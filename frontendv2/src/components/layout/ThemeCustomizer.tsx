@@ -92,7 +92,7 @@ export default function ThemeCustomizer() {
     if (!mounted) {
         return (
             <div className='flex items-center'>
-                <div className='h-9 w-9 rounded-xl border border-border/50 bg-muted/20 sm:h-10 sm:w-10' />
+                <div className='border-border/50 bg-muted/20 h-9 w-9 rounded-xl border sm:h-10 sm:w-10' />
             </div>
         );
     }
@@ -103,11 +103,11 @@ export default function ThemeCustomizer() {
                 type='button'
                 title={t('appearance.settingsMenuTitle')}
                 onClick={() => setCustomizerOpen(true)}
-                className='relative flex h-11 w-11 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground shadow-sm transition-colors hover:border-border hover:bg-muted/40 hover:text-foreground'
+                className='border-border bg-card text-muted-foreground hover:border-border hover:bg-muted/40 hover:text-foreground relative flex h-11 w-11 items-center justify-center rounded-xl border shadow-sm transition-colors'
             >
                 <Palette className='h-5.5 w-5.5' aria-hidden />
                 <span
-                    className='pointer-events-none absolute bottom-0.5 right-0.5 h-2 w-2 rounded-full ring-2 ring-card'
+                    className='ring-card pointer-events-none absolute right-0.5 bottom-0.5 h-2 w-2 rounded-full ring-2'
                     style={{ backgroundColor: currentAccent }}
                     aria-hidden
                 />
@@ -139,20 +139,20 @@ export default function ThemeCustomizer() {
                                 leaveTo='opacity-0 translate-y-2 sm:translate-y-0 sm:scale-95'
                             >
                                 <DialogPanel className={dialogPanelClass}>
-                                    <div className='border-b border-border bg-background px-4 py-3.5'>
+                                    <div className='border-border bg-background border-b px-4 py-3.5'>
                                         <div className='flex items-start justify-between gap-3'>
                                             <div>
-                                                <DialogTitle className='text-base font-semibold leading-tight text-foreground'>
+                                                <DialogTitle className='text-foreground text-base leading-tight font-semibold'>
                                                     {t('appearance.settingsMenuTitle')}
                                                 </DialogTitle>
-                                                <p className='text-sm text-muted-foreground/95'>
+                                                <p className='text-muted-foreground/95 text-sm'>
                                                     {t('appearance.settingsMenuSubtitle')}
                                                 </p>
                                             </div>
                                             <button
                                                 type='button'
                                                 onClick={() => setCustomizerOpen(false)}
-                                                className='rounded-lg p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground'
+                                                className='text-muted-foreground hover:bg-accent hover:text-foreground rounded-lg p-1 transition-colors'
                                             >
                                                 <XIcon className='h-5 w-5' />
                                             </button>
@@ -169,7 +169,7 @@ export default function ThemeCustomizer() {
                                                         ? t('appearance.theme.switchToLight')
                                                         : t('appearance.theme.switchToDark')
                                                 }
-                                                className='flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-border/60 bg-muted/25 px-3 text-sm font-medium transition-colors hover:bg-accent/50 sm:h-10 sm:text-xs'
+                                                className='border-border/60 bg-muted/25 hover:bg-accent/50 flex h-12 w-full items-center justify-center gap-2 rounded-xl border px-3 text-sm font-medium transition-colors sm:h-10 sm:text-xs'
                                             >
                                                 {theme === 'dark' ? (
                                                     <Sun className='h-4 w-4 text-amber-400' aria-hidden />
@@ -190,14 +190,14 @@ export default function ThemeCustomizer() {
                                                     setCustomizerOpen(false);
                                                     setBackgroundDialogOpen(true);
                                                 }}
-                                                className='flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-border/60 bg-muted/25 px-3 text-sm font-medium transition-colors hover:bg-accent/50 sm:h-10 sm:text-xs'
+                                                className='border-border/60 bg-muted/25 hover:bg-accent/50 flex h-12 w-full items-center justify-center gap-2 rounded-xl border px-3 text-sm font-medium transition-colors sm:h-10 sm:text-xs'
                                             >
-                                                <ImageIcon className='h-4 w-4 text-muted-foreground' aria-hidden />
+                                                <ImageIcon className='text-muted-foreground h-4 w-4' aria-hidden />
                                                 <span>{t('appearance.background.change')}</span>
                                             </button>
                                         </div>
 
-                                        <div className='rounded-2xl border border-border divide-y divide-border bg-card'>
+                                        <div className='border-border divide-border bg-card divide-y rounded-2xl border'>
                                             <div className={panelSectionClass}>
                                                 <p className={sectionLabelClass}>{t('appearance.accentColor')}</p>
                                                 <div className='grid grid-cols-5 gap-2.5 sm:gap-2'>
@@ -208,9 +208,9 @@ export default function ThemeCustomizer() {
                                                             title={option.name}
                                                             onClick={() => setAccentColor(option.value)}
                                                             className={cn(
-                                                                'relative mx-auto flex h-10 w-10 items-center justify-center rounded-full ring-1 ring-border/60 transition-transform hover:scale-105 sm:h-8 sm:w-8',
+                                                                'ring-border/60 relative mx-auto flex h-10 w-10 items-center justify-center rounded-full ring-1 transition-transform hover:scale-105 sm:h-8 sm:w-8',
                                                                 accentColor === option.value &&
-                                                                    'ring-2 ring-primary ring-offset-1 ring-offset-card',
+                                                                    'ring-primary ring-offset-card ring-2 ring-offset-1',
                                                             )}
                                                             style={{ backgroundColor: option.color }}
                                                         >
@@ -319,7 +319,7 @@ export default function ThemeCustomizer() {
                                                             className={cn(
                                                                 'flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm transition-colors sm:py-2 sm:text-xs',
                                                                 fontFamily === option.value
-                                                                    ? 'bg-primary/15 font-medium text-primary'
+                                                                    ? 'bg-primary/15 text-primary font-medium'
                                                                     : 'text-foreground hover:bg-accent/40',
                                                             )}
                                                             style={{ fontFamily: option.preview }}
@@ -327,7 +327,7 @@ export default function ThemeCustomizer() {
                                                             <span className='truncate'>{option.name}</span>
                                                             {fontFamily === option.value && (
                                                                 <Check
-                                                                    className='h-3 w-3 shrink-0 text-primary'
+                                                                    className='text-primary h-3 w-3 shrink-0'
                                                                     aria-hidden
                                                                 />
                                                             )}
@@ -350,7 +350,7 @@ export default function ThemeCustomizer() {
                                                             className={cn(
                                                                 'flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm transition-colors sm:py-2 sm:text-xs',
                                                                 locale === language.code
-                                                                    ? 'bg-primary/15 font-medium text-primary'
+                                                                    ? 'bg-primary/15 text-primary font-medium'
                                                                     : 'hover:bg-accent/40',
                                                             )}
                                                         >
@@ -359,14 +359,14 @@ export default function ThemeCustomizer() {
                                                                     {language.nativeName}
                                                                 </span>
                                                                 {language.name !== language.nativeName && (
-                                                                    <span className='ml-1 text-muted-foreground'>
+                                                                    <span className='text-muted-foreground ml-1'>
                                                                         ({language.name})
                                                                     </span>
                                                                 )}
                                                             </span>
                                                             {locale === language.code && (
                                                                 <Check
-                                                                    className='h-3 w-3 shrink-0 text-primary'
+                                                                    className='text-primary h-3 w-3 shrink-0'
                                                                     aria-hidden
                                                                 />
                                                             )}

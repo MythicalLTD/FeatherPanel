@@ -334,15 +334,15 @@ export default function ServerStartupPage() {
 
     if (!canRead) {
         return (
-            <div className='flex flex-col items-center justify-center py-24 text-center space-y-8 bg-card/40 backdrop-blur-3xl rounded-[3rem] border border-border/5'>
+            <div className='bg-card/40 border-border/5 flex flex-col items-center justify-center space-y-8 rounded-[3rem] border py-24 text-center backdrop-blur-3xl'>
                 <div className='relative'>
-                    <div className='absolute inset-0 bg-red-500/20 blur-3xl rounded-full scale-150' />
-                    <div className='relative h-32 w-32 rounded-3xl bg-red-500/10 flex items-center justify-center border-2 border-red-500/20 rotate-3'>
+                    <div className='absolute inset-0 scale-150 rounded-full bg-red-500/20 blur-3xl' />
+                    <div className='relative flex h-32 w-32 rotate-3 items-center justify-center rounded-3xl border-2 border-red-500/20 bg-red-500/10'>
                         <Lock className='h-16 w-16 text-red-500' />
                     </div>
                 </div>
                 <div className='max-w-md space-y-3 px-4'>
-                    <h2 className='text-3xl font-black uppercase tracking-tight'>
+                    <h2 className='text-3xl font-black tracking-tight uppercase'>
                         {t('serverStartup.featureDisabled')}
                     </h2>
                     <p className='text-muted-foreground text-lg leading-relaxed font-medium'>
@@ -352,7 +352,7 @@ export default function ServerStartupPage() {
                 <Button
                     variant='outline'
                     size='default'
-                    className='mt-8 rounded-2xl h-14 px-10'
+                    className='mt-8 h-14 rounded-2xl px-10'
                     onClick={() => router.push(`/server/${uuidShort}`)}
                 >
                     {t('common.goBack')}
@@ -364,29 +364,29 @@ export default function ServerStartupPage() {
     if (loading && !server) {
         return (
             <div key={pathname} className='flex flex-col items-center justify-center py-24'>
-                <Loader2 className='h-12 w-12 animate-spin text-primary opacity-50' />
-                <p className='mt-4 text-muted-foreground font-medium'>{t('common.loading')}</p>
+                <Loader2 className='text-primary h-12 w-12 animate-spin opacity-50' />
+                <p className='text-muted-foreground mt-4 font-medium'>{t('common.loading')}</p>
             </div>
         );
     }
 
     return (
-        <div key={pathname} className='max-w-6xl mx-auto space-y-8 pb-16 font-sans'>
+        <div key={pathname} className='mx-auto max-w-6xl space-y-8 pb-16 font-sans'>
             <WidgetRenderer widgets={getWidgets('server-startup', 'top-of-page')} />
 
             <PageHeader
                 title={t('serverStartup.title')}
                 description={t('serverStartup.description')}
                 actions={
-                    <div className='hidden md:flex items-center gap-3'>
+                    <div className='hidden items-center gap-3 md:flex'>
                         <Button
                             variant='plain'
                             size='default'
                             onClick={() => fetchData()}
                             disabled={loading || saving}
-                            className='bg-transparent hover:bg-white/5 border border-transparent hover:border-white/10 text-[10px]'
+                            className='border border-transparent bg-transparent text-[10px] hover:border-white/10 hover:bg-white/5'
                         >
-                            <RefreshCw className={cn('h-3 w-3 mr-2', loading && 'animate-spin')} />
+                            <RefreshCw className={cn('mr-2 h-3 w-3', loading && 'animate-spin')} />
                             {t('common.refresh')}
                         </Button>
                         <Button
@@ -400,7 +400,7 @@ export default function ServerStartupPage() {
                                 t('common.saving')
                             ) : (
                                 <>
-                                    <Save className='h-4 w-4 mr-2' />
+                                    <Save className='mr-2 h-4 w-4' />
                                     {t('common.saveChanges')}
                                 </>
                             )}
@@ -410,8 +410,8 @@ export default function ServerStartupPage() {
             />
             <WidgetRenderer widgets={getWidgets('server-startup', 'after-header')} />
 
-            <div className='grid grid-cols-1 lg:grid-cols-12 gap-8'>
-                <div className='lg:col-span-8 space-y-8'>
+            <div className='grid grid-cols-1 gap-8 lg:grid-cols-12'>
+                <div className='space-y-8 lg:col-span-8'>
                     <PageCard
                         title={t('serverStartup.startupCommand')}
                         description={t('serverStartup.startupHelp')}
@@ -440,7 +440,7 @@ export default function ServerStartupPage() {
                         description={t('serverStartup.variablesHelp')}
                         icon={Settings}
                         action={
-                            <div className='px-5 py-2 rounded-2xl bg-secondary/50 border border-border/10 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
+                            <div className='bg-secondary/50 border-border/10 text-muted-foreground/60 rounded-2xl border px-5 py-2 text-[10px] font-black tracking-widest uppercase'>
                                 {viewableVariables.length}{' '}
                                 {viewableVariables.length === 1
                                     ? t('serverStartup.variableSingular')
@@ -449,32 +449,32 @@ export default function ServerStartupPage() {
                         }
                     >
                         {viewableVariables.length === 0 ? (
-                            <div className='flex flex-col items-center justify-center py-16 text-center space-y-4'>
-                                <Settings className='h-16 w-16 text-muted-foreground/10' />
-                                <p className='text-muted-foreground font-black uppercase leading-none'>
+                            <div className='flex flex-col items-center justify-center space-y-4 py-16 text-center'>
+                                <Settings className='text-muted-foreground/10 h-16 w-16' />
+                                <p className='text-muted-foreground leading-none font-black uppercase'>
                                     {t('serverStartup.noVariablesConfigured')}
                                 </p>
                             </div>
                         ) : (
-                            <div className='grid grid-cols-1 md:grid-cols-2 gap-8'>
+                            <div className='grid grid-cols-1 gap-8 md:grid-cols-2'>
                                 {viewableVariables.map((v) => (
-                                    <div key={v.variable_id} className='space-y-3 group/var'>
-                                        <div className='flex items-center justify-between ml-1'>
+                                    <div key={v.variable_id} className='group/var space-y-3'>
+                                        <div className='ml-1 flex items-center justify-between'>
                                             <div className='flex items-center gap-2.5'>
                                                 <div
                                                     className={cn(
-                                                        'w-1.5 h-1.5 rounded-full transition-all duration-300',
+                                                        'h-1.5 w-1.5 rounded-full transition-all duration-300',
                                                         variableErrors[v.variable_id]
                                                             ? 'bg-red-500'
                                                             : 'bg-purple-500/50 group-hover/var:bg-purple-500',
                                                     )}
                                                 />
-                                                <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground group-hover/var:text-foreground transition-colors'>
+                                                <label className='text-muted-foreground group-hover/var:text-foreground text-[9px] font-black tracking-[0.2em] uppercase transition-colors'>
                                                     {v.name}
                                                 </label>
                                             </div>
                                             {!isEnabled(v.user_editable) && (
-                                                <span className='text-[8px] font-black uppercase tracking-widest text-muted-foreground/40 bg-secondary/50 px-2 py-0.5 rounded-md border border-border/10'>
+                                                <span className='text-muted-foreground/40 bg-secondary/50 border-border/10 rounded-md border px-2 py-0.5 text-[8px] font-black tracking-widest uppercase'>
                                                     {t('serverStartup.readOnly')}
                                                 </span>
                                             )}
@@ -493,18 +493,18 @@ export default function ServerStartupPage() {
                                                 className={cn(!isEnabled(v.user_editable) && 'opacity-50 grayscale')}
                                                 placeholder={v.default_value || t('serverStartup.enterValue')}
                                             />
-                                            <div className='absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-mono text-muted-foreground/20 opacity-0 group-hover/var:opacity-100 transition-opacity pointer-events-none'>
+                                            <div className='text-muted-foreground/20 pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 font-mono text-[10px] opacity-0 transition-opacity group-hover/var:opacity-100'>
                                                 {v.env_variable}
                                             </div>
                                         </div>
 
                                         {variableErrors[v.variable_id] ? (
-                                            <p className='text-[9px] font-black text-red-500 ml-2 uppercase tracking-widest animate-in slide-in-from-left-2'>
+                                            <p className='animate-in slide-in-from-left-2 ml-2 text-[9px] font-black tracking-widest text-red-500 uppercase'>
                                                 {variableErrors[v.variable_id]}
                                             </p>
                                         ) : (
                                             v.description && (
-                                                <p className='text-[9px] font-bold text-muted-foreground/40 ml-2 line-clamp-1 group-hover/var:line-clamp-none transition-all'>
+                                                <p className='text-muted-foreground/40 ml-2 line-clamp-1 text-[9px] font-bold transition-all group-hover/var:line-clamp-none'>
                                                     {v.description}
                                                 </p>
                                             )
@@ -517,11 +517,11 @@ export default function ServerStartupPage() {
                     <WidgetRenderer widgets={getWidgets('server-startup', 'after-variables')} />
                 </div>
 
-                <div className='lg:col-span-4 space-y-8'>
+                <div className='space-y-8 lg:col-span-4'>
                     <PageCard title={t('serverStartup.dockerImage')} description='Containerization' icon={Container}>
                         <div className='space-y-6'>
                             <div className='space-y-2.5'>
-                                <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                     {t('serverStartup.dockerImage')}
                                 </label>
                                 <Input
@@ -529,15 +529,15 @@ export default function ServerStartupPage() {
                                     onChange={(e) => setForm((prev) => ({ ...prev, image: e.target.value }))}
                                     disabled={!canUpdateDockerImage || saving}
                                     placeholder='ghcr.io/...'
-                                    className='text-xs font-mono'
+                                    className='font-mono text-xs'
                                 />
                             </div>
 
                             <div className='space-y-3'>
-                                <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                     {t('serverStartup.availableImages')}
                                 </label>
-                                <div className='space-y-2 max-h-[200px] overflow-y-auto pr-2 scrollbar-hide'>
+                                <div className='scrollbar-hide max-h-[200px] space-y-2 overflow-y-auto pr-2'>
                                     {availableDockerImages.map((image) => (
                                         <div
                                             key={image}
@@ -547,16 +547,16 @@ export default function ServerStartupPage() {
                                                 setForm((prev) => ({ ...prev, image }))
                                             }
                                             className={cn(
-                                                'p-3 rounded-xl border transition-all duration-300 cursor-pointer group/img relative overflow-hidden',
+                                                'group/img relative cursor-pointer overflow-hidden rounded-xl border p-3 transition-all duration-300',
                                                 form.image === image
-                                                    ? 'bg-blue-500/10 border-blue-500/40'
+                                                    ? 'border-blue-500/40 bg-blue-500/10'
                                                     : 'bg-card/50 border-border/5 hover:border-border/20',
                                             )}
                                         >
-                                            <div className='flex items-center justify-between gap-3 relative z-10'>
+                                            <div className='relative z-10 flex items-center justify-between gap-3'>
                                                 <p
                                                     className={cn(
-                                                        'text-[10px] font-mono font-bold truncate transition-colors',
+                                                        'truncate font-mono text-[10px] font-bold transition-colors',
                                                         form.image === image
                                                             ? 'text-blue-500'
                                                             : 'text-muted-foreground group-hover/img:text-foreground',
@@ -577,49 +577,49 @@ export default function ServerStartupPage() {
                     <WidgetRenderer widgets={getWidgets('server-startup', 'after-docker-image')} />
 
                     {canChangeSpell && (
-                        <div className='bg-primary/5 border border-primary/10 backdrop-blur-3xl rounded-3xl p-8 space-y-6 relative overflow-hidden group'>
-                            <div className='absolute -bottom-12 -right-12 w-48 h-48 bg-primary/10 blur-3xl pointer-events-none group-hover:bg-primary/20 transition-all duration-1000' />
-                            <div className='flex items-center gap-5 relative z-10'>
-                                <div className='h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 '>
-                                    <Zap className='h-6 w-6 text-primary fill-primary/20' />
+                        <div className='bg-primary/5 border-primary/10 group relative space-y-6 overflow-hidden rounded-3xl border p-8 backdrop-blur-3xl'>
+                            <div className='bg-primary/10 group-hover:bg-primary/20 pointer-events-none absolute -right-12 -bottom-12 h-48 w-48 blur-3xl transition-all duration-1000' />
+                            <div className='relative z-10 flex items-center gap-5'>
+                                <div className='bg-primary/10 border-primary/20 flex h-12 w-12 items-center justify-center rounded-2xl border transition-all duration-500 group-hover:scale-110 group-hover:rotate-3'>
+                                    <Zap className='text-primary fill-primary/20 h-6 w-6' />
                                 </div>
                                 <div className='space-y-1'>
-                                    <h3 className='text-xl font-black uppercase tracking-tight'>
+                                    <h3 className='text-xl font-black tracking-tight uppercase'>
                                         {t('serverStartup.softwareEnvironment')}
                                     </h3>
-                                    <p className='text-[10px] font-bold text-muted-foreground/60 tracking-widest uppercase'>
+                                    <p className='text-muted-foreground/60 text-[10px] font-bold tracking-widest uppercase'>
                                         {t('navigation.items.transferSpell')}
                                     </p>
                                 </div>
                             </div>
 
-                            <p className='text-sm font-medium text-muted-foreground/80 leading-relaxed relative z-10'>
+                            <p className='text-muted-foreground/80 relative z-10 text-sm leading-relaxed font-medium'>
                                 {t('serverStartup.transferDescription')}
                             </p>
 
                             <Button
                                 onClick={() => router.push(`/server/${uuidShort}/startup/transfer/spell`)}
-                                className='w-full bg-primary/10 hover:bg-primary/20 border border-primary/20 text-primary'
+                                className='bg-primary/10 hover:bg-primary/20 border-primary/20 text-primary w-full border'
                                 size='default'
                                 variant='outline'
                             >
                                 {t('serverStartup.startTransfer')}
-                                <ChevronRight className='h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform' />
+                                <ChevronRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
                             </Button>
                         </div>
                     )}
                     <WidgetRenderer widgets={getWidgets('server-startup', 'after-spell-selection')} />
 
-                    <div className='bg-blue-500/5 border border-blue-500/10 backdrop-blur-3xl rounded-3xl p-8 space-y-4 relative overflow-hidden group'>
-                        <div className='absolute -bottom-6 -right-6 w-24 h-24 bg-blue-500/10 blur-2xl pointer-events-none group-hover:scale-150 transition-transform duration-1000' />
-                        <div className='h-10 w-10 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20 relative z-10'>
+                    <div className='group relative space-y-4 overflow-hidden rounded-3xl border border-blue-500/10 bg-blue-500/5 p-8 backdrop-blur-3xl'>
+                        <div className='pointer-events-none absolute -right-6 -bottom-6 h-24 w-24 bg-blue-500/10 blur-2xl transition-transform duration-1000 group-hover:scale-150' />
+                        <div className='relative z-10 flex h-10 w-10 items-center justify-center rounded-xl border border-blue-500/20 bg-blue-500/10'>
                             <Info className='h-5 w-5 text-blue-500' />
                         </div>
-                        <div className='space-y-2 relative z-10'>
-                            <h3 className='text-lg font-black uppercase tracking-tight text-blue-500 leading-none'>
+                        <div className='relative z-10 space-y-2'>
+                            <h3 className='text-lg leading-none font-black tracking-tight text-blue-500 uppercase'>
                                 {t('serverStartup.startupSettings')}
                             </h3>
-                            <p className='text-blue-500/70 font-bold text-[11px] leading-relaxed'>
+                            <p className='text-[11px] leading-relaxed font-bold text-blue-500/70'>
                                 {t('serverStartup.description')}
                             </p>
                         </div>

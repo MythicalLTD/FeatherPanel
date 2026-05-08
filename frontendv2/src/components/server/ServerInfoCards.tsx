@@ -102,22 +102,22 @@ export default function ServerInfoCards({
 
     return (
         <div className={cn('grid gap-6', className)}>
-            <div className='rounded-xl border border-border/50 bg-card/50 backdrop-blur-xl p-6'>
-                <h3 className='text-sm font-medium text-muted-foreground mb-4 flex items-center gap-2'>
+            <div className='border-border/50 bg-card/50 rounded-xl border p-6 backdrop-blur-xl'>
+                <h3 className='text-muted-foreground mb-4 flex items-center gap-2 text-sm font-medium'>
                     <Wifi className='h-4 w-4' />
                     {t('servers.console.info_cards.network_title')}
                 </h3>
 
                 <div className='space-y-4'>
                     <div>
-                        <p className='text-xs text-muted-foreground mb-1'>{t('servers.console.info_cards.address')}</p>
+                        <p className='text-muted-foreground mb-1 text-xs'>{t('servers.console.info_cards.address')}</p>
                         <div className='flex items-center gap-2'>
-                            <code className='bg-muted px-2 py-1 rounded text-sm font-mono flex-1 truncate'>
+                            <code className='bg-muted flex-1 truncate rounded px-2 py-1 font-mono text-sm'>
                                 {serverIp && serverPort ? `${serverIp}:${serverPort}` : 'N/A'}
                             </code>
                             <button
                                 onClick={() => handleCopy(serverIp && serverPort ? `${serverIp}:${serverPort}` : 'N/A')}
-                                className='p-1.5 hover:bg-muted rounded-md transition-colors text-muted-foreground hover:text-foreground'
+                                className='hover:bg-muted text-muted-foreground hover:text-foreground rounded-md p-1.5 transition-colors'
                                 title={t('servers.console.info_cards.copy')}
                             >
                                 <svg
@@ -140,84 +140,84 @@ export default function ServerInfoCards({
 
                     <div className='grid grid-cols-2 gap-4 pt-2'>
                         <div>
-                            <p className='text-xs text-muted-foreground mb-1 flex items-center gap-1'>
+                            <p className='text-muted-foreground mb-1 flex items-center gap-1 text-xs'>
                                 <Clock className='h-3 w-3' />
                                 {t('servers.console.info_cards.uptime')}
                             </p>
-                            <p className='font-medium text-sm'>{wingsUptime || 'N/A'}</p>
+                            <p className='text-sm font-medium'>{wingsUptime || 'N/A'}</p>
                         </div>
                         <div>
-                            <p className='text-xs text-muted-foreground mb-1 flex items-center gap-1'>
+                            <p className='text-muted-foreground mb-1 flex items-center gap-1 text-xs'>
                                 <Activity className='h-3 w-3' />
                                 {t('servers.console.info_cards.ping')}
                             </p>
-                            <p className='font-medium text-sm'>{ping !== null ? `${ping}ms` : 'N/A'}</p>
+                            <p className='text-sm font-medium'>{ping !== null ? `${ping}ms` : 'N/A'}</p>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div className='rounded-xl border border-border/50 bg-card/50 backdrop-blur-xl p-6'>
-                <h3 className='text-sm font-medium text-muted-foreground mb-4 flex items-center gap-2'>
+            <div className='border-border/50 bg-card/50 rounded-xl border p-6 backdrop-blur-xl'>
+                <h3 className='text-muted-foreground mb-4 flex items-center gap-2 text-sm font-medium'>
                     <Activity className='h-4 w-4' />
                     {t('servers.console.info_cards.resources_title')}
                 </h3>
 
                 <div className='space-y-5'>
                     <div>
-                        <div className='flex justify-between text-sm mb-1.5'>
-                            <span className='text-muted-foreground flex gap-2 items-center'>
+                        <div className='mb-1.5 flex justify-between text-sm'>
+                            <span className='text-muted-foreground flex items-center gap-2'>
                                 <Cpu className='h-3 w-3' />
                                 {t('servers.cpu')}
                             </span>
                             <span className='font-medium'>{cpuUsage.toFixed(1)}%</span>
                         </div>
                         {cpuLimit > 0 && <Progress value={(cpuUsage / cpuLimit) * 100} className='h-1.5' />}
-                        <p className='text-[10px] text-muted-foreground mt-1 text-right'>
+                        <p className='text-muted-foreground mt-1 text-right text-[10px]'>
                             {t('servers.console.info_cards.limit', { limit: formatCpu(cpuLimit) })}
                         </p>
                     </div>
 
                     <div>
-                        <div className='flex justify-between text-sm mb-1.5'>
-                            <span className='text-muted-foreground flex gap-2 items-center'>
+                        <div className='mb-1.5 flex justify-between text-sm'>
+                            <span className='text-muted-foreground flex items-center gap-2'>
                                 <Database className='h-3 w-3' />
                                 {t('servers.memory')}
                             </span>
                             <span className='font-medium'>{formatMib(memoryUsage)}</span>
                         </div>
                         {memoryLimit > 0 && <Progress value={(memoryUsage / memoryLimit) * 100} className='h-1.5' />}
-                        <p className='text-[10px] text-muted-foreground mt-1 text-right'>
+                        <p className='text-muted-foreground mt-1 text-right text-[10px]'>
                             {t('servers.console.info_cards.limit', { limit: formatMemory(memoryLimit) })}
                         </p>
                     </div>
 
                     <div>
-                        <div className='flex justify-between text-sm mb-1.5'>
-                            <span className='text-muted-foreground flex gap-2 items-center'>
+                        <div className='mb-1.5 flex justify-between text-sm'>
+                            <span className='text-muted-foreground flex items-center gap-2'>
                                 <HardDrive className='h-3 w-3' />
                                 {t('servers.disk')}
                             </span>
                             <span className='font-medium'>{formatMib(diskUsage)}</span>
                         </div>
                         {diskLimit > 0 && <Progress value={(diskUsage / diskLimit) * 100} className='h-1.5' />}
-                        <p className='text-[10px] text-muted-foreground mt-1 text-right'>
+                        <p className='text-muted-foreground mt-1 text-right text-[10px]'>
                             {t('servers.console.info_cards.limit', { limit: formatDisk(diskLimit) })}
                         </p>
                     </div>
                 </div>
             </div>
 
-            <div className='rounded-xl border border-border/50 bg-card/50 backdrop-blur-xl p-6'>
-                <h3 className='text-sm font-medium text-muted-foreground mb-4 flex items-center gap-2'>
+            <div className='border-border/50 bg-card/50 rounded-xl border p-6 backdrop-blur-xl'>
+                <h3 className='text-muted-foreground mb-4 flex items-center gap-2 text-sm font-medium'>
                     <Activity className='h-4 w-4' />
                     {t('servers.console.info_cards.network_title')}
                 </h3>
 
                 <div className='space-y-4'>
                     <div>
-                        <div className='flex justify-between text-sm mb-1.5 align-middle'>
-                            <span className='text-muted-foreground flex gap-2 items-center'>
+                        <div className='mb-1.5 flex justify-between align-middle text-sm'>
+                            <span className='text-muted-foreground flex items-center gap-2'>
                                 <ArrowDown className='h-3 w-3' />
                                 {t('servers.console.info_cards.network_rx')}
                             </span>
@@ -226,8 +226,8 @@ export default function ServerInfoCards({
                     </div>
 
                     <div>
-                        <div className='flex justify-between text-sm mb-1.5 align-middle'>
-                            <span className='text-muted-foreground flex gap-2 items-center'>
+                        <div className='mb-1.5 flex justify-between align-middle text-sm'>
+                            <span className='text-muted-foreground flex items-center gap-2'>
                                 <ArrowUp className='h-3 w-3' />
                                 {t('servers.console.info_cards.network_tx')}
                             </span>

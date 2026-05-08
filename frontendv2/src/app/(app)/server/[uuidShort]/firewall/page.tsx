@@ -278,10 +278,10 @@ export default function ServerFirewallPage() {
     if (!canRead) {
         return (
             <div className='flex flex-col items-center justify-center py-24 text-center'>
-                <div className='h-20 w-20 rounded-3xl bg-red-500/10 flex items-center justify-center mb-6'>
+                <div className='mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-red-500/10'>
                     <Shield className='h-10 w-10 text-red-500' />
                 </div>
-                <h1 className='text-2xl font-black uppercase tracking-tight'>{t('common.accessDenied')}</h1>
+                <h1 className='text-2xl font-black tracking-tight uppercase'>{t('common.accessDenied')}</h1>
                 <p className='text-muted-foreground mt-2'>{t('common.noPermission')}</p>
                 <Button variant='outline' className='mt-8' onClick={() => window.history.back()}>
                     {t('common.goBack')}
@@ -310,19 +310,19 @@ export default function ServerFirewallPage() {
             <div className='flex flex-col items-center justify-center py-24'>
                 <div className='relative'>
                     <div className='absolute inset-0 animate-ping opacity-20'>
-                        <div className='w-16 h-16 rounded-full bg-primary/20' />
+                        <div className='bg-primary/20 h-16 w-16 rounded-full' />
                     </div>
-                    <div className='relative p-4 rounded-full bg-primary/10'>
-                        <Loader2 className='h-8 w-8 animate-spin text-primary' />
+                    <div className='bg-primary/10 relative rounded-full p-4'>
+                        <Loader2 className='text-primary h-8 w-8 animate-spin' />
                     </div>
                 </div>
-                <span className='mt-4 text-muted-foreground animate-pulse'>{t('common.loading')}...</span>
+                <span className='text-muted-foreground mt-4 animate-pulse'>{t('common.loading')}...</span>
             </div>
         );
     }
 
     return (
-        <div key={pathname} className='space-y-8 pb-12 '>
+        <div key={pathname} className='space-y-8 pb-12'>
             <WidgetRenderer widgets={getWidgets('server-firewall', 'top-of-page')} />
             <PageHeader
                 title={t('serverFirewall.title')}
@@ -330,7 +330,7 @@ export default function ServerFirewallPage() {
                 actions={
                     <div className='flex items-center gap-3'>
                         <Button variant='glass' size='default' onClick={fetchRules} disabled={loading}>
-                            <RefreshCw className={cn('h-5 w-5 mr-2', loading && 'animate-spin')} />
+                            <RefreshCw className={cn('mr-2 h-5 w-5', loading && 'animate-spin')} />
                             {t('serverFirewall.refresh')}
                         </Button>
 
@@ -340,7 +340,7 @@ export default function ServerFirewallPage() {
                                 onClick={openCreateModal}
                                 disabled={loading || allocations.length === 0}
                             >
-                                <Plus className='h-5 w-5 mr-2' />
+                                <Plus className='mr-2 h-5 w-5' />
                                 {t('serverFirewall.createRule')}
                             </Button>
                         )}
@@ -349,16 +349,16 @@ export default function ServerFirewallPage() {
             />
             <WidgetRenderer widgets={getWidgets('server-firewall', 'after-header')} />
 
-            <div className='relative overflow-hidden p-6 rounded-3xl bg-blue-500/5 border border-blue-500/10 backdrop-blur-xl animate-in slide-in-from-top duration-500'>
+            <div className='animate-in slide-in-from-top relative overflow-hidden rounded-3xl border border-blue-500/10 bg-blue-500/5 p-6 backdrop-blur-xl duration-500'>
                 <div className='relative z-10 flex items-start gap-5'>
-                    <div className='h-12 w-12 rounded-2xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20 shrink-0'>
+                    <div className='flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-blue-500/20 bg-blue-500/10'>
                         <Info className='h-6 w-6 text-blue-500' />
                     </div>
                     <div className='space-y-1'>
-                        <h3 className='text-lg font-bold text-blue-500 leading-none uppercase tracking-tight'>
+                        <h3 className='text-lg leading-none font-bold tracking-tight text-blue-500 uppercase'>
                             {t('serverFirewall.rulesInfoTitle')}
                         </h3>
-                        <p className='text-sm text-blue-500/80 leading-relaxed font-medium'>
+                        <p className='text-sm leading-relaxed font-medium text-blue-500/80'>
                             {t('serverFirewall.rulesInfoDescription')}
                         </p>
                     </div>
@@ -375,7 +375,7 @@ export default function ServerFirewallPage() {
                     action={
                         canManage ? (
                             <Button size='default' onClick={openCreateModal}>
-                                <Plus className='h-6 w-6 mr-2' />
+                                <Plus className='mr-2 h-6 w-6' />
                                 {t('serverFirewall.createRule')}
                             </Button>
                         ) : undefined
@@ -409,13 +409,13 @@ export default function ServerFirewallPage() {
                             ]}
                             description={
                                 <div className='flex flex-wrap items-center gap-x-6 gap-y-2'>
-                                    <div className='flex items-center gap-2 text-muted-foreground'>
-                                        <span className='text-[10px] font-black uppercase tracking-widest opacity-60 bg-secondary px-2 py-0.5 rounded-md border border-border/50'>
+                                    <div className='text-muted-foreground flex items-center gap-2'>
+                                        <span className='bg-secondary border-border/50 rounded-md border px-2 py-0.5 text-[10px] font-black tracking-widest uppercase opacity-60'>
                                             {t('serverFirewall.priority')} {rule.priority}
                                         </span>
                                     </div>
-                                    <div className='flex items-center gap-2 text-muted-foreground ml-auto sm:ml-0 opacity-60'>
-                                        <span className='text-[10px] font-black uppercase tracking-widest italic'>
+                                    <div className='text-muted-foreground ml-auto flex items-center gap-2 opacity-60 sm:ml-0'>
+                                        <span className='text-[10px] font-black tracking-widest uppercase italic'>
                                             {new Date(rule.created_at).toLocaleString()}
                                         </span>
                                     </div>
@@ -425,11 +425,11 @@ export default function ServerFirewallPage() {
                                 canManage && (
                                     <div className='flex items-center gap-2 sm:self-center'>
                                         <Button variant='glass' size='sm' onClick={() => openEditModal(rule)}>
-                                            <Pencil className='h-3.5 w-3.5 mr-1.5' />
+                                            <Pencil className='mr-1.5 h-3.5 w-3.5' />
                                             <span className='hidden sm:inline'>{t('common.edit')}</span>
                                         </Button>
                                         <Button variant='destructive' size='sm' onClick={() => promptDelete(rule)}>
-                                            <Trash2 className='h-3.5 w-3.5 mr-1.5' />
+                                            <Trash2 className='mr-1.5 h-3.5 w-3.5' />
                                             <span className='hidden sm:inline'>{t('common.delete')}</span>
                                         </Button>
                                     </div>
@@ -458,7 +458,7 @@ export default function ServerFirewallPage() {
                             placeholder={t('serverFirewall.allocationPlaceholder')}
                             disabled={saving || allocations.length === 0}
                         />
-                        <p className='text-xs text-muted-foreground'>{t('serverFirewall.allocationHelp')}</p>
+                        <p className='text-muted-foreground text-xs'>{t('serverFirewall.allocationHelp')}</p>
                     </div>
 
                     <div className='space-y-2'>
@@ -494,7 +494,7 @@ export default function ServerFirewallPage() {
                                 max={10000}
                                 disabled={saving}
                             />
-                            <p className='text-xs text-muted-foreground'>{t('serverFirewall.priorityHelp')}</p>
+                            <p className='text-muted-foreground text-xs'>{t('serverFirewall.priorityHelp')}</p>
                         </div>
 
                         <div className='space-y-2'>
@@ -508,7 +508,7 @@ export default function ServerFirewallPage() {
                         </div>
                     </div>
 
-                    <div className='flex justify-end gap-2 mt-4'>
+                    <div className='mt-4 flex justify-end gap-2'>
                         <Button variant='outline' onClick={() => setIsModalOpen(false)} disabled={saving} type='button'>
                             {t('common.cancel')}
                         </Button>
@@ -526,7 +526,7 @@ export default function ServerFirewallPage() {
                 title={t('serverFirewall.confirmDeleteTitle')}
                 description={t('serverFirewall.confirmDeleteDescription')}
             >
-                <div className='flex justify-end gap-2 mt-4'>
+                <div className='mt-4 flex justify-end gap-2'>
                     <Button variant='outline' onClick={() => setDeleteDialogOpen(false)} disabled={deleting}>
                         {t('common.cancel')}
                     </Button>

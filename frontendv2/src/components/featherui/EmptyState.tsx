@@ -29,18 +29,18 @@ export function EmptyState({ title, description, icon: Icon, action, className }
     return (
         <div
             className={cn(
-                'flex flex-col items-center justify-center py-24 text-center space-y-8 bg-card/10 rounded-[3rem] backdrop-blur-sm',
+                'bg-card/10 flex flex-col items-center justify-center space-y-8 rounded-[3rem] py-24 text-center backdrop-blur-sm',
                 className,
             )}
         >
             <div className='relative'>
-                <div className='absolute inset-0 bg-primary/20 blur-3xl rounded-full scale-150 animate-pulse' />
-                <div className='relative h-32 w-32 rounded-3xl bg-primary/10 flex items-center justify-center rotate-3'>
-                    <Icon className='h-16 w-16 text-primary' />
+                <div className='bg-primary/20 absolute inset-0 scale-150 animate-pulse rounded-full blur-3xl' />
+                <div className='bg-primary/10 relative flex h-32 w-32 rotate-3 items-center justify-center rounded-3xl'>
+                    <Icon className='text-primary h-16 w-16' />
                 </div>
             </div>
             <div className='max-w-md space-y-3 px-4'>
-                <h2 className='text-3xl font-black uppercase tracking-tight'>{title}</h2>
+                <h2 className='text-3xl font-black tracking-tight uppercase'>{title}</h2>
                 <p className='text-muted-foreground text-lg leading-relaxed font-medium'>{description}</p>
             </div>
             {action && <div className='mt-8'>{action}</div>}

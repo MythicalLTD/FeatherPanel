@@ -88,7 +88,7 @@ export function HistoryTab({ instanceId }: HistoryTabProps) {
         >
             {loading ? (
                 <div className='flex items-center justify-center py-12'>
-                    <Loader2 className='h-8 w-8 animate-spin text-muted-foreground' />
+                    <Loader2 className='text-muted-foreground h-8 w-8 animate-spin' />
                 </div>
             ) : activities.length === 0 ? (
                 <p className='text-muted-foreground py-6 text-center'>
@@ -99,13 +99,13 @@ export function HistoryTab({ instanceId }: HistoryTabProps) {
                     {activities.map((a) => (
                         <li
                             key={a.id}
-                            className='flex flex-wrap items-baseline gap-x-3 gap-y-1 rounded-xl border border-border/50 bg-muted/20 px-4 py-3'
+                            className='border-border/50 bg-muted/20 flex flex-wrap items-baseline gap-x-3 gap-y-1 rounded-xl border px-4 py-3'
                         >
-                            <span className='font-medium text-foreground tabular-nums'>{formatDate(a.created_at)}</span>
-                            <span className='rounded-md bg-primary/10 px-2 py-0.5 text-sm font-medium text-primary'>
+                            <span className='text-foreground font-medium tabular-nums'>{formatDate(a.created_at)}</span>
+                            <span className='bg-primary/10 text-primary rounded-md px-2 py-0.5 text-sm font-medium'>
                                 {formatActivityName(a.name)}
                             </span>
-                            {a.context && <span className='text-sm text-muted-foreground'>{a.context}</span>}
+                            {a.context && <span className='text-muted-foreground text-sm'>{a.context}</span>}
                         </li>
                     ))}
                 </ul>

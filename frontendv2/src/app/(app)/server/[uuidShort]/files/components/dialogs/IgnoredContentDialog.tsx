@@ -85,7 +85,7 @@ export function IgnoredContentDialog({ open, onOpenChange, uuid, onSuccess }: Ig
             <DialogContent className='sm:max-w-md'>
                 <DialogHeader>
                     <div className='flex items-center gap-3'>
-                        <div className='flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20'>
+                        <div className='bg-primary/10 text-primary border-primary/20 flex h-10 w-10 items-center justify-center rounded-xl border'>
                             <Settings className='h-5 w-5' />
                         </div>
                         <div>
@@ -96,9 +96,9 @@ export function IgnoredContentDialog({ open, onOpenChange, uuid, onSuccess }: Ig
                 </DialogHeader>
 
                 <div className='flex flex-col gap-4 py-4'>
-                    <div className='flex items-start gap-3 bg-blue-500/5 p-4 rounded-xl border border-blue-500/10 mb-2'>
-                        <Info className='h-5 w-5 text-blue-400 shrink-0 mt-0.5' />
-                        <p className='text-xs text-blue-100/70 leading-relaxed'>{t('files.dialogs.ignored.info')}</p>
+                    <div className='mb-2 flex items-start gap-3 rounded-xl border border-blue-500/10 bg-blue-500/5 p-4'>
+                        <Info className='mt-0.5 h-5 w-5 shrink-0 text-blue-400' />
+                        <p className='text-xs leading-relaxed text-blue-100/70'>{t('files.dialogs.ignored.info')}</p>
                     </div>
 
                     <div className='flex gap-2'>
@@ -107,28 +107,28 @@ export function IgnoredContentDialog({ open, onOpenChange, uuid, onSuccess }: Ig
                             value={newPattern}
                             onChange={(e) => setNewPattern(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && addPattern()}
-                            className='bg-white/5 border-white/10'
+                            className='border-white/10 bg-white/5'
                         />
                         <Button variant='secondary' size='icon' onClick={addPattern} className='shrink-0'>
                             <Plus className='h-4 w-4' />
                         </Button>
                     </div>
 
-                    <div className='flex flex-wrap gap-2 max-h-[200px] overflow-y-auto pr-2 custom-scrollbar'>
+                    <div className='custom-scrollbar flex max-h-[200px] flex-wrap gap-2 overflow-y-auto pr-2'>
                         {patterns.length === 0 ? (
-                            <p className='text-xs text-center w-full py-8 text-muted-foreground italic bg-white/5 rounded-xl border border-dashed border-white/10'>
+                            <p className='text-muted-foreground w-full rounded-xl border border-dashed border-white/10 bg-white/5 py-8 text-center text-xs italic'>
                                 {t('files.dialogs.ignored.empty')}
                             </p>
                         ) : (
                             patterns.map((pattern) => (
                                 <div
                                     key={pattern}
-                                    className='flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-lg border border-white/5 group'
+                                    className='group flex items-center gap-2 rounded-lg border border-white/5 bg-white/10 px-3 py-1.5'
                                 >
                                     <span className='text-xs font-medium text-white/80'>{pattern}</span>
                                     <button
                                         onClick={() => removePattern(pattern)}
-                                        className='text-white/40 hover:text-red-400 transition-colors'
+                                        className='text-white/40 transition-colors hover:text-red-400'
                                     >
                                         <X className='h-3 w-3' />
                                     </button>
@@ -142,7 +142,7 @@ export function IgnoredContentDialog({ open, onOpenChange, uuid, onSuccess }: Ig
                     <Button variant='ghost' onClick={() => onOpenChange(false)}>
                         {t('files.dialogs.ignored.cancel')}
                     </Button>
-                    <Button variant='default' onClick={handleSave} className=' h-10 px-6'>
+                    <Button variant='default' onClick={handleSave} className='h-10 px-6'>
                         {t('files.dialogs.ignored.save')}
                     </Button>
                 </DialogFooter>

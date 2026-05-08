@@ -279,8 +279,8 @@ export default function PluginPage({ context, serverUuid, vdsId }: PluginPagePro
     if (loading) {
         return (
             <div className='flex h-[50vh] items-center justify-center'>
-                <div className='flex items-center gap-3 text-muted-foreground'>
-                    <RefreshCw className='h-6 w-6 animate-spin text-primary' />
+                <div className='text-muted-foreground flex items-center gap-3'>
+                    <RefreshCw className='text-primary h-6 w-6 animate-spin' />
                     <span>{t('common.loading')}...</span>
                 </div>
             </div>
@@ -294,26 +294,26 @@ export default function PluginPage({ context, serverUuid, vdsId }: PluginPagePro
 
         if (isPluginNotFound) {
             return (
-                <div className='flex flex-col items-center justify-center min-h-[60vh] text-center p-8'>
+                <div className='flex min-h-[60vh] flex-col items-center justify-center p-8 text-center'>
                     <div className='relative mb-8'>
-                        <h1 className='text-9xl md:text-[12rem] font-black bg-linear-to-br from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent leading-none'>
+                        <h1 className='from-primary via-primary/80 to-primary/60 bg-linear-to-br bg-clip-text text-9xl leading-none font-black text-transparent md:text-[12rem]'>
                             404
                         </h1>
                         <div className='absolute inset-0 flex items-center justify-center'>
-                            <div className='text-6xl md:text-7xl opacity-10'>🔍</div>
+                            <div className='text-6xl opacity-10 md:text-7xl'>🔍</div>
                         </div>
                     </div>
-                    <div className='space-y-4 max-w-md'>
-                        <h2 className='text-2xl md:text-3xl font-bold tracking-tight'>{t('errors.404.title')}</h2>
+                    <div className='max-w-md space-y-4'>
+                        <h2 className='text-2xl font-bold tracking-tight md:text-3xl'>{t('errors.404.title')}</h2>
                         <p className='text-muted-foreground'>{t('errors.404.message')}</p>
-                        <div className='flex flex-col sm:flex-row gap-3 justify-center pt-4'>
+                        <div className='flex flex-col justify-center gap-3 pt-4 sm:flex-row'>
                             <Button onClick={() => router.back()} variant='outline' className='group'>
-                                <ArrowLeft className='h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform' />
+                                <ArrowLeft className='mr-2 h-4 w-4 transition-transform group-hover:-translate-x-1' />
                                 {t('errors.404.go_back')}
                             </Button>
                             <Link href='/dashboard'>
-                                <Button className='w-full sm:w-auto group'>
-                                    <Home className='h-4 w-4 mr-2' />
+                                <Button className='group w-full sm:w-auto'>
+                                    <Home className='mr-2 h-4 w-4' />
                                     {t('errors.404.go_home')}
                                 </Button>
                             </Link>
@@ -324,16 +324,16 @@ export default function PluginPage({ context, serverUuid, vdsId }: PluginPagePro
         }
 
         return (
-            <div className='flex flex-col items-center justify-center h-[50vh] text-center p-4'>
-                <AlertTriangle className='h-12 w-12 text-destructive mb-4' />
-                <h3 className='text-xl font-bold mb-2'>{error}</h3>
+            <div className='flex h-[50vh] flex-col items-center justify-center p-4 text-center'>
+                <AlertTriangle className='text-destructive mb-4 h-12 w-12' />
+                <h3 className='mb-2 text-xl font-bold'>{error}</h3>
                 <p className='text-muted-foreground mb-4'>
                     {isSpellRestriction ? t('errors.plugin.spell_restriction') : t('errors.plugin.load_failed')}
                 </p>
                 {isSpellRestriction && serverUuid && (
                     <Button
                         onClick={() => router.push(`/server/${serverUuid}`)}
-                        className='px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors'
+                        className='bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg px-4 py-2 transition-colors'
                     >
                         {t('errors.plugin.return_to_console')}
                     </Button>
@@ -343,12 +343,12 @@ export default function PluginPage({ context, serverUuid, vdsId }: PluginPagePro
     }
 
     return (
-        <div className='relative w-full h-full overflow-hidden'>
+        <div className='relative h-full w-full overflow-hidden'>
             {isEnabled(settings?.app_developer_mode) && (
-                <div className='absolute bottom-6 right-6 z-30'>
+                <div className='absolute right-6 bottom-6 z-30'>
                     <button
                         onClick={retryLoad}
-                        className='flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg shadow-lg hover:shadow-xl transition-all font-medium text-sm'
+                        className='bg-primary text-primary-foreground flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium shadow-lg transition-all hover:shadow-xl'
                         title={t('errors.plugin.reload_title')}
                     >
                         <RefreshCw className={cn('h-4 w-4', iframeLoading && 'animate-spin')} />
@@ -358,25 +358,25 @@ export default function PluginPage({ context, serverUuid, vdsId }: PluginPagePro
             )}
 
             {iframeLoading && (
-                <div className='absolute inset-0 flex flex-col items-center justify-center bg-background/20 backdrop-blur-sm z-20'>
+                <div className='bg-background/20 absolute inset-0 z-20 flex flex-col items-center justify-center backdrop-blur-sm'>
                     <div className='relative mb-6'>
-                        <div className='animate-spin rounded-full h-16 w-16 border-4 border-muted border-t-primary' />
-                        <div className='absolute inset-0 animate-pulse rounded-full h-16 w-16 bg-primary/20' />
+                        <div className='border-muted border-t-primary h-16 w-16 animate-spin rounded-full border-4' />
+                        <div className='bg-primary/20 absolute inset-0 h-16 w-16 animate-pulse rounded-full' />
                     </div>
                     <p className='text-muted-foreground text-lg font-medium'>{t('errors.plugin.loading_content')}</p>
                 </div>
             )}
 
             {iframeError && (
-                <div className='absolute inset-0 flex flex-col items-center justify-center bg-background/50 backdrop-blur-md z-20 p-8 text-center'>
-                    <div className='w-20 h-20 bg-destructive/10 rounded-full flex items-center justify-center mb-6'>
-                        <AlertTriangle className='h-10 w-10 text-destructive' />
+                <div className='bg-background/50 absolute inset-0 z-20 flex flex-col items-center justify-center p-8 text-center backdrop-blur-md'>
+                    <div className='bg-destructive/10 mb-6 flex h-20 w-20 items-center justify-center rounded-full'>
+                        <AlertTriangle className='text-destructive h-10 w-10' />
                     </div>
-                    <h3 className='text-xl font-bold mb-3'>{t('errors.plugin.failed_to_load')}</h3>
+                    <h3 className='mb-3 text-xl font-bold'>{t('errors.plugin.failed_to_load')}</h3>
                     <p className='text-muted-foreground mb-6 max-w-md'>{iframeError}</p>
                     <button
                         onClick={retryLoad}
-                        className='px-6 py-3 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-all font-medium'
+                        className='bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl px-6 py-3 font-medium transition-all'
                     >
                         {t('errors.plugin.retry_loading')}
                     </button>
@@ -388,8 +388,8 @@ export default function PluginPage({ context, serverUuid, vdsId }: PluginPagePro
                     ref={iframeRef}
                     src={iframeSrc}
                     className={cn(
-                        'w-full h-full border-0 transition-all duration-500',
-                        iframeLoading ? 'opacity-0 scale-95' : 'opacity-100 scale-100',
+                        'h-full w-full border-0 transition-all duration-500',
+                        iframeLoading ? 'scale-95 opacity-0' : 'scale-100 opacity-100',
                     )}
                     onLoad={onIframeLoad}
                     onError={onIframeError}

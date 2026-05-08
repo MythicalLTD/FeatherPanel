@@ -59,16 +59,16 @@ export function HeadlessSelect({
     return (
         <Listbox value={value} onChange={onChange} disabled={disabled}>
             <Field className={clsx('relative', className)}>
-                {label && <Label className='block text-sm font-semibold text-foreground mb-2'>{label}</Label>}
-                {description && <Description className='text-sm text-muted-foreground mb-2'>{description}</Description>}
+                {label && <Label className='text-foreground mb-2 block text-sm font-semibold'>{label}</Label>}
+                {description && <Description className='text-muted-foreground mb-2 text-sm'>{description}</Description>}
 
                 <Listbox.Button
                     className={clsx(
-                        'relative w-full h-12 cursor-pointer rounded-xl border bg-muted/30 text-sm transition-all duration-200 focus:outline-none focus:ring-4 px-4 py-3 text-left  font-semibold',
+                        'bg-muted/30 relative h-12 w-full cursor-pointer rounded-xl border px-4 py-3 text-left text-sm font-semibold transition-all duration-200 focus:ring-4 focus:outline-none',
                         error
                             ? 'border-destructive focus:border-destructive focus:ring-destructive/20'
                             : 'border-border/50 focus:border-primary focus:ring-primary/20 hover:border-border',
-                        disabled && 'opacity-50 cursor-not-allowed bg-muted/30',
+                        disabled && 'bg-muted/30 cursor-not-allowed opacity-50',
                         !disabled && 'group',
                         buttonClassName,
                     )}
@@ -83,8 +83,8 @@ export function HeadlessSelect({
                         <span
                             className={clsx(
                                 selectedOption
-                                    ? 'font-semibold text-foreground tabular-nums'
-                                    : 'font-medium text-muted-foreground',
+                                    ? 'text-foreground font-semibold tabular-nums'
+                                    : 'text-muted-foreground font-medium',
                             )}
                         >
                             {selectedOption ? selectedOption.name : placeholder}
@@ -92,7 +92,7 @@ export function HeadlessSelect({
                     </span>
                     <span className='pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4'>
                         <ChevronDown
-                            className='h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors'
+                            className='text-muted-foreground group-hover:text-foreground h-4 w-4 transition-colors'
                             aria-hidden='true'
                         />
                     </span>
@@ -102,7 +102,7 @@ export function HeadlessSelect({
                     anchor={anchor}
                     transition
                     className={clsx(
-                        'max-h-60 w-[var(--button-width)] overflow-auto rounded-2xl bg-popover/80 backdrop-blur-3xl border border-white/10 dark:border-white/5 py-1 text-base shadow-[0_20px_50px_rgba(0,0,0,0.3)] focus:outline-none sm:text-sm z-50 custom-scrollbar p-1.5',
+                        'bg-popover/80 custom-scrollbar z-50 max-h-60 w-[var(--button-width)] overflow-auto rounded-2xl border border-white/10 p-1.5 py-1 text-base shadow-[0_20px_50px_rgba(0,0,0,0.3)] backdrop-blur-3xl focus:outline-none sm:text-sm dark:border-white/5',
                         'transition duration-200 ease-out data-closed:scale-95 data-closed:opacity-0',
                         anchorPosition === 'top' ? 'origin-bottom' : 'origin-top',
                     )}
@@ -112,9 +112,9 @@ export function HeadlessSelect({
                             key={option.id}
                             className={({ active, selected }) =>
                                 clsx(
-                                    'relative cursor-pointer select-none py-3 pl-4 pr-10 rounded-xl transition-all duration-200 mx-0.5 my-0.5 group',
+                                    'group relative mx-0.5 my-0.5 cursor-pointer rounded-xl py-3 pr-10 pl-4 transition-all duration-200 select-none',
                                     active
-                                        ? 'bg-primary text-white  scale-[1.02]'
+                                        ? 'bg-primary scale-[1.02] text-white'
                                         : selected
                                           ? 'bg-primary/10 text-primary'
                                           : 'text-foreground/80 hover:bg-muted/50',
@@ -157,7 +157,7 @@ export function HeadlessSelect({
                 </Listbox.Options>
 
                 {error && (
-                    <Description className='text-sm text-destructive mt-2 flex items-center gap-1 animate-fade-in'>
+                    <Description className='text-destructive animate-fade-in mt-2 flex items-center gap-1 text-sm'>
                         <svg className='h-4 w-4' fill='none' viewBox='0 0 24 24' stroke='currentColor'>
                             <path
                                 strokeLinecap='round'

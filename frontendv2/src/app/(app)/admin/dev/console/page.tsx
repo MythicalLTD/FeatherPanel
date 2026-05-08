@@ -280,7 +280,7 @@ export default function ConsolePage() {
     if (developerModeLoading) {
         return (
             <div className='flex items-center justify-center p-12'>
-                <Loader2 className='w-8 h-8 animate-spin text-primary' />
+                <Loader2 className='text-primary h-8 w-8 animate-spin' />
             </div>
         );
     }
@@ -333,22 +333,22 @@ export default function ConsolePage() {
                             <Button variant='outline' onClick={() => setShowSystemInfo(!showSystemInfo)}>
                                 {showSystemInfo ? (
                                     <>
-                                        <EyeOff className='w-4 h-4 mr-2' />
+                                        <EyeOff className='mr-2 h-4 w-4' />
                                         {t('admin.dev.console.hide_system_info')}
                                     </>
                                 ) : (
                                     <>
-                                        <Eye className='w-4 h-4 mr-2' />
+                                        <Eye className='mr-2 h-4 w-4' />
                                         {t('admin.dev.console.show_system_info')}
                                     </>
                                 )}
                             </Button>
                             <Button variant='outline' onClick={clearTerminal}>
-                                <Trash2 className='w-4 h-4 mr-2' />
+                                <Trash2 className='mr-2 h-4 w-4' />
                                 {t('admin.dev.console.clear_terminal')}
                             </Button>
                             <Button variant='outline' onClick={fetchSystemInfo} disabled={isLoading}>
-                                <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+                                <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
                                 {t('admin.dev.console.refresh')}
                             </Button>
                         </div>
@@ -357,10 +357,10 @@ export default function ConsolePage() {
 
                 {showSystemInfo && systemInfo && (
                     <PageCard title={t('admin.dev.console.system_info')}>
-                        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
+                        <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3'>
                             <div>
-                                <h3 className='font-semibold mb-2'>{t('admin.dev.console.system')}</h3>
-                                <div className='text-sm space-y-1'>
+                                <h3 className='mb-2 font-semibold'>{t('admin.dev.console.system')}</h3>
+                                <div className='space-y-1 text-sm'>
                                     <div>
                                         <span className='text-muted-foreground'>OS:</span> {systemInfo.os}
                                     </div>
@@ -374,8 +374,8 @@ export default function ConsolePage() {
                                 </div>
                             </div>
                             <div>
-                                <h3 className='font-semibold mb-2'>{t('admin.dev.console.runtime')}</h3>
-                                <div className='text-sm space-y-1'>
+                                <h3 className='mb-2 font-semibold'>{t('admin.dev.console.runtime')}</h3>
+                                <div className='space-y-1 text-sm'>
                                     <div>
                                         <span className='text-muted-foreground'>PHP:</span> {systemInfo.php_version}
                                     </div>
@@ -385,8 +385,8 @@ export default function ConsolePage() {
                                 </div>
                             </div>
                             <div>
-                                <h3 className='font-semibold mb-2'>{t('admin.dev.console.disk_usage')}</h3>
-                                <div className='text-sm space-y-1'>
+                                <h3 className='mb-2 font-semibold'>{t('admin.dev.console.disk_usage')}</h3>
+                                <div className='space-y-1 text-sm'>
                                     <div>
                                         <span className='text-muted-foreground'>Used:</span>{' '}
                                         {formatBytes(systemInfo.disk_usage.used)}
@@ -407,20 +407,20 @@ export default function ConsolePage() {
 
                 <PageCard title={t('admin.dev.console.terminal')}>
                     <div className='space-y-4'>
-                        <p className='text-xs text-muted-foreground'>
+                        <p className='text-muted-foreground text-xs'>
                             {t('admin.dev.console.terminal_help') ||
                                 'Use Arrow Up/Down for command history, Ctrl+L to clear'}
                         </p>
 
                         <div
                             ref={terminalRef}
-                            className='h-96 bg-black text-green-400 p-4 overflow-auto font-mono text-sm rounded-xl border border-border/50'
+                            className='border-border/50 h-96 overflow-auto rounded-xl border bg-black p-4 font-mono text-sm text-green-400'
                             style={{ fontFamily: "'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', monospace" }}
                         >
                             {terminalLines.map((line) => (
                                 <div key={line.id} className='mb-1'>
                                     {line.type === 'command' && (
-                                        <span className='text-green-400 font-medium'>{line.content}</span>
+                                        <span className='font-medium text-green-400'>{line.content}</span>
                                     )}
                                     {line.type === 'error' && <span className='text-red-400'>{line.content}</span>}
                                     {line.type === 'info' && (
@@ -440,14 +440,14 @@ export default function ConsolePage() {
                             )}
                         </div>
 
-                        <div className='p-4 border border-border/50 bg-muted/30 rounded-xl'>
+                        <div className='border-border/50 bg-muted/30 rounded-xl border p-4'>
                             <div className='flex items-center gap-2'>
-                                <span className='text-green-400 font-mono text-sm shrink-0'>{getPrompt()}</span>
+                                <span className='shrink-0 font-mono text-sm text-green-400'>{getPrompt()}</span>
                                 <Input
                                     ref={inputRef}
                                     value={commandInput}
                                     onChange={(e) => setCommandInput(e.target.value)}
-                                    className='bg-transparent border-none text-green-400 font-mono text-sm focus:ring-0 focus:border-none flex-1'
+                                    className='flex-1 border-none bg-transparent font-mono text-sm text-green-400 focus:border-none focus:ring-0'
                                     placeholder={t('admin.dev.console.enter_command')}
                                     disabled={isLoading}
                                     autoComplete='off'
@@ -460,7 +460,7 @@ export default function ConsolePage() {
                 </PageCard>
 
                 <PageCard title={t('admin.dev.console.quick_commands')}>
-                    <div className='grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2'>
+                    <div className='grid grid-cols-2 gap-2 md:grid-cols-4 lg:grid-cols-6'>
                         {quickCommands.map((cmd) => (
                             <Button
                                 key={cmd}

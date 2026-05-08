@@ -1,9 +1,15 @@
 {
-	"printWidth": 120,
-	"tabWidth": 4,
-	"useTabs": false,
-	"semi": true,
-	"singleQuote": true,
-	"jsxSingleQuote": true,
-	"endOfLine": "lf"
+    "printWidth": 120,
+    "tabWidth": 4,
+    "useTabs": false,
+    "semi": true,
+    "singleQuote": true,
+    "jsxSingleQuote": true,
+    "endOfLine": "lf",
+    "plugins": [
+        "prettier-plugin-tailwindcss-canonical-classes",
+        "prettier-plugin-tailwindcss"
+    ],
+    "tailwindcssCanonicalStylesheet": "./src/app/globals.css",
+    "tailwindcssCanonicalRootFontSize": 16
 }

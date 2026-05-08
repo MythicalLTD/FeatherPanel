@@ -256,20 +256,20 @@ export default function CreateTicketPage() {
     ];
 
     return (
-        <div className='max-w-4xl mx-auto pb-12'>
+        <div className='mx-auto max-w-4xl pb-12'>
             <WidgetRenderer widgets={getWidgets('dashboard-tickets-create', 'top-of-page')} />
-            <div className='flex items-start gap-4 mb-8'>
+            <div className='mb-8 flex items-start gap-4'>
                 <Link href='/dashboard/tickets'>
                     <Button
                         variant='ghost'
                         size='icon'
-                        className='rounded-full h-10 w-10 border border-border/50 hover:bg-card hover:text-foreground'
+                        className='border-border/50 hover:bg-card hover:text-foreground h-10 w-10 rounded-full border'
                     >
                         <ChevronLeft className='h-5 w-5' />
                     </Button>
                 </Link>
                 <div>
-                    <h1 className='text-3xl font-bold tracking-tight mb-2 text-foreground'>
+                    <h1 className='text-foreground mb-2 text-3xl font-bold tracking-tight'>
                         {t('tickets.createTicket')}
                     </h1>
                     <p className='text-muted-foreground text-lg'>{t('tickets.createTicketDescription')}</p>
@@ -277,9 +277,9 @@ export default function CreateTicketPage() {
             </div>
             <WidgetRenderer widgets={getWidgets('dashboard-tickets-create', 'after-header')} />
 
-            <div className='bg-card/50 backdrop-blur-xl rounded-xl border border-border/50 overflow-hidden'>
-                <form onSubmit={handleSubmit} className='p-8 space-y-8'>
-                    <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+            <div className='bg-card/50 border-border/50 overflow-hidden rounded-xl border backdrop-blur-xl'>
+                <form onSubmit={handleSubmit} className='space-y-8 p-8'>
+                    <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
                         <div className='md:col-span-2'>
                             <Input
                                 id='title'
@@ -334,26 +334,26 @@ export default function CreateTicketPage() {
                                 placeholder={t('tickets.descriptionPlaceholder')}
                                 rows={6}
                                 required
-                                className='resize-y min-h-[120px]'
+                                className='min-h-[120px] resize-y'
                             />
                         </div>
 
-                        <div className='md:col-span-2 space-y-2.5'>
-                            <div className='flex justify-between items-center'>
+                        <div className='space-y-2.5 md:col-span-2'>
+                            <div className='flex items-center justify-between'>
                                 <Label className='text-sm font-medium'>{t('tickets.serverLabel')}</Label>
-                                <span className='text-xs text-muted-foreground capitalize'>{t('common.optional')}</span>
+                                <span className='text-muted-foreground text-xs capitalize'>{t('common.optional')}</span>
                             </div>
 
                             <div className='flex gap-2'>
                                 <Button
                                     type='button'
                                     variant='outline'
-                                    className='flex-1 justify-between h-auto py-3 px-4 rounded-xl border-border/50 hover:bg-card hover:border-primary/50 text-left font-normal'
+                                    className='border-border/50 hover:bg-card hover:border-primary/50 h-auto flex-1 justify-between rounded-xl px-4 py-3 text-left font-normal'
                                     onClick={() => setServerModalOpen(true)}
                                 >
-                                    <div className='flex items-center gap-3 min-w-0'>
-                                        <div className='p-1 rounded bg-muted/50'>
-                                            <ServerIcon className='h-4 w-4 text-muted-foreground' />
+                                    <div className='flex min-w-0 items-center gap-3'>
+                                        <div className='bg-muted/50 rounded p-1'>
+                                            <ServerIcon className='text-muted-foreground h-4 w-4' />
                                         </div>
                                         <span
                                             className={
@@ -366,7 +366,7 @@ export default function CreateTicketPage() {
                                                 : t('tickets.selectServer')}
                                         </span>
                                     </div>
-                                    <ChevronsUpDown className='h-4 w-4 text-muted-foreground opacity-50 ml-2 shrink-0' />
+                                    <ChevronsUpDown className='text-muted-foreground ml-2 h-4 w-4 shrink-0 opacity-50' />
                                 </Button>
 
                                 {serverId && (
@@ -374,7 +374,7 @@ export default function CreateTicketPage() {
                                         type='button'
                                         variant='ghost'
                                         size='icon'
-                                        className='h-auto w-12 rounded-xl border border-border/50 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30'
+                                        className='border-border/50 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 h-auto w-12 rounded-xl border'
                                         onClick={() => setServerId('')}
                                         title={t('tickets.clearServerSelection')}
                                     >
@@ -383,13 +383,13 @@ export default function CreateTicketPage() {
                                 )}
                             </div>
 
-                            <p className='text-xs text-muted-foreground'>{t('tickets.serverHint')}</p>
+                            <p className='text-muted-foreground text-xs'>{t('tickets.serverHint')}</p>
                         </div>
 
-                        <div className='md:col-span-2 space-y-4'>
+                        <div className='space-y-4 md:col-span-2'>
                             <Label className='text-sm font-medium'>{t('tickets.attachmentsOptional')}</Label>
                             <div
-                                className={`group border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer ${isDragging ? 'border-primary bg-primary/5' : 'border-border/50 hover:border-primary/50 hover:bg-muted/50'}`}
+                                className={`group cursor-pointer rounded-xl border-2 border-dashed p-8 text-center transition-all ${isDragging ? 'border-primary bg-primary/5' : 'border-border/50 hover:border-primary/50 hover:bg-muted/50'}`}
                                 onDragOver={handleDragOver}
                                 onDragLeave={handleDragLeave}
                                 onDrop={handleDrop}
@@ -404,36 +404,36 @@ export default function CreateTicketPage() {
                                 />
                                 <div className='flex flex-col items-center gap-3'>
                                     <div
-                                        className={`p-3 rounded-full transition-colors ${isDragging ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary '}`}
+                                        className={`rounded-full p-3 transition-colors ${isDragging ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary'}`}
                                     >
                                         <Upload className='h-6 w-6' />
                                     </div>
                                     <div className='space-y-1'>
-                                        <p className='text-sm font-medium text-foreground'>
+                                        <p className='text-foreground text-sm font-medium'>
                                             <span className='text-primary hover:underline'>
                                                 {t('tickets.clickToUpload')}
                                             </span>{' '}
                                             {t('tickets.orDragAndDrop')}
                                         </p>
-                                        <p className='text-xs text-muted-foreground'>{t('tickets.maxFileSize')}</p>
+                                        <p className='text-muted-foreground text-xs'>{t('tickets.maxFileSize')}</p>
                                     </div>
                                 </div>
                             </div>
 
                             {files.length > 0 && (
-                                <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
+                                <div className='grid grid-cols-1 gap-3 sm:grid-cols-2'>
                                     {files.map((file, idx) => (
                                         <div
                                             key={idx}
-                                            className='flex items-center justify-between p-3 rounded-lg border border-border/50 bg-muted/30 hover:bg-muted/50 transition-colors group'
+                                            className='border-border/50 bg-muted/30 hover:bg-muted/50 group flex items-center justify-between rounded-lg border p-3 transition-colors'
                                         >
-                                            <div className='flex items-center gap-3 min-w-0'>
-                                                <Paperclip className='h-4 w-4 text-muted-foreground shrink-0' />
+                                            <div className='flex min-w-0 items-center gap-3'>
+                                                <Paperclip className='text-muted-foreground h-4 w-4 shrink-0' />
                                                 <div className='min-w-0'>
-                                                    <p className='text-sm font-medium truncate text-foreground'>
+                                                    <p className='text-foreground truncate text-sm font-medium'>
                                                         {file.name}
                                                     </p>
-                                                    <p className='text-xs text-muted-foreground'>
+                                                    <p className='text-muted-foreground text-xs'>
                                                         {formatFileSize(file.size)}
                                                     </p>
                                                 </div>
@@ -442,7 +442,7 @@ export default function CreateTicketPage() {
                                                 type='button'
                                                 variant='ghost'
                                                 size='icon'
-                                                className='h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-opacity'
+                                                className='text-muted-foreground hover:text-destructive hover:bg-destructive/10 h-8 w-8 opacity-0 transition-opacity group-hover:opacity-100'
                                                 onClick={() => removeFile(idx)}
                                             >
                                                 <X className='h-4 w-4' />
@@ -454,7 +454,7 @@ export default function CreateTicketPage() {
                         </div>
                     </div>
 
-                    <div className='pt-4 flex justify-end gap-3'>
+                    <div className='flex justify-end gap-3 pt-4'>
                         <Link href='/dashboard/tickets'>
                             <Button type='button' variant='outline' size='lg' className='border-border/50'>
                                 {t('common.cancel')}

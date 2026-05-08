@@ -131,7 +131,7 @@ export default function ActivityTab() {
         return (
             <div className='flex items-center justify-center py-12'>
                 <div className='flex items-center gap-3'>
-                    <div className='animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent'></div>
+                    <div className='border-primary h-6 w-6 animate-spin rounded-full border-2 border-t-transparent'></div>
                     <span className='text-muted-foreground'>{t('account.activity.loading')}</span>
                 </div>
             </div>
@@ -140,9 +140,9 @@ export default function ActivityTab() {
 
     return (
         <div className='space-y-5'>
-            <div className='rounded-xl border border-border/50 bg-muted/20 p-4'>
-                <h3 className='text-lg font-semibold text-foreground'>{t('account.activity.title')}</h3>
-                <p className='text-sm text-muted-foreground mt-1'>{t('account.activity.description')}</p>
+            <div className='border-border/50 bg-muted/20 rounded-xl border p-4'>
+                <h3 className='text-foreground text-lg font-semibold'>{t('account.activity.title')}</h3>
+                <p className='text-muted-foreground mt-1 text-sm'>{t('account.activity.description')}</p>
             </div>
 
             <div className='relative'>
@@ -155,7 +155,7 @@ export default function ActivityTab() {
             </div>
 
             <div className='flex items-center justify-between'>
-                <p className='text-sm text-muted-foreground'>
+                <p className='text-muted-foreground text-sm'>
                     {pagination ? (
                         <span>
                             Showing {pagination.from} to {pagination.to} of {pagination.total_records} activities
@@ -165,13 +165,13 @@ export default function ActivityTab() {
                     )}
                 </p>
                 <Button variant='outline' size='sm' onClick={() => fetchActivities(currentPage)}>
-                    <RefreshCw className='w-4 h-4 mr-2' />
+                    <RefreshCw className='mr-2 h-4 w-4' />
                     {t('account.activity.refresh')}
                 </Button>
             </div>
 
             {pagination && pagination.total_pages > 1 && (
-                <div className='flex items-center justify-between gap-4 py-3 px-4 rounded-xl border border-border bg-card/50'>
+                <div className='border-border bg-card/50 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
                     <Button
                         variant='outline'
                         size='sm'
@@ -201,12 +201,12 @@ export default function ActivityTab() {
             {activities.length > 0 ? (
                 <ActivityFeed activities={activities} formatDate={formatDate} />
             ) : (
-                <div className='text-center py-12'>
-                    <Clock className='w-12 h-12 text-muted-foreground mx-auto mb-4' />
-                    <h4 className='text-sm font-semibold text-foreground mb-2'>
+                <div className='py-12 text-center'>
+                    <Clock className='text-muted-foreground mx-auto mb-4 h-12 w-12' />
+                    <h4 className='text-foreground mb-2 text-sm font-semibold'>
                         {searchQuery ? 'No search results' : t('account.activity.noActivities')}
                     </h4>
-                    <p className='text-sm text-muted-foreground'>
+                    <p className='text-muted-foreground text-sm'>
                         {searchQuery ? 'Try a different search term' : 'Your recent activity will appear here'}
                     </p>
                 </div>

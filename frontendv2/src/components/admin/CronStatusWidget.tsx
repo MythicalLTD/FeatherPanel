@@ -44,25 +44,25 @@ export function CronStatusWidget({ tasks, loading }: CronStatusWidgetProps) {
                     Array.from({ length: 3 }).map((_, i) => (
                         <div
                             key={i}
-                            className='flex items-center justify-between p-4 rounded-2xl bg-muted/20 animate-pulse'
+                            className='bg-muted/20 flex animate-pulse items-center justify-between rounded-2xl p-4'
                         >
                             <div className='space-y-2'>
-                                <div className='h-4 w-32 bg-muted rounded' />
-                                <div className='h-3 w-24 bg-muted rounded' />
+                                <div className='bg-muted h-4 w-32 rounded' />
+                                <div className='bg-muted h-3 w-24 rounded' />
                             </div>
-                            <div className='h-6 w-16 bg-muted rounded' />
+                            <div className='bg-muted h-6 w-16 rounded' />
                         </div>
                     ))
                 ) : tasks && tasks.length > 0 ? (
                     tasks.map((task) => (
                         <div
                             key={task.id}
-                            className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 p-3 md:p-4 rounded-xl md:rounded-2xl bg-muted/10 border border-border/50 group hover:bg-muted/20 transition-all'
+                            className='bg-muted/10 border-border/50 group hover:bg-muted/20 flex flex-col gap-3 rounded-xl border p-3 transition-all sm:flex-row sm:items-center sm:justify-between sm:gap-4 md:rounded-2xl md:p-4'
                         >
-                            <div className='flex items-center gap-3 min-w-0 flex-1'>
+                            <div className='flex min-w-0 flex-1 items-center gap-3'>
                                 <div
                                     className={cn(
-                                        'h-9 w-9 md:h-10 md:w-10 rounded-lg md:rounded-xl flex items-center justify-center shrink-0',
+                                        'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg md:h-10 md:w-10 md:rounded-xl',
                                         task.last_run_success && !task.late
                                             ? 'bg-green-500/10 text-green-500'
                                             : task.late
@@ -79,10 +79,10 @@ export function CronStatusWidget({ tasks, loading }: CronStatusWidgetProps) {
                                     )}
                                 </div>
                                 <div className='min-w-0 flex-1'>
-                                    <p className='text-xs md:text-sm font-bold tracking-tight truncate'>
+                                    <p className='truncate text-xs font-bold tracking-tight md:text-sm'>
                                         {task.task_name}
                                     </p>
-                                    <p className='text-[9px] md:text-[10px] text-muted-foreground uppercase font-bold opacity-70 truncate'>
+                                    <p className='text-muted-foreground truncate text-[9px] font-bold uppercase opacity-70 md:text-[10px]'>
                                         {t('admin.cron.last_run', {
                                             date: task.last_run_at
                                                 ? new Date(task.last_run_at).toLocaleString()
@@ -93,7 +93,7 @@ export function CronStatusWidget({ tasks, loading }: CronStatusWidgetProps) {
                             </div>
                             <div
                                 className={cn(
-                                    'px-2 py-1 rounded-lg text-[9px] md:text-[10px] font-black uppercase tracking-wider shrink-0 self-start sm:self-auto',
+                                    'shrink-0 self-start rounded-lg px-2 py-1 text-[9px] font-black tracking-wider uppercase sm:self-auto md:text-[10px]',
                                     task.last_run_success && !task.late
                                         ? 'bg-green-500/20 text-green-500'
                                         : task.late
@@ -110,9 +110,9 @@ export function CronStatusWidget({ tasks, loading }: CronStatusWidgetProps) {
                         </div>
                     ))
                 ) : (
-                    <div className='text-center py-8'>
-                        <AlertTriangle className='h-12 w-12 text-muted-foreground/30 mx-auto mb-3' />
-                        <p className='text-sm text-muted-foreground font-bold italic'>{t('admin.cron.no_tasks')}</p>
+                    <div className='py-8 text-center'>
+                        <AlertTriangle className='text-muted-foreground/30 mx-auto mb-3 h-12 w-12' />
+                        <p className='text-muted-foreground text-sm font-bold italic'>{t('admin.cron.no_tasks')}</p>
                     </div>
                 )}
             </div>

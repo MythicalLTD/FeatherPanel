@@ -72,7 +72,7 @@ export function DetailsTab({
                             value={hostname}
                             onChange={(e) => setHostname(e.target.value)}
                             placeholder='e.g. my-vm'
-                            className='mt-1 bg-muted/30 h-11 rounded-xl'
+                            className='bg-muted/30 mt-1 h-11 rounded-xl'
                         />
                     </div>
                     <div>
@@ -81,7 +81,7 @@ export function DetailsTab({
                             value={notes}
                             onChange={(e) => setNotes(e.target.value)}
                             placeholder='Optional notes'
-                            className='mt-1 min-h-[80px] bg-muted/30 rounded-xl'
+                            className='bg-muted/30 mt-1 min-h-[80px] rounded-xl'
                         />
                     </div>
                     <div>
@@ -90,9 +90,9 @@ export function DetailsTab({
                             type='datetime-local'
                             value={expiresAt || ''}
                             onChange={(e) => setExpiresAt(e.target.value || null)}
-                            className='mt-1 bg-muted/30 h-11 rounded-xl'
+                            className='bg-muted/30 mt-1 h-11 rounded-xl'
                         />
-                        <p className='text-xs text-muted-foreground mt-1'>
+                        <p className='text-muted-foreground mt-1 text-xs'>
                             {t('admin.vmInstances.expires_at_help') ??
                                 'VM will be automatically suspended on this date. Leave empty for no expiration.'}
                         </p>
@@ -105,7 +105,7 @@ export function DetailsTab({
                                     value={dnsNameserver}
                                     onChange={(e) => setDnsNameserver(e.target.value)}
                                     placeholder='e.g. 1.1.1.1 8.8.8.8'
-                                    className='mt-1 bg-muted/30 h-11 rounded-xl'
+                                    className='bg-muted/30 mt-1 h-11 rounded-xl'
                                 />
                             </div>
                             <div>
@@ -114,15 +114,15 @@ export function DetailsTab({
                                     value={dnsSearchDomain}
                                     onChange={(e) => setDnsSearchDomain(e.target.value)}
                                     placeholder='e.g. local'
-                                    className='mt-1 bg-muted/30 h-11 rounded-xl'
+                                    className='bg-muted/30 mt-1 h-11 rounded-xl'
                                 />
                             </div>
                         </>
                     )}
                     <div>
                         <Label>{t('admin.vmInstances.owner') ?? 'Owner'}</Label>
-                        <div className='flex gap-2 mt-1'>
-                            <div className='flex-1 h-11 px-3 bg-muted/30 rounded-xl border border-border/50 text-sm flex items-center text-foreground'>
+                        <div className='mt-1 flex gap-2'>
+                            <div className='bg-muted/30 border-border/50 text-foreground flex h-11 flex-1 items-center rounded-xl border px-3 text-sm'>
                                 {selectedOwner ? (
                                     <span>
                                         {selectedOwner.username || selectedOwner.uuid}
@@ -152,9 +152,9 @@ export function DetailsTab({
                     </div>
                 </div>
             </PageCard>
-            <div className='flex justify-end mt-4'>
+            <div className='mt-4 flex justify-end'>
                 <Button type='submit' loading={saving}>
-                    <Save className='h-4 w-4 mr-2' />
+                    <Save className='mr-2 h-4 w-4' />
                     {t('common.save_changes')}
                 </Button>
             </div>

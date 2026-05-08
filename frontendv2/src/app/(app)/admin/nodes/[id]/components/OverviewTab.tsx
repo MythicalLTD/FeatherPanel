@@ -63,14 +63,14 @@ export default function OverviewTab({ node, locationName }: OverviewTabProps) {
     return (
         <div className='space-y-6'>
             <PageCard title={t('admin.node.view.overview.title')} icon={Info}>
-                <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8'>
+                <div className='grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3'>
                     {infoItems.map((item, index) => (
                         <div key={index} className='flex gap-4'>
-                            <div className='p-2 rounded-xl bg-primary/10 h-fit'>
-                                <item.icon className='h-5 w-5 text-primary' />
+                            <div className='bg-primary/10 h-fit rounded-xl p-2'>
+                                <item.icon className='text-primary h-5 w-5' />
                             </div>
                             <div>
-                                <p className='text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1'>
+                                <p className='text-muted-foreground mb-1 text-xs font-bold tracking-wider uppercase'>
                                     {item.label}
                                 </p>
                                 <p className='text-sm font-medium'>{item.value}</p>
@@ -82,7 +82,7 @@ export default function OverviewTab({ node, locationName }: OverviewTabProps) {
 
             {node.description && (
                 <PageCard title={t('admin.node.view.overview.description')} icon={Info}>
-                    <p className='text-sm text-muted-foreground leading-relaxed'>{node.description}</p>
+                    <p className='text-muted-foreground text-sm leading-relaxed'>{node.description}</p>
                 </PageCard>
             )}
         </div>

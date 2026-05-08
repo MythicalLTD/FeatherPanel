@@ -127,7 +127,7 @@ export default function CreateUserPage() {
                 icon={UserPlus}
                 actions={
                     <Button variant='outline' onClick={() => router.push('/admin/users')}>
-                        <ArrowLeft className='h-4 w-4 mr-2' />
+                        <ArrowLeft className='mr-2 h-4 w-4' />
                         {t('admin.users.back_to_list')}
                     </Button>
                 }
@@ -135,11 +135,11 @@ export default function CreateUserPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-users-create', 'after-header')} />
 
-            <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
+            <div className='grid grid-cols-1 gap-6 lg:grid-cols-3'>
                 <div className='lg:col-span-2'>
                     <PageCard title={t('admin.users.create.form.title')} icon={UserPlus}>
                         <form onSubmit={handleCreateUser} className='space-y-6'>
-                            <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+                            <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
                                 <div>
                                     <Label htmlFor='create-username'>{t('admin.users.create.form.username')}</Label>
                                     <Input
@@ -209,7 +209,7 @@ export default function CreateUserPage() {
                                     id='create-role'
                                     value={createForm.role_id}
                                     onChange={(e) => setCreateForm({ ...createForm, role_id: e.target.value })}
-                                    className='w-full mt-2'
+                                    className='mt-2 w-full'
                                     required
                                 >
                                     <option value=''>{t('admin.users.create.form.select_role')}</option>
@@ -221,19 +221,19 @@ export default function CreateUserPage() {
                                 </Select>
                             </div>
 
-                            <div className='flex flex-wrap justify-end gap-3 pt-4 border-t'>
+                            <div className='flex flex-wrap justify-end gap-3 border-t pt-4'>
                                 <Button type='button' variant='outline' onClick={() => router.push('/admin/users')}>
                                     {t('common.cancel')}
                                 </Button>
                                 <Button type='submit' disabled={creating}>
                                     {creating ? (
                                         <>
-                                            <RefreshCw className='h-4 w-4 animate-spin mr-2' />
+                                            <RefreshCw className='mr-2 h-4 w-4 animate-spin' />
                                             {t('admin.users.create.creating')}
                                         </>
                                     ) : (
                                         <>
-                                            <UserPlus className='h-4 w-4 mr-2' />
+                                            <UserPlus className='mr-2 h-4 w-4' />
                                             {t('admin.users.create.submit')}
                                         </>
                                     )}
@@ -245,24 +245,24 @@ export default function CreateUserPage() {
 
                 <div className='space-y-6'>
                     <PageCard title={t('admin.users.create.help.tips_title')} icon={Info} variant='default'>
-                        <ul className='space-y-3 text-sm text-muted-foreground'>
+                        <ul className='text-muted-foreground space-y-3 text-sm'>
                             <li className='flex items-start gap-2'>
-                                <Users className='h-4 w-4 mt-0.5 text-primary shrink-0' />
+                                <Users className='text-primary mt-0.5 h-4 w-4 shrink-0' />
                                 <span>{t('admin.users.create.help.tips.username')}</span>
                             </li>
                             <li className='flex items-start gap-2'>
-                                <Shield className='h-4 w-4 mt-0.5 text-primary shrink-0' />
+                                <Shield className='text-primary mt-0.5 h-4 w-4 shrink-0' />
                                 <span>{t('admin.users.create.help.tips.role')}</span>
                             </li>
                             <li className='flex items-start gap-2'>
-                                <Info className='h-4 w-4 mt-0.5 text-primary shrink-0' />
+                                <Info className='text-primary mt-0.5 h-4 w-4 shrink-0' />
                                 <span>{t('admin.users.create.help.tips.email')}</span>
                             </li>
                         </ul>
                     </PageCard>
 
                     <PageCard title={t('admin.users.create.help.security_title')} icon={Shield} variant='danger'>
-                        <p className='text-sm text-muted-foreground leading-relaxed'>
+                        <p className='text-muted-foreground text-sm leading-relaxed'>
                             {t('admin.users.create.help.security_desc')}
                         </p>
                     </PageCard>

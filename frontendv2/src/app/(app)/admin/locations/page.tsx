@@ -156,7 +156,7 @@ function TypeSelector({
                         >
                             <div
                                 className={cn(
-                                    'h-9 w-9 rounded-lg flex items-center justify-center',
+                                    'flex h-9 w-9 items-center justify-center rounded-lg',
                                     selected
                                         ? `${opt.selectedBgClass} border ${opt.selectedBorderClass}`
                                         : 'bg-muted/50',
@@ -167,20 +167,20 @@ function TypeSelector({
                             <div>
                                 <p
                                     className={cn(
-                                        'text-xs font-bold leading-tight',
+                                        'text-xs leading-tight font-bold',
                                         selected ? opt.colorClass : 'text-foreground',
                                     )}
                                 >
                                     {t(`admin.locations.type.${opt.value}.label`)}
                                 </p>
-                                <p className='text-[10px] text-muted-foreground mt-0.5 leading-tight'>
+                                <p className='text-muted-foreground mt-0.5 text-[10px] leading-tight'>
                                     {t(`admin.locations.type.${opt.value}.description`)}
                                 </p>
                             </div>
 
                             {opt.comingSoon && !readOnly && (
-                                <span className='absolute inset-0 rounded-xl flex items-end justify-center pb-2 bg-background/30 backdrop-blur-[1px]'>
-                                    <span className='inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-widest text-muted-foreground/80 bg-card/80 border border-border/40 rounded-full px-2 py-0.5'>
+                                <span className='bg-background/30 absolute inset-0 flex items-end justify-center rounded-xl pb-2 backdrop-blur-[1px]'>
+                                    <span className='text-muted-foreground/80 bg-card/80 border-border/40 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[9px] font-black tracking-widest uppercase'>
                                         <Lock className='h-2.5 w-2.5' />
                                         {t(`admin.locations.type.${opt.value}.coming_soon`)}
                                     </span>
@@ -195,7 +195,7 @@ function TypeSelector({
 
                             {readOnly && selected && (
                                 <span className='absolute top-1.5 right-1.5'>
-                                    <Lock className='h-3 w-3 text-muted-foreground/60' />
+                                    <Lock className='text-muted-foreground/60 h-3 w-3' />
                                 </span>
                             )}
                         </button>
@@ -203,7 +203,7 @@ function TypeSelector({
                 })}
             </div>
             {readOnly && (
-                <p className='text-[11px] text-muted-foreground flex items-center gap-1.5'>
+                <p className='text-muted-foreground flex items-center gap-1.5 text-[11px]'>
                     <Info className='h-3 w-3 flex-shrink-0' />
                     {t('admin.locations.form.type_immutable_notice')}
                 </p>
@@ -220,7 +220,7 @@ function TypeBadge({ type }: { type: LocationType }) {
     return (
         <span
             className={cn(
-                'inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest border',
+                'inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[10px] font-black tracking-widest uppercase',
                 cfg.badgeClass,
             )}
         >
@@ -436,7 +436,7 @@ export default function LocationsPage() {
                 icon={Globe}
                 actions={
                     <Button onClick={() => setCreateOpen(true)}>
-                        <Plus className='h-4 w-4 mr-2' />
+                        <Plus className='mr-2 h-4 w-4' />
                         {t('admin.locations.create')}
                     </Button>
                 }
@@ -444,14 +444,14 @@ export default function LocationsPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-locations', 'after-header')} />
 
-            <div className='flex flex-col sm:flex-row gap-4 items-center bg-card/40 backdrop-blur-md p-4 rounded-2xl shadow-sm'>
-                <div className='relative flex-1 group w-full'>
-                    <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
+            <div className='bg-card/40 flex flex-col items-center gap-4 rounded-2xl p-4 shadow-sm backdrop-blur-md sm:flex-row'>
+                <div className='group relative w-full flex-1'>
+                    <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
                     <Input
                         placeholder={t('admin.locations.search_placeholder')}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className='pl-10 h-11 w-full'
+                        className='h-11 w-full pl-10'
                     />
                 </div>
             </div>
@@ -459,7 +459,7 @@ export default function LocationsPage() {
             <WidgetRenderer widgets={getWidgets('admin-locations', 'before-list')} />
 
             {pagination.totalPages > 1 && !loading && (
-                <div className='flex items-center justify-between gap-4 py-3 px-4 rounded-xl border border-border bg-card/50 mb-4'>
+                <div className='border-border bg-card/50 mb-4 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
                     <Button
                         variant='outline'
                         size='sm'
@@ -495,7 +495,7 @@ export default function LocationsPage() {
                     description={t('admin.locations.create_description')}
                     action={
                         <Button onClick={() => setCreateOpen(true)}>
-                            <Plus className='h-4 w-4 mr-2' />
+                            <Plus className='mr-2 h-4 w-4' />
                             {t('admin.locations.create')}
                         </Button>
                     }
@@ -510,7 +510,7 @@ export default function LocationsPage() {
                             icon={Globe}
                             badges={<TypeBadge type={location.type ?? 'game'} />}
                             description={
-                                <div className='flex items-center gap-2 text-sm text-muted-foreground mt-1'>
+                                <div className='text-muted-foreground mt-1 flex items-center gap-2 text-sm'>
                                     {location.flag_code && (
                                         <NextImage
                                             src={`https://flagcdn.com/16x12/${location.flag_code}.png`}
@@ -582,7 +582,7 @@ export default function LocationsPage() {
             )}
 
             {pagination.totalPages > 1 && (
-                <div className='flex items-center justify-center gap-2 mt-8'>
+                <div className='mt-8 flex items-center justify-center gap-2'>
                     <Button
                         variant='outline'
                         size='icon'
@@ -605,15 +605,15 @@ export default function LocationsPage() {
                 </div>
             )}
 
-            <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
+            <div className='grid grid-cols-1 gap-6 md:grid-cols-3'>
                 <PageCard title={t('admin.locations.help.what.title')} icon={MapPin}>
-                    <p className='text-sm text-muted-foreground leading-relaxed'>
+                    <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.locations.help.what.description')}
                     </p>
                 </PageCard>
                 <PageCard title={t('admin.locations.help.examples.title')} icon={Flag}>
-                    <div className='text-sm text-muted-foreground leading-relaxed space-y-2'>
-                        <ul className='list-disc list-inside space-y-1'>
+                    <div className='text-muted-foreground space-y-2 text-sm leading-relaxed'>
+                        <ul className='list-inside list-disc space-y-1'>
                             <li>
                                 <b>{t('admin.locations.help.examples.usa')}</b>:{' '}
                                 {t('admin.locations.help.examples.usa_desc')}
@@ -627,8 +627,8 @@ export default function LocationsPage() {
                     </div>
                 </PageCard>
                 <PageCard title={t('admin.locations.help.getting_started.title')} icon={Rocket}>
-                    <div className='text-sm text-muted-foreground leading-relaxed'>
-                        <ol className='list-decimal list-inside space-y-1'>
+                    <div className='text-muted-foreground text-sm leading-relaxed'>
+                        <ol className='list-inside list-decimal space-y-1'>
                             <li>{t('admin.locations.help.getting_started.step1')}</li>
                             <li>{t('admin.locations.help.getting_started.step2')}</li>
                             <li>{t('admin.locations.help.getting_started.step3')}</li>
@@ -648,7 +648,7 @@ export default function LocationsPage() {
                                 : ''}
                         </SheetDescription>
                     </SheetHeader>
-                    <form onSubmit={handleUpdate} className='space-y-5 mt-6'>
+                    <form onSubmit={handleUpdate} className='mt-6 space-y-5'>
                         <div className='space-y-2'>
                             <Label htmlFor='edit-name'>{t('admin.locations.form.name')} *</Label>
                             <Input
@@ -708,7 +708,7 @@ export default function LocationsPage() {
                         <SheetTitle>{t('admin.locations.form.create_title')}</SheetTitle>
                         <SheetDescription>{t('admin.locations.form.create_description')}</SheetDescription>
                     </SheetHeader>
-                    <form onSubmit={handleCreate} className='space-y-5 mt-6'>
+                    <form onSubmit={handleCreate} className='mt-6 space-y-5'>
                         <div className='space-y-2'>
                             <Label htmlFor='create-name'>{t('admin.locations.form.name')} *</Label>
                             <Input
@@ -743,7 +743,7 @@ export default function LocationsPage() {
                         </div>
                         <div className='space-y-2'>
                             <Label>{t('admin.locations.form.type')} *</Label>
-                            <p className='text-xs text-muted-foreground'>
+                            <p className='text-muted-foreground text-xs'>
                                 {t('admin.locations.form.type_description')}
                             </p>
                             <TypeSelector

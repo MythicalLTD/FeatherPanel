@@ -52,7 +52,7 @@ export function DetailsTab({
             <div className='space-y-8'>
                 <div className='space-y-6'>
                     <div>
-                        <Label className='text-sm font-semibold block mb-2'>{t('admin.vdsNodes.form.name')}</Label>
+                        <Label className='mb-2 block text-sm font-semibold'>{t('admin.vdsNodes.form.name')}</Label>
                         <Input
                             value={form.name}
                             onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -61,12 +61,12 @@ export function DetailsTab({
                             className='text-base'
                         />
                         {errors.name && (
-                            <p className='text-[10px] uppercase font-bold text-red-500 mt-2'>{errors.name}</p>
+                            <p className='mt-2 text-[10px] font-bold text-red-500 uppercase'>{errors.name}</p>
                         )}
                     </div>
 
                     <div>
-                        <Label className='text-sm font-semibold block mb-2'>
+                        <Label className='mb-2 block text-sm font-semibold'>
                             {t('admin.vdsNodes.form.description')}
                         </Label>
                         <Textarea
@@ -78,27 +78,27 @@ export function DetailsTab({
                     </div>
                 </div>
 
-                <div className='border-t border-border/50 pt-8'>
+                <div className='border-border/50 border-t pt-8'>
                     <div>
-                        <div className='flex items-center gap-3 mb-4'>
-                            <div className='p-2 rounded-lg bg-primary/10 h-fit'>
-                                <MapPin className='h-5 w-5 text-primary' />
+                        <div className='mb-4 flex items-center gap-3'>
+                            <div className='bg-primary/10 h-fit rounded-lg p-2'>
+                                <MapPin className='text-primary h-5 w-5' />
                             </div>
                             <div>
-                                <p className='text-xs font-bold uppercase tracking-wider text-muted-foreground'>
+                                <p className='text-muted-foreground text-xs font-bold tracking-wider uppercase'>
                                     {t('admin.vdsNodes.form.location')}
                                 </p>
-                                <p className='text-xs text-muted-foreground mt-0.5'>
+                                <p className='text-muted-foreground mt-0.5 text-xs'>
                                     {t('admin.vdsNodes.form.select_location_description')}
                                 </p>
                             </div>
                         </div>
 
-                        <div className='flex gap-2 ml-10'>
+                        <div className='ml-10 flex gap-2'>
                             <div
                                 role='button'
                                 tabIndex={0}
-                                className='flex-1 h-11 px-3 bg-muted/30 rounded-lg border border-border/50 text-sm flex items-center cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
+                                className='bg-muted/30 border-border/50 focus-visible:ring-ring flex h-11 flex-1 cursor-pointer items-center rounded-lg border px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-offset-2'
                                 onClick={openLocationModal}
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter' || e.key === ' ') {
@@ -108,7 +108,7 @@ export function DetailsTab({
                                 }}
                             >
                                 {form.location_id && selectedLocationName ? (
-                                    <span className='font-medium text-foreground'>{selectedLocationName}</span>
+                                    <span className='text-foreground font-medium'>{selectedLocationName}</span>
                                 ) : (
                                     <span className='text-muted-foreground italic'>
                                         {t('admin.vdsNodes.form.select_location')}
@@ -125,7 +125,7 @@ export function DetailsTab({
                             </Button>
                         </div>
                         {errors.location_id && (
-                            <p className='text-[10px] uppercase font-bold text-red-500 mt-2'>{errors.location_id}</p>
+                            <p className='mt-2 text-[10px] font-bold text-red-500 uppercase'>{errors.location_id}</p>
                         )}
                     </div>
                 </div>

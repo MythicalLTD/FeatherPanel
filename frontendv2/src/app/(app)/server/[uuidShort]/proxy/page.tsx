@@ -140,15 +140,15 @@ export default function ServerProxyPage() {
 
     if (loading && proxies.length === 0) {
         return (
-            <div key={pathname} className='flex flex-col items-center justify-center py-24 '>
-                <Loader2 className='h-12 w-12 animate-spin text-primary opacity-50' />
-                <p className='mt-4 text-muted-foreground font-medium animate-pulse'>{t('common.loading')}</p>
+            <div key={pathname} className='flex flex-col items-center justify-center py-24'>
+                <Loader2 className='text-primary h-12 w-12 animate-spin opacity-50' />
+                <p className='text-muted-foreground mt-4 animate-pulse font-medium'>{t('common.loading')}</p>
             </div>
         );
     }
 
     return (
-        <div key={pathname} className='space-y-8 pb-12 '>
+        <div key={pathname} className='space-y-8 pb-12'>
             <WidgetRenderer widgets={getWidgets('server-proxy', 'top-of-page')} />
 
             <PageHeader
@@ -156,7 +156,7 @@ export default function ServerProxyPage() {
                 description={
                     <>
                         {t('serverProxy.description')}
-                        <span className='ml-2 px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-sm font-bold'>
+                        <span className='ml-2 rounded-md border border-white/10 bg-white/5 px-2 py-0.5 text-sm font-bold'>
                             {proxies.length} / {maxProxies > 0 ? maxProxies : '∞'}
                         </span>
                     </>
@@ -164,7 +164,7 @@ export default function ServerProxyPage() {
                 actions={
                     <div className='flex items-center gap-3'>
                         <Button variant='glass' size='default' onClick={fetchData} disabled={loading}>
-                            <RefreshCw className={cn('h-5 w-5 mr-2', loading && 'animate-spin')} />
+                            <RefreshCw className={cn('mr-2 h-5 w-5', loading && 'animate-spin')} />
                             {t('serverProxy.refresh')}
                         </Button>
                         {canManage && (
@@ -173,7 +173,7 @@ export default function ServerProxyPage() {
                                 onClick={() => router.push(`/server/${uuidShort}/proxy/new`)}
                                 disabled={isMaxReached || loading}
                             >
-                                <Plus className='h-5 w-5 mr-2' />
+                                <Plus className='mr-2 h-5 w-5' />
                                 {t('serverProxy.createProxy')}
                             </Button>
                         )}
@@ -182,16 +182,16 @@ export default function ServerProxyPage() {
             />
             <WidgetRenderer widgets={getWidgets('server-proxy', 'after-header')} />
 
-            <div className='relative overflow-hidden p-6 rounded-3xl bg-blue-500/10 border border-blue-500/20 backdrop-blur-xl animate-in slide-in-from-top duration-500'>
+            <div className='animate-in slide-in-from-top relative overflow-hidden rounded-3xl border border-blue-500/20 bg-blue-500/10 p-6 backdrop-blur-xl duration-500'>
                 <div className='relative z-10 flex items-start gap-5'>
-                    <div className='h-12 w-12 rounded-2xl bg-blue-500/20 flex items-center justify-center border border-blue-500/30 shrink-0'>
+                    <div className='flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-blue-500/30 bg-blue-500/20'>
                         <Info className='h-6 w-6 text-blue-500' />
                     </div>
                     <div className='space-y-1'>
-                        <h3 className='text-lg font-bold text-blue-500 leading-none uppercase tracking-tight'>
+                        <h3 className='text-lg leading-none font-bold tracking-tight text-blue-500 uppercase'>
                             {t('serverProxy.infoTitle')}
                         </h3>
-                        <p className='text-sm text-blue-500/80 leading-relaxed font-medium'>
+                        <p className='text-sm leading-relaxed font-medium text-blue-500/80'>
                             {t('serverProxy.infoDescription')}
                         </p>
                     </div>
@@ -212,7 +212,7 @@ export default function ServerProxyPage() {
                                 onClick={() => router.push(`/server/${uuidShort}/proxy/new`)}
                                 disabled={isMaxReached}
                             >
-                                <Plus className='h-6 w-6 mr-2' />
+                                <Plus className='mr-2 h-6 w-6' />
                                 {t('serverProxy.createProxy')}
                             </Button>
                         ) : undefined
@@ -232,11 +232,11 @@ export default function ServerProxyPage() {
                             title={proxy.domain}
                             description={
                                 <div className='flex flex-col gap-1'>
-                                    <div className='flex items-center gap-2 text-muted-foreground'>
+                                    <div className='text-muted-foreground flex items-center gap-2'>
                                         <Network className='h-3 w-3 opacity-50' />
-                                        <span className='text-xs font-bold text-foreground/70'>{proxy.ip}</span>
+                                        <span className='text-foreground/70 text-xs font-bold'>{proxy.ip}</span>
                                     </div>
-                                    <div className='flex items-center gap-2 text-muted-foreground'>
+                                    <div className='text-muted-foreground flex items-center gap-2'>
                                         <Globe className='h-3 w-3 opacity-50' />
                                         <span className='text-xs font-medium'>
                                             {proxy.use_lets_encrypt
@@ -267,7 +267,7 @@ export default function ServerProxyPage() {
                                         <Button
                                             variant='destructive'
                                             onClick={() => promptDelete(proxy)}
-                                            className='h-10 w-10 p-0 rounded-xl'
+                                            className='h-10 w-10 rounded-xl p-0'
                                         >
                                             <Trash2 className='h-5 w-5 stroke-2' />
                                         </Button>
@@ -288,7 +288,7 @@ export default function ServerProxyPage() {
                 title={t('serverProxy.deleteModalTitle')}
                 description={t('serverProxy.deleteModalDescription', { domain: selectedProxy?.domain || '' })}
             >
-                <div className='flex justify-end gap-2 mt-6'>
+                <div className='mt-6 flex justify-end gap-2'>
                     <Button variant='ghost' onClick={() => setIsDeleteOpen(false)} disabled={saving}>
                         {t('common.cancel')}
                     </Button>

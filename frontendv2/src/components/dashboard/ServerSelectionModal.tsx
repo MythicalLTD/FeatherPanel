@@ -69,24 +69,24 @@ export function ServerSelectionModal({
         >
             <div className='space-y-4'>
                 <div className='relative'>
-                    <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground' />
+                    <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
                     <Input
                         placeholder={t('tickets.searchServers')}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className='pl-9 bg-secondary/20'
+                        className='bg-secondary/20 pl-9'
                     />
                 </div>
 
-                <div className='max-h-[300px] overflow-y-auto space-y-2 custom-scrollbar pr-1 relative min-h-[100px]'>
+                <div className='custom-scrollbar relative max-h-[300px] min-h-[100px] space-y-2 overflow-y-auto pr-1'>
                     {loading ? (
-                        <div className='absolute inset-0 flex items-center justify-center bg-background/50 z-10'>
-                            <Loader2 className='h-6 w-6 animate-spin text-primary' />
+                        <div className='bg-background/50 absolute inset-0 z-10 flex items-center justify-center'>
+                            <Loader2 className='text-primary h-6 w-6 animate-spin' />
                         </div>
                     ) : null}
 
                     {servers.length === 0 && !loading ? (
-                        <div className='text-center py-8 text-muted-foreground text-sm'>
+                        <div className='text-muted-foreground py-8 text-center text-sm'>
                             {t('tickets.noServersFound')}
                         </div>
                     ) : (
@@ -97,33 +97,31 @@ export function ServerSelectionModal({
                                     onSelect(server);
                                     onClose();
                                 }}
-                                className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all text-left group
-                                    ${
-                                        Number(selectedServerId) === server.id
-                                            ? 'border-primary bg-primary/5 shadow-sm'
-                                            : 'border-border/50 hover:bg-muted/50 hover:border-border'
-                                    }
-                                `}
+                                className={`group flex w-full items-center justify-between rounded-xl border p-3 text-left transition-all ${
+                                    Number(selectedServerId) === server.id
+                                        ? 'border-primary bg-primary/5 shadow-sm'
+                                        : 'border-border/50 hover:bg-muted/50 hover:border-border'
+                                } `}
                             >
-                                <div className='flex items-center gap-3 min-w-0'>
+                                <div className='flex min-w-0 items-center gap-3'>
                                     <div
-                                        className={`p-2 rounded-lg ${Number(selectedServerId) === server.id ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground group-hover:bg-muted/80'}`}
+                                        className={`rounded-lg p-2 ${Number(selectedServerId) === server.id ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground group-hover:bg-muted/80'}`}
                                     >
                                         <ServerIcon className='h-4 w-4' />
                                     </div>
                                     <div className='min-w-0'>
                                         <p
-                                            className={`text-sm font-medium truncate ${Number(selectedServerId) === server.id ? 'text-primary' : 'text-foreground'}`}
+                                            className={`truncate text-sm font-medium ${Number(selectedServerId) === server.id ? 'text-primary' : 'text-foreground'}`}
                                         >
                                             {server.name}
                                         </p>
-                                        <p className='text-xs text-muted-foreground truncate'>
+                                        <p className='text-muted-foreground truncate text-xs'>
                                             {server.uuidShort || server.uuid}
                                         </p>
                                     </div>
                                 </div>
                                 {Number(selectedServerId) === server.id && (
-                                    <Check className='h-4 w-4 text-primary shrink-0' />
+                                    <Check className='text-primary h-4 w-4 shrink-0' />
                                 )}
                             </button>
                         ))

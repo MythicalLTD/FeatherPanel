@@ -61,13 +61,13 @@ export function Sheet({ open, onOpenChange, children, className }: SheetProps) {
                                         className,
                                     )}
                                 >
-                                    <div className='flex h-full flex-col overflow-y-scroll bg-background/95 backdrop-blur-xl py-6 shadow-2xl border-l border-border/50'>
+                                    <div className='bg-background/95 border-border/50 flex h-full flex-col overflow-y-scroll border-l py-6 shadow-2xl backdrop-blur-xl'>
                                         <div className='px-4 sm:px-6'>
                                             <div className='flex items-start justify-between'>
-                                                <div className='ml-3 flex h-7 items-center absolute right-6 top-6 z-20'>
+                                                <div className='absolute top-6 right-6 z-20 ml-3 flex h-7 items-center'>
                                                     <button
                                                         type='button'
-                                                        className='relative rounded-xl bg-muted/50 p-2 text-muted-foreground hover:text-foreground hover:bg-muted transition-all focus:outline-hidden'
+                                                        className='bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted relative rounded-xl p-2 transition-all focus:outline-hidden'
                                                         onClick={() => onOpenChange(false)}
                                                     >
                                                         <span className='absolute -inset-2.5' />
@@ -98,7 +98,7 @@ export function SheetTitle({ children, className }: { children: React.ReactNode;
 }
 
 export function SheetDescription({ children, className }: { children: React.ReactNode; className?: string }) {
-    return <div className={cn('mt-2 text-muted-foreground', className)}>{children}</div>;
+    return <div className={cn('text-muted-foreground mt-2', className)}>{children}</div>;
 }
 
 export function SheetContent({ children }: { children: React.ReactNode; className?: string; side?: 'left' | 'right' }) {
@@ -106,5 +106,5 @@ export function SheetContent({ children }: { children: React.ReactNode; classNam
 }
 
 export function SheetFooter({ children, className }: { children: React.ReactNode; className?: string }) {
-    return <div className={cn('mt-auto pt-6 border-t border-border/50 flex gap-4', className)}>{children}</div>;
+    return <div className={cn('border-border/50 mt-auto flex gap-4 border-t pt-6', className)}>{children}</div>;
 }

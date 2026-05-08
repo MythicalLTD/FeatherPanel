@@ -184,17 +184,17 @@ export default function OAuth2ApiAuthorizePage() {
 
     if (serverModeAuthorized) {
         return (
-            <div className='min-h-[70vh] flex items-center justify-center p-6'>
-                <div className='w-full max-w-2xl rounded-2xl border border-emerald-500/30 bg-card/80 backdrop-blur-xl p-7 space-y-5'>
+            <div className='flex min-h-[70vh] items-center justify-center p-6'>
+                <div className='bg-card/80 w-full max-w-2xl space-y-5 rounded-2xl border border-emerald-500/30 p-7 backdrop-blur-xl'>
                     <div className='flex items-start gap-3'>
-                        <div className='h-10 w-10 rounded-lg bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0'>
+                        <div className='flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-400'>
                             <ShieldCheck className='h-5 w-5' />
                         </div>
                         <div>
-                            <h1 className='text-xl font-semibold text-foreground'>
+                            <h1 className='text-foreground text-xl font-semibold'>
                                 {t('account.apiKeys.oauth2.serverAuthorizedTitle')}
                             </h1>
-                            <p className='text-sm text-muted-foreground mt-1'>
+                            <p className='text-muted-foreground mt-1 text-sm'>
                                 {t('account.apiKeys.oauth2.serverAuthorizedDescription')}
                             </p>
                         </div>
@@ -211,9 +211,9 @@ export default function OAuth2ApiAuthorizePage() {
 
     if (loading) {
         return (
-            <div className='min-h-[70vh] flex items-center justify-center p-6'>
-                <div className='rounded-xl border border-border/60 bg-card/60 backdrop-blur-xl px-6 py-5 flex items-center gap-3 text-muted-foreground'>
-                    <Loader2 className='h-5 w-5 animate-spin text-primary' />
+            <div className='flex min-h-[70vh] items-center justify-center p-6'>
+                <div className='border-border/60 bg-card/60 text-muted-foreground flex items-center gap-3 rounded-xl border px-6 py-5 backdrop-blur-xl'>
+                    <Loader2 className='text-primary h-5 w-5 animate-spin' />
                     <span>{t('account.apiKeys.oauth2.prepareLoading')}</span>
                 </div>
             </div>
@@ -222,17 +222,17 @@ export default function OAuth2ApiAuthorizePage() {
 
     if (!hasRequestParams) {
         return (
-            <div className='min-h-[70vh] flex items-center justify-center p-6'>
-                <div className='w-full max-w-2xl rounded-2xl border border-border/60 bg-card/70 backdrop-blur-xl p-7 space-y-5'>
+            <div className='flex min-h-[70vh] items-center justify-center p-6'>
+                <div className='border-border/60 bg-card/70 w-full max-w-2xl space-y-5 rounded-2xl border p-7 backdrop-blur-xl'>
                     <div className='flex items-start gap-3'>
-                        <div className='h-10 w-10 rounded-lg bg-primary/15 text-primary flex items-center justify-center shrink-0'>
+                        <div className='bg-primary/15 text-primary flex h-10 w-10 shrink-0 items-center justify-center rounded-lg'>
                             <KeyRound className='h-5 w-5' />
                         </div>
                         <div>
-                            <h1 className='text-xl font-semibold text-foreground'>
+                            <h1 className='text-foreground text-xl font-semibold'>
                                 {t('account.apiKeys.oauth2.noRequestTitle')}
                             </h1>
-                            <p className='text-sm text-muted-foreground mt-1'>
+                            <p className='text-muted-foreground mt-1 text-sm'>
                                 {t('account.apiKeys.oauth2.noRequestDescription')}
                             </p>
                         </div>
@@ -261,13 +261,13 @@ export default function OAuth2ApiAuthorizePage() {
 
     if (error || !payload) {
         return (
-            <div className='min-h-[70vh] flex items-center justify-center p-6'>
-                <div className='w-full max-w-xl rounded-2xl border border-red-500/30 bg-card/80 backdrop-blur-xl p-6 space-y-4'>
+            <div className='flex min-h-[70vh] items-center justify-center p-6'>
+                <div className='bg-card/80 w-full max-w-xl space-y-4 rounded-2xl border border-red-500/30 p-6 backdrop-blur-xl'>
                     <div className='flex items-center gap-3 text-red-400'>
                         <TriangleAlert className='h-5 w-5' />
                         <h1 className='text-lg font-semibold'>{t('account.apiKeys.oauth2.initFailedTitle')}</h1>
                     </div>
-                    <p className='text-sm text-muted-foreground'>
+                    <p className='text-muted-foreground text-sm'>
                         {error || t('account.apiKeys.oauth2.initFailedDefault')}
                     </p>
                     <div className='flex gap-3'>
@@ -286,28 +286,28 @@ export default function OAuth2ApiAuthorizePage() {
     const appTitle = payload.request.appName || payload.request.name;
 
     return (
-        <div className='min-h-[70vh] flex items-center justify-center p-6'>
-            <div className='w-full max-w-3xl rounded-2xl border border-border/60 bg-card/70 backdrop-blur-xl shadow-sm p-6 md:p-8 space-y-6'>
+        <div className='flex min-h-[70vh] items-center justify-center p-6'>
+            <div className='border-border/60 bg-card/70 w-full max-w-3xl space-y-6 rounded-2xl border p-6 shadow-sm backdrop-blur-xl md:p-8'>
                 <div className='flex items-center justify-between gap-4'>
-                    <div className='flex items-center gap-4 min-w-0'>
+                    <div className='flex min-w-0 items-center gap-4'>
                         {payload.request.appLogo ? (
                             <Image
                                 src={payload.request.appLogo}
                                 alt={appTitle}
                                 width={56}
                                 height={56}
-                                className='h-14 w-14 rounded-xl border object-cover shrink-0'
+                                className='h-14 w-14 shrink-0 rounded-xl border object-cover'
                             />
                         ) : (
-                            <div className='h-14 w-14 rounded-xl border flex items-center justify-center bg-muted shrink-0'>
-                                <ShieldCheck className='h-6 w-6 text-muted-foreground' />
+                            <div className='bg-muted flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border'>
+                                <ShieldCheck className='text-muted-foreground h-6 w-6' />
                             </div>
                         )}
                         <div className='min-w-0'>
-                            <h1 className='text-xl md:text-2xl font-semibold truncate'>
+                            <h1 className='truncate text-xl font-semibold md:text-2xl'>
                                 {t('account.apiKeys.oauth2.authorizeTitle', { app: appTitle })}
                             </h1>
-                            <p className='text-sm text-muted-foreground truncate'>
+                            <p className='text-muted-foreground truncate text-sm'>
                                 {t('account.apiKeys.oauth2.authorizeSubtitle')}
                             </p>
                         </div>
@@ -315,23 +315,23 @@ export default function OAuth2ApiAuthorizePage() {
                 </div>
 
                 <div className='rounded-xl border border-amber-500/30 bg-amber-500/10 p-4'>
-                    <p className='text-sm text-amber-900 dark:text-amber-100 font-medium'>
+                    <p className='text-sm font-medium text-amber-900 dark:text-amber-100'>
                         {t('account.apiKeys.oauth2.warning')}
                     </p>
                 </div>
 
-                <div className='grid md:grid-cols-2 gap-3 text-sm'>
-                    <div className='rounded-lg border border-border/60 bg-background/40 p-3'>
+                <div className='grid gap-3 text-sm md:grid-cols-2'>
+                    <div className='border-border/60 bg-background/40 rounded-lg border p-3'>
                         <p className='text-muted-foreground'>{t('account.apiKeys.oauth2.requestName')}</p>
                         <p className='font-medium break-all'>{payload.request.name}</p>
                     </div>
                     {payload.request.description ? (
-                        <div className='rounded-lg border border-border/60 bg-background/40 p-3'>
+                        <div className='border-border/60 bg-background/40 rounded-lg border p-3'>
                             <p className='text-muted-foreground'>{t('account.apiKeys.oauth2.description')}</p>
                             <p className='font-medium break-all'>{payload.request.description}</p>
                         </div>
                     ) : null}
-                    <div className='rounded-lg border border-border/60 bg-background/40 p-3 md:col-span-2'>
+                    <div className='border-border/60 bg-background/40 rounded-lg border p-3 md:col-span-2'>
                         <p className='text-muted-foreground inline-flex items-center gap-2'>
                             <Globe className='h-3.5 w-3.5' />
                             {t('account.apiKeys.oauth2.callbackUrl')}
@@ -340,19 +340,19 @@ export default function OAuth2ApiAuthorizePage() {
                             href={payload.request.callbackurl}
                             target='_blank'
                             rel='noreferrer'
-                            className='font-medium break-all inline-flex items-center gap-2 hover:underline'
+                            className='inline-flex items-center gap-2 font-medium break-all hover:underline'
                         >
                             {payload.request.callbackurl}
                             <ExternalLink className='h-3 w-3' />
                         </a>
                     </div>
-                    <div className='rounded-lg border border-border/60 bg-background/40 p-3'>
+                    <div className='border-border/60 bg-background/40 rounded-lg border p-3'>
                         <p className='text-muted-foreground'>{t('account.apiKeys.oauth2.allowedIps')}</p>
-                        <p className='font-medium whitespace-pre-wrap break-all'>
+                        <p className='font-medium break-all whitespace-pre-wrap'>
                             {payload.request.allowedips || t('account.apiKeys.oauth2.allowedIpsAny')}
                         </p>
                     </div>
-                    <div className='rounded-lg border border-border/60 bg-background/40 p-3'>
+                    <div className='border-border/60 bg-background/40 rounded-lg border p-3'>
                         <p className='text-muted-foreground'>{t('account.apiKeys.oauth2.foreignIpAlert')}</p>
                         <p className='font-medium'>
                             {payload.request.alertCors
@@ -362,7 +362,7 @@ export default function OAuth2ApiAuthorizePage() {
                     </div>
                 </div>
 
-                <div className='flex flex-col-reverse sm:flex-row gap-3 pt-2'>
+                <div className='flex flex-col-reverse gap-3 pt-2 sm:flex-row'>
                     <Button variant='outline' className='sm:flex-1' disabled={submitting} onClick={handleDeny}>
                         {t('account.apiKeys.oauth2.deny')}
                     </Button>

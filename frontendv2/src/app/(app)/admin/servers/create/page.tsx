@@ -678,7 +678,7 @@ export default function CreateServerPage() {
     const navDisabled = wizardBlockedByInfra || wizardNavWaitingInfra;
 
     return (
-        <div className='max-w-5xl mx-auto pb-20'>
+        <div className='mx-auto max-w-5xl pb-20'>
             <WidgetRenderer widgets={getWidgets('admin-servers-create', 'top-of-page')} />
 
             <PageHeader
@@ -687,7 +687,7 @@ export default function CreateServerPage() {
                 icon={Server}
                 actions={
                     <Button variant='outline' onClick={() => router.push('/admin/servers')}>
-                        <X className='h-4 w-4 mr-2' />
+                        <X className='mr-2 h-4 w-4' />
                         {t('admin.servers.form.cancel')}
                     </Button>
                 }
@@ -696,22 +696,22 @@ export default function CreateServerPage() {
             <WidgetRenderer widgets={getWidgets('admin-servers-create', 'after-header')} />
 
             {infraGate.status === 'blocked' && (
-                <div className='mt-6 rounded-2xl border border-border/50 bg-card/70 backdrop-blur-md shadow-sm'>
+                <div className='border-border/50 bg-card/70 mt-6 rounded-2xl border shadow-sm backdrop-blur-md'>
                     <div className='flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6'>
                         <div className='flex min-w-0 flex-1 gap-3'>
-                            <div className='flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-primary ring-1 ring-primary/20'>
+                            <div className='bg-primary/12 text-primary ring-primary/20 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ring-1'>
                                 <AlertTriangle className='h-5 w-5' aria-hidden />
                             </div>
                             <div className='min-w-0 space-y-1'>
-                                <p className='text-sm font-semibold leading-snug'>
+                                <p className='text-sm leading-snug font-semibold'>
                                     {t('admin.servers.form.infra_prerequisite_title')}
                                 </p>
-                                <p className='text-sm text-muted-foreground leading-relaxed'>
+                                <p className='text-muted-foreground text-sm leading-relaxed'>
                                     {infraGate.gameLocations === 0
                                         ? t('admin.servers.form.infra_short_locations')
                                         : t('admin.servers.form.infra_short_nodes')}
                                 </p>
-                                <p className='text-xs text-muted-foreground/80'>
+                                <p className='text-muted-foreground/80 text-xs'>
                                     {t('admin.servers.form.infra_counts_hint', {
                                         locations: String(infraGate.gameLocations),
                                         nodes: String(infraGate.nodes),
@@ -724,7 +724,7 @@ export default function CreateServerPage() {
                                 type='button'
                                 variant='ghost'
                                 size='icon'
-                                className='h-10 w-10 rounded-xl text-muted-foreground hover:text-foreground'
+                                className='text-muted-foreground hover:text-foreground h-10 w-10 rounded-xl'
                                 title={t('admin.servers.form.infra_refresh_check')}
                                 onClick={() => void refreshInfrastructureCheck()}
                             >
@@ -753,7 +753,7 @@ export default function CreateServerPage() {
                 </div>
             )}
 
-            <div className='mt-8 mb-12 p-6 bg-card/50 backdrop-blur-xl rounded-2xl border border-border/50'>
+            <div className='bg-card/50 border-border/50 mt-8 mb-12 rounded-2xl border p-6 backdrop-blur-xl'>
                 <StepIndicator steps={wizardSteps} currentStep={currentStep} />
             </div>
 
@@ -804,13 +804,13 @@ export default function CreateServerPage() {
                 {currentStep === 6 && <Step6Review {...stepProps} />}
             </div>
 
-            <div className='flex items-center justify-between mt-8 p-6 bg-card/50 backdrop-blur-xl rounded-2xl border border-border/50'>
+            <div className='bg-card/50 border-border/50 mt-8 flex items-center justify-between rounded-2xl border p-6 backdrop-blur-xl'>
                 <Button variant='outline' onClick={handlePrevious} disabled={currentStep === 1} className='gap-2'>
                     <ChevronLeft className='h-4 w-4' />
                     {t('admin.servers.form.wizard.previous')}
                 </Button>
 
-                <span className='text-sm text-muted-foreground'>
+                <span className='text-muted-foreground text-sm'>
                     {t('admin.servers.form.wizard.step', { current: String(currentStep), total: String(totalSteps) })}
                 </span>
 
@@ -874,7 +874,7 @@ export default function CreateServerPage() {
                 renderItem={(node) => (
                     <div className='flex flex-col'>
                         <span className='font-semibold'>{node.name}</span>
-                        <span className='text-xs text-muted-foreground'>{node.fqdn}</span>
+                        <span className='text-muted-foreground text-xs'>{node.fqdn}</span>
                     </div>
                 )}
             />
@@ -980,8 +980,8 @@ function SelectionSheet<T extends { id: number | string }>({
                 </SheetHeader>
 
                 <div className='mt-6 space-y-4'>
-                    <div className='relative group'>
-                        <SearchIcon className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
+                    <div className='group relative'>
+                        <SearchIcon className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform transition-colors' />
                         <Input
                             placeholder={t('common.search')}
                             value={search}
@@ -991,7 +991,7 @@ function SelectionSheet<T extends { id: number | string }>({
                     </div>
 
                     {pagination && pagination.total_pages > 1 && (
-                        <div className='flex items-center justify-between gap-2 py-2 px-3 rounded-lg border border-border bg-muted/30'>
+                        <div className='border-border bg-muted/30 flex items-center justify-between gap-2 rounded-lg border px-3 py-2'>
                             <Button
                                 variant='outline'
                                 size='sm'
@@ -999,7 +999,7 @@ function SelectionSheet<T extends { id: number | string }>({
                                 onClick={() =>
                                     onPaginationChange({ ...pagination, current_page: pagination.current_page - 1 })
                                 }
-                                className='gap-1 h-8'
+                                className='h-8 gap-1'
                             >
                                 <ChevronLeft className='h-3 w-3' />
                                 {t('common.previous')}
@@ -1014,7 +1014,7 @@ function SelectionSheet<T extends { id: number | string }>({
                                 onClick={() =>
                                     onPaginationChange({ ...pagination, current_page: pagination.current_page + 1 })
                                 }
-                                className='gap-1 h-8'
+                                className='h-8 gap-1'
                             >
                                 {t('common.next')}
                                 <ChevronRight className='h-3 w-3' />
@@ -1022,15 +1022,15 @@ function SelectionSheet<T extends { id: number | string }>({
                         </div>
                     )}
 
-                    <div className='space-y-2 max-h-[calc(100vh-300px)] overflow-y-auto custom-scrollbar'>
+                    <div className='custom-scrollbar max-h-[calc(100vh-300px)] space-y-2 overflow-y-auto'>
                         {items.length === 0 ? (
-                            <div className='text-center py-8 text-muted-foreground'>{t('common.no_results')}</div>
+                            <div className='text-muted-foreground py-8 text-center'>{t('common.no_results')}</div>
                         ) : (
                             items.map((item) => (
                                 <button
                                     key={item.id}
                                     onClick={() => onSelect(item)}
-                                    className='w-full p-3 rounded-xl border border-border/50 hover:border-primary hover:bg-primary/5 cursor-pointer transition-all text-left'
+                                    className='border-border/50 hover:border-primary hover:bg-primary/5 w-full cursor-pointer rounded-xl border p-3 text-left transition-all'
                                 >
                                     {renderItem(item)}
                                 </button>
@@ -1039,8 +1039,8 @@ function SelectionSheet<T extends { id: number | string }>({
                     </div>
 
                     {pagination && pagination.total_pages > 1 && (
-                        <div className='flex items-center justify-between pt-4 border-t border-border/50'>
-                            <div className='text-sm text-muted-foreground'>
+                        <div className='border-border/50 flex items-center justify-between border-t pt-4'>
+                            <div className='text-muted-foreground text-sm'>
                                 {t('common.showing', {
                                     from: String((pagination.current_page - 1) * pagination.per_page + 1),
                                     to: String(
@@ -1064,7 +1064,7 @@ function SelectionSheet<T extends { id: number | string }>({
                                     }
                                     disabled={!pagination.has_prev}
                                 >
-                                    <ChevronLeft className='h-4 w-4 mr-2' />
+                                    <ChevronLeft className='mr-2 h-4 w-4' />
                                     {t('common.previous')}
                                 </Button>
                                 <Button
@@ -1079,7 +1079,7 @@ function SelectionSheet<T extends { id: number | string }>({
                                     disabled={!pagination.has_next}
                                 >
                                     {t('common.next')}
-                                    <ChevronRight className='h-4 w-4 ml-2' />
+                                    <ChevronRight className='ml-2 h-4 w-4' />
                                 </Button>
                             </div>
                         </div>

@@ -397,11 +397,11 @@ export default function LoginForm() {
             <WidgetRenderer widgets={getWidgets('auth-login', 'auth-login-top')} />
 
             {!isSsoLogin && !isDiscordLogin && (
-                <div className='text-center space-y-2'>
-                    <h2 className='text-2xl font-bold tracking-tight bg-gradient-to-r from-foreground via-foreground to-primary bg-clip-text text-transparent'>
+                <div className='space-y-2 text-center'>
+                    <h2 className='from-foreground via-foreground to-primary bg-gradient-to-r bg-clip-text text-2xl font-bold tracking-tight text-transparent'>
                         {discordLinkToken ? t('auth.discordLinking.title') : t('auth.login.title')}
                     </h2>
-                    <p className='text-sm text-muted-foreground'>
+                    <p className='text-muted-foreground text-sm'>
                         {discordLinkToken ? t('auth.discordLinking.subtitle') : t('auth.login.subtitle')}
                     </p>
                 </div>
@@ -410,12 +410,12 @@ export default function LoginForm() {
             {isSsoLogin ? (
                 <div className='flex flex-col items-center gap-4 py-6'>
                     <div className='flex items-center gap-3'>
-                        <div className='animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent'></div>
+                        <div className='border-primary h-6 w-6 animate-spin rounded-full border-2 border-t-transparent'></div>
                         <span className='text-muted-foreground'>{ssoStatus}</span>
                     </div>
-                    <p className='text-xs text-muted-foreground text-center'>{t('auth.ssoPleaseWait')}</p>
+                    <p className='text-muted-foreground text-center text-xs'>{t('auth.ssoPleaseWait')}</p>
                     {error && (
-                        <div className='p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm animate-fade-in w-full text-center'>
+                        <div className='bg-destructive/10 border-destructive/20 text-destructive animate-fade-in w-full rounded-xl border p-4 text-center text-sm'>
                             {error}
                         </div>
                     )}
@@ -423,12 +423,12 @@ export default function LoginForm() {
             ) : isDiscordLogin ? (
                 <div className='flex flex-col items-center gap-4 py-6'>
                     <div className='flex items-center gap-3'>
-                        <div className='animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent'></div>
+                        <div className='border-primary h-6 w-6 animate-spin rounded-full border-2 border-t-transparent'></div>
                         <span className='text-muted-foreground'>{t('auth.discordLoggingIn')}</span>
                     </div>
-                    <p className='text-xs text-muted-foreground text-center'>{t('auth.ssoPleaseWait')}</p>
+                    <p className='text-muted-foreground text-center text-xs'>{t('auth.ssoPleaseWait')}</p>
                     {error && (
-                        <div className='p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm animate-fade-in w-full text-center'>
+                        <div className='bg-destructive/10 border-destructive/20 text-destructive animate-fade-in w-full rounded-xl border p-4 text-center text-sm'>
                             {error}
                         </div>
                     )}
@@ -458,11 +458,11 @@ export default function LoginForm() {
                             placeholder={t('auth.login.password')}
                         />
 
-                        <Button type='submit' className='w-full group' loading={loading}>
+                        <Button type='submit' className='group w-full' loading={loading}>
                             {!loading && (
                                 <>
                                     {t('auth.discordLinking.submit')}
-                                    <ArrowRight className='ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform' />
+                                    <ArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
                                 </>
                             )}
                         </Button>
@@ -480,12 +480,12 @@ export default function LoginForm() {
                         </Button>
 
                         {error && (
-                            <div className='p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm animate-fade-in'>
+                            <div className='bg-destructive/10 border-destructive/20 text-destructive animate-fade-in rounded-xl border p-4 text-sm'>
                                 {error}
                             </div>
                         )}
                         {success && (
-                            <div className='p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-green-600 dark:text-green-400 text-sm animate-fade-in'>
+                            <div className='animate-fade-in rounded-xl border border-green-500/20 bg-green-500/10 p-4 text-sm text-green-600 dark:text-green-400'>
                                 {success}
                             </div>
                         )}
@@ -496,7 +496,7 @@ export default function LoginForm() {
                     <WidgetRenderer widgets={getWidgets('auth-login', 'auth-login-before-form')} />
 
                     {ldapEnabled && (
-                        <div className='flex gap-2 mb-4'>
+                        <div className='mb-4 flex gap-2'>
                             <Button
                                 type='button'
                                 variant={!showLdapLogin ? 'default' : 'outline'}
@@ -572,22 +572,22 @@ export default function LoginForm() {
                                 </div>
                             )}
 
-                            <Button type='submit' className='w-full group' loading={loading}>
+                            <Button type='submit' className='group w-full' loading={loading}>
                                 {!loading && (
                                     <>
                                         Login with LDAP
-                                        <ArrowRight className='ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform' />
+                                        <ArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
                                     </>
                                 )}
                             </Button>
 
                             {error && (
-                                <div className='p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm animate-fade-in'>
+                                <div className='bg-destructive/10 border-destructive/20 text-destructive animate-fade-in rounded-xl border p-4 text-sm'>
                                     {error}
                                 </div>
                             )}
                             {success && (
-                                <div className='p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-green-600 dark:text-green-400 text-sm animate-fade-in'>
+                                <div className='animate-fade-in rounded-xl border border-green-500/20 bg-green-500/10 p-4 text-sm text-green-600 dark:text-green-400'>
                                     {success}
                                 </div>
                             )}
@@ -619,7 +619,7 @@ export default function LoginForm() {
                             <div className='flex items-center justify-end'>
                                 <Link
                                     href='/auth/forgot-password'
-                                    className='text-sm font-medium text-primary hover:text-primary/80 transition-colors'
+                                    className='text-primary hover:text-primary/80 text-sm font-medium transition-colors'
                                 >
                                     {t('auth.login.forgot_password')}
                                 </Link>
@@ -644,22 +644,22 @@ export default function LoginForm() {
                                 </div>
                             )}
 
-                            <Button type='submit' className='w-full group' loading={loading}>
+                            <Button type='submit' className='group w-full' loading={loading}>
                                 {!loading && (
                                     <>
                                         {t('auth.login.submit')}
-                                        <ArrowRight className='ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform' />
+                                        <ArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
                                     </>
                                 )}
                             </Button>
 
                             {error && (
-                                <div className='p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm animate-fade-in'>
+                                <div className='bg-destructive/10 border-destructive/20 text-destructive animate-fade-in rounded-xl border p-4 text-sm'>
                                     {error}
                                 </div>
                             )}
                             {success && (
-                                <div className='p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-green-600 dark:text-green-400 text-sm animate-fade-in'>
+                                <div className='animate-fade-in rounded-xl border border-green-500/20 bg-green-500/10 p-4 text-sm text-green-600 dark:text-green-400'>
                                     {success}
                                 </div>
                             )}
@@ -672,10 +672,10 @@ export default function LoginForm() {
                         <>
                             <div className='relative'>
                                 <div className='absolute inset-0 flex items-center'>
-                                    <div className='w-full border-t border-border' />
+                                    <div className='border-border w-full border-t' />
                                 </div>
                                 <div className='relative flex justify-center text-xs uppercase'>
-                                    <span className='bg-card px-2 text-muted-foreground'>
+                                    <span className='bg-card text-muted-foreground px-2'>
                                         {t('auth.login.or_continue')}
                                     </span>
                                 </div>
@@ -702,7 +702,7 @@ export default function LoginForm() {
                                         className='w-full'
                                         onClick={handleDiscordLogin}
                                     >
-                                        <svg className='h-5 w-5 mr-2' viewBox='0 0 24 24' fill='currentColor'>
+                                        <svg className='mr-2 h-5 w-5' viewBox='0 0 24 24' fill='currentColor'>
                                             <path d='M20.317 4.369a19.791 19.791 0 00-4.885-1.515.07.07 0 00-.075.035 13.812 13.812 0 00-.605 1.246 18.016 18.016 0 00-5.427 0 12.217 12.217 0 00-.617-1.246.064.064 0 00-.075-.035c-1.724.285-3.362.83-4.885 1.515a.06.06 0 00-.024.022C.533 8.059-.32 11.591.099 15.08a.078.078 0 00.028.055 20.53 20.53 0 006.104 3.108.073.073 0 00.078-.023c.472-.651.889-1.341 1.246-2.065a.07.07 0 00-.038-.094 13.235 13.235 0 01-1.885-.884.07.07 0 01-.007-.117c.126-.094.252-.192.374-.291a.06.06 0 01.061-.011c3.927 1.792 8.18 1.792 12.061 0 a.062.062 0 01.063.008c.122.099.248.197.374.291a.07.07 0 01-.006.117 12.298 12.298 0 01-1.885.883.07.07 0 00-.038.095c.36.723.777 1.413 1.246 2.064a.073.073 0 00.078.023 20.477 20.477 0 006.105-3.107.075.075 0 00.028-.055c.5-4.101-.838-7.597-3.548-10.692a.061.061 0 00-.024-.023zM8.02 15.331c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.949-2.418 2.157-2.418 1.222 0 2.172 1.101 2.157 2.418 0 1.334-.949 2.419-2.157 2.419zm7.974 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.948-2.418 2.157-2.418 1.221 0 2.171 1.101 2.157 2.418 0 1.334-.936 2.419-2.157 2.419z' />
                                         </svg>
                                         {t('auth.login.discord')}
@@ -712,11 +712,11 @@ export default function LoginForm() {
                         </>
                     )}
 
-                    <div className='text-center text-sm text-muted-foreground'>
+                    <div className='text-muted-foreground text-center text-sm'>
                         {t('auth.login.no_account')}{' '}
                         <Link
                             href='/auth/register'
-                            className='font-semibold text-primary hover:text-primary/80 transition-colors'
+                            className='text-primary hover:text-primary/80 font-semibold transition-colors'
                         >
                             {t('auth.login.create_account')}
                         </Link>

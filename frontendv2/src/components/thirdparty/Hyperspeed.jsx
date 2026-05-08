@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/unsupported-syntax */
 /*
 This file is part of FeatherPanel.
 

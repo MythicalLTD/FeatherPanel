@@ -120,7 +120,7 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
     };
 
     return (
-        <div className='relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-background p-4'>
+        <div className='bg-background relative flex min-h-screen flex-col items-center justify-center overflow-hidden p-4'>
             {renderBackground()}
             {hasOverlay && (
                 <div className='pointer-events-none absolute inset-0 z-1' style={overlayStyle} aria-hidden />
@@ -131,15 +131,15 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
             </div>
 
             <div className='relative z-10 w-full max-w-2xl'>
-                <div className='relative group'>
-                    <div className='absolute -inset-0.5 bg-linear-to-r from-destructive/50 to-destructive/30 rounded-3xl blur opacity-20 group-hover:opacity-30 transition duration-1000' />
+                <div className='group relative'>
+                    <div className='from-destructive/50 to-destructive/30 absolute -inset-0.5 rounded-3xl bg-linear-to-r opacity-20 blur transition duration-1000 group-hover:opacity-30' />
 
-                    <div className='relative rounded-3xl border border-border/50 bg-card/95 backdrop-blur-xl p-8 md:p-12 '>
-                        <div className='text-center space-y-6'>
+                    <div className='border-border/50 bg-card/95 relative rounded-3xl border p-8 backdrop-blur-xl md:p-12'>
+                        <div className='space-y-6 text-center'>
                             <div className='relative'>
-                                <div className='inline-flex items-center justify-center w-24 h-24 rounded-3xl bg-destructive/10 mb-4'>
+                                <div className='bg-destructive/10 mb-4 inline-flex h-24 w-24 items-center justify-center rounded-3xl'>
                                     <svg
-                                        className='h-12 w-12 text-destructive'
+                                        className='text-destructive h-12 w-12'
                                         fill='none'
                                         viewBox='0 0 24 24'
                                         stroke='currentColor'
@@ -155,45 +155,45 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
                             </div>
 
                             <div className='space-y-3'>
-                                <h2 className='text-2xl md:text-3xl font-bold tracking-tight'>
+                                <h2 className='text-2xl font-bold tracking-tight md:text-3xl'>
                                     {staleVersion ? t('errors.500.stale_version_title') : t('errors.500.title')}
                                 </h2>
-                                <p className='text-muted-foreground max-w-md mx-auto'>
+                                <p className='text-muted-foreground mx-auto max-w-md'>
                                     {staleVersion ? t('errors.500.stale_version_message') : t('errors.500.message')}
                                 </p>
                                 {!staleVersion && error.digest && (
-                                    <p className='text-xs text-muted-foreground font-mono bg-muted px-3 py-1 rounded-lg inline-block'>
+                                    <p className='text-muted-foreground bg-muted inline-block rounded-lg px-3 py-1 font-mono text-xs'>
                                         {t('errors.500.error_id')}: {error.digest}
                                     </p>
                                 )}
                             </div>
 
-                            <div className='flex flex-col sm:flex-row gap-3 justify-center pt-4'>
+                            <div className='flex flex-col justify-center gap-3 pt-4 sm:flex-row'>
                                 <Button
                                     onClick={staleVersion ? hardRefresh : reset}
                                     variant='outline'
                                     className='group'
                                 >
-                                    <RefreshCw className='h-4 w-4 mr-2 group-hover:rotate-180 transition-transform duration-500' />
+                                    <RefreshCw className='mr-2 h-4 w-4 transition-transform duration-500 group-hover:rotate-180' />
                                     {staleVersion ? t('errors.500.refresh_page') : t('errors.500.try_again')}
                                 </Button>
                                 <Link href='/'>
-                                    <Button className='w-full sm:w-auto group'>
-                                        <Home className='h-4 w-4 mr-2' />
+                                    <Button className='group w-full sm:w-auto'>
+                                        <Home className='mr-2 h-4 w-4' />
                                         {t('errors.500.go_home')}
                                     </Button>
                                 </Link>
                             </div>
 
                             {process.env.NODE_ENV === 'development' && (
-                                <details className='pt-6 border-t border-border/50 text-left'>
-                                    <summary className='text-sm font-medium cursor-pointer hover:text-primary transition-colors'>
+                                <details className='border-border/50 border-t pt-6 text-left'>
+                                    <summary className='hover:text-primary cursor-pointer text-sm font-medium transition-colors'>
                                         {t('errors.500.details')}
                                     </summary>
-                                    <div className='mt-4 p-4 rounded-xl bg-muted text-xs font-mono overflow-auto max-h-60'>
-                                        <p className='text-destructive font-semibold mb-2'>{error.name}</p>
+                                    <div className='bg-muted mt-4 max-h-60 overflow-auto rounded-xl p-4 font-mono text-xs'>
+                                        <p className='text-destructive mb-2 font-semibold'>{error.name}</p>
                                         <p className='whitespace-pre-wrap'>{error.message}</p>
-                                        {error.stack && <pre className='mt-4 text-muted-foreground'>{error.stack}</pre>}
+                                        {error.stack && <pre className='text-muted-foreground mt-4'>{error.stack}</pre>}
                                     </div>
                                 </details>
                             )}
@@ -202,7 +202,7 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
                 </div>
             </div>
 
-            <div className='relative z-10 mt-8 text-center text-xs text-muted-foreground'>
+            <div className='text-muted-foreground relative z-10 mt-8 text-center text-xs'>
                 <p className='mb-2 font-medium'>
                     {t('branding.running_on', { name: 'FeatherPanel', version: core?.version || '' }).trim()}
                 </p>
@@ -210,7 +210,7 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
                     href='https://featherpanel.com'
                     target='_blank'
                     rel='noopener noreferrer'
-                    className='inline-flex items-center gap-1.5 text-primary transition-all duration-200 hover:text-primary/80 hover:underline underline-offset-4 font-medium'
+                    className='text-primary hover:text-primary/80 inline-flex items-center gap-1.5 font-medium underline-offset-4 transition-all duration-200 hover:underline'
                 >
                     {t('branding.copyright', { company: 'MythicalSystems' })}
                     <svg className='h-3.5 w-3.5' fill='none' viewBox='0 0 24 24' stroke='currentColor'>

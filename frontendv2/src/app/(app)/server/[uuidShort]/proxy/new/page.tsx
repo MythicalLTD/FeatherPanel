@@ -197,7 +197,7 @@ export default function CreateProxyPage() {
     }
 
     return (
-        <div className='max-w-6xl mx-auto space-y-8 pb-16 '>
+        <div className='mx-auto max-w-6xl space-y-8 pb-16'>
             <WidgetRenderer widgets={getWidgets('server-proxy-new', 'top-of-page')} />
 
             <PageHeader
@@ -211,12 +211,12 @@ export default function CreateProxyPage() {
                         <Button size='default' onClick={handleCreate} disabled={saving || !dnsVerified}>
                             {saving ? (
                                 <>
-                                    <Loader2 className='h-4 w-4 mr-2 animate-spin' />
+                                    <Loader2 className='mr-2 h-4 w-4 animate-spin' />
                                     {t('common.saving')}
                                 </>
                             ) : (
                                 <>
-                                    <ArrowRightLeft className='h-4 w-4 mr-2' />
+                                    <ArrowRightLeft className='mr-2 h-4 w-4' />
                                     {t('serverProxy.createProxy')}
                                 </>
                             )}
@@ -226,18 +226,18 @@ export default function CreateProxyPage() {
             />
             <WidgetRenderer widgets={getWidgets('server-proxy-new', 'after-header')} />
 
-            <div className='grid grid-cols-1 lg:grid-cols-12 gap-8'>
-                <div className='lg:col-span-8 space-y-8'>
-                    <div className='bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl p-8 space-y-6'>
-                        <div className='flex items-center gap-4 border-b border-border/10 pb-6'>
-                            <div className='h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20'>
-                                <Globe className='h-5 w-5 text-primary' />
+            <div className='grid grid-cols-1 gap-8 lg:grid-cols-12'>
+                <div className='space-y-8 lg:col-span-8'>
+                    <div className='bg-card/50 border-border/50 space-y-6 rounded-3xl border p-8 backdrop-blur-3xl'>
+                        <div className='border-border/10 flex items-center gap-4 border-b pb-6'>
+                            <div className='bg-primary/10 border-primary/20 flex h-10 w-10 items-center justify-center rounded-xl border'>
+                                <Globe className='text-primary h-5 w-5' />
                             </div>
                             <div className='space-y-0.5'>
-                                <h2 className='text-xl font-black uppercase tracking-tight italic'>
+                                <h2 className='text-xl font-black tracking-tight uppercase italic'>
                                     {t('serverProxy.domain')} & {t('serverProxy.targetPort')}
                                 </h2>
-                                <p className='text-[9px] font-bold text-muted-foreground tracking-widest uppercase opacity-50'>
+                                <p className='text-muted-foreground text-[9px] font-bold tracking-widest uppercase opacity-50'>
                                     {t('serverProxy.configuration')}
                                 </p>
                             </div>
@@ -245,7 +245,7 @@ export default function CreateProxyPage() {
 
                         <div className='space-y-6'>
                             <div className='space-y-2.5'>
-                                <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                     {t('serverProxy.domain')} <span className='text-primary'>*</span>
                                 </label>
                                 <Input
@@ -257,15 +257,15 @@ export default function CreateProxyPage() {
                                     }}
                                     placeholder='play.example.com'
                                     disabled={saving}
-                                    className='h-12 bg-secondary/50 border-border/10 focus:border-primary/50 rounded-xl text-sm font-extrabold transition-all'
+                                    className='bg-secondary/50 border-border/10 focus:border-primary/50 h-12 rounded-xl text-sm font-extrabold transition-all'
                                 />
-                                <p className='text-xs text-muted-foreground ml-1'>
+                                <p className='text-muted-foreground ml-1 text-xs'>
                                     {t('serverProxy.domainDescription')}
                                 </p>
                             </div>
 
                             <div className='space-y-2.5'>
-                                <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                     {t('serverProxy.targetPort')} <span className='text-primary'>*</span>
                                 </label>
                                 <HeadlessSelect
@@ -284,26 +284,26 @@ export default function CreateProxyPage() {
                                 />
                             </div>
 
-                            <div className='rounded-2xl border border-primary/20 bg-primary/5 p-5 space-y-4'>
+                            <div className='border-primary/20 bg-primary/5 space-y-4 rounded-2xl border p-5'>
                                 <div className='flex items-start gap-4'>
-                                    <div className='h-8 w-8 rounded-lg bg-primary/20 flex items-center justify-center shrink-0 border border-primary/30'>
-                                        <Info className='h-4 w-4 text-primary' />
+                                    <div className='bg-primary/20 border-primary/30 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border'>
+                                        <Info className='text-primary h-4 w-4' />
                                     </div>
                                     <div className='space-y-1'>
-                                        <h4 className='text-sm font-bold text-primary uppercase tracking-wide'>
+                                        <h4 className='text-primary text-sm font-bold tracking-wide uppercase'>
                                             {t('serverProxy.verifyDns')}
                                         </h4>
-                                        <p className='text-xs text-muted-foreground leading-relaxed'>
+                                        <p className='text-muted-foreground text-xs leading-relaxed'>
                                             {t('serverProxy.pointDomain', { domain: formData.domain || 'domain' })}
                                         </p>
                                     </div>
                                 </div>
 
                                 {targetIp && (
-                                    <div className='flex items-center gap-2 text-xs p-3 bg-background/50 rounded-xl border border-dashed border-primary/30 mx-1'>
-                                        <Server className='h-3 w-3 text-primary opacity-50' />
-                                        <span className='font-bold text-primary/80'>{t('serverProxy.aRecord')}</span>
-                                        <span className='font-mono text-foreground font-bold bg-secondary/50 px-2 py-0.5 rounded'>
+                                    <div className='bg-background/50 border-primary/30 mx-1 flex items-center gap-2 rounded-xl border border-dashed p-3 text-xs'>
+                                        <Server className='text-primary h-3 w-3 opacity-50' />
+                                        <span className='text-primary/80 font-bold'>{t('serverProxy.aRecord')}</span>
+                                        <span className='text-foreground bg-secondary/50 rounded px-2 py-0.5 font-mono font-bold'>
                                             {targetIp}
                                         </span>
                                     </div>
@@ -317,20 +317,20 @@ export default function CreateProxyPage() {
                                         }
                                         size='sm'
                                         className={cn(
-                                            'w-full h-10 font-bold tracking-wide uppercase text-[10px] rounded-xl transition-all',
+                                            'h-10 w-full rounded-xl text-[10px] font-bold tracking-wide uppercase transition-all',
                                             dnsVerified
-                                                ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                                                ? 'bg-emerald-600 text-white hover:bg-emerald-700'
                                                 : 'bg-primary hover:bg-primary/90',
                                         )}
                                     >
                                         {verifyingDns ? (
                                             <>
-                                                <Loader2 className='h-3 w-3 mr-2 animate-spin' />
+                                                <Loader2 className='mr-2 h-3 w-3 animate-spin' />
                                                 {t('serverProxy.verifying')}
                                             </>
                                         ) : dnsVerified ? (
                                             <>
-                                                <CheckCircle className='h-3 w-3 mr-2' />
+                                                <CheckCircle className='mr-2 h-3 w-3' />
                                                 {t('serverProxy.verified')}
                                             </>
                                         ) : (
@@ -339,7 +339,7 @@ export default function CreateProxyPage() {
                                     </Button>
 
                                     {dnsError && (
-                                        <div className='flex items-center gap-2 text-red-400 bg-red-500/10 p-3 rounded-xl border border-red-500/20 animate-in slide-in-from-top-2'>
+                                        <div className='animate-in slide-in-from-top-2 flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-red-400'>
                                             <XCircle className='h-4 w-4 shrink-0' />
                                             <p className='text-xs font-bold'>{dnsError}</p>
                                         </div>
@@ -349,16 +349,16 @@ export default function CreateProxyPage() {
                         </div>
                     </div>
 
-                    <div className='bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl p-8 space-y-6'>
-                        <div className='flex items-center gap-4 border-b border-border/10 pb-6'>
-                            <div className='h-10 w-10 rounded-xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20'>
+                    <div className='bg-card/50 border-border/50 space-y-6 rounded-3xl border p-8 backdrop-blur-3xl'>
+                        <div className='border-border/10 flex items-center gap-4 border-b pb-6'>
+                            <div className='flex h-10 w-10 items-center justify-center rounded-xl border border-emerald-500/20 bg-emerald-500/10'>
                                 <ShieldCheck className='h-5 w-5 text-emerald-500' />
                             </div>
                             <div className='space-y-0.5'>
-                                <h2 className='text-xl font-black uppercase tracking-tight italic'>
+                                <h2 className='text-xl font-black tracking-tight uppercase italic'>
                                     {t('serverProxy.enableSsl')}
                                 </h2>
-                                <p className='text-[9px] font-bold text-muted-foreground tracking-widest uppercase opacity-50'>
+                                <p className='text-muted-foreground text-[9px] font-bold tracking-widest uppercase opacity-50'>
                                     {t('serverProxy.secureWithHttps')}
                                 </p>
                             </div>
@@ -369,7 +369,7 @@ export default function CreateProxyPage() {
                                     onClick={() => setFormData({ ...formData, ssl: !formData.ssl })}
                                     className={cn(
                                         'rounded-lg font-bold',
-                                        formData.ssl && 'bg-emerald-600 hover:bg-emerald-700 text-white',
+                                        formData.ssl && 'bg-emerald-600 text-white hover:bg-emerald-700',
                                     )}
                                     disabled={saving}
                                 >
@@ -379,13 +379,13 @@ export default function CreateProxyPage() {
                         </div>
 
                         {formData.ssl && (
-                            <div className='space-y-6 animate-in fade-in slide-in-from-top-4 duration-500'>
-                                <div className='flex items-center justify-between p-4 rounded-2xl bg-secondary/30 border border-border/20'>
+                            <div className='animate-in fade-in slide-in-from-top-4 space-y-6 duration-500'>
+                                <div className='bg-secondary/30 border-border/20 flex items-center justify-between rounded-2xl border p-4'>
                                     <div className='space-y-0.5'>
-                                        <h4 className='font-bold text-sm text-foreground'>
+                                        <h4 className='text-foreground text-sm font-bold'>
                                             {t('serverProxy.letsEncrypt')}
                                         </h4>
-                                        <p className='text-[10px] text-muted-foreground font-medium uppercase tracking-wide'>
+                                        <p className='text-muted-foreground text-[10px] font-medium tracking-wide uppercase'>
                                             {t('serverProxy.autoGenerate')}
                                         </p>
                                     </div>
@@ -398,7 +398,7 @@ export default function CreateProxyPage() {
                                         disabled={saving}
                                         className={cn(
                                             'rounded-lg font-bold',
-                                            formData.use_lets_encrypt && 'bg-blue-600 hover:bg-blue-700 text-white',
+                                            formData.use_lets_encrypt && 'bg-blue-600 text-white hover:bg-blue-700',
                                         )}
                                     >
                                         {formData.use_lets_encrypt ? t('serverProxy.on') : t('serverProxy.off')}
@@ -407,11 +407,11 @@ export default function CreateProxyPage() {
 
                                 {formData.use_lets_encrypt ? (
                                     <div className='space-y-2.5'>
-                                        <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                        <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                             {t('serverProxy.email')} <span className='text-primary'>*</span>
                                         </label>
-                                        <div className='relative group'>
-                                            <div className='absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/50 group-focus-within:text-primary transition-colors z-10'>
+                                        <div className='group relative'>
+                                            <div className='text-muted-foreground/50 group-focus-within:text-primary absolute top-1/2 left-4 z-10 -translate-y-1/2 transition-colors'>
                                                 <Mail className='h-4 w-4' />
                                             </div>
                                             <Input
@@ -421,35 +421,35 @@ export default function CreateProxyPage() {
                                                     setFormData({ ...formData, client_email: e.target.value })
                                                 }
                                                 placeholder='admin@example.com'
-                                                className='pl-11 h-12 bg-secondary/50 border-border/10 focus:border-primary/50 rounded-xl text-sm font-extrabold transition-all'
+                                                className='bg-secondary/50 border-border/10 focus:border-primary/50 h-12 rounded-xl pl-11 text-sm font-extrabold transition-all'
                                                 disabled={saving}
                                                 required
                                             />
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+                                    <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
                                         <div className='space-y-2.5'>
-                                            <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                            <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                                 {t('serverProxy.certificate')}
                                             </label>
                                             <Textarea
                                                 value={formData.ssl_cert || ''}
                                                 onChange={(e) => setFormData({ ...formData, ssl_cert: e.target.value })}
                                                 disabled={saving}
-                                                className='font-mono text-xs min-h-[150px] bg-secondary/50 border-border/10 focus:border-primary/50 rounded-xl leading-relaxed'
+                                                className='bg-secondary/50 border-border/10 focus:border-primary/50 min-h-[150px] rounded-xl font-mono text-xs leading-relaxed'
                                                 placeholder='-----BEGIN CERTIFICATE-----...'
                                             />
                                         </div>
                                         <div className='space-y-2.5'>
-                                            <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                            <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                                 {t('serverProxy.privateKey')}
                                             </label>
                                             <Textarea
                                                 value={formData.ssl_key || ''}
                                                 onChange={(e) => setFormData({ ...formData, ssl_key: e.target.value })}
                                                 disabled={saving}
-                                                className='font-mono text-xs min-h-[150px] bg-secondary/50 border-border/10 focus:border-primary/50 rounded-xl leading-relaxed'
+                                                className='bg-secondary/50 border-border/10 focus:border-primary/50 min-h-[150px] rounded-xl font-mono text-xs leading-relaxed'
                                                 placeholder='-----BEGIN PRIVATE KEY-----...'
                                             />
                                         </div>
@@ -460,62 +460,62 @@ export default function CreateProxyPage() {
                     </div>
                 </div>
 
-                <div className='lg:col-span-4 space-y-8'>
-                    <div className='bg-blue-500/5 border border-blue-500/10 backdrop-blur-3xl rounded-3xl p-8 space-y-4 relative overflow-hidden group'>
-                        <div className='absolute -bottom-6 -right-6 w-24 h-24 bg-blue-500/10 blur-2xl pointer-events-none group-hover:scale-150 transition-transform duration-1000' />
-                        <div className='h-10 w-10 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20 relative z-10'>
+                <div className='space-y-8 lg:col-span-4'>
+                    <div className='group relative space-y-4 overflow-hidden rounded-3xl border border-blue-500/10 bg-blue-500/5 p-8 backdrop-blur-3xl'>
+                        <div className='pointer-events-none absolute -right-6 -bottom-6 h-24 w-24 bg-blue-500/10 blur-2xl transition-transform duration-1000 group-hover:scale-150' />
+                        <div className='relative z-10 flex h-10 w-10 items-center justify-center rounded-xl border border-blue-500/20 bg-blue-500/10'>
                             <Info className='h-5 w-5 text-blue-500' />
                         </div>
-                        <div className='space-y-2 relative z-10'>
-                            <h3 className='text-lg font-black uppercase tracking-tight text-blue-500 leading-none italic'>
+                        <div className='relative z-10 space-y-2'>
+                            <h3 className='text-lg leading-none font-black tracking-tight text-blue-500 uppercase italic'>
                                 {t('serverProxy.infoTitle')}
                             </h3>
-                            <p className='text-blue-500/70 font-bold text-[11px] leading-relaxed italic'>
+                            <p className='text-[11px] leading-relaxed font-bold text-blue-500/70 italic'>
                                 {t('serverProxy.infoDescription')}
                             </p>
                         </div>
                     </div>
 
-                    <div className='bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl p-8 space-y-6 relative overflow-hidden'>
-                        <div className='flex items-center gap-4 border-b border-border/10 pb-6 relative z-10'>
-                            <div className='h-10 w-10 rounded-xl bg-secondary/50 flex items-center justify-center border border-border/10'>
-                                <Settings2 className='h-5 w-5 text-muted-foreground' />
+                    <div className='bg-card/50 border-border/50 relative space-y-6 overflow-hidden rounded-3xl border p-8 backdrop-blur-3xl'>
+                        <div className='border-border/10 relative z-10 flex items-center gap-4 border-b pb-6'>
+                            <div className='bg-secondary/50 border-border/10 flex h-10 w-10 items-center justify-center rounded-xl border'>
+                                <Settings2 className='text-muted-foreground h-5 w-5' />
                             </div>
                             <div className='space-y-0.5'>
-                                <h2 className='text-xl font-black uppercase tracking-tight italic'>
+                                <h2 className='text-xl font-black tracking-tight uppercase italic'>
                                     {t('serverProxy.helpfulTips')}
                                 </h2>
-                                <p className='text-[9px] font-bold text-muted-foreground tracking-widest uppercase opacity-50 italic'>
+                                <p className='text-muted-foreground text-[9px] font-bold tracking-widest uppercase italic opacity-50'>
                                     {t('serverProxy.guide')}
                                 </p>
                             </div>
                         </div>
-                        <ul className='space-y-4 relative z-10'>
-                            <li className='flex gap-3 text-xs text-muted-foreground'>
-                                <span className='h-1.5 w-1.5 rounded-full bg-primary mt-1.5 shrink-0' />
+                        <ul className='relative z-10 space-y-4'>
+                            <li className='text-muted-foreground flex gap-3 text-xs'>
+                                <span className='bg-primary mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full' />
                                 <span>{t('serverProxy.tipDns')}</span>
                             </li>
-                            <li className='flex gap-3 text-xs text-muted-foreground'>
-                                <span className='h-1.5 w-1.5 rounded-full bg-primary mt-1.5 shrink-0' />
+                            <li className='text-muted-foreground flex gap-3 text-xs'>
+                                <span className='bg-primary mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full' />
                                 <span>{t('serverProxy.tipPorts')}</span>
                             </li>
-                            <li className='flex gap-3 text-xs text-muted-foreground'>
-                                <span className='h-1.5 w-1.5 rounded-full bg-primary mt-1.5 shrink-0' />
+                            <li className='text-muted-foreground flex gap-3 text-xs'>
+                                <span className='bg-primary mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full' />
                                 <span>{t('serverProxy.tipSsl')}</span>
                             </li>
                         </ul>
                     </div>
 
-                    <div className='md:hidden pt-2'>
+                    <div className='pt-2 md:hidden'>
                         <Button size='default' onClick={handleCreate} disabled={saving || !dnsVerified}>
                             {saving ? (
                                 <>
-                                    <Loader2 className='h-4 w-4 mr-2 animate-spin' />
+                                    <Loader2 className='mr-2 h-4 w-4 animate-spin' />
                                     {t('common.saving')}
                                 </>
                             ) : (
                                 <>
-                                    <ArrowRightLeft className='h-4 w-4 mr-2' />
+                                    <ArrowRightLeft className='mr-2 h-4 w-4' />
                                     {t('serverProxy.createProxy')}
                                 </>
                             )}

@@ -223,20 +223,20 @@ export default function TicketCategoriesPage() {
                                 setCreateOpen(true);
                             }}
                         >
-                            <Plus className='h-4 w-4 mr-2' />
+                            <Plus className='mr-2 h-4 w-4' />
                             {t('admin.tickets.categories.create')}
                         </Button>
                     }
                 />
 
-                <div className='flex flex-col sm:flex-row gap-4 items-center bg-card/40 backdrop-blur-md p-4 rounded-2xl shadow-sm'>
-                    <div className='relative flex-1 group w-full'>
-                        <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
+                <div className='bg-card/40 flex flex-col items-center gap-4 rounded-2xl p-4 shadow-sm backdrop-blur-md sm:flex-row'>
+                    <div className='group relative w-full flex-1'>
+                        <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
                         <Input
                             placeholder={t('admin.tickets.categories.search_placeholder')}
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            className='pl-10 h-11 w-full'
+                            className='h-11 w-full pl-10'
                         />
                     </div>
                 </div>
@@ -269,7 +269,7 @@ export default function TicketCategoriesPage() {
                                 icon={({ className }: { className?: string }) => (
                                     <div
                                         className={cn(
-                                            'flex items-center justify-center rounded-xl bg-primary/10 overflow-hidden relative',
+                                            'bg-primary/10 relative flex items-center justify-center overflow-hidden rounded-xl',
                                             className,
                                         )}
                                     >
@@ -281,7 +281,7 @@ export default function TicketCategoriesPage() {
                                                 className='object-cover'
                                             />
                                         ) : (
-                                            <div className='h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary'>
+                                            <div className='bg-primary/10 text-primary flex h-8 w-8 items-center justify-center rounded-lg'>
                                                 <TicketIcon className='h-4 w-4' />
                                             </div>
                                         )}
@@ -291,7 +291,7 @@ export default function TicketCategoriesPage() {
                                 subtitle={category.support_email}
                                 style={{ borderLeft: `4px solid ${category.color}` }}
                                 description={
-                                    <div className='flex items-center gap-4 text-sm text-muted-foreground'>
+                                    <div className='text-muted-foreground flex items-center gap-4 text-sm'>
                                         <span>
                                             {t('admin.tickets.categories.form.open_hours')}:{' '}
                                             {category.open_hours || 'N/A'}
@@ -338,8 +338,8 @@ export default function TicketCategoriesPage() {
                                 <Input type='file' accept='image/*' onChange={handleFileSelect} />
                                 {iconPreview && (
                                     <div className='mt-2'>
-                                        <Label className='text-xs text-muted-foreground'>{t('common.preview')}</Label>
-                                        <div className='relative h-16 w-16 rounded-lg overflow-hidden border border-border/10'>
+                                        <Label className='text-muted-foreground text-xs'>{t('common.preview')}</Label>
+                                        <div className='border-border/10 relative h-16 w-16 overflow-hidden rounded-lg border'>
                                             <Image
                                                 src={iconPreview}
                                                 alt={t('common.preview')}
@@ -357,7 +357,7 @@ export default function TicketCategoriesPage() {
                                         type='color'
                                         value={formData.color}
                                         onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                                        className='w-12 p-1 h-11'
+                                        className='h-11 w-12 p-1'
                                     />
                                     <Input
                                         value={formData.color}
@@ -412,8 +412,8 @@ export default function TicketCategoriesPage() {
                                 <Input type='file' accept='image/*' onChange={handleFileSelect} />
                                 {iconPreview && (
                                     <div className='mt-2'>
-                                        <Label className='text-xs text-muted-foreground'>{t('common.preview')}</Label>
-                                        <div className='relative h-16 w-16 rounded-lg overflow-hidden border border-border/10'>
+                                        <Label className='text-muted-foreground text-xs'>{t('common.preview')}</Label>
+                                        <div className='border-border/10 relative h-16 w-16 overflow-hidden rounded-lg border'>
                                             <Image
                                                 src={iconPreview}
                                                 alt={t('common.preview')}
@@ -431,7 +431,7 @@ export default function TicketCategoriesPage() {
                                         type='color'
                                         value={formData.color}
                                         onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                                        className='w-12 p-1 h-11'
+                                        className='h-11 w-12 p-1'
                                     />
                                     <Input
                                         value={formData.color}
@@ -466,14 +466,14 @@ export default function TicketCategoriesPage() {
                     </div>
                 </Sheet>
 
-                <div className='grid grid-cols-1 md:grid-cols-3 gap-6 pt-10'>
+                <div className='grid grid-cols-1 gap-6 pt-10 md:grid-cols-3'>
                     <PageCard title={t('admin.tickets.categories.help.managing.title')} icon={Tags}>
-                        <p className='text-sm text-muted-foreground leading-relaxed'>
+                        <p className='text-muted-foreground text-sm leading-relaxed'>
                             {t('admin.tickets.categories.help.managing.description')}
                         </p>
                     </PageCard>
                     <PageCard title={t('admin.tickets.categories.help.emails.title')} icon={Info}>
-                        <p className='text-sm text-muted-foreground leading-relaxed'>
+                        <p className='text-muted-foreground text-sm leading-relaxed'>
                             {t('admin.tickets.categories.help.emails.description')}
                         </p>
                     </PageCard>
@@ -482,7 +482,7 @@ export default function TicketCategoriesPage() {
                         icon={HelpCircle}
                         variant='warning'
                     >
-                        <p className='text-sm text-muted-foreground leading-relaxed'>
+                        <p className='text-muted-foreground text-sm leading-relaxed'>
                             {t('admin.tickets.categories.help.icons.description')}
                         </p>
                     </PageCard>

@@ -362,8 +362,8 @@ export default function TicketViewPage() {
 
     if (loading) {
         return (
-            <div className='flex items-center justify-center min-h-[400px]'>
-                <RefreshCw className='h-8 w-8 animate-spin text-primary' />
+            <div className='flex min-h-[400px] items-center justify-center'>
+                <RefreshCw className='text-primary h-8 w-8 animate-spin' />
             </div>
         );
     }
@@ -373,24 +373,24 @@ export default function TicketViewPage() {
     if (!ticket) return null;
 
     return (
-        <div className='max-w-[1600px] mx-auto h-[calc(100vh-6rem)] flex flex-col pt-2 pb-6'>
+        <div className='mx-auto flex h-[calc(100vh-6rem)] max-w-[1600px] flex-col pt-2 pb-6'>
             <WidgetRenderer widgets={getWidgets('admin-tickets-view', 'top-of-page')} />
 
-            <div className='flex items-center justify-between mb-4 shrink-0 px-1'>
+            <div className='mb-4 flex shrink-0 items-center justify-between px-1'>
                 <div className='flex items-center gap-3'>
                     <Link href='/admin/tickets'>
-                        <Button variant='ghost' size='icon' className='rounded-full h-9 w-9'>
+                        <Button variant='ghost' size='icon' className='h-9 w-9 rounded-full'>
                             <ArrowLeft className='h-4 w-4' />
                         </Button>
                     </Link>
                     <div>
-                        <h1 className='text-xl font-bold tracking-tight line-clamp-1'>{ticket.title}</h1>
-                        <div className='flex items-center gap-2 text-xs text-muted-foreground'>
+                        <h1 className='line-clamp-1 text-xl font-bold tracking-tight'>{ticket.title}</h1>
+                        <div className='text-muted-foreground flex items-center gap-2 text-xs'>
                             <span className='font-mono'>#{ticket.id}</span>
                             <span>•</span>
                             <span>{new Date(ticket.created_at).toLocaleString()}</span>
                             <span>•</span>
-                            <span className='font-medium text-foreground'>{ticket.category?.name}</span>
+                            <span className='text-foreground font-medium'>{ticket.category?.name}</span>
                         </div>
                     </div>
                 </div>
@@ -410,11 +410,11 @@ export default function TicketViewPage() {
                             onOpenChange={setMobileDetailsOpen}
                             className='w-full sm:w-[400px]'
                         >
-                            <SheetHeader className='p-0 border-b border-border/5 pb-4 mb-0'>
+                            <SheetHeader className='border-border/5 mb-0 border-b p-0 pb-4'>
                                 <SheetTitle>{t('admin.tickets.view.info')}</SheetTitle>
                                 <SheetDescription>{t('admin.tickets.view.info')}</SheetDescription>
                             </SheetHeader>
-                            <div className='h-[calc(100vh-100px)] overflow-hidden pt-4 safe-padding-bottom'>
+                            <div className='safe-padding-bottom h-[calc(100vh-100px)] overflow-hidden pt-4'>
                                 <TicketSidebar
                                     ticket={ticket}
                                     userDetails={userDetails}
@@ -439,7 +439,7 @@ export default function TicketViewPage() {
                             onClick={() => setEditOpen(true)}
                             className='h-9 rounded-lg text-xs font-medium'
                         >
-                            <Settings className='h-3.5 w-3.5 mr-2' /> {t('admin.tickets.view.edit')}
+                            <Settings className='mr-2 h-3.5 w-3.5' /> {t('admin.tickets.view.edit')}
                         </Button>
                         {ticket.status?.id === 3 ? (
                             <Button
@@ -448,7 +448,7 @@ export default function TicketViewPage() {
                                 onClick={handleReopen}
                                 className='h-9 rounded-lg text-xs font-medium'
                             >
-                                <Unlock className='h-3.5 w-3.5 mr-2' /> {t('admin.tickets.view.reopen')}
+                                <Unlock className='mr-2 h-3.5 w-3.5' /> {t('admin.tickets.view.reopen')}
                             </Button>
                         ) : (
                             <Button
@@ -457,7 +457,7 @@ export default function TicketViewPage() {
                                 onClick={handleClose}
                                 className='h-9 rounded-lg text-xs font-medium'
                             >
-                                <Lock className='h-3.5 w-3.5 mr-2' /> {t('admin.tickets.view.close')}
+                                <Lock className='mr-2 h-3.5 w-3.5' /> {t('admin.tickets.view.close')}
                             </Button>
                         )}
                     </div>
@@ -466,23 +466,23 @@ export default function TicketViewPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-tickets-view', 'after-header')} />
 
-            <div className='flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-6'>
-                <div className='lg:col-span-8 flex flex-col bg-card rounded-2xl border border-border/50 shadow-sm overflow-hidden h-full'>
-                    <div className='flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 custom-scrollbar' ref={scrollRef}>
-                        <div className='flex gap-4 group'>
-                            <Avatar className='h-10 w-10 mt-1 ring-2 ring-border/50'>
+            <div className='grid min-h-0 flex-1 grid-cols-1 gap-6 lg:grid-cols-12'>
+                <div className='bg-card border-border/50 flex h-full flex-col overflow-hidden rounded-2xl border shadow-sm lg:col-span-8'>
+                    <div className='custom-scrollbar flex-1 space-y-6 overflow-y-auto p-4 sm:p-6' ref={scrollRef}>
+                        <div className='group flex gap-4'>
+                            <Avatar className='ring-border/50 mt-1 h-10 w-10 ring-2'>
                                 <AvatarImage src={ticket.user.avatar} />
                             </Avatar>
-                            <div className='flex-1 space-y-1 max-w-[85%]'>
+                            <div className='max-w-[85%] flex-1 space-y-1'>
                                 <div className='flex items-center gap-2'>
-                                    <span className='font-bold text-sm'>
+                                    <span className='text-sm font-bold'>
                                         {t('admin.tickets.view.original_request')}
                                     </span>
-                                    <span className='text-[10px] text-muted-foreground'>
+                                    <span className='text-muted-foreground text-[10px]'>
                                         {new Date(ticket.created_at).toLocaleString()}
                                     </span>
                                 </div>
-                                <div className='p-4 rounded-2xl rounded-tl-sm bg-muted/30 border border-border/30 text-sm leading-relaxed whitespace-pre-wrap'>
+                                <div className='bg-muted/30 border-border/30 rounded-2xl rounded-tl-sm border p-4 text-sm leading-relaxed whitespace-pre-wrap'>
                                     <ReactMarkdown>{ticket.description || ''}</ReactMarkdown>
                                 </div>
                             </div>
@@ -490,11 +490,11 @@ export default function TicketViewPage() {
 
                         {ticket.messages.length > 0 && (
                             <div className='relative flex items-center py-2'>
-                                <div className='grow border-t border-border/50'></div>
-                                <span className='shrink-0 mx-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60'>
+                                <div className='border-border/50 grow border-t'></div>
+                                <span className='text-muted-foreground mx-4 shrink-0 text-[10px] font-black tracking-widest uppercase opacity-60'>
                                     {t('admin.tickets.view.conversation')}
                                 </span>
-                                <div className='grow border-t border-border/50'></div>
+                                <div className='border-border/50 grow border-t'></div>
                             </div>
                         )}
 
@@ -505,25 +505,25 @@ export default function TicketViewPage() {
                             return (
                                 <div
                                     key={msg.id}
-                                    className={cn('flex gap-4 group', isStaff ? 'flex-row-reverse' : 'flex-row')}
+                                    className={cn('group flex gap-4', isStaff ? 'flex-row-reverse' : 'flex-row')}
                                 >
-                                    <Avatar className='h-10 w-10 mt-1 ring-2 ring-border/50 shrink-0'>
+                                    <Avatar className='ring-border/50 mt-1 h-10 w-10 shrink-0 ring-2'>
                                         <AvatarImage src={msg.user?.avatar} />
                                     </Avatar>
 
                                     <div
                                         className={cn(
-                                            'flex flex-col max-w-[85%] lg:max-w-[75%]',
+                                            'flex max-w-[85%] flex-col lg:max-w-[75%]',
                                             isStaff ? 'items-end' : 'items-start',
                                         )}
                                     >
                                         <div
                                             className={cn(
-                                                'flex items-center gap-2 px-1 mb-1',
+                                                'mb-1 flex items-center gap-2 px-1',
                                                 isStaff ? 'flex-row-reverse' : 'flex-row',
                                             )}
                                         >
-                                            <span className='font-bold text-sm text-foreground'>
+                                            <span className='text-foreground text-sm font-bold'>
                                                 {msg.user?.username ||
                                                     (isStaff
                                                         ? t('admin.tickets.view.staff')
@@ -532,7 +532,7 @@ export default function TicketViewPage() {
                                             {msg.user?.role && (
                                                 <Badge
                                                     variant='secondary'
-                                                    className='text-[9px] h-4 px-1 leading-none border-0 font-bold uppercase'
+                                                    className='h-4 border-0 px-1 text-[9px] leading-none font-bold uppercase'
                                                     style={{
                                                         backgroundColor: msg.user.role.color
                                                             ? `${msg.user.role.color}15`
@@ -543,7 +543,7 @@ export default function TicketViewPage() {
                                                     {msg.user.role.name}
                                                 </Badge>
                                             )}
-                                            <span className='text-[10px] text-muted-foreground ml-1'>
+                                            <span className='text-muted-foreground ml-1 text-[10px]'>
                                                 {new Date(msg.created_at).toLocaleTimeString([], {
                                                     hour: '2-digit',
                                                     minute: '2-digit',
@@ -553,26 +553,26 @@ export default function TicketViewPage() {
 
                                         <div
                                             className={cn(
-                                                'relative px-5 py-3 text-sm shadow-sm w-fit min-w-[140px]',
+                                                'relative w-fit min-w-[140px] px-5 py-3 text-sm shadow-sm',
                                                 isInternal
-                                                    ? 'bg-yellow-500/10 border-yellow-500/20 text-yellow-700 dark:text-yellow-400 border border-dashed rounded-xl'
+                                                    ? 'rounded-xl border border-dashed border-yellow-500/20 bg-yellow-500/10 text-yellow-700 dark:text-yellow-400'
                                                     : isStaff
-                                                      ? 'bg-primary/10 border border-primary/20 text-foreground rounded-2xl rounded-tr-sm'
-                                                      : 'bg-muted/30 text-foreground rounded-2xl rounded-tl-sm border border-border/50',
+                                                      ? 'bg-primary/10 border-primary/20 text-foreground rounded-2xl rounded-tr-sm border'
+                                                      : 'bg-muted/30 text-foreground border-border/50 rounded-2xl rounded-tl-sm border',
                                             )}
                                         >
                                             {isInternal && (
-                                                <div className='flex items-center gap-1.5 mb-2 text-[10px] font-black uppercase tracking-wider opacity-80 pb-2 border-b border-yellow-500/20'>
+                                                <div className='mb-2 flex items-center gap-1.5 border-b border-yellow-500/20 pb-2 text-[10px] font-black tracking-wider uppercase opacity-80'>
                                                     <Lock className='h-3 w-3' />
                                                     {t('admin.tickets.view.internal_note')}
                                                 </div>
                                             )}
 
-                                            <div className='prose prose-sm max-w-none wrap-break-word leading-relaxed dark:prose-invert'>
+                                            <div className='prose prose-sm dark:prose-invert max-w-none leading-relaxed wrap-break-word'>
                                                 <ReactMarkdown
                                                     components={{
                                                         p: ({ children }) => (
-                                                            <p className='mb-1 last:mb-0 whitespace-pre-wrap'>
+                                                            <p className='mb-1 whitespace-pre-wrap last:mb-0'>
                                                                 {children}
                                                             </p>
                                                         ),
@@ -587,12 +587,12 @@ export default function TicketViewPage() {
                                                             />
                                                         ),
                                                         ul: ({ children }) => (
-                                                            <ul className='list-disc pl-4 mb-2 space-y-1'>
+                                                            <ul className='mb-2 list-disc space-y-1 pl-4'>
                                                                 {children}
                                                             </ul>
                                                         ),
                                                         ol: ({ children }) => (
-                                                            <ol className='list-decimal pl-4 mb-2 space-y-1'>
+                                                            <ol className='mb-2 list-decimal space-y-1 pl-4'>
                                                                 {children}
                                                             </ol>
                                                         ),
@@ -607,22 +607,22 @@ export default function TicketViewPage() {
                                             </div>
 
                                             {Boolean(msg.attachments?.length) && (
-                                                <div className='flex flex-wrap justify-end gap-2 mt-2 pt-2 border-t border-border/10'>
+                                                <div className='border-border/10 mt-2 flex flex-wrap justify-end gap-2 border-t pt-2'>
                                                     {msg.attachments!.map((att) => (
                                                         <a
                                                             key={att.id}
                                                             href={att.url}
                                                             target='_blank'
                                                             rel='noopener noreferrer'
-                                                            className='flex items-center gap-2 px-3 py-1.5 rounded-lg bg-background/50 border border-border/10 text-xs hover:border-primary/50 transition-colors shadow-sm'
+                                                            className='bg-background/50 border-border/10 hover:border-primary/50 flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs shadow-sm transition-colors'
                                                         >
-                                                            <div className='p-1 rounded bg-muted text-muted-foreground'>
+                                                            <div className='bg-muted text-muted-foreground rounded p-1'>
                                                                 <Paperclip className='h-3 w-3' />
                                                             </div>
-                                                            <span className='truncate max-w-[100px] font-medium'>
+                                                            <span className='max-w-[100px] truncate font-medium'>
                                                                 {att.file_name}
                                                             </span>
-                                                            <span className='text-[9px] text-muted-foreground opacity-70'>
+                                                            <span className='text-muted-foreground text-[9px] opacity-70'>
                                                                 {formatBytes(att.file_size)}
                                                             </span>
                                                         </a>
@@ -637,21 +637,21 @@ export default function TicketViewPage() {
                         <div ref={scrollRef} />
                     </div>
 
-                    <div className='p-4 bg-background/50 backdrop-blur-sm border-t border-border/50'>
+                    <div className='bg-background/50 border-border/50 border-t p-4 backdrop-blur-sm'>
                         <form onSubmit={handleReply} className='flex flex-col gap-2'>
                             {files.length > 0 && (
-                                <div className='flex flex-wrap gap-2 mb-2 p-2 bg-muted/30 rounded-lg'>
+                                <div className='bg-muted/30 mb-2 flex flex-wrap gap-2 rounded-lg p-2'>
                                     {files.map((file, idx) => (
                                         <Badge
                                             key={idx}
                                             variant='secondary'
-                                            className='pl-2 pr-1 py-1 flex items-center gap-1 bg-background border border-border'
+                                            className='bg-background border-border flex items-center gap-1 border py-1 pr-1 pl-2'
                                         >
-                                            <span className='truncate max-w-[150px]'>{file.name}</span>
+                                            <span className='max-w-[150px] truncate'>{file.name}</span>
                                             <button
                                                 type='button'
                                                 onClick={() => removeFile(idx)}
-                                                className='hover:bg-destructive/10 hover:text-destructive rounded-full p-0.5 ml-1 transition-colors'
+                                                className='hover:bg-destructive/10 hover:text-destructive ml-1 rounded-full p-0.5 transition-colors'
                                             >
                                                 <X className='h-3 w-3' />
                                             </button>
@@ -660,13 +660,13 @@ export default function TicketViewPage() {
                                 </div>
                             )}
 
-                            <div className='flex gap-2 items-end'>
+                            <div className='flex items-end gap-2'>
                                 <Button
                                     type='button'
                                     variant='ghost'
                                     size='icon'
                                     className={cn(
-                                        'shrink-0 h-[50px] w-[50px] rounded-2xl text-muted-foreground hover:bg-muted font-normal',
+                                        'text-muted-foreground hover:bg-muted h-[50px] w-[50px] shrink-0 rounded-2xl font-normal',
                                         isDragging && 'bg-primary/10 text-primary',
                                     )}
                                     onClick={() => fileInputRef.current?.click()}
@@ -688,7 +688,7 @@ export default function TicketViewPage() {
                                     <Paperclip className='h-5 w-5' />
                                 </Button>
 
-                                <div className='flex-1 bg-accent/20 border border-border/10 rounded-2xl overflow-hidden focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary/50 transition-all shadow-sm'>
+                                <div className='bg-accent/20 border-border/10 focus-within:ring-primary/20 focus-within:border-primary/50 flex-1 overflow-hidden rounded-2xl border shadow-sm transition-all focus-within:ring-2'>
                                     <Textarea
                                         value={reply}
                                         onChange={(e) => setReply(e.target.value)}
@@ -699,7 +699,7 @@ export default function TicketViewPage() {
                                             }
                                         }}
                                         placeholder={t('admin.tickets.view.reply_placeholder')}
-                                        className='min-h-[50px] max-h-[200px] border-0 bg-transparent resize-none p-3.5 md:text-sm text-base focus-visible:ring-0 placeholder:text-muted-foreground/50'
+                                        className='placeholder:text-muted-foreground/50 max-h-[200px] min-h-[50px] resize-none border-0 bg-transparent p-3.5 text-base focus-visible:ring-0 md:text-sm'
                                         rows={1}
                                         onInput={(e) => {
                                             const target = e.target as HTMLTextAreaElement;
@@ -707,25 +707,25 @@ export default function TicketViewPage() {
                                             target.style.height = `${Math.min(target.scrollHeight, 200)}px`;
                                         }}
                                     />
-                                    <div className='h-10 flex items-center justify-between px-2 bg-accent/30 border-t border-border/5'>
+                                    <div className='bg-accent/30 border-border/5 flex h-10 items-center justify-between border-t px-2'>
                                         <div className='flex items-center gap-2 px-2'>
                                             <Checkbox
                                                 id='internal'
                                                 checked={isInternal}
                                                 onCheckedChange={(c) => setIsInternal(!!c)}
-                                                className='h-4 w-4 border-muted-foreground/40 data-[state=checked]:bg-yellow-500 data-[state=checked]:border-yellow-500'
+                                                className='border-muted-foreground/40 h-4 w-4 data-[state=checked]:border-yellow-500 data-[state=checked]:bg-yellow-500'
                                             />
                                             <Label
                                                 htmlFor='internal'
                                                 className={cn(
-                                                    'text-xs font-bold uppercase transition-colors select-none cursor-pointer',
+                                                    'cursor-pointer text-xs font-bold uppercase transition-colors select-none',
                                                     isInternal ? 'text-yellow-500' : 'text-muted-foreground/60',
                                                 )}
                                             >
                                                 {t('admin.tickets.view.internal_mode')}
                                             </Label>
                                         </div>
-                                        <span className='text-[10px] text-muted-foreground/40 font-mono hidden sm:inline-block'>
+                                        <span className='text-muted-foreground/40 hidden font-mono text-[10px] sm:inline-block'>
                                             {t('admin.tickets.view.markdown_supported')}
                                         </span>
                                     </div>
@@ -734,16 +734,16 @@ export default function TicketViewPage() {
                                     type='submit'
                                     disabled={isSubmitting || (!reply.trim() && files.length === 0)}
                                     className={cn(
-                                        'rounded-xl h-10 px-6 font-bold uppercase tracking-wide transition-all ',
+                                        'h-10 rounded-xl px-6 font-bold tracking-wide uppercase transition-all',
                                         isInternal
                                             ? 'bg-yellow-500 hover:bg-yellow-600'
-                                            : 'bg-linear-to-r from-primary to-primary/90 hover:brightness-110',
+                                            : 'from-primary to-primary/90 bg-linear-to-r hover:brightness-110',
                                     )}
                                 >
                                     {isSubmitting ? (
-                                        <RefreshCw className='h-4 w-4 animate-spin mr-2' />
+                                        <RefreshCw className='mr-2 h-4 w-4 animate-spin' />
                                     ) : (
-                                        <Send className='h-4 w-4 mr-2' />
+                                        <Send className='mr-2 h-4 w-4' />
                                     )}
                                     {isInternal
                                         ? t('admin.tickets.view.send_internal')
@@ -764,7 +764,7 @@ export default function TicketViewPage() {
                     <WidgetRenderer widgets={getWidgets('admin-tickets-view', 'after-messages')} />
                 </div>
 
-                <div className='hidden lg:block lg:col-span-4 h-full overflow-hidden'>
+                <div className='hidden h-full overflow-hidden lg:col-span-4 lg:block'>
                     <TicketSidebar
                         ticket={ticket}
                         userDetails={userDetails}
@@ -787,7 +787,7 @@ export default function TicketViewPage() {
                     <SheetDescription>{t('admin.tickets.view.edit_description')}</SheetDescription>
                 </SheetHeader>
 
-                <form onSubmit={handleUpdate} className='space-y-6 mt-6'>
+                <form onSubmit={handleUpdate} className='mt-6 space-y-6'>
                     <div className='space-y-2'>
                         <Label>{t('admin.tickets.table.title')}</Label>
                         <Input
@@ -810,7 +810,7 @@ export default function TicketViewPage() {
                         <select
                             value={editForm.category_id}
                             onChange={(e) => setEditForm({ ...editForm, category_id: e.target.value })}
-                            className='w-full h-10 bg-transparent border border-input rounded-md px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
+                            className='border-input ring-offset-background placeholder:text-muted-foreground focus:ring-ring h-10 w-full rounded-md border bg-transparent px-3 py-2 text-sm focus:ring-2 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50'
                         >
                             {categories.map((c) => (
                                 <option key={c.id} value={c.id.toString()}>
@@ -825,7 +825,7 @@ export default function TicketViewPage() {
                         <select
                             value={editForm.priority_id}
                             onChange={(e) => setEditForm({ ...editForm, priority_id: e.target.value })}
-                            className='w-full h-10 bg-transparent border border-input rounded-md px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
+                            className='border-input ring-offset-background placeholder:text-muted-foreground focus:ring-ring h-10 w-full rounded-md border bg-transparent px-3 py-2 text-sm focus:ring-2 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50'
                         >
                             {priorities.map((p) => (
                                 <option key={p.id} value={p.id.toString()}>
@@ -840,7 +840,7 @@ export default function TicketViewPage() {
                         <select
                             value={editForm.status_id}
                             onChange={(e) => setEditForm({ ...editForm, status_id: e.target.value })}
-                            className='w-full h-10 bg-transparent border border-input rounded-md px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
+                            className='border-input ring-offset-background placeholder:text-muted-foreground focus:ring-ring h-10 w-full rounded-md border bg-transparent px-3 py-2 text-sm focus:ring-2 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50'
                         >
                             {statuses.map((s) => (
                                 <option key={s.id} value={s.id.toString()}>
@@ -851,7 +851,7 @@ export default function TicketViewPage() {
                     </div>
 
                     <div className='pt-4 pb-2'>
-                        <Button type='submit' className='w-full h-12 text-lg font-black uppercase tracking-tight '>
+                        <Button type='submit' className='h-12 w-full text-lg font-black tracking-tight uppercase'>
                             {t('common.save')}
                         </Button>
                     </div>
@@ -864,7 +864,7 @@ export default function TicketViewPage() {
                     setMailPreviewOpen(v);
                     if (!v) setMailPreview(null);
                 }}
-                className='sm:max-w-xl w-full'
+                className='w-full sm:max-w-xl'
             >
                 <div>
                     <SheetHeader>
@@ -873,10 +873,10 @@ export default function TicketViewPage() {
                             {mailPreview?.created_at && new Date(mailPreview.created_at).toLocaleString()}
                         </SheetDescription>
                     </SheetHeader>
-                    <div className='mt-6 border rounded-xl p-0 overflow-hidden h-[calc(100vh-140px)]'>
+                    <div className='mt-6 h-[calc(100vh-140px)] overflow-hidden rounded-xl border p-0'>
                         <iframe
                             srcDoc={mailPreview?.body || 'No content'}
-                            className='w-full h-full bg-white text-black'
+                            className='h-full w-full bg-white text-black'
                             title='Email Body'
                         />
                     </div>

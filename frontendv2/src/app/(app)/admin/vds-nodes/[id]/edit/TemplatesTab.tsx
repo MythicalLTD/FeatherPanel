@@ -193,7 +193,7 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
                         <RefreshCw className='h-4 w-4' />
                     </Button>
                     <Button size='sm' onClick={() => setCreateOpen(true)}>
-                        <Plus className='h-4 w-4 mr-2' />
+                        <Plus className='mr-2 h-4 w-4' />
                         {t('admin.vdsNodes.templates.add')}
                     </Button>
                 </TabToolbar>
@@ -207,7 +207,7 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
                         description={t('admin.vdsNodes.templates.empty_desc')}
                         action={
                             <Button size='sm' onClick={() => setCreateOpen(true)}>
-                                <Plus className='h-4 w-4 mr-2' />
+                                <Plus className='mr-2 h-4 w-4' />
                                 {t('admin.vdsNodes.templates.add')}
                             </Button>
                         }
@@ -216,29 +216,29 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
                     <TabTableShell>
                         <table className='w-full text-sm'>
                             <thead>
-                                <tr className='border-b border-border/50 bg-muted/20'>
-                                    <th className='text-left p-3 font-medium'>
+                                <tr className='border-border/50 bg-muted/20 border-b'>
+                                    <th className='p-3 text-left font-medium'>
                                         {t('admin.vdsNodes.templates.col_name')}
                                     </th>
-                                    <th className='text-left p-3 font-medium'>
+                                    <th className='p-3 text-left font-medium'>
                                         {t('admin.vdsNodes.templates.col_vmid')}
                                     </th>
-                                    <th className='text-left p-3 font-medium'>
+                                    <th className='p-3 text-left font-medium'>
                                         {t('admin.vdsNodes.templates.col_type')}
                                     </th>
-                                    <th className='text-right p-3 font-medium'>
+                                    <th className='p-3 text-right font-medium'>
                                         {t('admin.vdsNodes.templates.col_actions')}
                                     </th>
                                 </tr>
                             </thead>
-                            <tbody className='divide-y divide-border/50'>
+                            <tbody className='divide-border/50 divide-y'>
                                 {templates.map((tpl) => (
                                     <tr key={tpl.id} className='hover:bg-muted/20 transition-colors'>
                                         <td className='p-3 font-medium'>{tpl.name}</td>
-                                        <td className='p-3 font-mono text-muted-foreground'>
+                                        <td className='text-muted-foreground p-3 font-mono'>
                                             {tpl.template_file ?? '—'}
                                         </td>
-                                        <td className='p-3 text-muted-foreground'>
+                                        <td className='text-muted-foreground p-3'>
                                             {tpl.guest_type === 'qemu' ? 'QEMU/KVM' : 'LXC'}
                                         </td>
                                         <td className='p-3 text-right'>
@@ -282,17 +282,17 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
             </PageCard>
 
             <Tabs defaultValue='qemu'>
-                <TabsList className='w-full grid grid-cols-2 rounded-2xl border border-border/50 bg-card/30 p-2 mb-6 h-auto gap-2'>
+                <TabsList className='border-border/50 bg-card/30 mb-6 grid h-auto w-full grid-cols-2 gap-2 rounded-2xl border p-2'>
                     <TabsTrigger
                         value='qemu'
-                        className='flex items-center gap-2 rounded-xl border border-transparent py-3 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:border-primary/10'
+                        className='data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:border-primary/10 flex items-center gap-2 rounded-xl border border-transparent py-3'
                     >
                         <Monitor className='h-4 w-4' />
                         QEMU/KVM Tutorial
                     </TabsTrigger>
                     <TabsTrigger
                         value='lxc'
-                        className='flex items-center gap-2 rounded-xl border border-transparent py-3 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:border-primary/10'
+                        className='data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:border-primary/10 flex items-center gap-2 rounded-xl border border-transparent py-3'
                     >
                         <Cpu className='h-4 w-4' />
                         LXC Tutorial
@@ -310,7 +310,7 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
                 <SheetContent side='right' className='w-full max-w-md'>
                     <SheetHeader>
                         <SheetTitle>{t('admin.vdsNodes.templates.create_title')}</SheetTitle>
-                        <p className='text-sm text-muted-foreground'>
+                        <p className='text-muted-foreground text-sm'>
                             {t('admin.vdsNodes.templates.create_desc_select') ||
                                 'Select a VM from Proxmox — name and VMID will be filled. Use a VM you converted to template in Proxmox.'}
                         </p>
@@ -321,12 +321,12 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
                                 {t('admin.vdsNodes.templates.field_select_vm') || 'Select VM from Proxmox'}
                             </Label>
                             {loadingProxmoxVms ? (
-                                <p className='text-sm text-muted-foreground flex items-center gap-2 py-2'>
+                                <p className='text-muted-foreground flex items-center gap-2 py-2 text-sm'>
                                     <Loader2 className='h-4 w-4 animate-spin' />
                                     {t('admin.vdsNodes.templates.loading_vms') || 'Loading VMs…'}
                                 </p>
                             ) : proxmoxVmsError ? (
-                                <p className='text-sm text-destructive'>{proxmoxVmsError}</p>
+                                <p className='text-destructive text-sm'>{proxmoxVmsError}</p>
                             ) : (
                                 <Select
                                     value={createForm.template_file || ''}
@@ -343,7 +343,7 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
                                 </Select>
                             )}
                             {proxmoxVms.length === 0 && !loadingProxmoxVms && !proxmoxVmsError && (
-                                <p className='text-xs text-muted-foreground mt-1'>
+                                <p className='text-muted-foreground mt-1 text-xs'>
                                     {t('admin.vdsNodes.templates.no_vms') ||
                                         'No VMs found. Create and convert to template in Proxmox first.'}
                                 </p>
@@ -356,7 +356,7 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
                                 onChange={(e) => setCreateForm((f) => ({ ...f, name: e.target.value }))}
                                 placeholder={t('admin.vdsNodes.templates.field_name_placeholder')}
                             />
-                            <p className='text-xs text-muted-foreground mt-1'>
+                            <p className='text-muted-foreground mt-1 text-xs'>
                                 {t('admin.vdsNodes.templates.field_name_help') ||
                                     'Editable; used as the template name in the panel.'}
                             </p>
@@ -374,7 +374,7 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
                             </Select>
                         </div>
                         {createForm.guest_type === 'lxc' && (
-                            <Alert variant='warning' className='py-2 px-3'>
+                            <Alert variant='warning' className='px-3 py-2'>
                                 <ShieldAlert className='h-4 w-4' />
                                 <AlertTitle className='text-xs'>Security Recommendation</AlertTitle>
                                 <AlertDescription className='text-[10px] leading-tight'>
@@ -407,7 +407,7 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
                                         'e.g. P@ssw0rd (shown to users after deploy)'
                                     }
                                 />
-                                <p className='text-xs text-muted-foreground mt-1'>
+                                <p className='text-muted-foreground mt-1 text-xs'>
                                     {t('admin.vdsNodes.templates.field_lxc_root_password_help') ||
                                         'Optional. Informational only — FeatherPanel does not change the root password on the container; this is just shown to users as the default password for this template.'}
                                 </p>

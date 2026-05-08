@@ -89,20 +89,20 @@ export function ImagePreviewDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className='sm:max-w-4xl max-h-[90vh] overflow-hidden flex flex-col p-0 border-border gap-0'>
-                <DialogHeader className='p-4 flex flex-row items-center justify-between space-y-0 text-left'>
+            <DialogContent className='border-border flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-4xl'>
+                <DialogHeader className='flex flex-row items-center justify-between space-y-0 p-4 text-left'>
                     <div className='flex flex-col gap-1'>
-                        <DialogTitle className='text-base font-semibold leading-none tracking-tight text-primary'>
+                        <DialogTitle className='text-primary text-base leading-none font-semibold tracking-tight'>
                             {file.name}
                         </DialogTitle>
-                        <p className='text-sm text-muted-foreground'>{formatFileSize(file.size)}</p>
+                        <p className='text-muted-foreground text-sm'>{formatFileSize(file.size)}</p>
                     </div>
                     <div className='flex items-center gap-2'>
                         <Button
                             variant='ghost'
                             size='icon'
                             onClick={() => onDownload(file.name)}
-                            className='h-8 w-8 text-muted-foreground hover:text-foreground'
+                            className='text-muted-foreground hover:text-foreground h-8 w-8'
                             title={t('files.dialogs.preview.download')}
                         >
                             <Download className='h-4 w-4' />
@@ -112,7 +112,7 @@ export function ImagePreviewDialog({
                             variant='ghost'
                             size='icon'
                             onClick={() => onOpenChange(false)}
-                            className='h-8 w-8 text-muted-foreground hover:text-foreground'
+                            className='text-muted-foreground hover:text-foreground h-8 w-8'
                         >
                             <X className='h-4 w-4' />
                             <span className='sr-only'>{t('files.dialogs.preview.close')}</span>
@@ -120,34 +120,34 @@ export function ImagePreviewDialog({
                     </div>
                 </DialogHeader>
 
-                <div className='flex-1 overflow-auto p-8 flex items-center justify-center relative min-h-[400px]'>
+                <div className='relative flex min-h-[400px] flex-1 items-center justify-center overflow-auto p-8'>
                     {loading && (
                         <div className='flex flex-col items-center gap-3'>
-                            <Loader2 className='h-8 w-8 animate-spin text-primary opacity-50' />
-                            <p className='text-xs text-muted-foreground font-medium'>
+                            <Loader2 className='text-primary h-8 w-8 animate-spin opacity-50' />
+                            <p className='text-muted-foreground text-xs font-medium'>
                                 {t('files.dialogs.preview.loading')}
                             </p>
                         </div>
                     )}
 
                     {error && (
-                        <div className='flex flex-col items-center gap-3 text-center px-4'>
-                            <div className='h-12 w-12 rounded-full bg-red-500/10 flex items-center justify-center'>
+                        <div className='flex flex-col items-center gap-3 px-4 text-center'>
+                            <div className='flex h-12 w-12 items-center justify-center rounded-full bg-red-500/10'>
                                 <AlertCircle className='h-6 w-6 text-red-500' />
                             </div>
-                            <p className='text-sm text-red-400 font-medium max-w-xs'>{error}</p>
+                            <p className='max-w-xs text-sm font-medium text-red-400'>{error}</p>
                         </div>
                     )}
 
                     {!loading && !error && blobUrl && (
-                        <div className='relative group max-h-full animate-in zoom-in-95 duration-500'>
+                        <div className='group animate-in zoom-in-95 relative max-h-full duration-500'>
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                                 src={blobUrl}
                                 alt={file.name}
-                                className='max-w-full max-h-[70vh] object-contain rounded-lg transition-transform group-hover:scale-[1.02] duration-500'
+                                className='max-h-[70vh] max-w-full rounded-lg object-contain transition-transform duration-500 group-hover:scale-[1.02]'
                             />
-                            <div className='absolute inset-0 rounded-lg ring-1 ring-white/10 pointer-events-none' />
+                            <div className='pointer-events-none absolute inset-0 rounded-lg ring-1 ring-white/10' />
                         </div>
                     )}
                 </div>

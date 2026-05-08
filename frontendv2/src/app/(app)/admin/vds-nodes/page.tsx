@@ -269,7 +269,7 @@ export default function VdsNodesPage() {
                             <RefreshCw className='h-4 w-4' />
                         </Button>
                         <Button onClick={() => router.push('/admin/vds-nodes/create')}>
-                            <Server className='h-4 w-4 mr-2' />
+                            <Server className='mr-2 h-4 w-4' />
                             {t('admin.vdsNodes.form.create_short')}
                         </Button>
                     </div>
@@ -278,14 +278,14 @@ export default function VdsNodesPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-vm-nodes', 'after-header')} />
 
-            <div className='flex flex-col sm:flex-row gap-4 items-center bg-card/40 backdrop-blur-md p-4 rounded-2xl shadow-sm'>
-                <div className='relative flex-1 group w-full'>
-                    <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
+            <div className='bg-card/40 flex flex-col items-center gap-4 rounded-2xl p-4 shadow-sm backdrop-blur-md sm:flex-row'>
+                <div className='group relative w-full flex-1'>
+                    <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
                     <Input
                         placeholder={t('admin.vdsNodes.search_placeholder')}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className='pl-10 h-11 w-full'
+                        className='h-11 w-full pl-10'
                     />
                 </div>
             </div>
@@ -293,7 +293,7 @@ export default function VdsNodesPage() {
             <WidgetRenderer widgets={getWidgets('admin-vm-nodes', 'before-list')} />
 
             {pagination.totalPages > 1 && !loading && (
-                <div className='flex items-center justify-between gap-4 py-3 px-4 rounded-xl border border-border bg-card/50 mb-4'>
+                <div className='border-border bg-card/50 mb-4 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
                     <Button
                         variant='outline'
                         size='sm'
@@ -356,7 +356,7 @@ export default function VdsNodesPage() {
                                 icon={Server}
                                 badges={badges}
                                 description={
-                                    <div className='text-sm text-muted-foreground mt-1 line-clamp-1'>
+                                    <div className='text-muted-foreground mt-1 line-clamp-1 text-sm'>
                                         {node.description || t('common.nA')}
                                     </div>
                                 }
@@ -417,7 +417,7 @@ export default function VdsNodesPage() {
             )}
 
             {pagination.totalPages > 1 && (
-                <div className='flex items-center justify-center gap-2 mt-8'>
+                <div className='mt-8 flex items-center justify-center gap-2'>
                     <Button
                         variant='outline'
                         size='icon'
@@ -440,28 +440,28 @@ export default function VdsNodesPage() {
                 </div>
             )}
 
-            <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
+            <div className='grid grid-cols-1 gap-6 md:grid-cols-3'>
                 <PageCard title={t('admin.vdsNodes.help.what.title')} icon={Server}>
-                    <p className='text-sm text-muted-foreground leading-relaxed'>
+                    <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.vdsNodes.help.what.description')}
                     </p>
                 </PageCard>
                 <PageCard title={t('admin.vdsNodes.help.utility.title')} icon={Network}>
-                    <ul className='text-sm text-muted-foreground leading-relaxed list-disc list-inside space-y-1'>
+                    <ul className='text-muted-foreground list-inside list-disc space-y-1 text-sm leading-relaxed'>
                         <li>{t('admin.vdsNodes.help.utility.connect')}</li>
                         <li>{t('admin.vdsNodes.help.utility.monitor')}</li>
                         <li>{t('admin.vdsNodes.help.utility.mapLocations')}</li>
                     </ul>
                 </PageCard>
                 <PageCard title={t('admin.vdsNodes.help.locations.title')} icon={MapPin}>
-                    <p className='text-sm text-muted-foreground leading-relaxed'>
+                    <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.vdsNodes.help.locations.description')}
                     </p>
                 </PageCard>
             </div>
 
             <PageCard title={t('admin.vdsNodes.help.proxmox.title')} icon={Shield} className='mt-6'>
-                <div className='text-sm text-muted-foreground space-y-4'>
+                <div className='text-muted-foreground space-y-4 text-sm'>
                     <p>{t('admin.vdsNodes.help.proxmox.p1')}</p>
                     <p>{t('admin.vdsNodes.help.proxmox.p2')}</p>
                 </div>

@@ -80,32 +80,32 @@ export default function LogoutPage() {
         <div className='flex flex-col items-center justify-center gap-6'>
             <div className='flex flex-col items-center gap-4 text-center'>
                 <div className='relative'>
-                    <div className='relative bg-primary/10 rounded-full p-4'>
-                        <LogOut className='size-12 text-primary' />
+                    <div className='bg-primary/10 relative rounded-full p-4'>
+                        <LogOut className='text-primary size-12' />
                     </div>
                 </div>
 
                 <div className='space-y-2'>
-                    <h1 className='text-2xl font-bold text-foreground'>{t('auth.logout.title')}</h1>
+                    <h1 className='text-foreground text-2xl font-bold'>{t('auth.logout.title')}</h1>
                     <p className='text-muted-foreground max-w-sm'>{t('auth.logout.subtitle')}</p>
                 </div>
 
-                <div className='flex items-center gap-2 mt-4'>
+                <div className='mt-4 flex items-center gap-2'>
                     <div className='flex space-x-1'>
                         {[1, 2, 3].map((i) => (
                             <div
                                 key={i}
-                                className='w-2 h-2 bg-primary rounded-full animate-bounce'
+                                className='bg-primary h-2 w-2 animate-bounce rounded-full'
                                 style={{ animationDelay: `${(i - 1) * 0.1}s` }}
                             />
                         ))}
                     </div>
-                    <span className='text-sm text-muted-foreground ml-2'>{t('auth.logout.cleaning_up')}</span>
+                    <span className='text-muted-foreground ml-2 text-sm'>{t('auth.logout.cleaning_up')}</span>
                 </div>
             </div>
 
             <div className='w-full max-w-xs'>
-                <div className='w-full bg-muted rounded-full h-1.5'>
+                <div className='bg-muted h-1.5 w-full rounded-full'>
                     <div
                         className='bg-primary h-1.5 rounded-full transition-all duration-1000 ease-out'
                         style={{ width: `${Math.min(logoutProgress, 100)}%` }}
@@ -114,8 +114,8 @@ export default function LogoutPage() {
             </div>
 
             {showManualRedirect && (
-                <div className='text-center animate-fade-in'>
-                    <p className='text-sm text-muted-foreground mb-3'>{t('auth.logout.taking_too_long')}</p>
+                <div className='animate-fade-in text-center'>
+                    <p className='text-muted-foreground mb-3 text-sm'>{t('auth.logout.taking_too_long')}</p>
                     <Button variant='outline' size='sm' onClick={manualRedirect}>
                         {t('auth.logout.continue_to_login')}
                     </Button>

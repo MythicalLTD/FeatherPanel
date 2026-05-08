@@ -166,7 +166,7 @@ export default function CreateSpellPage() {
                 actions={
                     <div className='flex items-center gap-2'>
                         <Button variant='outline' onClick={() => router.push('/admin/spells')}>
-                            <ArrowLeft className='h-4 w-4 mr-2' />
+                            <ArrowLeft className='mr-2 h-4 w-4' />
                             Back
                         </Button>
                         <Button onClick={handleCreate} loading={saving}>
@@ -245,11 +245,11 @@ export default function CreateSpellPage() {
                                 />
                                 {form.banner && (
                                     <div className='mt-2'>
-                                        <div className='text-sm text-muted-foreground mb-1'>
+                                        <div className='text-muted-foreground mb-1 text-sm'>
                                             {t('admin.spells.form.banner_preview')}
                                         </div>
                                         <div
-                                            className='w-full h-24 rounded-lg border border-border bg-cover bg-center bg-no-repeat'
+                                            className='border-border h-24 w-full rounded-lg border bg-cover bg-center bg-no-repeat'
                                             style={{ backgroundImage: `url(${form.banner})` }}
                                         />
                                     </div>
@@ -290,7 +290,7 @@ export default function CreateSpellPage() {
                                         </div>
                                     ))}
                                     <Button type='button' size='sm' variant='outline' onClick={addDockerImage}>
-                                        <Plus className='h-4 w-4 mr-2' />
+                                        <Plus className='mr-2 h-4 w-4' />
                                         {t('admin.spells.form.add_docker_image')}
                                     </Button>
                                 </div>
@@ -321,7 +321,7 @@ export default function CreateSpellPage() {
                                         setForm({ ...form, force_outgoing_ip: checked as boolean })
                                     }
                                 />
-                                <label htmlFor='force-ip' className='text-sm font-medium cursor-pointer'>
+                                <label htmlFor='force-ip' className='cursor-pointer text-sm font-medium'>
                                     {t('admin.spells.form.force_outgoing_ip')}
                                 </label>
                             </div>
@@ -353,7 +353,7 @@ export default function CreateSpellPage() {
                                     </div>
                                 ))}
                                 <Button type='button' size='sm' variant='outline' onClick={addFeature}>
-                                    <Plus className='h-4 w-4 mr-2' />
+                                    <Plus className='mr-2 h-4 w-4' />
                                     {t('admin.spells.form.add_feature')}
                                 </Button>
                             </div>
@@ -438,7 +438,7 @@ export default function CreateSpellPage() {
                                     <option value='true'>{t('admin.spells.form.privileged')}</option>
                                     <option value='false'>{t('admin.spells.form.non_privileged')}</option>
                                 </Select>
-                                <p className='text-xs text-muted-foreground'>
+                                <p className='text-muted-foreground text-xs'>
                                     {t('admin.spells.form.script_privilege_help')}
                                 </p>
                             </div>

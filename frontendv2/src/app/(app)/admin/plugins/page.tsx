@@ -568,24 +568,24 @@ export default function PluginsPage() {
                 description={t('admin.plugins.description')}
                 icon={Puzzle}
                 actions={
-                    <div className='flex gap-2 flex-wrap'>
+                    <div className='flex flex-wrap gap-2'>
                         <Button variant='outline' onClick={fetchPlugins} disabled={loading}>
-                            <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                            <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
                             {t('admin.plugins.actions.refresh')}
                         </Button>
                         <Button variant='outline' onClick={checkAllUpdates} disabled={updateCheckLoading}>
-                            <RefreshCw className={`w-4 h-4 mr-2 ${updateCheckLoading ? 'animate-spin' : ''}`} />
+                            <RefreshCw className={`mr-2 h-4 w-4 ${updateCheckLoading ? 'animate-spin' : ''}`} />
                             {t('admin.plugins.actions.check_updates')}
                         </Button>
                         <Button variant='outline' asChild>
                             <label className='cursor-pointer'>
-                                <Upload className='w-4 h-4 mr-2' />
+                                <Upload className='mr-2 h-4 w-4' />
                                 {t('admin.plugins.actions.upload')}
                                 <input type='file' accept='.fpa' className='hidden' onChange={onUploadPlugin} />
                             </label>
                         </Button>
                         <Button onClick={() => setConfirmUrlOpen(true)}>
-                            <Plus className='w-4 h-4 mr-2' />
+                            <Plus className='mr-2 h-4 w-4' />
                             {t('admin.plugins.actions.install_url')}
                         </Button>
                     </div>
@@ -597,20 +597,20 @@ export default function PluginsPage() {
             {pluginsWithUpdates.length > 0 && (
                 <div className='rounded-md border border-blue-500/30 bg-blue-500/10 p-4 text-blue-700 dark:text-blue-400'>
                     <div className='flex items-start gap-3'>
-                        <RefreshCw className='h-5 w-5 shrink-0 mt-0.5' />
+                        <RefreshCw className='mt-0.5 h-5 w-5 shrink-0' />
                         <div className='flex-1'>
-                            <div className='font-semibold mb-2'>{t('admin.plugins.banners.updates.title')}</div>
-                            <p className='text-sm mb-2'>{t('admin.plugins.banners.updates.description')}</p>
-                            <div className='flex flex-wrap gap-2 mb-2'>
+                            <div className='mb-2 font-semibold'>{t('admin.plugins.banners.updates.title')}</div>
+                            <p className='mb-2 text-sm'>{t('admin.plugins.banners.updates.description')}</p>
+                            <div className='mb-2 flex flex-wrap gap-2'>
                                 {pluginsWithUpdates.map((plugin) => (
                                     <Badge
                                         key={plugin.identifier}
                                         variant='secondary'
-                                        className='text-xs cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors'
+                                        className='cursor-pointer text-xs transition-colors hover:bg-blue-200 dark:hover:bg-blue-800'
                                         onClick={() => checkForUpdate(plugin)}
                                     >
                                         {plugin.name || plugin.identifier}
-                                        <RefreshCw className='h-3 w-3 ml-1 inline' />
+                                        <RefreshCw className='ml-1 inline h-3 w-3' />
                                     </Badge>
                                 ))}
                             </div>
@@ -620,7 +620,7 @@ export default function PluginsPage() {
             )}
 
             {plugins.length > 0 ? (
-                <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'>
+                <div className='grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3'>
                     {plugins.map((plugin) => (
                         <PageCard
                             key={plugin.identifier}
@@ -628,7 +628,7 @@ export default function PluginsPage() {
                             description={plugin.identifier}
                             iconSrc={plugin.icon}
                             icon={Puzzle}
-                            className='h-full flex flex-col'
+                            className='flex h-full flex-col'
                             variant={
                                 plugin.unmetDependencies?.length || plugin.missingConfigs?.length
                                     ? 'warning'
@@ -645,13 +645,13 @@ export default function PluginsPage() {
                                             openPluginConfig(plugin);
                                         }}
                                     >
-                                        <Settings className='h-4 w-4 mr-2' />
+                                        <Settings className='mr-2 h-4 w-4' />
                                         {t('admin.plugins.actions.configure')}
                                     </Button>
                                     <Button
                                         size='sm'
                                         variant='ghost'
-                                        className='h-9 w-9 p-0 text-muted-foreground hover:text-destructive'
+                                        className='text-muted-foreground hover:text-destructive h-9 w-9 p-0'
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             requestUninstall(plugin);
@@ -662,21 +662,21 @@ export default function PluginsPage() {
                                 </div>
                             }
                         >
-                            <div className='space-y-4 flex-1'>
-                                <p className='text-sm text-muted-foreground line-clamp-2 min-h-10'>
+                            <div className='flex-1 space-y-4'>
+                                <p className='text-muted-foreground line-clamp-2 min-h-10 text-sm'>
                                     {plugin.description || t('admin.plugins.grid.no_description')}
                                 </p>
 
                                 <div className='space-y-2'>
                                     <div className='flex items-center justify-between text-xs'>
                                         <span className='text-muted-foreground'>{t('admin.plugins.grid.version')}</span>
-                                        <span className='font-mono bg-secondary/50 px-1.5 py-0.5 rounded'>
+                                        <span className='bg-secondary/50 rounded px-1.5 py-0.5 font-mono'>
                                             v{plugin.version || '?'}
                                         </span>
                                     </div>
                                     <div className='flex items-center justify-between text-xs'>
                                         <span className='text-muted-foreground'>{t('admin.plugins.grid.author')}</span>
-                                        <span className='font-medium truncate max-w-[120px]'>
+                                        <span className='max-w-[120px] truncate font-medium'>
                                             {plugin.author || t('admin.plugins.grid.author_unknown')}
                                         </span>
                                     </div>
@@ -689,7 +689,7 @@ export default function PluginsPage() {
                                                 href={plugin.website}
                                                 target='_blank'
                                                 rel='noreferrer'
-                                                className='text-primary hover:underline flex items-center gap-1'
+                                                className='text-primary flex items-center gap-1 hover:underline'
                                                 onClick={(e) => e.stopPropagation()}
                                             >
                                                 {t('admin.plugins.grid.visit_action')} <Globe className='h-3 w-3' />
@@ -701,14 +701,14 @@ export default function PluginsPage() {
                                 <div className='flex flex-wrap gap-1.5 pt-2'>
                                     {hasUpdateAvailable(plugin) && (
                                         <Badge
-                                            className='bg-blue-500 hover:bg-blue-600 text-white border-0 cursor-pointer w-full justify-center py-1'
+                                            className='w-full cursor-pointer justify-center border-0 bg-blue-500 py-1 text-white hover:bg-blue-600'
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 checkForUpdate(plugin);
                                             }}
                                         >
                                             <RefreshCw
-                                                className={`h-3 w-3 mr-1 ${
+                                                className={`mr-1 h-3 w-3 ${
                                                     checkingUpdateId === plugin.identifier
                                                         ? 'animate-spin'
                                                         : 'animate-pulse'
@@ -723,7 +723,7 @@ export default function PluginsPage() {
                                         <Badge
                                             key={dep}
                                             variant='outline'
-                                            className='text-[10px] border-yellow-500/50 text-yellow-600 bg-yellow-500/10'
+                                            className='border-yellow-500/50 bg-yellow-500/10 text-[10px] text-yellow-600'
                                         >
                                             {t('admin.plugins.grid.missing_badge', { dep })}
                                         </Badge>
@@ -732,7 +732,7 @@ export default function PluginsPage() {
                                         <Badge
                                             key={String(cfg)}
                                             variant='outline'
-                                            className='text-[10px] border-orange-500/50 text-orange-600 bg-orange-500/10'
+                                            className='border-orange-500/50 bg-orange-500/10 text-[10px] text-orange-600'
                                         >
                                             {t('admin.plugins.grid.config_badge', { cfg: String(cfg) })}
                                         </Badge>
@@ -748,32 +748,32 @@ export default function PluginsPage() {
                     ))}
                 </div>
             ) : (
-                <div className='text-center py-12'>
-                    <div className='h-24 w-24 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center'>
-                        <Puzzle className='h-12 w-12 text-muted-foreground' />
+                <div className='py-12 text-center'>
+                    <div className='bg-muted mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full'>
+                        <Puzzle className='text-muted-foreground h-12 w-12' />
                     </div>
-                    <h3 className='text-lg font-semibold mb-2'>{t('admin.plugins.grid.empty_title')}</h3>
+                    <h3 className='mb-2 text-lg font-semibold'>{t('admin.plugins.grid.empty_title')}</h3>
                     <p className='text-muted-foreground mb-4'>{t('admin.plugins.grid.empty_description')}</p>
                     <Button onClick={fetchPlugins}>
-                        <RefreshCw className='h-4 w-4 mr-2' />
+                        <RefreshCw className='mr-2 h-4 w-4' />
                         {t('admin.plugins.actions.refresh')}
                     </Button>
                 </div>
             )}
 
-            <div className='mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-10'>
+            <div className='mt-6 grid grid-cols-1 gap-6 pt-10 md:grid-cols-2 lg:grid-cols-3'>
                 <PageCard title={t('admin.plugins.help.install.title')} icon={Upload}>
-                    <p className='text-sm text-muted-foreground leading-relaxed'>
+                    <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.plugins.help.install.description')}
                     </p>
                 </PageCard>
                 <PageCard title={t('admin.plugins.help.config.title')} icon={Settings}>
-                    <p className='text-sm text-muted-foreground leading-relaxed'>
+                    <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.plugins.help.config.description')}
                     </p>
                 </PageCard>
                 <PageCard title={t('admin.plugins.help.security.title')} icon={AlertCircle} variant='warning'>
-                    <p className='text-sm text-muted-foreground leading-relaxed'>
+                    <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.plugins.help.security.description')}
                     </p>
                 </PageCard>
@@ -788,19 +788,19 @@ export default function PluginsPage() {
                         })}
                     </SheetDescription>
                 </SheetHeader>
-                <div className='px-1 pt-4 pb-8 overflow-y-auto max-h-[calc(100vh-200px)]'>
+                <div className='max-h-[calc(100vh-200px)] overflow-y-auto px-1 pt-4 pb-8'>
                     {configLoading ? (
-                        <div className='flex items-center justify-center py-8 text-muted-foreground'>
-                            <RefreshCw className='h-5 w-5 animate-spin mr-2' />
+                        <div className='text-muted-foreground flex items-center justify-center py-8'>
+                            <RefreshCw className='mr-2 h-5 w-5 animate-spin' />
                             {t('admin.plugins.drawers.config.loading')}
                         </div>
                     ) : configError ? (
-                        <div className='text-center py-8 text-destructive'>{configError}</div>
+                        <div className='text-destructive py-8 text-center'>{configError}</div>
                     ) : pluginConfig ? (
                         <div className='space-y-6'>
-                            <div className='rounded-xl bg-secondary/20 p-6 space-y-6'>
+                            <div className='bg-secondary/20 space-y-6 rounded-xl p-6'>
                                 <div className='flex items-center justify-between border-b pb-4'>
-                                    <h3 className='font-semibold text-lg'>
+                                    <h3 className='text-lg font-semibold'>
                                         {t('admin.plugins.drawers.config.settings_title')}
                                     </h3>
                                     <Badge variant='outline' className='bg-primary/5 border-primary/20 text-primary'>
@@ -812,20 +812,20 @@ export default function PluginsPage() {
                                         {configFields.map((field) => (
                                             <div key={field.name} className='space-y-2.5'>
                                                 <div className='flex items-center justify-between'>
-                                                    <label className='text-sm font-medium text-foreground/90'>
+                                                    <label className='text-foreground/90 text-sm font-medium'>
                                                         {field.display_name}
                                                     </label>
                                                     {field.required && (
                                                         <Badge
                                                             variant='secondary'
-                                                            className='text-[10px] uppercase tracking-wider font-bold'
+                                                            className='text-[10px] font-bold tracking-wider uppercase'
                                                         >
                                                             {t('admin.plugins.drawers.config.required')}
                                                         </Badge>
                                                     )}
                                                 </div>
                                                 {field.type === 'boolean' ? (
-                                                    <div className='flex items-center gap-3 p-3 rounded-lg border bg-background/50'>
+                                                    <div className='bg-background/50 flex items-center gap-3 rounded-lg border p-3'>
                                                         <input
                                                             type='checkbox'
                                                             checked={pluginConfig.settings[field.name] === 'true'}
@@ -844,9 +844,9 @@ export default function PluginsPage() {
                                                                         : null,
                                                                 )
                                                             }
-                                                            className='h-4 w-4 rounded border-primary text-primary focus:ring-primary'
+                                                            className='border-primary text-primary focus:ring-primary h-4 w-4 rounded'
                                                         />
-                                                        <span className='text-sm text-foreground/80'>
+                                                        <span className='text-foreground/80 text-sm'>
                                                             {field.description || field.display_name}
                                                         </span>
                                                     </div>
@@ -878,7 +878,7 @@ export default function PluginsPage() {
                                                             className='bg-background/50 border-input/50 focus:border-primary/50 focus:bg-background transition-all'
                                                         />
                                                         {field.description && (
-                                                            <p className='text-[11px] text-muted-foreground ml-1'>
+                                                            <p className='text-muted-foreground ml-1 text-[11px]'>
                                                                 {field.description}
                                                             </p>
                                                         )}
@@ -894,38 +894,38 @@ export default function PluginsPage() {
                                                 disabled={savingSetting}
                                             >
                                                 {savingSetting ? (
-                                                    <RefreshCw className='h-4 w-4 mr-2 animate-spin' />
+                                                    <RefreshCw className='mr-2 h-4 w-4 animate-spin' />
                                                 ) : (
-                                                    <Save className='h-4 w-4 mr-2' />
+                                                    <Save className='mr-2 h-4 w-4' />
                                                 )}
                                                 {t('admin.plugins.actions.save_settings')}
                                             </Button>
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className='text-center py-12 text-muted-foreground bg-muted/20 rounded-xl border border-dashed'>
-                                        <Settings className='h-10 w-10 mx-auto mb-3 opacity-20' />
+                                    <div className='text-muted-foreground bg-muted/20 rounded-xl border border-dashed py-12 text-center'>
+                                        <Settings className='mx-auto mb-3 h-10 w-10 opacity-20' />
                                         <p className='font-medium'>{t('admin.plugins.drawers.config.no_schema')}</p>
-                                        <p className='text-xs mt-1 text-muted-foreground/70'>
+                                        <p className='text-muted-foreground/70 mt-1 text-xs'>
                                             {t('admin.plugins.drawers.config.no_schema_desc')}
                                         </p>
                                     </div>
                                 )}
                             </div>
 
-                            <div className='rounded-lg border border-border bg-muted/30 p-6 space-y-5'>
+                            <div className='border-border bg-muted/30 space-y-5 rounded-lg border p-6'>
                                 <div className='space-y-1.5'>
-                                    <h3 className='text-base font-semibold text-foreground'>
+                                    <h3 className='text-foreground text-base font-semibold'>
                                         {t('admin.plugins.drawers.config.spell_restrictions.title')}
                                     </h3>
-                                    <p className='text-sm text-muted-foreground leading-relaxed'>
+                                    <p className='text-muted-foreground text-sm leading-relaxed'>
                                         {t('admin.plugins.drawers.config.spell_restrictions.description')}
                                     </p>
                                 </div>
 
                                 <div className='space-y-4'>
                                     <div className='relative'>
-                                        <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none' />
+                                        <Search className='text-muted-foreground pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform' />
                                         <Input
                                             placeholder={t(
                                                 'admin.plugins.drawers.config.spell_restrictions.search_placeholder',
@@ -935,11 +935,11 @@ export default function PluginsPage() {
                                                 setSpellSearchQuery(e.target.value);
                                                 setSpellPage(1);
                                             }}
-                                            className='pl-10 h-10 bg-background/50 border-border text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:bg-background'
+                                            className='bg-background/50 border-border text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:bg-background h-10 pl-10'
                                         />
                                         {spellsLoading && (
-                                            <div className='absolute right-3 top-1/2 transform -translate-y-1/2'>
-                                                <RefreshCw className='h-4 w-4 animate-spin text-muted-foreground' />
+                                            <div className='absolute top-1/2 right-3 -translate-y-1/2 transform'>
+                                                <RefreshCw className='text-muted-foreground h-4 w-4 animate-spin' />
                                             </div>
                                         )}
                                     </div>
@@ -947,14 +947,14 @@ export default function PluginsPage() {
                                     {selectedSpellIds.size > 0 && (
                                         <div className='space-y-2.5'>
                                             <div className='flex items-center justify-between'>
-                                                <p className='text-sm font-medium text-foreground'>
+                                                <p className='text-foreground text-sm font-medium'>
                                                     {t(
                                                         'admin.plugins.drawers.config.spell_restrictions.selected_spells',
                                                     )}
                                                 </p>
                                                 <Badge
                                                     variant='secondary'
-                                                    className='text-xs bg-primary/20 text-primary border-primary/30'
+                                                    className='bg-primary/20 text-primary border-primary/30 text-xs'
                                                 >
                                                     {t(
                                                         'admin.plugins.drawers.config.spell_restrictions.selected_count',
@@ -964,12 +964,12 @@ export default function PluginsPage() {
                                                     )}
                                                 </Badge>
                                             </div>
-                                            <div className='flex flex-wrap gap-2 p-3 rounded-md bg-background/50 border border-border'>
+                                            <div className='bg-background/50 border-border flex flex-wrap gap-2 rounded-md border p-3'>
                                                 {selectedSpellsDetails.map((spell) => (
                                                     <Badge
                                                         key={spell.id}
                                                         variant='secondary'
-                                                        className='flex items-center gap-1.5 px-2.5 py-1 bg-primary/20 text-primary border-primary/30 hover:bg-primary/25 transition-colors'
+                                                        className='bg-primary/20 text-primary border-primary/30 hover:bg-primary/25 flex items-center gap-1.5 px-2.5 py-1 transition-colors'
                                                     >
                                                         <span className='text-xs font-medium'>{spell.name}</span>
                                                         <button
@@ -982,7 +982,7 @@ export default function PluginsPage() {
                                                                     prev.filter((s) => s.id !== spell.id),
                                                                 );
                                                             }}
-                                                            className='ml-0.5 hover:bg-destructive/30 rounded-full p-0.5 transition-colors'
+                                                            className='hover:bg-destructive/30 ml-0.5 rounded-full p-0.5 transition-colors'
                                                         >
                                                             <X className='h-3 w-3' />
                                                         </button>
@@ -992,23 +992,23 @@ export default function PluginsPage() {
                                         </div>
                                     )}
 
-                                    <div className='border border-border rounded-md bg-background/50 overflow-hidden'>
+                                    <div className='border-border bg-background/50 overflow-hidden rounded-md border'>
                                         <div className='max-h-[320px] overflow-y-auto'>
                                             {spellsLoading && spellSearchQuery === '' && spellPage === 1 ? (
                                                 <div className='flex items-center justify-center py-12'>
-                                                    <RefreshCw className='h-5 w-5 animate-spin mr-2 text-muted-foreground' />
-                                                    <span className='text-sm text-muted-foreground'>
+                                                    <RefreshCw className='text-muted-foreground mr-2 h-5 w-5 animate-spin' />
+                                                    <span className='text-muted-foreground text-sm'>
                                                         {t('admin.plugins.drawers.config.spell_restrictions.loading')}
                                                     </span>
                                                 </div>
                                             ) : spells.length === 0 ? (
-                                                <div className='text-center py-12'>
-                                                    <Puzzle className='h-8 w-8 mx-auto mb-2 text-muted-foreground/50' />
-                                                    <p className='text-sm font-medium text-foreground'>
+                                                <div className='py-12 text-center'>
+                                                    <Puzzle className='text-muted-foreground/50 mx-auto mb-2 h-8 w-8' />
+                                                    <p className='text-foreground text-sm font-medium'>
                                                         {t('admin.plugins.drawers.config.spell_restrictions.no_spells')}
                                                     </p>
                                                     {spellSearchQuery && (
-                                                        <p className='text-xs text-muted-foreground mt-1'>
+                                                        <p className='text-muted-foreground mt-1 text-xs'>
                                                             {t(
                                                                 'admin.plugins.drawers.config.spell_restrictions.no_spells_search',
                                                             )}
@@ -1016,15 +1016,15 @@ export default function PluginsPage() {
                                                     )}
                                                 </div>
                                             ) : (
-                                                <div className='divide-y divide-border'>
+                                                <div className='divide-border divide-y'>
                                                     {spells.map((spell) => {
                                                         const isSelected = selectedSpellIds.has(spell.id);
                                                         return (
                                                             <div
                                                                 key={spell.id}
-                                                                className={`p-3 transition-all cursor-pointer flex items-start gap-3 ${
+                                                                className={`flex cursor-pointer items-start gap-3 p-3 transition-all ${
                                                                     isSelected
-                                                                        ? 'bg-primary/10 hover:bg-primary/15 border-l-2 border-l-primary'
+                                                                        ? 'bg-primary/10 hover:bg-primary/15 border-l-primary border-l-2'
                                                                         : 'hover:bg-muted/40 bg-background/30'
                                                                 }`}
                                                                 onClick={() => {
@@ -1052,17 +1052,17 @@ export default function PluginsPage() {
                                                                     setSelectedSpellIds(newSet);
                                                                 }}
                                                             >
-                                                                <div className='flex-1 min-w-0'>
+                                                                <div className='min-w-0 flex-1'>
                                                                     <div className='flex items-center gap-2'>
                                                                         <div
-                                                                            className={`font-medium text-sm ${isSelected ? 'text-primary' : 'text-foreground'}`}
+                                                                            className={`text-sm font-medium ${isSelected ? 'text-primary' : 'text-foreground'}`}
                                                                         >
                                                                             {spell.name}
                                                                         </div>
                                                                         {isSelected && (
                                                                             <Badge
                                                                                 variant='outline'
-                                                                                className='text-[10px] px-1.5 py-0 border-primary/40 text-primary bg-primary/10'
+                                                                                className='border-primary/40 text-primary bg-primary/10 px-1.5 py-0 text-[10px]'
                                                                             >
                                                                                 {t(
                                                                                     'admin.plugins.drawers.config.spell_restrictions.selected_badge',
@@ -1071,7 +1071,7 @@ export default function PluginsPage() {
                                                                         )}
                                                                     </div>
                                                                     {spell.description && (
-                                                                        <div className='text-xs text-muted-foreground mt-1 line-clamp-2'>
+                                                                        <div className='text-muted-foreground mt-1 line-clamp-2 text-xs'>
                                                                             {spell.description}
                                                                         </div>
                                                                     )}
@@ -1115,7 +1115,7 @@ export default function PluginsPage() {
                                                                                 }
                                                                                 setSelectedSpellIds(newSet);
                                                                             }}
-                                                                            className='h-4 w-4 rounded border-2 border-border cursor-pointer checked:bg-primary checked:border-primary focus:ring-2 focus:ring-primary/30 transition-all appearance-none bg-background/50 checked:before:content-["✓"] checked:before:text-white checked:before:text-xs checked:before:flex checked:before:items-center checked:before:justify-center'
+                                                                            className='border-border checked:bg-primary checked:border-primary focus:ring-primary/30 bg-background/50 h-4 w-4 cursor-pointer appearance-none rounded border-2 transition-all checked:before:flex checked:before:items-center checked:before:justify-center checked:before:text-xs checked:before:text-white checked:before:content-["✓"] focus:ring-2'
                                                                             onClick={(e) => e.stopPropagation()}
                                                                         />
                                                                     </div>
@@ -1129,18 +1129,18 @@ export default function PluginsPage() {
                                     </div>
 
                                     {spellsTotalPages > 1 && (
-                                        <div className='flex items-center justify-between pt-2 border-t border-border'>
+                                        <div className='border-border flex items-center justify-between border-t pt-2'>
                                             <Button
                                                 variant='outline'
                                                 size='sm'
                                                 onClick={() => setSpellPage((p) => Math.max(1, p - 1))}
                                                 disabled={spellPage === 1 || spellsLoading}
-                                                className='h-8 bg-background/50 border-border hover:bg-muted/50'
+                                                className='bg-background/50 border-border hover:bg-muted/50 h-8'
                                             >
-                                                <ChevronLeft className='h-3.5 w-3.5 mr-1.5' />
+                                                <ChevronLeft className='mr-1.5 h-3.5 w-3.5' />
                                                 {t('admin.plugins.drawers.config.spell_restrictions.previous')}
                                             </Button>
-                                            <span className='text-xs text-muted-foreground font-medium'>
+                                            <span className='text-muted-foreground text-xs font-medium'>
                                                 {t('admin.plugins.drawers.config.spell_restrictions.page_info', {
                                                     current: String(spellPage),
                                                     total: String(spellsTotalPages),
@@ -1151,28 +1151,28 @@ export default function PluginsPage() {
                                                 size='sm'
                                                 onClick={() => setSpellPage((p) => Math.min(spellsTotalPages, p + 1))}
                                                 disabled={spellPage === spellsTotalPages || spellsLoading}
-                                                className='h-8 bg-background/50 border-border hover:bg-muted/50'
+                                                className='bg-background/50 border-border hover:bg-muted/50 h-8'
                                             >
                                                 {t('admin.plugins.drawers.config.spell_restrictions.next')}
-                                                <ChevronRight className='h-3.5 w-3.5 ml-1.5' />
+                                                <ChevronRight className='ml-1.5 h-3.5 w-3.5' />
                                             </Button>
                                         </div>
                                     )}
 
                                     <div className='pt-1'>
                                         <Button
-                                            className='w-full h-10 font-medium bg-primary hover:bg-primary/90'
+                                            className='bg-primary hover:bg-primary/90 h-10 w-full font-medium'
                                             onClick={saveSpellRestrictions}
                                             disabled={savingSpellRestrictions}
                                         >
                                             {savingSpellRestrictions ? (
                                                 <>
-                                                    <RefreshCw className='h-4 w-4 mr-2 animate-spin' />
+                                                    <RefreshCw className='mr-2 h-4 w-4 animate-spin' />
                                                     {t('admin.plugins.drawers.config.spell_restrictions.saving')}
                                                 </>
                                             ) : (
                                                 <>
-                                                    <Save className='h-4 w-4 mr-2' />
+                                                    <Save className='mr-2 h-4 w-4' />
                                                     {t('admin.plugins.drawers.config.spell_restrictions.save')}
                                                 </>
                                             )}
@@ -1183,7 +1183,7 @@ export default function PluginsPage() {
                         </div>
                     ) : null}
                 </div>
-                <div className='p-4 border-t mt-auto'>
+                <div className='mt-auto border-t p-4'>
                     <Button variant='outline' className='w-full' onClick={() => setConfigDrawerOpen(false)}>
                         {t('admin.plugins.actions.close')}
                     </Button>
@@ -1227,12 +1227,12 @@ export default function PluginsPage() {
                                 value={installUrl}
                                 onChange={(e) => setInstallUrl(e.target.value)}
                             />
-                            <p className='text-xs text-muted-foreground'>
+                            <p className='text-muted-foreground text-xs'>
                                 {t('admin.plugins.dialogs.install_url.url_description')}
                             </p>
                         </div>
                         <div className='rounded-md border border-yellow-500/30 bg-yellow-500/10 p-3 text-sm text-yellow-700'>
-                            <div className='font-semibold mb-1 flex items-center gap-2'>
+                            <div className='mb-1 flex items-center gap-2 font-semibold'>
                                 <AlertTriangle className='h-4 w-4' />
                                 {t('admin.plugins.dialogs.install_url.security_warning_title')}
                             </div>
@@ -1244,7 +1244,7 @@ export default function PluginsPage() {
                             {t('admin.plugins.actions.cancel')}
                         </Button>
                         <Button onClick={installFromUrlAction} disabled={installingFromUrl}>
-                            {installingFromUrl ? <RefreshCw className='w-4 h-4 animate-spin mr-2' /> : null}
+                            {installingFromUrl ? <RefreshCw className='mr-2 h-4 w-4 animate-spin' /> : null}
                             {t('admin.plugins.actions.install')}
                         </Button>
                     </DialogFooter>
@@ -1257,7 +1257,7 @@ export default function PluginsPage() {
                         <DialogTitle>{t('admin.plugins.dialogs.upload.title')}</DialogTitle>
                         <DialogDescription>{pendingUploadFile?.name}</DialogDescription>
                     </DialogHeader>
-                    <p className='text-sm text-yellow-600 font-medium'>{t('admin.plugins.dialogs.upload.warning')}</p>
+                    <p className='text-sm font-medium text-yellow-600'>{t('admin.plugins.dialogs.upload.warning')}</p>
                     <DialogFooter>
                         <Button variant='outline' onClick={() => setConfirmUploadOpen(false)}>
                             {t('admin.plugins.actions.cancel')}
@@ -1275,7 +1275,7 @@ export default function PluginsPage() {
                     </DialogHeader>
                     <div className='space-y-4'>
                         <div className='rounded-md border border-green-500/30 bg-green-500/10 p-3 text-sm text-green-700'>
-                            <div className='font-semibold mb-1'>{t('admin.plugins.dialogs.update.available')}</div>
+                            <div className='mb-1 font-semibold'>{t('admin.plugins.dialogs.update.available')}</div>
                             <p>
                                 {t('admin.plugins.dialogs.update.version_info', {
                                     current: updateRequirements?.installed_version || 'unknown',
@@ -1284,7 +1284,7 @@ export default function PluginsPage() {
                             </p>
                         </div>
                         <div className='rounded-md border border-yellow-500/30 bg-yellow-500/10 p-3 text-sm text-yellow-700'>
-                            <AlertCircle className='h-5 w-5 mb-1' />
+                            <AlertCircle className='mb-1 h-5 w-5' />
                             <p>{t('admin.plugins.dialogs.update.backup_warning')}</p>
                         </div>
                     </div>
@@ -1293,7 +1293,7 @@ export default function PluginsPage() {
                             {t('admin.plugins.actions.cancel')}
                         </Button>
                         <Button onClick={installUpdate} disabled={!!installingUpdateId}>
-                            {installingUpdateId ? <RefreshCw className='w-4 h-4 animate-spin mr-2' /> : null}
+                            {installingUpdateId ? <RefreshCw className='mr-2 h-4 w-4 animate-spin' /> : null}
                             {t('admin.plugins.actions.update')}
                         </Button>
                     </DialogFooter>

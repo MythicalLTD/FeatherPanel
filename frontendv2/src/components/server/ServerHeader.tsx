@@ -134,28 +134,28 @@ export default function ServerHeader({
     };
 
     return (
-        <div className='rounded-xl border border-border/50 bg-card/50 backdrop-blur-xl'>
+        <div className='border-border/50 bg-card/50 rounded-xl border backdrop-blur-xl'>
             <div className='p-6'>
-                <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4'>
+                <div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
                     <div className='space-y-2'>
-                        <h1 className='text-2xl sm:text-3xl font-bold tracking-tight'>{serverName}</h1>
-                        <div className='flex flex-wrap items-center gap-3 text-sm text-muted-foreground'>
+                        <h1 className='text-2xl font-bold tracking-tight sm:text-3xl'>{serverName}</h1>
+                        <div className='text-muted-foreground flex flex-wrap items-center gap-3 text-sm'>
                             <Badge className={getStatusColor(serverStatus)}>{serverStatus.toUpperCase()}</Badge>
                             {serverUuidShort && (
                                 <span className='flex items-center gap-1'>
                                     <span className='opacity-50'>#</span>
-                                    <code className='bg-muted px-1 rounded font-mono text-xs'>{serverUuidShort}</code>
+                                    <code className='bg-muted rounded px-1 font-mono text-xs'>{serverUuidShort}</code>
                                 </span>
                             )}
                             {nodeLocation && (
-                                <span className='flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-muted/50 border border-border/50'>
+                                <span className='bg-muted/50 border-border/50 flex items-center gap-1.5 rounded-md border px-2 py-0.5'>
                                     {nodeLocationFlag ? (
                                         /* eslint-disable-next-line @next/next/no-img-element */
                                         <img
                                             src={`https://flagcdn.com/16x12/${nodeLocationFlag}.png`}
                                             srcSet={`https://flagcdn.com/32x24/${nodeLocationFlag}.png 2x, https://flagcdn.com/48x36/${nodeLocationFlag}.png 3x`}
                                             alt={nodeLocation}
-                                            className='h-3 w-4 object-cover rounded-[1px]'
+                                            className='h-3 w-4 rounded-[1px] object-cover'
                                         />
                                     ) : (
                                         <span className='opacity-50'>@</span>
@@ -164,14 +164,14 @@ export default function ServerHeader({
                                 </span>
                             )}
                             {nodeName && (
-                                <span className='flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-muted/50 border border-border/50'>
+                                <span className='bg-muted/50 border-border/50 flex items-center gap-1.5 rounded-md border px-2 py-0.5'>
                                     <span className='opacity-50'>{t('servers.node')}:</span>
                                     <span className='font-medium'>{nodeName}</span>
                                 </span>
                             )}
                         </div>
                         {serverUuid && (
-                            <p className='text-xs text-muted-foreground/50 font-mono hidden sm:block'>
+                            <p className='text-muted-foreground/50 hidden font-mono text-xs sm:block'>
                                 {t('servers.console.uuid')}: {serverUuid}
                             </p>
                         )}
@@ -269,7 +269,7 @@ export default function ServerHeader({
                             checked={dontAskAgain}
                             onCheckedChange={(checked) => setDontAskAgain(checked === true)}
                         />
-                        <Label htmlFor='dont-ask-kill' className='text-sm font-normal cursor-pointer'>
+                        <Label htmlFor='dont-ask-kill' className='cursor-pointer text-sm font-normal'>
                             {t('servers.console.kill_dont_ask_again')}
                         </Label>
                     </div>

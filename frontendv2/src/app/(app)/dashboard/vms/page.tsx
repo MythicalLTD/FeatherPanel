@@ -121,34 +121,34 @@ export default function VmsPage() {
         <div className='space-y-10 pb-12'>
             <div className='flex items-start justify-between'>
                 <div>
-                    <h1 className='text-2xl sm:text-4xl font-bold tracking-tight'>{t('vms.title')}</h1>
-                    <p className='mt-2 text-sm sm:text-lg text-muted-foreground'>{t('vms.description')}</p>
+                    <h1 className='text-2xl font-bold tracking-tight sm:text-4xl'>{t('vms.title')}</h1>
+                    <p className='text-muted-foreground mt-2 text-sm sm:text-lg'>{t('vms.description')}</p>
                 </div>
             </div>
 
             {/* Controls */}
-            <div className='flex flex-col gap-3 p-3 bg-card/50 backdrop-blur-xl rounded-2xl border border-border/50'>
+            <div className='bg-card/50 border-border/50 flex flex-col gap-3 rounded-2xl border p-3 backdrop-blur-xl'>
                 <div className='flex items-center gap-2'>
                     <input
                         type='text'
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder={t('vms.searchPlaceholder')}
-                        className='flex-1 min-w-0 px-4 py-2 bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary transition-all text-sm'
+                        className='bg-background border-border focus:ring-primary min-w-0 flex-1 rounded-xl border px-4 py-2 text-sm transition-all focus:ring-2 focus:outline-none'
                     />
 
                     <Listbox value={selectedSortOption} onChange={(option) => setSelectedSort(option.id)}>
                         <div className='relative'>
-                            <Listbox.Button className='px-3 py-2 bg-background border border-border rounded-xl hover:bg-muted transition-colors text-sm font-medium flex items-center gap-2 whitespace-nowrap'>
+                            <Listbox.Button className='bg-background border-border hover:bg-muted flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors'>
                                 {selectedSortOption.name}
                                 <span className='text-xs opacity-50'>▼</span>
                             </Listbox.Button>
-                            <Listbox.Options className='absolute right-0 mt-1 w-48 bg-card border border-border rounded-lg shadow-lg z-50 py-1'>
+                            <Listbox.Options className='bg-card border-border absolute right-0 z-50 mt-1 w-48 rounded-lg border py-1 shadow-lg'>
                                 {sortOptions.map((option) => (
                                     <Listbox.Option
                                         key={option.id}
                                         value={option}
-                                        className='px-3 py-2 hover:bg-primary/10 cursor-pointer text-sm'
+                                        className='hover:bg-primary/10 cursor-pointer px-3 py-2 text-sm'
                                     >
                                         {option.name}
                                     </Listbox.Option>
@@ -158,13 +158,13 @@ export default function VmsPage() {
                     </Listbox>
 
                     <RadioGroup value={selectedLayoutOption} onChange={(option) => setSelectedLayout(option.id)}>
-                        <div className='flex items-center gap-2 shrink-0'>
+                        <div className='flex shrink-0 items-center gap-2'>
                             {layoutOptions.map((option) => (
                                 <RadioGroup.Option key={option.id} value={option}>
                                     {({ checked }) => (
                                         <button
                                             className={cn(
-                                                'p-2 rounded-lg border transition-all',
+                                                'rounded-lg border p-2 transition-all',
                                                 checked
                                                     ? 'bg-primary text-primary-foreground border-primary'
                                                     : 'bg-background border-border hover:bg-muted',
@@ -182,10 +182,10 @@ export default function VmsPage() {
                     <button
                         onClick={() => setShowOnlyRunning(!showOnlyRunning)}
                         className={cn(
-                            'px-3 py-2 rounded-lg font-medium text-sm transition-all shrink-0',
+                            'shrink-0 rounded-lg px-3 py-2 text-sm font-medium transition-all',
                             showOnlyRunning
-                                ? 'bg-green-500/20 text-green-500 border border-green-500/30'
-                                : 'bg-background border border-border hover:bg-muted',
+                                ? 'border border-green-500/30 bg-green-500/20 text-green-500'
+                                : 'bg-background border-border hover:bg-muted border',
                         )}
                         title={t('vms.runningOnly')}
                     >
@@ -195,7 +195,7 @@ export default function VmsPage() {
                     <button
                         onClick={() => fetchVms(pagination.current_page)}
                         disabled={loading}
-                        className='shrink-0 p-2 bg-background border border-border rounded-xl hover:bg-muted transition-colors disabled:opacity-50'
+                        className='bg-background border-border hover:bg-muted shrink-0 rounded-xl border p-2 transition-colors disabled:opacity-50'
                         title={t('vms.refresh')}
                     >
                         <RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} />
@@ -207,7 +207,7 @@ export default function VmsPage() {
             {loading && (
                 <div className='flex items-center justify-center py-24'>
                     <div className='flex flex-col items-center gap-4'>
-                        <RefreshCw className='h-12 w-12 animate-spin text-primary' />
+                        <RefreshCw className='text-primary h-12 w-12 animate-spin' />
                         <p className='text-muted-foreground'>{t('vms.loading')}</p>
                     </div>
                 </div>
@@ -216,13 +216,13 @@ export default function VmsPage() {
             {/* Error State */}
             {error && !loading && (
                 <div className='flex items-center justify-center py-24'>
-                    <div className='text-center max-w-md'>
-                        <TriangleAlert className='h-16 w-16 text-destructive mx-auto mb-4' />
-                        <h3 className='text-xl font-semibold mb-2'>{t('vms.errorTitle')}</h3>
+                    <div className='max-w-md text-center'>
+                        <TriangleAlert className='text-destructive mx-auto mb-4 h-16 w-16' />
+                        <h3 className='mb-2 text-xl font-semibold'>{t('vms.errorTitle')}</h3>
                         <p className='text-muted-foreground mb-6'>{error}</p>
                         <button
                             onClick={() => fetchVms(1)}
-                            className='px-6 py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:bg-primary/90 transition-colors'
+                            className='bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl px-6 py-3 font-semibold transition-colors'
                         >
                             {t('vms.retry')}
                         </button>
@@ -234,18 +234,18 @@ export default function VmsPage() {
             {!loading && !error && (
                 <>
                     {filteredVms.length === 0 ? (
-                        <div className='rounded-xl border border-border/50 bg-card/50 backdrop-blur-xl p-12 text-center'>
+                        <div className='border-border/50 bg-card/50 rounded-xl border p-12 text-center backdrop-blur-xl'>
                             <p className='text-muted-foreground font-medium'>
                                 {searchQuery ? t('vms.noVmsFound') : t('vms.noVms')}
                             </p>
-                            <p className='text-sm text-muted-foreground/70 mt-1'>
+                            <p className='text-muted-foreground/70 mt-1 text-sm'>
                                 {searchQuery ? t('vms.adjustFilters') : t('vms.getStarted')}
                             </p>
                         </div>
                     ) : (
                         <>
                             <div className='flex items-center justify-between gap-2'>
-                                <p className='text-sm text-muted-foreground'>
+                                <p className='text-muted-foreground text-sm'>
                                     {t('vms.pagination.showing', {
                                         from: String(pagination.from),
                                         to: String(pagination.to),
@@ -257,11 +257,11 @@ export default function VmsPage() {
                                         <button
                                             onClick={() => fetchVms(Math.max(1, pagination.current_page - 1))}
                                             disabled={!pagination.has_prev || loading}
-                                            className='px-3 py-1 bg-background border border-border rounded-lg hover:bg-muted disabled:opacity-50 text-sm font-medium'
+                                            className='bg-background border-border hover:bg-muted rounded-lg border px-3 py-1 text-sm font-medium disabled:opacity-50'
                                         >
                                             {t('vms.pagination.previous')}
                                         </button>
-                                        <span className='text-sm text-muted-foreground'>
+                                        <span className='text-muted-foreground text-sm'>
                                             {t('vms.pagination.page', {
                                                 current: String(pagination.current_page),
                                                 total: String(pagination.total_pages),
@@ -272,7 +272,7 @@ export default function VmsPage() {
                                                 fetchVms(Math.min(pagination.total_pages, pagination.current_page + 1))
                                             }
                                             disabled={!pagination.has_next || loading}
-                                            className='px-3 py-1 bg-background border border-border rounded-lg hover:bg-muted disabled:opacity-50 text-sm font-medium'
+                                            className='bg-background border-border hover:bg-muted rounded-lg border px-3 py-1 text-sm font-medium disabled:opacity-50'
                                         >
                                             {t('vms.pagination.next')}
                                         </button>
@@ -281,7 +281,7 @@ export default function VmsPage() {
                             </div>
 
                             {selectedLayout === 'grid' ? (
-                                <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
+                                <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3'>
                                     {filteredVms.map((vm) => (
                                         <VmCard key={vm.id} vm={vm} layout='grid' />
                                     ))}

@@ -109,10 +109,10 @@ export function DisksTab({
                             {diskKeys.map((k) => (
                                 <li
                                     key={k}
-                                    className='flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border/50 px-3 py-2 bg-muted/20 text-sm text-foreground'
+                                    className='border-border/50 bg-muted/20 text-foreground flex flex-wrap items-center justify-between gap-2 rounded-xl border px-3 py-2 text-sm'
                                 >
                                     <span className='font-mono'>{k}</span>
-                                    <span className='text-foreground/90 truncate flex-1 min-w-0'>
+                                    <span className='text-foreground/90 min-w-0 flex-1 truncate'>
                                         {String(config?.[k] ?? '')}
                                     </span>
                                     {((/^mp\d+$/.test(k) && isLxc) ||
@@ -127,7 +127,7 @@ export function DisksTab({
                                                 loading={deletingDisk === k}
                                                 disabled={!!deletingDisk}
                                             >
-                                                <Trash2 className='h-4 w-4 mr-1' />
+                                                <Trash2 className='mr-1 h-4 w-4' />
                                                 {t('common.delete') ?? 'Delete'}
                                             </Button>
                                         )}
@@ -138,7 +138,7 @@ export function DisksTab({
                 )}
                 <form
                     onSubmit={onCreateDisk}
-                    className='flex flex-wrap items-end gap-3 rounded-xl border border-border/50 p-4 bg-muted/10'
+                    className='border-border/50 bg-muted/10 flex flex-wrap items-end gap-3 rounded-xl border p-4'
                 >
                     <div className='min-w-[160px]'>
                         <Label className='text-xs'>{t('admin.vmInstances.disk_storage') ?? 'Storage'}</Label>
@@ -156,7 +156,7 @@ export function DisksTab({
                             min={1}
                             value={newDiskSizeGb}
                             onChange={(e) => setNewDiskSizeGb(parseInt(e.target.value, 10) || 10)}
-                            className='mt-1 h-10 w-24 bg-muted/30 rounded-xl'
+                            className='bg-muted/30 mt-1 h-10 w-24 rounded-xl'
                         />
                     </div>
                     {isLxc && (
@@ -168,12 +168,12 @@ export function DisksTab({
                                 value={newDiskPath}
                                 onChange={(e) => setNewDiskPath(e.target.value)}
                                 placeholder='/mnt/data'
-                                className='mt-1 h-10 w-40 bg-muted/30 rounded-xl'
+                                className='bg-muted/30 mt-1 h-10 w-40 rounded-xl'
                             />
                         </div>
                     )}
                     <Button type='submit' size='sm' loading={creatingDisk}>
-                        <Plus className='h-4 w-4 mr-2' />
+                        <Plus className='mr-2 h-4 w-4' />
                         {t('admin.vmInstances.add_disk') ?? 'Add disk'}
                     </Button>
                 </form>
@@ -196,14 +196,14 @@ export function DisksTab({
                                 value={resizeSize}
                                 onChange={(e) => setResizeSize(e.target.value)}
                                 placeholder={t('admin.vmInstances.disk_size_placeholder') ?? '+5G or 20G'}
-                                className='mt-1 h-10 w-32 bg-muted/30 rounded-xl'
+                                className='bg-muted/30 mt-1 h-10 w-32 rounded-xl'
                             />
                         </div>
                         <Button type='submit' size='sm' loading={resizing} disabled={!resizeDisk || !resizeSize.trim()}>
                             {t('admin.vmInstances.resize_disk') ?? 'Expand disk'}
                         </Button>
                     </form>
-                    <p className='text-xs text-muted-foreground mt-2'>
+                    <p className='text-muted-foreground mt-2 text-xs'>
                         {t('admin.vmInstances.disk_resize_hint') ?? 'Use +5G to add 5GB, or 20G to set total to 20GB.'}
                     </p>
                 </div>

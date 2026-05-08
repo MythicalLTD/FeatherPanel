@@ -151,17 +151,17 @@ function TerminalOutput({
     return (
         <div
             ref={containerRef}
-            className='overflow-auto font-mono text-[12px] leading-5 bg-[#0d1117] min-h-[420px] max-h-[68vh] p-4'
+            className='max-h-[68vh] min-h-105 overflow-auto bg-[#0d1117] p-4 font-mono text-[12px] leading-5'
             style={{ fontFamily: "'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace" }}
         >
             {loading ? (
-                <div className='flex items-center gap-3 text-slate-500 py-4'>
-                    <Loader2 className='w-4 h-4 animate-spin' />
+                <div className='flex items-center gap-3 py-4 text-slate-500'>
+                    <Loader2 className='h-4 w-4 animate-spin' />
                     <span>{t('admin.logs.loading')}</span>
                 </div>
             ) : isEmpty ? (
-                <div className='flex flex-col items-center justify-center h-40 gap-3 text-slate-600'>
-                    <EmptyIcon className={cn('w-8 h-8 opacity-50', emptyIconColor)} />
+                <div className='flex h-40 flex-col items-center justify-center gap-3 text-slate-600'>
+                    <EmptyIcon className={cn('h-8 w-8 opacity-50', emptyIconColor)} />
                     <span className='text-sm'>{searchQuery ? t('admin.logs.filter_no_match') : emptyLabel}</span>
                 </div>
             ) : (
@@ -172,11 +172,11 @@ function TerminalOutput({
                         <div
                             key={i}
                             className={cn(
-                                'flex group rounded-sm',
+                                'group flex rounded-sm',
                                 highlighted ? 'bg-yellow-500/10 ring-1 ring-yellow-500/30' : '',
                             )}
                         >
-                            <span className='select-none text-slate-600 w-10 shrink-0 text-right pr-3 pt-px text-[11px] group-hover:text-slate-500 transition-colors'>
+                            <span className='w-10 shrink-0 pt-px pr-3 text-right text-[11px] text-slate-600 transition-colors select-none group-hover:text-slate-500'>
                                 {i + 1}
                             </span>
                             <span className={cn('flex-1 break-all whitespace-pre-wrap', ansiLineClass(line))}>
@@ -186,7 +186,7 @@ function TerminalOutput({
                                           return (
                                               <>
                                                   {clean.slice(0, idx)}
-                                                  <mark className='bg-yellow-400/30 text-yellow-200 rounded-sm'>
+                                                  <mark className='rounded-sm bg-yellow-400/30 text-yellow-200'>
                                                       {clean.slice(idx, idx + searchQuery.length)}
                                                   </mark>
                                                   {clean.slice(idx + searchQuery.length)}
@@ -232,26 +232,26 @@ function SearchBar({
 }: SearchBarProps) {
     const { t } = useTranslation();
     return (
-        <div className='flex items-center gap-2 px-4 py-2 border-b border-border/30 bg-background/30'>
-            <div className='relative flex-1 max-w-sm'>
-                <Search className='absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none' />
+        <div className='border-border/30 bg-background/30 flex items-center gap-2 border-b px-4 py-2'>
+            <div className='relative max-w-sm flex-1'>
+                <Search className='text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2' />
                 <input
                     value={searchQuery}
                     onChange={(e) => onSearchChange(e.target.value)}
                     placeholder={t('admin.logs.filter_placeholder')}
-                    className='w-full h-7 pl-8 pr-7 rounded-lg bg-muted/40 border border-border/40 text-xs font-mono placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50 focus:bg-muted/60 transition-all'
+                    className='bg-muted/40 border-border/40 placeholder:text-muted-foreground/50 focus:border-primary/50 focus:bg-muted/60 h-7 w-full rounded-lg border pr-7 pl-8 font-mono text-xs transition-all focus:outline-none'
                 />
                 {searchQuery && (
                     <button
                         onClick={() => onSearchChange('')}
-                        className='absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground'
+                        className='text-muted-foreground hover:text-foreground absolute top-1/2 right-2 -translate-y-1/2'
                     >
-                        <X className='w-3 h-3' />
+                        <X className='h-3 w-3' />
                     </button>
                 )}
             </div>
             {searchQuery && (
-                <span className='text-[11px] text-muted-foreground font-medium whitespace-nowrap'>
+                <span className='text-muted-foreground text-[11px] font-medium whitespace-nowrap'>
                     {t('admin.logs.filter_matches', { filtered: String(filteredCount), total: String(totalCount) })}
                 </span>
             )}
@@ -260,23 +260,23 @@ function SearchBar({
             <button
                 onClick={onToggleAutoScroll}
                 className={cn(
-                    'flex items-center gap-1.5 h-7 px-2.5 rounded-lg text-[11px] font-semibold border transition-all',
+                    'flex h-7 items-center gap-1.5 rounded-lg border px-2.5 text-[11px] font-semibold transition-all',
                     autoScroll
                         ? 'bg-primary/10 border-primary/30 text-primary'
                         : 'border-border/40 text-muted-foreground hover:text-foreground',
                 )}
                 title={t('admin.logs.auto_scroll')}
             >
-                <ArrowDown className='w-3 h-3' />
+                <ArrowDown className='h-3 w-3' />
                 {t('admin.logs.auto_scroll')}
             </button>
             <button
                 onClick={onCopy}
                 disabled={logsEmpty}
-                className='flex items-center gap-1.5 h-7 px-2.5 rounded-lg text-[11px] font-semibold border border-border/40 text-muted-foreground hover:text-foreground transition-all disabled:opacity-40'
+                className='border-border/40 text-muted-foreground hover:text-foreground flex h-7 items-center gap-1.5 rounded-lg border px-2.5 text-[11px] font-semibold transition-all disabled:opacity-40'
                 title={t('admin.logs.copy')}
             >
-                {copied ? <Check className='w-3 h-3 text-emerald-400' /> : <Copy className='w-3 h-3' />}
+                {copied ? <Check className='h-3 w-3 text-emerald-400' /> : <Copy className='h-3 w-3' />}
                 {copied ? t('admin.logs.copied') : t('admin.logs.copy')}
             </button>
         </div>
@@ -627,14 +627,14 @@ export default function AdminLogsPage() {
                     description={t('admin.logs.description')}
                     icon={FileText}
                     actions={
-                        <div className='flex items-center gap-2 flex-wrap justify-end'>
+                        <div className='flex flex-wrap items-center justify-end gap-2'>
                             {viewMode === 'panel' && (
                                 <>
                                     {panelAutoRefresh && (
-                                        <span className='flex items-center gap-1.5 text-xs text-emerald-400 font-medium'>
+                                        <span className='flex items-center gap-1.5 text-xs font-medium text-emerald-400'>
                                             <span className='relative flex h-2 w-2'>
-                                                <span className='animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75' />
-                                                <span className='relative inline-flex rounded-full h-2 w-2 bg-emerald-400' />
+                                                <span className='absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75' />
+                                                <span className='relative inline-flex h-2 w-2 rounded-full bg-emerald-400' />
                                             </span>
                                             {t('admin.logs.live')}
                                         </span>
@@ -646,7 +646,7 @@ export default function AdminLogsPage() {
                                         disabled={panelLoading}
                                     >
                                         <RefreshCw
-                                            className={cn('w-3.5 h-3.5 mr-1.5', panelLoading && 'animate-spin')}
+                                            className={cn('mr-1.5 h-3.5 w-3.5', panelLoading && 'animate-spin')}
                                         />
                                         {t('admin.logs.actions.refresh')}
                                     </Button>
@@ -657,12 +657,12 @@ export default function AdminLogsPage() {
                                     >
                                         {panelAutoRefresh ? (
                                             <>
-                                                <Square className='w-3.5 h-3.5 mr-1.5' />
+                                                <Square className='mr-1.5 h-3.5 w-3.5' />
                                                 {t('admin.logs.actions.stop_auto')}
                                             </>
                                         ) : (
                                             <>
-                                                <Play className='w-3.5 h-3.5 mr-1.5' />
+                                                <Play className='mr-1.5 h-3.5 w-3.5' />
                                                 {t('admin.logs.actions.auto_refresh')}
                                             </>
                                         )}
@@ -673,7 +673,7 @@ export default function AdminLogsPage() {
                                         onClick={clearPanelLogs}
                                         disabled={panelLoading}
                                     >
-                                        <Trash2 className='w-3.5 h-3.5 mr-1.5' />
+                                        <Trash2 className='mr-1.5 h-3.5 w-3.5' />
                                         {t('admin.logs.actions.clear_logs')}
                                     </Button>
                                 </>
@@ -681,10 +681,10 @@ export default function AdminLogsPage() {
                             {viewMode === 'wings' && selectedNodeId && (
                                 <>
                                     {wingsAutoRefresh && (
-                                        <span className='flex items-center gap-1.5 text-xs text-emerald-400 font-medium'>
+                                        <span className='flex items-center gap-1.5 text-xs font-medium text-emerald-400'>
                                             <span className='relative flex h-2 w-2'>
-                                                <span className='animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75' />
-                                                <span className='relative inline-flex rounded-full h-2 w-2 bg-emerald-400' />
+                                                <span className='absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75' />
+                                                <span className='relative inline-flex h-2 w-2 rounded-full bg-emerald-400' />
                                             </span>
                                             {t('admin.logs.live')}
                                         </span>
@@ -696,7 +696,7 @@ export default function AdminLogsPage() {
                                         disabled={wingsLoading}
                                     >
                                         <RefreshCw
-                                            className={cn('w-3.5 h-3.5 mr-1.5', wingsLoading && 'animate-spin')}
+                                            className={cn('mr-1.5 h-3.5 w-3.5', wingsLoading && 'animate-spin')}
                                         />
                                         {t('admin.logs.actions.refresh')}
                                     </Button>
@@ -707,12 +707,12 @@ export default function AdminLogsPage() {
                                     >
                                         {wingsAutoRefresh ? (
                                             <>
-                                                <Square className='w-3.5 h-3.5 mr-1.5' />
+                                                <Square className='mr-1.5 h-3.5 w-3.5' />
                                                 {t('admin.logs.wings_stop_auto')}
                                             </>
                                         ) : (
                                             <>
-                                                <Play className='w-3.5 h-3.5 mr-1.5' />
+                                                <Play className='mr-1.5 h-3.5 w-3.5' />
                                                 {t('admin.logs.wings_auto_refresh')}
                                             </>
                                         )}
@@ -724,9 +724,9 @@ export default function AdminLogsPage() {
                                         disabled={wingsUploading || wingsLoading}
                                     >
                                         {wingsUploading ? (
-                                            <Loader2 className='w-3.5 h-3.5 mr-1.5 animate-spin' />
+                                            <Loader2 className='mr-1.5 h-3.5 w-3.5 animate-spin' />
                                         ) : (
-                                            <UploadCloud className='w-3.5 h-3.5 mr-1.5' />
+                                            <UploadCloud className='mr-1.5 h-3.5 w-3.5' />
                                         )}
                                         {t('admin.logs.wings_upload_logs')}
                                     </Button>
@@ -737,40 +737,40 @@ export default function AdminLogsPage() {
                 />
 
                 {/* Mode switcher tabs */}
-                <div className='flex items-center gap-1 p-1 bg-card/50 border border-border/40 rounded-2xl w-fit backdrop-blur-xl'>
+                <div className='bg-card/50 border-border/40 flex w-fit items-center gap-1 rounded-2xl border p-1 backdrop-blur-xl'>
                     <button
                         onClick={() => setViewMode('panel')}
                         className={cn(
-                            'flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all',
+                            'flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all',
                             viewMode === 'panel'
                                 ? 'bg-primary text-primary-foreground shadow-sm'
                                 : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
                         )}
                     >
-                        <Terminal className='w-4 h-4' />
+                        <Terminal className='h-4 w-4' />
                         {t('admin.logs.tab_panel')}
                     </button>
                     <button
                         onClick={() => setViewMode('wings')}
                         className={cn(
-                            'flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all',
+                            'flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all',
                             viewMode === 'wings'
                                 ? 'bg-primary text-primary-foreground shadow-sm'
                                 : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
                         )}
                     >
-                        <Server className='w-4 h-4' />
+                        <Server className='h-4 w-4' />
                         {t('admin.logs.tab_wings')}
                     </button>
                 </div>
 
                 {/* Panel logs view */}
                 {viewMode === 'panel' && (
-                    <div className='rounded-3xl border border-border/50 bg-card/50 backdrop-blur-xl overflow-hidden'>
+                    <div className='border-border/50 bg-card/50 overflow-hidden rounded-3xl border backdrop-blur-xl'>
                         {/* Panel toolbar */}
-                        <div className='flex flex-col sm:flex-row sm:items-center gap-3 px-4 py-3 border-b border-border/40 bg-muted/20'>
+                        <div className='border-border/40 bg-muted/20 flex flex-col gap-3 border-b px-4 py-3 sm:flex-row sm:items-center'>
                             {/* Log type pills */}
-                            <div className='flex items-center gap-1 p-1 bg-background/60 rounded-xl border border-border/40'>
+                            <div className='bg-background/60 border-border/40 flex items-center gap-1 rounded-xl border p-1'>
                                 {(Object.entries(LOG_TYPE_META) as [LogType, (typeof LOG_TYPE_META)[LogType]][]).map(
                                     ([type, meta]) => {
                                         const Icon = meta.icon;
@@ -780,13 +780,13 @@ export default function AdminLogsPage() {
                                                 key={type}
                                                 onClick={() => setCurrentLogType(type)}
                                                 className={cn(
-                                                    'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all',
+                                                    'flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all',
                                                     active
                                                         ? 'bg-primary text-primary-foreground shadow-sm'
                                                         : 'text-muted-foreground hover:text-foreground hover:bg-muted/60',
                                                 )}
                                             >
-                                                <Icon className={cn('w-3.5 h-3.5', active ? undefined : meta.color)} />
+                                                <Icon className={cn('h-3.5 w-3.5', active ? undefined : meta.color)} />
                                                 {meta.label}
                                             </button>
                                         );
@@ -798,13 +798,13 @@ export default function AdminLogsPage() {
                             <div className='relative' onClick={(e) => e.stopPropagation()}>
                                 <button
                                     onClick={() => setPanelLineDropdownOpen((v) => !v)}
-                                    className='flex items-center gap-1.5 h-8 px-3 rounded-lg border border-border/50 bg-background/60 text-xs font-semibold text-muted-foreground hover:text-foreground hover:border-border transition-all'
+                                    className='border-border/50 bg-background/60 text-muted-foreground hover:text-foreground hover:border-border flex h-8 items-center gap-1.5 rounded-lg border px-3 text-xs font-semibold transition-all'
                                 >
                                     {t('admin.logs.n_lines', { n: String(panelLines) })}{' '}
-                                    <ChevronDown className='w-3 h-3' />
+                                    <ChevronDown className='h-3 w-3' />
                                 </button>
                                 {panelLineDropdownOpen && (
-                                    <div className='absolute top-full mt-1 left-0 z-50 bg-popover border border-border rounded-xl shadow-xl overflow-hidden min-w-[90px]'>
+                                    <div className='bg-popover border-border absolute top-full left-0 z-50 mt-1 min-w-[90px] overflow-hidden rounded-xl border shadow-xl'>
                                         {LINE_OPTIONS.map((n) => (
                                             <button
                                                 key={n}
@@ -813,7 +813,7 @@ export default function AdminLogsPage() {
                                                     setPanelLineDropdownOpen(false);
                                                 }}
                                                 className={cn(
-                                                    'w-full text-left px-3 py-1.5 text-xs font-semibold transition-colors',
+                                                    'w-full px-3 py-1.5 text-left text-xs font-semibold transition-colors',
                                                     panelLines === n
                                                         ? 'bg-primary text-primary-foreground'
                                                         : 'hover:bg-muted text-muted-foreground',
@@ -830,19 +830,19 @@ export default function AdminLogsPage() {
 
                             {/* Panel file stats */}
                             {panelCurrentFileInfo && (
-                                <div className='hidden lg:flex items-center gap-3 text-[11px] text-muted-foreground/70 font-medium'>
+                                <div className='text-muted-foreground/70 hidden items-center gap-3 text-[11px] font-medium lg:flex'>
                                     <span className='flex items-center gap-1'>
-                                        <HardDrive className='w-3 h-3' />
+                                        <HardDrive className='h-3 w-3' />
                                         {formatFileSize(panelCurrentFileInfo.size)}
                                     </span>
                                     <span className='flex items-center gap-1'>
-                                        <Clock className='w-3 h-3' />
+                                        <Clock className='h-3 w-3' />
                                         {formatDate(panelCurrentFileInfo.modified)}
                                     </span>
                                 </div>
                             )}
 
-                            <Badge variant='secondary' className='text-[11px] hidden sm:inline-flex'>
+                            <Badge variant='secondary' className='hidden text-[11px] sm:inline-flex'>
                                 {t('admin.logs.n_lines', { n: String(panelFilteredLines.length) })}
                             </Badge>
                         </div>
@@ -875,29 +875,29 @@ export default function AdminLogsPage() {
                         />
 
                         {/* Status bar */}
-                        <div className='flex items-center gap-4 px-4 py-2 border-t border-border/30 bg-muted/10 text-[11px] text-muted-foreground/60 font-medium'>
+                        <div className='border-border/30 bg-muted/10 text-muted-foreground/60 flex items-center gap-4 border-t px-4 py-2 text-[11px] font-medium'>
                             <div className='flex items-center gap-1.5'>
-                                <PanelTypeIcon className={cn('w-3 h-3', panelTypeColor) as string} />
-                                <span className='uppercase tracking-wide'>{safePanelMeta.label}</span>
+                                <PanelTypeIcon className={cn('h-3 w-3', panelTypeColor) as string} />
+                                <span className='tracking-wide uppercase'>{safePanelMeta.label}</span>
                             </div>
                             {panelCurrentFileInfo && (
                                 <>
                                     <span>·</span>
                                     <span className='flex items-center gap-1'>
-                                        <HardDrive className='w-3 h-3' />
+                                        <HardDrive className='h-3 w-3' />
                                         {formatFileSize(panelCurrentFileInfo.size)}
                                     </span>
                                     <span>·</span>
                                     <span className='flex items-center gap-1'>
-                                        <Clock className='w-3 h-3' />
+                                        <Clock className='h-3 w-3' />
                                         {formatDate(panelCurrentFileInfo.modified)}
                                     </span>
                                 </>
                             )}
                             <div className='flex-1' />
                             {panelAutoRefresh && (
-                                <span className='text-emerald-500 flex items-center gap-1'>
-                                    <span className='inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse' />
+                                <span className='flex items-center gap-1 text-emerald-500'>
+                                    <span className='inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500' />
                                     {t('admin.logs.panel_auto_refresh_interval')}
                                 </span>
                             )}
@@ -908,14 +908,14 @@ export default function AdminLogsPage() {
 
                 {/* Panel log file inventory */}
                 {viewMode === 'panel' && logFiles.length > 0 && (
-                    <div className='rounded-2xl border border-border/40 bg-card/30 backdrop-blur-xl overflow-hidden'>
-                        <div className='px-4 py-2.5 border-b border-border/30 flex items-center gap-2'>
-                            <HardDrive className='w-3.5 h-3.5 text-muted-foreground' />
-                            <span className='text-xs font-semibold text-muted-foreground uppercase tracking-wide'>
+                    <div className='border-border/40 bg-card/30 overflow-hidden rounded-2xl border backdrop-blur-xl'>
+                        <div className='border-border/30 flex items-center gap-2 border-b px-4 py-2.5'>
+                            <HardDrive className='text-muted-foreground h-3.5 w-3.5' />
+                            <span className='text-muted-foreground text-xs font-semibold tracking-wide uppercase'>
                                 {t('admin.logs.files_on_disk')}
                             </span>
                         </div>
-                        <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-border/30'>
+                        <div className='divide-border/30 grid grid-cols-1 divide-y sm:grid-cols-2 sm:divide-x sm:divide-y-0 lg:grid-cols-3'>
                             {logFiles.map((file) => {
                                 const meta = LOG_TYPE_META[file.type as LogType];
                                 const Icon = meta?.icon ?? FileText;
@@ -926,31 +926,31 @@ export default function AdminLogsPage() {
                                         key={file.name}
                                         onClick={() => setCurrentLogType(file.type as LogType)}
                                         className={cn(
-                                            'flex items-center gap-3 px-4 py-3 text-left hover:bg-muted/30 transition-colors',
+                                            'hover:bg-muted/30 flex items-center gap-3 px-4 py-3 text-left transition-colors',
                                             isActive ? 'bg-primary/5' : '',
                                         )}
                                     >
-                                        <Icon className={cn('w-4 h-4 shrink-0', color)} />
+                                        <Icon className={cn('h-4 w-4 shrink-0', color)} />
                                         <div className='min-w-0 flex-1'>
                                             <div className='flex items-center gap-2'>
-                                                <span className='text-xs font-semibold text-foreground uppercase'>
+                                                <span className='text-foreground text-xs font-semibold uppercase'>
                                                     {file.type}
                                                 </span>
                                                 {isActive && (
-                                                    <span className='text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded-full'>
+                                                    <span className='text-primary bg-primary/10 rounded-full px-1.5 py-0.5 text-[10px] font-bold'>
                                                         {t('admin.logs.active')}
                                                     </span>
                                                 )}
                                             </div>
-                                            <div className='text-[11px] text-muted-foreground/60 truncate mt-0.5'>
+                                            <div className='text-muted-foreground/60 mt-0.5 truncate text-[11px]'>
                                                 {file.name}
                                             </div>
                                         </div>
-                                        <div className='text-right shrink-0'>
-                                            <div className='text-xs font-semibold text-muted-foreground'>
+                                        <div className='shrink-0 text-right'>
+                                            <div className='text-muted-foreground text-xs font-semibold'>
                                                 {formatFileSize(file.size)}
                                             </div>
-                                            <div className='text-[10px] text-muted-foreground/50 mt-0.5'>
+                                            <div className='text-muted-foreground/50 mt-0.5 text-[10px]'>
                                                 {formatDate(file.modified)}
                                             </div>
                                         </div>
@@ -963,26 +963,26 @@ export default function AdminLogsPage() {
 
                 {/* Wings node logs view */}
                 {viewMode === 'wings' && (
-                    <div className='rounded-3xl border border-border/50 bg-card/50 backdrop-blur-xl overflow-hidden'>
+                    <div className='border-border/50 bg-card/50 overflow-hidden rounded-3xl border backdrop-blur-xl'>
                         {/* Wings toolbar */}
-                        <div className='flex flex-col sm:flex-row sm:items-center gap-3 px-4 py-3 border-b border-border/40 bg-muted/20'>
+                        <div className='border-border/40 bg-muted/20 flex flex-col gap-3 border-b px-4 py-3 sm:flex-row sm:items-center'>
                             {/* Node picker */}
                             <div className='relative' onClick={(e) => e.stopPropagation()}>
                                 <button
                                     onClick={() => setWingsNodeDropdownOpen((v) => !v)}
                                     disabled={nodesLoading}
-                                    className='flex items-center gap-2 h-8 px-3 rounded-lg border border-border/50 bg-background/60 text-xs font-semibold text-muted-foreground hover:text-foreground hover:border-border transition-all disabled:opacity-50 max-w-[220px]'
+                                    className='border-border/50 bg-background/60 text-muted-foreground hover:text-foreground hover:border-border flex h-8 max-w-[220px] items-center gap-2 rounded-lg border px-3 text-xs font-semibold transition-all disabled:opacity-50'
                                 >
-                                    <Server className='w-3.5 h-3.5 shrink-0 text-amber-400' />
+                                    <Server className='h-3.5 w-3.5 shrink-0 text-amber-400' />
                                     <span className='truncate'>
                                         {nodesLoading
                                             ? t('admin.logs.wings_loading_nodes')
                                             : (selectedNode?.name ?? t('admin.logs.wings_select_node'))}
                                     </span>
-                                    <ChevronDown className='w-3 h-3 shrink-0' />
+                                    <ChevronDown className='h-3 w-3 shrink-0' />
                                 </button>
                                 {wingsNodeDropdownOpen && nodes.length > 0 && (
-                                    <div className='absolute top-full mt-1 left-0 z-50 bg-popover border border-border rounded-xl shadow-xl overflow-hidden min-w-[200px] max-h-60 overflow-y-auto'>
+                                    <div className='bg-popover border-border absolute top-full left-0 z-50 mt-1 max-h-60 min-w-[200px] overflow-hidden overflow-y-auto rounded-xl border shadow-xl'>
                                         {nodes.map((node) => (
                                             <button
                                                 key={node.id}
@@ -991,18 +991,18 @@ export default function AdminLogsPage() {
                                                     setWingsNodeDropdownOpen(false);
                                                 }}
                                                 className={cn(
-                                                    'w-full text-left px-3 py-2 text-xs font-semibold transition-colors flex items-center gap-2',
+                                                    'flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-semibold transition-colors',
                                                     selectedNodeId === node.id
                                                         ? 'bg-primary text-primary-foreground'
                                                         : 'hover:bg-muted text-muted-foreground',
                                                 )}
                                             >
-                                                <Server className='w-3.5 h-3.5 shrink-0' />
+                                                <Server className='h-3.5 w-3.5 shrink-0' />
                                                 <div className='min-w-0'>
                                                     <div className='truncate'>{node.name}</div>
                                                     <div
                                                         className={cn(
-                                                            'text-[10px] truncate',
+                                                            'truncate text-[10px]',
                                                             selectedNodeId === node.id
                                                                 ? 'opacity-70'
                                                                 : 'text-muted-foreground/50',
@@ -1016,7 +1016,7 @@ export default function AdminLogsPage() {
                                     </div>
                                 )}
                                 {wingsNodeDropdownOpen && !nodesLoading && nodes.length === 0 && (
-                                    <div className='absolute top-full mt-1 left-0 z-50 bg-popover border border-border rounded-xl shadow-xl p-3 text-xs text-muted-foreground min-w-[180px]'>
+                                    <div className='bg-popover border-border text-muted-foreground absolute top-full left-0 z-50 mt-1 min-w-[180px] rounded-xl border p-3 text-xs shadow-xl'>
                                         {t('admin.logs.wings_no_nodes')}
                                     </div>
                                 )}
@@ -1026,13 +1026,13 @@ export default function AdminLogsPage() {
                             <div className='relative' onClick={(e) => e.stopPropagation()}>
                                 <button
                                     onClick={() => setWingsLineDropdownOpen((v) => !v)}
-                                    className='flex items-center gap-1.5 h-8 px-3 rounded-lg border border-border/50 bg-background/60 text-xs font-semibold text-muted-foreground hover:text-foreground hover:border-border transition-all'
+                                    className='border-border/50 bg-background/60 text-muted-foreground hover:text-foreground hover:border-border flex h-8 items-center gap-1.5 rounded-lg border px-3 text-xs font-semibold transition-all'
                                 >
                                     {t('admin.logs.n_lines', { n: String(wingsLines) })}{' '}
-                                    <ChevronDown className='w-3 h-3' />
+                                    <ChevronDown className='h-3 w-3' />
                                 </button>
                                 {wingsLineDropdownOpen && (
-                                    <div className='absolute top-full mt-1 left-0 z-50 bg-popover border border-border rounded-xl shadow-xl overflow-hidden min-w-[90px]'>
+                                    <div className='bg-popover border-border absolute top-full left-0 z-50 mt-1 min-w-[90px] overflow-hidden rounded-xl border shadow-xl'>
                                         {LINE_OPTIONS.map((n) => (
                                             <button
                                                 key={n}
@@ -1041,7 +1041,7 @@ export default function AdminLogsPage() {
                                                     setWingsLineDropdownOpen(false);
                                                 }}
                                                 className={cn(
-                                                    'w-full text-left px-3 py-1.5 text-xs font-semibold transition-colors',
+                                                    'w-full px-3 py-1.5 text-left text-xs font-semibold transition-colors',
                                                     wingsLines === n
                                                         ? 'bg-primary text-primary-foreground'
                                                         : 'hover:bg-muted text-muted-foreground',
@@ -1058,50 +1058,50 @@ export default function AdminLogsPage() {
 
                             {/* Wings node quick info */}
                             {selectedNode && (
-                                <div className='hidden lg:flex items-center gap-3 text-[11px] text-muted-foreground/70 font-medium'>
+                                <div className='text-muted-foreground/70 hidden items-center gap-3 text-[11px] font-medium lg:flex'>
                                     <span className='flex items-center gap-1'>
-                                        <Globe className='w-3 h-3' />
+                                        <Globe className='h-3 w-3' />
                                         {selectedNode.fqdn}
                                     </span>
                                     <span className='flex items-center gap-1'>
-                                        <Clock className='w-3 h-3' />
+                                        <Clock className='h-3 w-3' />
                                         {t('admin.logs.tab_wings')}
                                     </span>
                                 </div>
                             )}
 
-                            <Badge variant='secondary' className='text-[11px] hidden sm:inline-flex'>
+                            <Badge variant='secondary' className='hidden text-[11px] sm:inline-flex'>
                                 {t('admin.logs.n_lines', { n: String(wingsFilteredLines.length) })}
                             </Badge>
                         </div>
 
                         {/* Upload URL banner */}
                         {wingsUploadUrl && (
-                            <div className='flex items-center gap-3 px-4 py-2.5 bg-emerald-500/10 border-b border-emerald-500/20 text-xs font-medium text-emerald-400'>
-                                <Check className='w-3.5 h-3.5 shrink-0' />
+                            <div className='flex items-center gap-3 border-b border-emerald-500/20 bg-emerald-500/10 px-4 py-2.5 text-xs font-medium text-emerald-400'>
+                                <Check className='h-3.5 w-3.5 shrink-0' />
                                 <span>{t('admin.logs.wings_uploaded')}</span>
                                 <a
                                     href={wingsUploadUrl}
                                     target='_blank'
                                     rel='noopener noreferrer'
-                                    className='underline underline-offset-2 hover:text-emerald-300 flex items-center gap-1 truncate'
+                                    className='flex items-center gap-1 truncate underline underline-offset-2 hover:text-emerald-300'
                                 >
                                     {wingsUploadUrl}
-                                    <ExternalLink className='w-3 h-3 shrink-0' />
+                                    <ExternalLink className='h-3 w-3 shrink-0' />
                                 </a>
                                 <button
                                     onClick={() => navigator.clipboard.writeText(wingsUploadUrl)}
                                     className='shrink-0 hover:text-emerald-300'
                                 >
-                                    <Copy className='w-3 h-3' />
+                                    <Copy className='h-3 w-3' />
                                 </button>
                             </div>
                         )}
 
                         {/* No node selected */}
                         {!selectedNodeId && !nodesLoading && (
-                            <div className='flex flex-col items-center justify-center h-48 gap-3 bg-[#0d1117] text-slate-600'>
-                                <Server className='w-10 h-10 opacity-30' />
+                            <div className='flex h-48 flex-col items-center justify-center gap-3 bg-[#0d1117] text-slate-600'>
+                                <Server className='h-10 w-10 opacity-30' />
                                 <span className='text-sm'>{t('admin.logs.wings_no_node_selected')}</span>
                             </div>
                         )}
@@ -1124,8 +1124,8 @@ export default function AdminLogsPage() {
                                     logsEmpty={!wingsLogs}
                                     extra={
                                         wingsLoading ? (
-                                            <span className='flex items-center gap-1.5 text-[11px] text-muted-foreground'>
-                                                <Loader2 className='w-3 h-3 animate-spin' />
+                                            <span className='text-muted-foreground flex items-center gap-1.5 text-[11px]'>
+                                                <Loader2 className='h-3 w-3 animate-spin' />
                                                 {t('admin.logs.wings_fetching')}
                                             </span>
                                         ) : undefined
@@ -1144,10 +1144,10 @@ export default function AdminLogsPage() {
                         )}
 
                         {/* Status bar */}
-                        <div className='flex items-center gap-4 px-4 py-2 border-t border-border/30 bg-muted/10 text-[11px] text-muted-foreground/60 font-medium'>
+                        <div className='border-border/30 bg-muted/10 text-muted-foreground/60 flex items-center gap-4 border-t px-4 py-2 text-[11px] font-medium'>
                             <div className='flex items-center gap-1.5'>
-                                <Server className='w-3 h-3 text-amber-400' />
-                                <span className='uppercase tracking-wide'>
+                                <Server className='h-3 w-3 text-amber-400' />
+                                <span className='tracking-wide uppercase'>
                                     {selectedNode?.name ?? t('admin.logs.wings_no_node_status')}
                                 </span>
                             </div>
@@ -1159,8 +1159,8 @@ export default function AdminLogsPage() {
                             )}
                             <div className='flex-1' />
                             {wingsAutoRefresh && (
-                                <span className='text-emerald-500 flex items-center gap-1'>
-                                    <span className='inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse' />
+                                <span className='flex items-center gap-1 text-emerald-500'>
+                                    <span className='inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500' />
                                     {t('admin.logs.wings_auto_refresh_interval')}
                                 </span>
                             )}
@@ -1173,17 +1173,17 @@ export default function AdminLogsPage() {
 
                 {/* Wings node switcher grid */}
                 {viewMode === 'wings' && nodes.length > 0 && (
-                    <div className='rounded-2xl border border-border/40 bg-card/30 backdrop-blur-xl overflow-hidden'>
-                        <div className='px-4 py-2.5 border-b border-border/30 flex items-center gap-2'>
-                            <Server className='w-3.5 h-3.5 text-muted-foreground' />
-                            <span className='text-xs font-semibold text-muted-foreground uppercase tracking-wide'>
+                    <div className='border-border/40 bg-card/30 overflow-hidden rounded-2xl border backdrop-blur-xl'>
+                        <div className='border-border/30 flex items-center gap-2 border-b px-4 py-2.5'>
+                            <Server className='text-muted-foreground h-3.5 w-3.5' />
+                            <span className='text-muted-foreground text-xs font-semibold tracking-wide uppercase'>
                                 {t('admin.logs.wings_nodes')}
                             </span>
-                            <span className='text-[11px] text-muted-foreground/50'>
+                            <span className='text-muted-foreground/50 text-[11px]'>
                                 {t('admin.logs.wings_nodes_hint')}
                             </span>
                         </div>
-                        <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-border/30'>
+                        <div className='divide-border/30 grid grid-cols-1 divide-y sm:grid-cols-2 sm:divide-x sm:divide-y-0 lg:grid-cols-3'>
                             {nodes.map((node) => {
                                 const isActive = node.id === selectedNodeId;
                                 return (
@@ -1191,28 +1191,28 @@ export default function AdminLogsPage() {
                                         key={node.id}
                                         onClick={() => setSelectedNodeId(node.id)}
                                         className={cn(
-                                            'flex items-center gap-3 px-4 py-3 text-left hover:bg-muted/30 transition-colors',
+                                            'hover:bg-muted/30 flex items-center gap-3 px-4 py-3 text-left transition-colors',
                                             isActive ? 'bg-primary/5' : '',
                                         )}
                                     >
                                         <Server
                                             className={cn(
-                                                'w-4 h-4 shrink-0',
+                                                'h-4 w-4 shrink-0',
                                                 isActive ? 'text-primary' : 'text-amber-400',
                                             )}
                                         />
                                         <div className='min-w-0 flex-1'>
                                             <div className='flex items-center gap-2'>
-                                                <span className='text-xs font-semibold text-foreground truncate'>
+                                                <span className='text-foreground truncate text-xs font-semibold'>
                                                     {node.name}
                                                 </span>
                                                 {isActive && (
-                                                    <span className='text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded-full shrink-0'>
+                                                    <span className='text-primary bg-primary/10 shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-bold'>
                                                         {t('admin.logs.active')}
                                                     </span>
                                                 )}
                                             </div>
-                                            <div className='text-[11px] text-muted-foreground/60 truncate mt-0.5'>
+                                            <div className='text-muted-foreground/60 mt-0.5 truncate text-[11px]'>
                                                 {node.fqdn}
                                             </div>
                                         </div>

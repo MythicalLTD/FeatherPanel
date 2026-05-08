@@ -31,15 +31,15 @@ export function ResourcesTab({ form, setForm, errors }: TabProps) {
             description={t('admin.servers.edit.resources.description')}
         >
             <div className='space-y-6'>
-                <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+                <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
                     <div className='space-y-3'>
                         <Label>{t('admin.servers.form.memory')}</Label>
-                        <div className='flex items-center gap-2 mb-2'>
+                        <div className='mb-2 flex items-center gap-2'>
                             <Button
                                 type='button'
                                 size='sm'
                                 variant={form.memory === 0 ? 'default' : 'outline'}
-                                className={form.memory === 0 ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''}
+                                className={form.memory === 0 ? 'bg-emerald-600 text-white hover:bg-emerald-700' : ''}
                                 onClick={() => setForm((prev) => ({ ...prev, memory: 0 }))}
                             >
                                 {t('admin.servers.form.unlimited')}
@@ -48,7 +48,7 @@ export function ResourcesTab({ form, setForm, errors }: TabProps) {
                                 type='button'
                                 size='sm'
                                 variant={form.memory !== 0 ? 'default' : 'outline'}
-                                className={form.memory !== 0 ? 'bg-amber-600 hover:bg-amber-700 text-white' : ''}
+                                className={form.memory !== 0 ? 'bg-amber-600 text-white hover:bg-amber-700' : ''}
                                 onClick={() => {
                                     if (form.memory === 0) setForm((prev) => ({ ...prev, memory: 1024 }));
                                 }}
@@ -65,17 +65,17 @@ export function ResourcesTab({ form, setForm, errors }: TabProps) {
                                 className={`bg-muted/30 h-11 ${errors.memory ? 'border-red-500' : ''}`}
                             />
                         )}
-                        <p className='text-xs text-muted-foreground'>{t('admin.servers.form.memory_help')}</p>
+                        <p className='text-muted-foreground text-xs'>{t('admin.servers.form.memory_help')}</p>
                     </div>
 
                     <div className='space-y-3'>
                         <Label>{t('admin.servers.form.swap')}</Label>
-                        <div className='flex items-center gap-2 mb-2'>
+                        <div className='mb-2 flex items-center gap-2'>
                             <Button
                                 type='button'
                                 size='sm'
                                 variant={form.swap === 0 ? 'default' : 'outline'}
-                                className={form.swap === 0 ? 'bg-red-600 hover:bg-red-700 text-white' : ''}
+                                className={form.swap === 0 ? 'bg-red-600 text-white hover:bg-red-700' : ''}
                                 onClick={() => setForm((prev) => ({ ...prev, swap: 0 }))}
                             >
                                 {t('admin.servers.form.disabled')}
@@ -86,7 +86,7 @@ export function ResourcesTab({ form, setForm, errors }: TabProps) {
                                 variant={form.swap !== 0 && form.swap !== -1 ? 'default' : 'outline'}
                                 className={
                                     form.swap !== 0 && form.swap !== -1
-                                        ? 'bg-amber-600 hover:bg-amber-700 text-white'
+                                        ? 'bg-amber-600 text-white hover:bg-amber-700'
                                         : ''
                                 }
                                 onClick={() => {
@@ -100,7 +100,7 @@ export function ResourcesTab({ form, setForm, errors }: TabProps) {
                                 type='button'
                                 size='sm'
                                 variant={form.swap === -1 ? 'default' : 'outline'}
-                                className={form.swap === -1 ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''}
+                                className={form.swap === -1 ? 'bg-emerald-600 text-white hover:bg-emerald-700' : ''}
                                 onClick={() => setForm((prev) => ({ ...prev, swap: -1 }))}
                             >
                                 {t('admin.servers.form.unlimited')}
@@ -115,17 +115,17 @@ export function ResourcesTab({ form, setForm, errors }: TabProps) {
                                 className={`bg-muted/30 h-11 ${errors.swap ? 'border-red-500' : ''}`}
                             />
                         )}
-                        <p className='text-xs text-muted-foreground'>{t('admin.servers.form.swap_help')}</p>
+                        <p className='text-muted-foreground text-xs'>{t('admin.servers.form.swap_help')}</p>
                     </div>
 
                     <div className='space-y-3'>
                         <Label>{t('admin.servers.form.disk')}</Label>
-                        <div className='flex items-center gap-2 mb-2'>
+                        <div className='mb-2 flex items-center gap-2'>
                             <Button
                                 type='button'
                                 size='sm'
                                 variant={form.disk === 0 ? 'default' : 'outline'}
-                                className={form.disk === 0 ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''}
+                                className={form.disk === 0 ? 'bg-emerald-600 text-white hover:bg-emerald-700' : ''}
                                 onClick={() => setForm((prev) => ({ ...prev, disk: 0 }))}
                             >
                                 {t('admin.servers.form.unlimited')}
@@ -134,7 +134,7 @@ export function ResourcesTab({ form, setForm, errors }: TabProps) {
                                 type='button'
                                 size='sm'
                                 variant={form.disk !== 0 ? 'default' : 'outline'}
-                                className={form.disk !== 0 ? 'bg-amber-600 hover:bg-amber-700 text-white' : ''}
+                                className={form.disk !== 0 ? 'bg-amber-600 text-white hover:bg-amber-700' : ''}
                                 onClick={() => {
                                     if (form.disk === 0) setForm((prev) => ({ ...prev, disk: 1024 }));
                                 }}
@@ -151,17 +151,17 @@ export function ResourcesTab({ form, setForm, errors }: TabProps) {
                                 className={`bg-muted/30 h-11 ${errors.disk ? 'border-red-500' : ''}`}
                             />
                         )}
-                        <p className='text-xs text-muted-foreground'>{t('admin.servers.form.disk_help')}</p>
+                        <p className='text-muted-foreground text-xs'>{t('admin.servers.form.disk_help')}</p>
                     </div>
 
                     <div className='space-y-3'>
                         <Label>{t('admin.servers.form.cpu')}</Label>
-                        <div className='flex items-center gap-2 mb-2'>
+                        <div className='mb-2 flex items-center gap-2'>
                             <Button
                                 type='button'
                                 size='sm'
                                 variant={form.cpu === 0 ? 'default' : 'outline'}
-                                className={form.cpu === 0 ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''}
+                                className={form.cpu === 0 ? 'bg-emerald-600 text-white hover:bg-emerald-700' : ''}
                                 onClick={() => setForm((prev) => ({ ...prev, cpu: 0 }))}
                             >
                                 {t('admin.servers.form.unlimited')}
@@ -170,7 +170,7 @@ export function ResourcesTab({ form, setForm, errors }: TabProps) {
                                 type='button'
                                 size='sm'
                                 variant={form.cpu !== 0 ? 'default' : 'outline'}
-                                className={form.cpu !== 0 ? 'bg-amber-600 hover:bg-amber-700 text-white' : ''}
+                                className={form.cpu !== 0 ? 'bg-amber-600 text-white hover:bg-amber-700' : ''}
                                 onClick={() => {
                                     if (form.cpu === 0) setForm((prev) => ({ ...prev, cpu: 100 }));
                                 }}
@@ -187,7 +187,7 @@ export function ResourcesTab({ form, setForm, errors }: TabProps) {
                                 className={`bg-muted/30 h-11 ${errors.cpu ? 'border-red-500' : ''}`}
                             />
                         )}
-                        <p className='text-xs text-muted-foreground'>{t('admin.servers.form.cpu_help')}</p>
+                        <p className='text-muted-foreground text-xs'>{t('admin.servers.form.cpu_help')}</p>
                     </div>
 
                     <div className='space-y-3'>
@@ -200,7 +200,7 @@ export function ResourcesTab({ form, setForm, errors }: TabProps) {
                             max={1000}
                             className={`bg-muted/30 h-11 ${errors.io ? 'border-red-500' : ''}`}
                         />
-                        <p className='text-xs text-muted-foreground'>{t('admin.servers.form.io_help')}</p>
+                        <p className='text-muted-foreground text-xs'>{t('admin.servers.form.io_help')}</p>
                     </div>
 
                     <div className='space-y-3'>
@@ -210,7 +210,7 @@ export function ResourcesTab({ form, setForm, errors }: TabProps) {
                                 type='button'
                                 size='sm'
                                 variant={form.oom_killer ? 'default' : 'outline'}
-                                className={form.oom_killer ? 'bg-red-600 hover:bg-red-700 text-white' : ''}
+                                className={form.oom_killer ? 'bg-red-600 text-white hover:bg-red-700' : ''}
                                 onClick={() => setForm((prev) => ({ ...prev, oom_killer: true }))}
                             >
                                 {t('admin.servers.form.enabled')}
@@ -219,13 +219,13 @@ export function ResourcesTab({ form, setForm, errors }: TabProps) {
                                 type='button'
                                 size='sm'
                                 variant={!form.oom_killer ? 'default' : 'outline'}
-                                className={!form.oom_killer ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''}
+                                className={!form.oom_killer ? 'bg-emerald-600 text-white hover:bg-emerald-700' : ''}
                                 onClick={() => setForm((prev) => ({ ...prev, oom_killer: false }))}
                             >
                                 {t('admin.servers.form.disabled')}
                             </Button>
                         </div>
-                        <p className='text-xs text-muted-foreground'>{t('admin.servers.form.oom_killer_help')}</p>
+                        <p className='text-muted-foreground text-xs'>{t('admin.servers.form.oom_killer_help')}</p>
                     </div>
                 </div>
 
@@ -237,7 +237,7 @@ export function ResourcesTab({ form, setForm, errors }: TabProps) {
                         placeholder={t('admin.servers.form.threads_placeholder')}
                         className='bg-muted/30 h-11'
                     />
-                    <p className='text-xs text-muted-foreground'>{t('admin.servers.form.threads_help')}</p>
+                    <p className='text-muted-foreground text-xs'>{t('admin.servers.form.threads_help')}</p>
                 </div>
             </div>
         </PageCard>

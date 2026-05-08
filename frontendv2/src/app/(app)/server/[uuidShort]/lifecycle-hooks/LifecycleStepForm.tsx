@@ -91,7 +91,7 @@ export function LifecycleStepForm({
                             onChange={(e) => setForm((current) => ({ ...current, discord_content: e.target.value }))}
                             placeholder={t('lifecycleHooks.discord.placeholders.messageContent')}
                         />
-                        <p className='text-[11px] text-muted-foreground'>{t('lifecycleHooks.discord.contentHint')}</p>
+                        <p className='text-muted-foreground text-[11px]'>{t('lifecycleHooks.discord.contentHint')}</p>
                     </div>
                     <div className='space-y-2'>
                         <Label>{t('lifecycleHooks.form.usernameOptional')}</Label>
@@ -178,7 +178,7 @@ export function LifecycleStepForm({
                 />
             </div>
 
-            <div className='flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-border/20'>
+            <div className='border-border/20 flex flex-wrap items-center justify-between gap-3 border-t pt-2'>
                 <Button type='button' variant='glass' onClick={onCancel} disabled={saving}>
                     {cancelLabel}
                 </Button>

@@ -189,12 +189,12 @@ export function ActionsTab({ serverId, serverName, isSuspended, currentNodeId, o
                     </div>
                     {isSuspended ? (
                         <Button variant='outline' onClick={handleUnsuspend} loading={suspending}>
-                            <Play className='h-4 w-4 mr-2' />
+                            <Play className='mr-2 h-4 w-4' />
                             {t('admin.servers.edit.actions.unsuspend')}
                         </Button>
                     ) : (
                         <Button variant='destructive' onClick={handleSuspend} loading={suspending}>
-                            <Pause className='h-4 w-4 mr-2' />
+                            <Pause className='mr-2 h-4 w-4' />
                             {t('admin.servers.edit.actions.suspend')}
                         </Button>
                     )}
@@ -214,7 +214,7 @@ export function ActionsTab({ serverId, serverName, isSuspended, currentNodeId, o
                             setDeleteDialogOpen(true);
                         }}
                     >
-                        <Trash2 className='h-4 w-4 mr-2' />
+                        <Trash2 className='mr-2 h-4 w-4' />
                         {t('admin.servers.edit.actions.soft_delete')}
                     </Button>
                     <Button
@@ -224,7 +224,7 @@ export function ActionsTab({ serverId, serverName, isSuspended, currentNodeId, o
                             setDeleteDialogOpen(true);
                         }}
                     >
-                        <Trash2 className='h-4 w-4 mr-2' />
+                        <Trash2 className='mr-2 h-4 w-4' />
                         {t('admin.servers.edit.actions.hard_delete')}
                     </Button>
                 </div>
@@ -239,7 +239,7 @@ export function ActionsTab({ serverId, serverName, isSuspended, currentNodeId, o
                         setTransferDialogOpen(true);
                     }}
                 >
-                    <ArrowLeftRight className='h-4 w-4 mr-2' />
+                    <ArrowLeftRight className='mr-2 h-4 w-4' />
                     {t('admin.servers.actions.transfer')}
                 </Button>
 
@@ -262,11 +262,11 @@ export function ActionsTab({ serverId, serverName, isSuspended, currentNodeId, o
                                         </span>
                                         <br />
                                         <br />
-                                        <span className='font-semibold text-destructive'>
+                                        <span className='text-destructive font-semibold'>
                                             {t('admin.servers.edit.actions.hard_delete_target_node_warning')}
                                         </span>
                                         <br />
-                                        <span className='font-semibold text-destructive'>
+                                        <span className='text-destructive font-semibold'>
                                             {t('admin.servers.edit.actions.hard_delete_restore_warning')}
                                         </span>
                                     </>
@@ -339,7 +339,7 @@ export function ActionsTab({ serverId, serverName, isSuspended, currentNodeId, o
                             onClick={handleTransfer}
                             disabled={!selectedNode || !selectedAllocation || transferring}
                         >
-                            {transferring ? <Loader2 className='h-4 w-4 animate-spin mr-2' /> : null}
+                            {transferring ? <Loader2 className='mr-2 h-4 w-4 animate-spin' /> : null}
                             {t('admin.servers.transfer.submit')}
                         </AlertDialogAction>
                     </AlertDialogFooter>
@@ -353,7 +353,7 @@ export function ActionsTab({ serverId, serverName, isSuspended, currentNodeId, o
             >
                 <div className='space-y-3'>
                     <div className='relative'>
-                        <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground' />
+                        <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
                         <Input
                             placeholder='Search nodes...'
                             className='pl-10'
@@ -364,16 +364,16 @@ export function ActionsTab({ serverId, serverName, isSuspended, currentNodeId, o
                             }}
                         />
                     </div>
-                    <div className='max-h-[320px] overflow-y-auto space-y-2'>
+                    <div className='max-h-[320px] space-y-2 overflow-y-auto'>
                         {loadingNodes ? (
                             <div className='py-8 text-center'>
-                                <Loader2 className='h-5 w-5 animate-spin mx-auto' />
+                                <Loader2 className='mx-auto h-5 w-5 animate-spin' />
                             </div>
                         ) : (
                             nodes.map((n) => (
                                 <button
                                     key={n.id}
-                                    className='w-full p-3 rounded-xl border border-border/50 hover:bg-muted/50 text-left'
+                                    className='border-border/50 hover:bg-muted/50 w-full rounded-xl border p-3 text-left'
                                     onClick={() => {
                                         setSelectedNode(n);
                                         setSelectedAllocation(null);
@@ -381,7 +381,7 @@ export function ActionsTab({ serverId, serverName, isSuspended, currentNodeId, o
                                     }}
                                 >
                                     <div className='font-medium'>{n.name}</div>
-                                    <div className='text-xs text-muted-foreground'>{n.fqdn}</div>
+                                    <div className='text-muted-foreground text-xs'>{n.fqdn}</div>
                                 </button>
                             ))
                         )}
@@ -396,7 +396,7 @@ export function ActionsTab({ serverId, serverName, isSuspended, currentNodeId, o
             >
                 <div className='space-y-3'>
                     <div className='relative'>
-                        <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground' />
+                        <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
                         <Input
                             placeholder='Search allocations...'
                             className='pl-10'
@@ -407,16 +407,16 @@ export function ActionsTab({ serverId, serverName, isSuspended, currentNodeId, o
                             }}
                         />
                     </div>
-                    <div className='max-h-[320px] overflow-y-auto space-y-2'>
+                    <div className='max-h-[320px] space-y-2 overflow-y-auto'>
                         {loadingAllocations ? (
                             <div className='py-8 text-center'>
-                                <Loader2 className='h-5 w-5 animate-spin mx-auto' />
+                                <Loader2 className='mx-auto h-5 w-5 animate-spin' />
                             </div>
                         ) : (
                             allocations.map((a) => (
                                 <button
                                     key={a.id}
-                                    className='w-full p-3 rounded-xl border border-border/50 hover:bg-muted/50 text-left'
+                                    className='border-border/50 hover:bg-muted/50 w-full rounded-xl border p-3 text-left'
                                     onClick={() => {
                                         setSelectedAllocation(a);
                                         setAllocationModalOpen(false);
@@ -425,7 +425,7 @@ export function ActionsTab({ serverId, serverName, isSuspended, currentNodeId, o
                                     <div className='font-medium'>
                                         {a.ip}:{a.port}
                                     </div>
-                                    <div className='text-xs text-muted-foreground'>{a.ip_alias || 'No Alias'}</div>
+                                    <div className='text-muted-foreground text-xs'>{a.ip_alias || 'No Alias'}</div>
                                 </button>
                             ))
                         )}

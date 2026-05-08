@@ -51,8 +51,8 @@ export default function TicketsAnalyticsPage() {
             .finally(() => setLoading(false));
     }, []);
 
-    if (loading) return <div className='min-h-[300px] flex items-center justify-center'>Loading...</div>;
-    if (!data) return <div className='min-h-[300px] flex items-center justify-center'>No data</div>;
+    if (loading) return <div className='flex min-h-[300px] items-center justify-center'>Loading...</div>;
+    if (!data) return <div className='flex min-h-[300px] items-center justify-center'>No data</div>;
 
     const breakdown = [
         { name: 'Tickets', value: data.tickets.tickets ?? 0 },

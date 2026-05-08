@@ -44,7 +44,7 @@ interface SimplePieChartProps {
 
 export function SimplePieChart({ title, description, data }: SimplePieChartProps) {
     return (
-        <Card className='col-span-1 border-border/50 shadow-sm bg-card/50 backdrop-blur-sm'>
+        <Card className='border-border/50 bg-card/50 col-span-1 shadow-sm backdrop-blur-sm'>
             <CardHeader>
                 <CardTitle>{title}</CardTitle>
                 <CardDescription>{description}</CardDescription>
@@ -92,7 +92,7 @@ interface TrendChartProps {
 
 export function TrendChart({ title, description, data, color = '#3b82f6' }: TrendChartProps) {
     return (
-        <Card className='col-span-1 lg:col-span-2 border-border/50 shadow-sm bg-card/50 backdrop-blur-sm'>
+        <Card className='border-border/50 bg-card/50 col-span-1 shadow-sm backdrop-blur-sm lg:col-span-2'>
             <CardHeader>
                 <CardTitle>{title}</CardTitle>
                 <CardDescription>{description}</CardDescription>
@@ -129,7 +129,7 @@ interface ResourceTrendChartProps {
 export function ResourceTrendChart({ title, description, data }: ResourceTrendChartProps) {
     const { t } = useTranslation();
     return (
-        <Card className='col-span-1 lg:col-span-2 border-border/50 shadow-sm bg-card/50 backdrop-blur-sm'>
+        <Card className='border-border/50 bg-card/50 col-span-1 shadow-sm backdrop-blur-sm lg:col-span-2'>
             <CardHeader>
                 <CardTitle>{title}</CardTitle>
                 <CardDescription>{description}</CardDescription>
@@ -190,7 +190,7 @@ interface SimpleBarChartProps {
 
 export function SimpleBarChart({ title, description, data, color = '#3b82f6' }: SimpleBarChartProps) {
     return (
-        <Card className='col-span-1 lg:col-span-2 border-border/50 shadow-sm bg-card/50 backdrop-blur-sm'>
+        <Card className='border-border/50 bg-card/50 col-span-1 shadow-sm backdrop-blur-sm lg:col-span-2'>
             <CardHeader>
                 <CardTitle>{title}</CardTitle>
                 <CardDescription>{description}</CardDescription>

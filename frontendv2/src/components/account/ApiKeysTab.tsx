@@ -217,7 +217,7 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
         return (
             <div className='flex items-center justify-center py-12'>
                 <div className='flex items-center gap-3'>
-                    <div className='animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent'></div>
+                    <div className='border-primary h-6 w-6 animate-spin rounded-full border-2 border-t-transparent'></div>
                     <span className='text-muted-foreground'>{t('account.apiKeys.loading')}</span>
                 </div>
             </div>
@@ -228,11 +228,11 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
         <div className='space-y-5'>
             <WidgetRenderer widgets={getWidgets(slug, 'top-of-page')} />
             <div className='flex items-center justify-between'>
-                <div className='rounded-xl border border-border/50 bg-muted/20 p-4 flex-1'>
-                    <h3 className='text-lg font-semibold text-foreground'>{t('account.apiKeys.title')}</h3>
-                    <p className='text-sm text-muted-foreground mt-1'>{t('account.apiKeys.description')}</p>
+                <div className='border-border/50 bg-muted/20 flex-1 rounded-xl border p-4'>
+                    <h3 className='text-foreground text-lg font-semibold'>{t('account.apiKeys.title')}</h3>
+                    <p className='text-muted-foreground mt-1 text-sm'>{t('account.apiKeys.description')}</p>
                 </div>
-                <div className='flex gap-2 ml-3'>
+                <div className='ml-3 flex gap-2'>
                     <Button
                         onClick={() => window.open('/icanhasfeatherpanel/api/index.html', '_blank')}
                         variant='outline'
@@ -241,7 +241,7 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
                         {t('account.apiKeys.apiDocs')}
                     </Button>
                     <Button onClick={fetchClients} variant='outline' size='sm'>
-                        <RefreshCw className='w-4 h-4 mr-2' />
+                        <RefreshCw className='mr-2 h-4 w-4' />
                         {t('account.apiKeys.refresh')}
                     </Button>
                     {canCreateApiKeys && (
@@ -263,7 +263,7 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
                             }}
                             size='sm'
                         >
-                            <Plus className='w-4 h-4 mr-2' />
+                            <Plus className='mr-2 h-4 w-4' />
                             {t('account.apiKeys.addKey')}
                         </Button>
                     )}
@@ -272,14 +272,14 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
 
             <WidgetRenderer widgets={getWidgets(slug, 'after-header')} />
 
-            <div className='bg-blue-50/80 dark:bg-blue-950/50 border border-blue-200/70 dark:border-blue-800/70 rounded-xl p-4'>
+            <div className='rounded-xl border border-blue-200/70 bg-blue-50/80 p-4 dark:border-blue-800/70 dark:bg-blue-950/50'>
                 <div className='flex items-start gap-3'>
-                    <Info className='h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0' />
+                    <Info className='mt-0.5 h-5 w-5 shrink-0 text-blue-600 dark:text-blue-400' />
                     <div className='space-y-2'>
                         <h4 className='text-sm font-medium text-blue-800 dark:text-blue-200'>
                             {t('account.apiKeys.importantInfo.title')}
                         </h4>
-                        <div className='text-sm text-blue-700 dark:text-blue-300 space-y-1'>
+                        <div className='space-y-1 text-sm text-blue-700 dark:text-blue-300'>
                             <p>{t('account.apiKeys.importantInfo.persistent')}</p>
                             <p>{t('account.apiKeys.importantInfo.accessScope')}</p>
                             <p>{t('account.apiKeys.importantInfo.security')}</p>
@@ -298,15 +298,15 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
                 />
             </div>
 
-            <div className='text-sm text-muted-foreground text-center'>
+            <div className='text-muted-foreground text-center text-sm'>
                 {t('account.apiKeys.totalKeys', { count: String(filteredClients.length) })}
             </div>
 
             {filteredClients.length === 0 ? (
-                <div className='rounded-lg border-2 border-dashed border-border bg-muted/20 p-12 text-center'>
-                    <Key className='w-12 h-12 text-muted-foreground mx-auto mb-4' />
-                    <h4 className='text-sm font-semibold text-foreground mb-2'>{t('account.apiKeys.noKeys')}</h4>
-                    <p className='text-sm text-muted-foreground mb-4'>{t('account.apiKeys.createFirst')}</p>
+                <div className='border-border bg-muted/20 rounded-lg border-2 border-dashed p-12 text-center'>
+                    <Key className='text-muted-foreground mx-auto mb-4 h-12 w-12' />
+                    <h4 className='text-foreground mb-2 text-sm font-semibold'>{t('account.apiKeys.noKeys')}</h4>
+                    <p className='text-muted-foreground mb-4 text-sm'>{t('account.apiKeys.createFirst')}</p>
                     {canCreateApiKeys && (
                         <Button
                             onClick={() => {
@@ -326,42 +326,42 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
                     {filteredClients.map((client) => (
                         <div
                             key={client.id}
-                            className='rounded-lg border border-border/50 bg-card/50 backdrop-blur-xl p-4'
+                            className='border-border/50 bg-card/50 rounded-lg border p-4 backdrop-blur-xl'
                         >
-                            <div className='flex items-start justify-between mb-3'>
+                            <div className='mb-3 flex items-start justify-between'>
                                 <div className='flex-1'>
-                                    <h4 className='text-sm font-semibold text-foreground'>{client.name}</h4>
-                                    <p className='text-xs text-muted-foreground mt-1 font-mono truncate'>
+                                    <h4 className='text-foreground text-sm font-semibold'>{client.name}</h4>
+                                    <p className='text-muted-foreground mt-1 truncate font-mono text-xs'>
                                         {client.public_key ? client.public_key.substring(0, 20) + '...' : ''}
                                     </p>
-                                    <p className='text-xs text-muted-foreground mt-2'>
+                                    <p className='text-muted-foreground mt-2 text-xs'>
                                         {t('account.apiKeys.createdAt')}:{' '}
                                         {new Date(client.created_at).toLocaleDateString()}
                                     </p>
                                     {client.allowed_ips != null && String(client.allowed_ips).trim() !== '' && (
-                                        <p className='text-xs text-amber-700 dark:text-amber-300 mt-1'>
+                                        <p className='mt-1 text-xs text-amber-700 dark:text-amber-300'>
                                             {t('account.apiKeys.ipRestrictedLabel')}
                                         </p>
                                     )}
                                 </div>
-                                <div className='flex flex-col gap-1 items-end'>
+                                <div className='flex flex-col items-end gap-1'>
                                     {client.allowed_ips != null && String(client.allowed_ips).trim() !== '' && (
-                                        <div className='px-2 py-1 rounded text-xs font-medium bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200'>
+                                        <div className='rounded bg-amber-100 px-2 py-1 text-xs font-medium text-amber-900 dark:bg-amber-950 dark:text-amber-200'>
                                             {t('account.apiKeys.badges.ipLocked')}
                                         </div>
                                     )}
-                                    <div className='px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'>
+                                    <div className='rounded bg-green-100 px-2 py-1 text-xs font-medium text-green-800 dark:bg-green-900 dark:text-green-200'>
                                         {t('account.apiKeys.statuses.active')}
                                     </div>
                                 </div>
                             </div>
-                            <div className='flex gap-2 flex-wrap'>
+                            <div className='flex flex-wrap gap-2'>
                                 <Button variant='outline' size='sm' onClick={() => viewClient(client)}>
-                                    <Eye className='w-4 h-4 mr-1' />
+                                    <Eye className='mr-1 h-4 w-4' />
                                     {t('account.apiKeys.viewDetails')}
                                 </Button>
                                 <Button variant='outline' size='sm' onClick={() => editClient(client)}>
-                                    <Pencil className='w-4 h-4 mr-1' />
+                                    <Pencil className='mr-1 h-4 w-4' />
                                     {t('account.apiKeys.edit')}
                                 </Button>
                                 <Button
@@ -372,7 +372,7 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
                                         setRegenerateModal(true);
                                     }}
                                 >
-                                    <RefreshCw className='w-4 h-4 mr-1' />
+                                    <RefreshCw className='mr-1 h-4 w-4' />
                                     {t('account.apiKeys.regenerateKeys')}
                                 </Button>
                                 <Button
@@ -383,7 +383,7 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
                                         setDeleteModal(true);
                                     }}
                                 >
-                                    <Trash2 className='w-4 h-4 mr-1' />
+                                    <Trash2 className='mr-1 h-4 w-4' />
                                     {t('account.apiKeys.delete')}
                                 </Button>
                             </div>
@@ -405,11 +405,11 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
             >
                 <div className='fixed inset-0 bg-black/30' aria-hidden='true' />
                 <div className='fixed inset-0 flex items-center justify-center p-4'>
-                    <DialogPanel className='w-full max-w-2xl rounded-xl bg-card/50 backdrop-blur-xl border border-border/50 p-6'>
-                        <DialogTitle className='text-lg font-semibold text-foreground mb-2'>
+                    <DialogPanel className='bg-card/50 border-border/50 w-full max-w-2xl rounded-xl border p-6 backdrop-blur-xl'>
+                        <DialogTitle className='text-foreground mb-2 text-lg font-semibold'>
                             {editModal ? t('account.apiKeys.editKey') : t('account.apiKeys.addKey')}
                         </DialogTitle>
-                        <DialogDescription className='text-sm text-muted-foreground mb-6'>
+                        <DialogDescription className='text-muted-foreground mb-6 text-sm'>
                             {t('account.apiKeys.modalDescription')}
                         </DialogDescription>
 
@@ -430,7 +430,7 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
                             <Label htmlFor='api-keys-modal-allowed-ips' className='text-foreground'>
                                 {t('account.apiKeys.allowedIpsLabel')}
                             </Label>
-                            <p className='text-xs text-muted-foreground mt-1 mb-2'>
+                            <p className='text-muted-foreground mt-1 mb-2 text-xs'>
                                 {t('account.apiKeys.allowedIpsHelp')}
                             </p>
                             <Textarea
@@ -456,10 +456,10 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
                                 onCheckedChange={(checked) => setNotifyForeignIp(checked === true)}
                             />
                             <div className='min-w-0 flex-1'>
-                                <HeadlessLabel className='text-sm font-medium text-foreground cursor-pointer'>
+                                <HeadlessLabel className='text-foreground cursor-pointer text-sm font-medium'>
                                     {t('account.apiKeys.notifyForeignIp')}
                                 </HeadlessLabel>
-                                <p className='text-xs text-muted-foreground mt-1'>
+                                <p className='text-muted-foreground mt-1 text-xs'>
                                     {t('account.apiKeys.notifyForeignIpHelp')}
                                 </p>
                             </div>
@@ -490,8 +490,8 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
             <Dialog open={viewModal} onClose={() => setViewModal(false)} className='relative z-50'>
                 <div className='fixed inset-0 bg-black/30' aria-hidden='true' />
                 <div className='fixed inset-0 flex items-center justify-center p-4'>
-                    <DialogPanel className='w-full max-w-2xl rounded-xl bg-card/50 backdrop-blur-xl border border-border/50 p-6'>
-                        <DialogTitle className='text-lg font-semibold text-foreground mb-4'>
+                    <DialogPanel className='bg-card/50 border-border/50 w-full max-w-2xl rounded-xl border p-6 backdrop-blur-xl'>
+                        <DialogTitle className='text-foreground mb-4 text-lg font-semibold'>
                             {selectedClient?.name}
                         </DialogTitle>
                         {selectedClient && (
@@ -499,25 +499,25 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
                                 {selectedClient.allowed_ips != null &&
                                     String(selectedClient.allowed_ips).trim() !== '' && (
                                         <div>
-                                            <span className='text-sm font-medium text-muted-foreground'>
+                                            <span className='text-muted-foreground text-sm font-medium'>
                                                 {t('account.apiKeys.allowedIpsLabel')}:
                                             </span>
-                                            <pre className='mt-2 text-xs font-mono whitespace-pre-wrap break-all p-3 bg-muted rounded-md max-h-40 overflow-auto custom-scrollbar'>
+                                            <pre className='bg-muted custom-scrollbar mt-2 max-h-40 overflow-auto rounded-md p-3 font-mono text-xs break-all whitespace-pre-wrap'>
                                                 {selectedClient.allowed_ips}
                                             </pre>
                                             {selectedClient.notify_foreign_ip === 'true' && (
-                                                <p className='text-xs text-muted-foreground mt-2'>
+                                                <p className='text-muted-foreground mt-2 text-xs'>
                                                     {t('account.apiKeys.notifyEnabledHint')}
                                                 </p>
                                             )}
                                         </div>
                                     )}
                                 <div>
-                                    <span className='text-sm font-medium text-muted-foreground'>
+                                    <span className='text-muted-foreground text-sm font-medium'>
                                         {t('account.apiKeys.publicKey')}:
                                     </span>
-                                    <div className='mt-2 p-3 bg-muted rounded-md'>
-                                        <pre className='text-xs font-mono break-all whitespace-pre-wrap'>
+                                    <div className='bg-muted mt-2 rounded-md p-3'>
+                                        <pre className='font-mono text-xs break-all whitespace-pre-wrap'>
                                             {selectedClient.public_key}
                                         </pre>
                                         <Button
@@ -526,18 +526,18 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
                                             className='mt-2'
                                             onClick={() => copyToClipboard(selectedClient.public_key || '')}
                                         >
-                                            <Copy className='w-4 h-4 mr-1' />
+                                            <Copy className='mr-1 h-4 w-4' />
                                             {t('account.apiKeys.copyKey')}
                                         </Button>
                                     </div>
                                 </div>
                                 {selectedClient.private_key && (
                                     <div>
-                                        <span className='text-sm font-medium text-muted-foreground'>
+                                        <span className='text-muted-foreground text-sm font-medium'>
                                             {t('account.apiKeys.privateKey')}:
                                         </span>
-                                        <div className='mt-2 p-3 bg-muted rounded-md'>
-                                            <pre className='text-xs font-mono break-all whitespace-pre-wrap custom-scrollbar max-h-64 overflow-auto'>
+                                        <div className='bg-muted mt-2 rounded-md p-3'>
+                                            <pre className='custom-scrollbar max-h-64 overflow-auto font-mono text-xs break-all whitespace-pre-wrap'>
                                                 {selectedClient.private_key}
                                             </pre>
                                             <Button
@@ -546,10 +546,10 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
                                                 className='mt-2'
                                                 onClick={() => copyToClipboard(selectedClient.private_key || '')}
                                             >
-                                                <Copy className='w-4 h-4 mr-1' />
+                                                <Copy className='mr-1 h-4 w-4' />
                                                 {t('account.apiKeys.copyKey')}
                                             </Button>
-                                            <p className='text-xs text-yellow-600 mt-2'>
+                                            <p className='mt-2 text-xs text-yellow-600'>
                                                 {t('account.apiKeys.privateKeyWarning')}
                                             </p>
                                         </div>
@@ -564,11 +564,11 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
             <Dialog open={deleteModal} onClose={() => setDeleteModal(false)} className='relative z-50'>
                 <div className='fixed inset-0 bg-black/30' aria-hidden='true' />
                 <div className='fixed inset-0 flex items-center justify-center p-4'>
-                    <DialogPanel className='w-full max-w-md rounded-xl bg-card/50 backdrop-blur-xl border border-border/50 p-6'>
-                        <DialogTitle className='text-lg font-semibold text-foreground mb-2'>
+                    <DialogPanel className='bg-card/50 border-border/50 w-full max-w-md rounded-xl border p-6 backdrop-blur-xl'>
+                        <DialogTitle className='text-foreground mb-2 text-lg font-semibold'>
                             {t('account.apiKeys.confirmDelete')}
                         </DialogTitle>
-                        <DialogDescription className='text-sm text-muted-foreground mb-6'>
+                        <DialogDescription className='text-muted-foreground mb-6 text-sm'>
                             {t('account.apiKeys.deleteWarning')}
                         </DialogDescription>
                         <div className='flex gap-3'>
@@ -586,11 +586,11 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
             <Dialog open={regenerateModal} onClose={() => setRegenerateModal(false)} className='relative z-50'>
                 <div className='fixed inset-0 bg-black/30' aria-hidden='true' />
                 <div className='fixed inset-0 flex items-center justify-center p-4'>
-                    <DialogPanel className='w-full max-w-md rounded-xl bg-card/50 backdrop-blur-xl border border-border/50 p-6'>
-                        <DialogTitle className='text-lg font-semibold text-foreground mb-2'>
+                    <DialogPanel className='bg-card/50 border-border/50 w-full max-w-md rounded-xl border p-6 backdrop-blur-xl'>
+                        <DialogTitle className='text-foreground mb-2 text-lg font-semibold'>
                             {t('account.apiKeys.confirmRegenerate')}
                         </DialogTitle>
-                        <DialogDescription className='text-sm text-muted-foreground mb-6'>
+                        <DialogDescription className='text-muted-foreground mb-6 text-sm'>
                             {t('account.apiKeys.regenerateWarning')}
                         </DialogDescription>
                         <div className='flex gap-3'>

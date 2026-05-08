@@ -167,44 +167,44 @@ export function ModulesTab({ node }: ModulesTabProps) {
                             loading={loading}
                             className='rounded-xl'
                         >
-                            <RotateCw className={`h-3 w-3 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                            <RotateCw className={`mr-2 h-3 w-3 ${loading ? 'animate-spin' : ''}`} />
                             {t('common.reload')}
                         </Button>
                     </div>
 
                     <div className='relative min-h-[400px]'>
                         {loading && !modules.length ? (
-                            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                            <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
                                 {[1, 2, 3, 4].map((i) => (
                                     <div
                                         key={i}
-                                        className='h-48 rounded-2xl bg-muted/20 border border-border/50 animate-pulse'
+                                        className='bg-muted/20 border-border/50 h-48 animate-pulse rounded-2xl border'
                                     />
                                 ))}
                             </div>
                         ) : !modules.length ? (
-                            <div className='flex flex-col items-center justify-center h-[400px] text-center space-y-4'>
-                                <div className='p-6 rounded-full bg-muted/30'>
-                                    <LayoutGrid className='h-12 w-12 text-muted-foreground/30' />
+                            <div className='flex h-[400px] flex-col items-center justify-center space-y-4 text-center'>
+                                <div className='bg-muted/30 rounded-full p-6'>
+                                    <LayoutGrid className='text-muted-foreground/30 h-12 w-12' />
                                 </div>
                                 <div className='max-w-xs'>
                                     <h3 className='text-lg font-bold'>{t('admin.node.view.modules.no_modules')}</h3>
-                                    <p className='text-sm text-muted-foreground'>
+                                    <p className='text-muted-foreground text-sm'>
                                         {t('admin.node.view.modules.no_modules_description')}
                                     </p>
                                 </div>
                             </div>
                         ) : (
-                            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                            <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
                                 {modules.map((module) => (
                                     <Card
                                         key={module.name}
-                                        className={`group relative overflow-hidden transition-all duration-300 border-border/50 bg-muted/10 hover:bg-muted/20 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5 rounded-2xl`}
+                                        className={`group border-border/50 bg-muted/10 hover:bg-muted/20 hover:border-primary/30 hover:shadow-primary/5 relative overflow-hidden rounded-2xl transition-all duration-300 hover:shadow-xl`}
                                     >
                                         <CardHeader className='pb-4'>
                                             <div className='flex items-start justify-between'>
                                                 <div className='flex items-center gap-4'>
-                                                    <div className='p-3 rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-all duration-300'>
+                                                    <div className='bg-primary/10 text-primary group-hover:bg-primary rounded-xl p-3 transition-all duration-300 group-hover:text-white'>
                                                         <LayoutGrid className='h-5 w-5' />
                                                     </div>
                                                     <div className='space-y-1'>
@@ -212,13 +212,13 @@ export function ModulesTab({ node }: ModulesTabProps) {
                                                             <CardTitle className='text-base font-bold'>
                                                                 {module.name}
                                                             </CardTitle>
-                                                            <span className='text-[10px] font-mono text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded'>
+                                                            <span className='text-muted-foreground bg-muted/50 rounded px-1.5 py-0.5 font-mono text-[10px]'>
                                                                 v{module.version}
                                                             </span>
                                                         </div>
                                                         <Badge
                                                             variant={module.enabled ? 'default' : 'outline'}
-                                                            className={`text-[10px] uppercase tracking-wider font-bold h-5 ${
+                                                            className={`h-5 text-[10px] font-bold tracking-wider uppercase ${
                                                                 module.enabled
                                                                     ? 'bg-primary/20 text-primary border-primary/20'
                                                                     : 'text-muted-foreground'
@@ -226,12 +226,12 @@ export function ModulesTab({ node }: ModulesTabProps) {
                                                         >
                                                             {module.enabled ? (
                                                                 <>
-                                                                    <CheckCircle2 className='h-3 w-3 mr-1' />
+                                                                    <CheckCircle2 className='mr-1 h-3 w-3' />
                                                                     {t('admin.node.view.modules.enabled_badge')}
                                                                 </>
                                                             ) : (
                                                                 <>
-                                                                    <XCircle className='h-3 w-3 mr-1' />
+                                                                    <XCircle className='mr-1 h-3 w-3' />
                                                                     {t('admin.node.view.modules.disabled_badge')}
                                                                 </>
                                                             )}
@@ -246,11 +246,11 @@ export function ModulesTab({ node }: ModulesTabProps) {
                                             </div>
                                         </CardHeader>
                                         <CardContent className='space-y-4'>
-                                            <CardDescription className='text-xs line-clamp-2 min-h-[32px]'>
+                                            <CardDescription className='line-clamp-2 min-h-[32px] text-xs'>
                                                 {module.description}
                                             </CardDescription>
 
-                                            <div className='pt-2 border-t border-border/50'>
+                                            <div className='border-border/50 border-t pt-2'>
                                                 <Button
                                                     variant='ghost'
                                                     size='sm'
@@ -259,14 +259,14 @@ export function ModulesTab({ node }: ModulesTabProps) {
                                                     loading={fetchingConfig && selectedModule?.name === module.name}
                                                     disabled={module.enabled}
                                                 >
-                                                    <Settings className='h-3 w-3 mr-2' />
+                                                    <Settings className='mr-2 h-3 w-3' />
                                                     {t('admin.node.view.modules.configure')}
                                                 </Button>
                                             </div>
                                         </CardContent>
                                         {toggling === module.name && (
-                                            <div className='absolute inset-0 bg-background/50 backdrop-blur-[1px] flex items-center justify-center z-10'>
-                                                <Loader2 className='h-6 w-6 animate-spin text-primary' />
+                                            <div className='bg-background/50 absolute inset-0 z-10 flex items-center justify-center backdrop-blur-[1px]'>
+                                                <Loader2 className='text-primary h-6 w-6 animate-spin' />
                                             </div>
                                         )}
                                     </Card>
@@ -285,15 +285,15 @@ export function ModulesTab({ node }: ModulesTabProps) {
                     <DialogDescription>{t('admin.node.view.modules.configure_description')}</DialogDescription>
                 </DialogHeader>
 
-                <div className='py-4 space-y-4'>
+                <div className='space-y-4 py-4'>
                     {selectedModule?.enabled && (
-                        <div className='p-4 rounded-xl bg-orange-500/10 border border-orange-500/20 text-orange-500 text-xs flex items-center gap-3'>
+                        <div className='flex items-center gap-3 rounded-xl border border-orange-500/20 bg-orange-500/10 p-4 text-xs text-orange-500'>
                             <AlertTriangle className='h-4 w-4 shrink-0' />
                             {t('admin.node.view.modules.configure_disabled_notice')}
                         </div>
                     )}
                     <textarea
-                        className='w-full h-80 p-4 rounded-xl bg-muted/50 border border-border font-mono text-xs focus:ring-1 focus:ring-primary focus:outline-none'
+                        className='bg-muted/50 border-border focus:ring-primary h-80 w-full rounded-xl border p-4 font-mono text-xs focus:ring-1 focus:outline-none'
                         value={configData}
                         onChange={(e) => setConfigData(e.target.value)}
                         placeholder='{ ... }'

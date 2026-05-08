@@ -67,14 +67,14 @@ export function KnowledgeBaseList({ t }: KnowledgeBaseListProps) {
 
     if (loading) {
         return (
-            <div className='rounded-xl border border-border/50 bg-card/50 backdrop-blur-xl p-6 space-y-4'>
+            <div className='border-border/50 bg-card/50 space-y-4 rounded-xl border p-6 backdrop-blur-xl'>
                 <div className='flex items-center justify-between'>
-                    <div className='h-6 w-32 bg-muted animate-pulse rounded' />
-                    <div className='h-4 w-16 bg-muted animate-pulse rounded' />
+                    <div className='bg-muted h-6 w-32 animate-pulse rounded' />
+                    <div className='bg-muted h-4 w-16 animate-pulse rounded' />
                 </div>
                 <div className='space-y-3'>
                     {[1, 2, 3].map((i) => (
-                        <div key={i} className='h-12 bg-muted/50 animate-pulse rounded-lg' />
+                        <div key={i} className='bg-muted/50 h-12 animate-pulse rounded-lg' />
                     ))}
                 </div>
             </div>
@@ -86,33 +86,33 @@ export function KnowledgeBaseList({ t }: KnowledgeBaseListProps) {
     }
 
     return (
-        <div className='rounded-xl border border-border/50 bg-card/50 backdrop-blur-xl'>
-            <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-4 sm:p-6 border-b border-border min-w-0'>
-                <div className='flex items-center gap-2 min-w-0'>
-                    <BookOpen className='h-5 w-5 text-muted-foreground' />
-                    <h2 className='text-base sm:text-lg font-bold truncate'>{t('dashboard.knowledgebase.title')}</h2>
+        <div className='border-border/50 bg-card/50 rounded-xl border backdrop-blur-xl'>
+            <div className='border-border flex min-w-0 flex-col gap-2 border-b p-4 sm:flex-row sm:items-center sm:justify-between sm:p-6'>
+                <div className='flex min-w-0 items-center gap-2'>
+                    <BookOpen className='text-muted-foreground h-5 w-5' />
+                    <h2 className='truncate text-base font-bold sm:text-lg'>{t('dashboard.knowledgebase.title')}</h2>
                 </div>
                 <Link
                     href='/dashboard/knowledgebase'
-                    className='text-xs sm:text-sm font-medium text-primary hover:text-primary/80 transition-colors self-start sm:self-auto whitespace-nowrap'
+                    className='text-primary hover:text-primary/80 self-start text-xs font-medium whitespace-nowrap transition-colors sm:self-auto sm:text-sm'
                 >
                     {t('dashboard.knowledgebase.view_all')} &rarr;
                 </Link>
             </div>
 
-            <div className='divide-y divide-border'>
+            <div className='divide-border divide-y'>
                 {categories.length > 0 ? (
                     categories.map((category) => (
                         <Link
                             key={category.id}
                             href={`/dashboard/knowledgebase/category/${category.id}`}
-                            className='block p-4 hover:bg-muted/50 transition-colors group'
+                            className='hover:bg-muted/50 group block p-4 transition-colors'
                         >
-                            <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 min-w-0'>
-                                <div className='flex items-start gap-3 sm:gap-4 min-w-0'>
-                                    <div className='p-2 rounded-full bg-primary/5 text-primary shrink-0 mt-1 sm:mt-0 transition-transform group-hover:scale-110'>
+                            <div className='flex min-w-0 flex-col justify-between gap-3 sm:flex-row sm:items-center sm:gap-4'>
+                                <div className='flex min-w-0 items-start gap-3 sm:gap-4'>
+                                    <div className='bg-primary/5 text-primary mt-1 shrink-0 rounded-full p-2 transition-transform group-hover:scale-110 sm:mt-0'>
                                         {category.icon ? (
-                                            <div className='h-5 w-5 relative overflow-hidden rounded-sm'>
+                                            <div className='relative h-5 w-5 overflow-hidden rounded-sm'>
                                                 <Image
                                                     src={category.icon}
                                                     alt={category.name}
@@ -127,26 +127,26 @@ export function KnowledgeBaseList({ t }: KnowledgeBaseListProps) {
                                     </div>
                                     <div className='min-w-0'>
                                         <h4
-                                            className='font-medium text-foreground group-hover:text-primary transition-colors text-sm sm:text-base break-words line-clamp-2'
+                                            className='text-foreground group-hover:text-primary line-clamp-2 text-sm font-medium break-words transition-colors sm:text-base'
                                             title={category.name}
                                         >
                                             {category.name}
                                         </h4>
                                         {category.description && (
-                                            <p className='text-xs text-muted-foreground mt-1 line-clamp-2 break-words'>
+                                            <p className='text-muted-foreground mt-1 line-clamp-2 text-xs break-words'>
                                                 {category.description}
                                             </p>
                                         )}
                                     </div>
                                 </div>
 
-                                <ChevronRight className='hidden sm:block h-5 w-5 text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-1 transition-all shrink-0' />
+                                <ChevronRight className='text-muted-foreground/30 group-hover:text-primary hidden h-5 w-5 shrink-0 transition-all group-hover:translate-x-1 sm:block' />
                             </div>
                         </Link>
                     ))
                 ) : (
-                    <div className='p-8 text-center text-muted-foreground'>
-                        <BookOpen className='h-8 w-8 mx-auto mb-2 opacity-50' />
+                    <div className='text-muted-foreground p-8 text-center'>
+                        <BookOpen className='mx-auto mb-2 h-8 w-8 opacity-50' />
                         <p>{t('dashboard.knowledgebase.no_categories')}</p>
                     </div>
                 )}

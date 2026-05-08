@@ -293,7 +293,7 @@ export default function CreateVdsNodePage() {
     };
 
     return (
-        <div className='max-w-5xl mx-auto py-8 px-4'>
+        <div className='mx-auto max-w-5xl px-4 py-8'>
             <WidgetRenderer widgets={getWidgets('admin-vds-nodes-create', 'top-of-page')} />
 
             <PageHeader
@@ -302,7 +302,7 @@ export default function CreateVdsNodePage() {
                 icon={Server}
                 actions={
                     <Button variant='outline' onClick={() => router.back()}>
-                        <ArrowLeft className='h-4 w-4 mr-2' />
+                        <ArrowLeft className='mr-2 h-4 w-4' />
                         {t('common.back')}
                     </Button>
                 }
@@ -310,8 +310,8 @@ export default function CreateVdsNodePage() {
 
             <WidgetRenderer widgets={getWidgets('admin-vds-nodes-create', 'after-header')} />
 
-            <form onSubmit={handleSubmit} className='space-y-8 mt-8'>
-                <div className='grid grid-cols-1 lg:grid-cols-2 gap-8'>
+            <form onSubmit={handleSubmit} className='mt-8 space-y-8'>
+                <div className='grid grid-cols-1 gap-8 lg:grid-cols-2'>
                     <div className='space-y-8'>
                         <PageCard title={t('admin.vdsNodes.form.basic_details')} icon={Server}>
                             <div className='space-y-6'>
@@ -324,7 +324,7 @@ export default function CreateVdsNodePage() {
                                         error={!!errors.name}
                                     />
                                     {errors.name && (
-                                        <p className='text-[10px] uppercase font-bold text-red-500 mt-1'>
+                                        <p className='mt-1 text-[10px] font-bold text-red-500 uppercase'>
                                             {errors.name}
                                         </p>
                                     )}
@@ -347,12 +347,12 @@ export default function CreateVdsNodePage() {
                                             type='button'
                                             onClick={openLocationPicker}
                                             aria-label={t('admin.vdsNodes.form.select_location')}
-                                            className='flex-1 h-11 px-3 bg-muted/30 rounded-xl border border-border/50 text-sm flex items-center text-left cursor-pointer hover:bg-muted/45 hover:border-border transition-colors'
+                                            className='bg-muted/30 border-border/50 hover:bg-muted/45 hover:border-border flex h-11 flex-1 cursor-pointer items-center rounded-xl border px-3 text-left text-sm transition-colors'
                                         >
                                             {form.location_id && selectedLocationName ? (
                                                 <div className='flex items-center gap-2'>
-                                                    <MapPin className='h-4 w-4 text-primary' />
-                                                    <span className='font-medium text-foreground'>
+                                                    <MapPin className='text-primary h-4 w-4' />
+                                                    <span className='text-foreground font-medium'>
                                                         {selectedLocationName}
                                                     </span>
                                                 </div>
@@ -367,7 +367,7 @@ export default function CreateVdsNodePage() {
                                         </Button>
                                     </div>
                                     {errors.location_id && (
-                                        <p className='text-[10px] uppercase font-bold text-red-500 mt-1'>
+                                        <p className='mt-1 text-[10px] font-bold text-red-500 uppercase'>
                                             {errors.location_id}
                                         </p>
                                     )}
@@ -396,7 +396,7 @@ export default function CreateVdsNodePage() {
                                         error={!!errors.user}
                                     />
                                     {errors.user && (
-                                        <p className='text-[10px] uppercase font-bold text-red-500 mt-1'>
+                                        <p className='mt-1 text-[10px] font-bold text-red-500 uppercase'>
                                             {errors.user}
                                         </p>
                                     )}
@@ -417,7 +417,7 @@ export default function CreateVdsNodePage() {
                                         error={!!errors.token_id}
                                     />
                                     {errors.token_id && (
-                                        <p className='text-[10px] uppercase font-bold text-red-500 mt-1'>
+                                        <p className='mt-1 text-[10px] font-bold text-red-500 uppercase'>
                                             {errors.token_id}
                                         </p>
                                     )}
@@ -432,7 +432,7 @@ export default function CreateVdsNodePage() {
                                         error={!!errors.secret}
                                     />
                                     {errors.secret && (
-                                        <p className='text-[10px] uppercase font-bold text-red-500 mt-1'>
+                                        <p className='mt-1 text-[10px] font-bold text-red-500 uppercase'>
                                             {errors.secret}
                                         </p>
                                     )}
@@ -453,7 +453,7 @@ export default function CreateVdsNodePage() {
                                         error={!!errors.fqdn}
                                     />
                                     {errors.fqdn && (
-                                        <p className='text-[10px] uppercase font-bold text-red-500 mt-1'>
+                                        <p className='mt-1 text-[10px] font-bold text-red-500 uppercase'>
                                             {errors.fqdn}
                                         </p>
                                     )}
@@ -490,7 +490,7 @@ export default function CreateVdsNodePage() {
                                             error={!!errors.port}
                                         />
                                         {errors.port && (
-                                            <p className='text-[10px] uppercase font-bold text-red-500 mt-1'>
+                                            <p className='mt-1 text-[10px] font-bold text-red-500 uppercase'>
                                                 {errors.port}
                                             </p>
                                         )}
@@ -527,7 +527,7 @@ export default function CreateVdsNodePage() {
                                         error={!!errors.timeout}
                                     />
                                     {errors.timeout && (
-                                        <p className='text-[10px] uppercase font-bold text-red-500 mt-1'>
+                                        <p className='mt-1 text-[10px] font-bold text-red-500 uppercase'>
                                             {errors.timeout}
                                         </p>
                                     )}
@@ -539,7 +539,7 @@ export default function CreateVdsNodePage() {
                             <div className='space-y-6'>
                                 <div className='space-y-2'>
                                     <Label className='text-sm font-semibold'>{t('admin.vdsNodes.form.headers')}</Label>
-                                    <p className='text-xs text-muted-foreground'>
+                                    <p className='text-muted-foreground text-xs'>
                                         {t('admin.vdsNodes.form.headers_help')}
                                     </p>
                                     <div className='space-y-2'>
@@ -582,7 +582,7 @@ export default function CreateVdsNodePage() {
                                             onClick={() => setExtraHeaders((rows) => [...rows, { key: '', value: '' }])}
                                             className='mt-1'
                                         >
-                                            <Plus className='h-4 w-4 mr-2' />
+                                            <Plus className='mr-2 h-4 w-4' />
                                             {t('admin.vdsNodes.form.headers_add')}
                                         </Button>
                                     </div>
@@ -590,7 +590,7 @@ export default function CreateVdsNodePage() {
 
                                 <div className='space-y-2'>
                                     <Label className='text-sm font-semibold'>{t('admin.vdsNodes.form.params')}</Label>
-                                    <p className='text-xs text-muted-foreground'>
+                                    <p className='text-muted-foreground text-xs'>
                                         {t('admin.vdsNodes.form.params_help')}
                                     </p>
                                     <div className='space-y-2'>
@@ -633,7 +633,7 @@ export default function CreateVdsNodePage() {
                                             onClick={() => setExtraParams((rows) => [...rows, { key: '', value: '' }])}
                                             className='mt-1'
                                         >
-                                            <Plus className='h-4 w-4 mr-2' />
+                                            <Plus className='mr-2 h-4 w-4' />
                                             {t('admin.vdsNodes.form.params_add')}
                                         </Button>
                                     </div>
@@ -647,9 +647,9 @@ export default function CreateVdsNodePage() {
                     <Button
                         type='submit'
                         loading={loading}
-                        className='w-full sm:w-auto min-w-[200px] h-14 text-lg bg-primary hover:bg-primary/90 transition-all'
+                        className='bg-primary hover:bg-primary/90 h-14 w-full min-w-[200px] text-lg transition-all sm:w-auto'
                     >
-                        <Save className='h-5 w-5 mr-3' />
+                        <Save className='mr-3 h-5 w-5' />
                         {t('admin.vdsNodes.form.submit_create')}
                     </Button>
                 </div>
@@ -678,12 +678,12 @@ export default function CreateVdsNodePage() {
                     </SheetHeader>
 
                     <div className='mt-6 space-y-4'>
-                        <div className='flex rounded-xl border border-border/60 p-1 bg-muted/30 gap-1'>
+                        <div className='border-border/60 bg-muted/30 flex gap-1 rounded-xl border p-1'>
                             <button
                                 type='button'
                                 onClick={() => setLocationPickerMode('select')}
                                 className={cn(
-                                    'flex-1 inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                                    'inline-flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
                                     locationPickerMode === 'select'
                                         ? 'bg-background text-foreground shadow-sm'
                                         : 'text-muted-foreground hover:text-foreground',
@@ -696,7 +696,7 @@ export default function CreateVdsNodePage() {
                                 type='button'
                                 onClick={() => setLocationPickerMode('create')}
                                 className={cn(
-                                    'flex-1 inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                                    'inline-flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
                                     locationPickerMode === 'create'
                                         ? 'bg-background text-foreground shadow-sm'
                                         : 'text-muted-foreground hover:text-foreground',
@@ -752,7 +752,7 @@ export default function CreateVdsNodePage() {
                                         ))}
                                     </Select>
                                 </div>
-                                <div className='flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-2'>
+                                <div className='flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end'>
                                     <Button
                                         type='button'
                                         variant='outline'
@@ -761,7 +761,7 @@ export default function CreateVdsNodePage() {
                                         {t('common.cancel')}
                                     </Button>
                                     <Button type='submit' loading={creatingLocation}>
-                                        <Plus className='h-4 w-4 mr-2' />
+                                        <Plus className='mr-2 h-4 w-4' />
                                         {t('admin.vdsNodes.form.create_location_submit')}
                                     </Button>
                                 </div>
@@ -769,7 +769,7 @@ export default function CreateVdsNodePage() {
                         ) : (
                             <>
                                 <div className='relative'>
-                                    <SearchIcon className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground' />
+                                    <SearchIcon className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform' />
                                     <Input
                                         placeholder={t('admin.vdsNodes.form.search_locations')}
                                         value={locationSearch}
@@ -779,7 +779,7 @@ export default function CreateVdsNodePage() {
                                 </div>
 
                                 {locationPagination.total_pages > 1 && (
-                                    <div className='flex items-center justify-between gap-2 py-2 px-3 rounded-lg border border-border bg-muted/30'>
+                                    <div className='border-border bg-muted/30 flex items-center justify-between gap-2 rounded-lg border px-3 py-2'>
                                         <Button
                                             variant='outline'
                                             size='sm'
@@ -790,7 +790,7 @@ export default function CreateVdsNodePage() {
                                                     current_page: prev.current_page - 1,
                                                 }))
                                             }
-                                            className='gap-1 h-8'
+                                            className='h-8 gap-1'
                                         >
                                             <ChevronLeft className='h-3 w-3' />
                                             {t('common.previous')}
@@ -808,7 +808,7 @@ export default function CreateVdsNodePage() {
                                                     current_page: prev.current_page + 1,
                                                 }))
                                             }
-                                            className='gap-1 h-8'
+                                            className='h-8 gap-1'
                                         >
                                             {t('common.next')}
                                             <ChevronRight className='h-3 w-3' />
@@ -816,9 +816,9 @@ export default function CreateVdsNodePage() {
                                     </div>
                                 )}
 
-                                <div className='space-y-2 max-h-[calc(100vh-300px)] overflow-y-auto'>
+                                <div className='max-h-[calc(100vh-300px)] space-y-2 overflow-y-auto'>
                                     {locations.length === 0 ? (
-                                        <div className='text-center py-8 text-muted-foreground'>
+                                        <div className='text-muted-foreground py-8 text-center'>
                                             {t('admin.vdsNodes.form.no_locations_found')}
                                         </div>
                                     ) : (
@@ -834,16 +834,16 @@ export default function CreateVdsNodePage() {
                                                     setSelectedLocationName(location.name);
                                                     setLocationModalOpen(false);
                                                 }}
-                                                className='w-full p-3 rounded-lg border border-border/50 hover:bg-muted/50 hover:border-primary/50 transition-colors text-left'
+                                                className='border-border/50 hover:bg-muted/50 hover:border-primary/50 w-full rounded-lg border p-3 text-left transition-colors'
                                             >
                                                 <div className='flex items-start gap-3'>
-                                                    <div className='p-2 bg-primary/10 rounded-lg mt-0.5'>
-                                                        <MapPin className='h-5 w-5 text-primary' />
+                                                    <div className='bg-primary/10 mt-0.5 rounded-lg p-2'>
+                                                        <MapPin className='text-primary h-5 w-5' />
                                                     </div>
-                                                    <div className='flex-1 min-w-0'>
+                                                    <div className='min-w-0 flex-1'>
                                                         <div className='font-medium'>{location.name}</div>
                                                         {location.description && (
-                                                            <div className='text-sm text-muted-foreground mt-1'>
+                                                            <div className='text-muted-foreground mt-1 text-sm'>
                                                                 {location.description}
                                                             </div>
                                                         )}

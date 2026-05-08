@@ -68,7 +68,7 @@ function StatusBadge({ connected }: { connected: boolean }) {
     return (
         <span
             className={cn(
-                'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border',
+                'inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-semibold',
                 connected
                     ? 'bg-primary/10 text-primary border-primary/20'
                     : 'bg-muted/50 text-muted-foreground border-border/50',
@@ -227,7 +227,7 @@ export default function CloudManagementPage() {
                     actions={
                         <div className='flex flex-wrap items-center gap-2'>
                             <Button variant='outline' size='sm' disabled={isLoading || isLinking} onClick={fetchKeys}>
-                                <RefreshCw className={cn('h-4 w-4 mr-2', isLoading && 'animate-spin')} />
+                                <RefreshCw className={cn('mr-2 h-4 w-4', isLoading && 'animate-spin')} />
                                 {t('admin.cloud_management.refresh_status')}
                             </Button>
                             <Button
@@ -236,11 +236,11 @@ export default function CloudManagementPage() {
                                 disabled={isRegenerating || isLinking}
                                 onClick={() => setShowRotateConfirmDialog(true)}
                             >
-                                <Key className={cn('h-4 w-4 mr-2', isRegenerating && 'animate-spin')} />
+                                <Key className={cn('mr-2 h-4 w-4', isRegenerating && 'animate-spin')} />
                                 {t('admin.cloud_management.rotate_keys')}
                             </Button>
                             <Button size='sm' disabled={isLinking || isRegenerating} onClick={linkWithFeatherCloud}>
-                                <PlugZap className={cn('h-4 w-4 mr-2', isLinking && 'animate-spin')} />
+                                <PlugZap className={cn('mr-2 h-4 w-4', isLinking && 'animate-spin')} />
                                 {isLinking
                                     ? t('admin.cloud_management.linking')
                                     : isConnected
@@ -275,21 +275,21 @@ export default function CloudManagementPage() {
                         icon={Key}
                     >
                         <div className='grid gap-6 sm:grid-cols-2'>
-                            <div className='rounded-xl border border-border/50 bg-muted/10 p-4'>
-                                <p className='text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1'>
+                            <div className='border-border/50 bg-muted/10 rounded-xl border p-4'>
+                                <p className='text-muted-foreground mb-1 text-xs font-semibold tracking-wider uppercase'>
                                     {t('admin.cloud_management.credentials.cloud_to_panel')}
                                 </p>
-                                <p className='text-sm text-foreground'>
+                                <p className='text-foreground text-sm'>
                                     {keys.cloudCredentials.lastRotatedAt
                                         ? new Date(keys.cloudCredentials.lastRotatedAt).toLocaleString()
                                         : t('admin.cloud_management.credentials.never_rotated')}
                                 </p>
                             </div>
-                            <div className='rounded-xl border border-border/50 bg-muted/10 p-4'>
-                                <p className='text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1'>
+                            <div className='border-border/50 bg-muted/10 rounded-xl border p-4'>
+                                <p className='text-muted-foreground mb-1 text-xs font-semibold tracking-wider uppercase'>
                                     {t('admin.cloud_management.credentials.panel_to_cloud')}
                                 </p>
-                                <p className='text-sm text-foreground'>
+                                <p className='text-foreground text-sm'>
                                     {keys.panelCredentials.lastRotatedAt
                                         ? new Date(keys.panelCredentials.lastRotatedAt).toLocaleString()
                                         : t('admin.cloud_management.credentials.never_rotated')}
@@ -301,50 +301,50 @@ export default function CloudManagementPage() {
 
                 <PageCard title={t('admin.cloud_management.features.title')} icon={Store}>
                     <ul className='space-y-4'>
-                        <li className='flex gap-4 rounded-xl border border-border/50 bg-muted/5 p-4'>
-                            <div className='h-10 w-10 shrink-0 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center'>
-                                <Brain className='h-5 w-5 text-primary' />
+                        <li className='border-border/50 bg-muted/5 flex gap-4 rounded-xl border p-4'>
+                            <div className='bg-primary/10 border-primary/20 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border'>
+                                <Brain className='text-primary h-5 w-5' />
                             </div>
                             <div className='min-w-0'>
-                                <p className='font-semibold text-foreground'>
+                                <p className='text-foreground font-semibold'>
                                     {t('admin.cloud_management.features.feather_ai.title')}
                                 </p>
-                                <p className='text-sm text-muted-foreground mt-0.5'>
+                                <p className='text-muted-foreground mt-0.5 text-sm'>
                                     {t('admin.cloud_management.features.feather_ai.description')}
                                 </p>
-                                <span className='mt-2 inline-block text-xs font-medium text-primary border border-primary/20 bg-primary/10 px-2 py-0.5 rounded-md'>
+                                <span className='text-primary border-primary/20 bg-primary/10 mt-2 inline-block rounded-md border px-2 py-0.5 text-xs font-medium'>
                                     {t('admin.cloud_management.features.feather_ai.coming_soon')}
                                 </span>
                             </div>
                         </li>
-                        <li className='flex gap-4 rounded-xl border border-border/50 bg-muted/5 p-4'>
-                            <div className='h-10 w-10 shrink-0 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center'>
+                        <li className='border-border/50 bg-muted/5 flex gap-4 rounded-xl border p-4'>
+                            <div className='flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-amber-500/20 bg-amber-500/10'>
                                 <Store className='h-5 w-5 text-amber-600 dark:text-amber-400' />
                             </div>
                             <div className='min-w-0'>
-                                <p className='font-semibold text-foreground'>
+                                <p className='text-foreground font-semibold'>
                                     {t('admin.cloud_management.features.premium_plugins.title')}
                                 </p>
-                                <p className='text-sm text-muted-foreground mt-0.5'>
+                                <p className='text-muted-foreground mt-0.5 text-sm'>
                                     {t('admin.cloud_management.features.premium_plugins.description')}
                                 </p>
-                                <span className='mt-2 inline-block text-xs font-medium text-amber-600 dark:text-amber-400 border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 rounded-md'>
+                                <span className='mt-2 inline-block rounded-md border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-600 dark:text-amber-400'>
                                     {t('admin.cloud_management.features.premium_plugins.premium')}
                                 </span>
                             </div>
                         </li>
-                        <li className='flex gap-4 rounded-xl border border-border/50 bg-muted/5 p-4'>
-                            <div className='h-10 w-10 shrink-0 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center'>
-                                <ShieldCheck className='h-5 w-5 text-primary' />
+                        <li className='border-border/50 bg-muted/5 flex gap-4 rounded-xl border p-4'>
+                            <div className='bg-primary/10 border-primary/20 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border'>
+                                <ShieldCheck className='text-primary h-5 w-5' />
                             </div>
                             <div className='min-w-0'>
-                                <p className='font-semibold text-foreground'>
+                                <p className='text-foreground font-semibold'>
                                     {t('admin.cloud_management.features.cloud_intelligence.title')}
                                 </p>
-                                <p className='text-sm text-muted-foreground mt-0.5'>
+                                <p className='text-muted-foreground mt-0.5 text-sm'>
                                     {t('admin.cloud_management.features.cloud_intelligence.description')}
                                 </p>
-                                <span className='mt-2 inline-block text-xs font-medium text-primary border border-primary/20 bg-primary/10 px-2 py-0.5 rounded-md'>
+                                <span className='text-primary border-primary/20 bg-primary/10 mt-2 inline-block rounded-md border px-2 py-0.5 text-xs font-medium'>
                                     {t('admin.cloud_management.features.cloud_intelligence.active')}
                                 </span>
                             </div>
@@ -365,7 +365,7 @@ export default function CloudManagementPage() {
                             >
                                 <RefreshCw
                                     className={cn(
-                                        'h-4 w-4 mr-2',
+                                        'mr-2 h-4 w-4',
                                         (isRefreshingCloudData || cloudLoading) && 'animate-spin',
                                     )}
                                 />
@@ -375,24 +375,24 @@ export default function CloudManagementPage() {
                     >
                         {cloudLoading || isRefreshingCloudData ? (
                             <div className='flex items-center justify-center py-12'>
-                                <RefreshCw className='h-8 w-8 animate-spin text-muted-foreground' />
+                                <RefreshCw className='text-muted-foreground h-8 w-8 animate-spin' />
                             </div>
                         ) : (
                             <div className='grid gap-4 sm:grid-cols-3'>
                                 {cloudTeam && (
-                                    <div className='rounded-xl border border-border/50 bg-muted/10 p-4 flex items-center gap-3'>
-                                        <div className='h-10 w-10 shrink-0 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center'>
-                                            <Users className='h-5 w-5 text-primary' />
+                                    <div className='border-border/50 bg-muted/10 flex items-center gap-3 rounded-xl border p-4'>
+                                        <div className='bg-primary/10 border-primary/20 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border'>
+                                            <Users className='text-primary h-5 w-5' />
                                         </div>
                                         <div className='min-w-0'>
-                                            <p className='text-xs font-semibold uppercase tracking-wider text-muted-foreground'>
+                                            <p className='text-muted-foreground text-xs font-semibold tracking-wider uppercase'>
                                                 {t('admin.cloud_management.cloud_info.team')}
                                             </p>
-                                            <p className='font-semibold text-foreground truncate'>
+                                            <p className='text-foreground truncate font-semibold'>
                                                 {cloudTeam.team.name}
                                             </p>
                                             {cloudTeam.team.description && (
-                                                <p className='text-sm text-muted-foreground truncate'>
+                                                <p className='text-muted-foreground truncate text-sm'>
                                                     {cloudTeam.team.description}
                                                 </p>
                                             )}
@@ -400,18 +400,18 @@ export default function CloudManagementPage() {
                                     </div>
                                 )}
                                 {cloudCredits && (
-                                    <div className='rounded-xl border border-border/50 bg-muted/10 p-4 flex items-center gap-3'>
-                                        <div className='h-10 w-10 shrink-0 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center'>
-                                            <Coins className='h-5 w-5 text-primary' />
+                                    <div className='border-border/50 bg-muted/10 flex items-center gap-3 rounded-xl border p-4'>
+                                        <div className='bg-primary/10 border-primary/20 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border'>
+                                            <Coins className='text-primary h-5 w-5' />
                                         </div>
                                         <div className='min-w-0'>
-                                            <p className='text-xs font-semibold uppercase tracking-wider text-muted-foreground'>
+                                            <p className='text-muted-foreground text-xs font-semibold tracking-wider uppercase'>
                                                 {t('admin.cloud_management.cloud_info.total_credits')}
                                             </p>
-                                            <p className='font-semibold text-foreground'>
+                                            <p className='text-foreground font-semibold'>
                                                 {cloudCredits.total_credits.toLocaleString()}
                                             </p>
-                                            <p className='text-sm text-muted-foreground'>
+                                            <p className='text-muted-foreground text-sm'>
                                                 {t('admin.cloud_management.cloud_info.team_members', {
                                                     count: cloudCredits.member_count.toString(),
                                                 })}
@@ -420,18 +420,18 @@ export default function CloudManagementPage() {
                                     </div>
                                 )}
                                 {cloudSummary && (
-                                    <div className='rounded-xl border border-border/50 bg-muted/10 p-4 flex items-center gap-3'>
-                                        <div className='h-10 w-10 shrink-0 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center'>
-                                            <BarChart3 className='h-5 w-5 text-primary' />
+                                    <div className='border-border/50 bg-muted/10 flex items-center gap-3 rounded-xl border p-4'>
+                                        <div className='bg-primary/10 border-primary/20 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border'>
+                                            <BarChart3 className='text-primary h-5 w-5' />
                                         </div>
                                         <div className='min-w-0'>
-                                            <p className='text-xs font-semibold uppercase tracking-wider text-muted-foreground'>
+                                            <p className='text-muted-foreground text-xs font-semibold tracking-wider uppercase'>
                                                 {t('admin.cloud_management.cloud_info.total_purchases')}
                                             </p>
-                                            <p className='font-semibold text-foreground'>
+                                            <p className='text-foreground font-semibold'>
                                                 {cloudSummary.statistics.total_purchases}
                                             </p>
-                                            <p className='text-sm text-muted-foreground truncate'>
+                                            <p className='text-muted-foreground truncate text-sm'>
                                                 {cloudSummary.cloud.cloud_name}
                                             </p>
                                         </div>
@@ -444,46 +444,46 @@ export default function CloudManagementPage() {
 
                 <PageCard title={t('admin.cloud_management.security.title')} icon={LockKeyhole}>
                     <div className='grid gap-4 sm:grid-cols-2'>
-                        <div className='flex gap-3 rounded-xl border border-border/50 bg-muted/5 p-4'>
-                            <Key className='h-5 w-5 shrink-0 text-muted-foreground' />
+                        <div className='border-border/50 bg-muted/5 flex gap-3 rounded-xl border p-4'>
+                            <Key className='text-muted-foreground h-5 w-5 shrink-0' />
                             <div>
-                                <p className='font-semibold text-foreground'>
+                                <p className='text-foreground font-semibold'>
                                     {t('admin.cloud_management.security.identification.title')}
                                 </p>
-                                <p className='text-sm text-muted-foreground mt-0.5'>
+                                <p className='text-muted-foreground mt-0.5 text-sm'>
                                     {t('admin.cloud_management.security.identification.description')}
                                 </p>
                             </div>
                         </div>
-                        <div className='flex gap-3 rounded-xl border border-border/50 bg-muted/5 p-4'>
-                            <LockKeyhole className='h-5 w-5 shrink-0 text-muted-foreground' />
+                        <div className='border-border/50 bg-muted/5 flex gap-3 rounded-xl border p-4'>
+                            <LockKeyhole className='text-muted-foreground h-5 w-5 shrink-0' />
                             <div>
-                                <p className='font-semibold text-foreground'>
+                                <p className='text-foreground font-semibold'>
                                     {t('admin.cloud_management.security.privacy.title')}
                                 </p>
-                                <p className='text-sm text-muted-foreground mt-0.5'>
+                                <p className='text-muted-foreground mt-0.5 text-sm'>
                                     {t('admin.cloud_management.security.privacy.description')}
                                 </p>
                             </div>
                         </div>
-                        <div className='flex gap-3 rounded-xl border border-border/50 bg-muted/5 p-4'>
-                            <ShieldCheck className='h-5 w-5 shrink-0 text-muted-foreground' />
+                        <div className='border-border/50 bg-muted/5 flex gap-3 rounded-xl border p-4'>
+                            <ShieldCheck className='text-muted-foreground h-5 w-5 shrink-0' />
                             <div>
-                                <p className='font-semibold text-foreground'>
+                                <p className='text-foreground font-semibold'>
                                     {t('admin.cloud_management.security.permissions.title')}
                                 </p>
-                                <p className='text-sm text-muted-foreground mt-0.5'>
+                                <p className='text-muted-foreground mt-0.5 text-sm'>
                                     {t('admin.cloud_management.security.permissions.description')}
                                 </p>
                             </div>
                         </div>
-                        <div className='flex gap-3 rounded-xl border border-border/50 bg-muted/5 p-4'>
-                            <BarChart3 className='h-5 w-5 shrink-0 text-muted-foreground' />
+                        <div className='border-border/50 bg-muted/5 flex gap-3 rounded-xl border p-4'>
+                            <BarChart3 className='text-muted-foreground h-5 w-5 shrink-0' />
                             <div>
-                                <p className='font-semibold text-foreground'>
+                                <p className='text-foreground font-semibold'>
                                     {t('admin.cloud_management.security.audit.title')}
                                 </p>
-                                <p className='text-sm text-muted-foreground mt-0.5'>
+                                <p className='text-muted-foreground mt-0.5 text-sm'>
                                     {t('admin.cloud_management.security.audit.description')}
                                 </p>
                             </div>
@@ -496,11 +496,11 @@ export default function CloudManagementPage() {
                     description={t('admin.cloud_management.oauth2.description')}
                     icon={PlugZap}
                 >
-                    <div className='rounded-xl border border-border/50 bg-muted/10 p-4 space-y-3'>
-                        <p className='text-sm font-semibold text-foreground'>
+                    <div className='border-border/50 bg-muted/10 space-y-3 rounded-xl border p-4'>
+                        <p className='text-foreground text-sm font-semibold'>
                             {t('admin.cloud_management.oauth2.how_it_works')}
                         </p>
-                        <ul className='list-disc list-inside space-y-1 text-sm text-muted-foreground'>
+                        <ul className='text-muted-foreground list-inside list-disc space-y-1 text-sm'>
                             <li>{t('admin.cloud_management.oauth2.step1')}</li>
                             <li>{t('admin.cloud_management.oauth2.step2')}</li>
                             <li>{t('admin.cloud_management.oauth2.step3')}</li>
@@ -513,23 +513,23 @@ export default function CloudManagementPage() {
                     <AlertDialogContent className='max-w-lg'>
                         <AlertDialogHeader>
                             <AlertDialogTitle className='flex items-center gap-2'>
-                                <RefreshCw className='h-5 w-5 text-primary' />
+                                <RefreshCw className='text-primary h-5 w-5' />
                                 {t('admin.cloud_management.rotate_dialog.title')}
                             </AlertDialogTitle>
                             <AlertDialogDescription className='space-y-3 pt-2'>
-                                <p className='text-sm text-foreground'>
+                                <p className='text-foreground text-sm'>
                                     {t('admin.cloud_management.rotate_dialog.description')}
                                 </p>
-                                <div className='rounded-xl border border-border/50 bg-muted/10 p-3 space-y-2'>
-                                    <p className='text-sm font-semibold text-foreground'>
+                                <div className='border-border/50 bg-muted/10 space-y-2 rounded-xl border p-3'>
+                                    <p className='text-foreground text-sm font-semibold'>
                                         {t('admin.cloud_management.rotate_dialog.important')}
                                     </p>
-                                    <ul className='list-disc list-inside space-y-1 text-sm text-muted-foreground'>
+                                    <ul className='text-muted-foreground list-inside list-disc space-y-1 text-sm'>
                                         <li>{t('admin.cloud_management.rotate_dialog.warning1')}</li>
                                         <li>{t('admin.cloud_management.rotate_dialog.warning2')}</li>
                                         <li>{t('admin.cloud_management.rotate_dialog.warning3')}</li>
                                         {!hasCloudKeys && (
-                                            <li className='font-semibold text-foreground'>
+                                            <li className='text-foreground font-semibold'>
                                                 {t('admin.cloud_management.rotate_dialog.warning4')}
                                             </li>
                                         )}
@@ -546,7 +546,7 @@ export default function CloudManagementPage() {
                                     regenerateKeys();
                                 }}
                             >
-                                <RefreshCw className={cn('h-4 w-4 mr-2', isRegenerating && 'animate-spin')} />
+                                <RefreshCw className={cn('mr-2 h-4 w-4', isRegenerating && 'animate-spin')} />
                                 {isRegenerating
                                     ? t('admin.cloud_management.rotate_dialog.rotating')
                                     : t('admin.cloud_management.rotate_dialog.confirm')}

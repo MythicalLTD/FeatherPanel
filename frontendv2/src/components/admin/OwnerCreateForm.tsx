@@ -121,7 +121,7 @@ export function OwnerCreateForm({ onCreated, onCancel, showFooter = true }: Owne
 
     return (
         <div className='space-y-4'>
-            <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
+            <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
                 <div className='space-y-2'>
                     <Label htmlFor='owner-create-username'>{t('admin.users.create.form.username')}</Label>
                     <Input
@@ -184,7 +184,7 @@ export function OwnerCreateForm({ onCreated, onCancel, showFooter = true }: Owne
                     id='owner-create-role'
                     value={form.role_id}
                     onChange={(e) => setForm((p) => ({ ...p, role_id: e.target.value }))}
-                    className='w-full h-11'
+                    className='h-11 w-full'
                 >
                     <option value=''>{t('admin.users.create.form.select_role')}</option>
                     {availableRoles.map((role) => (
@@ -194,7 +194,7 @@ export function OwnerCreateForm({ onCreated, onCancel, showFooter = true }: Owne
                     ))}
                 </Select>
             </div>
-            <p className='text-xs text-muted-foreground'>{t('admin.servers.form.owner_create_password_hint')}</p>
+            <p className='text-muted-foreground text-xs'>{t('admin.servers.form.owner_create_password_hint')}</p>
             {showFooter && (
                 <SheetFooter className='px-0 sm:px-0'>
                     {onCancel && (

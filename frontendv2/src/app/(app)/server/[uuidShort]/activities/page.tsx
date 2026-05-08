@@ -141,7 +141,7 @@ function BlurredIp({ ip, className }: { ip: string; className?: string }) {
     return (
         <span
             className={cn(
-                'font-mono font-bold italic blur-sm hover:blur-none transition-all duration-200',
+                'font-mono font-bold italic blur-sm transition-all duration-200 hover:blur-none',
                 'text-xs opacity-60',
                 className,
             )}
@@ -411,8 +411,8 @@ export default function ServerActivityPage() {
     if (permissionsLoading || (loading && activities.length === 0)) {
         return (
             <div className='flex flex-col items-center justify-center py-24'>
-                <Loader2 className='h-12 w-12 animate-spin text-primary opacity-50' />
-                <p className='mt-4 text-muted-foreground font-medium animate-pulse'>{t('common.loading')}</p>
+                <Loader2 className='text-primary h-12 w-12 animate-spin opacity-50' />
+                <p className='text-muted-foreground mt-4 animate-pulse font-medium'>{t('common.loading')}</p>
             </div>
         );
     }
@@ -424,7 +424,7 @@ export default function ServerActivityPage() {
                 description={
                     <div className='flex items-center gap-3'>
                         <span>{t('serverActivities.description')}</span>
-                        <span className='px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-primary/5 text-primary border border-primary/20'>
+                        <span className='bg-primary/5 text-primary border-primary/20 rounded-full border px-3 py-1 text-[10px] font-black tracking-widest uppercase'>
                             {pagination.total_records} {t('serverActivities.events')}
                         </span>
                     </div>
@@ -432,7 +432,7 @@ export default function ServerActivityPage() {
                 actions={
                     <div className='flex items-center gap-3'>
                         <Button variant='glass' size='default' onClick={() => fetchActivities()} disabled={loading}>
-                            <RefreshCw className={cn('h-5 w-5 mr-2', loading && 'animate-spin')} />
+                            <RefreshCw className={cn('mr-2 h-5 w-5', loading && 'animate-spin')} />
                             {t('common.refresh')}
                         </Button>
                     </div>
@@ -442,35 +442,35 @@ export default function ServerActivityPage() {
             <WidgetRenderer widgets={getWidgets('server-activities', 'activity-top')} />
 
             <div className='space-y-6'>
-                <div className='flex flex-col sm:flex-row sm:items-center gap-4'>
-                    <div className='relative flex-1 group'>
-                        <Search className='absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground/80 group-focus-within:text-foreground transition-colors' />
+                <div className='flex flex-col gap-4 sm:flex-row sm:items-center'>
+                    <div className='group relative flex-1'>
+                        <Search className='text-muted-foreground/80 group-focus-within:text-foreground absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 transition-colors' />
                         <Input
                             placeholder={t('serverActivities.searchPlaceholder')}
-                            className='pl-12 h-14 text-base'
+                            className='h-14 pl-12 text-base'
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
                     </div>
-                    <div className='flex items-center gap-2 shrink-0'>
+                    <div className='flex shrink-0 items-center gap-2'>
                         <DropdownMenu>
-                            <DropdownMenuTrigger className='h-14 min-w-48 md:min-w-56 rounded-xl border border-border/40 bg-card/50 backdrop-blur-sm px-4 flex items-center justify-between gap-3 outline-none hover:bg-accent/50 transition-colors text-left font-medium'>
-                                <SlidersHorizontal className='h-5 w-5 shrink-0 text-muted-foreground' />
-                                <span className='truncate flex-1'>{selectedFilterLabel}</span>
+                            <DropdownMenuTrigger className='border-border/40 bg-card/50 hover:bg-accent/50 flex h-14 min-w-48 items-center justify-between gap-3 rounded-xl border px-4 text-left font-medium backdrop-blur-sm transition-colors outline-none md:min-w-56'>
+                                <SlidersHorizontal className='text-muted-foreground h-5 w-5 shrink-0' />
+                                <span className='flex-1 truncate'>{selectedFilterLabel}</span>
                                 {(selectedEventFilter !== 'all' || searchQuery) && (
-                                    <span className='shrink-0 w-2 h-2 rounded-full bg-primary' aria-hidden />
+                                    <span className='bg-primary h-2 w-2 shrink-0 rounded-full' aria-hidden />
                                 )}
                             </DropdownMenuTrigger>
                             <DropdownMenuContent
                                 align='end'
-                                className='w-64 max-h-[min(60vh,400px)] overflow-y-auto bg-card/90 backdrop-blur-xl border-border/40 p-2 rounded-2xl'
+                                className='bg-card/90 border-border/40 max-h-[min(60vh,400px)] w-64 overflow-y-auto rounded-2xl p-2 backdrop-blur-xl'
                             >
                                 {filterOptions.map((option) => (
                                     <DropdownMenuItem
                                         key={option.id}
                                         onClick={() => setSelectedEventFilter(option.id)}
                                         className={cn(
-                                            'flex items-center justify-between gap-3 p-3 rounded-xl cursor-pointer',
+                                            'flex cursor-pointer items-center justify-between gap-3 rounded-xl p-3',
                                             selectedEventFilter === option.id && 'bg-primary/10 text-primary',
                                         )}
                                     >
@@ -485,7 +485,7 @@ export default function ServerActivityPage() {
                                                 setSearchQuery('');
                                                 setSelectedEventFilter('all');
                                             }}
-                                            className='flex items-center gap-3 p-3 rounded-xl cursor-pointer text-red-500 focus:text-red-500 focus:bg-red-500/10'
+                                            className='flex cursor-pointer items-center gap-3 rounded-xl p-3 text-red-500 focus:bg-red-500/10 focus:text-red-500'
                                         >
                                             <X className='h-4 w-4' />
                                             <span className='font-bold'>{t('common.clear')}</span>
@@ -498,7 +498,7 @@ export default function ServerActivityPage() {
                             <Button
                                 variant='glass'
                                 size='icon'
-                                className='h-14 w-14 rounded-xl hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/50'
+                                className='h-14 w-14 rounded-xl hover:border-red-500/50 hover:bg-red-500/10 hover:text-red-500'
                                 onClick={() => {
                                     setSearchQuery('');
                                     setSelectedEventFilter('all');
@@ -511,7 +511,7 @@ export default function ServerActivityPage() {
                 </div>
 
                 {pagination.total_records > pagination.per_page && (
-                    <div className='flex items-center justify-between gap-4 py-3 px-4 rounded-xl border border-border bg-card/50'>
+                    <div className='border-border bg-card/50 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
                         <Button
                             variant='glass'
                             size='sm'
@@ -556,7 +556,7 @@ export default function ServerActivityPage() {
                                         setSearchQuery('');
                                         setSelectedEventFilter('all');
                                     }}
-                                    className='h-14 px-10 text-lg rounded-xl'
+                                    className='h-14 rounded-xl px-10 text-lg'
                                 >
                                     {t('common.clear')}
                                 </Button>
@@ -570,29 +570,29 @@ export default function ServerActivityPage() {
                                 <ResourceCard
                                     key={activity.id}
                                     style={{ animationDelay: `${index * 50}ms` }}
-                                    className='animate-in slide-in-from-bottom-2 duration-500 fill-mode-both'
+                                    className='animate-in slide-in-from-bottom-2 fill-mode-both duration-500'
                                     icon={getEventIcon(activity.event)}
                                     iconWrapperClassName={getEventIconClass(activity.event)}
                                     title={formatEvent(activity.event)}
                                     badges={
-                                        <span className='px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest leading-none bg-background/50 border border-border/40'>
+                                        <span className='bg-background/50 border-border/40 rounded-full border px-3 py-1 text-[10px] leading-none font-black tracking-widest uppercase'>
                                             {activity.id}
                                         </span>
                                     }
                                     description={
                                         <>
-                                            <p className='w-full text-muted-foreground font-medium line-clamp-1 opacity-80 group-hover:opacity-100 transition-opacity mb-2'>
+                                            <p className='text-muted-foreground mb-2 line-clamp-1 w-full font-medium opacity-80 transition-opacity group-hover:opacity-100'>
                                                 {displayMessage(activity)}
                                             </p>
-                                            <div className='flex flex-wrap items-center gap-x-6 gap-y-2 pt-1 border-t border-border/10 w-full'>
-                                                <div className='flex items-center gap-2 text-muted-foreground'>
+                                            <div className='border-border/10 flex w-full flex-wrap items-center gap-x-6 gap-y-2 border-t pt-1'>
+                                                <div className='text-muted-foreground flex items-center gap-2'>
                                                     <User className='h-4 w-4 opacity-50' />
-                                                    <span className='text-sm font-bold uppercase tracking-tight'>
+                                                    <span className='text-sm font-bold tracking-tight uppercase'>
                                                         {activity.user?.username ||
                                                             t('serverActivities.details.system')}
                                                     </span>
                                                 </div>
-                                                <div className='flex items-center gap-2 text-muted-foreground'>
+                                                <div className='text-muted-foreground flex items-center gap-2'>
                                                     <Clock className='h-4 w-4 opacity-50' />
                                                     <span className='text-sm font-semibold'>
                                                         {activity.timestamp
@@ -601,7 +601,7 @@ export default function ServerActivityPage() {
                                                     </span>
                                                 </div>
                                                 {activity.ip && (
-                                                    <div className='flex items-center gap-2 text-muted-foreground'>
+                                                    <div className='text-muted-foreground flex items-center gap-2'>
                                                         <Globe className='h-4 w-4 opacity-50' />
                                                         <BlurredIp ip={activity.ip} />
                                                     </div>
@@ -612,23 +612,23 @@ export default function ServerActivityPage() {
                                     actions={
                                         <DropdownMenu>
                                             <DropdownMenuTrigger
-                                                className='h-12 w-12 rounded-xl group-hover:bg-primary/10 transition-colors flex items-center justify-center outline-none'
+                                                className='group-hover:bg-primary/10 flex h-12 w-12 items-center justify-center rounded-xl transition-colors outline-none'
                                                 onClick={(e) => e.stopPropagation()}
                                             >
-                                                <MoreVertical className='h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors' />
+                                                <MoreVertical className='text-muted-foreground group-hover:text-primary h-6 w-6 transition-colors' />
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent
                                                 align='end'
-                                                className='w-56 bg-card/90 backdrop-blur-xl border-border/40 p-2 rounded-2xl'
+                                                className='bg-card/90 border-border/40 w-56 rounded-2xl p-2 backdrop-blur-xl'
                                             >
                                                 <DropdownMenuItem
                                                     onClick={() => {
                                                         setSelectedItem(activity);
                                                         setDetailsOpen(true);
                                                     }}
-                                                    className='flex items-center gap-3 p-3 rounded-xl cursor-pointer'
+                                                    className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
                                                 >
-                                                    <Eye className='h-4 w-4 text-primary' />
+                                                    <Eye className='text-primary h-4 w-4' />
                                                     <span className='font-bold'>
                                                         {t('serverActivities.viewDetails')}
                                                     </span>
@@ -643,8 +643,8 @@ export default function ServerActivityPage() {
                 )}
 
                 {pagination.total_records > pagination.per_page && (
-                    <div className='flex items-center justify-between py-8 border-t border-border/40 px-6'>
-                        <p className='text-sm font-bold opacity-40 uppercase tracking-widest'>
+                    <div className='border-border/40 flex items-center justify-between border-t px-6 py-8'>
+                        <p className='text-sm font-bold tracking-widest uppercase opacity-40'>
                             {t('serverActivities.pagination.showing', {
                                 from: String(pagination.from),
                                 to: String(pagination.to),
@@ -657,11 +657,11 @@ export default function ServerActivityPage() {
                                 size='sm'
                                 disabled={!pagination.has_prev || loading}
                                 onClick={() => changePage(pagination.current_page - 1)}
-                                className='h-10 w-10 p-0 rounded-xl'
+                                className='h-10 w-10 rounded-xl p-0'
                             >
                                 <ChevronLeft className='h-5 w-5' />
                             </Button>
-                            <span className='h-10 px-4 rounded-xl text-sm font-black bg-primary/5 text-primary border border-primary/20 flex items-center justify-center min-w-12'>
+                            <span className='bg-primary/5 text-primary border-primary/20 flex h-10 min-w-12 items-center justify-center rounded-xl border px-4 text-sm font-black'>
                                 {pagination.current_page} / {pagination.total_pages}
                             </span>
                             <Button
@@ -669,7 +669,7 @@ export default function ServerActivityPage() {
                                 size='sm'
                                 disabled={!pagination.has_next || loading}
                                 onClick={() => changePage(pagination.current_page + 1)}
-                                className='h-10 w-10 p-0 rounded-xl'
+                                className='h-10 w-10 rounded-xl p-0'
                             >
                                 <ChevronRight className='h-5 w-5' />
                             </Button>
@@ -685,17 +685,17 @@ export default function ServerActivityPage() {
                     <div className='space-y-6 p-2'>
                         <DialogHeader className='mb-0'>
                             <div className='flex items-start gap-4'>
-                                <div className='h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20 shrink-0'>
+                                <div className='bg-primary/10 border-primary/20 flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border'>
                                     {React.createElement(getEventIcon(selectedItem.event), {
                                         className: 'h-6 w-6 text-primary',
                                     })}
                                 </div>
                                 <div className='min-w-0 flex-1 space-y-1'>
                                     <div className='flex flex-wrap items-baseline gap-x-2 gap-y-1'>
-                                        <DialogTitle className='text-xl font-bold leading-tight text-foreground'>
+                                        <DialogTitle className='text-foreground text-xl leading-tight font-bold'>
                                             {formatEvent(selectedItem.event)}
                                         </DialogTitle>
-                                        <span className='text-xs font-medium tabular-nums text-muted-foreground'>
+                                        <span className='text-muted-foreground text-xs font-medium tabular-nums'>
                                             #{selectedItem.id}
                                         </span>
                                     </div>
@@ -707,17 +707,17 @@ export default function ServerActivityPage() {
                         </DialogHeader>
 
                         <div className='space-y-4 px-1'>
-                            <div className='rounded-2xl border border-border/50 bg-card/40 p-5 space-y-4'>
-                                <h3 className='text-[10px] font-semibold uppercase tracking-widest text-muted-foreground'>
+                            <div className='border-border/50 bg-card/40 space-y-4 rounded-2xl border p-5'>
+                                <h3 className='text-muted-foreground text-[10px] font-semibold tracking-widest uppercase'>
                                     {t('serverActivities.details.eventSummary')}
                                 </h3>
                                 <dl className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
                                     <div className='space-y-1.5'>
-                                        <dt className='text-[10px] uppercase font-bold text-muted-foreground tracking-widest'>
+                                        <dt className='text-muted-foreground text-[10px] font-bold tracking-widest uppercase'>
                                             {t('serverActivities.details.executingUser')}
                                         </dt>
                                         <dd className='flex items-center gap-2 text-sm font-semibold'>
-                                            <div className='h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-xs font-bold border border-primary/15 text-primary'>
+                                            <div className='bg-primary/10 border-primary/15 text-primary flex h-8 w-8 items-center justify-center rounded-lg border text-xs font-bold'>
                                                 {selectedItem.user?.username?.substring(0, 2).toUpperCase() || 'S'}
                                             </div>
                                             <span className='truncate'>
@@ -726,11 +726,11 @@ export default function ServerActivityPage() {
                                         </dd>
                                     </div>
                                     <div className='space-y-1.5'>
-                                        <dt className='text-[10px] uppercase font-bold text-muted-foreground tracking-widest'>
+                                        <dt className='text-muted-foreground text-[10px] font-bold tracking-widest uppercase'>
                                             {t('serverActivities.details.timestamp')}
                                         </dt>
                                         <dd className='flex items-center gap-2 text-sm font-semibold'>
-                                            <Clock className='h-4 w-4 text-muted-foreground shrink-0' />
+                                            <Clock className='text-muted-foreground h-4 w-4 shrink-0' />
                                             <span>
                                                 {selectedItem.timestamp
                                                     ? new Date(selectedItem.timestamp).toLocaleString()
@@ -740,11 +740,11 @@ export default function ServerActivityPage() {
                                     </div>
                                     {selectedItem.ip ? (
                                         <div className='space-y-1.5 sm:col-span-2'>
-                                            <dt className='text-[10px] uppercase font-bold text-muted-foreground tracking-widest'>
+                                            <dt className='text-muted-foreground text-[10px] font-bold tracking-widest uppercase'>
                                                 {t('serverActivities.details.ipAddress')}
                                             </dt>
                                             <dd className='flex items-center gap-2 text-sm'>
-                                                <Globe className='h-4 w-4 text-muted-foreground shrink-0' />
+                                                <Globe className='text-muted-foreground h-4 w-4 shrink-0' />
                                                 <BlurredIp ip={selectedItem.ip} className='text-sm opacity-90' />
                                             </dd>
                                         </div>
@@ -753,12 +753,12 @@ export default function ServerActivityPage() {
                             </div>
 
                             {detailsPairs.length > 0 ? (
-                                <div className='rounded-2xl border border-border/50 bg-card/40 p-5 space-y-3'>
+                                <div className='border-border/50 bg-card/40 space-y-3 rounded-2xl border p-5'>
                                     <div className='flex items-center justify-between gap-2'>
-                                        <h3 className='text-[10px] font-semibold uppercase tracking-widest text-muted-foreground'>
+                                        <h3 className='text-muted-foreground text-[10px] font-semibold tracking-widest uppercase'>
                                             {t('serverActivities.details.metadataPayload')}
                                         </h3>
-                                        <span className='text-[10px] text-muted-foreground tabular-nums'>
+                                        <span className='text-muted-foreground text-[10px] tabular-nums'>
                                             {t('serverActivities.details.fieldsCount', {
                                                 count: String(detailsPairs.length),
                                             })}
@@ -768,16 +768,16 @@ export default function ServerActivityPage() {
                                         {detailsPairs.map((pair) => (
                                             <div
                                                 key={pair.key}
-                                                className='space-y-1.5 border-b border-border/30 pb-4 last:border-0 last:pb-0'
+                                                className='border-border/30 space-y-1.5 border-b pb-4 last:border-0 last:pb-0'
                                             >
-                                                <dt className='text-[10px] uppercase font-bold text-muted-foreground tracking-widest wrap-break-word'>
+                                                <dt className='text-muted-foreground text-[10px] font-bold tracking-widest wrap-break-word uppercase'>
                                                     {pair.key}
                                                 </dt>
                                                 <dd
                                                     className={cn(
-                                                        'text-sm font-mono break-all text-foreground',
+                                                        'text-foreground font-mono text-sm break-all',
                                                         shouldBlurIpMetadata(pair.key, pair.value) &&
-                                                            'blur-sm hover:blur-none transition-all duration-200',
+                                                            'blur-sm transition-all duration-200 hover:blur-none',
                                                     )}
                                                 >
                                                     {pair.value}
@@ -788,32 +788,32 @@ export default function ServerActivityPage() {
                                 </div>
                             ) : null}
 
-                            <div className='rounded-2xl border border-border/50 bg-muted/30 p-4 space-y-3'>
+                            <div className='border-border/50 bg-muted/30 space-y-3 rounded-2xl border p-4'>
                                 <div className='flex items-center justify-between gap-2'>
-                                    <h3 className='text-[10px] font-semibold uppercase tracking-widest text-muted-foreground'>
+                                    <h3 className='text-muted-foreground text-[10px] font-semibold tracking-widest uppercase'>
                                         {t('serverActivities.details.diagnosticOutput')}
                                     </h3>
                                     <Button
                                         type='button'
                                         variant='glass'
                                         size='sm'
-                                        className='h-8 rounded-lg font-medium shrink-0'
+                                        className='h-8 shrink-0 rounded-lg font-medium'
                                         onClick={() => {
                                             navigator.clipboard.writeText(rawJson || '');
                                             toast.success(t('serverActivities.details.payloadCopied'));
                                         }}
                                     >
-                                        <Copy className='h-3.5 w-3.5 mr-2' />
+                                        <Copy className='mr-2 h-3.5 w-3.5' />
                                         {t('serverActivities.details.copyPayload')}
                                     </Button>
                                 </div>
-                                <pre className='max-h-56 overflow-auto rounded-xl border border-border/40 bg-background/80 px-3 py-3 text-xs font-mono leading-relaxed text-muted-foreground custom-scrollbar'>
+                                <pre className='border-border/40 bg-background/80 text-muted-foreground custom-scrollbar max-h-56 overflow-auto rounded-xl border px-3 py-3 font-mono text-xs leading-relaxed'>
                                     {rawJson || t('serverActivities.details.noMetadata')}
                                 </pre>
                             </div>
                         </div>
 
-                        <DialogFooter className='border-t border-border/40 pt-6 mt-2 px-1'>
+                        <DialogFooter className='border-border/40 mt-2 border-t px-1 pt-6'>
                             <Button
                                 type='button'
                                 variant='ghost'

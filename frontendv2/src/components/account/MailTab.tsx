@@ -181,7 +181,7 @@ export default function MailTab() {
         return (
             <div className='flex items-center justify-center py-12'>
                 <div className='flex items-center gap-3'>
-                    <div className='animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent'></div>
+                    <div className='border-primary h-6 w-6 animate-spin rounded-full border-2 border-t-transparent'></div>
                     <span className='text-muted-foreground'>{t('account.mail.loading')}</span>
                 </div>
             </div>
@@ -192,7 +192,7 @@ export default function MailTab() {
         return (
             <div className='flex items-center justify-center py-12'>
                 <div className='text-center'>
-                    <Mail className='h-8 w-8 mx-auto mb-2 text-destructive' />
+                    <Mail className='text-destructive mx-auto mb-2 h-8 w-8' />
                     <p className='text-destructive mb-2'>{t('account.mail.loadError')}</p>
                     <Button variant='outline' onClick={() => fetchMails(currentPage)}>
                         {t('account.mail.tryAgain')}
@@ -205,12 +205,12 @@ export default function MailTab() {
     return (
         <div className='space-y-5'>
             <div className='flex items-center justify-between'>
-                <div className='rounded-xl border border-border/50 bg-muted/20 p-4 flex-1'>
-                    <h3 className='text-lg font-semibold text-foreground'>{t('account.mail.title')}</h3>
-                    <p className='text-sm text-muted-foreground mt-1'>{t('account.mail.description')}</p>
+                <div className='border-border/50 bg-muted/20 flex-1 rounded-xl border p-4'>
+                    <h3 className='text-foreground text-lg font-semibold'>{t('account.mail.title')}</h3>
+                    <p className='text-muted-foreground mt-1 text-sm'>{t('account.mail.description')}</p>
                 </div>
                 <Button onClick={() => fetchMails(currentPage)} variant='outline' size='sm' className='ml-3'>
-                    <RefreshCw className='w-4 h-4 mr-2' />
+                    <RefreshCw className='mr-2 h-4 w-4' />
                     {t('account.mail.refresh')}
                 </Button>
             </div>
@@ -224,7 +224,7 @@ export default function MailTab() {
                 />
             </div>
 
-            <div className='text-sm text-muted-foreground text-center'>
+            <div className='text-muted-foreground text-center text-sm'>
                 {pagination ? (
                     <span>
                         {t('account.mail.showingMails', {
@@ -239,7 +239,7 @@ export default function MailTab() {
             </div>
 
             {pagination && pagination.total_pages > 1 && (
-                <div className='flex items-center justify-between gap-4 py-3 px-4 rounded-xl border border-border bg-card/50'>
+                <div className='border-border bg-card/50 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
                     <Button
                         variant='outline'
                         size='sm'
@@ -271,26 +271,26 @@ export default function MailTab() {
                     {mails.map((mail) => (
                         <div
                             key={mail.id}
-                            className='rounded-lg border border-border/50 bg-card/50 backdrop-blur-xl p-4 transition-colors'
+                            className='border-border/50 bg-card/50 rounded-lg border p-4 backdrop-blur-xl transition-colors'
                         >
-                            <div className='flex items-start justify-between mb-3'>
+                            <div className='mb-3 flex items-start justify-between'>
                                 <div className='flex-1'>
-                                    <h4 className='text-sm font-semibold text-foreground mb-2'>{mail.subject}</h4>
+                                    <h4 className='text-foreground mb-2 text-sm font-semibold'>{mail.subject}</h4>
                                     <Button variant='outline' size='sm' onClick={() => openMailModal(mail)}>
-                                        <Mail className='w-4 h-4 mr-1' />
+                                        <Mail className='mr-1 h-4 w-4' />
                                         {t('account.mail.viewFull')}
                                     </Button>
                                 </div>
                                 <div
                                     className={cn(
-                                        'px-2 py-1 rounded text-xs font-medium',
+                                        'rounded px-2 py-1 text-xs font-medium',
                                         getStatusVariant(mail.status),
                                     )}
                                 >
                                     {t(`account.mail.status.${mail.status}`)}
                                 </div>
                             </div>
-                            <div className='flex items-center gap-1 text-xs text-muted-foreground'>
+                            <div className='text-muted-foreground flex items-center gap-1 text-xs'>
                                 <Clock className='h-3 w-3' />
                                 <span>{formatDate(mail.created_at)}</span>
                             </div>
@@ -298,12 +298,12 @@ export default function MailTab() {
                     ))}
                 </div>
             ) : (
-                <div className='text-center py-12'>
-                    <Mail className='w-12 h-12 text-muted-foreground mx-auto mb-4' />
-                    <h4 className='text-sm font-semibold text-foreground mb-2'>
+                <div className='py-12 text-center'>
+                    <Mail className='text-muted-foreground mx-auto mb-4 h-12 w-12' />
+                    <h4 className='text-foreground mb-2 text-sm font-semibold'>
                         {searchQuery ? t('account.mail.noSearchResults') : t('account.mail.noMails')}
                     </h4>
-                    <p className='text-sm text-muted-foreground'>
+                    <p className='text-muted-foreground text-sm'>
                         {searchQuery ? t('account.mail.tryDifferentSearch') : t('account.mail.noMailsDescription')}
                     </p>
                 </div>
@@ -327,18 +327,18 @@ export default function MailTab() {
             <Dialog open={mailModalOpen} onClose={() => setMailModalOpen(false)} className='relative z-50'>
                 <div className='fixed inset-0 bg-black/30' aria-hidden='true' />
                 <div className='fixed inset-0 flex items-center justify-center p-4'>
-                    <DialogPanel className='w-full max-w-5xl max-h-[90vh] rounded-xl bg-card/50 backdrop-blur-xl border border-border/50 p-6 flex flex-col'>
-                        <DialogTitle className='text-xl font-semibold text-foreground mb-2'>
+                    <DialogPanel className='bg-card/50 border-border/50 flex max-h-[90vh] w-full max-w-5xl flex-col rounded-xl border p-6 backdrop-blur-xl'>
+                        <DialogTitle className='text-foreground mb-2 text-xl font-semibold'>
                             {selectedMail?.subject}
                         </DialogTitle>
-                        <DialogDescription className='flex items-center gap-4 text-sm text-muted-foreground mb-4'>
+                        <DialogDescription className='text-muted-foreground mb-4 flex items-center gap-4 text-sm'>
                             <div className='flex items-center gap-2'>
                                 <Clock className='h-4 w-4' />
                                 <span>{selectedMail ? formatDate(selectedMail.created_at) : ''}</span>
                             </div>
                             <div
                                 className={cn(
-                                    'px-2 py-1 rounded text-xs font-medium',
+                                    'rounded px-2 py-1 text-xs font-medium',
                                     getStatusVariant(selectedMail?.status || 'pending'),
                                 )}
                             >
@@ -350,7 +350,7 @@ export default function MailTab() {
                             {selectedMail && (
                                 <iframe
                                     srcDoc={getIframeContent(selectedMail.body)}
-                                    className='w-full h-full min-h-[60vh] border-0 bg-white rounded'
+                                    className='h-full min-h-[60vh] w-full rounded border-0 bg-white'
                                     sandbox='allow-same-origin'
                                     title={t('account.mail.mailContent')}
                                 />

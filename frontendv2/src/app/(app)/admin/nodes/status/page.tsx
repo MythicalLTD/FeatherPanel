@@ -132,8 +132,8 @@ export default function NodeStatusPage() {
 
     if (error && !globalStats) {
         return (
-            <div className='flex flex-col items-center justify-center min-h-[400px] text-center'>
-                <Alert variant='destructive' className='max-w-md w-full mb-6'>
+            <div className='flex min-h-[400px] flex-col items-center justify-center text-center'>
+                <Alert variant='destructive' className='mb-6 w-full max-w-md'>
                     <AlertTriangle className='h-4 w-4' />
                     <AlertTitle>{t('admin.nodes.error')}</AlertTitle>
                     <AlertDescription>{error}</AlertDescription>
@@ -173,13 +173,13 @@ export default function NodeStatusPage() {
                             title={globalStats.total_nodes.toString()}
                             subtitle={t('admin.nodes.total')}
                             icon={Server}
-                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                            className='bg-card/50 shadow-none! backdrop-blur-sm'
                         />
                         <ResourceCard
                             title={globalStats.healthy_nodes.toString()}
                             subtitle={t('admin.nodes.healthy')}
                             icon={Check}
-                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                            className='bg-card/50 shadow-none! backdrop-blur-sm'
                             iconClassName='text-green-500'
                             iconWrapperClassName='bg-green-500/10 border-green-500/20'
                         />
@@ -187,7 +187,7 @@ export default function NodeStatusPage() {
                             title={globalStats.unhealthy_nodes.toString()}
                             subtitle={t('admin.nodes.unhealthy')}
                             icon={AlertTriangle}
-                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                            className='bg-card/50 shadow-none! backdrop-blur-sm'
                             iconClassName='text-red-500'
                             iconWrapperClassName='bg-red-500/10 border-red-500/20'
                         />
@@ -195,7 +195,7 @@ export default function NodeStatusPage() {
                             title={`${globalStats.avg_cpu_percent.toFixed(1)}%`}
                             subtitle={t('admin.nodes.avg_cpu')}
                             icon={Cpu}
-                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                            className='bg-card/50 shadow-none! backdrop-blur-sm'
                         />
                     </div>
 
@@ -205,18 +205,18 @@ export default function NodeStatusPage() {
                         <PageCard
                             title={t('admin.nodes.memory_usage')}
                             icon={MemoryStick}
-                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                            className='bg-card/50 shadow-none! backdrop-blur-sm'
                         >
                             <div className='space-y-4'>
-                                <div className='flex justify-between items-center text-sm'>
+                                <div className='flex items-center justify-between text-sm'>
                                     <span className='text-muted-foreground'>{t('admin.nodes.used_total')}</span>
                                     <span className='font-medium'>
                                         {formatBytes(globalStats.used_memory)} / {formatBytes(globalStats.total_memory)}
                                     </span>
                                 </div>
-                                <div className='h-3 w-full bg-secondary rounded-full overflow-hidden'>
+                                <div className='bg-secondary h-3 w-full overflow-hidden rounded-full'>
                                     <div
-                                        className={`h-full transition-all duration-500 rounded-full ${
+                                        className={`h-full rounded-full transition-all duration-500 ${
                                             getMemoryUsagePercent() > 90
                                                 ? 'bg-red-500'
                                                 : getMemoryUsagePercent() > 75
@@ -226,7 +226,7 @@ export default function NodeStatusPage() {
                                         style={{ width: `${getMemoryUsagePercent()}%` }}
                                     />
                                 </div>
-                                <p className='text-xs text-center text-muted-foreground'>
+                                <p className='text-muted-foreground text-center text-xs'>
                                     {t('admin.nodes.used_percent', { percent: getMemoryUsagePercent().toFixed(1) })}
                                 </p>
                             </div>
@@ -234,18 +234,18 @@ export default function NodeStatusPage() {
                         <PageCard
                             title={t('admin.nodes.disk_usage')}
                             icon={HardDrive}
-                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                            className='bg-card/50 shadow-none! backdrop-blur-sm'
                         >
                             <div className='space-y-4'>
-                                <div className='flex justify-between items-center text-sm'>
+                                <div className='flex items-center justify-between text-sm'>
                                     <span className='text-muted-foreground'>{t('admin.nodes.used_total')}</span>
                                     <span className='font-medium'>
                                         {formatBytes(globalStats.used_disk)} / {formatBytes(globalStats.total_disk)}
                                     </span>
                                 </div>
-                                <div className='h-3 w-full bg-secondary rounded-full overflow-hidden'>
+                                <div className='bg-secondary h-3 w-full overflow-hidden rounded-full'>
                                     <div
-                                        className={`h-full transition-all duration-500 rounded-full ${
+                                        className={`h-full rounded-full transition-all duration-500 ${
                                             getDiskUsagePercent() > 90
                                                 ? 'bg-red-500'
                                                 : getDiskUsagePercent() > 75
@@ -255,7 +255,7 @@ export default function NodeStatusPage() {
                                         style={{ width: `${getDiskUsagePercent()}%` }}
                                     />
                                 </div>
-                                <p className='text-xs text-center text-muted-foreground'>
+                                <p className='text-muted-foreground text-center text-xs'>
                                     {t('admin.nodes.used_percent', { percent: getDiskUsagePercent().toFixed(1) })}
                                 </p>
                             </div>
@@ -282,7 +282,7 @@ export default function NodeStatusPage() {
                                         title={node.name}
                                         description={node.fqdn}
                                         icon={Server}
-                                        className='shadow-none! bg-card/50 backdrop-blur-sm'
+                                        className='bg-card/50 shadow-none! backdrop-blur-sm'
                                         variant={node.status === 'healthy' ? 'default' : 'danger'}
                                         action={
                                             <Badge variant={node.status === 'healthy' ? 'default' : 'destructive'}>
@@ -296,7 +296,7 @@ export default function NodeStatusPage() {
                                             {node.status === 'healthy' && node.utilization ? (
                                                 <div className='space-y-6'>
                                                     <div className='space-y-2'>
-                                                        <div className='flex justify-between items-center text-sm'>
+                                                        <div className='flex items-center justify-between text-sm'>
                                                             <span className='font-medium'>
                                                                 {t('admin.nodes.cpu_usage')}
                                                             </span>
@@ -304,15 +304,15 @@ export default function NodeStatusPage() {
                                                                 {node.utilization.cpu_percent.toFixed(1)}%
                                                             </span>
                                                         </div>
-                                                        <div className='h-2 w-full bg-secondary rounded-full overflow-hidden'>
+                                                        <div className='bg-secondary h-2 w-full overflow-hidden rounded-full'>
                                                             <div
-                                                                className='h-full bg-primary rounded-full transition-all duration-300'
+                                                                className='bg-primary h-full rounded-full transition-all duration-300'
                                                                 style={{
                                                                     width: `${Math.min(100, node.utilization.cpu_percent)}%`,
                                                                 }}
                                                             />
                                                         </div>
-                                                        <div className='flex justify-between text-xs text-muted-foreground font-mono'>
+                                                        <div className='text-muted-foreground flex justify-between font-mono text-xs'>
                                                             <span>
                                                                 {t('admin.nodes.load')}:{' '}
                                                                 {node.utilization.load_average1}
@@ -323,7 +323,7 @@ export default function NodeStatusPage() {
                                                     </div>
 
                                                     <div className='space-y-2'>
-                                                        <div className='flex justify-between items-center text-sm'>
+                                                        <div className='flex items-center justify-between text-sm'>
                                                             <span className='font-medium'>
                                                                 {t('admin.nodes.memory')}
                                                             </span>
@@ -332,9 +332,9 @@ export default function NodeStatusPage() {
                                                                 {formatBytes(node.utilization.memory_total)}
                                                             </span>
                                                         </div>
-                                                        <div className='h-2 w-full bg-secondary rounded-full overflow-hidden'>
+                                                        <div className='bg-secondary h-2 w-full overflow-hidden rounded-full'>
                                                             <div
-                                                                className='h-full bg-blue-500 rounded-full transition-all duration-300'
+                                                                className='h-full rounded-full bg-blue-500 transition-all duration-300'
                                                                 style={{
                                                                     width: `${(node.utilization.memory_used / node.utilization.memory_total) * 100}%`,
                                                                 }}
@@ -343,16 +343,16 @@ export default function NodeStatusPage() {
                                                     </div>
 
                                                     <div className='space-y-2'>
-                                                        <div className='flex justify-between items-center text-sm'>
+                                                        <div className='flex items-center justify-between text-sm'>
                                                             <span className='font-medium'>{t('admin.nodes.disk')}</span>
                                                             <span className='text-muted-foreground'>
                                                                 {formatBytes(node.utilization.disk_used)} /{' '}
                                                                 {formatBytes(node.utilization.disk_total)}
                                                             </span>
                                                         </div>
-                                                        <div className='h-2 w-full bg-secondary rounded-full overflow-hidden'>
+                                                        <div className='bg-secondary h-2 w-full overflow-hidden rounded-full'>
                                                             <div
-                                                                className='h-full bg-green-500 rounded-full transition-all duration-300'
+                                                                className='h-full rounded-full bg-green-500 transition-all duration-300'
                                                                 style={{
                                                                     width: `${(node.utilization.disk_used / node.utilization.disk_total) * 100}%`,
                                                                 }}
@@ -362,7 +362,7 @@ export default function NodeStatusPage() {
 
                                                     {node.utilization.swap_total > 0 && (
                                                         <div className='space-y-2'>
-                                                            <div className='flex justify-between items-center text-sm'>
+                                                            <div className='flex items-center justify-between text-sm'>
                                                                 <span className='font-medium'>
                                                                     {t('admin.nodes.swap')}
                                                                 </span>
@@ -371,9 +371,9 @@ export default function NodeStatusPage() {
                                                                     {formatBytes(node.utilization.swap_total)}
                                                                 </span>
                                                             </div>
-                                                            <div className='h-2 w-full bg-secondary rounded-full overflow-hidden'>
+                                                            <div className='bg-secondary h-2 w-full overflow-hidden rounded-full'>
                                                                 <div
-                                                                    className='h-full bg-orange-500 rounded-full transition-all duration-300'
+                                                                    className='h-full rounded-full bg-orange-500 transition-all duration-300'
                                                                     style={{
                                                                         width: `${(node.utilization.swap_used / node.utilization.swap_total) * 100}%`,
                                                                     }}

@@ -72,7 +72,7 @@ export function PullFileDialog({ open, onOpenChange, uuid, root, onSuccess }: Pu
             <DialogContent className='sm:max-w-md'>
                 <DialogHeader>
                     <div className='flex items-center gap-3'>
-                        <div className='flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20'>
+                        <div className='bg-primary/10 text-primary border-primary/20 flex h-10 w-10 items-center justify-center rounded-xl border'>
                             <Download className='h-5 w-5' />
                         </div>
                         <div>
@@ -84,25 +84,25 @@ export function PullFileDialog({ open, onOpenChange, uuid, root, onSuccess }: Pu
 
                 <div className='flex flex-col gap-4 py-4'>
                     <div className='space-y-2'>
-                        <label className='text-xs font-semibold uppercase tracking-wider text-muted-foreground ml-1'>
+                        <label className='text-muted-foreground ml-1 text-xs font-semibold tracking-wider uppercase'>
                             {t('files.dialogs.pull.url_label')}
                         </label>
                         <Input
                             placeholder={t('files.dialogs.pull.url_placeholder')}
                             value={url}
                             onChange={(e) => setUrl(e.target.value)}
-                            className='bg-white/5 border-white/10 focus:border-primary/50'
+                            className='focus:border-primary/50 border-white/10 bg-white/5'
                         />
                     </div>
                     <div className='space-y-2'>
-                        <label className='text-xs font-semibold uppercase tracking-wider text-muted-foreground ml-1'>
+                        <label className='text-muted-foreground ml-1 text-xs font-semibold tracking-wider uppercase'>
                             {t('files.dialogs.pull.name_label')}
                         </label>
                         <Input
                             placeholder={t('files.dialogs.pull.name_placeholder')}
                             value={filename}
                             onChange={(e) => setFilename(e.target.value)}
-                            className='bg-white/5 border-white/10 focus:border-primary/50'
+                            className='focus:border-primary/50 border-white/10 bg-white/5'
                         />
                     </div>
                 </div>

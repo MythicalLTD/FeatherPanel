@@ -36,25 +36,25 @@ export function UtilizationTab({ loading, data, error, onRefresh }: UtilizationT
     if (loading) {
         return (
             <div className='flex items-center justify-center py-12'>
-                <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-primary'></div>
+                <div className='border-primary h-8 w-8 animate-spin rounded-full border-b-2'></div>
             </div>
         );
     }
 
     if (error) {
         return (
-            <div className='p-6 bg-destructive/10 border border-destructive/20 rounded-2xl text-center space-y-4'>
-                <div className='p-3 bg-destructive/20 rounded-full w-fit mx-auto'>
-                    <AlertCircle className='h-6 w-6 text-destructive' />
+            <div className='bg-destructive/10 border-destructive/20 space-y-4 rounded-2xl border p-6 text-center'>
+                <div className='bg-destructive/20 mx-auto w-fit rounded-full p-3'>
+                    <AlertCircle className='text-destructive h-6 w-6' />
                 </div>
                 <div>
-                    <h3 className='text-lg font-bold text-destructive'>
+                    <h3 className='text-destructive text-lg font-bold'>
                         {t('admin.node.view.utilization.error_title')}
                     </h3>
-                    <p className='text-muted-foreground text-sm space-y-2'>{error}</p>
+                    <p className='text-muted-foreground space-y-2 text-sm'>{error}</p>
                 </div>
                 <Button variant='outline' onClick={onRefresh} size='sm'>
-                    <RefreshCw className='h-4 w-4 mr-2' />
+                    <RefreshCw className='mr-2 h-4 w-4' />
                     {t('common.retry')}
                 </Button>
             </div>
@@ -108,12 +108,12 @@ export function UtilizationTab({ loading, data, error, onRefresh }: UtilizationT
 
     return (
         <div className='space-y-6'>
-            <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
+            <div className='grid grid-cols-1 gap-6 lg:grid-cols-2'>
                 {resourceItems.map((item, index) => (
                     <PageCard key={index} title={item.title} icon={item.icon}>
                         <div className='space-y-6'>
-                            <div className='flex justify-between items-end mb-2'>
-                                <span className='text-sm text-muted-foreground font-medium'>
+                            <div className='mb-2 flex items-end justify-between'>
+                                <span className='text-muted-foreground text-sm font-medium'>
                                     {t('admin.node.view.utilization.current_usage')}
                                 </span>
                                 <span className='text-lg font-bold tabular-nums'>{item.label}</span>
@@ -121,10 +121,10 @@ export function UtilizationTab({ loading, data, error, onRefresh }: UtilizationT
 
                             <Progress value={item.value} className='h-3' indicatorClassName={item.color} />
 
-                            <div className='grid grid-cols-3 gap-4 pt-4 border-t border-border/50'>
+                            <div className='border-border/50 grid grid-cols-3 gap-4 border-t pt-4'>
                                 {item.stats.map((stat, sIndex) => (
                                     <div key={sIndex}>
-                                        <p className='text-[10px] uppercase font-bold tracking-wider text-muted-foreground mb-1'>
+                                        <p className='text-muted-foreground mb-1 text-[10px] font-bold tracking-wider uppercase'>
                                             {stat.label}
                                         </p>
                                         <p className='text-sm font-semibold'>{stat.value}</p>
@@ -138,8 +138,8 @@ export function UtilizationTab({ loading, data, error, onRefresh }: UtilizationT
                 {utilization.swap_total > 0 && (
                     <PageCard title={t('admin.node.view.utilization.swap')} icon={Zap}>
                         <div className='space-y-6'>
-                            <div className='flex justify-between items-end mb-2'>
-                                <span className='text-sm text-muted-foreground font-medium'>
+                            <div className='mb-2 flex items-end justify-between'>
+                                <span className='text-muted-foreground text-sm font-medium'>
                                     {t('admin.node.view.utilization.current_usage')}
                                 </span>
                                 <span className='text-lg font-bold tabular-nums'>
@@ -153,8 +153,8 @@ export function UtilizationTab({ loading, data, error, onRefresh }: UtilizationT
                                 indicatorClassName='bg-orange-500'
                             />
 
-                            <div className='pt-4 border-t border-border/50'>
-                                <p className='text-[10px] uppercase font-bold tracking-wider text-muted-foreground mb-1'>
+                            <div className='border-border/50 border-t pt-4'>
+                                <p className='text-muted-foreground mb-1 text-[10px] font-bold tracking-wider uppercase'>
                                     {t('admin.node.view.utilization.swap_percent')}
                                 </p>
                                 <p className='text-sm font-semibold'>
@@ -171,17 +171,17 @@ export function UtilizationTab({ loading, data, error, onRefresh }: UtilizationT
                     <div className='overflow-x-auto'>
                         <table className='w-full text-sm'>
                             <thead>
-                                <tr className='border-b border-border/50 text-left'>
-                                    <th className='p-4 font-medium text-muted-foreground uppercase tracking-wider text-[10px]'>
+                                <tr className='border-border/50 border-b text-left'>
+                                    <th className='text-muted-foreground p-4 text-[10px] font-medium tracking-wider uppercase'>
                                         {t('admin.node.view.utilization.mountpoint')}
                                     </th>
-                                    <th className='p-4 font-medium text-muted-foreground uppercase tracking-wider text-[10px]'>
+                                    <th className='text-muted-foreground p-4 text-[10px] font-medium tracking-wider uppercase'>
                                         {t('admin.node.view.utilization.device')}
                                     </th>
-                                    <th className='p-4 font-medium text-muted-foreground uppercase tracking-wider text-[10px]'>
+                                    <th className='text-muted-foreground p-4 text-[10px] font-medium tracking-wider uppercase'>
                                         {t('admin.node.view.utilization.usage')}
                                     </th>
-                                    <th className='p-4 font-medium text-muted-foreground uppercase tracking-wider text-[10px]'>
+                                    <th className='text-muted-foreground p-4 text-[10px] font-medium tracking-wider uppercase'>
                                         {t('admin.node.view.utilization.tags')}
                                     </th>
                                 </tr>
@@ -190,15 +190,15 @@ export function UtilizationTab({ loading, data, error, onRefresh }: UtilizationT
                                 {utilization.disk_details.map((disk, index) => (
                                     <tr
                                         key={index}
-                                        className='border-b border-border/10 last:border-0 hover:bg-muted/30 transition-colors'
+                                        className='border-border/10 hover:bg-muted/30 border-b transition-colors last:border-0'
                                     >
                                         <td className='p-4 font-mono text-xs'>{disk.mountpoint}</td>
-                                        <td className='p-4 text-muted-foreground text-xs'>{disk.device}</td>
+                                        <td className='text-muted-foreground p-4 text-xs'>{disk.device}</td>
                                         <td className='p-4'>
                                             <div className='flex items-center gap-3'>
-                                                <div className='flex-1 h-1.5 bg-muted rounded-full overflow-hidden max-w-[80px]'>
+                                                <div className='bg-muted h-1.5 max-w-[80px] flex-1 overflow-hidden rounded-full'>
                                                     <div
-                                                        className='h-full bg-primary rounded-full'
+                                                        className='bg-primary h-full rounded-full'
                                                         style={{
                                                             width: `${(disk.used_space / disk.total_space) * 100}%`,
                                                         }}
@@ -215,7 +215,7 @@ export function UtilizationTab({ loading, data, error, onRefresh }: UtilizationT
                                                     <Badge
                                                         key={tIndex}
                                                         variant='outline'
-                                                        className='text-[9px] uppercase tracking-tighter'
+                                                        className='text-[9px] tracking-tighter uppercase'
                                                     >
                                                         {tag}
                                                     </Badge>

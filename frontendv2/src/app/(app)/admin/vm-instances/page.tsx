@@ -315,7 +315,7 @@ export default function VmInstancesPage() {
                 icon={Server}
                 actions={
                     <Button size='sm' onClick={() => router.push('/admin/vm-instances/create')}>
-                        <Plus className='h-4 w-4 mr-2' />
+                        <Plus className='mr-2 h-4 w-4' />
                         {t('admin.vmInstances.create')}
                     </Button>
                 }
@@ -323,17 +323,17 @@ export default function VmInstancesPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-vm-instances', 'after-header')} />
 
-            <div className='flex flex-col gap-4 items-stretch bg-card/50 backdrop-blur-md p-4 rounded-2xl border border-border shadow-sm'>
-                <div className='relative flex-1 group w-full'>
-                    <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
+            <div className='bg-card/50 border-border flex flex-col items-stretch gap-4 rounded-2xl border p-4 shadow-sm backdrop-blur-md'>
+                <div className='group relative w-full flex-1'>
+                    <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
                     <Input
                         placeholder={t('admin.vmInstances.search_placeholder')}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className='pl-10 h-11 w-full'
+                        className='h-11 w-full pl-10'
                     />
                 </div>
-                <div className='flex flex-col sm:flex-row gap-2 items-stretch sm:items-center justify-between'>
+                <div className='flex flex-col items-stretch justify-between gap-2 sm:flex-row sm:items-center'>
                     <div className='flex flex-wrap items-center gap-2'>
                         <Button
                             variant={filterOwner ? 'default' : 'outline'}
@@ -346,7 +346,7 @@ export default function VmInstancesPage() {
                                 }
                             }}
                         >
-                            <User className='h-3.5 w-3.5 mr-2' />
+                            <User className='mr-2 h-3.5 w-3.5' />
                             {filterOwner
                                 ? t('admin.vmInstances.filters.user_selected', { username: filterOwner.username })
                                 : t('admin.vmInstances.filters.user')}
@@ -360,7 +360,7 @@ export default function VmInstancesPage() {
                                 setIsNodeFilterModalOpen(true);
                             }}
                         >
-                            <Network className='h-3.5 w-3.5 mr-2' />
+                            <Network className='mr-2 h-3.5 w-3.5' />
                             {filterNode
                                 ? t('admin.vmInstances.filters.node_selected', { name: filterNode.name })
                                 : t('admin.vmInstances.filters.node')}
@@ -378,7 +378,7 @@ export default function VmInstancesPage() {
                                     setPagination((p) => ({ ...p, page: 1 }));
                                 }}
                             >
-                                <X className='h-3.5 w-3.5 mr-2' />
+                                <X className='mr-2 h-3.5 w-3.5' />
                                 {t('admin.vmInstances.filters.clear')}
                             </Button>
                         )}
@@ -394,7 +394,7 @@ export default function VmInstancesPage() {
                                 setSortBy(field);
                                 setSortOrder(order);
                             }}
-                            className='w-[220px] h-11 rounded-xl bg-background/50 border-border/50 text-sm'
+                            className='bg-background/50 border-border/50 h-11 w-[220px] rounded-xl text-sm'
                         >
                             <option value='id-DESC'>{t('admin.vmInstances.sort.newest')}</option>
                             <option value='id-ASC'>{t('admin.vmInstances.sort.oldest')}</option>
@@ -418,7 +418,7 @@ export default function VmInstancesPage() {
                     description={t('admin.vmInstances.empty_desc')}
                     action={
                         <Button size='sm' onClick={() => router.push('/admin/vm-instances/create')}>
-                            <Plus className='h-4 w-4 mr-2' />
+                            <Plus className='mr-2 h-4 w-4' />
                             {t('admin.vmInstances.create')}
                         </Button>
                     }
@@ -426,7 +426,7 @@ export default function VmInstancesPage() {
             ) : (
                 <>
                     {pagination.totalPages > 1 && (
-                        <div className='flex items-center justify-between gap-4 py-3 px-4 rounded-xl border border-border bg-card/50 mb-4'>
+                        <div className='border-border bg-card/50 mb-4 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
                             <Button
                                 variant='outline'
                                 size='sm'
@@ -477,41 +477,41 @@ export default function VmInstancesPage() {
                                     icon={Server}
                                     badges={badges}
                                     description={
-                                        <div className='flex items-center gap-4 mt-2 flex-wrap'>
+                                        <div className='mt-2 flex flex-wrap items-center gap-4'>
                                             <span
                                                 className={cn(
-                                                    'inline-flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-full border',
+                                                    'inline-flex items-center gap-2 rounded-full border px-3 py-1 text-sm font-medium',
                                                     vmStatusStyles[inst.status] ?? vmStatusStyles.unknown,
                                                 )}
                                             >
                                                 <span
                                                     className={cn(
-                                                        'h-2 w-2 rounded-full shrink-0',
+                                                        'h-2 w-2 shrink-0 rounded-full',
                                                         statusDotStyles[inst.status] ?? 'bg-muted-foreground',
                                                     )}
                                                 />
                                                 {inst.status}
                                             </span>
                                             {ip && (
-                                                <div className='flex items-center gap-1.5 text-xs text-muted-foreground'>
+                                                <div className='text-muted-foreground flex items-center gap-1.5 text-xs'>
                                                     <Network className='h-3.5 w-3.5' />
                                                     <span className='font-mono'>{ip}</span>
                                                 </div>
                                             )}
                                             {mem > 0 && (
-                                                <div className='flex items-center gap-1.5 text-xs text-muted-foreground'>
+                                                <div className='text-muted-foreground flex items-center gap-1.5 text-xs'>
                                                     <Database className='h-3.5 w-3.5' />
                                                     <span>{formatMemory(mem)}</span>
                                                 </div>
                                             )}
                                             {cpus > 0 && (
-                                                <div className='flex items-center gap-1.5 text-xs text-muted-foreground'>
+                                                <div className='text-muted-foreground flex items-center gap-1.5 text-xs'>
                                                     <Cpu className='h-3.5 w-3.5' />
                                                     <span>{cpus} vCPU</span>
                                                 </div>
                                             )}
                                             {disk > 0 && (
-                                                <div className='flex items-center gap-1.5 text-xs text-muted-foreground'>
+                                                <div className='text-muted-foreground flex items-center gap-1.5 text-xs'>
                                                     <HardDrive className='h-3.5 w-3.5' />
                                                     <span>{formatDisk(disk)}</span>
                                                 </div>
@@ -554,7 +554,7 @@ export default function VmInstancesPage() {
                     </div>
 
                     {pagination.totalPages > 1 && (
-                        <div className='flex items-center justify-center gap-2 mt-8'>
+                        <div className='mt-8 flex items-center justify-center gap-2'>
                             <Button
                                 variant='outline'
                                 size='icon'
@@ -579,19 +579,19 @@ export default function VmInstancesPage() {
                 </>
             )}
 
-            <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+            <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
                 <PageCard title={t('admin.vmInstances.help.managing.title')} icon={Server}>
-                    <p className='text-sm text-muted-foreground leading-relaxed'>
+                    <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.vmInstances.help.managing.description')}
                     </p>
                 </PageCard>
                 <PageCard title={t('admin.vmInstances.help.resources.title')} icon={Layers}>
-                    <p className='text-sm text-muted-foreground leading-relaxed'>
+                    <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.vmInstances.help.resources.description')}
                     </p>
                 </PageCard>
                 <PageCard title={t('admin.vmInstances.help.tips.title')} icon={HelpCircle} className='md:col-span-2'>
-                    <ul className='text-sm text-muted-foreground leading-relaxed list-disc list-inside space-y-1'>
+                    <ul className='text-muted-foreground list-inside list-disc space-y-1 text-sm leading-relaxed'>
                         <li>{t('admin.vmInstances.help.tips.item1')}</li>
                         <li>{t('admin.vmInstances.help.tips.item2')}</li>
                         <li>{t('admin.vmInstances.help.tips.item3')}</li>
@@ -614,7 +614,7 @@ export default function VmInstancesPage() {
                         >
                             {deleting ? (
                                 <>
-                                    <Loader2 className='h-4 w-4 animate-spin mr-2' />
+                                    <Loader2 className='mr-2 h-4 w-4 animate-spin' />
                                     {t('common.deleting')}
                                 </>
                             ) : (
@@ -640,13 +640,13 @@ export default function VmInstancesPage() {
                         }}
                         className='mb-4'
                     />
-                    <div className='space-y-2 max-h-[400px] overflow-y-auto'>
+                    <div className='max-h-[400px] space-y-2 overflow-y-auto'>
                         {ownerFilterLoading ? (
-                            <div className='text-center py-4'>
-                                <Loader2 className='h-6 w-6 animate-spin mx-auto' />
+                            <div className='py-4 text-center'>
+                                <Loader2 className='mx-auto h-6 w-6 animate-spin' />
                             </div>
                         ) : ownerFilterResults.length === 0 ? (
-                            <p className='text-center py-4 text-muted-foreground'>{t('common.no_results')}</p>
+                            <p className='text-muted-foreground py-4 text-center'>{t('common.no_results')}</p>
                         ) : (
                             ownerFilterResults.map((user) => (
                                 <button
@@ -658,11 +658,11 @@ export default function VmInstancesPage() {
                                         setIsOwnerFilterModalOpen(false);
                                         setPagination((p) => ({ ...p, page: 1 }));
                                     }}
-                                    className='w-full p-3 rounded-xl border border-border/50 hover:border-primary hover:bg-primary/5 text-left'
+                                    className='border-border/50 hover:border-primary hover:bg-primary/5 w-full rounded-xl border p-3 text-left'
                                 >
                                     <div className='flex flex-col'>
                                         <span className='font-semibold'>{user.username}</span>
-                                        <span className='text-xs text-muted-foreground'>{user.email}</span>
+                                        <span className='text-muted-foreground text-xs'>{user.email}</span>
                                     </div>
                                 </button>
                             ))
@@ -677,13 +677,13 @@ export default function VmInstancesPage() {
                 title={t('admin.vmInstances.filters.select_node')}
             >
                 <div className='p-6'>
-                    <div className='space-y-2 max-h-[400px] overflow-y-auto'>
+                    <div className='max-h-[400px] space-y-2 overflow-y-auto'>
                         {loadingNodes ? (
-                            <div className='text-center py-4'>
-                                <Loader2 className='h-6 w-6 animate-spin mx-auto' />
+                            <div className='py-4 text-center'>
+                                <Loader2 className='mx-auto h-6 w-6 animate-spin' />
                             </div>
                         ) : nodesList.length === 0 ? (
-                            <p className='text-center py-4 text-muted-foreground'>{t('common.no_results')}</p>
+                            <p className='text-muted-foreground py-4 text-center'>{t('common.no_results')}</p>
                         ) : (
                             nodesList.map((node) => (
                                 <button
@@ -695,11 +695,11 @@ export default function VmInstancesPage() {
                                         setIsNodeFilterModalOpen(false);
                                         setPagination((p) => ({ ...p, page: 1 }));
                                     }}
-                                    className='w-full p-3 rounded-xl border border-border/50 hover:border-primary hover:bg-primary/5 text-left'
+                                    className='border-border/50 hover:border-primary hover:bg-primary/5 w-full rounded-xl border p-3 text-left'
                                 >
                                     <div className='flex flex-col'>
                                         <span className='font-semibold'>{node.name}</span>
-                                        <span className='text-xs text-muted-foreground'>{node.pve_host}</span>
+                                        <span className='text-muted-foreground text-xs'>{node.pve_host}</span>
                                     </div>
                                 </button>
                             ))
@@ -709,14 +709,14 @@ export default function VmInstancesPage() {
             </HeadlessModal>
 
             <Sheet open={isViewDrawerOpen} onOpenChange={setIsViewDrawerOpen}>
-                <SheetContent side='right' className='sm:max-w-2xl overflow-y-auto custom-scrollbar'>
+                <SheetContent side='right' className='custom-scrollbar overflow-y-auto sm:max-w-2xl'>
                     {selectedInstance && (
                         <>
                             <SheetHeader>
                                 <div className='flex items-center justify-between'>
                                     <div>
                                         <SheetTitle className='flex items-center gap-2'>
-                                            <Server className='h-5 w-5 text-primary' />
+                                            <Server className='text-primary h-5 w-5' />
                                             {t('admin.vmInstances.details.title')}
                                         </SheetTitle>
                                         <SheetDescription>
@@ -731,7 +731,7 @@ export default function VmInstancesPage() {
                                         onClick={() => router.push(`/vds/${selectedInstance.id}`)}
                                         className='rounded-xl border-dashed'
                                     >
-                                        <Eye className='h-4 w-4 mr-2' />
+                                        <Eye className='mr-2 h-4 w-4' />
                                         {t('admin.vmInstances.details.view_client_area')}
                                     </Button>
                                 </div>
@@ -739,8 +739,8 @@ export default function VmInstancesPage() {
 
                             <div className='mt-8 space-y-6'>
                                 <div className='grid grid-cols-1 gap-4'>
-                                    <div className='p-5 rounded-2xl bg-muted/30 border border-border/50'>
-                                        <h4 className='text-xs font-black uppercase tracking-widest text-primary mb-4'>
+                                    <div className='bg-muted/30 border-border/50 rounded-2xl border p-5'>
+                                        <h4 className='text-primary mb-4 text-xs font-black tracking-widest uppercase'>
                                             {t('admin.vmInstances.details.basic_info')}
                                         </h4>
                                         <div className='space-y-4'>
@@ -769,14 +769,14 @@ export default function VmInstancesPage() {
                                                 value={
                                                     <span
                                                         className={cn(
-                                                            'inline-flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-full border',
+                                                            'inline-flex items-center gap-2 rounded-full border px-3 py-1 text-sm font-medium',
                                                             vmStatusStyles[selectedInstance.status] ??
                                                                 vmStatusStyles.unknown,
                                                         )}
                                                     >
                                                         <span
                                                             className={cn(
-                                                                'h-2 w-2 rounded-full shrink-0',
+                                                                'h-2 w-2 shrink-0 rounded-full',
                                                                 statusDotStyles[selectedInstance.status] ??
                                                                     'bg-muted-foreground',
                                                             )}
@@ -796,8 +796,8 @@ export default function VmInstancesPage() {
                                         </div>
                                     </div>
 
-                                    <div className='p-5 rounded-2xl bg-muted/30 border border-border/50'>
-                                        <h4 className='text-xs font-black uppercase tracking-widest text-primary mb-4'>
+                                    <div className='bg-muted/30 border-border/50 rounded-2xl border p-5'>
+                                        <h4 className='text-primary mb-4 text-xs font-black tracking-widest uppercase'>
                                             {t('admin.vmInstances.details.ownership_node')}
                                         </h4>
                                         <div className='space-y-4'>
@@ -841,8 +841,8 @@ export default function VmInstancesPage() {
 function DetailItem({ label, value, isMono = false }: { label: string; value: React.ReactNode; isMono?: boolean }) {
     return (
         <div className='flex items-start justify-between gap-4'>
-            <span className='text-sm font-medium text-muted-foreground shrink-0'>{label}</span>
-            <span className={cn('text-sm text-foreground text-right break-all', isMono && 'font-mono')}>{value}</span>
+            <span className='text-muted-foreground shrink-0 text-sm font-medium'>{label}</span>
+            <span className={cn('text-foreground text-right text-sm break-all', isMono && 'font-mono')}>{value}</span>
         </div>
     );
 }

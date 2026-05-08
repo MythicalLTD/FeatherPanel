@@ -62,9 +62,9 @@ export default function VerifyEmailForm() {
 
     if (loading) {
         return (
-            <div className='text-center py-12'>
-                <div className='inline-block animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent' />
-                <p className='mt-4 text-sm text-muted-foreground'>{t('auth.verify_email.verifying')}</p>
+            <div className='py-12 text-center'>
+                <div className='border-primary inline-block h-8 w-8 animate-spin rounded-full border-2 border-t-transparent' />
+                <p className='text-muted-foreground mt-4 text-sm'>{t('auth.verify_email.verifying')}</p>
             </div>
         );
     }
@@ -77,7 +77,7 @@ export default function VerifyEmailForm() {
                 >
                     {success ? t('auth.verify_email.success_title') : t('auth.verify_email.failed_title')}
                 </h2>
-                <p className='text-sm text-muted-foreground'>{message}</p>
+                <p className='text-muted-foreground text-sm'>{message}</p>
             </div>
             <Button type='button' className='w-full' onClick={() => router.push('/auth/login')}>
                 {t('auth.verify_email.continue_to_login')}

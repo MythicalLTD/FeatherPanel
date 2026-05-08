@@ -200,26 +200,26 @@ export default function TicketsPage() {
             <WidgetRenderer widgets={getWidgets('admin-tickets', 'top-of-page')} />
             <PageHeader title={t('admin.tickets.title')} description={t('admin.tickets.viewAndManage')} icon={Ticket} />
 
-            <div className='flex flex-col sm:flex-row gap-4 items-center bg-card/40 backdrop-blur-md p-4 rounded-2xl shadow-sm'>
-                <div className='relative flex-1 group w-full'>
-                    <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
+            <div className='bg-card/40 flex flex-col items-center gap-4 rounded-2xl p-4 shadow-sm backdrop-blur-md sm:flex-row'>
+                <div className='group relative w-full flex-1'>
+                    <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
                     <Input
                         placeholder={t('admin.tickets.search_placeholder')}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className='pl-10 h-11 w-full'
+                        className='h-11 w-full pl-10'
                     />
                 </div>
-                <div className='flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0 w-full sm:w-auto'>
+                <div className='flex w-full items-center gap-2 overflow-x-auto pb-2 sm:w-auto sm:pb-0'>
                     <div className='flex items-center gap-2'>
-                        <Filter className='h-4 w-4 text-muted-foreground' />
+                        <Filter className='text-muted-foreground h-4 w-4' />
                         <Select
                             value={statusFilter}
                             onChange={(e) => {
                                 setStatusFilter(e.target.value);
                                 setPagination((prev) => ({ ...prev, page: 1 }));
                             }}
-                            className='w-[160px] h-11 rounded-xl bg-background/50 border-border/50'
+                            className='bg-background/50 border-border/50 h-11 w-[160px] rounded-xl'
                         >
                             <option value='all'>{t('admin.tickets.filters.all_statuses')}</option>
                             {statuses.map((status) => (
@@ -235,7 +235,7 @@ export default function TicketsPage() {
                             setCategoryFilter(e.target.value);
                             setPagination((prev) => ({ ...prev, page: 1 }));
                         }}
-                        className='w-[160px] h-11 rounded-xl bg-background/50 border-border/50'
+                        className='bg-background/50 border-border/50 h-11 w-[160px] rounded-xl'
                     >
                         <option value='all'>{t('admin.tickets.filters.all_categories')}</option>
                         {categories.map((category) => (
@@ -250,7 +250,7 @@ export default function TicketsPage() {
             <WidgetRenderer widgets={getWidgets('admin-tickets', 'after-header')} />
 
             {!loading && tickets.length > 0 && pagination.totalPages > 1 && (
-                <div className='flex items-center justify-between gap-4 py-3 px-4 rounded-xl border border-border bg-card/50 mb-4'>
+                <div className='border-border bg-card/50 mb-4 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
                     <Button
                         variant='outline'
                         size='sm'
@@ -317,14 +317,14 @@ export default function TicketsPage() {
                                     <div className='flex items-center gap-2'>
                                         <span className='font-mono text-xs opacity-70'>#{ticket.id}</span>
                                         <span>•</span>
-                                        <span className='font-medium text-primary/80'>{ticket.user?.username}</span>
+                                        <span className='text-primary/80 font-medium'>{ticket.user?.username}</span>
                                         <span className='opacity-50'>({ticket.user?.email})</span>
                                     </div>
                                 }
                                 badges={badges}
                                 iconClassName='text-primary'
                                 description={
-                                    <div className='flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground'>
+                                    <div className='text-muted-foreground flex flex-wrap items-center gap-x-6 gap-y-2 text-sm'>
                                         <div className='flex items-center gap-2'>
                                             <span className='font-semibold'>{t('admin.tickets.table.category')}:</span>
                                             <span>{ticket.category?.name}</span>
@@ -347,7 +347,7 @@ export default function TicketsPage() {
                                     <div className='flex items-center gap-2'>
                                         <Link href={`/admin/tickets/${ticket.uuid}`}>
                                             <Button size='sm' variant='outline'>
-                                                <Eye className='h-4 w-4 mr-2' />
+                                                <Eye className='mr-2 h-4 w-4' />
                                                 {t('common.view')}
                                             </Button>
                                         </Link>
@@ -373,7 +373,7 @@ export default function TicketsPage() {
             )}
 
             {pagination.totalPages > 1 && (
-                <div className='flex items-center justify-center gap-2 mt-8'>
+                <div className='mt-8 flex items-center justify-center gap-2'>
                     <Button
                         variant='outline'
                         size='icon'
@@ -397,19 +397,19 @@ export default function TicketsPage() {
                     </Button>
                 </div>
             )}
-            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-10'>
+            <div className='grid grid-cols-1 gap-6 pt-10 md:grid-cols-2 lg:grid-cols-3'>
                 <PageCard title={t('admin.tickets.help.managing.title')} icon={Ticket}>
-                    <p className='text-sm text-muted-foreground leading-relaxed'>
+                    <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.tickets.help.managing.description')}
                     </p>
                 </PageCard>
                 <PageCard title={t('admin.tickets.help.categories.title')} icon={Filter}>
-                    <p className='text-sm text-muted-foreground leading-relaxed'>
+                    <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.tickets.help.categories.description')}
                     </p>
                 </PageCard>
                 <PageCard title={t('admin.tickets.help.support.title')} icon={AlertCircle} variant='danger'>
-                    <p className='text-sm text-muted-foreground leading-relaxed'>
+                    <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.tickets.help.support.description')}
                     </p>
                 </PageCard>

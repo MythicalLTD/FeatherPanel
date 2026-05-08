@@ -133,10 +133,10 @@ export default function CommunityTranslationsPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-feathercloud-translations', 'before-content')} />
 
-            <div className='backdrop-blur-3xl border border-border/50 rounded-3xl p-6 bg-card/50'>
-                <div className='flex gap-4 items-center'>
+            <div className='border-border/50 bg-card/50 rounded-3xl border p-6 backdrop-blur-3xl'>
+                <div className='flex items-center gap-4'>
                     <div className='relative flex-1'>
-                        <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground' />
+                        <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform' />
                         <Input
                             placeholder={t('admin.translations.search_placeholder')}
                             value={searchQuery}
@@ -145,7 +145,7 @@ export default function CommunityTranslationsPage() {
                         />
                     </div>
                     <Button variant='outline' onClick={() => router.push('/admin/translations')}>
-                        <FileText className='h-4 w-4 mr-2' />
+                        <FileText className='mr-2 h-4 w-4' />
                         {t('admin.marketplace.index.translations.manage_local')}
                     </Button>
                 </div>
@@ -175,27 +175,27 @@ export default function CommunityTranslationsPage() {
                     }
                 />
             ) : (
-                <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+                <div className='grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3'>
                     {filteredTranslations.map((translation) => (
                         <div
                             key={translation.id}
-                            className='backdrop-blur-3xl border border-border/50 rounded-3xl p-6 bg-card/50 hover:shadow-lg transition-shadow'
+                            className='border-border/50 bg-card/50 rounded-3xl border p-6 backdrop-blur-3xl transition-shadow hover:shadow-lg'
                         >
                             <div className='space-y-4'>
                                 <div className='flex items-start justify-between'>
                                     <div className='flex items-center gap-3'>
-                                        <div className='p-2 bg-primary/10 rounded-lg'>
-                                            <Globe className='h-5 w-5 text-primary' />
+                                        <div className='bg-primary/10 rounded-lg p-2'>
+                                            <Globe className='text-primary h-5 w-5' />
                                         </div>
                                         <div>
-                                            <h3 className='font-semibold text-lg'>{translation.name}</h3>
-                                            <p className='text-sm text-muted-foreground'>{translation.nativeName}</p>
+                                            <h3 className='text-lg font-semibold'>{translation.name}</h3>
+                                            <p className='text-muted-foreground text-sm'>{translation.nativeName}</p>
                                         </div>
                                     </div>
                                     {translation.verified && (
                                         <Badge
                                             variant='default'
-                                            className='bg-green-500/10 text-green-600 border-green-500/20'
+                                            className='border-green-500/20 bg-green-500/10 text-green-600'
                                         >
                                             {t('admin.marketplace.index.translations.verified')}
                                         </Badge>
@@ -203,12 +203,12 @@ export default function CommunityTranslationsPage() {
                                 </div>
 
                                 {translation.description && (
-                                    <p className='text-sm text-muted-foreground line-clamp-2'>
+                                    <p className='text-muted-foreground line-clamp-2 text-sm'>
                                         {translation.description}
                                     </p>
                                 )}
 
-                                <div className='flex flex-wrap gap-2 text-xs text-muted-foreground'>
+                                <div className='text-muted-foreground flex flex-wrap gap-2 text-xs'>
                                     <div className='flex items-center gap-1'>
                                         <Users className='h-3 w-3' />
                                         <span>{translation.author}</span>
@@ -227,9 +227,9 @@ export default function CommunityTranslationsPage() {
                                     </div>
                                 </div>
 
-                                <div className='flex gap-2 pt-2 border-t'>
+                                <div className='flex gap-2 border-t pt-2'>
                                     <Button variant='outline' size='sm' className='flex-1' onClick={handleDownload}>
-                                        <Download className='h-4 w-4 mr-2' />
+                                        <Download className='mr-2 h-4 w-4' />
                                         {t('admin.marketplace.index.translations.download')}
                                     </Button>
                                     <Button size='sm' className='flex-1' onClick={handleInstall}>

@@ -596,8 +596,8 @@ export default function VmInstanceEditPage() {
 
     if (loading || !instance) {
         return (
-            <div className='flex items-center justify-center min-h-[200px]'>
-                <Loader2 className='h-8 w-8 animate-spin text-muted-foreground' />
+            <div className='flex min-h-[200px] items-center justify-center'>
+                <Loader2 className='text-muted-foreground h-8 w-8 animate-spin' />
             </div>
         );
     }
@@ -620,12 +620,12 @@ export default function VmInstanceEditPage() {
                                 size='sm'
                                 onClick={handleUnsuspend}
                                 disabled={suspending}
-                                className='text-green-600 hover:text-green-700 border-green-500/20 hover:bg-green-500/10'
+                                className='border-green-500/20 text-green-600 hover:bg-green-500/10 hover:text-green-700'
                             >
                                 {suspending ? (
-                                    <Loader2 className='h-4 w-4 mr-2 animate-spin' />
+                                    <Loader2 className='mr-2 h-4 w-4 animate-spin' />
                                 ) : (
-                                    <ShieldCheck className='h-4 w-4 mr-2' />
+                                    <ShieldCheck className='mr-2 h-4 w-4' />
                                 )}
                                 {t('admin.vmInstances.unsuspend') ?? 'Unsuspend'}
                             </Button>
@@ -635,18 +635,18 @@ export default function VmInstanceEditPage() {
                                 size='sm'
                                 onClick={handleSuspend}
                                 disabled={suspending}
-                                className='text-amber-600 hover:text-amber-700 border-amber-500/20 hover:bg-amber-500/10'
+                                className='border-amber-500/20 text-amber-600 hover:bg-amber-500/10 hover:text-amber-700'
                             >
                                 {suspending ? (
-                                    <Loader2 className='h-4 w-4 mr-2 animate-spin' />
+                                    <Loader2 className='mr-2 h-4 w-4 animate-spin' />
                                 ) : (
-                                    <Ban className='h-4 w-4 mr-2' />
+                                    <Ban className='mr-2 h-4 w-4' />
                                 )}
                                 {t('admin.vmInstances.suspend') ?? 'Suspend'}
                             </Button>
                         )}
                         <Button variant='outline' size='sm' onClick={() => router.push('/admin/vm-instances')}>
-                            <ArrowLeft className='h-4 w-4 mr-2' />
+                            <ArrowLeft className='mr-2 h-4 w-4' />
                             {t('common.back')}
                         </Button>
                     </div>
@@ -657,19 +657,19 @@ export default function VmInstanceEditPage() {
                 value={activeTab}
                 onValueChange={handleTabChange}
                 orientation='vertical'
-                className='w-full flex flex-col md:flex-row gap-6'
+                className='flex w-full flex-col gap-6 md:flex-row'
             >
-                <aside className='w-full md:w-64 shrink-0 overflow-x-auto md:overflow-visible pb-2 md:pb-0'>
-                    <TabsList className='flex flex-row md:flex-col h-auto w-max md:w-full bg-card/30 border border-border/50 p-2 rounded-2xl gap-2 md:gap-1'>
+                <aside className='w-full shrink-0 overflow-x-auto pb-2 md:w-64 md:overflow-visible md:pb-0'>
+                    <TabsList className='bg-card/30 border-border/50 flex h-auto w-max flex-row gap-2 rounded-2xl border p-2 md:w-full md:flex-col md:gap-1'>
                         {editTabs.map((tab) => {
                             const Icon = tab.icon;
                             return (
                                 <TabsTrigger
                                     key={tab.id}
                                     value={tab.id}
-                                    className='w-auto md:w-full justify-start px-4 py-3 h-auto text-sm md:text-base font-normal data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:font-medium transition-all rounded-xl border border-transparent data-[state=active]:border-primary/10 whitespace-nowrap'
+                                    className='data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:border-primary/10 h-auto w-auto justify-start rounded-xl border border-transparent px-4 py-3 text-sm font-normal whitespace-nowrap transition-all data-[state=active]:font-medium md:w-full md:text-base'
                                 >
-                                    <Icon className='h-4 w-4 mr-3 shrink-0' />
+                                    <Icon className='mr-3 h-4 w-4 shrink-0' />
                                     {tab.label}
                                 </TabsTrigger>
                             );
@@ -677,7 +677,7 @@ export default function VmInstanceEditPage() {
                     </TabsList>
                 </aside>
 
-                <div className='flex-1 space-y-6 min-w-0'>
+                <div className='min-w-0 flex-1 space-y-6'>
                     <TabsContent value='details' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
                         <DetailsTab
                             hostname={hostname}
@@ -802,7 +802,7 @@ export default function VmInstanceEditPage() {
                     </SheetHeader>
                     <div className='mt-6 space-y-4'>
                         <div className='relative'>
-                            <SearchIcon className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground' />
+                            <SearchIcon className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
                             <Input
                                 placeholder={t('common.search') ?? 'Search'}
                                 value={ownerSearch}
@@ -813,9 +813,9 @@ export default function VmInstanceEditPage() {
                                 className='pl-10'
                             />
                         </div>
-                        <div className='space-y-2 max-h-[60vh] overflow-y-auto'>
+                        <div className='max-h-[60vh] space-y-2 overflow-y-auto'>
                             {owners.length === 0 ? (
-                                <p className='text-center py-6 text-muted-foreground'>{t('common.no_results')}</p>
+                                <p className='text-muted-foreground py-6 text-center'>{t('common.no_results')}</p>
                             ) : (
                                 owners.map((user) => (
                                     <button
@@ -825,11 +825,11 @@ export default function VmInstanceEditPage() {
                                             setSelectedOwner(user);
                                             setOwnerModalOpen(false);
                                         }}
-                                        className='w-full p-3 rounded-xl border border-border/50 hover:border-primary hover:bg-primary/5 text-left'
+                                        className='border-border/50 hover:border-primary hover:bg-primary/5 w-full rounded-xl border p-3 text-left'
                                     >
                                         <div className='flex flex-col'>
                                             <span className='font-semibold'>{user.username}</span>
-                                            <span className='text-xs text-muted-foreground'>{user.email}</span>
+                                            <span className='text-muted-foreground text-xs'>{user.email}</span>
                                         </div>
                                     </button>
                                 ))

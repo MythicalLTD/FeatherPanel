@@ -79,7 +79,6 @@ export default function DashboardShell({ children }: { children: React.ReactNode
     const navbarHoverDockActive = navbarHoverReveal && chromeLayout === 'modern';
 
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         setMounted(true);
 
         const token = getCookie('remember_token');
@@ -123,8 +122,8 @@ export default function DashboardShell({ children }: { children: React.ReactNode
 
     if (!mounted) {
         return (
-            <div className='flex h-screen items-center justify-center bg-background'>
-                <div className='animate-spin rounded-full h-12 w-12 border-2 border-primary border-t-transparent' />
+            <div className='bg-background flex h-screen items-center justify-center'>
+                <div className='border-primary h-12 w-12 animate-spin rounded-full border-2 border-t-transparent' />
             </div>
         );
     }
@@ -133,7 +132,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
         <BackgroundWrapper>
             <div
                 className={cn(
-                    'motion-content min-h-screen flex flex-col',
+                    'motion-content flex min-h-screen flex-col',
                     isFullWidthMode && 'h-screen overflow-hidden',
                 )}
             >
@@ -141,7 +140,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
 
                 <div
                     className={cn(
-                        'flex-1 flex flex-col min-w-0 transition-[padding] duration-300 ease-out',
+                        'flex min-w-0 flex-1 flex-col transition-[padding] duration-300 ease-out',
                         chromeLayout === 'classic'
                             ? sidebarCollapsed
                                 ? 'lg:pl-16'
@@ -162,7 +161,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                     <main
                         className={cn(
                             'flex-1',
-                            isFullWidthMode ? 'p-0 overflow-hidden' : 'py-5 sm:py-6 px-3 sm:px-6 lg:px-8',
+                            isFullWidthMode ? 'overflow-hidden p-0' : 'px-3 py-5 sm:px-6 sm:py-6 lg:px-8',
                         )}
                     >
                         <div className={cn(isFullWidthMode && 'h-full', !isFullWidthMode && 'mx-auto max-w-7xl')}>

@@ -72,7 +72,7 @@ export function StorageConfigurationTab({ nodeId, form, setForm, errors }: Stora
                     title={t('admin.vdsNodes.storage.image_storages_title')}
                     description={t('admin.vdsNodes.storage.image_storages_description')}
                 >
-                    <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                    <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
                         <div className='space-y-2'>
                             <Label className='text-sm font-medium'>{t('admin.vdsNodes.form.efi_storage')}</Label>
                             <Select
@@ -87,7 +87,7 @@ export function StorageConfigurationTab({ nodeId, form, setForm, errors }: Stora
                                     </option>
                                 ))}
                             </Select>
-                            <p className='text-xs text-muted-foreground/70'>
+                            <p className='text-muted-foreground/70 text-xs'>
                                 {t('admin.vdsNodes.form.efi_storage_help')}
                             </p>
                         </div>
@@ -106,7 +106,7 @@ export function StorageConfigurationTab({ nodeId, form, setForm, errors }: Stora
                                     </option>
                                 ))}
                             </Select>
-                            <p className='text-xs text-muted-foreground/70'>
+                            <p className='text-muted-foreground/70 text-xs'>
                                 {t('admin.vdsNodes.form.tpm_storage_help')}
                             </p>
                         </div>
@@ -134,16 +134,16 @@ export function StorageConfigurationTab({ nodeId, form, setForm, errors }: Stora
                                         </option>
                                     ))}
                                 </Select>
-                                {storagesLoading && <Loader2 className='h-4 w-4 animate-spin text-muted-foreground' />}
+                                {storagesLoading && <Loader2 className='text-muted-foreground h-4 w-4 animate-spin' />}
                             </div>
-                            <p className='text-xs text-muted-foreground/70'>
+                            <p className='text-muted-foreground/70 text-xs'>
                                 {t('admin.vdsNodes.form.backup_storage_help')}
                             </p>
                             {storagesError && (
-                                <p className='text-[10px] uppercase font-bold text-red-500 mt-1'>{storagesError}</p>
+                                <p className='mt-1 text-[10px] font-bold text-red-500 uppercase'>{storagesError}</p>
                             )}
                             {errors.storage_backups && (
-                                <p className='text-[10px] uppercase font-bold text-red-500 mt-1'>
+                                <p className='mt-1 text-[10px] font-bold text-red-500 uppercase'>
                                     {errors.storage_backups}
                                 </p>
                             )}

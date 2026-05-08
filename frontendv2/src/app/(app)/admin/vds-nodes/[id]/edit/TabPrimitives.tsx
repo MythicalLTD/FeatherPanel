@@ -32,8 +32,8 @@ export function TabSection({ title, description, action, children, className, co
             {(title || description || action) && (
                 <div className='flex items-start justify-between gap-4'>
                     <div className='space-y-1'>
-                        {title && <h3 className='text-sm font-semibold tracking-tight text-foreground'>{title}</h3>}
-                        {description && <p className='text-xs text-muted-foreground leading-relaxed'>{description}</p>}
+                        {title && <h3 className='text-foreground text-sm font-semibold tracking-tight'>{title}</h3>}
+                        {description && <p className='text-muted-foreground text-xs leading-relaxed'>{description}</p>}
                     </div>
                     {action && <div className='shrink-0'>{action}</div>}
                 </div>
@@ -63,7 +63,7 @@ interface TabTableShellProps {
 
 export function TabTableShell({ children, className }: TabTableShellProps) {
     return (
-        <div className={cn('overflow-hidden rounded-xl border border-border/50 bg-muted/20', className)}>
+        <div className={cn('border-border/50 bg-muted/20 overflow-hidden rounded-xl border', className)}>
             {children}
         </div>
     );
@@ -81,16 +81,16 @@ export function TabBlankState({ title, description, icon: Icon = SearchX, action
     return (
         <div
             className={cn(
-                'rounded-xl border border-dashed border-border/50 bg-muted/30 px-6 py-12 text-center',
+                'border-border/50 bg-muted/30 rounded-xl border border-dashed px-6 py-12 text-center',
                 className,
             )}
         >
-            <div className='mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl border border-primary/20 bg-primary/10'>
-                <Icon className='h-5 w-5 text-primary' />
+            <div className='border-primary/20 bg-primary/10 mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl border'>
+                <Icon className='text-primary h-5 w-5' />
             </div>
             <h3 className='text-sm font-semibold tracking-tight'>{title}</h3>
             {description && (
-                <p className='mx-auto mt-2 max-w-md text-xs leading-relaxed text-muted-foreground'>{description}</p>
+                <p className='text-muted-foreground mx-auto mt-2 max-w-md text-xs leading-relaxed'>{description}</p>
             )}
             {action && <div className='mt-5 flex justify-center'>{action}</div>}
         </div>
@@ -106,14 +106,14 @@ interface TabHintCardProps {
 
 export function TabHintCard({ title, description, icon: Icon, className }: TabHintCardProps) {
     return (
-        <div className={cn('rounded-xl border border-border/50 bg-muted/30 p-4 space-y-3', className)}>
+        <div className={cn('border-border/50 bg-muted/30 space-y-3 rounded-xl border p-4', className)}>
             <div className='flex items-center gap-3'>
-                <div className='flex h-9 w-9 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 shrink-0'>
-                    <Icon className='h-4 w-4 text-primary' />
+                <div className='border-primary/20 bg-primary/10 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border'>
+                    <Icon className='text-primary h-4 w-4' />
                 </div>
-                <h4 className='font-medium tracking-tight text-sm'>{title}</h4>
+                <h4 className='text-sm font-medium tracking-tight'>{title}</h4>
             </div>
-            <p className='text-xs leading-relaxed text-muted-foreground'>{description}</p>
+            <p className='text-muted-foreground text-xs leading-relaxed'>{description}</p>
         </div>
     );
 }

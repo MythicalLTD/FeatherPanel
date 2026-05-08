@@ -81,7 +81,7 @@ export function CompressDialog({ open, onOpenChange, serverUuid, directory, file
             <DialogContent className='sm:max-w-md'>
                 <DialogHeader>
                     <DialogTitle className='flex items-center gap-2'>
-                        <Archive className='h-5 w-5 text-primary' />
+                        <Archive className='text-primary h-5 w-5' />
                         {t('files.dialogs.compress.title')}
                     </DialogTitle>
                     <DialogDescription>{t('files.dialogs.compress.description')}</DialogDescription>
@@ -91,7 +91,7 @@ export function CompressDialog({ open, onOpenChange, serverUuid, directory, file
                     <div className='space-y-2'>
                         <Label
                             htmlFor='archive-type'
-                            className='text-xs font-bold uppercase tracking-widest text-muted-foreground'
+                            className='text-muted-foreground text-xs font-bold tracking-widest uppercase'
                         >
                             {t('files.dialogs.compress.type_label')}
                         </Label>
@@ -107,7 +107,7 @@ export function CompressDialog({ open, onOpenChange, serverUuid, directory, file
                     <div className='space-y-2'>
                         <Label
                             htmlFor='archive-name'
-                            className='text-xs font-bold uppercase tracking-widest text-muted-foreground'
+                            className='text-muted-foreground text-xs font-bold tracking-widest uppercase'
                         >
                             {t('files.dialogs.compress.name_label')}
                         </Label>
@@ -117,13 +117,13 @@ export function CompressDialog({ open, onOpenChange, serverUuid, directory, file
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             disabled={compressing}
-                            className='h-11 bg-white/5 border-white/10 focus:border-primary/50 rounded-xl'
+                            className='focus:border-primary/50 h-11 rounded-xl border-white/10 bg-white/5'
                         />
-                        <p className='text-[10px] text-muted-foreground'>{t('files.dialogs.compress.name_help')}</p>
+                        <p className='text-muted-foreground text-[10px]'>{t('files.dialogs.compress.name_help')}</p>
                     </div>
 
-                    <div className='p-3 rounded-xl bg-primary/5 border border-primary/10'>
-                        <p className='text-xs text-primary/80 font-medium'>
+                    <div className='bg-primary/5 border-primary/10 rounded-xl border p-3'>
+                        <p className='text-primary/80 text-xs font-medium'>
                             {t('files.dialogs.compress.info', { count: String(files.length), directory: directory })}
                         </p>
                     </div>
@@ -134,7 +134,7 @@ export function CompressDialog({ open, onOpenChange, serverUuid, directory, file
                         {t('files.dialogs.compress.cancel')}
                     </Button>
                     <Button onClick={handleCompress} disabled={compressing} loading={compressing}>
-                        <Archive className='h-4 w-4 mr-2' />
+                        <Archive className='mr-2 h-4 w-4' />
                         {t('files.dialogs.compress.compress')}
                     </Button>
                 </DialogFooter>

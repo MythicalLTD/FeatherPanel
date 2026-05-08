@@ -104,9 +104,9 @@ export default function ServerSubdomainsPage() {
 
     if (loading && subdomains.length === 0) {
         return (
-            <div key={pathname} className='flex flex-col items-center justify-center py-24 '>
-                <Loader2 className='h-12 w-12 animate-spin text-primary opacity-50' />
-                <p className='mt-4 text-muted-foreground font-medium animate-pulse'>{t('common.loading')}</p>
+            <div key={pathname} className='flex flex-col items-center justify-center py-24'>
+                <Loader2 className='text-primary h-12 w-12 animate-spin opacity-50' />
+                <p className='text-muted-foreground mt-4 animate-pulse font-medium'>{t('common.loading')}</p>
             </div>
         );
     }
@@ -114,10 +114,10 @@ export default function ServerSubdomainsPage() {
     if (!canManage) {
         return (
             <div className='flex flex-col items-center justify-center py-24 text-center'>
-                <div className='h-20 w-20 rounded-3xl bg-red-500/10 flex items-center justify-center mb-6'>
+                <div className='mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-red-500/10'>
                     <Lock className='h-10 w-10 text-red-500' />
                 </div>
-                <h1 className='text-2xl font-black uppercase tracking-tight'>{t('common.accessDenied')}</h1>
+                <h1 className='text-2xl font-black tracking-tight uppercase'>{t('common.accessDenied')}</h1>
                 <p className='text-muted-foreground mt-2'>{t('common.noPermission')}</p>
                 <Button variant='outline' className='mt-8' onClick={() => router.back()}>
                     {t('common.goBack')}
@@ -129,7 +129,7 @@ export default function ServerSubdomainsPage() {
     const limitReached = (overview?.current_total ?? 0) >= (overview?.max_allowed ?? 0);
 
     return (
-        <div key={pathname} className='space-y-8 pb-12 '>
+        <div key={pathname} className='space-y-8 pb-12'>
             <WidgetRenderer widgets={getWidgets('server-subdomains', 'top-of-page')} />
 
             <PageHeader
@@ -138,7 +138,7 @@ export default function ServerSubdomainsPage() {
                 actions={
                     <div className='flex items-center gap-3'>
                         <Button variant='glass' size='default' onClick={fetchData} disabled={loading}>
-                            <RefreshCw className={cn('h-5 w-5 mr-2', loading && 'animate-spin')} />
+                            <RefreshCw className={cn('mr-2 h-5 w-5', loading && 'animate-spin')} />
                             {t('common.refresh')}
                         </Button>
 
@@ -148,7 +148,7 @@ export default function ServerSubdomainsPage() {
                             onClick={() => router.push(`/server/${uuidShort}/subdomains/new`)}
                             disabled={limitReached || loading}
                         >
-                            <Plus className='h-5 w-5 mr-2' />
+                            <Plus className='mr-2 h-5 w-5' />
                             {t('serverSubdomains.createButton')}
                         </Button>
                     </div>
@@ -157,16 +157,16 @@ export default function ServerSubdomainsPage() {
             <WidgetRenderer widgets={getWidgets('server-subdomains', 'after-header')} />
 
             {limitReached && (
-                <div className='relative overflow-hidden p-6 rounded-3xl bg-yellow-500/10 border border-yellow-500/20 backdrop-blur-xl animate-in slide-in-from-top duration-500'>
+                <div className='animate-in slide-in-from-top relative overflow-hidden rounded-3xl border border-yellow-500/20 bg-yellow-500/10 p-6 backdrop-blur-xl duration-500'>
                     <div className='relative z-10 flex items-start gap-5'>
-                        <div className='h-12 w-12 rounded-2xl bg-yellow-500/20 flex items-center justify-center border border-yellow-500/30 shrink-0'>
+                        <div className='flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-yellow-500/30 bg-yellow-500/20'>
                             <AlertTriangle className='h-6 w-6 text-yellow-500' />
                         </div>
                         <div className='space-y-1'>
-                            <h3 className='text-lg font-bold text-yellow-500 leading-none uppercase tracking-tight'>
+                            <h3 className='text-lg leading-none font-bold tracking-tight text-yellow-500 uppercase'>
                                 {t('serverSubdomains.limitReached')}
                             </h3>
-                            <p className='text-sm text-yellow-500/80 leading-relaxed font-medium'>
+                            <p className='text-sm leading-relaxed font-medium text-yellow-500/80'>
                                 {t('serverSubdomains.limitReachedDescription', {
                                     limit: String(overview?.max_allowed),
                                 })}
@@ -190,7 +190,7 @@ export default function ServerSubdomainsPage() {
                             onClick={() => router.push(`/server/${uuidShort}/subdomains/new`)}
                             disabled={limitReached}
                         >
-                            <Plus className='h-6 w-6 mr-2' />
+                            <Plus className='mr-2 h-6 w-6' />
                             {t('serverSubdomains.createButton')}
                         </Button>
                     }
@@ -205,7 +205,7 @@ export default function ServerSubdomainsPage() {
                             title={sub.subdomain + '.' + sub.domain}
                             description={
                                 <div className='flex flex-col gap-1'>
-                                    <span className='text-xs font-medium text-muted-foreground'>{sub.record_type}</span>
+                                    <span className='text-muted-foreground text-xs font-medium'>{sub.record_type}</span>
                                 </div>
                             }
                             badges={[

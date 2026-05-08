@@ -194,11 +194,11 @@ const ScannerTab = () => {
 
     return (
         <div className='space-y-6'>
-            <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
-                <Card className='lg:col-span-2 border-border/50 bg-card/30 backdrop-blur-sm'>
+            <div className='grid grid-cols-1 gap-6 lg:grid-cols-3'>
+                <Card className='border-border/50 bg-card/30 backdrop-blur-sm lg:col-span-2'>
                     <CardHeader>
-                        <CardTitle className='text-lg flex items-center gap-2'>
-                            <Activity className='h-5 w-5 text-primary' />
+                        <CardTitle className='flex items-center gap-2 text-lg'>
+                            <Activity className='text-primary h-5 w-5' />
                             {t('admin.featherzerotrust.scanner.config')}
                         </CardTitle>
                     </CardHeader>
@@ -225,24 +225,24 @@ const ScannerTab = () => {
                                         setSelectedServers([]);
                                     }}
                                     className={cn(
-                                        'p-4 rounded-2xl border-2 transition-all text-left relative overflow-hidden group',
+                                        'group relative overflow-hidden rounded-2xl border-2 p-4 text-left transition-all',
                                         scanMode === mode.id
                                             ? 'border-primary bg-primary/5 shadow-[0_0_20px_rgba(var(--primary),0.1)]'
                                             : 'border-border/50 hover:border-primary/30 hover:bg-muted/30',
                                     )}
                                 >
                                     {scanMode === mode.id && (
-                                        <div className='absolute inset-0 bg-primary/5 animate-pulse' />
+                                        <div className='bg-primary/5 absolute inset-0 animate-pulse' />
                                     )}
                                     <div className='relative z-10'>
                                         <mode.icon
                                             className={cn(
-                                                'h-6 w-6 mb-2',
+                                                'mb-2 h-6 w-6',
                                                 scanMode === mode.id ? 'text-primary' : 'text-muted-foreground',
                                             )}
                                         />
-                                        <div className='font-bold text-sm'>{mode.label}</div>
-                                        <div className='text-[10px] text-muted-foreground'>{mode.desc}</div>
+                                        <div className='text-sm font-bold'>{mode.label}</div>
+                                        <div className='text-muted-foreground text-[10px]'>{mode.desc}</div>
                                     </div>
                                 </button>
                             ))}
@@ -269,14 +269,14 @@ const ScannerTab = () => {
                         </div>
 
                         <Button
-                            className='w-full h-12 text-md font-bold transition-all hover:scale-[1.01] active:scale-[0.99] '
+                            className='text-md h-12 w-full font-bold transition-all hover:scale-[1.01] active:scale-[0.99]'
                             disabled={scanning || selectedServers.length === 0}
                             onClick={handlePerformScan}
                         >
                             {scanning ? (
-                                <Radar className='h-5 w-5 animate-spin mr-2' />
+                                <Radar className='mr-2 h-5 w-5 animate-spin' />
                             ) : (
-                                <ShieldCheck className='h-5 w-5 mr-2' />
+                                <ShieldCheck className='mr-2 h-5 w-5' />
                             )}
                             {scanning
                                 ? t('admin.featherzerotrust.scanner.scanning')
@@ -287,7 +287,7 @@ const ScannerTab = () => {
 
                 <Card className='border-border/50 bg-card/30 backdrop-blur-sm'>
                     <CardHeader>
-                        <CardTitle className='text-sm font-medium uppercase tracking-wider text-muted-foreground flex items-center justify-between'>
+                        <CardTitle className='text-muted-foreground flex items-center justify-between text-sm font-medium tracking-wider uppercase'>
                             {t('admin.featherzerotrust.scanner.targets')}
                             <Badge variant='outline' className='text-[10px]'>
                                 {selectedServers.length}
@@ -297,20 +297,20 @@ const ScannerTab = () => {
                     <CardContent className='space-y-4'>
                         <Button
                             variant='outline'
-                            className='w-full h-10 border-dashed border-primary/30 hover:border-primary/60 hover:bg-primary/5'
+                            className='border-primary/30 hover:border-primary/60 hover:bg-primary/5 h-10 w-full border-dashed'
                             onClick={() => {
                                 setServerModalOpen(true);
                                 fetchServers();
                             }}
                         >
-                            <Plus className='h-4 w-4 mr-2' />
+                            <Plus className='mr-2 h-4 w-4' />
                             {t('admin.featherzerotrust.scanner.addTarget')}
                         </Button>
 
-                        <div className='space-y-2 max-h-[250px] overflow-y-auto pr-2 custom-scrollbar'>
+                        <div className='custom-scrollbar max-h-[250px] space-y-2 overflow-y-auto pr-2'>
                             {selectedServers.length === 0 ? (
-                                <div className='text-center py-8 opacity-40'>
-                                    <Server className='h-8 w-8 mx-auto mb-2' />
+                                <div className='py-8 text-center opacity-40'>
+                                    <Server className='mx-auto mb-2 h-8 w-8' />
                                     <p className='text-[10px]'>
                                         {t('admin.featherzerotrust.scanner.noServersSelected')}
                                     </p>
@@ -319,18 +319,18 @@ const ScannerTab = () => {
                                 selectedServers.map((s) => (
                                     <div
                                         key={s.uuid}
-                                        className='flex items-center justify-between p-2 rounded-lg bg-muted/30 border border-border/50 group animate-in slide-in-from-right-2'
+                                        className='bg-muted/30 border-border/50 group animate-in slide-in-from-right-2 flex items-center justify-between rounded-lg border p-2'
                                     >
                                         <div className='min-w-0'>
-                                            <div className='text-xs font-bold truncate'>{s.name}</div>
-                                            <div className='text-[9px] font-mono opacity-50 truncate'>
+                                            <div className='truncate text-xs font-bold'>{s.name}</div>
+                                            <div className='truncate font-mono text-[9px] opacity-50'>
                                                 {s.uuidShort}
                                             </div>
                                         </div>
                                         <Button
                                             variant='ghost'
                                             size='sm'
-                                            className='h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity'
+                                            className='h-7 w-7 opacity-0 transition-opacity group-hover:opacity-100'
                                             onClick={() =>
                                                 setSelectedServers(selectedServers.filter((sv) => sv.uuid !== s.uuid))
                                             }
@@ -346,37 +346,37 @@ const ScannerTab = () => {
             </div>
 
             {scanning && (
-                <Card className='border-primary/30 bg-black/40 backdrop-blur-xl overflow-hidden animate-in fade-in zoom-in duration-500'>
-                    <div className='bg-primary/10 px-4 py-2 border-b border-primary/20 flex items-center justify-between'>
+                <Card className='border-primary/30 animate-in fade-in zoom-in overflow-hidden bg-black/40 backdrop-blur-xl duration-500'>
+                    <div className='bg-primary/10 border-primary/20 flex items-center justify-between border-b px-4 py-2'>
                         <div className='flex items-center gap-2'>
-                            <Terminal className='h-4 w-4 text-primary' />
-                            <span className='text-[10px] font-mono text-primary uppercase tracking-widest'>
+                            <Terminal className='text-primary h-4 w-4' />
+                            <span className='text-primary font-mono text-[10px] tracking-widest uppercase'>
                                 {t('admin.featherzerotrust.scanner.liveFeed')}
                             </span>
                         </div>
                         <div className='flex items-center gap-1'>
-                            <div className='h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse' />
-                            <span className='text-[10px] text-red-500 font-bold'>
+                            <div className='h-1.5 w-1.5 animate-pulse rounded-full bg-red-500' />
+                            <span className='text-[10px] font-bold text-red-500'>
                                 {t('admin.featherzerotrust.scanner.analyzing')}
                             </span>
                         </div>
                     </div>
-                    <CardContent className='p-4 space-y-4'>
-                        <div className='flex items-center justify-between mb-2'>
-                            <span className='text-sm font-medium text-primary-foreground/80'>
+                    <CardContent className='space-y-4 p-4'>
+                        <div className='mb-2 flex items-center justify-between'>
+                            <span className='text-primary-foreground/80 text-sm font-medium'>
                                 {scanProgress.message}
                             </span>
-                            <span className='text-xs font-mono text-primary'>
+                            <span className='text-primary font-mono text-xs'>
                                 {scanProgress.filesScanned.toLocaleString()} files
                             </span>
                         </div>
-                        <div className='h-1 bg-muted/30 rounded-full overflow-hidden'>
+                        <div className='bg-muted/30 h-1 overflow-hidden rounded-full'>
                             <div
-                                className='h-full bg-primary transition-all duration-500 ease-out'
+                                className='bg-primary h-full transition-all duration-500 ease-out'
                                 style={{ width: `${Math.min((scanProgress.filesScanned / 1500) * 100, 98)}%` }}
                             />
                         </div>
-                        <div className='bg-black/50 p-3 rounded-lg border border-white/5 font-mono text-[10px] text-green-500/80'>
+                        <div className='rounded-lg border border-white/5 bg-black/50 p-3 font-mono text-[10px] text-green-500/80'>
                             <div className='flex items-center gap-2'>
                                 <span className='opacity-50'>CUR_DIR:</span>
                                 <span className='truncate'>{scanProgress.currentDirectory}</span>
@@ -387,7 +387,7 @@ const ScannerTab = () => {
             )}
 
             {(scanResults || batchResults.length > 0) && (
-                <div className='space-y-6 animate-in slide-in-from-bottom-6 duration-700'>
+                <div className='animate-in slide-in-from-bottom-6 space-y-6 duration-700'>
                     <div className='flex items-center gap-3'>
                         <ShieldCheck className='h-6 w-6 text-green-500' />
                         <h2 className='text-xl font-bold'>{t('admin.featherzerotrust.scanner.resultsTitle')}</h2>
@@ -395,9 +395,9 @@ const ScannerTab = () => {
 
                     {scanResults && (
                         <div className='space-y-4'>
-                            <div className='grid grid-cols-2 lg:grid-cols-4 gap-4'>
-                                <Card className='p-4 bg-blue-500/5 border-blue-500/20'>
-                                    <div className='text-[10px] text-blue-500 font-bold uppercase'>
+                            <div className='grid grid-cols-2 gap-4 lg:grid-cols-4'>
+                                <Card className='border-blue-500/20 bg-blue-500/5 p-4'>
+                                    <div className='text-[10px] font-bold text-blue-500 uppercase'>
                                         {t('admin.featherzerotrust.scanner.filesScanned')}
                                     </div>
                                     <div className='text-2xl font-bold'>
@@ -408,8 +408,8 @@ const ScannerTab = () => {
                                     className={cn(
                                         'p-4 transition-colors',
                                         scanResults.detections_count > 0
-                                            ? 'bg-red-500/10 border-red-500/30'
-                                            : 'bg-green-500/5 border-green-500/20',
+                                            ? 'border-red-500/30 bg-red-500/10'
+                                            : 'border-green-500/20 bg-green-500/5',
                                     )}
                                 >
                                     <div
@@ -422,8 +422,8 @@ const ScannerTab = () => {
                                     </div>
                                     <div className='text-2xl font-bold'>{scanResults.detections_count}</div>
                                 </Card>
-                                <Card className='p-4 bg-muted/30 border-border/50'>
-                                    <div className='text-[10px] text-muted-foreground font-bold uppercase'>
+                                <Card className='bg-muted/30 border-border/50 p-4'>
+                                    <div className='text-muted-foreground text-[10px] font-bold uppercase'>
                                         {t('admin.featherzerotrust.scanner.duration')}
                                     </div>
                                     <div className='text-2xl font-bold'>{scanResults.duration}</div>
@@ -432,7 +432,7 @@ const ScannerTab = () => {
 
                             {scanResults.detections && scanResults.detections.length > 0 && (
                                 <div className='space-y-3'>
-                                    <h3 className='text-sm font-semibold flex items-center gap-2 text-red-500'>
+                                    <h3 className='flex items-center gap-2 text-sm font-semibold text-red-500'>
                                         <AlertTriangle className='h-4 w-4' />
                                         {t('admin.featherzerotrust.scanner.threatsFound')}
                                     </h3>
@@ -446,22 +446,22 @@ const ScannerTab = () => {
                                             return (
                                                 <div
                                                     key={i}
-                                                    className='p-3 rounded-xl border border-red-500/20 bg-red-500/5 flex items-start gap-4'
+                                                    className='flex items-start gap-4 rounded-xl border border-red-500/20 bg-red-500/5 p-3'
                                                 >
-                                                    <div className='p-2 rounded-lg bg-red-500/20 text-red-500'>
+                                                    <div className='rounded-lg bg-red-500/20 p-2 text-red-500'>
                                                         <AlertTriangle className='h-4 w-4' />
                                                     </div>
                                                     <div className='min-w-0'>
                                                         <div className='text-sm font-bold text-red-200'>
                                                             {detection.file_name || 'Unknown'}
                                                         </div>
-                                                        <div className='text-[10px] text-red-500/80 font-mono truncate'>
+                                                        <div className='truncate font-mono text-[10px] text-red-500/80'>
                                                             {detection.file_path || 'N/A'}
                                                         </div>
                                                         <div className='mt-1'>
                                                             <Badge
                                                                 variant='destructive'
-                                                                className='text-[9px] uppercase tracking-tighter'
+                                                                className='text-[9px] tracking-tighter uppercase'
                                                             >
                                                                 {detection.detection_type || 'Malicious Pattern'}
                                                             </Badge>
@@ -477,7 +477,7 @@ const ScannerTab = () => {
                     )}
 
                     {batchResults.length > 0 && (
-                        <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                        <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
                             {batchResults.map((r) => (
                                 <ResourceCard
                                     key={r.server_uuid}
@@ -494,11 +494,11 @@ const ScannerTab = () => {
                                     ]}
                                     description={
                                         r.error ? (
-                                            <p className='text-xs text-red-500 italic mt-2'>{r.error}</p>
+                                            <p className='mt-2 text-xs text-red-500 italic'>{r.error}</p>
                                         ) : (
-                                            <div className='flex items-center gap-6 mt-2'>
+                                            <div className='mt-2 flex items-center gap-6'>
                                                 <div className='flex flex-col'>
-                                                    <span className='text-[10px] text-muted-foreground uppercase'>
+                                                    <span className='text-muted-foreground text-[10px] uppercase'>
                                                         Files
                                                     </span>
                                                     <span className='text-xs font-bold'>
@@ -506,7 +506,7 @@ const ScannerTab = () => {
                                                     </span>
                                                 </div>
                                                 <div className='flex flex-col'>
-                                                    <span className='text-[10px] text-muted-foreground uppercase'>
+                                                    <span className='text-muted-foreground text-[10px] uppercase'>
                                                         Detections
                                                     </span>
                                                     <span

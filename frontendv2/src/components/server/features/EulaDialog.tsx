@@ -82,17 +82,17 @@ export function EulaDialog({ isOpen, onClose, server, onAccepted }: EulaDialogPr
             </DialogHeader>
 
             <div className='space-y-4 py-4'>
-                <div className='bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4'>
+                <div className='rounded-lg border border-yellow-200 bg-yellow-50 p-4 dark:border-yellow-800 dark:bg-yellow-900/20'>
                     <p className='text-sm text-yellow-800 dark:text-yellow-200'>{t('features.eula.eulaMessage')}</p>
                 </div>
 
                 <div className='space-y-2'>
-                    <p className='text-sm text-muted-foreground'>{t('features.eula.eulaExplanation')}</p>
+                    <p className='text-muted-foreground text-sm'>{t('features.eula.eulaExplanation')}</p>
                     <a
                         href='https://www.minecraft.net/en-us/eula'
                         target='_blank'
                         rel='noopener noreferrer'
-                        className='text-sm text-primary hover:underline flex items-center gap-1'
+                        className='text-primary flex items-center gap-1 text-sm hover:underline'
                     >
                         {t('features.eula.readEula')}
                         <ExternalLink className='h-3 w-3' />

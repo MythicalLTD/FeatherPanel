@@ -26,7 +26,7 @@ export function LimitsTab({ form, setForm }: TabProps) {
 
     return (
         <PageCard title={t('admin.servers.edit.limits.title')} description={t('admin.servers.edit.limits.description')}>
-            <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
+            <div className='grid grid-cols-1 gap-6 md:grid-cols-3'>
                 <div className='space-y-3'>
                     <Label>{t('admin.servers.form.database_limit')}</Label>
                     <Input
@@ -36,7 +36,7 @@ export function LimitsTab({ form, setForm }: TabProps) {
                         min={0}
                         className='bg-muted/30 h-11'
                     />
-                    <p className='text-xs text-muted-foreground'>{t('admin.servers.form.database_limit_help')}</p>
+                    <p className='text-muted-foreground text-xs'>{t('admin.servers.form.database_limit_help')}</p>
                 </div>
 
                 <div className='space-y-3'>
@@ -48,7 +48,7 @@ export function LimitsTab({ form, setForm }: TabProps) {
                         min={0}
                         className='bg-muted/30 h-11'
                     />
-                    <p className='text-xs text-muted-foreground'>{t('admin.servers.form.allocation_limit_help')}</p>
+                    <p className='text-muted-foreground text-xs'>{t('admin.servers.form.allocation_limit_help')}</p>
                 </div>
 
                 <div className='space-y-3'>
@@ -60,13 +60,13 @@ export function LimitsTab({ form, setForm }: TabProps) {
                         min={0}
                         className='bg-muted/30 h-11'
                     />
-                    <p className='text-xs text-muted-foreground'>{t('admin.servers.form.backup_limit_help')}</p>
+                    <p className='text-muted-foreground text-xs'>{t('admin.servers.form.backup_limit_help')}</p>
                 </div>
 
                 <div className='space-y-3 md:col-span-3'>
                     <Label>{t('admin.servers.form.backup_retention_mode')}</Label>
                     <select
-                        className='w-full h-11 rounded-md border border-input bg-muted/30 px-3 text-sm'
+                        className='border-input bg-muted/30 h-11 w-full rounded-md border px-3 text-sm'
                         value={form.backup_retention_mode}
                         onChange={(e) =>
                             setForm((prev) => ({
@@ -79,7 +79,7 @@ export function LimitsTab({ form, setForm }: TabProps) {
                         <option value='hard_limit'>{t('admin.servers.form.backup_retention_hard_limit')}</option>
                         <option value='fifo_rolling'>{t('admin.servers.form.backup_retention_fifo')}</option>
                     </select>
-                    <p className='text-xs text-muted-foreground'>
+                    <p className='text-muted-foreground text-xs'>
                         {t('admin.servers.form.backup_retention_mode_help')}
                     </p>
                 </div>

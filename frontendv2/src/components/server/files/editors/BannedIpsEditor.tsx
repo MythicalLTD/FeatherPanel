@@ -108,12 +108,12 @@ export function BannedIpsEditor({
     };
 
     return (
-        <Card className='bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl shadow-sm'>
-            <CardHeader className='border-b border-border/10 pb-6'>
+        <Card className='bg-card/50 border-border/50 rounded-3xl border shadow-sm backdrop-blur-3xl'>
+            <CardHeader className='border-border/10 border-b pb-6'>
                 <div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
                     <div className='space-y-2'>
                         <CardTitle className='text-2xl font-bold'>{t('files.editors.bannedIpsConfig.title')}</CardTitle>
-                        <CardDescription className='text-sm text-muted-foreground'>
+                        <CardDescription className='text-muted-foreground text-sm'>
                             {t('files.editors.bannedIpsConfig.description')}
                         </CardDescription>
                     </div>
@@ -131,9 +131,9 @@ export function BannedIpsEditor({
                     </div>
                 </div>
             </CardHeader>
-            <div className='p-8 space-y-8'>
+            <div className='space-y-8 p-8'>
                 <section className='space-y-6'>
-                    <div className='rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-sm text-muted-foreground'>
+                    <div className='border-destructive/20 bg-destructive/5 text-muted-foreground rounded-xl border p-4 text-sm'>
                         {t('files.editors.bannedIpsConfig.notice') ||
                             'Banned IPs cannot connect to the server. Be careful when managing IP bans.'}
                     </div>
@@ -144,18 +144,18 @@ export function BannedIpsEditor({
                         </Button>
                     </div>
                     {entries.length === 0 && (
-                        <div className='rounded-xl border border-dashed border-border/30 p-8 text-sm text-muted-foreground bg-muted/10 text-center'>
+                        <div className='border-border/30 text-muted-foreground bg-muted/10 rounded-xl border border-dashed p-8 text-center text-sm'>
                             {t('files.editors.bannedIpsConfig.emptyState')}
                         </div>
                     )}
                     {entries.map((entry, index) => (
                         <div
                             key={`banned-ip-${index}`}
-                            className='space-y-6 rounded-xl bg-card/30 border border-border/30 p-6'
+                            className='bg-card/30 border-border/30 space-y-6 rounded-xl border p-6'
                         >
                             <div className='flex items-start justify-between gap-4'>
-                                <div className='space-y-3 flex-1'>
-                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                <div className='flex-1 space-y-3'>
+                                    <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                         {t('files.editors.bannedIpsConfig.fields.ip')}
                                     </label>
                                     <Input
@@ -178,7 +178,7 @@ export function BannedIpsEditor({
                             </div>
                             <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
                                 <div className='space-y-3'>
-                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                    <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                         {t('files.editors.bannedIpsConfig.fields.created')}
                                     </label>
                                     <Input
@@ -190,7 +190,7 @@ export function BannedIpsEditor({
                                     />
                                 </div>
                                 <div className='space-y-3'>
-                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                    <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                         {t('files.editors.bannedIpsConfig.fields.source')}
                                     </label>
                                     <Input
@@ -204,7 +204,7 @@ export function BannedIpsEditor({
                             </div>
                             <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
                                 <div className='space-y-3'>
-                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                    <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                         {t('files.editors.bannedIpsConfig.fields.expires')}
                                     </label>
                                     <Input
@@ -216,7 +216,7 @@ export function BannedIpsEditor({
                                     />
                                 </div>
                                 <div className='space-y-3'>
-                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                    <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                         {t('files.editors.bannedIpsConfig.fields.reason')}
                                     </label>
                                     <Textarea

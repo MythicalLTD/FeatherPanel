@@ -26,7 +26,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(({ classNa
     return (
         <textarea
             className={cn(
-                'flex min-h-[120px] w-full rounded-xl border bg-muted/30 px-4 py-3 text-sm transition-all duration-200 focus:outline-none focus:ring-4 disabled:cursor-not-allowed disabled:opacity-50 placeholder:text-muted-foreground/50 shadow-sm hover:shadow-md focus:shadow-lg font-semibold text-foreground custom-scrollbar',
+                'bg-muted/30 placeholder:text-muted-foreground/50 text-foreground custom-scrollbar flex min-h-[120px] w-full rounded-xl border px-4 py-3 text-sm font-semibold shadow-sm transition-all duration-200 hover:shadow-md focus:shadow-lg focus:ring-4 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50',
                 error
                     ? 'border-destructive focus:border-destructive focus:ring-destructive/20'
                     : 'border-border/50 focus:border-primary focus:ring-primary/20 hover:border-border',

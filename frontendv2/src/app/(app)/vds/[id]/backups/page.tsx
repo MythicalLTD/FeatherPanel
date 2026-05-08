@@ -274,8 +274,8 @@ export default function VdsBackupsPage() {
     if (instanceLoading || (loading && backups.length === 0)) {
         return (
             <div className='flex flex-col items-center justify-center py-24'>
-                <Loader2 className='h-12 w-12 animate-spin text-primary opacity-50' />
-                <p className='mt-4 text-muted-foreground font-medium animate-pulse'>{t('common.loading')}</p>
+                <Loader2 className='text-primary h-12 w-12 animate-spin opacity-50' />
+                <p className='text-muted-foreground mt-4 animate-pulse font-medium'>{t('common.loading')}</p>
             </div>
         );
     }
@@ -291,7 +291,7 @@ export default function VdsBackupsPage() {
                         <span>
                             {t('serverBackups.description') || 'Manage filesystem backups for this VDS instance.'}
                         </span>
-                        <span className='px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-primary/5 text-primary border border-primary/20'>
+                        <span className='bg-primary/5 text-primary border-primary/20 rounded-full border px-3 py-1 text-[10px] font-black tracking-widest uppercase'>
                             {backups.length} / {backupLimit === 0 ? '∞' : backupLimit}
                             {fifoRolling ? ' · FIFO' : ''}
                         </span>
@@ -300,16 +300,16 @@ export default function VdsBackupsPage() {
                 actions={
                     <div className='flex items-center gap-3'>
                         <Button variant='glass' size='default' onClick={fetchBackups} disabled={loading}>
-                            <RefreshCw className={cn('h-5 w-5 mr-2', loading && 'animate-spin')} />
+                            <RefreshCw className={cn('mr-2 h-5 w-5', loading && 'animate-spin')} />
                             {t('serverBackups.refresh') || 'Refresh'}
                         </Button>
                         <Button
                             size='default'
                             disabled={limitReached || loading}
                             onClick={() => setConfirmCreateOpen(true)}
-                            className='active:scale-95 transition-all'
+                            className='transition-all active:scale-95'
                         >
-                            <Plus className='h-5 w-5 mr-2' />
+                            <Plus className='mr-2 h-5 w-5' />
                             {t('serverBackups.createBackup') || 'Create backup'}
                         </Button>
                     </div>
@@ -317,16 +317,16 @@ export default function VdsBackupsPage() {
             />
 
             {fifoRolling && backupLimit > 0 && (
-                <div className='relative overflow-hidden p-6 rounded-3xl bg-sky-500/10 border border-sky-500/20 backdrop-blur-xl'>
+                <div className='relative overflow-hidden rounded-3xl border border-sky-500/20 bg-sky-500/10 p-6 backdrop-blur-xl'>
                     <div className='relative z-10 flex items-start gap-5'>
-                        <div className='h-12 w-12 rounded-2xl bg-sky-500/20 flex items-center justify-center border border-sky-500/30'>
+                        <div className='flex h-12 w-12 items-center justify-center rounded-2xl border border-sky-500/30 bg-sky-500/20'>
                             <Info className='h-6 w-6 text-sky-500' />
                         </div>
                         <div className='space-y-1'>
-                            <h3 className='text-lg font-bold text-sky-600 dark:text-sky-400 leading-none'>
+                            <h3 className='text-lg leading-none font-bold text-sky-600 dark:text-sky-400'>
                                 {t('serverBackups.fifoRollingTitle')}
                             </h3>
-                            <p className='text-sm text-sky-600/85 dark:text-sky-400/85 leading-relaxed font-medium'>
+                            <p className='text-sm leading-relaxed font-medium text-sky-600/85 dark:text-sky-400/85'>
                                 {t('serverBackups.fifoRollingDescription', { limit: String(backupLimit) })}
                             </p>
                         </div>
@@ -335,16 +335,16 @@ export default function VdsBackupsPage() {
             )}
 
             {limitReached && (
-                <div className='relative overflow-hidden p-6 rounded-3xl bg-yellow-500/10 border border-yellow-500/20 backdrop-blur-xl'>
+                <div className='relative overflow-hidden rounded-3xl border border-yellow-500/20 bg-yellow-500/10 p-6 backdrop-blur-xl'>
                     <div className='relative z-10 flex items-start gap-5'>
-                        <div className='h-12 w-12 rounded-2xl bg-yellow-500/20 flex items-center justify-center border border-yellow-500/30'>
+                        <div className='flex h-12 w-12 items-center justify-center rounded-2xl border border-yellow-500/30 bg-yellow-500/20'>
                             <AlertTriangle className='h-6 w-6 text-yellow-500' />
                         </div>
                         <div className='space-y-1'>
-                            <h3 className='text-lg font-bold text-yellow-500 leading-none'>
+                            <h3 className='text-lg leading-none font-bold text-yellow-500'>
                                 {t('serverBackups.backupLimitReached') || 'Backup limit reached'}
                             </h3>
-                            <p className='text-sm text-yellow-500/80 leading-relaxed font-medium'>
+                            <p className='text-sm leading-relaxed font-medium text-yellow-500/80'>
                                 {t('serverBackups.backupLimitReachedDescription', {
                                     limit: String(backupLimit),
                                 })}
@@ -356,11 +356,11 @@ export default function VdsBackupsPage() {
 
             <div className='space-y-6'>
                 <div className='flex items-center gap-4'>
-                    <div className='relative flex-1 group'>
-                        <Search className='absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground/80 group-focus-within:text-foreground transition-colors' />
+                    <div className='group relative flex-1'>
+                        <Search className='text-muted-foreground/80 group-focus-within:text-foreground absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 transition-colors' />
                         <Input
                             placeholder={t('serverBackups.searchPlaceholder') || 'Search backups…'}
-                            className='pl-12 h-14 text-base'
+                            className='h-14 pl-12 text-base'
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                         />
@@ -385,7 +385,7 @@ export default function VdsBackupsPage() {
                                     className='h-14 px-10 text-lg'
                                     disabled={loading}
                                 >
-                                    <Plus className='h-6 w-6 mr-2' />
+                                    <Plus className='mr-2 h-6 w-6' />
                                     {t('serverBackups.createBackup') || 'Create backup'}
                                 </Button>
                             ) : undefined
@@ -426,13 +426,13 @@ export default function VdsBackupsPage() {
                                                 </div>
                                             ) : (
                                                 <>
-                                                    <div className='flex items-center gap-2 text-muted-foreground'>
+                                                    <div className='text-muted-foreground flex items-center gap-2'>
                                                         <HardDrive className='h-4 w-4 opacity-50' />
                                                         <span className='text-sm font-semibold'>
                                                             {formatMib(backup.size_bytes / 1024 / 1024)}
                                                         </span>
                                                     </div>
-                                                    <div className='flex items-center gap-2 text-muted-foreground'>
+                                                    <div className='text-muted-foreground flex items-center gap-2'>
                                                         <Calendar className='h-4 w-4 opacity-50' />
                                                         <span className='text-sm font-semibold'>
                                                             {backup.ctime
@@ -447,17 +447,17 @@ export default function VdsBackupsPage() {
                                     badges={
                                         <div className='flex items-center gap-2'>
                                             {backup.storage && (
-                                                <span className='px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest leading-none bg-background/50 border border-border/40'>
+                                                <span className='bg-background/50 border-border/40 rounded-full border px-3 py-1 text-[10px] leading-none font-black tracking-widest uppercase'>
                                                     {backup.storage}
                                                 </span>
                                             )}
                                             {isPending && (
-                                                <span className='px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest leading-none bg-blue-500/10 text-blue-500 border border-blue-500/20 animate-pulse'>
+                                                <span className='animate-pulse rounded-full border border-blue-500/20 bg-blue-500/10 px-3 py-1 text-[10px] leading-none font-black tracking-widest text-blue-500 uppercase'>
                                                     {t('serverBackups.inProgress') || 'IN PROGRESS'}
                                                 </span>
                                             )}
                                             {isFailed && (
-                                                <span className='px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest leading-none bg-red-500/10 text-red-500 border border-red-500/20'>
+                                                <span className='rounded-full border border-red-500/20 bg-red-500/10 px-3 py-1 text-[10px] leading-none font-black tracking-widest text-red-500 uppercase'>
                                                     {t('serverBackups.failed') || 'FAILED'}
                                                 </span>
                                             )}
@@ -465,7 +465,7 @@ export default function VdsBackupsPage() {
                                     }
                                     actions={
                                         isPending ? (
-                                            <div className='flex items-center gap-2 text-sm text-muted-foreground'>
+                                            <div className='text-muted-foreground flex items-center gap-2 text-sm'>
                                                 <Loader2 className='h-4 w-4 animate-spin' />
                                                 <span>{t('serverBackups.pleaseWait') || 'Please wait...'}</span>
                                             </div>
@@ -475,26 +475,26 @@ export default function VdsBackupsPage() {
                                                     <Button
                                                         variant='outline'
                                                         size='sm'
-                                                        className='h-9 px-4 rounded-xl'
+                                                        className='h-9 rounded-xl px-4'
                                                         onClick={() => {
                                                             setSelectedForRestore(backup);
                                                             setConfirmRestoreOpen(true);
                                                         }}
                                                     >
-                                                        <RotateCcw className='h-3.5 w-3.5 mr-1.5' />
+                                                        <RotateCcw className='mr-1.5 h-3.5 w-3.5' />
                                                         {t('serverBackups.restore') || 'Restore'}
                                                     </Button>
                                                 )}
                                                 <Button
                                                     variant='destructive'
                                                     size='sm'
-                                                    className='h-9 px-4 rounded-xl'
+                                                    className='h-9 rounded-xl px-4'
                                                     onClick={() => {
                                                         setSelectedForDelete(backup);
                                                         setConfirmDeleteOpen(true);
                                                     }}
                                                 >
-                                                    <AlertTriangle className='h-3.5 w-3.5 mr-1.5' />
+                                                    <AlertTriangle className='mr-1.5 h-3.5 w-3.5' />
                                                     {t('serverBackups.delete') || 'Delete'}
                                                 </Button>
                                             </div>
@@ -517,7 +517,7 @@ export default function VdsBackupsPage() {
                                 'This will create a new Proxmox backup for this VDS instance.'}
                         </DialogDescription>
                     </DialogHeader>
-                    <DialogFooter className='flex gap-3 justify-end'>
+                    <DialogFooter className='flex justify-end gap-3'>
                         <Button
                             variant='outline'
                             onClick={() => setConfirmCreateOpen(false)}
@@ -532,7 +532,7 @@ export default function VdsBackupsPage() {
                             disabled={creating}
                             className='rounded-xl'
                         >
-                            {creating ? <Loader2 className='h-4 w-4 mr-2 animate-spin' /> : null}
+                            {creating ? <Loader2 className='mr-2 h-4 w-4 animate-spin' /> : null}
                             {t('serverBackups.create') || 'Create'}
                         </Button>
                     </DialogFooter>
@@ -549,7 +549,7 @@ export default function VdsBackupsPage() {
                                 'This will permanently delete this backup from storage.'}
                         </DialogDescription>
                     </DialogHeader>
-                    <DialogFooter className='flex gap-3 justify-end'>
+                    <DialogFooter className='flex justify-end gap-3'>
                         <Button
                             variant='outline'
                             onClick={() => setConfirmDeleteOpen(false)}
@@ -564,7 +564,7 @@ export default function VdsBackupsPage() {
                             disabled={deleting}
                             className='rounded-xl'
                         >
-                            {deleting ? <Loader2 className='h-4 w-4 mr-2 animate-spin' /> : null}
+                            {deleting ? <Loader2 className='mr-2 h-4 w-4 animate-spin' /> : null}
                             {t('serverBackups.delete') || 'Delete'}
                         </Button>
                     </DialogFooter>
@@ -578,7 +578,7 @@ export default function VdsBackupsPage() {
                         <DialogTitle>{t('serverBackups.confirmRestoreTitle') || 'Restore from backup?'}</DialogTitle>
                         <DialogDescription>
                             <div className='space-y-3'>
-                                <p className='text-yellow-500 font-semibold flex items-center gap-2'>
+                                <p className='flex items-center gap-2 font-semibold text-yellow-500'>
                                     <AlertTriangle className='h-4 w-4' />
                                     {t('serverBackups.restoreWarning') ||
                                         'Warning: This will overwrite all current data!'}
@@ -588,11 +588,11 @@ export default function VdsBackupsPage() {
                                         'The VM will be stopped and restored to the state of this backup. All current data will be replaced. This action cannot be undone.'}
                                 </p>
                                 {selectedForRestore && (
-                                    <div className='mt-4 p-3 rounded-lg bg-muted/50 border border-border/50'>
-                                        <p className='text-sm font-mono text-muted-foreground'>
+                                    <div className='bg-muted/50 border-border/50 mt-4 rounded-lg border p-3'>
+                                        <p className='text-muted-foreground font-mono text-sm'>
                                             {selectedForRestore.volid}
                                         </p>
-                                        <p className='text-xs text-muted-foreground mt-1'>
+                                        <p className='text-muted-foreground mt-1 text-xs'>
                                             {selectedForRestore.ctime
                                                 ? new Date(selectedForRestore.ctime * 1000).toLocaleString()
                                                 : '—'}
@@ -602,7 +602,7 @@ export default function VdsBackupsPage() {
                             </div>
                         </DialogDescription>
                     </DialogHeader>
-                    <DialogFooter className='flex gap-3 justify-end'>
+                    <DialogFooter className='flex justify-end gap-3'>
                         <Button
                             variant='outline'
                             onClick={() => setConfirmRestoreOpen(false)}
@@ -618,9 +618,9 @@ export default function VdsBackupsPage() {
                             className='rounded-xl'
                         >
                             {restoring ? (
-                                <Loader2 className='h-4 w-4 mr-2 animate-spin' />
+                                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
                             ) : (
-                                <RotateCcw className='h-4 w-4 mr-2' />
+                                <RotateCcw className='mr-2 h-4 w-4' />
                             )}
                             {t('serverBackups.restore') || 'Restore'}
                         </Button>

@@ -62,21 +62,21 @@ function KeyValueList({
             <TabSection
                 action={
                     <Button type='button' size='sm' variant='outline' onClick={onAdd}>
-                        <Plus className='h-4 w-4 mr-2' />
+                        <Plus className='mr-2 h-4 w-4' />
                         {addLabel}
                     </Button>
                 }
             >
                 {pairs.length === 0 ? (
-                    <div className='rounded-2xl border border-dashed border-border/60 bg-card/20 px-4 py-8 text-center'>
-                        <p className='text-xs text-muted-foreground italic'>{emptyLabel}</p>
+                    <div className='border-border/60 bg-card/20 rounded-2xl border border-dashed px-4 py-8 text-center'>
+                        <p className='text-muted-foreground text-xs italic'>{emptyLabel}</p>
                     </div>
                 ) : (
                     <div className='space-y-3'>
                         {pairs.map((pair, index) => (
                             <div
                                 key={index}
-                                className='grid grid-cols-1 gap-3 rounded-2xl border border-border/40 bg-background/40 p-3 md:grid-cols-[1fr_1fr_auto] md:items-center'
+                                className='border-border/40 bg-background/40 grid grid-cols-1 gap-3 rounded-2xl border p-3 md:grid-cols-[1fr_1fr_auto] md:items-center'
                             >
                                 <Input
                                     className='flex-1'
@@ -145,14 +145,14 @@ export function AdvancedTab({
                 <TabSection
                     action={
                         <Button type='button' size='sm' variant='outline' onClick={onAddParam}>
-                            <Plus className='h-4 w-4 mr-2' />
+                            <Plus className='mr-2 h-4 w-4' />
                             {t('admin.vdsNodes.advanced.add_param')}
                         </Button>
                     }
                 >
                     {params.length === 0 ? (
-                        <div className='rounded-2xl border border-dashed border-border/60 bg-card/20 px-4 py-8 text-center'>
-                            <p className='text-xs text-muted-foreground italic'>
+                        <div className='border-border/60 bg-card/20 rounded-2xl border border-dashed px-4 py-8 text-center'>
+                            <p className='text-muted-foreground text-xs italic'>
                                 {t('admin.vdsNodes.advanced.no_params')}
                             </p>
                         </div>
@@ -161,7 +161,7 @@ export function AdvancedTab({
                             {params.map((pair, index) => (
                                 <div
                                     key={index}
-                                    className='grid grid-cols-1 gap-3 rounded-2xl border border-border/40 bg-background/40 p-3 md:grid-cols-[1fr_1fr_auto] md:items-center'
+                                    className='border-border/40 bg-background/40 grid grid-cols-1 gap-3 rounded-2xl border p-3 md:grid-cols-[1fr_1fr_auto] md:items-center'
                                 >
                                     <Input
                                         className='flex-1'

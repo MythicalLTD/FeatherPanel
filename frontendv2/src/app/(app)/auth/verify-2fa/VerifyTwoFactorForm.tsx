@@ -98,12 +98,12 @@ export default function VerifyTwoFactorForm() {
         <div className='space-y-6'>
             <WidgetRenderer widgets={getWidgets('auth-verify-2fa', 'auth-verify-2fa-top')} />
 
-            <div className='text-center space-y-3'>
-                <div className='inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-2'>
-                    <ShieldCheck className='h-8 w-8 text-primary' />
+            <div className='space-y-3 text-center'>
+                <div className='bg-primary/10 mb-2 inline-flex h-16 w-16 items-center justify-center rounded-2xl'>
+                    <ShieldCheck className='text-primary h-8 w-8' />
                 </div>
                 <h2 className='text-2xl font-bold tracking-tight'>{t('auth.verify_2fa.title')}</h2>
-                <p className='text-sm text-muted-foreground'>{t('auth.verify_2fa.subtitle')}</p>
+                <p className='text-muted-foreground text-sm'>{t('auth.verify_2fa.subtitle')}</p>
             </div>
 
             <WidgetRenderer widgets={getWidgets('auth-verify-2fa', 'auth-verify-2fa-before-form')} />
@@ -118,36 +118,36 @@ export default function VerifyTwoFactorForm() {
                     maxLength={6}
                     autoComplete='one-time-code'
                     inputMode='numeric'
-                    className='text-center text-2xl tracking-widest font-mono'
+                    className='text-center font-mono text-2xl tracking-widest'
                 />
 
-                <Button type='submit' className='w-full group' disabled={code.length !== 6} loading={loading}>
+                <Button type='submit' className='group w-full' disabled={code.length !== 6} loading={loading}>
                     {!loading && (
                         <>
                             {t('auth.verify_2fa.submit')}
-                            <ArrowRight className='ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform' />
+                            <ArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
                         </>
                     )}
                 </Button>
 
                 {error && (
-                    <div className='p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm animate-fade-in'>
+                    <div className='bg-destructive/10 border-destructive/20 text-destructive animate-fade-in rounded-xl border p-4 text-sm'>
                         {error}
                     </div>
                 )}
                 {success && (
-                    <div className='p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-green-600 dark:text-green-400 text-sm animate-fade-in'>
+                    <div className='animate-fade-in rounded-xl border border-green-500/20 bg-green-500/10 p-4 text-sm text-green-600 dark:text-green-400'>
                         {success}
                     </div>
                 )}
             </form>
             <WidgetRenderer widgets={getWidgets('auth-verify-2fa', 'auth-verify-2fa-after-form')} />
 
-            <div className='text-center text-sm text-muted-foreground'>
+            <div className='text-muted-foreground text-center text-sm'>
                 {t('auth.verify_2fa.lost_access')}{' '}
                 <button
                     type='button'
-                    className='font-semibold text-primary hover:text-primary/80 transition-colors'
+                    className='text-primary hover:text-primary/80 font-semibold transition-colors'
                     onClick={() => router.push('/auth/login')}
                 >
                     {t('auth.verify_2fa.go_back')}

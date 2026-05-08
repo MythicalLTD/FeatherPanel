@@ -25,12 +25,12 @@ export default function LanguageSelector() {
     const [mounted] = useState(true);
 
     if (!mounted) {
-        return <div className='h-10 w-10 rounded-full border border-border/50 bg-background/90 backdrop-blur-md' />;
+        return <div className='border-border/50 bg-background/90 h-10 w-10 rounded-full border backdrop-blur-md' />;
     }
 
     return (
         <Menu as='div' className='relative'>
-            <MenuButton className='h-10 w-10 rounded-full border border-border/50 bg-background/90 backdrop-blur-md hover:bg-background hover:scale-110 hover:shadow-lg transition-all duration-200 flex items-center justify-center'>
+            <MenuButton className='border-border/50 bg-background/90 hover:bg-background flex h-10 w-10 items-center justify-center rounded-full border backdrop-blur-md transition-all duration-200 hover:scale-110 hover:shadow-lg'>
                 <Globe className='h-4 w-4' />
             </MenuButton>
 
@@ -43,8 +43,8 @@ export default function LanguageSelector() {
                 leaveFrom='transform opacity-100 scale-100'
                 leaveTo='transform opacity-0 scale-95'
             >
-                <MenuItems className='absolute right-0 mt-2 w-48 origin-top-right rounded-xl bg-card border border-border/50 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none backdrop-blur-xl p-2'>
-                    <div className='px-3 py-2 text-sm font-semibold text-foreground border-b border-border/50 mb-2'>
+                <MenuItems className='bg-card border-border/50 ring-opacity-5 absolute right-0 mt-2 w-48 origin-top-right rounded-xl border p-2 shadow-lg ring-1 ring-black backdrop-blur-xl focus:outline-none'>
+                    <div className='text-foreground border-border/50 mb-2 border-b px-3 py-2 text-sm font-semibold'>
                         {t('appearance.language')}
                     </div>
                     {availableLanguages.map((language) => (
@@ -59,12 +59,12 @@ export default function LanguageSelector() {
                                     <span className='flex-1 text-left'>
                                         <span className='font-medium'>{language.nativeName}</span>
                                         {language.name !== language.nativeName && (
-                                            <span className='text-xs text-muted-foreground ml-1'>
+                                            <span className='text-muted-foreground ml-1 text-xs'>
                                                 ({language.name})
                                             </span>
                                         )}
                                     </span>
-                                    {locale === language.code && <Check className='h-4 w-4 text-primary' />}
+                                    {locale === language.code && <Check className='text-primary h-4 w-4' />}
                                 </button>
                             )}
                         </MenuItem>

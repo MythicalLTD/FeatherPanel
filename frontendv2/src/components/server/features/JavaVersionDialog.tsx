@@ -92,29 +92,29 @@ export function JavaVersionDialog({ isOpen, onClose, server, detectedIssue, onUp
 
             <div className='space-y-4 py-4'>
                 {detectedIssue && (
-                    <div className='bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4'>
+                    <div className='rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-900/20'>
                         <p className='text-sm text-red-800 dark:text-red-200'>{detectedIssue}</p>
                     </div>
                 )}
 
                 <div className='space-y-3'>
-                    <p className='text-sm text-muted-foreground'>{t('features.javaVersion.recommendation')}</p>
+                    <p className='text-muted-foreground text-sm'>{t('features.javaVersion.recommendation')}</p>
 
                     {availableDockerImages.length > 0 && (
                         <div className='space-y-2'>
                             <Label>{t('serverStartup.availableImages')}</Label>
-                            <div className='grid gap-2 max-h-[200px] overflow-y-auto'>
+                            <div className='grid max-h-[200px] gap-2 overflow-y-auto'>
                                 {availableDockerImages.map((img) => (
                                     <Button
                                         key={img.label}
                                         variant={selectedImage === img.value ? 'default' : 'outline'}
                                         size='sm'
-                                        className='justify-start text-left h-auto py-2'
+                                        className='h-auto justify-start py-2 text-left'
                                         onClick={() => setSelectedImage(img.value)}
                                     >
                                         <div className='flex flex-col items-start'>
                                             <span className='font-medium'>{img.label}</span>
-                                            <span className='text-xs opacity-70 truncate max-w-[300px]'>
+                                            <span className='max-w-[300px] truncate text-xs opacity-70'>
                                                 {img.value}
                                             </span>
                                         </div>
@@ -125,9 +125,9 @@ export function JavaVersionDialog({ isOpen, onClose, server, detectedIssue, onUp
                     )}
 
                     {selectedImage && (
-                        <div className='bg-muted p-3 rounded-lg'>
+                        <div className='bg-muted rounded-lg p-3'>
                             <Label className='text-xs'>{t('features.javaVersion.selectedImage')}</Label>
-                            <p className='text-sm font-mono mt-1 break-all'>{selectedImage}</p>
+                            <p className='mt-1 font-mono text-sm break-all'>{selectedImage}</p>
                         </div>
                     )}
                 </div>

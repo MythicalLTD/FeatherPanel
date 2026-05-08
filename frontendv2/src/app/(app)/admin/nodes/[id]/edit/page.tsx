@@ -467,7 +467,7 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
     if (loading) {
         return (
             <div className='flex items-center justify-center p-12'>
-                <Loader2 className='w-8 h-8 animate-spin text-primary' />
+                <Loader2 className='text-primary h-8 w-8 animate-spin' />
             </div>
         );
     }
@@ -503,11 +503,11 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
                 actions={
                     <div className='flex gap-2'>
                         <Button variant='outline' onClick={() => router.back()}>
-                            <ArrowLeft className='h-4 w-4 mr-2' />
+                            <ArrowLeft className='mr-2 h-4 w-4' />
                             {t('common.back')}
                         </Button>
                         <Button onClick={() => handleSubmit()} loading={saving}>
-                            <Save className='h-4 w-4 mr-2' />
+                            <Save className='mr-2 h-4 w-4' />
                             {t('admin.node.form.submit_save')}
                         </Button>
                     </div>
@@ -524,19 +524,19 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
                     value={activeTab}
                     onValueChange={setActiveTab}
                     orientation='vertical'
-                    className='w-full flex flex-col md:flex-row gap-6'
+                    className='flex w-full flex-col gap-6 md:flex-row'
                 >
-                    <aside className='w-full md:w-64 shrink-0 overflow-x-auto md:overflow-visible pb-2 md:pb-0'>
-                        <TabsList className='flex flex-row md:flex-col h-auto w-max md:w-full bg-card/30 border border-border/50 p-2 rounded-2xl gap-2 md:gap-1'>
+                    <aside className='w-full shrink-0 overflow-x-auto pb-2 md:w-64 md:overflow-visible md:pb-0'>
+                        <TabsList className='bg-card/30 border-border/50 flex h-auto w-max flex-row gap-2 rounded-2xl border p-2 md:w-full md:flex-col md:gap-1'>
                             {tabs.map((tab) => {
                                 const Icon = tab.icon;
                                 return (
                                     <TabsTrigger
                                         key={tab.id}
                                         value={tab.id}
-                                        className='w-auto md:w-full justify-start px-4 py-3 h-auto text-sm md:text-base font-normal data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:font-medium transition-all rounded-xl border border-transparent data-[state=active]:border-primary/10 whitespace-nowrap'
+                                        className='data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:border-primary/10 h-auto w-auto justify-start rounded-xl border border-transparent px-4 py-3 text-sm font-normal whitespace-nowrap transition-all data-[state=active]:font-medium md:w-full md:text-base'
                                     >
-                                        <Icon className='w-4 h-4 mr-3' />
+                                        <Icon className='mr-3 h-4 w-4' />
                                         {tab.label}
                                     </TabsTrigger>
                                 );
@@ -544,7 +544,7 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
                         </TabsList>
                     </aside>
 
-                    <div className='flex-1 space-y-6 min-w-0'>
+                    <div className='min-w-0 flex-1 space-y-6'>
                         <TabsContent value='details' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
                             <DetailsTab
                                 form={form}
@@ -666,7 +666,7 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
                         ].includes(activeTab) && (
                             <div className='flex justify-end'>
                                 <Button onClick={() => handleSubmit()} loading={saving}>
-                                    <Save className='h-4 w-4 mr-2' />
+                                    <Save className='mr-2 h-4 w-4' />
                                     {t('admin.node.form.submit_save')}
                                 </Button>
                             </div>
@@ -688,7 +688,7 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
 
                     <div className='mt-6 space-y-4'>
                         <div className='relative'>
-                            <SearchIcon className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground' />
+                            <SearchIcon className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform' />
                             <Input
                                 placeholder={t('admin.node.form.search_locations')}
                                 value={locationSearch}
@@ -698,7 +698,7 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
                         </div>
 
                         {locationPagination.total_pages > 1 && (
-                            <div className='flex items-center justify-between gap-2 py-2 px-3 rounded-lg border border-border bg-muted/30'>
+                            <div className='border-border bg-muted/30 flex items-center justify-between gap-2 rounded-lg border px-3 py-2'>
                                 <Button
                                     variant='outline'
                                     size='sm'
@@ -709,7 +709,7 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
                                             current_page: prev.current_page - 1,
                                         }))
                                     }
-                                    className='gap-1 h-8'
+                                    className='h-8 gap-1'
                                 >
                                     <ChevronLeft className='h-3 w-3' />
                                     {t('common.previous')}
@@ -727,7 +727,7 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
                                             current_page: prev.current_page + 1,
                                         }))
                                     }
-                                    className='gap-1 h-8'
+                                    className='h-8 gap-1'
                                 >
                                     {t('common.next')}
                                     <ChevronRight className='h-3 w-3' />
@@ -735,9 +735,9 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
                             </div>
                         )}
 
-                        <div className='space-y-2 max-h-[calc(100vh-300px)] overflow-y-auto'>
+                        <div className='max-h-[calc(100vh-300px)] space-y-2 overflow-y-auto'>
                             {locations.length === 0 ? (
-                                <div className='text-center py-8 text-muted-foreground'>
+                                <div className='text-muted-foreground py-8 text-center'>
                                     {t('admin.node.form.no_locations_found')}
                                 </div>
                             ) : (
@@ -749,16 +749,16 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
                                             setSelectedLocationName(location.name);
                                             setLocationModalOpen(false);
                                         }}
-                                        className='w-full p-3 rounded-lg border border-border/50 hover:bg-muted/50 hover:border-primary/50 transition-colors text-left'
+                                        className='border-border/50 hover:bg-muted/50 hover:border-primary/50 w-full rounded-lg border p-3 text-left transition-colors'
                                     >
                                         <div className='flex items-start gap-3'>
-                                            <div className='p-2 bg-primary/10 rounded-lg mt-0.5'>
-                                                <MapPin className='h-5 w-5 text-primary' />
+                                            <div className='bg-primary/10 mt-0.5 rounded-lg p-2'>
+                                                <MapPin className='text-primary h-5 w-5' />
                                             </div>
-                                            <div className='flex-1 min-w-0'>
+                                            <div className='min-w-0 flex-1'>
                                                 <div className='font-medium'>{location.name}</div>
                                                 {location.description && (
-                                                    <div className='text-sm text-muted-foreground mt-1'>
+                                                    <div className='text-muted-foreground mt-1 text-sm'>
                                                         {location.description}
                                                     </div>
                                                 )}
@@ -770,8 +770,8 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
                         </div>
 
                         {locationPagination.total_pages > 1 && (
-                            <div className='flex items-center justify-between pt-4 border-t'>
-                                <div className='text-sm text-muted-foreground'>
+                            <div className='flex items-center justify-between border-t pt-4'>
+                                <div className='text-muted-foreground text-sm'>
                                     {t('common.showing', {
                                         from: String(
                                             locationPagination.current_page * locationPagination.per_page -

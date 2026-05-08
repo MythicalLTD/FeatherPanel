@@ -57,7 +57,7 @@ export function DockerTab({ nodeId, loading, data, error, onRefresh }: DockerTab
     if (loading) {
         return (
             <div className='flex items-center justify-center py-12'>
-                <RefreshCw className='h-8 w-8 animate-spin text-primary' />
+                <RefreshCw className='text-primary h-8 w-8 animate-spin' />
             </div>
         );
     }
@@ -65,7 +65,7 @@ export function DockerTab({ nodeId, loading, data, error, onRefresh }: DockerTab
     if (error) {
         return (
             <PageCard title={t('admin.node.view.docker.error_title')} icon={AlertTriangle}>
-                <div className='p-6 bg-destructive/10 border border-destructive/20 rounded-2xl text-center space-y-4'>
+                <div className='bg-destructive/10 border-destructive/20 space-y-4 rounded-2xl border p-6 text-center'>
                     <p className='text-destructive'>{error}</p>
                     <Button variant='outline' onClick={onRefresh}>
                         {t('common.retry')}
@@ -120,26 +120,26 @@ export function DockerTab({ nodeId, loading, data, error, onRefresh }: DockerTab
                         loading={cleaning}
                         title={t('admin.node.view.docker.prune')}
                     >
-                        <Trash2 className='h-4 w-4 mr-2' />
+                        <Trash2 className='mr-2 h-4 w-4' />
                         {t('admin.node.view.docker.prune')}
                     </Button>
                 }
             >
-                <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+                <div className='grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3'>
                     {stats.map((stat, index) => (
-                        <div key={index} className='p-6 rounded-2xl bg-muted/30 border border-border/50'>
-                            <p className='text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2'>
+                        <div key={index} className='bg-muted/30 border-border/50 rounded-2xl border p-6'>
+                            <p className='text-muted-foreground mb-2 text-xs font-bold tracking-wider uppercase'>
                                 {stat.label}
                             </p>
-                            <h3 className='text-2xl font-bold mb-1'>{stat.value}</h3>
-                            <p className='text-xs text-muted-foreground italic leading-relaxed'>{stat.description}</p>
+                            <h3 className='mb-1 text-2xl font-bold'>{stat.value}</h3>
+                            <p className='text-muted-foreground text-xs leading-relaxed italic'>{stat.description}</p>
                         </div>
                     ))}
                 </div>
             </PageCard>
 
             <PageCard title={t('admin.node.view.docker.info_title')} icon={Info}>
-                <p className='text-sm text-muted-foreground leading-relaxed'>
+                <p className='text-muted-foreground text-sm leading-relaxed'>
                     {t('admin.node.view.docker.info_description')}
                 </p>
             </PageCard>

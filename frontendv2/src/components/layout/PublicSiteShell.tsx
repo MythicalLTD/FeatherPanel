@@ -62,8 +62,8 @@ export default function PublicSiteShell({ children }: PublicSiteShellProps) {
     ].filter((item) => item.enabled);
 
     return (
-        <div className='min-h-screen flex flex-col'>
-            <header className='sticky top-0 z-30 border-b border-border/60 bg-background/85 backdrop-blur-xl'>
+        <div className='flex min-h-screen flex-col'>
+            <header className='border-border/60 bg-background/85 sticky top-0 z-30 border-b backdrop-blur-xl'>
                 <div className='mx-auto w-full max-w-7xl px-4 md:px-8'>
                     <div className='flex h-16 items-center justify-between gap-4'>
                         {isExternalUrl(homeHref) ? (
@@ -78,7 +78,7 @@ export default function PublicSiteShell({ children }: PublicSiteShellProps) {
                                 />
                                 <div className='leading-tight'>
                                     <p className='font-bold tracking-tight'>{appName}</p>
-                                    <p className='text-[11px] uppercase tracking-[0.18em] text-muted-foreground'>
+                                    <p className='text-muted-foreground text-[11px] tracking-[0.18em] uppercase'>
                                         {t('public_portal.label')}
                                     </p>
                                 </div>
@@ -95,14 +95,14 @@ export default function PublicSiteShell({ children }: PublicSiteShellProps) {
                                 />
                                 <div className='leading-tight'>
                                     <p className='font-bold tracking-tight'>{appName}</p>
-                                    <p className='text-[11px] uppercase tracking-[0.18em] text-muted-foreground'>
+                                    <p className='text-muted-foreground text-[11px] tracking-[0.18em] uppercase'>
                                         {t('public_portal.label')}
                                     </p>
                                 </div>
                             </Link>
                         )}
 
-                        <nav className='flex items-center gap-2 rounded-xl border border-border/50 bg-card/50 p-1'>
+                        <nav className='border-border/50 bg-card/50 flex items-center gap-2 rounded-xl border p-1'>
                             {navItems.map((item) => {
                                 return (
                                     <Link
@@ -126,12 +126,12 @@ export default function PublicSiteShell({ children }: PublicSiteShellProps) {
 
             <main className='flex-1'>{children}</main>
 
-            <footer className='mt-10 border-t border-border/60 bg-card/20'>
+            <footer className='border-border/60 bg-card/20 mt-10 border-t'>
                 <div className='mx-auto w-full max-w-7xl px-4 py-6 md:px-8'>
                     <div className='flex flex-col gap-5 md:flex-row md:items-end md:justify-between'>
                         <div className='max-w-md'>
                             <p className='text-sm font-semibold'>{appName}</p>
-                            <p className='mt-1 text-xs leading-5 text-muted-foreground'>{appDescription}</p>
+                            <p className='text-muted-foreground mt-1 text-xs leading-5'>{appDescription}</p>
                         </div>
                     </div>
                 </div>

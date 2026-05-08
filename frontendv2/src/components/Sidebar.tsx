@@ -53,7 +53,7 @@ function renderIcon(item: NavigationItem, className: string, sizeClass: string) 
     const Icon = item.icon;
     if (typeof Icon === 'string') {
         return (
-            <span className={cn('shrink-0 flex items-center justify-center text-lg', className, sizeClass)}>
+            <span className={cn('flex shrink-0 items-center justify-center text-lg', className, sizeClass)}>
                 {Icon}
             </span>
         );
@@ -264,9 +264,9 @@ function SidebarContent({
     const renderCollapsedLabel = (label: string) => {
         if (!collapsed || mobile) return null;
         return (
-            <span className='pointer-events-none absolute left-full top-1/2 z-50 ml-3 flex -translate-x-1 -translate-y-1/2 items-center whitespace-nowrap rounded-xl border border-border/50 bg-card/95 px-2.5 py-1.5 text-xs font-medium tracking-tight text-foreground opacity-0 shadow-xl shadow-black/20 ring-1 ring-border/30 backdrop-blur-md transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100 group-focus-visible:translate-x-0 group-focus-visible:opacity-100 motion-reduce:transition-none'>
+            <span className='border-border/50 bg-card/95 text-foreground ring-border/30 pointer-events-none absolute top-1/2 left-full z-50 ml-3 flex -translate-x-1 -translate-y-1/2 items-center rounded-xl border px-2.5 py-1.5 text-xs font-medium tracking-tight whitespace-nowrap opacity-0 shadow-xl ring-1 shadow-black/20 backdrop-blur-md transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100 group-focus-visible:translate-x-0 group-focus-visible:opacity-100 motion-reduce:transition-none'>
                 <span
-                    className='absolute -left-1.5 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rotate-45 border-l border-t border-border/50 bg-card/95'
+                    className='border-border/50 bg-card/95 absolute top-1/2 -left-1.5 h-2.5 w-2.5 -translate-y-1/2 rotate-45 border-t border-l'
                     aria-hidden='true'
                 />
                 {label}
@@ -277,13 +277,13 @@ function SidebarContent({
     const modernBrandInner = (
         <div
             className={cn(
-                'flex items-center rounded-2xl border border-border/50 bg-card/40 px-3 py-2.5 transition-colors hover:border-border/70 hover:bg-card/55',
+                'border-border/50 bg-card/40 hover:border-border/70 hover:bg-card/55 flex items-center rounded-2xl border px-3 py-2.5 transition-colors',
                 collapsed && !mobile ? 'justify-center px-1.5 py-2' : 'gap-2.5',
             )}
         >
             <div
                 className={cn(
-                    'flex shrink-0 items-center justify-center rounded-xl bg-muted/30 ring-1 ring-border/40',
+                    'bg-muted/30 ring-border/40 flex shrink-0 items-center justify-center rounded-xl ring-1',
                     collapsed && !mobile ? 'h-8 w-8' : 'h-9 w-9',
                 )}
             >
@@ -299,10 +299,10 @@ function SidebarContent({
 
             {(!collapsed || mobile) && (
                 <div className='flex min-w-0 flex-col gap-0.5'>
-                    <span className='truncate text-sm font-semibold tracking-tight text-foreground'>
+                    <span className='text-foreground truncate text-sm font-semibold tracking-tight'>
                         {settings?.app_name || 'FeatherPanel'}
                     </span>
-                    <span className='inline-flex w-fit items-center rounded-md border border-primary/20 bg-primary/10 px-1.5 py-px text-[10px] font-semibold uppercase tracking-wider text-primary'>
+                    <span className='border-primary/20 bg-primary/10 text-primary inline-flex w-fit items-center rounded-md border px-1.5 py-px text-[10px] font-semibold tracking-wider uppercase'>
                         v{settings?.app_version || '1.0.0'}
                     </span>
                 </div>
@@ -313,7 +313,7 @@ function SidebarContent({
     const classicBrandInner = (
         <div
             className={cn(
-                'flex items-center border-b border-border/50 transition-all',
+                'border-border/50 flex items-center border-b transition-all',
                 collapsed && !mobile ? 'justify-center px-2 py-4' : 'gap-3 px-4 py-4',
             )}
         >
@@ -331,7 +331,7 @@ function SidebarContent({
             {(!collapsed || mobile) && (
                 <div className='flex min-w-0 flex-col gap-0.5'>
                     <span className='truncate text-base font-semibold'>{settings?.app_name || 'FeatherPanel'}</span>
-                    <span className='inline-flex w-fit items-center rounded-md border border-primary/20 bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary'>
+                    <span className='border-primary/20 bg-primary/10 text-primary inline-flex w-fit items-center rounded-md border px-2 py-0.5 text-[10px] font-medium'>
                         v{settings?.app_version || '1.0.0'}
                     </span>
                 </div>
@@ -346,7 +346,7 @@ function SidebarContent({
                     <Link
                         href='/dashboard'
                         prefetch={true}
-                        className='shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-transparent'
+                        className='focus-visible:ring-ring shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent'
                     >
                         {classicBrandInner}
                     </Link>
@@ -354,7 +354,7 @@ function SidebarContent({
                     <Link
                         href='/dashboard'
                         prefetch={true}
-                        className='block min-w-0 shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-transparent'
+                        className='focus-visible:ring-ring block min-w-0 shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent'
                     >
                         {classicBrandInner}
                     </Link>
@@ -363,7 +363,7 @@ function SidebarContent({
                 <Link
                     href='/dashboard'
                     prefetch={true}
-                    className='mx-2 mt-2 shrink-0 rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-transparent'
+                    className='focus-visible:ring-ring mx-2 mt-2 shrink-0 rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent'
                 >
                     {modernBrandInner}
                 </Link>
@@ -372,7 +372,7 @@ function SidebarContent({
                     href='/dashboard'
                     prefetch={true}
                     className={cn(
-                        'mx-2 mt-3 block min-w-0 shrink-0 rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-transparent',
+                        'focus-visible:ring-ring mx-2 mt-3 block min-w-0 shrink-0 rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent',
                         collapsed && 'mx-1.5 mt-2',
                     )}
                 >
@@ -398,10 +398,10 @@ function SidebarContent({
                                     type='button'
                                     onClick={() => toggleGroup(group)}
                                     className={cn(
-                                        'group/header mb-2 flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-left text-xs font-semibold uppercase tracking-wider transition-colors',
+                                        'group/header mb-2 flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-left text-xs font-semibold tracking-wider uppercase transition-colors',
                                         isClassicChrome
                                             ? 'text-muted-foreground hover:text-accent-foreground'
-                                            : 'text-[11px] text-muted-foreground/90 hover:bg-muted/40 hover:text-foreground',
+                                            : 'text-muted-foreground/90 hover:bg-muted/40 hover:text-foreground text-[11px]',
                                     )}
                                 >
                                     <span className='truncate'>{renderGroupTitle(group)}</span>
@@ -410,7 +410,7 @@ function SidebarContent({
                                             'shrink-0 transition-transform duration-200',
                                             isClassicChrome
                                                 ? 'h-3 w-3'
-                                                : 'h-3.5 w-3.5 text-muted-foreground/70 group-hover/header:text-foreground',
+                                                : 'text-muted-foreground/70 group-hover/header:text-foreground h-3.5 w-3.5',
                                             !isClassicChrome && 'text-muted-foreground/70',
                                             !isCollapsed && 'rotate-90',
                                         )}
@@ -419,7 +419,7 @@ function SidebarContent({
                             )}
                             <div
                                 className={cn(
-                                    'space-y-1 transition-all duration-200 overflow-hidden',
+                                    'space-y-1 overflow-hidden transition-all duration-200',
                                     isCollapsed && (!collapsed || mobile)
                                         ? 'max-h-0 opacity-0'
                                         : 'max-h-[2000px] opacity-100',
@@ -450,7 +450,7 @@ function SidebarContent({
                                                     {renderIcon(item, '', topIconSize)}
 
                                                     {(!collapsed || mobile) && (
-                                                        <span className='truncate flex-1 text-left'>{item.name}</span>
+                                                        <span className='flex-1 truncate text-left'>{item.name}</span>
                                                     )}
 
                                                     {(!collapsed || mobile) && (
@@ -467,11 +467,11 @@ function SidebarContent({
                                                 <div
                                                     className={cn(
                                                         isClassicChrome
-                                                            ? 'ml-4 space-y-1 transition-all duration-200 overflow-hidden'
-                                                            : 'ml-3 space-y-0.5 border-l border-border/30 pl-2 transition-all duration-200 overflow-hidden',
+                                                            ? 'ml-4 space-y-1 overflow-hidden transition-all duration-200'
+                                                            : 'border-border/30 ml-3 space-y-0.5 overflow-hidden border-l pl-2 transition-all duration-200',
                                                         isSubmenuCollapsed || (collapsed && !mobile)
                                                             ? 'max-h-0 opacity-0'
-                                                            : 'max-h-[500px] opacity-100 mt-1',
+                                                            : 'mt-1 max-h-[500px] opacity-100',
                                                     )}
                                                 >
                                                     {item.children?.map((child) => {
@@ -588,9 +588,9 @@ function SidebarContent({
                 <div
                     className={cn(
                         isClassicChrome
-                            ? 'border-t border-border/50 p-2'
-                            : 'border-t border-border/40 bg-muted/10 p-1.5',
-                        !isClassicChrome && collapsed && 'px-1 pb-2 pt-1',
+                            ? 'border-border/50 border-t p-2'
+                            : 'border-border/40 bg-muted/10 border-t p-1.5',
+                        !isClassicChrome && collapsed && 'px-1 pt-1 pb-2',
                         !isClassicChrome && !collapsed && 'p-2',
                     )}
                 >
@@ -606,10 +606,10 @@ function SidebarContent({
                             }
                         }}
                         className={cn(
-                            'flex w-full items-center justify-center rounded-lg text-sm font-medium text-muted-foreground transition-all',
+                            'text-muted-foreground flex w-full items-center justify-center rounded-lg text-sm font-medium transition-all',
                             isClassicChrome
-                                ? 'px-3 py-2 hover:bg-accent hover:text-accent-foreground'
-                                : 'gap-2 rounded-xl border border-dashed border-border/50 bg-muted/15 transition-colors hover:border-border/70 hover:bg-muted/30 hover:text-foreground',
+                                ? 'hover:bg-accent hover:text-accent-foreground px-3 py-2'
+                                : 'border-border/50 bg-muted/15 hover:border-border/70 hover:bg-muted/30 hover:text-foreground gap-2 rounded-xl border border-dashed transition-colors',
                             !isClassicChrome && collapsed && 'px-1 py-2',
                             !isClassicChrome && !collapsed && 'px-3 py-2.5',
                         )}
@@ -687,7 +687,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
                         leaveFrom='opacity-100'
                         leaveTo='opacity-0'
                     >
-                        <div className='fixed inset-0 bg-background/80 backdrop-blur-sm' />
+                        <div className='bg-background/80 fixed inset-0 backdrop-blur-sm' />
                     </Transition.Child>
 
                     <div className='fixed inset-0 flex'>
@@ -705,7 +705,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
                                     'relative mr-16 flex w-full max-w-xs flex-1',
                                     chromeLayout === 'classic'
                                         ? 'overflow-hidden'
-                                        : 'overflow-hidden rounded-r-2xl border border-border/50 border-l-0 bg-card/50 shadow-sm backdrop-blur-2xl dark:bg-card/45',
+                                        : 'border-border/50 bg-card/50 dark:bg-card/45 overflow-hidden rounded-r-2xl border border-l-0 shadow-sm backdrop-blur-2xl',
                                 )}
                             >
                                 <Transition.Child
@@ -717,10 +717,10 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
                                     leaveFrom='opacity-100'
                                     leaveTo='opacity-0'
                                 >
-                                    <div className='absolute left-full top-0 flex w-16 justify-center pt-5'>
+                                    <div className='absolute top-0 left-full flex w-16 justify-center pt-5'>
                                         <button
                                             type='button'
-                                            className='rounded-full border border-border/50 bg-card/90 p-2.5 text-muted-foreground shadow-lg backdrop-blur-md transition-colors hover:bg-muted hover:text-foreground'
+                                            className='border-border/50 bg-card/90 text-muted-foreground hover:bg-muted hover:text-foreground rounded-full border p-2.5 shadow-lg backdrop-blur-md transition-colors'
                                             onClick={() => setMobileOpen(false)}
                                         >
                                             <span className='sr-only'>Close sidebar</span>
@@ -733,7 +733,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
                                     className={cn(
                                         'flex h-full min-h-0 grow flex-col gap-y-5 overflow-y-auto',
                                         chromeLayout === 'classic' &&
-                                            'bg-card/70 backdrop-blur-xl border-r border-border/80',
+                                            'bg-card/70 border-border/80 border-r backdrop-blur-xl',
                                     )}
                                 >
                                     <SidebarContent
@@ -758,7 +758,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
                     'hidden lg:fixed lg:inset-y-0 lg:z-40 lg:flex lg:flex-col',
                     chromeLayout === 'classic'
                         ? ''
-                        : 'lg:overflow-hidden lg:rounded-r-2xl lg:border lg:border-border/50 lg:border-l-0 lg:bg-card/50 lg:shadow-sm lg:backdrop-blur-2xl dark:lg:bg-card/45',
+                        : 'lg:border-border/50 lg:bg-card/50 dark:lg:bg-card/45 lg:overflow-hidden lg:rounded-r-2xl lg:border lg:border-l-0 lg:shadow-sm lg:backdrop-blur-2xl',
                 )}
             >
                 <div
@@ -766,7 +766,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
                         'flex h-full min-h-0 grow flex-col gap-y-5 overflow-y-auto transition-[width] duration-300 ease-out',
                         chromeLayout === 'classic'
                             ? cn(
-                                  'bg-card/70 backdrop-blur-xl transition-all duration-300 lg:border-r lg:border-border/80',
+                                  'bg-card/70 lg:border-border/80 backdrop-blur-xl transition-all duration-300 lg:border-r',
                                   collapsed ? 'w-16' : 'w-64',
                               )
                             : collapsed

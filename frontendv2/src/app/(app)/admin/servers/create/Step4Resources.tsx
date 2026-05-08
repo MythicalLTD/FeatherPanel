@@ -35,11 +35,11 @@ export function Step4Resources({ formData, setFormData }: StepProps) {
                 icon={Cpu}
                 className='animate-in fade-in-0 slide-in-from-right-4 duration-300'
             >
-                <div className='grid grid-cols-1 md:grid-cols-2 gap-8'>
+                <div className='grid grid-cols-1 gap-8 md:grid-cols-2'>
                     <div className='space-y-4'>
                         <div className='flex items-center gap-3'>
-                            <div className='p-2 bg-primary/10 rounded-lg'>
-                                <MemoryStick className='h-5 w-5 text-primary' />
+                            <div className='bg-primary/10 rounded-lg p-2'>
+                                <MemoryStick className='text-primary h-5 w-5' />
                             </div>
                             <Label className='text-base font-semibold'>{t('admin.servers.form.memory')}</Label>
                         </div>
@@ -83,12 +83,12 @@ export function Step4Resources({ formData, setFormData }: StepProps) {
                                 className='bg-muted/30'
                             />
                         )}
-                        <p className='text-xs text-muted-foreground'>{t('admin.servers.form.memory_help')}</p>
+                        <p className='text-muted-foreground text-xs'>{t('admin.servers.form.memory_help')}</p>
                     </div>
 
                     <div className='space-y-4'>
                         <div className='flex items-center gap-3'>
-                            <div className='p-2 bg-orange-500/10 rounded-lg'>
+                            <div className='rounded-lg bg-orange-500/10 p-2'>
                                 <MemoryStick className='h-5 w-5 text-orange-500' />
                             </div>
                             <Label className='text-base font-semibold'>{t('admin.servers.form.swap')}</Label>
@@ -142,12 +142,12 @@ export function Step4Resources({ formData, setFormData }: StepProps) {
                                 className='bg-muted/30'
                             />
                         )}
-                        <p className='text-xs text-muted-foreground'>{t('admin.servers.form.swap_help')}</p>
+                        <p className='text-muted-foreground text-xs'>{t('admin.servers.form.swap_help')}</p>
                     </div>
 
                     <div className='space-y-4'>
                         <div className='flex items-center gap-3'>
-                            <div className='p-2 bg-blue-500/10 rounded-lg'>
+                            <div className='rounded-lg bg-blue-500/10 p-2'>
                                 <HardDrive className='h-5 w-5 text-blue-500' />
                             </div>
                             <Label className='text-base font-semibold'>{t('admin.servers.form.disk')}</Label>
@@ -190,12 +190,12 @@ export function Step4Resources({ formData, setFormData }: StepProps) {
                                 className='bg-muted/30'
                             />
                         )}
-                        <p className='text-xs text-muted-foreground'>{t('admin.servers.form.disk_help')}</p>
+                        <p className='text-muted-foreground text-xs'>{t('admin.servers.form.disk_help')}</p>
                     </div>
 
                     <div className='space-y-4'>
                         <div className='flex items-center gap-3'>
-                            <div className='p-2 bg-purple-500/10 rounded-lg'>
+                            <div className='rounded-lg bg-purple-500/10 p-2'>
                                 <Cpu className='h-5 w-5 text-purple-500' />
                             </div>
                             <Label className='text-base font-semibold'>{t('admin.servers.form.cpu')}</Label>
@@ -238,7 +238,7 @@ export function Step4Resources({ formData, setFormData }: StepProps) {
                                 className='bg-muted/30'
                             />
                         )}
-                        <p className='text-xs text-muted-foreground'>{t('admin.servers.form.cpu_help')}</p>
+                        <p className='text-muted-foreground text-xs'>{t('admin.servers.form.cpu_help')}</p>
                     </div>
 
                     <div className='space-y-4'>
@@ -252,7 +252,7 @@ export function Step4Resources({ formData, setFormData }: StepProps) {
                             max={1000}
                             className='bg-muted/30'
                         />
-                        <p className='text-xs text-muted-foreground'>{t('admin.servers.form.io_help')}</p>
+                        <p className='text-muted-foreground text-xs'>{t('admin.servers.form.io_help')}</p>
                     </div>
 
                     <div className='space-y-4'>
@@ -263,14 +263,14 @@ export function Step4Resources({ formData, setFormData }: StepProps) {
                             placeholder='Leave empty for all threads'
                             className='bg-muted/30'
                         />
-                        <p className='text-xs text-muted-foreground'>{t('admin.servers.form.threads_help')}</p>
+                        <p className='text-muted-foreground text-xs'>{t('admin.servers.form.threads_help')}</p>
                     </div>
                 </div>
 
-                <div className='flex items-center justify-between mt-8 p-4 bg-muted/20 rounded-xl border border-border/50'>
+                <div className='bg-muted/20 border-border/50 mt-8 flex items-center justify-between rounded-xl border p-4'>
                     <div className='space-y-0.5'>
                         <Label>{t('admin.servers.form.oom_killer')}</Label>
-                        <p className='text-xs text-muted-foreground'>{t('admin.servers.form.oom_killer_help')}</p>
+                        <p className='text-muted-foreground text-xs'>{t('admin.servers.form.oom_killer_help')}</p>
                     </div>
                     <Switch
                         checked={formData.oomKiller}

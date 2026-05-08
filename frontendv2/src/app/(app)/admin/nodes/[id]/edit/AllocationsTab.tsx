@@ -242,23 +242,23 @@ export function AllocationsTab({ nodeId, nodeName }: AllocationsTabProps) {
                 action={
                     <div className='flex items-center gap-3'>
                         {isCheckingHealth && (
-                            <div className='flex items-center gap-2 px-3 py-1 bg-muted/50 rounded-lg text-xs text-muted-foreground animate-pulse'>
-                                <div className='h-2 w-2 bg-blue-500 rounded-full' />
+                            <div className='bg-muted/50 text-muted-foreground flex animate-pulse items-center gap-2 rounded-lg px-3 py-1 text-xs'>
+                                <div className='h-2 w-2 rounded-full bg-blue-500' />
                                 {t('admin.node.health.checking')}
                             </div>
                         )}
                         {selectedIds.length > 0 && (
                             <Button variant='destructive' size='sm' onClick={() => setBulkDeleteConfirm(true)}>
-                                <Trash2 className='h-4 w-4 mr-2' />
+                                <Trash2 className='mr-2 h-4 w-4' />
                                 {t('admin.node.allocations.delete_selected')} ({selectedIds.length})
                             </Button>
                         )}
                         <Button variant='outline' size='sm' onClick={() => setDeleteUnusedConfirm(true)}>
-                            <Trash2 className='h-4 w-4 mr-2' />
+                            <Trash2 className='mr-2 h-4 w-4' />
                             {t('admin.node.allocations.delete_unused')}
                         </Button>
                         <Button size='sm' onClick={() => setCreatingAllocation(true)}>
-                            <Plus className='h-4 w-4 mr-2' />
+                            <Plus className='mr-2 h-4 w-4' />
                             {t('admin.node.allocations.create_allocation')}
                         </Button>
                     </div>
@@ -267,7 +267,7 @@ export function AllocationsTab({ nodeId, nodeName }: AllocationsTabProps) {
                 <div className='space-y-4'>
                     <div className='flex items-center gap-4'>
                         <div className='relative flex-1'>
-                            <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground' />
+                            <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
                             <Input
                                 placeholder={t('admin.node.allocations.search_placeholder')}
                                 value={searchQuery}
@@ -281,7 +281,7 @@ export function AllocationsTab({ nodeId, nodeName }: AllocationsTabProps) {
                     </div>
 
                     {pagination.totalPages > 1 && (
-                        <div className='flex items-center justify-between gap-4 py-3 px-4 rounded-xl border border-border bg-card/50'>
+                        <div className='border-border bg-card/50 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
                             <Button
                                 variant='outline'
                                 size='sm'
@@ -308,14 +308,14 @@ export function AllocationsTab({ nodeId, nodeName }: AllocationsTabProps) {
                         </div>
                     )}
 
-                    <div className='rounded-xl border border-border/50 overflow-hidden'>
+                    <div className='border-border/50 overflow-hidden rounded-xl border'>
                         <table className='w-full text-sm'>
-                            <thead className='bg-muted/30 border-b border-border/50'>
+                            <thead className='bg-muted/30 border-border/50 border-b'>
                                 <tr>
-                                    <th className='px-4 py-3 text-left w-10'>
+                                    <th className='w-10 px-4 py-3 text-left'>
                                         <input
                                             type='checkbox'
-                                            className='rounded border-border bg-background'
+                                            className='border-border bg-background rounded'
                                             checked={
                                                 allocations.length > 0 && selectedIds.length === allocations.length
                                             }
@@ -325,34 +325,34 @@ export function AllocationsTab({ nodeId, nodeName }: AllocationsTabProps) {
                                             }}
                                         />
                                     </th>
-                                    <th className='px-4 py-3 text-left font-medium text-muted-foreground'>ID</th>
-                                    <th className='px-4 py-3 text-left font-medium text-muted-foreground'>
+                                    <th className='text-muted-foreground px-4 py-3 text-left font-medium'>ID</th>
+                                    <th className='text-muted-foreground px-4 py-3 text-left font-medium'>
                                         {t('admin.node.allocations.ip_address')}
                                     </th>
-                                    <th className='px-4 py-3 text-left font-medium text-muted-foreground'>
+                                    <th className='text-muted-foreground px-4 py-3 text-left font-medium'>
                                         {t('admin.node.allocations.port')}
                                     </th>
-                                    <th className='px-4 py-3 text-left font-medium text-muted-foreground'>
+                                    <th className='text-muted-foreground px-4 py-3 text-left font-medium'>
                                         {t('admin.node.allocations.ip_alias')}
                                     </th>
-                                    <th className='px-4 py-3 text-left font-medium text-muted-foreground'>
+                                    <th className='text-muted-foreground px-4 py-3 text-left font-medium'>
                                         {t('admin.node.allocations.server')}
                                     </th>
-                                    <th className='px-4 py-3 text-right font-medium text-muted-foreground'>
+                                    <th className='text-muted-foreground px-4 py-3 text-right font-medium'>
                                         {t('common.actions')}
                                     </th>
                                 </tr>
                             </thead>
-                            <tbody className='divide-y divide-border/50'>
+                            <tbody className='divide-border/50 divide-y'>
                                 {loading ? (
                                     <tr>
                                         <td colSpan={7} className='px-4 py-8 text-center'>
-                                            <Loader2 className='h-6 w-6 animate-spin mx-auto text-primary' />
+                                            <Loader2 className='text-primary mx-auto h-6 w-6 animate-spin' />
                                         </td>
                                     </tr>
                                 ) : allocations.length === 0 ? (
                                     <tr>
-                                        <td colSpan={7} className='px-4 py-8 text-center text-muted-foreground italic'>
+                                        <td colSpan={7} className='text-muted-foreground px-4 py-8 text-center italic'>
                                             {t('admin.node.allocations.no_results')}
                                         </td>
                                     </tr>
@@ -362,7 +362,7 @@ export function AllocationsTab({ nodeId, nodeName }: AllocationsTabProps) {
                                             <td className='px-4 py-3 text-left'>
                                                 <input
                                                     type='checkbox'
-                                                    className='rounded border-border bg-background'
+                                                    className='border-border bg-background rounded'
                                                     checked={selectedIds.includes(allocation.id)}
                                                     onChange={() => toggleSelection(allocation.id)}
                                                 />
@@ -372,18 +372,18 @@ export function AllocationsTab({ nodeId, nodeName }: AllocationsTabProps) {
                                                 <div className='flex items-center gap-2'>
                                                     <span className='font-mono'>{allocation.ip}</span>
                                                     {allocation.server_id ? (
-                                                        <span className='px-2 py-0.5 bg-green-500/10 text-green-500 text-[10px] font-bold uppercase rounded-full border border-green-500/20'>
+                                                        <span className='rounded-full border border-green-500/20 bg-green-500/10 px-2 py-0.5 text-[10px] font-bold text-green-500 uppercase'>
                                                             {t('admin.node.allocations.assigned')}
                                                         </span>
                                                     ) : (
-                                                        <span className='px-2 py-0.5 bg-muted text-muted-foreground text-[10px] font-bold uppercase rounded-full'>
+                                                        <span className='bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-[10px] font-bold uppercase'>
                                                             {t('admin.node.allocations.available')}
                                                         </span>
                                                     )}
                                                 </div>
                                             </td>
                                             <td className='px-4 py-3 font-mono'>{allocation.port}</td>
-                                            <td className='px-4 py-3 text-muted-foreground truncate max-w-[150px]'>
+                                            <td className='text-muted-foreground max-w-[150px] truncate px-4 py-3'>
                                                 {allocation.ip_alias || '-'}
                                             </td>
                                             <td className='px-4 py-3'>
@@ -460,8 +460,8 @@ export function AllocationsTab({ nodeId, nodeName }: AllocationsTabProps) {
                     </div>
 
                     {pagination.totalPages > 1 && (
-                        <div className='flex items-center justify-between mt-4'>
-                            <p className='text-xs text-muted-foreground'>
+                        <div className='mt-4 flex items-center justify-between'>
+                            <p className='text-muted-foreground text-xs'>
                                 {t('common.pagination.showing', {
                                     from: String((pagination.page - 1) * pagination.pageSize + 1),
                                     to: String(Math.min(pagination.page * pagination.pageSize, pagination.total)),
@@ -477,7 +477,7 @@ export function AllocationsTab({ nodeId, nodeName }: AllocationsTabProps) {
                                 >
                                     <ChevronLeft className='h-4 w-4' />
                                 </Button>
-                                <span className='text-xs font-medium px-2'>
+                                <span className='px-2 text-xs font-medium'>
                                     {pagination.page} / {pagination.totalPages}
                                 </span>
                                 <Button
@@ -494,43 +494,43 @@ export function AllocationsTab({ nodeId, nodeName }: AllocationsTabProps) {
                 </div>
             </PageCard>
 
-            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8'>
-                <div className='p-6 bg-card/40 border border-border/50 rounded-2xl space-y-3'>
-                    <div className='flex items-center gap-3 text-primary'>
+            <div className='mt-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3'>
+                <div className='bg-card/40 border-border/50 space-y-3 rounded-2xl border p-6'>
+                    <div className='text-primary flex items-center gap-3'>
                         <Network className='h-5 w-5' />
                         <h4 className='font-bold'>{t('admin.node.allocations.help.what_are_allocations')}</h4>
                     </div>
-                    <p className='text-sm text-muted-foreground leading-relaxed'>
+                    <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.node.allocations.help.what_are_allocations_text')}
                     </p>
                 </div>
-                <div className='p-6 bg-card/40 border border-border/50 rounded-2xl space-y-3'>
-                    <div className='flex items-center gap-3 text-primary'>
+                <div className='bg-card/40 border-border/50 space-y-3 rounded-2xl border p-6'>
+                    <div className='text-primary flex items-center gap-3'>
                         <MapPin className='h-5 w-5' />
                         <h4 className='font-bold'>{t('admin.node.allocations.help.what_you_will_need')}</h4>
                     </div>
-                    <ul className='text-sm text-muted-foreground leading-relaxed list-disc list-inside space-y-1'>
+                    <ul className='text-muted-foreground list-inside list-disc space-y-1 text-sm leading-relaxed'>
                         <li>{t('admin.node.allocations.help.what_you_will_need_ip')}</li>
                         <li>{t('admin.node.allocations.help.what_you_will_need_port')}</li>
                         <li>{t('admin.node.allocations.help.what_you_will_need_alias')}</li>
                         <li>{t('admin.node.allocations.help.what_you_will_need_notes')}</li>
                     </ul>
                 </div>
-                <div className='p-6 bg-card/40 border border-border/50 rounded-2xl space-y-3'>
-                    <div className='flex items-center gap-3 text-primary'>
+                <div className='bg-card/40 border-border/50 space-y-3 rounded-2xl border p-6'>
+                    <div className='text-primary flex items-center gap-3'>
                         <Gamepad2 className='h-5 w-5' />
                         <h4 className='font-bold'>{t('admin.node.allocations.help.popular_game_ranges')}</h4>
                     </div>
-                    <p className='text-sm text-muted-foreground leading-relaxed'>
+                    <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.node.allocations.help.recommendation')}
                     </p>
                 </div>
-                <div className='p-6 bg-card/40 border border-border/50 rounded-2xl space-y-3 md:col-span-2 lg:col-span-3'>
-                    <div className='flex items-center gap-3 text-primary'>
+                <div className='bg-card/40 border-border/50 space-y-3 rounded-2xl border p-6 md:col-span-2 lg:col-span-3'>
+                    <div className='text-primary flex items-center gap-3'>
                         <Shield className='h-5 w-5' />
                         <h4 className='font-bold'>{t('admin.node.allocations.help.protocols_and_firewall')}</h4>
                     </div>
-                    <p className='text-sm text-muted-foreground leading-relaxed'>
+                    <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.node.allocations.help.protocols_and_firewall_text')}
                     </p>
                 </div>
@@ -544,46 +544,46 @@ export function AllocationsTab({ nodeId, nodeName }: AllocationsTabProps) {
                     </SheetDescription>
                 </SheetHeader>
                 {viewingAllocation && (
-                    <div className='space-y-6 mt-8'>
+                    <div className='mt-8 space-y-6'>
                         <div className='grid grid-cols-2 gap-x-4 gap-y-6'>
                             <div className='space-y-1'>
-                                <Label className='text-xs text-muted-foreground uppercase tracking-wider font-bold'>
+                                <Label className='text-muted-foreground text-xs font-bold tracking-wider uppercase'>
                                     {t('admin.node.allocations.ip_address')}
                                 </Label>
-                                <p className='font-mono bg-muted/30 px-3 py-2 rounded-lg border border-border/50'>
+                                <p className='bg-muted/30 border-border/50 rounded-lg border px-3 py-2 font-mono'>
                                     {viewingAllocation.ip}
                                 </p>
                             </div>
                             <div className='space-y-1'>
-                                <Label className='text-xs text-muted-foreground uppercase tracking-wider font-bold'>
+                                <Label className='text-muted-foreground text-xs font-bold tracking-wider uppercase'>
                                     {t('admin.node.allocations.port')}
                                 </Label>
-                                <p className='font-mono bg-muted/30 px-3 py-2 rounded-lg border border-border/50'>
+                                <p className='bg-muted/30 border-border/50 rounded-lg border px-3 py-2 font-mono'>
                                     {viewingAllocation.port}
                                 </p>
                             </div>
-                            <div className='space-y-1 col-span-2'>
-                                <Label className='text-xs text-muted-foreground uppercase tracking-wider font-bold'>
+                            <div className='col-span-2 space-y-1'>
+                                <Label className='text-muted-foreground text-xs font-bold tracking-wider uppercase'>
                                     {t('admin.node.allocations.ip_alias')}
                                 </Label>
-                                <p className='bg-muted/30 px-3 py-2 rounded-lg border border-border/50'>
+                                <p className='bg-muted/30 border-border/50 rounded-lg border px-3 py-2'>
                                     {viewingAllocation.ip_alias || '-'}
                                 </p>
                             </div>
-                            <div className='space-y-1 col-span-2'>
-                                <Label className='text-xs text-muted-foreground uppercase tracking-wider font-bold'>
+                            <div className='col-span-2 space-y-1'>
+                                <Label className='text-muted-foreground text-xs font-bold tracking-wider uppercase'>
                                     {t('admin.node.allocations.server')}
                                 </Label>
-                                <p className='bg-muted/30 px-3 py-2 rounded-lg border border-border/50 font-medium text-primary'>
+                                <p className='bg-muted/30 border-border/50 text-primary rounded-lg border px-3 py-2 font-medium'>
                                     {viewingAllocation.server_name ||
                                         (viewingAllocation.server_id ? `ID: ${viewingAllocation.server_id}` : '-')}
                                 </p>
                             </div>
-                            <div className='space-y-1 col-span-2'>
-                                <Label className='text-xs text-muted-foreground uppercase tracking-wider font-bold'>
+                            <div className='col-span-2 space-y-1'>
+                                <Label className='text-muted-foreground text-xs font-bold tracking-wider uppercase'>
                                     {t('admin.node.allocations.notes')}
                                 </Label>
-                                <p className='bg-muted/30 px-3 py-2 rounded-lg border border-border/50 min-h-[100px]'>
+                                <p className='bg-muted/30 border-border/50 min-h-[100px] rounded-lg border px-3 py-2'>
                                     {viewingAllocation.notes || '-'}
                                 </p>
                             </div>
@@ -608,7 +608,7 @@ export function AllocationsTab({ nodeId, nodeName }: AllocationsTabProps) {
                             })}
                     </SheetDescription>
                 </SheetHeader>
-                <div className='space-y-6 mt-8'>
+                <div className='mt-8 space-y-6'>
                     <div className='space-y-2'>
                         <Label className='text-sm font-semibold'>{t('admin.node.allocations.ip_address')}</Label>
                         {!editCustomIP ? (
@@ -738,7 +738,7 @@ export function AllocationsTab({ nodeId, nodeName }: AllocationsTabProps) {
                             {t('admin.node.allocations.confirm_delete_unused_description')}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <div className='py-6 space-y-2'>
+                    <div className='space-y-2 py-6'>
                         <Label className='text-sm font-semibold'>
                             {t('admin.node.allocations.delete_unused_ip_filter')}
                         </Label>
@@ -748,7 +748,7 @@ export function AllocationsTab({ nodeId, nodeName }: AllocationsTabProps) {
                             className='h-11 font-mono'
                             onChange={(e) => setDeleteUnusedIpFilter(e.target.value)}
                         />
-                        <p className='text-[10px] text-muted-foreground italic leading-relaxed'>
+                        <p className='text-muted-foreground text-[10px] leading-relaxed italic'>
                             {t('admin.node.allocations.delete_unused_ip_help')}
                         </p>
                     </div>

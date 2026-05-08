@@ -151,15 +151,15 @@ export default function AnalyticsDashboardPage() {
                             icon={module.icon}
                             title={module.title}
                             description={
-                                <p className='text-sm text-muted-foreground line-clamp-2'>{module.description}</p>
+                                <p className='text-muted-foreground line-clamp-2 text-sm'>{module.description}</p>
                             }
                             onClick={() => router.push(module.href)}
                             iconWrapperClassName={module.bgColor + ' ' + module.borderColor}
                             iconClassName={module.color}
                             actions={
-                                <ArrowRight className='w-5 h-5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0' />
+                                <ArrowRight className='text-muted-foreground h-5 w-5 -translate-x-2 opacity-0 transition-all group-hover:translate-x-0 group-hover:opacity-100' />
                             }
-                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                            className='bg-card/50 shadow-none! backdrop-blur-sm'
                         />
                     ))}
                 </div>

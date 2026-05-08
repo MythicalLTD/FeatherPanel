@@ -121,9 +121,9 @@ export default function ForgotPasswordForm() {
             <div className='space-y-6'>
                 <WidgetRenderer widgets={getWidgets('auth-forgot-password', 'auth-forgot-password-top')} />
 
-                <div className='text-center space-y-2'>
+                <div className='space-y-2 text-center'>
                     <h2 className='text-2xl font-bold tracking-tight'>{t('auth.forgot_password.title')}</h2>
-                    <p className='text-sm text-muted-foreground'>{t('auth.forgot_password.subtitle')}</p>
+                    <p className='text-muted-foreground text-sm'>{t('auth.forgot_password.subtitle')}</p>
                 </div>
 
                 <WidgetRenderer widgets={getWidgets('auth-forgot-password', 'auth-forgot-password-before-form')} />
@@ -158,28 +158,28 @@ export default function ForgotPasswordForm() {
                         </div>
                     )}
 
-                    <Button type='submit' className='w-full group' loading={loading}>
+                    <Button type='submit' className='group w-full' loading={loading}>
                         {!loading && (
                             <>
                                 {t('auth.forgot_password.submit')}
-                                <ArrowRight className='ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform' />
+                                <ArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
                             </>
                         )}
                     </Button>
 
                     {error && (
-                        <div className='p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm animate-fade-in'>
+                        <div className='bg-destructive/10 border-destructive/20 text-destructive animate-fade-in rounded-xl border p-4 text-sm'>
                             {error}
                         </div>
                     )}
                 </form>
                 <WidgetRenderer widgets={getWidgets('auth-forgot-password', 'auth-forgot-password-after-form')} />
 
-                <div className='text-center text-sm text-muted-foreground'>
+                <div className='text-muted-foreground text-center text-sm'>
                     {t('auth.forgot_password.remember')}{' '}
                     <Link
                         href='/auth/login'
-                        className='font-semibold text-primary hover:text-primary/80 transition-colors'
+                        className='text-primary hover:text-primary/80 font-semibold transition-colors'
                     >
                         {t('auth.forgot_password.sign_in')}
                     </Link>
@@ -190,7 +190,7 @@ export default function ForgotPasswordForm() {
             <Dialog open={showSuccessDialog} onClose={handleDialogClose}>
                 <DialogHeader>
                     <DialogTitleCustom className='flex items-center gap-2'>
-                        <div className='h-10 w-10 rounded-lg flex items-center justify-center bg-green-500/10'>
+                        <div className='flex h-10 w-10 items-center justify-center rounded-lg bg-green-500/10'>
                             <CheckCircle className='h-5 w-5 text-green-500' />
                         </div>
                         <span>{t('auth.forgot_password.success_title')}</span>

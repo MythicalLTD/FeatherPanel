@@ -113,7 +113,7 @@ export function WingsConfigTab({ node }: WingsConfigTabProps) {
                             disabled={loading || saving}
                             className='h-10 rounded-xl'
                         >
-                            <RotateCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                            <RotateCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
                             {t('common.reload')}
                         </Button>
                         <Button
@@ -123,9 +123,9 @@ export function WingsConfigTab({ node }: WingsConfigTabProps) {
                             className='h-10 rounded-xl'
                         >
                             {saving ? (
-                                <Loader2 className='h-4 w-4 mr-2 animate-spin' />
+                                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
                             ) : (
-                                <Save className='h-4 w-4 mr-2' />
+                                <Save className='mr-2 h-4 w-4' />
                             )}
                             {t('common.save')}
                         </Button>
@@ -134,20 +134,20 @@ export function WingsConfigTab({ node }: WingsConfigTabProps) {
             >
                 <div className='space-y-6'>
                     {error ? (
-                        <div className='rounded-2xl border border-destructive/20 bg-destructive/5 p-6 text-center'>
-                            <AlertTriangle className='h-8 w-8 text-destructive mx-auto mb-3' />
-                            <h3 className='text-sm font-bold text-destructive mb-1'>Failed to Load Configuration</h3>
-                            <p className='text-xs text-destructive/80 mb-4'>{error}</p>
+                        <div className='border-destructive/20 bg-destructive/5 rounded-2xl border p-6 text-center'>
+                            <AlertTriangle className='text-destructive mx-auto mb-3 h-8 w-8' />
+                            <h3 className='text-destructive mb-1 text-sm font-bold'>Failed to Load Configuration</h3>
+                            <p className='text-destructive/80 mb-4 text-xs'>{error}</p>
                             <Button variant='outline' size='sm' onClick={fetchConfig} className='rounded-xl'>
                                 Try Again
                             </Button>
                         </div>
                     ) : (
                         <>
-                            <div className='rounded-2xl border border-border/50 bg-card overflow-hidden h-[500px] shadow-xl relative'>
+                            <div className='border-border/50 bg-card relative h-[500px] overflow-hidden rounded-2xl border shadow-xl'>
                                 {loading && (
-                                    <div className='absolute inset-0 bg-background/50 backdrop-blur-sm z-10 flex items-center justify-center'>
-                                        <Loader2 className='h-8 w-8 text-primary animate-spin' />
+                                    <div className='bg-background/50 absolute inset-0 z-10 flex items-center justify-center backdrop-blur-sm'>
+                                        <Loader2 className='text-primary h-8 w-8 animate-spin' />
                                     </div>
                                 )}
                                 <Editor
@@ -169,7 +169,7 @@ export function WingsConfigTab({ node }: WingsConfigTabProps) {
                                 />
                             </div>
 
-                            <div className='rounded-2xl border border-border/50 bg-muted/30 p-4'>
+                            <div className='border-border/50 bg-muted/30 rounded-2xl border p-4'>
                                 <div className='flex items-center space-x-3'>
                                     <Checkbox
                                         id='restart-wings'
@@ -180,11 +180,11 @@ export function WingsConfigTab({ node }: WingsConfigTabProps) {
                                     <div className='grid gap-1.5 leading-none'>
                                         <label
                                             htmlFor='restart-wings'
-                                            className='text-sm font-bold cursor-pointer select-none leading-none'
+                                            className='cursor-pointer text-sm leading-none font-bold select-none'
                                         >
                                             {t('admin.node.view.config.restart_checkbox')}
                                         </label>
-                                        <p className='text-xs text-muted-foreground'>
+                                        <p className='text-muted-foreground text-xs'>
                                             {t('admin.node.view.config.restart_help')}
                                         </p>
                                     </div>
@@ -197,14 +197,14 @@ export function WingsConfigTab({ node }: WingsConfigTabProps) {
 
             <div className='rounded-2xl border border-blue-500/20 bg-blue-500/5 p-4'>
                 <div className='flex items-start gap-4'>
-                    <div className='p-2 rounded-xl bg-blue-500/10'>
+                    <div className='rounded-xl bg-blue-500/10 p-2'>
                         <Settings2 className='h-5 w-5 text-blue-500' />
                     </div>
                     <div className='flex-1'>
-                        <div className='text-sm font-bold text-blue-600 dark:text-blue-500 mb-1'>
+                        <div className='mb-1 text-sm font-bold text-blue-600 dark:text-blue-500'>
                             {t('admin.node.view.config.info_title')}
                         </div>
-                        <p className='text-xs text-blue-600/80 dark:text-blue-400/70 leading-relaxed'>
+                        <p className='text-xs leading-relaxed text-blue-600/80 dark:text-blue-400/70'>
                             {t('admin.node.view.config.info_description')}
                         </p>
                     </div>

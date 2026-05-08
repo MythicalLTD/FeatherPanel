@@ -33,6 +33,13 @@ const eslintConfig = defineConfig([
         },
         rules: {
             'local/license-header': 'error',
+            // The React compiler lint set is currently too strict for the
+            // existing codebase and flags many valid legacy patterns.
+            'react-hooks/set-state-in-effect': 'off',
+            'react-hooks/immutability': 'off',
+            'react-hooks/refs': 'off',
+            'react-hooks/static-components': 'off',
+            'react-hooks/preserve-manual-memoization': 'off',
         },
     },
     // Override default ignores of eslint-config-next.

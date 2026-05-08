@@ -215,7 +215,7 @@ export default function UsersPage() {
     };
 
     const paginationBar = (
-        <div className='flex items-center justify-between gap-4 py-3 px-4 rounded-xl border border-border bg-card/50'>
+        <div className='border-border bg-card/50 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
             <Button
                 variant='outline'
                 size='sm'
@@ -252,7 +252,7 @@ export default function UsersPage() {
                 icon={UsersIcon}
                 actions={
                     <Button onClick={() => router.push('/admin/users/create')}>
-                        <UserPlus className='h-4 w-4 mr-2' />
+                        <UserPlus className='mr-2 h-4 w-4' />
                         {t('admin.users.create.title')}
                     </Button>
                 }
@@ -260,17 +260,17 @@ export default function UsersPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-users', 'after-header')} />
 
-            <div className='flex flex-col sm:flex-row gap-4 items-center bg-card/50 backdrop-blur-md p-4 rounded-2xl border border-border shadow-sm'>
-                <div className='relative flex-1 group'>
-                    <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
+            <div className='bg-card/50 border-border flex flex-col items-center gap-4 rounded-2xl border p-4 shadow-sm backdrop-blur-md sm:flex-row'>
+                <div className='group relative flex-1'>
+                    <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
                     <Input
                         placeholder={t('admin.users.search_placeholder')}
-                        className='pl-10 h-11'
+                        className='h-11 pl-10'
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
                 </div>
-                <div className='flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0 w-full sm:w-auto'>
+                <div className='flex w-full items-center gap-2 overflow-x-auto pb-2 sm:w-auto sm:pb-0'>
                     {availableRoles.length > 0 && (
                         <Select
                             value={roleFilter}
@@ -278,7 +278,7 @@ export default function UsersPage() {
                                 setRoleFilter(e.target.value);
                                 setPagination({ ...pagination, page: 1 });
                             }}
-                            className='w-[160px] h-11 rounded-xl'
+                            className='h-11 w-[160px] rounded-xl'
                         >
                             <option value=''>{t('admin.users.filters.all_roles')}</option>
                             {availableRoles.map((role) => (
@@ -294,7 +294,7 @@ export default function UsersPage() {
                             setBannedFilter(e.target.value);
                             setPagination({ ...pagination, page: 1 });
                         }}
-                        className='w-[160px] h-11 rounded-xl'
+                        className='h-11 w-[160px] rounded-xl'
                     >
                         <option value=''>{t('admin.users.filters.any_status')}</option>
                         <option value='false'>{t('admin.users.filters.status_active')}</option>
@@ -405,7 +405,7 @@ export default function UsersPage() {
                                 badges={badges}
                                 description={
                                     <div className='flex flex-col gap-1'>
-                                        <div className='flex flex-wrap items-center gap-4 text-xs text-muted-foreground font-medium'>
+                                        <div className='text-muted-foreground flex flex-wrap items-center gap-4 text-xs font-medium'>
                                             {user.last_seen && (
                                                 <div className='flex items-center gap-1.5'>
                                                     <span className='font-semibold'>{t('admin.users.last_seen')}:</span>
@@ -428,7 +428,7 @@ export default function UsersPage() {
                                             )}
                                         </div>
                                         {user.discord_oauth2_username && (
-                                            <div className='flex items-center gap-1.5 text-xs text-muted-foreground pt-1'>
+                                            <div className='text-muted-foreground flex items-center gap-1.5 pt-1 text-xs'>
                                                 <span className='font-semibold text-indigo-500/80'>
                                                     {t('admin.users.edit.account_info.discord_user')}:
                                                 </span>
@@ -468,21 +468,21 @@ export default function UsersPage() {
                 </div>
             )}
 
-            {pagination && pagination.totalPages > 1 && <div className='flex justify-center mt-6'>{paginationBar}</div>}
+            {pagination && pagination.totalPages > 1 && <div className='mt-6 flex justify-center'>{paginationBar}</div>}
 
-            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-10'>
+            <div className='grid grid-cols-1 gap-6 pt-10 md:grid-cols-2 lg:grid-cols-3'>
                 <PageCard title={t('admin.users.help.managing.title')} icon={UsersIcon}>
-                    <p className='text-sm text-muted-foreground leading-relaxed'>
+                    <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.users.help.managing.description')}
                     </p>
                 </PageCard>
                 <PageCard title={t('admin.users.help.roles.title')} icon={Shield}>
-                    <p className='text-sm text-muted-foreground leading-relaxed'>
+                    <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.users.help.roles.description')}
                     </p>
                 </PageCard>
                 <PageCard title={t('admin.users.help.security.title')} icon={KeyRound} variant='danger'>
-                    <ul className='list-disc list-inside space-y-1 text-sm text-muted-foreground'>
+                    <ul className='text-muted-foreground list-inside list-disc space-y-1 text-sm'>
                         <li>{t('admin.users.help.security.item1')}</li>
                         <li>{t('admin.users.help.security.item2')}</li>
                         <li>{t('admin.users.help.security.item3')}</li>

@@ -270,7 +270,7 @@ export default function PterodactylImporterPage() {
             <WidgetRenderer widgets={getWidgets('admin-pterodactyl-importer', 'after-header')} />
 
             <div className='grid gap-6 md:grid-cols-3'>
-                <div className='md:col-span-2 space-y-6'>
+                <div className='space-y-6 md:col-span-2'>
                     <WidgetRenderer widgets={getWidgets('admin-pterodactyl-importer', 'before-content')} />
 
                     <PageCard
@@ -290,14 +290,14 @@ export default function PterodactylImporterPage() {
                         }
                     >
                         {isCheckingPrerequisites ? (
-                            <div className='flex flex-col items-center justify-center py-12 gap-3 text-muted-foreground'>
-                                <Loader2 className='h-8 w-8 animate-spin text-primary' />
+                            <div className='text-muted-foreground flex flex-col items-center justify-center gap-3 py-12'>
+                                <Loader2 className='text-primary h-8 w-8 animate-spin' />
                                 <p>{t('admin.pterodactyl_importer.prerequisites.checking')}</p>
                             </div>
                         ) : prerequisites ? (
                             <div className='space-y-4'>
                                 <div
-                                    className={`rounded-xl border p-4 flex items-center gap-4 ${
+                                    className={`flex items-center gap-4 rounded-xl border p-4 ${
                                         prerequisitesPassed
                                             ? 'border-green-500/20 bg-green-500/5'
                                             : 'border-destructive/20 bg-destructive/5'
@@ -311,7 +311,7 @@ export default function PterodactylImporterPage() {
                                         {prerequisitesPassed ? (
                                             <CheckCircle className='h-6 w-6 text-green-500' />
                                         ) : (
-                                            <XCircle className='h-6 w-6 text-destructive' />
+                                            <XCircle className='text-destructive h-6 w-6' />
                                         )}
                                     </div>
                                     <div>
@@ -324,7 +324,7 @@ export default function PterodactylImporterPage() {
                                                 ? t('admin.pterodactyl_importer.prerequisites.success')
                                                 : t('admin.pterodactyl_importer.prerequisites.failed_title')}
                                         </h3>
-                                        <p className='text-sm text-muted-foreground'>
+                                        <p className='text-muted-foreground text-sm'>
                                             {prerequisitesPassed
                                                 ? t('admin.pterodactyl_importer.prerequisites.success_desc')
                                                 : t('admin.pterodactyl_importer.prerequisites.failed_desc')}
@@ -385,31 +385,31 @@ export default function PterodactylImporterPage() {
                                     ].map((item) => (
                                         <div
                                             key={item.key}
-                                            className='flex items-center justify-between rounded-lg border border-white/5 bg-card/50 p-3 box-decoration-clone transition-all hover:bg-card/80'
+                                            className='bg-card/50 hover:bg-card/80 flex items-center justify-between rounded-lg border border-white/5 box-decoration-clone p-3 transition-all'
                                         >
                                             <span className='text-sm font-medium'>
                                                 {t(`admin.pterodactyl_importer.prerequisites.items.${item.key}`)}
                                             </span>
                                             <div className='flex items-center gap-3'>
-                                                <span className='text-xs text-muted-foreground font-mono bg-white/5 px-2 py-0.5 rounded'>
+                                                <span className='text-muted-foreground rounded bg-white/5 px-2 py-0.5 font-mono text-xs'>
                                                     {item.count}
                                                 </span>
                                                 {item.passed ? (
                                                     <CheckCircle className='h-4 w-4 text-green-500' />
                                                 ) : (
-                                                    <XCircle className='h-4 w-4 text-destructive' />
+                                                    <XCircle className='text-destructive h-4 w-4' />
                                                 )}
                                             </div>
                                         </div>
                                     ))}
 
-                                    <div className='flex items-center justify-between rounded-lg border border-white/5 bg-card/50 p-3 box-decoration-clone transition-all hover:bg-card/80 sm:col-span-2'>
+                                    <div className='bg-card/50 hover:bg-card/80 flex items-center justify-between rounded-lg border border-white/5 box-decoration-clone p-3 transition-all sm:col-span-2'>
                                         <span className='text-sm font-medium'>
                                             {t('admin.pterodactyl_importer.prerequisites.items.panel_status')}
                                         </span>
                                         <div className='flex items-center gap-2'>
                                             <span
-                                                className={`text-xs px-2 py-0.5 rounded font-medium ${
+                                                className={`rounded px-2 py-0.5 text-xs font-medium ${
                                                     prerequisites.panel_clean
                                                         ? 'bg-green-500/10 text-green-500'
                                                         : 'bg-destructive/10 text-destructive'
@@ -424,7 +424,7 @@ export default function PterodactylImporterPage() {
                                 </div>
                             </div>
                         ) : (
-                            <div className='py-8 text-center text-muted-foreground'>
+                            <div className='text-muted-foreground py-8 text-center'>
                                 {t('admin.pterodactyl_importer.prerequisites.failed')}
                             </div>
                         )}
@@ -433,19 +433,19 @@ export default function PterodactylImporterPage() {
                     {prerequisitesPassed && (
                         <div className='space-y-6'>
                             <div className='flex items-center gap-2'>
-                                <div className='h-px flex-1 bg-border/50' />
-                                <span className='text-xs font-semibold uppercase tracking-wider text-muted-foreground'>
+                                <div className='bg-border/50 h-px flex-1' />
+                                <span className='text-muted-foreground text-xs font-semibold tracking-wider uppercase'>
                                     {t('admin.pterodactyl_importer.cli.overview')}
                                 </span>
-                                <div className='h-px flex-1 bg-border/50' />
+                                <div className='bg-border/50 h-px flex-1' />
                             </div>
 
                             <PageCard
                                 title={t('admin.pterodactyl_importer.cli.step1.title')}
                                 description={t('admin.pterodactyl_importer.cli.step1.description')}
                             >
-                                <div className='rounded-xl border border-primary/20 bg-primary/5 p-4 backdrop-blur-sm'>
-                                    <code className='block whitespace-pre-wrap font-mono text-sm text-primary-foreground'>
+                                <div className='border-primary/20 bg-primary/5 rounded-xl border p-4 backdrop-blur-sm'>
+                                    <code className='text-primary-foreground block font-mono text-sm whitespace-pre-wrap'>
                                         curl -sSL https://get.featherpanel.com/stable.sh | bash
                                     </code>
                                 </div>
@@ -457,7 +457,7 @@ export default function PterodactylImporterPage() {
                             >
                                 <div className='flex flex-col gap-4 sm:flex-row'>
                                     <div className='flex-1 space-y-2'>
-                                        <Label className='text-xs font-medium uppercase text-muted-foreground'>
+                                        <Label className='text-muted-foreground text-xs font-medium uppercase'>
                                             {t('admin.pterodactyl_importer.cli.step2.select_label')}
                                         </Label>
                                         <Select
@@ -501,7 +501,7 @@ export default function PterodactylImporterPage() {
                                         className='border-primary/20'
                                     >
                                         <div className='space-y-6'>
-                                            <div className='rounded-xl bg-black/50 border border-white/10 p-4'>
+                                            <div className='rounded-xl border border-white/10 bg-black/50 p-4'>
                                                 <code className='font-mono text-sm text-green-400'>
                                                     feathercli config setup
                                                 </code>
@@ -509,16 +509,16 @@ export default function PterodactylImporterPage() {
 
                                             <div className='grid gap-4 sm:grid-cols-2'>
                                                 <div className='space-y-1 rounded-lg border border-white/5 bg-white/5 p-3'>
-                                                    <span className='text-xs font-medium text-muted-foreground uppercase'>
+                                                    <span className='text-muted-foreground text-xs font-medium uppercase'>
                                                         {t('admin.pterodactyl_importer.cli.step2.panel_url')}
                                                     </span>
                                                     <div className='font-mono text-sm break-all'>{panelUrl}</div>
                                                 </div>
                                                 <div className='space-y-1 rounded-lg border border-white/5 bg-white/5 p-3'>
-                                                    <span className='text-xs font-medium text-muted-foreground uppercase'>
+                                                    <span className='text-muted-foreground text-xs font-medium uppercase'>
                                                         {t('admin.pterodactyl_importer.cli.step2.api_key')}
                                                     </span>
-                                                    <div className='font-mono text-sm break-all blur-[2px] hover:blur-none transition-all cursor-pointer'>
+                                                    <div className='cursor-pointer font-mono text-sm break-all blur-[2px] transition-all hover:blur-none'>
                                                         {selectedApiKey}
                                                     </div>
                                                 </div>
@@ -528,10 +528,10 @@ export default function PterodactylImporterPage() {
                                                 <h4 className='font-medium'>
                                                     {t('admin.pterodactyl_importer.cli.step4.title')}
                                                 </h4>
-                                                <p className='text-sm text-muted-foreground'>
+                                                <p className='text-muted-foreground text-sm'>
                                                     {t('admin.pterodactyl_importer.cli.step4.description')}
                                                 </p>
-                                                <div className='rounded-xl bg-black/50 border border-white/10 p-4'>
+                                                <div className='rounded-xl border border-white/10 bg-black/50 p-4'>
                                                     <code className='font-mono text-sm text-green-400'>
                                                         feathercli migrate
                                                     </code>
@@ -556,16 +556,16 @@ export default function PterodactylImporterPage() {
                                 href='https://docs.mythical.systems/docs/featherpanel/migration'
                                 target='_blank'
                                 rel='noopener noreferrer'
-                                className='flex items-center gap-3 rounded-lg border border-transparent p-3 transition-colors hover:bg-white/5 hover:border-white/10'
+                                className='flex items-center gap-3 rounded-lg border border-transparent p-3 transition-colors hover:border-white/10 hover:bg-white/5'
                             >
-                                <div className='rounded-lg bg-primary/10 p-2 text-primary'>
+                                <div className='bg-primary/10 text-primary rounded-lg p-2'>
                                     <BookOpen className='h-5 w-5' />
                                 </div>
                                 <div className='min-w-0 flex-1'>
                                     <div className='text-sm font-medium'>
                                         {t('admin.pterodactyl_importer.help.documentation.title')}
                                     </div>
-                                    <div className='text-xs text-muted-foreground'>
+                                    <div className='text-muted-foreground text-xs'>
                                         {t('admin.pterodactyl_importer.help.documentation.description')}
                                     </div>
                                 </div>
@@ -575,7 +575,7 @@ export default function PterodactylImporterPage() {
                                 href='https://discord.mythical.systems'
                                 target='_blank'
                                 rel='noopener noreferrer'
-                                className='flex items-center gap-3 rounded-lg border border-transparent p-3 transition-colors hover:bg-white/5 hover:border-white/10'
+                                className='flex items-center gap-3 rounded-lg border border-transparent p-3 transition-colors hover:border-white/10 hover:bg-white/5'
                             >
                                 <div className='rounded-lg bg-[#5865F2]/10 p-2 text-[#5865F2]'>
                                     <MessageCircle className='h-5 w-5' />
@@ -584,7 +584,7 @@ export default function PterodactylImporterPage() {
                                     <div className='text-sm font-medium'>
                                         {t('admin.pterodactyl_importer.help.discord.title')}
                                     </div>
-                                    <div className='text-xs text-muted-foreground'>
+                                    <div className='text-muted-foreground text-xs'>
                                         {t('admin.pterodactyl_importer.help.discord.description')}
                                     </div>
                                 </div>
@@ -600,14 +600,14 @@ export default function PterodactylImporterPage() {
                         <ul className='space-y-2'>
                             {Object.values(getTranslationObject('admin.pterodactyl_importer.info.items')).map(
                                 (item, i) => (
-                                    <li key={i} className='flex items-center gap-2 text-sm text-muted-foreground'>
+                                    <li key={i} className='text-muted-foreground flex items-center gap-2 text-sm'>
                                         <span className='h-1.5 w-1.5 rounded-full bg-amber-500/50' />
                                         {item}
                                     </li>
                                 ),
                             )}
                         </ul>
-                        <div className='mt-4 rounded-lg bg-amber-500/10 p-3 text-xs text-amber-500/90 border border-amber-500/20'>
+                        <div className='mt-4 rounded-lg border border-amber-500/20 bg-amber-500/10 p-3 text-xs text-amber-500/90'>
                             {t('admin.pterodactyl_importer.info.footer')}
                         </div>
                     </PageCard>
@@ -635,7 +635,7 @@ export default function PterodactylImporterPage() {
                                 placeholder={t('admin.pterodactyl_importer.create_key.placeholder')}
                                 disabled={isCreatingApiKey}
                             />
-                            <p className='text-xs text-muted-foreground'>
+                            <p className='text-muted-foreground text-xs'>
                                 {t('admin.pterodactyl_importer.create_key.help_text')}
                             </p>
                         </div>

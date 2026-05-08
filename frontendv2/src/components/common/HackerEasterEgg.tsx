@@ -61,11 +61,11 @@ function isHackerFlagSet(): boolean {
 function LockScreen() {
     return (
         <div
-            className='fixed inset-0 z-[99999] flex flex-col items-center justify-center bg-background p-6 text-center'
+            className='bg-background fixed inset-0 z-[99999] flex flex-col items-center justify-center p-6 text-center'
             style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
         >
             <div className='max-w-md space-y-4'>
-                <p className='text-xl font-medium text-foreground'>Look what you have done script kiddy.</p>
+                <p className='text-foreground text-xl font-medium'>Look what you have done script kiddy.</p>
                 <p className='text-muted-foreground'>
                     Hahahah how funny you are you think you&apos;re a hacker or something? Okay then, let&apos;s see how
                     you get rid of me.
@@ -116,15 +116,15 @@ export default function HackerEasterEgg({ children }: { children: React.ReactNod
         <>
             {showTriggerMessage && (
                 <div
-                    className='fixed inset-0 z-[99998] flex flex-col items-center justify-center bg-background/95 p-6 text-center backdrop-blur-sm'
+                    className='bg-background/95 fixed inset-0 z-[99998] flex flex-col items-center justify-center p-6 text-center backdrop-blur-sm'
                     style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
                 >
                     <div className='max-w-md space-y-4'>
-                        <p className='text-xl font-medium text-foreground'>
+                        <p className='text-foreground text-xl font-medium'>
                             Hahahah how funny you are you think you&apos;re a hacker or something?
                         </p>
                         <p className='text-foreground'>Okay then, let&apos;s see how you get rid of me.</p>
-                        <p className='text-sm text-muted-foreground'>(Redirecting you to your new home in 3…)</p>
+                        <p className='text-muted-foreground text-sm'>(Redirecting you to your new home in 3…)</p>
                     </div>
                 </div>
             )}

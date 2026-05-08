@@ -82,13 +82,13 @@ export function Step3Application({
                     <div className='space-y-3'>
                         <Label className='flex items-center gap-1.5'>
                             {t('admin.servers.form.realm')}
-                            <span className='text-red-500 font-bold'>*</span>
+                            <span className='font-bold text-red-500'>*</span>
                         </Label>
                         <div className='flex gap-2'>
                             <div
                                 role='button'
                                 tabIndex={0}
-                                className='flex-1 h-11 px-3 bg-muted/30 rounded-xl border border-border/50 text-sm flex items-center cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
+                                className='bg-muted/30 border-border/50 focus-visible:ring-ring flex h-11 flex-1 cursor-pointer items-center rounded-xl border px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-offset-2'
                                 onClick={openRealmModal}
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter' || e.key === ' ') {
@@ -99,8 +99,8 @@ export function Step3Application({
                             >
                                 {selectedEntities.realm ? (
                                     <div className='flex items-center gap-2'>
-                                        <Box className='h-4 w-4 text-primary' />
-                                        <span className='font-medium text-foreground'>
+                                        <Box className='text-primary h-4 w-4' />
+                                        <span className='text-foreground font-medium'>
                                             {selectedEntities.realm.name}
                                         </span>
                                     </div>
@@ -116,17 +116,17 @@ export function Step3Application({
                         </div>
                     </div>
 
-                    <div className={cn('space-y-3', !formData.realmId && 'opacity-50 pointer-events-none')}>
+                    <div className={cn('space-y-3', !formData.realmId && 'pointer-events-none opacity-50')}>
                         <Label className='flex items-center gap-1.5'>
                             {t('admin.servers.form.spell')}
-                            <span className='text-red-500 font-bold'>*</span>
+                            <span className='font-bold text-red-500'>*</span>
                         </Label>
                         <div className='flex gap-2'>
                             <div
                                 role='button'
                                 tabIndex={formData.realmId ? 0 : -1}
                                 className={cn(
-                                    'flex-1 h-11 px-3 bg-muted/30 rounded-xl border border-border/50 text-sm flex items-center outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+                                    'bg-muted/30 border-border/50 focus-visible:ring-ring flex h-11 flex-1 items-center rounded-xl border px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
                                     formData.realmId ? 'cursor-pointer' : 'cursor-not-allowed opacity-50',
                                 )}
                                 onClick={openSpellModal}
@@ -140,8 +140,8 @@ export function Step3Application({
                             >
                                 {selectedEntities.spell ? (
                                     <div className='flex items-center gap-2'>
-                                        <Wand2 className='h-4 w-4 text-primary' />
-                                        <span className='font-medium text-foreground'>
+                                        <Wand2 className='text-primary h-4 w-4' />
+                                        <span className='text-foreground font-medium'>
                                             {selectedEntities.spell.name}
                                         </span>
                                     </div>
@@ -162,25 +162,25 @@ export function Step3Application({
                             <div className='space-y-2.5'>
                                 <Label className='flex items-center gap-1.5'>
                                     {t('admin.servers.form.docker_image')}
-                                    <span className='text-red-500 font-bold'>*</span>
+                                    <span className='font-bold text-red-500'>*</span>
                                 </Label>
                                 <Input
                                     value={formData.dockerImage}
                                     onChange={(e) => setFormData((prev) => ({ ...prev, dockerImage: e.target.value }))}
                                     placeholder='ghcr.io/pterodactyl/yolks:java_8'
-                                    className='font-mono text-sm h-11 bg-muted/30'
+                                    className='bg-muted/30 h-11 font-mono text-sm'
                                 />
-                                <p className='text-xs text-muted-foreground'>
+                                <p className='text-muted-foreground text-xs'>
                                     {t('admin.servers.form.docker_image_help')}
                                 </p>
                             </div>
 
                             {dockerImages.length > 0 && (
                                 <div className='space-y-2'>
-                                    <Label className='text-xs font-medium text-muted-foreground uppercase tracking-wider'>
+                                    <Label className='text-muted-foreground text-xs font-medium tracking-wider uppercase'>
                                         {t('admin.servers.form.available_docker_images')}
                                     </Label>
-                                    <div className='space-y-2 max-h-[200px] overflow-y-auto pr-2 custom-scrollbar'>
+                                    <div className='custom-scrollbar max-h-[200px] space-y-2 overflow-y-auto pr-2'>
                                         {dockerImages.map((img) => (
                                             <div
                                                 key={img.value}
@@ -196,19 +196,19 @@ export function Step3Application({
                                                     }
                                                 }}
                                                 className={cn(
-                                                    'p-3 rounded-xl border transition-all duration-200 cursor-pointer group/img relative overflow-hidden',
+                                                    'group/img relative cursor-pointer overflow-hidden rounded-xl border p-3 transition-all duration-200',
                                                     formData.dockerImage === img.value
-                                                        ? 'bg-primary/10 border-primary/40 ring-1 ring-primary/20'
+                                                        ? 'bg-primary/10 border-primary/40 ring-primary/20 ring-1'
                                                         : 'bg-muted/20 border-border/50 hover:border-primary/30 hover:bg-muted/30',
                                                 )}
                                             >
                                                 <div className='flex items-center justify-between gap-3'>
-                                                    <div className='flex items-center gap-2 min-w-0'>
-                                                        <Container className='h-4 w-4 text-primary shrink-0' />
+                                                    <div className='flex min-w-0 items-center gap-2'>
+                                                        <Container className='text-primary h-4 w-4 shrink-0' />
                                                         <div className='min-w-0'>
                                                             <p
                                                                 className={cn(
-                                                                    'text-sm font-medium truncate',
+                                                                    'truncate text-sm font-medium',
                                                                     formData.dockerImage === img.value
                                                                         ? 'text-primary'
                                                                         : 'text-foreground group-hover/img:text-foreground',
@@ -216,13 +216,13 @@ export function Step3Application({
                                                             >
                                                                 {img.name}
                                                             </p>
-                                                            <p className='text-xs font-mono text-muted-foreground truncate'>
+                                                            <p className='text-muted-foreground truncate font-mono text-xs'>
                                                                 {img.value}
                                                             </p>
                                                         </div>
                                                     </div>
                                                     {formData.dockerImage === img.value && (
-                                                        <div className='h-2 w-2 rounded-full bg-primary shrink-0' />
+                                                        <div className='bg-primary h-2 w-2 shrink-0 rounded-full' />
                                                     )}
                                                 </div>
                                             </div>
@@ -241,12 +241,12 @@ export function Step3Application({
                     icon={Binary}
                     className='animate-in fade-in-0 slide-in-from-right-4 duration-500'
                 >
-                    <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+                    <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
                         {spellVariablesData.map((v) => (
                             <div key={v.id} className='space-y-3'>
                                 <Label className='flex items-center gap-1.5'>
                                     {v.name}
-                                    {v.rules.includes('required') && <span className='text-red-500 font-bold'>*</span>}
+                                    {v.rules.includes('required') && <span className='font-bold text-red-500'>*</span>}
                                 </Label>
                                 <Input
                                     value={formData.spellVariables[v.env_variable] || ''}
@@ -262,7 +262,7 @@ export function Step3Application({
                                     placeholder={v.default_value}
                                     className='bg-muted/30 h-11'
                                 />
-                                <p className='text-xs text-muted-foreground'>{v.description}</p>
+                                <p className='text-muted-foreground text-xs'>{v.description}</p>
                             </div>
                         ))}
                     </div>

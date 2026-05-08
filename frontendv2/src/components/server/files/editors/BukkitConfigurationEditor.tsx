@@ -309,12 +309,12 @@ export function BukkitConfigurationEditor({
     };
 
     return (
-        <Card className='bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl shadow-sm'>
-            <CardHeader className='border-b border-border/10 pb-6'>
+        <Card className='bg-card/50 border-border/50 rounded-3xl border shadow-sm backdrop-blur-3xl'>
+            <CardHeader className='border-border/10 border-b pb-6'>
                 <div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
                     <div className='space-y-2'>
                         <CardTitle className='text-2xl font-bold'>{t('files.editors.bukkitConfig.title')}</CardTitle>
-                        <CardDescription className='text-sm text-muted-foreground'>
+                        <CardDescription className='text-muted-foreground text-sm'>
                             {t('files.editors.bukkitConfig.description')}
                         </CardDescription>
                     </div>
@@ -332,29 +332,29 @@ export function BukkitConfigurationEditor({
                     </div>
                 </div>
             </CardHeader>
-            <div className='p-8 space-y-10'>
+            <div className='space-y-10 p-8'>
                 <section className='space-y-6'>
-                    <div className='flex items-center gap-4 border-b border-border/10 pb-6'>
-                        <div className='h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20'>
-                            <Settings2 className='h-5 w-5 text-primary' />
+                    <div className='border-border/10 flex items-center gap-4 border-b pb-6'>
+                        <div className='bg-primary/10 border-primary/20 flex h-10 w-10 items-center justify-center rounded-xl border'>
+                            <Settings2 className='text-primary h-5 w-5' />
                         </div>
                         <div className='space-y-0.5'>
-                            <h3 className='text-xl font-black uppercase tracking-tight italic'>
+                            <h3 className='text-xl font-black tracking-tight uppercase italic'>
                                 {t('files.editors.bukkitConfig.sections.settings')}
                             </h3>
-                            <p className='text-[9px] font-bold text-muted-foreground tracking-widest uppercase opacity-50'>
+                            <p className='text-muted-foreground text-[9px] font-bold tracking-widest uppercase opacity-50'>
                                 {t('files.editors.bukkitConfig.sectionsDescriptions.settings')}
                             </p>
                         </div>
                     </div>
                     <div className='grid grid-cols-1 gap-6 xl:grid-cols-2'>
-                        <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6'>
+                        <div className='bg-card/30 border-border/30 space-y-3 rounded-xl border p-6'>
                             <div className='flex items-start justify-between gap-4'>
                                 <div className='space-y-1'>
-                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                    <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                         {t('files.editors.bukkitConfig.fields.allowEnd.label')}
                                     </label>
-                                    <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                    <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                         {t('files.editors.bukkitConfig.fields.allowEnd.description')}
                                     </p>
                                 </div>
@@ -366,13 +366,13 @@ export function BukkitConfigurationEditor({
                             </div>
                         </div>
 
-                        <div className='space-y-3 rounded-xl bg-muted/10 border border-border/20 p-5 hover:border-border/40 transition-all'>
+                        <div className='bg-muted/10 border-border/20 hover:border-border/40 space-y-3 rounded-xl border p-5 transition-all'>
                             <div className='flex items-start justify-between gap-4'>
                                 <div className='space-y-1'>
-                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                    <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                         {t('files.editors.bukkitConfig.fields.warnOnOverload.label')}
                                     </label>
-                                    <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                    <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                         {t('files.editors.bukkitConfig.fields.warnOnOverload.description')}
                                     </p>
                                 </div>
@@ -384,9 +384,9 @@ export function BukkitConfigurationEditor({
                             </div>
                         </div>
 
-                        <div className='space-y-3 rounded-xl bg-muted/10 border border-border/20 p-5 hover:border-border/40 transition-all'>
+                        <div className='bg-muted/10 border-border/20 hover:border-border/40 space-y-3 rounded-xl border p-5 transition-all'>
                             <div className='space-y-2'>
-                                <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                     {t('files.editors.bukkitConfig.fields.permissionsFile.label')}
                                 </label>
                                 <Input
@@ -396,15 +396,15 @@ export function BukkitConfigurationEditor({
                                     readOnly={readonly}
                                     placeholder={t('files.editors.bukkitConfig.fields.permissionsFile.placeholder')}
                                 />
-                                <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                     {t('files.editors.bukkitConfig.fields.permissionsFile.description')}
                                 </p>
                             </div>
                         </div>
 
-                        <div className='space-y-3 rounded-xl bg-muted/10 border border-border/20 p-5 hover:border-border/40 transition-all'>
+                        <div className='bg-muted/10 border-border/20 hover:border-border/40 space-y-3 rounded-xl border p-5 transition-all'>
                             <div className='space-y-2'>
-                                <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                     {t('files.editors.bukkitConfig.fields.updateFolder.label')}
                                 </label>
                                 <Input
@@ -414,19 +414,19 @@ export function BukkitConfigurationEditor({
                                     readOnly={readonly}
                                     placeholder={t('files.editors.bukkitConfig.fields.updateFolder.placeholder')}
                                 />
-                                <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                     {t('files.editors.bukkitConfig.fields.updateFolder.description')}
                                 </p>
                             </div>
                         </div>
 
-                        <div className='space-y-3 rounded-xl bg-muted/10 border border-border/20 p-5 hover:border-border/40 transition-all'>
+                        <div className='bg-muted/10 border-border/20 hover:border-border/40 space-y-3 rounded-xl border p-5 transition-all'>
                             <div className='flex items-start justify-between gap-4'>
                                 <div className='space-y-1'>
-                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                    <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                         {t('files.editors.bukkitConfig.fields.pluginProfiling.label')}
                                     </label>
-                                    <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                    <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                         {t('files.editors.bukkitConfig.fields.pluginProfiling.description')}
                                     </p>
                                 </div>
@@ -438,9 +438,9 @@ export function BukkitConfigurationEditor({
                             </div>
                         </div>
 
-                        <div className='space-y-3 rounded-xl bg-muted/10 border border-border/20 p-5 hover:border-border/40 transition-all'>
+                        <div className='bg-muted/10 border-border/20 hover:border-border/40 space-y-3 rounded-xl border p-5 transition-all'>
                             <div className='space-y-2'>
-                                <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                     {t('files.editors.bukkitConfig.fields.connectionThrottle.label')}
                                 </label>
                                 <Input
@@ -452,19 +452,19 @@ export function BukkitConfigurationEditor({
                                     readOnly={readonly}
                                     min={-1}
                                 />
-                                <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                     {t('files.editors.bukkitConfig.fields.connectionThrottle.description')}
                                 </p>
                             </div>
                         </div>
 
-                        <div className='space-y-3 rounded-xl bg-muted/10 border border-border/20 p-5 hover:border-border/40 transition-all'>
+                        <div className='bg-muted/10 border-border/20 hover:border-border/40 space-y-3 rounded-xl border p-5 transition-all'>
                             <div className='flex items-start justify-between gap-4'>
                                 <div className='space-y-1'>
-                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                    <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                         {t('files.editors.bukkitConfig.fields.queryPlugins.label')}
                                     </label>
-                                    <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                    <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                         {t('files.editors.bukkitConfig.fields.queryPlugins.description')}
                                     </p>
                                 </div>
@@ -476,9 +476,9 @@ export function BukkitConfigurationEditor({
                             </div>
                         </div>
 
-                        <div className='space-y-3 rounded-xl bg-muted/10 border border-border/20 p-5 hover:border-border/40 transition-all'>
+                        <div className='bg-muted/10 border-border/20 hover:border-border/40 space-y-3 rounded-xl border p-5 transition-all'>
                             <div className='space-y-2'>
-                                <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                     {t('files.editors.bukkitConfig.fields.deprecatedVerbose.label')}
                                 </label>
                                 <Select
@@ -498,15 +498,15 @@ export function BukkitConfigurationEditor({
                                         {t('files.editors.bukkitConfig.options.deprecatedVerbose.false')}
                                     </option>
                                 </Select>
-                                <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                     {t('files.editors.bukkitConfig.fields.deprecatedVerbose.description')}
                                 </p>
                             </div>
                         </div>
 
-                        <div className='space-y-3 rounded-xl bg-muted/10 border border-border/20 p-5 hover:border-border/40 transition-all xl:col-span-2'>
+                        <div className='bg-muted/10 border-border/20 hover:border-border/40 space-y-3 rounded-xl border p-5 transition-all xl:col-span-2'>
                             <div className='space-y-2'>
-                                <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                     {t('files.editors.bukkitConfig.fields.shutdownMessage.label')}
                                 </label>
                                 <Textarea
@@ -515,15 +515,15 @@ export function BukkitConfigurationEditor({
                                     readOnly={readonly}
                                     rows={2}
                                 />
-                                <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                     {t('files.editors.bukkitConfig.fields.shutdownMessage.description')}
                                 </p>
                             </div>
                         </div>
 
-                        <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6'>
+                        <div className='bg-card/30 border-border/30 space-y-3 rounded-xl border p-6'>
                             <div className='space-y-3'>
-                                <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                     {t('files.editors.bukkitConfig.fields.minimumApi.label')}
                                 </label>
                                 <Input
@@ -533,19 +533,19 @@ export function BukkitConfigurationEditor({
                                     readOnly={readonly}
                                     placeholder={t('files.editors.bukkitConfig.fields.minimumApi.placeholder')}
                                 />
-                                <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                     {t('files.editors.bukkitConfig.fields.minimumApi.description')}
                                 </p>
                             </div>
                         </div>
 
-                        <div className='space-y-3 rounded-xl bg-muted/10 border border-border/20 p-5 hover:border-border/40 transition-all'>
+                        <div className='bg-muted/10 border-border/20 hover:border-border/40 space-y-3 rounded-xl border p-5 transition-all'>
                             <div className='flex items-start justify-between gap-4'>
                                 <div className='space-y-1'>
-                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                    <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                         {t('files.editors.bukkitConfig.fields.useMapColorCache.label')}
                                     </label>
-                                    <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                    <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                         {t('files.editors.bukkitConfig.fields.useMapColorCache.description')}
                                     </p>
                                 </div>
@@ -561,21 +561,21 @@ export function BukkitConfigurationEditor({
 
                 <section className='space-y-4'>
                     <div className='flex items-center gap-3'>
-                        <div className='flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary'>
+                        <div className='bg-primary/10 text-primary flex h-10 w-10 items-center justify-center rounded-lg'>
                             <Activity className='h-5 w-5' />
                         </div>
                         <div>
                             <h3 className='text-lg font-semibold'>
                                 {t('files.editors.bukkitConfig.sections.spawnLimits')}
                             </h3>
-                            <p className='text-sm text-muted-foreground'>
+                            <p className='text-muted-foreground text-sm'>
                                 {t('files.editors.bukkitConfig.sectionsDescriptions.spawnLimits')}
                             </p>
                         </div>
                     </div>
                     <div className='grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3'>
-                        <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6'>
-                            <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                        <div className='bg-card/30 border-border/30 space-y-3 rounded-xl border p-6'>
+                            <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                 {t('files.editors.bukkitConfig.fields.spawnLimits.monsters.label')}
                             </label>
                             <Input
@@ -587,13 +587,13 @@ export function BukkitConfigurationEditor({
                                 min={0}
                                 readOnly={readonly}
                             />
-                            <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                            <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                 {t('files.editors.bukkitConfig.fields.spawnLimits.monsters.description')}
                             </p>
                         </div>
 
-                        <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6'>
-                            <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                        <div className='bg-card/30 border-border/30 space-y-3 rounded-xl border p-6'>
+                            <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                 {t('files.editors.bukkitConfig.fields.spawnLimits.animals.label')}
                             </label>
                             <Input
@@ -605,13 +605,13 @@ export function BukkitConfigurationEditor({
                                 min={0}
                                 readOnly={readonly}
                             />
-                            <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                            <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                 {t('files.editors.bukkitConfig.fields.spawnLimits.animals.description')}
                             </p>
                         </div>
 
-                        <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6'>
-                            <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                        <div className='bg-card/30 border-border/30 space-y-3 rounded-xl border p-6'>
+                            <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                 {t('files.editors.bukkitConfig.fields.spawnLimits.waterAnimals.label')}
                             </label>
                             <Input
@@ -626,13 +626,13 @@ export function BukkitConfigurationEditor({
                                 min={0}
                                 readOnly={readonly}
                             />
-                            <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                            <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                 {t('files.editors.bukkitConfig.fields.spawnLimits.waterAnimals.description')}
                             </p>
                         </div>
 
-                        <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6'>
-                            <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                        <div className='bg-card/30 border-border/30 space-y-3 rounded-xl border p-6'>
+                            <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                 {t('files.editors.bukkitConfig.fields.spawnLimits.waterAmbient.label')}
                             </label>
                             <Input
@@ -647,13 +647,13 @@ export function BukkitConfigurationEditor({
                                 min={0}
                                 readOnly={readonly}
                             />
-                            <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                            <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                 {t('files.editors.bukkitConfig.fields.spawnLimits.waterAmbient.description')}
                             </p>
                         </div>
 
-                        <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6'>
-                            <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                        <div className='bg-card/30 border-border/30 space-y-3 rounded-xl border p-6'>
+                            <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                 {t('files.editors.bukkitConfig.fields.spawnLimits.waterUndergroundCreature.label')}
                             </label>
                             <Input
@@ -668,15 +668,15 @@ export function BukkitConfigurationEditor({
                                 min={0}
                                 readOnly={readonly}
                             />
-                            <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                            <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                 {t(
                                     'files.editors.bukkitConfig.fields.spawnLimits.waterUndergroundCreature.description',
                                 )}
                             </p>
                         </div>
 
-                        <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6'>
-                            <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                        <div className='bg-card/30 border-border/30 space-y-3 rounded-xl border p-6'>
+                            <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                 {t('files.editors.bukkitConfig.fields.spawnLimits.axolotls.label')}
                             </label>
                             <Input
@@ -688,13 +688,13 @@ export function BukkitConfigurationEditor({
                                 min={0}
                                 readOnly={readonly}
                             />
-                            <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                            <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                 {t('files.editors.bukkitConfig.fields.spawnLimits.axolotls.description')}
                             </p>
                         </div>
 
-                        <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6'>
-                            <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                        <div className='bg-card/30 border-border/30 space-y-3 rounded-xl border p-6'>
+                            <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                 {t('files.editors.bukkitConfig.fields.spawnLimits.ambient.label')}
                             </label>
                             <Input
@@ -706,7 +706,7 @@ export function BukkitConfigurationEditor({
                                 min={0}
                                 readOnly={readonly}
                             />
-                            <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                            <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                 {t('files.editors.bukkitConfig.fields.spawnLimits.ambient.description')}
                             </p>
                         </div>
@@ -715,21 +715,21 @@ export function BukkitConfigurationEditor({
 
                 <section className='space-y-4'>
                     <div className='flex items-center gap-3'>
-                        <div className='flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary'>
+                        <div className='bg-primary/10 text-primary flex h-10 w-10 items-center justify-center rounded-lg'>
                             <Gauge className='h-5 w-5' />
                         </div>
                         <div>
                             <h3 className='text-lg font-semibold'>
                                 {t('files.editors.bukkitConfig.sections.ticksPer')}
                             </h3>
-                            <p className='text-sm text-muted-foreground'>
+                            <p className='text-muted-foreground text-sm'>
                                 {t('files.editors.bukkitConfig.sectionsDescriptions.ticksPer')}
                             </p>
                         </div>
                     </div>
                     <div className='grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3'>
-                        <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6'>
-                            <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                        <div className='bg-card/30 border-border/30 space-y-3 rounded-xl border p-6'>
+                            <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                 {t('files.editors.bukkitConfig.fields.ticksPer.animalSpawns.label')}
                             </label>
                             <Input
@@ -741,13 +741,13 @@ export function BukkitConfigurationEditor({
                                 min={1}
                                 readOnly={readonly}
                             />
-                            <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                            <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                 {t('files.editors.bukkitConfig.fields.ticksPer.animalSpawns.description')}
                             </p>
                         </div>
 
-                        <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6'>
-                            <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                        <div className='bg-card/30 border-border/30 space-y-3 rounded-xl border p-6'>
+                            <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                 {t('files.editors.bukkitConfig.fields.ticksPer.monsterSpawns.label')}
                             </label>
                             <Input
@@ -759,13 +759,13 @@ export function BukkitConfigurationEditor({
                                 min={1}
                                 readOnly={readonly}
                             />
-                            <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                            <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                 {t('files.editors.bukkitConfig.fields.ticksPer.monsterSpawns.description')}
                             </p>
                         </div>
 
-                        <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6'>
-                            <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                        <div className='bg-card/30 border-border/30 space-y-3 rounded-xl border p-6'>
+                            <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                 {t('files.editors.bukkitConfig.fields.ticksPer.waterSpawns.label')}
                             </label>
                             <Input
@@ -777,13 +777,13 @@ export function BukkitConfigurationEditor({
                                 min={1}
                                 readOnly={readonly}
                             />
-                            <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                            <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                 {t('files.editors.bukkitConfig.fields.ticksPer.waterSpawns.description')}
                             </p>
                         </div>
 
-                        <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6'>
-                            <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                        <div className='bg-card/30 border-border/30 space-y-3 rounded-xl border p-6'>
+                            <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                 {t('files.editors.bukkitConfig.fields.ticksPer.waterAmbientSpawns.label')}
                             </label>
                             <Input
@@ -798,13 +798,13 @@ export function BukkitConfigurationEditor({
                                 min={1}
                                 readOnly={readonly}
                             />
-                            <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                            <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                 {t('files.editors.bukkitConfig.fields.ticksPer.waterAmbientSpawns.description')}
                             </p>
                         </div>
 
-                        <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6'>
-                            <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                        <div className='bg-card/30 border-border/30 space-y-3 rounded-xl border p-6'>
+                            <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                 {t('files.editors.bukkitConfig.fields.ticksPer.waterUndergroundCreatureSpawns.label')}
                             </label>
                             <Input
@@ -819,15 +819,15 @@ export function BukkitConfigurationEditor({
                                 min={1}
                                 readOnly={readonly}
                             />
-                            <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                            <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                 {t(
                                     'files.editors.bukkitConfig.fields.ticksPer.waterUndergroundCreatureSpawns.description',
                                 )}
                             </p>
                         </div>
 
-                        <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6'>
-                            <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                        <div className='bg-card/30 border-border/30 space-y-3 rounded-xl border p-6'>
+                            <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                 {t('files.editors.bukkitConfig.fields.ticksPer.axolotlSpawns.label')}
                             </label>
                             <Input
@@ -839,13 +839,13 @@ export function BukkitConfigurationEditor({
                                 min={1}
                                 readOnly={readonly}
                             />
-                            <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                            <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                 {t('files.editors.bukkitConfig.fields.ticksPer.axolotlSpawns.description')}
                             </p>
                         </div>
 
-                        <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6'>
-                            <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                        <div className='bg-card/30 border-border/30 space-y-3 rounded-xl border p-6'>
+                            <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                 {t('files.editors.bukkitConfig.fields.ticksPer.ambientSpawns.label')}
                             </label>
                             <Input
@@ -857,13 +857,13 @@ export function BukkitConfigurationEditor({
                                 min={1}
                                 readOnly={readonly}
                             />
-                            <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                            <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                 {t('files.editors.bukkitConfig.fields.ticksPer.ambientSpawns.description')}
                             </p>
                         </div>
 
-                        <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6'>
-                            <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                        <div className='bg-card/30 border-border/30 space-y-3 rounded-xl border p-6'>
+                            <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                 {t('files.editors.bukkitConfig.fields.ticksPer.autosave.label')}
                             </label>
                             <Input
@@ -875,7 +875,7 @@ export function BukkitConfigurationEditor({
                                 min={1}
                                 readOnly={readonly}
                             />
-                            <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                            <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                 {t('files.editors.bukkitConfig.fields.ticksPer.autosave.description')}
                             </p>
                         </div>
@@ -884,21 +884,21 @@ export function BukkitConfigurationEditor({
 
                 <section className='space-y-4'>
                     <div className='flex items-center gap-3'>
-                        <div className='flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary'>
+                        <div className='bg-primary/10 text-primary flex h-10 w-10 items-center justify-center rounded-lg'>
                             <Layers className='h-5 w-5' />
                         </div>
                         <div>
                             <h3 className='text-lg font-semibold'>
                                 {t('files.editors.bukkitConfig.sections.chunkGc')}
                             </h3>
-                            <p className='text-sm text-muted-foreground'>
+                            <p className='text-muted-foreground text-sm'>
                                 {t('files.editors.bukkitConfig.sectionsDescriptions.chunkGc')}
                             </p>
                         </div>
                     </div>
                     <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
-                        <div className='space-y-2 rounded-xl bg-muted/10 border border-border/20 p-5 hover:border-border/40 transition-all'>
-                            <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                        <div className='bg-muted/10 border-border/20 hover:border-border/40 space-y-2 rounded-xl border p-5 transition-all'>
+                            <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                 {t('files.editors.bukkitConfig.fields.chunkGc.periodInTicks.label')}
                             </label>
                             <Input
@@ -910,7 +910,7 @@ export function BukkitConfigurationEditor({
                                 min={1}
                                 readOnly={readonly}
                             />
-                            <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                            <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                 {t('files.editors.bukkitConfig.fields.chunkGc.periodInTicks.description')}
                             </p>
                         </div>
@@ -919,20 +919,20 @@ export function BukkitConfigurationEditor({
 
                 <section className='space-y-4'>
                     <div className='flex items-center gap-3'>
-                        <div className='flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary'>
+                        <div className='bg-primary/10 text-primary flex h-10 w-10 items-center justify-center rounded-lg'>
                             <FileText className='h-5 w-5' />
                         </div>
                         <div>
                             <h3 className='text-lg font-semibold'>
                                 {t('files.editors.bukkitConfig.sections.aliases')}
                             </h3>
-                            <p className='text-sm text-muted-foreground'>
+                            <p className='text-muted-foreground text-sm'>
                                 {t('files.editors.bukkitConfig.sectionsDescriptions.aliases')}
                             </p>
                         </div>
                     </div>
-                    <div className='space-y-2 rounded-xl bg-muted/10 border border-border/20 p-5 hover:border-border/40 transition-all'>
-                        <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                    <div className='bg-muted/10 border-border/20 hover:border-border/40 space-y-2 rounded-xl border p-5 transition-all'>
+                        <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                             {t('files.editors.bukkitConfig.fields.aliases.label')}
                         </label>
                         <Input
@@ -942,7 +942,7 @@ export function BukkitConfigurationEditor({
                             readOnly={readonly}
                             placeholder={t('files.editors.bukkitConfig.fields.aliases.placeholder')}
                         />
-                        <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                        <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                             {t('files.editors.bukkitConfig.fields.aliases.description')}
                         </p>
                     </div>

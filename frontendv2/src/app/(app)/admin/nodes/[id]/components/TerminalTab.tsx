@@ -190,8 +190,8 @@ export function TerminalTab({ node }: TerminalTabProps) {
                 icon={TerminalIcon}
             >
                 <div className='space-y-4'>
-                    <div className='rounded-2xl border border-border bg-black overflow-hidden '>
-                        <div ref={terminalRef} className='w-full h-[450px] bg-black p-2' />
+                    <div className='border-border overflow-hidden rounded-2xl border bg-black'>
+                        <div ref={terminalRef} className='h-[450px] w-full bg-black p-2' />
                     </div>
 
                     <form className='flex gap-2' onSubmit={handleExecute}>
@@ -199,23 +199,23 @@ export function TerminalTab({ node }: TerminalTabProps) {
                             value={commandInput}
                             onChange={(e) => setCommandInput(e.target.value)}
                             placeholder={t('admin.node.view.terminal.placeholder')}
-                            className='flex-1 font-mono text-sm h-12 rounded-xl bg-muted/30 border-border/50 focus:bg-background transition-all'
+                            className='bg-muted/30 border-border/50 focus:bg-background h-12 flex-1 rounded-xl font-mono text-sm transition-all'
                             disabled={executing}
                         />
                         <Button
                             type='submit'
                             loading={executing}
                             disabled={!commandInput.trim()}
-                            className='h-12 px-6 rounded-xl'
+                            className='h-12 rounded-xl px-6'
                         >
-                            {!executing && <Zap className='h-4 w-4 mr-2' />}
+                            {!executing && <Zap className='mr-2 h-4 w-4' />}
                             {t('admin.node.view.terminal.execute')}
                         </Button>
                         <Button
                             type='button'
                             variant='outline'
                             onClick={handleClear}
-                            className='h-12 w-12 p-0 rounded-xl border-border/50 hover:bg-destructive/10 hover:text-destructive transition-colors'
+                            className='border-border/50 hover:bg-destructive/10 hover:text-destructive h-12 w-12 rounded-xl p-0 transition-colors'
                             title={t('common.clear')}
                         >
                             <Trash2 className='h-4 w-4' />
@@ -224,16 +224,16 @@ export function TerminalTab({ node }: TerminalTabProps) {
                 </div>
             </PageCard>
 
-            <div className='rounded-2xl border border-yellow-500/20 bg-yellow-500/5 p-4 animate-in fade-in slide-in-from-bottom-2'>
+            <div className='animate-in fade-in slide-in-from-bottom-2 rounded-2xl border border-yellow-500/20 bg-yellow-500/5 p-4'>
                 <div className='flex items-start gap-4'>
-                    <div className='p-2 rounded-xl bg-yellow-500/10'>
+                    <div className='rounded-xl bg-yellow-500/10 p-2'>
                         <AlertTriangle className='h-5 w-5 text-yellow-500' />
                     </div>
                     <div className='flex-1'>
-                        <div className='text-sm font-bold text-yellow-600 dark:text-yellow-500 mb-1'>
+                        <div className='mb-1 text-sm font-bold text-yellow-600 dark:text-yellow-500'>
                             {t('admin.node.view.terminal.warning_title')}
                         </div>
-                        <p className='text-xs text-yellow-600/80 dark:text-yellow-500/70 leading-relaxed'>
+                        <p className='text-xs leading-relaxed text-yellow-600/80 dark:text-yellow-500/70'>
                             {t('admin.node.view.terminal.warning_description')}
                         </p>
                     </div>

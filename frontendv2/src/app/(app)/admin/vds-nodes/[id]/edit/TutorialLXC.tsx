@@ -20,7 +20,7 @@ import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 export function TutorialLXC() {
     return (
         <PageCard title='How to create Proxmox LXC templates' icon={Info} className='mt-6'>
-            <div className='text-sm text-muted-foreground space-y-4'>
+            <div className='text-muted-foreground space-y-4 text-sm'>
                 <Alert variant='destructive'>
                     <ShieldAlert className='h-4 w-4' />
                     <AlertTitle>Security Warning</AlertTitle>
@@ -42,7 +42,7 @@ export function TutorialLXC() {
 
                 <p className='font-medium'>2. Create the Container</p>
                 <p>Click &quot;Create CT&quot; in the top right corner and follow the wizard:</p>
-                <ul className='list-disc list-inside text-xs space-y-1'>
+                <ul className='list-inside list-disc space-y-1 text-xs'>
                     <li>
                         <span className='font-semibold'>General:</span> Set a VMID (e.g., <code>8000</code>) and a
                         hostname. Set a root password.
@@ -75,7 +75,7 @@ export function TutorialLXC() {
                 <p className='text-xs'>
                     Once SSH settings are correct, ensure the container also has the needed tools for FeatherPanel. Run:
                 </p>
-                <pre className='bg-muted/60 rounded-md p-3 overflow-x-auto text-xs'>
+                <pre className='bg-muted/60 overflow-x-auto rounded-md p-3 text-xs'>
                     <code>{`apt update && apt install -y openssh-server curl
 
 # Edit SSH settings before templating (if your plans use password SSH logins)

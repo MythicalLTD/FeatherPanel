@@ -56,11 +56,11 @@ export function DetailsTab({
                 description={t('admin.servers.edit.details.description')}
             >
                 <div className='space-y-6'>
-                    <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+                    <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
                         <div className='space-y-3'>
                             <Label className='flex items-center gap-1.5'>
                                 {t('admin.servers.form.name')}
-                                <span className='text-red-500 font-bold'>*</span>
+                                <span className='font-bold text-red-500'>*</span>
                             </Label>
                             <Input
                                 value={form.name}
@@ -69,7 +69,7 @@ export function DetailsTab({
                                 className={`bg-muted/30 h-11 ${errors.name ? 'border-red-500' : ''}`}
                             />
                             {errors.name && <p className='text-xs text-red-500'>{errors.name}</p>}
-                            <p className='text-xs text-muted-foreground'>{t('admin.servers.form.name_help')}</p>
+                            <p className='text-muted-foreground text-xs'>{t('admin.servers.form.name_help')}</p>
                         </div>
 
                         <div className='space-y-3'>
@@ -80,20 +80,20 @@ export function DetailsTab({
                                 placeholder={t('admin.servers.form.description_placeholder')}
                                 className='bg-muted/30 h-11'
                             />
-                            <p className='text-xs text-muted-foreground'>{t('admin.servers.form.description_help')}</p>
+                            <p className='text-muted-foreground text-xs'>{t('admin.servers.form.description_help')}</p>
                         </div>
                     </div>
 
                     <div className='space-y-3'>
                         <Label className='flex items-center gap-1.5'>
                             {t('admin.servers.form.owner')}
-                            <span className='text-red-500 font-bold'>*</span>
+                            <span className='font-bold text-red-500'>*</span>
                         </Label>
                         <div className='flex gap-2'>
                             <div
                                 role='button'
                                 tabIndex={0}
-                                className='flex-1 h-11 px-3 bg-muted/30 rounded-xl border border-border/50 text-sm flex items-center cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
+                                className='bg-muted/30 border-border/50 focus-visible:ring-ring flex h-11 flex-1 cursor-pointer items-center rounded-xl border px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-offset-2'
                                 onClick={openOwnerModal}
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter' || e.key === ' ') {
@@ -104,8 +104,8 @@ export function DetailsTab({
                             >
                                 {selectedEntities.owner ? (
                                     <div className='flex items-center gap-2'>
-                                        <UserCircle className='h-4 w-4 text-primary' />
-                                        <span className='font-medium text-foreground'>
+                                        <UserCircle className='text-primary h-4 w-4' />
+                                        <span className='text-foreground font-medium'>
                                             {selectedEntities.owner.username}
                                         </span>
                                         <span className='text-muted-foreground'>({selectedEntities.owner.email})</span>
@@ -121,7 +121,7 @@ export function DetailsTab({
                             </Button>
                         </div>
                         {errors.owner_id && <p className='text-xs text-red-500'>{errors.owner_id}</p>}
-                        <p className='text-xs text-muted-foreground'>{t('admin.servers.form.owner_help')}</p>
+                        <p className='text-muted-foreground text-xs'>{t('admin.servers.form.owner_help')}</p>
                     </div>
 
                     <div className='space-y-3'>
@@ -132,7 +132,7 @@ export function DetailsTab({
                             placeholder={t('admin.servers.edit.details.external_id_placeholder')}
                             className='bg-muted/30 h-11'
                         />
-                        <p className='text-xs text-muted-foreground'>
+                        <p className='text-muted-foreground text-xs'>
                             {t('admin.servers.edit.details.external_id_help')}
                         </p>
                     </div>
@@ -145,16 +145,16 @@ export function DetailsTab({
                             onChange={(e) => setForm((prev) => ({ ...prev, expires_at: e.target.value || null }))}
                             className='bg-muted/30 h-11'
                         />
-                        <p className='text-xs text-muted-foreground'>
+                        <p className='text-muted-foreground text-xs'>
                             {t('admin.servers.edit.details.expires_at_help')}
                         </p>
                     </div>
 
-                    <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-                        <div className='flex items-center justify-between p-4 bg-muted/20 rounded-xl border border-border/50'>
+                    <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
+                        <div className='bg-muted/20 border-border/50 flex items-center justify-between rounded-xl border p-4'>
                             <div className='space-y-0.5'>
                                 <Label>{t('admin.servers.form.skip_scripts')}</Label>
-                                <p className='text-xs text-muted-foreground'>
+                                <p className='text-muted-foreground text-xs'>
                                     {t('admin.servers.form.skip_scripts_help')}
                                 </p>
                             </div>
@@ -164,10 +164,10 @@ export function DetailsTab({
                             />
                         </div>
 
-                        <div className='flex items-center justify-between p-4 bg-muted/20 rounded-xl border border-border/50'>
+                        <div className='bg-muted/20 border-border/50 flex items-center justify-between rounded-xl border p-4'>
                             <div className='space-y-0.5'>
                                 <Label>{t('admin.servers.edit.details.skip_zerotrust')}</Label>
-                                <p className='text-xs text-muted-foreground'>
+                                <p className='text-muted-foreground text-xs'>
                                     {t('admin.servers.edit.details.skip_zerotrust_help')}
                                 </p>
                             </div>
@@ -184,19 +184,19 @@ export function DetailsTab({
                 title={t('admin.servers.edit.details.location_node')}
                 description={t('admin.servers.edit.details.location_node_help')}
             >
-                <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-                    <div className='p-4 bg-muted/20 rounded-xl border border-border/50'>
-                        <Label className='text-muted-foreground text-xs uppercase tracking-wide'>
+                <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
+                    <div className='bg-muted/20 border-border/50 rounded-xl border p-4'>
+                        <Label className='text-muted-foreground text-xs tracking-wide uppercase'>
                             {t('admin.servers.form.location')}
                         </Label>
-                        <p className='font-medium mt-1'>{location?.name || t('common.unknown')}</p>
+                        <p className='mt-1 font-medium'>{location?.name || t('common.unknown')}</p>
                     </div>
-                    <div className='p-4 bg-muted/20 rounded-xl border border-border/50'>
-                        <Label className='text-muted-foreground text-xs uppercase tracking-wide'>
+                    <div className='bg-muted/20 border-border/50 rounded-xl border p-4'>
+                        <Label className='text-muted-foreground text-xs tracking-wide uppercase'>
                             {t('admin.servers.form.node')}
                         </Label>
-                        <p className='font-medium mt-1'>{node?.name || t('common.unknown')}</p>
-                        {node?.fqdn && <p className='text-xs text-muted-foreground'>{node.fqdn}</p>}
+                        <p className='mt-1 font-medium'>{node?.name || t('common.unknown')}</p>
+                        {node?.fqdn && <p className='text-muted-foreground text-xs'>{node.fqdn}</p>}
                     </div>
                 </div>
             </PageCard>

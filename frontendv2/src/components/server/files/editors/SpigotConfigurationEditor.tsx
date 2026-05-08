@@ -232,12 +232,12 @@ export function SpigotConfigurationEditor({
     };
 
     return (
-        <Card className='bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl shadow-sm'>
-            <CardHeader className='border-b border-border/10 pb-6'>
+        <Card className='bg-card/50 border-border/50 rounded-3xl border shadow-sm backdrop-blur-3xl'>
+            <CardHeader className='border-border/10 border-b pb-6'>
                 <div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
                     <div className='space-y-2'>
                         <CardTitle className='text-2xl font-bold'>{t('files.editors.spigotConfig.title')}</CardTitle>
-                        <CardDescription className='text-sm text-muted-foreground'>
+                        <CardDescription className='text-muted-foreground text-sm'>
                             {t('files.editors.spigotConfig.description') ||
                                 'Configure your Spigot server settings visually'}
                         </CardDescription>
@@ -259,14 +259,14 @@ export function SpigotConfigurationEditor({
             <div className='space-y-10 p-6'>
                 <section className='space-y-4'>
                     <div className='flex items-center gap-3'>
-                        <div className='flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary'>
+                        <div className='bg-primary/10 text-primary flex h-10 w-10 items-center justify-center rounded-lg'>
                             <Settings2 className='h-5 w-5' />
                         </div>
                         <div>
                             <h3 className='text-lg font-semibold'>
                                 {t('files.editors.spigotConfig.sections.settings')}
                             </h3>
-                            <p className='text-sm text-muted-foreground'>
+                            <p className='text-muted-foreground text-sm'>
                                 {t('files.editors.spigotConfig.sectionsDescriptions.settings') ||
                                     'General server settings and configuration'}
                             </p>
@@ -282,7 +282,7 @@ export function SpigotConfigurationEditor({
                             { key: 'logNamedDeaths', label: 'Log named entity deaths' },
                             { key: 'debug', label: 'Enable debug logging' },
                         ].map((field) => (
-                            <div key={field.key} className='space-y-3 rounded-lg bg-muted/20 p-4 border-0'>
+                            <div key={field.key} className='bg-muted/20 space-y-3 rounded-lg border-0 p-4'>
                                 <div className='flex items-start justify-between gap-4'>
                                     <div className='space-y-1'>
                                         <Label className='text-sm font-semibold'>{field.label}</Label>
@@ -309,7 +309,7 @@ export function SpigotConfigurationEditor({
                             { key: 'timeoutTime', label: 'Timeout time', step: 1 },
                             { key: 'nettyThreads', label: 'Netty threads', step: 1 },
                         ].map((field) => (
-                            <div key={field.key} className='space-y-2 rounded-lg bg-muted/20 p-4 border-0'>
+                            <div key={field.key} className='bg-muted/20 space-y-2 rounded-lg border-0 p-4'>
                                 <Label className='text-sm font-semibold'>{field.label}</Label>
                                 <Input
                                     type='number'
@@ -324,8 +324,8 @@ export function SpigotConfigurationEditor({
                         ))}
                     </div>
 
-                    <div className='space-y-6 rounded-xl bg-card/30 border border-border/30 p-6'>
-                        <h4 className='text-lg font-black uppercase tracking-tight'>
+                    <div className='bg-card/30 border-border/30 space-y-6 rounded-xl border p-6'>
+                        <h4 className='text-lg font-black tracking-tight uppercase'>
                             {t('files.editors.spigotConfig.sections.attributeLimits')}
                         </h4>
                         <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
@@ -336,7 +336,7 @@ export function SpigotConfigurationEditor({
                                 { key: 'attackDamage', label: 'Max attack damage', step: 1 },
                             ].map((field) => (
                                 <div key={field.key} className='space-y-3'>
-                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                    <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                         {field.label}
                                     </label>
                                     <Input
@@ -362,15 +362,15 @@ export function SpigotConfigurationEditor({
                 </section>
 
                 <section className='space-y-6'>
-                    <div className='flex items-center gap-4 border-b border-border/10 pb-6'>
-                        <div className='h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20'>
-                            <MessageSquare className='h-5 w-5 text-primary' />
+                    <div className='border-border/10 flex items-center gap-4 border-b pb-6'>
+                        <div className='bg-primary/10 border-primary/20 flex h-10 w-10 items-center justify-center rounded-xl border'>
+                            <MessageSquare className='text-primary h-5 w-5' />
                         </div>
                         <div className='space-y-0.5'>
-                            <h3 className='text-xl font-black uppercase tracking-tight italic'>
+                            <h3 className='text-xl font-black tracking-tight uppercase italic'>
                                 {t('files.editors.spigotConfig.sections.messages')}
                             </h3>
-                            <p className='text-[9px] font-bold text-muted-foreground tracking-widest uppercase opacity-50'>
+                            <p className='text-muted-foreground text-[9px] font-bold tracking-widest uppercase opacity-50'>
                                 {t('files.editors.spigotConfig.sectionsDescriptions.messages') ||
                                     'Customize server messages'}
                             </p>
@@ -386,7 +386,7 @@ export function SpigotConfigurationEditor({
                             { key: 'restart', label: 'Restart message' },
                         ].map((field) => (
                             <div key={field.key} className='space-y-3'>
-                                <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                     {field.label}
                                 </label>
                                 <Textarea

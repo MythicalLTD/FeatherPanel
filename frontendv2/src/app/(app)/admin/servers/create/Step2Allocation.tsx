@@ -78,13 +78,13 @@ export function Step2Allocation({
                     <div className='space-y-3'>
                         <Label className='flex items-center gap-1.5'>
                             {t('admin.servers.form.location')}
-                            <span className='text-red-500 font-bold'>*</span>
+                            <span className='font-bold text-red-500'>*</span>
                         </Label>
                         <div className='flex gap-2'>
                             <div
                                 role='button'
                                 tabIndex={0}
-                                className='flex-1 h-11 px-3 bg-muted/30 rounded-xl border border-border/50 text-sm flex items-center cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
+                                className='bg-muted/30 border-border/50 focus-visible:ring-ring flex h-11 flex-1 cursor-pointer items-center rounded-xl border px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-offset-2'
                                 onClick={openLocationModal}
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter' || e.key === ' ') {
@@ -95,8 +95,8 @@ export function Step2Allocation({
                             >
                                 {selectedEntities.location ? (
                                     <div className='flex items-center gap-2'>
-                                        <MapPin className='h-4 w-4 text-primary' />
-                                        <span className='font-medium text-foreground'>
+                                        <MapPin className='text-primary h-4 w-4' />
+                                        <span className='text-foreground font-medium'>
                                             {selectedEntities.location.name}
                                         </span>
                                     </div>
@@ -110,20 +110,20 @@ export function Step2Allocation({
                                 <Search className='h-4 w-4' />
                             </Button>
                         </div>
-                        <p className='text-xs text-muted-foreground'>{t('admin.servers.form.location_help')}</p>
+                        <p className='text-muted-foreground text-xs'>{t('admin.servers.form.location_help')}</p>
                     </div>
 
-                    <div className={cn('space-y-3', !formData.locationId && 'opacity-50 pointer-events-none')}>
+                    <div className={cn('space-y-3', !formData.locationId && 'pointer-events-none opacity-50')}>
                         <Label className='flex items-center gap-1.5'>
                             {t('admin.servers.form.node')}
-                            <span className='text-red-500 font-bold'>*</span>
+                            <span className='font-bold text-red-500'>*</span>
                         </Label>
                         <div className='flex gap-2'>
                             <div
                                 role='button'
                                 tabIndex={formData.locationId ? 0 : -1}
                                 className={cn(
-                                    'flex-1 h-11 px-3 bg-muted/30 rounded-xl border border-border/50 text-sm flex items-center outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+                                    'bg-muted/30 border-border/50 focus-visible:ring-ring flex h-11 flex-1 items-center rounded-xl border px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
                                     formData.locationId ? 'cursor-pointer' : 'cursor-not-allowed opacity-50',
                                 )}
                                 onClick={openNodeModal}
@@ -137,8 +137,8 @@ export function Step2Allocation({
                             >
                                 {selectedEntities.node ? (
                                     <div className='flex items-center gap-2'>
-                                        <Server className='h-4 w-4 text-primary' />
-                                        <span className='font-medium text-foreground'>
+                                        <Server className='text-primary h-4 w-4' />
+                                        <span className='text-foreground font-medium'>
                                             {selectedEntities.node.name}
                                         </span>
                                         <span className='text-muted-foreground text-xs'>
@@ -153,20 +153,20 @@ export function Step2Allocation({
                                 <Search className='h-4 w-4' />
                             </Button>
                         </div>
-                        <p className='text-xs text-muted-foreground'>{t('admin.servers.form.node_help')}</p>
+                        <p className='text-muted-foreground text-xs'>{t('admin.servers.form.node_help')}</p>
                     </div>
 
-                    <div className={cn('space-y-3', !formData.nodeId && 'opacity-50 pointer-events-none')}>
+                    <div className={cn('space-y-3', !formData.nodeId && 'pointer-events-none opacity-50')}>
                         <Label className='flex items-center gap-1.5'>
                             {t('admin.servers.form.allocation')}
-                            <span className='text-red-500 font-bold'>*</span>
+                            <span className='font-bold text-red-500'>*</span>
                         </Label>
                         <div className='flex gap-2'>
                             <div
                                 role='button'
                                 tabIndex={formData.nodeId ? 0 : -1}
                                 className={cn(
-                                    'flex-1 h-11 px-3 bg-muted/30 rounded-xl border border-border/50 text-sm flex items-center outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+                                    'bg-muted/30 border-border/50 focus-visible:ring-ring flex h-11 flex-1 items-center rounded-xl border px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
                                     formData.nodeId ? 'cursor-pointer' : 'cursor-not-allowed opacity-50',
                                 )}
                                 onClick={openAllocationModal}
@@ -180,8 +180,8 @@ export function Step2Allocation({
                             >
                                 {selectedEntities.allocation ? (
                                     <div className='flex items-center gap-2'>
-                                        <Plug className='h-4 w-4 text-primary' />
-                                        <span className='font-medium text-foreground'>
+                                        <Plug className='text-primary h-4 w-4' />
+                                        <span className='text-foreground font-medium'>
                                             {selectedEntities.allocation.ip}:{selectedEntities.allocation.port}
                                         </span>
                                     </div>
@@ -195,7 +195,7 @@ export function Step2Allocation({
                                 <Search className='h-4 w-4' />
                             </Button>
                         </div>
-                        <p className='text-xs text-muted-foreground'>{t('admin.servers.form.allocation_help')}</p>
+                        <p className='text-muted-foreground text-xs'>{t('admin.servers.form.allocation_help')}</p>
                     </div>
                 </div>
             </PageCard>

@@ -63,18 +63,18 @@ export function QuickStatsCards({ node, systemInfoData }: QuickStatsCardsProps) 
     ];
 
     return (
-        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6'>
+        <div className='mb-6 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4'>
             {stats.map((stat, index) => (
-                <PageCard key={index} className='p-0 overflow-hidden' title=''>
-                    <div className='p-6 h-full flex items-center gap-4'>
-                        <div className={`p-3 rounded-2xl ${stat.bg}`}>
+                <PageCard key={index} className='overflow-hidden p-0' title=''>
+                    <div className='flex h-full items-center gap-4 p-6'>
+                        <div className={`rounded-2xl p-3 ${stat.bg}`}>
                             <stat.icon className={`h-6 w-6 ${stat.color}`} />
                         </div>
                         <div>
-                            <p className='text-sm text-muted-foreground font-medium'>{stat.title}</p>
+                            <p className='text-muted-foreground text-sm font-medium'>{stat.title}</p>
                             <div className='flex items-baseline gap-1'>
                                 <h3 className='text-2xl font-bold tracking-tight'>{stat.value}</h3>
-                                <span className='text-xs text-muted-foreground'>{stat.subtitle}</span>
+                                <span className='text-muted-foreground text-xs'>{stat.subtitle}</span>
                             </div>
                         </div>
                     </div>

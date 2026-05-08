@@ -236,15 +236,15 @@ export default function UserServersPage({ params }: { params: Promise<{ uuid: st
                     }
                     actions={
                         <Button variant='outline' size='sm' onClick={() => router.push(`/admin/users/${uuid}/edit`)}>
-                            <ArrowLeft className='h-4 w-4 mr-2' />
+                            <ArrowLeft className='mr-2 h-4 w-4' />
                             {t('admin.users.servers.backToUser', { defaultValue: 'Back to user' })}
                         </Button>
                     }
                 />
 
-                <div className='flex flex-col sm:flex-row gap-4'>
+                <div className='flex flex-col gap-4 sm:flex-row'>
                     <div className='relative flex-1'>
-                        <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground' />
+                        <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
                         <Input
                             placeholder={t('admin.servers.search_placeholder', { defaultValue: 'Search servers...' })}
                             value={searchQuery}
@@ -267,7 +267,7 @@ export default function UserServersPage({ params }: { params: Promise<{ uuid: st
                 ) : (
                     <>
                         {pagination.total_pages > 1 && (
-                            <div className='flex items-center justify-between gap-4 py-3 px-4 rounded-xl border border-border bg-card/50 mb-4'>
+                            <div className='border-border bg-card/50 mb-4 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
                                 <Button
                                     variant='outline'
                                     size='sm'
@@ -323,10 +323,10 @@ export default function UserServersPage({ params }: { params: Promise<{ uuid: st
                                             icon={ServerIcon}
                                             badges={badges}
                                             description={
-                                                <div className='flex items-center gap-4 mt-2 flex-wrap'>
+                                                <div className='mt-2 flex flex-wrap items-center gap-4'>
                                                     <StatusBadge status={status} t={t} />
                                                     {server.allocation && (
-                                                        <div className='flex items-center gap-1.5 text-xs text-muted-foreground'>
+                                                        <div className='text-muted-foreground flex items-center gap-1.5 text-xs'>
                                                             <Network className='h-3.5 w-3.5' />
                                                             <span>
                                                                 {server.allocation.ip_alias || server.allocation.ip}:
@@ -334,15 +334,15 @@ export default function UserServersPage({ params }: { params: Promise<{ uuid: st
                                                             </span>
                                                         </div>
                                                     )}
-                                                    <div className='flex items-center gap-1.5 text-xs text-muted-foreground'>
+                                                    <div className='text-muted-foreground flex items-center gap-1.5 text-xs'>
                                                         <Database className='h-3.5 w-3.5' />
                                                         <span>{formatMemory(server.memory)}</span>
                                                     </div>
-                                                    <div className='flex items-center gap-1.5 text-xs text-muted-foreground'>
+                                                    <div className='text-muted-foreground flex items-center gap-1.5 text-xs'>
                                                         <Cpu className='h-3.5 w-3.5' />
                                                         <span>{formatCpu(server.cpu)}</span>
                                                     </div>
-                                                    <div className='flex items-center gap-1.5 text-xs text-muted-foreground'>
+                                                    <div className='text-muted-foreground flex items-center gap-1.5 text-xs'>
                                                         <HardDrive className='h-3.5 w-3.5' />
                                                         <span>{formatDisk(server.disk)}</span>
                                                     </div>
@@ -379,8 +379,8 @@ export default function UserServersPage({ params }: { params: Promise<{ uuid: st
                         )}
 
                         {pagination.total_pages > 1 && (
-                            <div className='flex items-center justify-between py-4 border-t border-border'>
-                                <p className='text-sm text-muted-foreground'>
+                            <div className='border-border flex items-center justify-between border-t py-4'>
+                                <p className='text-muted-foreground text-sm'>
                                     {t('servers.pagination.showing', {
                                         from: String(pagination.from),
                                         to: String(pagination.to),
@@ -412,7 +412,7 @@ export default function UserServersPage({ params }: { params: Promise<{ uuid: st
                         )}
 
                         <div className='mt-8'>
-                            <div className='flex items-center justify-between mb-4'>
+                            <div className='mb-4 flex items-center justify-between'>
                                 <h3 className='text-lg font-semibold'>
                                     {t('admin.users.servers.vdsTitle', { defaultValue: 'Owned VDS' })}
                                 </h3>
@@ -456,7 +456,7 @@ export default function UserServersPage({ params }: { params: Promise<{ uuid: st
                                                 icon={ServerIcon}
                                                 badges={vmBadges}
                                                 description={
-                                                    <div className='flex items-center gap-4 mt-2 flex-wrap'>
+                                                    <div className='mt-2 flex flex-wrap items-center gap-4'>
                                                         <Badge
                                                             variant={
                                                                 vmStatus === 'suspended'
@@ -468,7 +468,7 @@ export default function UserServersPage({ params }: { params: Promise<{ uuid: st
                                                         >
                                                             {vmStatus}
                                                         </Badge>
-                                                        <div className='flex items-center gap-1.5 text-xs text-muted-foreground'>
+                                                        <div className='text-muted-foreground flex items-center gap-1.5 text-xs'>
                                                             <Network className='h-3.5 w-3.5' />
                                                             <span>{vm.ip_address || '—'}</span>
                                                         </div>

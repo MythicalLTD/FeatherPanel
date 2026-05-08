@@ -68,7 +68,7 @@ export function DetailsTab({
 
     return (
         <PageCard title={t('admin.node.form.basic_details')} icon={Database}>
-            <div className='grid grid-cols-1 md:grid-cols-2 gap-8'>
+            <div className='grid grid-cols-1 gap-8 md:grid-cols-2'>
                 <div className='space-y-6'>
                     <div className='space-y-2'>
                         <Label className='text-sm font-semibold'>{t('admin.node.form.name')}</Label>
@@ -100,7 +100,7 @@ export function DetailsTab({
                             <div
                                 role='button'
                                 tabIndex={0}
-                                className='flex-1 h-11 px-3 bg-muted/30 rounded-xl border border-border/50 text-sm flex items-center cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
+                                className='bg-muted/30 border-border/50 focus-visible:ring-ring flex h-11 flex-1 cursor-pointer items-center rounded-xl border px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-offset-2'
                                 onClick={openLocationModal}
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter' || e.key === ' ') {
@@ -111,8 +111,8 @@ export function DetailsTab({
                             >
                                 {form.location_id && displayLocationName ? (
                                     <div className='flex items-center gap-2'>
-                                        <MapPin className='h-4 w-4 text-primary' />
-                                        <span className='font-medium text-foreground'>{displayLocationName}</span>
+                                        <MapPin className='text-primary h-4 w-4' />
+                                        <span className='text-foreground font-medium'>{displayLocationName}</span>
                                     </div>
                                 ) : (
                                     <span className='text-muted-foreground'>
@@ -125,7 +125,7 @@ export function DetailsTab({
                             </Button>
                         </div>
                         {errors.location_id && (
-                            <p className='text-[10px] uppercase font-bold text-red-500 mt-1'>{errors.location_id}</p>
+                            <p className='mt-1 text-[10px] font-bold text-red-500 uppercase'>{errors.location_id}</p>
                         )}
                     </div>
                     <div className='space-y-2'>
@@ -139,7 +139,7 @@ export function DetailsTab({
                             <option value='true'>{t('admin.node.form.visibility_public')}</option>
                             <option value='false'>{t('admin.node.form.visibility_private')}</option>
                         </Select>
-                        <p className='text-xs text-muted-foreground/70 italic'>
+                        <p className='text-muted-foreground/70 text-xs italic'>
                             {t('admin.node.form.visibility_help')}
                         </p>
                     </div>

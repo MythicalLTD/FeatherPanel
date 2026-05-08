@@ -466,7 +466,7 @@ export default function AdminSubdomainsPage() {
     };
 
     return (
-        <div className='space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500'>
+        <div className='animate-in fade-in slide-in-from-bottom-4 space-y-6 duration-500'>
             <WidgetRenderer widgets={getWidgets('admin-subdomains', 'top-of-page')} />
             <PageHeader
                 title={t('admin.subdomains.title')}
@@ -474,26 +474,26 @@ export default function AdminSubdomainsPage() {
                 icon={Globe}
                 actions={
                     <Button onClick={openCreate}>
-                        <Plus className='h-4 w-4 mr-2' />
+                        <Plus className='mr-2 h-4 w-4' />
                         {t('admin.subdomains.newDomain')}
                     </Button>
                 }
             />
 
             {!userSubdomainsEnabled && (
-                <Alert className='border-destructive/35 bg-destructive/[0.07] dark:bg-destructive/10 shadow-md rounded-2xl'>
-                    <AlertCircle className='h-5 w-5 text-destructive shrink-0' />
-                    <AlertTitle className='text-base font-bold text-foreground tracking-tight'>
+                <Alert className='border-destructive/35 bg-destructive/[0.07] dark:bg-destructive/10 rounded-2xl shadow-md'>
+                    <AlertCircle className='text-destructive h-5 w-5 shrink-0' />
+                    <AlertTitle className='text-foreground text-base font-bold tracking-tight'>
                         {t('admin.subdomains.featureDisabledAlertTitle')}
                     </AlertTitle>
-                    <AlertDescription className='text-sm leading-relaxed text-muted-foreground space-y-4 mt-2'>
+                    <AlertDescription className='text-muted-foreground mt-2 space-y-4 text-sm leading-relaxed'>
                         <p>{t('admin.subdomains.featureDisabledAlertBody')}</p>
-                        <div className='flex flex-col sm:flex-row sm:items-center gap-4 justify-between rounded-xl border border-border/60 bg-background/60 p-4'>
+                        <div className='border-border/60 bg-background/60 flex flex-col justify-between gap-4 rounded-xl border p-4 sm:flex-row sm:items-center'>
                             <div className='space-y-1'>
-                                <Label className='text-sm font-semibold text-foreground'>
+                                <Label className='text-foreground text-sm font-semibold'>
                                     {t('admin.subdomains.userSubdomainsToggleLabel')}
                                 </Label>
-                                <p className='text-xs text-muted-foreground'>
+                                <p className='text-muted-foreground text-xs'>
                                     {t('admin.subdomains.userSubdomainsToggleHint')}
                                 </p>
                             </div>
@@ -513,7 +513,7 @@ export default function AdminSubdomainsPage() {
                             className='w-full sm:w-auto'
                             onClick={() => router.push('/admin/settings?category=servers')}
                         >
-                            <Settings className='h-4 w-4 mr-2' />
+                            <Settings className='mr-2 h-4 w-4' />
                             {t('admin.subdomains.featureDisabledOpenSettings')}
                         </Button>
                     </AlertDescription>
@@ -521,19 +521,19 @@ export default function AdminSubdomainsPage() {
             )}
 
             {userSubdomainsEnabled && (
-                <Alert className='border-amber-500/45 bg-amber-500/[0.08] dark:bg-amber-950/25 shadow-md rounded-2xl'>
-                    <Settings className='h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0' />
-                    <AlertTitle className='text-base font-bold text-amber-950 dark:text-amber-50 tracking-tight'>
+                <Alert className='rounded-2xl border-amber-500/45 bg-amber-500/[0.08] shadow-md dark:bg-amber-950/25'>
+                    <Settings className='h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400' />
+                    <AlertTitle className='text-base font-bold tracking-tight text-amber-950 dark:text-amber-50'>
                         {t('admin.subdomains.featureEnabledAlertTitle')}
                     </AlertTitle>
-                    <AlertDescription className='text-amber-950/85 dark:text-amber-50/85 text-sm leading-relaxed space-y-4 mt-2'>
+                    <AlertDescription className='mt-2 space-y-4 text-sm leading-relaxed text-amber-950/85 dark:text-amber-50/85'>
                         <p>{t('admin.subdomains.featureEnabledAlertBody')}</p>
                         {(!settingsKeySet || !settingsForm.cloudflare_email.trim()) && (
                             <p className='font-semibold text-amber-900 dark:text-amber-100'>
                                 {t('admin.subdomains.featureEnabledAlertIncomplete')}
                             </p>
                         )}
-                        <div className='flex flex-col sm:flex-row sm:items-center gap-4 justify-between rounded-xl border border-amber-600/25 bg-background/50 dark:bg-background/20 p-4'>
+                        <div className='bg-background/50 dark:bg-background/20 flex flex-col justify-between gap-4 rounded-xl border border-amber-600/25 p-4 sm:flex-row sm:items-center'>
                             <div className='space-y-1'>
                                 <Label className='text-sm font-semibold text-amber-950 dark:text-amber-50'>
                                     {t('admin.subdomains.userSubdomainsToggleLabel')}
@@ -549,19 +549,19 @@ export default function AdminSubdomainsPage() {
                                 className='shrink-0 scale-110'
                             />
                         </div>
-                        <div className='flex flex-col sm:flex-row gap-2 flex-wrap'>
+                        <div className='flex flex-col flex-wrap gap-2 sm:flex-row'>
                             <Button
                                 type='button'
                                 variant='outline'
                                 size='sm'
-                                className='border-amber-600/40 bg-background/80 hover:bg-amber-500/10 text-amber-950 dark:text-amber-50'
+                                className='bg-background/80 border-amber-600/40 text-amber-950 hover:bg-amber-500/10 dark:text-amber-50'
                                 onClick={() =>
                                     document
                                         .getElementById('admin-subdomains-cloudflare-settings')
                                         ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
                                 }
                             >
-                                <Settings className='h-4 w-4 mr-2' />
+                                <Settings className='mr-2 h-4 w-4' />
                                 {t('admin.subdomains.featureEnabledAlertCta')}
                             </Button>
                             <Button
@@ -578,11 +578,11 @@ export default function AdminSubdomainsPage() {
                 </Alert>
             )}
 
-            <div className='flex flex-col sm:flex-row gap-4 items-center bg-card/40 backdrop-blur-md p-4 rounded-2xl shadow-sm'>
-                <div className='relative flex-1 group w-full'>
-                    <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
+            <div className='bg-card/40 flex flex-col items-center gap-4 rounded-2xl p-4 shadow-sm backdrop-blur-md sm:flex-row'>
+                <div className='group relative w-full flex-1'>
+                    <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
                     <Input
-                        className='pl-10 h-11 w-full'
+                        className='h-11 w-full pl-10'
                         placeholder={t('admin.subdomains.searchPlaceholder')}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
@@ -597,7 +597,7 @@ export default function AdminSubdomainsPage() {
             ) : domains.length > 0 ? (
                 <>
                     {pagination.totalPages > 1 && (
-                        <div className='flex items-center justify-between gap-4 py-3 px-4 rounded-xl border border-border bg-card/50 mb-4'>
+                        <div className='border-border bg-card/50 mb-4 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
                             <Button
                                 variant='outline'
                                 size='sm'
@@ -679,7 +679,7 @@ export default function AdminSubdomainsPage() {
                                     </div>
                                 }
                                 description={
-                                    <p className='mt-2 text-sm text-muted-foreground line-clamp-1 italic opacity-70'>
+                                    <p className='text-muted-foreground mt-2 line-clamp-1 text-sm italic opacity-70'>
                                         {domain.description || t('admin.subdomains.descriptionPlaceholder')}
                                     </p>
                                 }
@@ -688,7 +688,7 @@ export default function AdminSubdomainsPage() {
                     </div>
 
                     {pagination.totalPages > 1 && (
-                        <div className='flex items-center justify-center gap-2 mt-8'>
+                        <div className='mt-8 flex items-center justify-center gap-2'>
                             <Button
                                 variant='outline'
                                 size='icon'
@@ -718,22 +718,22 @@ export default function AdminSubdomainsPage() {
                     icon={Globe}
                     action={
                         <Button onClick={openCreate}>
-                            <Plus className='w-4 h-4 mr-2' />
+                            <Plus className='mr-2 h-4 w-4' />
                             {t('admin.subdomains.newDomain')}
                         </Button>
                     }
                 />
             )}
 
-            <div className='grid grid-cols-1 lg:grid-cols-3 gap-6 pt-6 border-t border-border/50'>
-                <div className='lg:col-span-2 space-y-6'>
+            <div className='border-border/50 grid grid-cols-1 gap-6 border-t pt-6 lg:grid-cols-3'>
+                <div className='space-y-6 lg:col-span-2'>
                     <PageCard
                         id='admin-subdomains-cloudflare-settings'
                         title={t('admin.subdomains.settingsTitle')}
                         icon={Settings}
                     >
                         <div className='grid gap-6'>
-                            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                            <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
                                 <div className='space-y-2'>
                                     <Label htmlFor='cf-email'>{t('admin.subdomains.cloudflareEmail')}</Label>
                                     <Input
@@ -761,8 +761,8 @@ export default function AdminSubdomainsPage() {
                                         }
                                     />
                                     {settingsKeySet && (
-                                        <p className='text-[10px] text-primary font-medium flex items-center gap-1'>
-                                            <Zap className='w-3 h-3' />
+                                        <p className='text-primary flex items-center gap-1 text-[10px] font-medium'>
+                                            <Zap className='h-3 w-3' />
                                             {t('admin.subdomains.secretMaskedMessage')}
                                         </p>
                                     )}
@@ -782,7 +782,7 @@ export default function AdminSubdomainsPage() {
                                         })
                                     }
                                 />
-                                <p className='text-xs text-muted-foreground'>{t('admin.subdomains.cloudflareHint')}</p>
+                                <p className='text-muted-foreground text-xs'>{t('admin.subdomains.cloudflareHint')}</p>
                             </div>
                             <div className='flex justify-end'>
                                 <Button onClick={handleSaveSettings} loading={savingSettings}>
@@ -792,21 +792,21 @@ export default function AdminSubdomainsPage() {
                         </div>
                     </PageCard>
 
-                    <Card className='border-dashed border-muted bg-muted/20 rounded-2xl'>
-                        <div className='p-6 space-y-4'>
+                    <Card className='border-muted bg-muted/20 rounded-2xl border-dashed'>
+                        <div className='space-y-4 p-6'>
                             <div className='flex items-center gap-2'>
-                                <RefreshCw className='h-5 w-5 text-muted-foreground' />
+                                <RefreshCw className='text-muted-foreground h-5 w-5' />
                                 <h3 className='font-semibold'>{t('admin.subdomains.tutorialTitle')}</h3>
                             </div>
-                            <p className='text-sm text-muted-foreground'>{t('admin.subdomains.tutorialDescription')}</p>
-                            <ol className='list-decimal list-inside space-y-2 text-sm text-muted-foreground pl-2'>
+                            <p className='text-muted-foreground text-sm'>{t('admin.subdomains.tutorialDescription')}</p>
+                            <ol className='text-muted-foreground list-inside list-decimal space-y-2 pl-2 text-sm'>
                                 <li>{t('admin.subdomains.tutorialSteps.credentials')}</li>
                                 <li>{t('admin.subdomains.tutorialSteps.domain')}</li>
                                 <li>{t('admin.subdomains.tutorialSteps.mappings')}</li>
                             </ol>
                             <Alert className='bg-primary/5 border-primary/10'>
                                 <AlertCircle className='h-4 w-4' />
-                                <AlertTitle className='text-xs font-bold uppercase tracking-wider'>
+                                <AlertTitle className='text-xs font-bold tracking-wider uppercase'>
                                     {t('admin.subdomains.tutorialProTip')}
                                 </AlertTitle>
                                 <AlertDescription className='text-xs'>
@@ -819,26 +819,26 @@ export default function AdminSubdomainsPage() {
 
                 <div className='space-y-6'>
                     <PageCard title={t('admin.subdomains.dialogHelpTitle')} icon={Zap}>
-                        <div className='space-y-4 text-sm text-muted-foreground leading-relaxed'>
+                        <div className='text-muted-foreground space-y-4 text-sm leading-relaxed'>
                             <div className='flex gap-3'>
-                                <div className='w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5'>
-                                    <span className='text-[10px] font-bold text-primary'>1</span>
+                                <div className='bg-primary/10 mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full'>
+                                    <span className='text-primary text-[10px] font-bold'>1</span>
                                 </div>
                                 <p>{t('admin.subdomains.dialogHelpSteps.domain')}</p>
                             </div>
                             <div className='flex gap-3'>
-                                <div className='w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5'>
-                                    <span className='text-[10px] font-bold text-primary'>2</span>
+                                <div className='bg-primary/10 mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full'>
+                                    <span className='text-primary text-[10px] font-bold'>2</span>
                                 </div>
                                 <p>{t('admin.subdomains.dialogHelpSteps.spell')}</p>
                             </div>
                             <div className='flex gap-3'>
-                                <div className='w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5'>
-                                    <span className='text-[10px] font-bold text-primary'>3</span>
+                                <div className='bg-primary/10 mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full'>
+                                    <span className='text-primary text-[10px] font-bold'>3</span>
                                 </div>
                                 <p>{t('admin.subdomains.dialogHelpSteps.protocol')}</p>
                             </div>
-                            <div className='h-px bg-border/50' />
+                            <div className='bg-border/50 h-px' />
                             <p className='text-xs italic'>{t('admin.subdomains.dialogHelpFootnote')}</p>
                         </div>
                     </PageCard>
@@ -857,7 +857,7 @@ export default function AdminSubdomainsPage() {
                     </SheetHeader>
                     <form onSubmit={handleCreateEdit} className='space-y-6 pt-4'>
                         <div className='space-y-4'>
-                            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                            <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
                                 <div className='space-y-2'>
                                     <Label htmlFor='domain-name'>{t('admin.subdomains.domainLabel')}</Label>
                                     <Input
@@ -895,7 +895,7 @@ export default function AdminSubdomainsPage() {
                             <div className='flex items-center justify-between'>
                                 <div className='space-y-0.5'>
                                     <Label className='text-sm'>{t('admin.subdomains.activeToggle')}</Label>
-                                    <p className='text-[11px] text-muted-foreground'>
+                                    <p className='text-muted-foreground text-[11px]'>
                                         {t('admin.subdomains.activeToggleHint')}
                                     </p>
                                 </div>
@@ -905,18 +905,18 @@ export default function AdminSubdomainsPage() {
                                 />
                             </div>
 
-                            <div className='h-px bg-border/50' />
+                            <div className='bg-border/50 h-px' />
 
-                            <div className='p-6 bg-card/20 backdrop-blur-md border border-white/5 rounded-3xl space-y-4'>
+                            <div className='bg-card/20 space-y-4 rounded-3xl border border-white/5 p-6 backdrop-blur-md'>
                                 <div className='flex items-center justify-between'>
-                                    <Label className='flex items-center gap-2 font-semibold text-foreground/80'>
-                                        <Cloud className='w-4 h-4 text-primary' />
+                                    <Label className='text-foreground/80 flex items-center gap-2 font-semibold'>
+                                        <Cloud className='text-primary h-4 w-4' />
                                         {t('admin.subdomains.zoneToggleLabel')}
                                     </Label>
                                     <Switch checked={zoneOverrideEnabled} onCheckedChange={setZoneOverrideEnabled} />
                                 </div>
                                 {zoneOverrideEnabled && (
-                                    <div className='space-y-2 animate-in fade-in slide-in-from-top-2 duration-300'>
+                                    <div className='animate-in fade-in slide-in-from-top-2 space-y-2 duration-300'>
                                         <Input
                                             value={domainForm.cloudflare_zone_id}
                                             onChange={(e) =>
@@ -928,16 +928,16 @@ export default function AdminSubdomainsPage() {
                                 )}
                             </div>
 
-                            <div className='h-px bg-border/5' />
+                            <div className='bg-border/5 h-px' />
 
                             <div className='space-y-6'>
                                 <div className='flex items-center justify-between px-1'>
                                     <div className='space-y-0.5'>
-                                        <Label className='flex items-center gap-2 text-primary font-bold uppercase tracking-wider text-xs'>
-                                            <Zap className='w-3 h-3' />
+                                        <Label className='text-primary flex items-center gap-2 text-xs font-bold tracking-wider uppercase'>
+                                            <Zap className='h-3 w-3' />
                                             {t('admin.subdomains.mappingsTitle')}
                                         </Label>
-                                        <p className='text-[10px] text-muted-foreground/60'>
+                                        <p className='text-muted-foreground/60 text-[10px]'>
                                             {t('admin.subdomains.mappingsDescription') ||
                                                 'Configure spell routing rules.'}
                                         </p>
@@ -947,9 +947,9 @@ export default function AdminSubdomainsPage() {
                                         variant='outline'
                                         size='sm'
                                         onClick={addSpell}
-                                        className='h-8 px-3 border-primary/20 hover:bg-primary/5 hover:border-primary/40'
+                                        className='border-primary/20 hover:bg-primary/5 hover:border-primary/40 h-8 px-3'
                                     >
-                                        <Plus className='w-3 h-3 mr-1.5' />
+                                        <Plus className='mr-1.5 h-3 w-3' />
                                         {t('admin.subdomains.addMapping')}
                                     </Button>
                                 </div>
@@ -958,11 +958,11 @@ export default function AdminSubdomainsPage() {
                                     {domainForm.spells.map((mapping, idx) => (
                                         <div
                                             key={idx}
-                                            className='group/mapping border border-white/5 bg-white/2 rounded-3xl p-6 transition-all hover:bg-white/4 hover:border-white/10'
+                                            className='group/mapping rounded-3xl border border-white/5 bg-white/2 p-6 transition-all hover:border-white/10 hover:bg-white/4'
                                         >
-                                            <div className='flex items-start justify-between gap-4 mb-6'>
+                                            <div className='mb-6 flex items-start justify-between gap-4'>
                                                 <div className='flex-1'>
-                                                    <Label className='text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-2 block'>
+                                                    <Label className='text-muted-foreground mb-2 block text-[10px] font-bold tracking-widest uppercase'>
                                                         {t('admin.subdomains.spell')}
                                                     </Label>
                                                     <Select
@@ -983,13 +983,13 @@ export default function AdminSubdomainsPage() {
                                                     className='text-muted-foreground/30 hover:text-destructive hover:bg-destructive/10 shrink-0 transition-colors'
                                                     onClick={() => removeSpell(idx)}
                                                 >
-                                                    <Trash2 className='w-4 h-4' />
+                                                    <Trash2 className='h-4 w-4' />
                                                 </Button>
                                             </div>
 
-                                            <div className='grid grid-cols-2 lg:grid-cols-4 gap-4'>
+                                            <div className='grid grid-cols-2 gap-4 lg:grid-cols-4'>
                                                 <div className='space-y-2'>
-                                                    <Label className='text-[10px] uppercase tracking-wider text-muted-foreground/60 font-bold ml-1'>
+                                                    <Label className='text-muted-foreground/60 ml-1 text-[10px] font-bold tracking-wider uppercase'>
                                                         {t('admin.subdomains.protocolService')}
                                                     </Label>
                                                     <Input
@@ -997,11 +997,11 @@ export default function AdminSubdomainsPage() {
                                                         onChange={(e) =>
                                                             updateSpell(idx, 'protocol_service', e.target.value)
                                                         }
-                                                        className='h-10 text-sm px-4'
+                                                        className='h-10 px-4 text-sm'
                                                     />
                                                 </div>
                                                 <div className='space-y-2'>
-                                                    <Label className='text-[10px] uppercase tracking-wider text-muted-foreground/60 font-bold ml-1'>
+                                                    <Label className='text-muted-foreground/60 ml-1 text-[10px] font-bold tracking-wider uppercase'>
                                                         {t('admin.subdomains.protocolType')}
                                                     </Label>
                                                     <Select
@@ -1009,7 +1009,7 @@ export default function AdminSubdomainsPage() {
                                                         onChange={(e) =>
                                                             updateSpell(idx, 'protocol_type', e.target.value)
                                                         }
-                                                        className='h-10 text-sm px-4'
+                                                        className='h-10 px-4 text-sm'
                                                     >
                                                         <option value='tcp'>TCP</option>
                                                         <option value='udp'>UDP</option>
@@ -1017,7 +1017,7 @@ export default function AdminSubdomainsPage() {
                                                     </Select>
                                                 </div>
                                                 <div className='space-y-2'>
-                                                    <Label className='text-[10px] uppercase tracking-wider text-muted-foreground/60 font-bold ml-1'>
+                                                    <Label className='text-muted-foreground/60 ml-1 text-[10px] font-bold tracking-wider uppercase'>
                                                         {t('admin.subdomains.priority')}
                                                     </Label>
                                                     <Input
@@ -1026,11 +1026,11 @@ export default function AdminSubdomainsPage() {
                                                         onChange={(e) =>
                                                             updateSpell(idx, 'priority', parseInt(e.target.value))
                                                         }
-                                                        className='h-10 text-sm px-4'
+                                                        className='h-10 px-4 text-sm'
                                                     />
                                                 </div>
                                                 <div className='space-y-2'>
-                                                    <Label className='text-[10px] uppercase tracking-wider text-muted-foreground/60 font-bold ml-1'>
+                                                    <Label className='text-muted-foreground/60 ml-1 text-[10px] font-bold tracking-wider uppercase'>
                                                         {t('admin.subdomains.ttl')}
                                                     </Label>
                                                     <Input
@@ -1039,16 +1039,16 @@ export default function AdminSubdomainsPage() {
                                                         onChange={(e) =>
                                                             updateSpell(idx, 'ttl', parseInt(e.target.value))
                                                         }
-                                                        className='h-10 text-sm px-4'
+                                                        className='h-10 px-4 text-sm'
                                                     />
                                                 </div>
                                             </div>
                                         </div>
                                     ))}
                                     {domainForm.spells.length === 0 && (
-                                        <div className='text-center py-12 border border-dashed border-white/5 rounded-3xl bg-white/1'>
-                                            <Zap className='w-8 h-8 mx-auto text-muted-foreground/20 mb-3' />
-                                            <p className='text-sm text-muted-foreground/40'>
+                                        <div className='rounded-3xl border border-dashed border-white/5 bg-white/1 py-12 text-center'>
+                                            <Zap className='text-muted-foreground/20 mx-auto mb-3 h-8 w-8' />
+                                            <p className='text-muted-foreground/40 text-sm'>
                                                 {t('admin.subdomains.spellRequired')}
                                             </p>
                                         </div>
@@ -1081,33 +1081,33 @@ export default function AdminSubdomainsPage() {
                                 {domainEntries.map((entry) => (
                                     <div
                                         key={entry.uuid}
-                                        className='flex items-center justify-between p-4 bg-muted/30 rounded-2xl border border-border/50 hover:bg-muted/50 transition-colors'
+                                        className='bg-muted/30 border-border/50 hover:bg-muted/50 flex items-center justify-between rounded-2xl border p-4 transition-colors'
                                     >
-                                        <div className='space-y-1 min-w-0'>
-                                            <div className='flex items-center gap-2 font-mono text-sm text-primary font-bold truncate'>
-                                                <Globe className='w-3 h-3' />
+                                        <div className='min-w-0 space-y-1'>
+                                            <div className='text-primary flex items-center gap-2 truncate font-mono text-sm font-bold'>
+                                                <Globe className='h-3 w-3' />
                                                 {entry.subdomain}.{selectedDomain?.domain}
                                             </div>
-                                            <div className='flex items-center gap-3 text-[10px] text-muted-foreground'>
-                                                <span className='flex items-center gap-1 bg-zinc-500/10 px-2 py-0.5 rounded-full'>
+                                            <div className='text-muted-foreground flex items-center gap-3 text-[10px]'>
+                                                <span className='flex items-center gap-1 rounded-full bg-zinc-500/10 px-2 py-0.5'>
                                                     {entry.record_type}
                                                 </span>
                                                 <span className='flex items-center gap-1'>
-                                                    <Server className='w-2 h-2' />
+                                                    <Server className='h-2 w-2' />
                                                     Port: {entry.port || 'Auto'}
                                                 </span>
                                             </div>
                                         </div>
-                                        <div className='text-right text-[10px] text-muted-foreground tabular-nums'>
+                                        <div className='text-muted-foreground text-right text-[10px] tabular-nums'>
                                             {entry.created_at ? new Date(entry.created_at).toLocaleDateString() : 'N/A'}
                                         </div>
                                     </div>
                                 ))}
                             </div>
                         ) : (
-                            <div className='text-center py-12 bg-muted/20 border border-dashed rounded-3xl'>
-                                <Globe className='w-8 h-8 mx-auto text-muted-foreground opacity-20 mb-3' />
-                                <p className='text-sm text-muted-foreground'>{t('admin.subdomains.noSubdomains')}</p>
+                            <div className='bg-muted/20 rounded-3xl border border-dashed py-12 text-center'>
+                                <Globe className='text-muted-foreground mx-auto mb-3 h-8 w-8 opacity-20' />
+                                <p className='text-muted-foreground text-sm'>{t('admin.subdomains.noSubdomains')}</p>
                             </div>
                         )}
                     </div>

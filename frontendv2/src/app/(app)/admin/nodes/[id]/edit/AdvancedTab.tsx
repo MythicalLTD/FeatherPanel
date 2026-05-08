@@ -33,7 +33,7 @@ export function AdvancedTab({ form, setForm, errors }: AdvancedTabProps) {
 
     return (
         <PageCard title={t('admin.node.form.advanced')} icon={Shield}>
-            <div className='grid grid-cols-1 md:grid-cols-2 gap-8'>
+            <div className='grid grid-cols-1 gap-8 md:grid-cols-2'>
                 <div className='space-y-6'>
                     <div className='grid grid-cols-2 gap-4'>
                         <div className='space-y-2'>
@@ -57,7 +57,7 @@ export function AdvancedTab({ form, setForm, errors }: AdvancedTabProps) {
                             />
                         </div>
                     </div>
-                    <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
+                    <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
                         <div className='space-y-2'>
                             <Label className='text-sm font-semibold'>{t('admin.node.form.ipv4')}</Label>
                             <Input
@@ -94,7 +94,7 @@ export function AdvancedTab({ form, setForm, errors }: AdvancedTabProps) {
                             <option value='false'>{t('admin.node.form.maintenance_disabled')}</option>
                             <option value='true'>{t('admin.node.form.maintenance_enabled')}</option>
                         </Select>
-                        <p className='text-xs text-muted-foreground/70 italic'>
+                        <p className='text-muted-foreground/70 text-xs italic'>
                             {t('admin.node.form.maintenance_help')}
                         </p>
                     </div>
@@ -108,11 +108,11 @@ export function AdvancedTab({ form, setForm, errors }: AdvancedTabProps) {
                                     setForm({ ...form, upload_size: parseInt(e.target.value) || 0 })
                                 }
                             />
-                            <span className='absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground/50'>
+                            <span className='text-muted-foreground/50 absolute top-1/2 right-3 -translate-y-1/2 text-xs font-bold'>
                                 {t('admin.node.form.memory_mib')}
                             </span>
                         </div>
-                        <p className='text-xs text-muted-foreground/70 italic'>
+                        <p className='text-muted-foreground/70 text-xs italic'>
                             {t('admin.node.form.upload_size_help')}
                         </p>
                     </div>

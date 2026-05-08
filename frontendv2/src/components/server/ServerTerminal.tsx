@@ -96,7 +96,6 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
             const savedHistory = localStorage.getItem('featherpanel_terminal_history');
             if (savedHistory) {
                 try {
-                    // eslint-disable-next-line react-hooks/set-state-in-effect
                     setCommandHistory(JSON.parse(savedHistory));
                 } catch (e) {
                     console.error('Failed to parse command history', e);
@@ -279,30 +278,30 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
         const canSend = canSendCommands && (serverStatus === 'running' || serverStatus === 'starting');
 
         return (
-            <div className='rounded-xl border border-border/50 bg-card/50 backdrop-blur-xl overflow-hidden'>
-                <div className='border-b border-border p-4 sm:p-6'>
+            <div className='border-border/50 bg-card/50 overflow-hidden rounded-xl border backdrop-blur-xl'>
+                <div className='border-border border-b p-4 sm:p-6'>
                     <div className='flex items-center justify-between'>
                         <div className='flex items-center gap-3'>
-                            <div className='h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center'>
-                                <TerminalIcon className='h-5 w-5 text-primary' />
+                            <div className='bg-primary/10 flex h-10 w-10 items-center justify-center rounded-lg'>
+                                <TerminalIcon className='text-primary h-5 w-5' />
                             </div>
                             <h2 className='text-lg font-bold'>{t('servers.console.terminal.title')}</h2>
                         </div>
                         <div className='flex items-center gap-2'>
-                            <label className='flex items-center gap-2 cursor-pointer group px-2 py-1.5 rounded-md hover:bg-muted/50 transition-colors'>
+                            <label className='group hover:bg-muted/50 flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 transition-colors'>
                                 <input
                                     type='checkbox'
                                     checked={autoScroll}
                                     onChange={(e) => setAutoScroll(e.target.checked)}
-                                    className='w-4 h-4 rounded border-2 border-input bg-background text-primary focus:ring-2 focus:ring-primary focus:ring-offset-0 cursor-pointer transition-all duration-200'
+                                    className='border-input bg-background text-primary focus:ring-primary h-4 w-4 cursor-pointer rounded border-2 transition-all duration-200 focus:ring-2 focus:ring-offset-0'
                                 />
-                                <span className='text-xs sm:text-sm text-muted-foreground group-hover:text-foreground transition-colors select-none'>
+                                <span className='text-muted-foreground group-hover:text-foreground text-xs transition-colors select-none sm:text-sm'>
                                     {t('servers.console.terminal.auto_scroll')}
                                 </span>
                             </label>
                             <button
                                 onClick={() => setShowSettings((prev) => !prev)}
-                                className='h-9 w-9 rounded-lg border border-border bg-background hover:bg-muted transition-colors flex items-center justify-center text-muted-foreground hover:text-foreground'
+                                className='border-border bg-background hover:bg-muted text-muted-foreground hover:text-foreground flex h-9 w-9 items-center justify-center rounded-lg border transition-colors'
                                 aria-label={t('servers.console.terminal.customize')}
                                 type='button'
                             >
@@ -311,7 +310,7 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                             {showPopoutButton && (
                                 <button
                                     onClick={handlePopoutWindow}
-                                    className='h-9 w-9 rounded-lg border border-border bg-background hover:bg-muted transition-colors flex items-center justify-center text-muted-foreground hover:text-foreground'
+                                    className='border-border bg-background hover:bg-muted text-muted-foreground hover:text-foreground flex h-9 w-9 items-center justify-center rounded-lg border transition-colors'
                                     aria-label={t('servers.console.terminal.popout')}
                                     type='button'
                                 >
@@ -320,7 +319,7 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                             )}
                             <Menu as='div' className='relative'>
                                 <Menu.Button
-                                    className='h-9 w-9 rounded-lg border border-border bg-background hover:bg-muted transition-colors flex items-center justify-center text-muted-foreground hover:text-foreground'
+                                    className='border-border bg-background hover:bg-muted text-muted-foreground hover:text-foreground flex h-9 w-9 items-center justify-center rounded-lg border transition-colors'
                                     aria-label={t('servers.console.terminal.history_title')}
                                 >
                                     <History className='h-4 w-4' />
@@ -334,15 +333,15 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                                     leaveFrom='transform opacity-100 scale-100'
                                     leaveTo='transform opacity-0 scale-95'
                                 >
-                                    <Menu.Items className='absolute right-0 mt-2 w-64 origin-top-right rounded-xl bg-popover border border-border/50 focus:outline-none z-20 overflow-hidden'>
-                                        <div className='p-2 border-b border-border/50 bg-muted/30'>
-                                            <p className='text-xs font-medium text-muted-foreground px-2'>
+                                    <Menu.Items className='bg-popover border-border/50 absolute right-0 z-20 mt-2 w-64 origin-top-right overflow-hidden rounded-xl border focus:outline-none'>
+                                        <div className='border-border/50 bg-muted/30 border-b p-2'>
+                                            <p className='text-muted-foreground px-2 text-xs font-medium'>
                                                 {t('servers.console.terminal.history_title')}
                                             </p>
                                         </div>
-                                        <div className='max-h-60 overflow-y-auto custom-scrollbar p-1'>
+                                        <div className='custom-scrollbar max-h-60 overflow-y-auto p-1'>
                                             {commandHistory.length === 0 ? (
-                                                <div className='px-3 py-4 text-center text-xs text-muted-foreground'>
+                                                <div className='text-muted-foreground px-3 py-4 text-center text-xs'>
                                                     {t('servers.console.terminal.no_history')}
                                                 </div>
                                             ) : (
@@ -351,10 +350,7 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                                                         {({ active }) => (
                                                             <button
                                                                 onClick={() => loadHistoryCommand(cmd)}
-                                                                className={`
-                                                    w-full text-left px-3 py-2 text-sm rounded-lg flex items-center gap-2 transition-colors
-                                                    ${active ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-muted'}
-                                                `}
+                                                                className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors ${active ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-muted'} `}
                                                             >
                                                                 <Clock className='h-3 w-3 opacity-50' />
                                                                 <span className='truncate font-mono text-xs'>
@@ -372,7 +368,7 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                             {onUploadLogs && (
                                 <button
                                     onClick={onUploadLogs}
-                                    className='h-9 w-9 rounded-lg border border-border bg-background hover:bg-muted transition-colors flex items-center justify-center text-muted-foreground hover:text-foreground'
+                                    className='border-border bg-background hover:bg-muted text-muted-foreground hover:text-foreground flex h-9 w-9 items-center justify-center rounded-lg border transition-colors'
                                     aria-label={t('servers.console.upload_logs')}
                                     type='button'
                                 >
@@ -381,7 +377,7 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                             )}
                             <button
                                 onClick={clearTerminal}
-                                className='h-9 w-9 rounded-lg border border-border bg-background hover:bg-muted transition-colors flex items-center justify-center text-muted-foreground hover:text-foreground'
+                                className='border-border bg-background hover:bg-muted text-muted-foreground hover:text-foreground flex h-9 w-9 items-center justify-center rounded-lg border transition-colors'
                                 aria-label={t('servers.console.terminal.clear')}
                             >
                                 <Trash2 className='h-4 w-4' />
@@ -390,28 +386,28 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                     </div>
                 </div>
                 {showSettings && (
-                    <div className='border-b border-border bg-muted/30 px-4 py-3 sm:px-6'>
-                        <div className='flex items-center justify-between mb-3'>
-                            <p className='text-xs font-semibold text-muted-foreground'>
+                    <div className='border-border bg-muted/30 border-b px-4 py-3 sm:px-6'>
+                        <div className='mb-3 flex items-center justify-between'>
+                            <p className='text-muted-foreground text-xs font-semibold'>
                                 {t('servers.console.terminal.customize')}
                             </p>
                             <button
                                 onClick={handleAddFilter}
                                 type='button'
-                                className='text-xs px-2 py-1 rounded-md bg-primary/10 text-primary hover:bg-primary/20 transition-colors'
+                                className='bg-primary/10 text-primary hover:bg-primary/20 rounded-md px-2 py-1 text-xs transition-colors'
                                 disabled={!onFiltersChange}
                             >
                                 {t('servers.console.terminal.add_rule')}
                             </button>
                         </div>
                         {filters.length === 0 ? (
-                            <p className='text-xs text-muted-foreground'>{t('servers.console.terminal.no_rules')}</p>
+                            <p className='text-muted-foreground text-xs'>{t('servers.console.terminal.no_rules')}</p>
                         ) : (
-                            <div className='space-y-3 max-h-64 overflow-y-auto custom-scrollbar pr-1'>
+                            <div className='custom-scrollbar max-h-64 space-y-3 overflow-y-auto pr-1'>
                                 {filters.map((rule) => (
                                     <div
                                         key={rule.id}
-                                        className='rounded-lg border border-border/60 bg-background/60 px-3 py-2 space-y-2'
+                                        className='border-border/60 bg-background/60 space-y-2 rounded-lg border px-3 py-2'
                                     >
                                         <div className='flex items-center justify-between gap-2'>
                                             <div className='flex items-center gap-2'>
@@ -423,7 +419,7 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                                                             enabled: e.target.checked,
                                                         })
                                                     }
-                                                    className='w-3.5 h-3.5 rounded border-input'
+                                                    className='border-input h-3.5 w-3.5 rounded'
                                                     disabled={!onFiltersChange}
                                                 />
                                                 <select
@@ -433,7 +429,7 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                                                             type: e.target.value as ConsoleFilterRule['type'],
                                                         })
                                                     }
-                                                    className='text-xs rounded-md border border-border bg-background px-2 py-1'
+                                                    className='border-border bg-background rounded-md border px-2 py-1 text-xs'
                                                     disabled={!onFiltersChange}
                                                 >
                                                     <option value='replace'>
@@ -450,15 +446,15 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                                             <button
                                                 onClick={() => handleDeleteFilter(rule.id)}
                                                 type='button'
-                                                className='text-[11px] text-muted-foreground hover:text-destructive'
+                                                className='text-muted-foreground hover:text-destructive text-[11px]'
                                                 disabled={!onFiltersChange}
                                             >
                                                 {t('servers.console.terminal.delete_rule')}
                                             </button>
                                         </div>
-                                        <div className='grid grid-cols-1 sm:grid-cols-3 gap-2'>
-                                            <div className='sm:col-span-2 space-y-1'>
-                                                <label className='text-[11px] text-muted-foreground'>
+                                        <div className='grid grid-cols-1 gap-2 sm:grid-cols-3'>
+                                            <div className='space-y-1 sm:col-span-2'>
+                                                <label className='text-muted-foreground text-[11px]'>
                                                     {t('servers.console.terminal.pattern')}
                                                 </label>
                                                 <input
@@ -469,13 +465,13 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                                                             pattern: e.target.value,
                                                         })
                                                     }
-                                                    className='w-full text-xs font-mono px-2 py-1 rounded-md border border-border bg-background'
+                                                    className='border-border bg-background w-full rounded-md border px-2 py-1 font-mono text-xs'
                                                     placeholder='^\\[INFO\\]'
                                                     disabled={!onFiltersChange}
                                                 />
                                             </div>
                                             <div className='space-y-1'>
-                                                <label className='text-[11px] text-muted-foreground'>
+                                                <label className='text-muted-foreground text-[11px]'>
                                                     {t('servers.console.terminal.flags')}
                                                 </label>
                                                 <input
@@ -486,7 +482,7 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                                                             flags: e.target.value,
                                                         })
                                                     }
-                                                    className='w-full text-xs px-2 py-1 rounded-md border border-border bg-background'
+                                                    className='border-border bg-background w-full rounded-md border px-2 py-1 text-xs'
                                                     placeholder='gmi'
                                                     disabled={!onFiltersChange}
                                                 />
@@ -494,7 +490,7 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                                         </div>
                                         {rule.type === 'replace' && (
                                             <div className='space-y-1'>
-                                                <label className='text-[11px] text-muted-foreground'>
+                                                <label className='text-muted-foreground text-[11px]'>
                                                     {t('servers.console.terminal.replacement')}
                                                 </label>
                                                 <input
@@ -505,7 +501,7 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                                                             replacement: e.target.value,
                                                         })
                                                     }
-                                                    className='w-full text-xs px-2 py-1 rounded-md border border-border bg-background'
+                                                    className='border-border bg-background w-full rounded-md border px-2 py-1 text-xs'
                                                     placeholder='[RENAMED]'
                                                     disabled={!onFiltersChange}
                                                 />
@@ -513,7 +509,7 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                                         )}
                                         {rule.type === 'color' && (
                                             <div className='space-y-1'>
-                                                <label className='text-[11px] text-muted-foreground'>
+                                                <label className='text-muted-foreground text-[11px]'>
                                                     {t('servers.console.terminal.color')}
                                                 </label>
                                                 <select
@@ -523,7 +519,7 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                                                             color: e.target.value as ConsoleFilterRule['color'],
                                                         })
                                                     }
-                                                    className='text-xs rounded-md border border-border bg-background px-2 py-1'
+                                                    className='border-border bg-background rounded-md border px-2 py-1 text-xs'
                                                     disabled={!onFiltersChange}
                                                 >
                                                     <option value='red'>
@@ -561,25 +557,25 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                         ref={terminalRef}
                         className={
                             fullHeight
-                                ? 'w-full h-[calc(100vh-160px)] sm:h-[calc(100vh-160px)]'
-                                : 'w-full h-[500px] sm:h-[600px]'
+                                ? 'h-[calc(100vh-160px)] w-full sm:h-[calc(100vh-160px)]'
+                                : 'h-[500px] w-full sm:h-[600px]'
                         }
                     />
 
                     {showScrollButton && (
                         <button
                             onClick={scrollToBottom}
-                            className='absolute top-4 right-4 z-10 backdrop-blur-sm bg-background/95 hover:bg-background px-3 py-2 rounded-lg border border-border flex items-center gap-2 transition-colors'
+                            className='bg-background/95 hover:bg-background border-border absolute top-4 right-4 z-10 flex items-center gap-2 rounded-lg border px-3 py-2 backdrop-blur-sm transition-colors'
                         >
                             <ChevronDown className='h-4 w-4' />
-                            <span className='hidden sm:inline text-sm'>
+                            <span className='hidden text-sm sm:inline'>
                                 {t('servers.console.terminal.scroll_bottom')}
                             </span>
                         </button>
                     )}
 
                     {onSendCommand && (
-                        <div className='border-t border-border p-3 bg-muted/30'>
+                        <div className='border-border bg-muted/30 border-t p-3'>
                             <div className='flex gap-2'>
                                 <input
                                     value={commandInput}
@@ -615,26 +611,26 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                                         }
                                     }}
                                     type='text'
-                                    className='flex-1 text-sm font-mono px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary'
+                                    className='border-border bg-background focus:ring-primary flex-1 rounded-lg border px-3 py-2 font-mono text-sm focus:ring-2 focus:outline-none'
                                     placeholder={t('servers.console.terminal.placeholder')}
                                     disabled={!canSend}
                                 />
                                 <button
                                     onClick={sendCommand}
                                     disabled={!canSend || !commandInput.trim()}
-                                    className='h-9 w-9 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-colors'
+                                    className='bg-primary text-primary-foreground hover:bg-primary/90 flex h-9 w-9 items-center justify-center rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-50'
                                 >
                                     <Send className='h-4 w-4' />
                                 </button>
                             </div>
                             {!canSendCommands && (
-                                <p className='text-xs text-red-600 dark:text-red-400 mt-2 flex items-center gap-1.5'>
+                                <p className='mt-2 flex items-center gap-1.5 text-xs text-red-600 dark:text-red-400'>
                                     <span>🚫</span>
                                     <span>{t('servers.console.noConsolePermissionSend')}</span>
                                 </p>
                             )}
                             {canSendCommands && !canSend && (
-                                <p className='text-xs text-yellow-600 dark:text-yellow-400 mt-2 flex items-center gap-1.5'>
+                                <p className='mt-2 flex items-center gap-1.5 text-xs text-yellow-600 dark:text-yellow-400'>
                                     <span>⚠️</span>
                                     <span>{t('servers.console.terminal.server_running_required')}</span>
                                 </p>

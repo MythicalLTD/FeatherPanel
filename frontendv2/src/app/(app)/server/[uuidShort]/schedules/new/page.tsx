@@ -100,10 +100,10 @@ export default function CreateSchedulePage() {
     if (!canCreate) {
         return (
             <div className='flex flex-col items-center justify-center py-24 text-center'>
-                <div className='h-20 w-20 rounded-3xl bg-red-500/10 flex items-center justify-center mb-6'>
+                <div className='mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-red-500/10'>
                     <Lock className='h-10 w-10 text-red-500' />
                 </div>
-                <h1 className='text-2xl font-black uppercase tracking-tight'>{t('common.accessDenied')}</h1>
+                <h1 className='text-2xl font-black tracking-tight uppercase'>{t('common.accessDenied')}</h1>
                 <p className='text-muted-foreground mt-2'>{t('common.noPermission')}</p>
                 <Button variant='outline' className='mt-8' onClick={() => router.back()}>
                     {t('common.goBack')}
@@ -113,7 +113,7 @@ export default function CreateSchedulePage() {
     }
 
     return (
-        <div className='max-w-4xl mx-auto space-y-8 pb-16 '>
+        <div className='mx-auto max-w-4xl space-y-8 pb-16'>
             <PageHeader
                 title={t('serverSchedules.createSchedule')}
                 description={t('serverSchedules.createScheduleDescription')}
@@ -129,7 +129,7 @@ export default function CreateSchedulePage() {
                             disabled={saving}
                             loading={saving}
                         >
-                            <Plus className='h-4 w-4 mr-2' />
+                            <Plus className='mr-2 h-4 w-4' />
                             {t('serverSchedules.create')}
                         </Button>
                     </div>
@@ -138,16 +138,16 @@ export default function CreateSchedulePage() {
             <WidgetRenderer widgets={getWidgets('server-schedules-new', 'after-header')} />
 
             <form onSubmit={handleCreate} className='space-y-8'>
-                <div className='bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl p-8 space-y-6'>
-                    <div className='flex items-center gap-4 border-b border-border/10 pb-6'>
-                        <div className='h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20'>
-                            <Calendar className='h-5 w-5 text-primary' />
+                <div className='bg-card/50 border-border/50 space-y-6 rounded-3xl border p-8 backdrop-blur-3xl'>
+                    <div className='border-border/10 flex items-center gap-4 border-b pb-6'>
+                        <div className='bg-primary/10 border-primary/20 flex h-10 w-10 items-center justify-center rounded-xl border'>
+                            <Calendar className='text-primary h-5 w-5' />
                         </div>
                         <div className='space-y-0.5'>
-                            <h2 className='text-xl font-black uppercase tracking-tight italic'>
+                            <h2 className='text-xl font-black tracking-tight uppercase italic'>
                                 {t('serverSchedules.name')}
                             </h2>
-                            <p className='text-[9px] font-bold text-muted-foreground tracking-widest uppercase opacity-50'>
+                            <p className='text-muted-foreground text-[9px] font-bold tracking-widest uppercase opacity-50'>
                                 Basic Info
                             </p>
                         </div>
@@ -156,7 +156,7 @@ export default function CreateSchedulePage() {
                     <div className='space-y-2.5'>
                         <Label
                             htmlFor='schedule-name'
-                            className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'
+                            className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'
                         >
                             {t('serverSchedules.name')} <span className='text-primary'>*</span>
                         </Label>
@@ -168,21 +168,21 @@ export default function CreateSchedulePage() {
                             disabled={saving}
                             required
                         />
-                        <p className='text-xs text-muted-foreground ml-1'>{t('serverSchedules.nameHelp')}</p>
+                        <p className='text-muted-foreground ml-1 text-xs'>{t('serverSchedules.nameHelp')}</p>
                     </div>
                 </div>
 
-                <div className='bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl p-8 space-y-6'>
-                    <div className='flex items-center justify-between border-b border-border/10 pb-6'>
+                <div className='bg-card/50 border-border/50 space-y-6 rounded-3xl border p-8 backdrop-blur-3xl'>
+                    <div className='border-border/10 flex items-center justify-between border-b pb-6'>
                         <div className='flex items-center gap-4'>
-                            <div className='h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20'>
-                                <Calendar className='h-5 w-5 text-primary' />
+                            <div className='bg-primary/10 border-primary/20 flex h-10 w-10 items-center justify-center rounded-xl border'>
+                                <Calendar className='text-primary h-5 w-5' />
                             </div>
                             <div className='space-y-0.5'>
-                                <h2 className='text-xl font-black uppercase tracking-tight italic'>
+                                <h2 className='text-xl font-black tracking-tight uppercase italic'>
                                     {t('serverSchedules.cronExpression')}
                                 </h2>
-                                <p className='text-[9px] font-bold text-muted-foreground tracking-widest uppercase opacity-50'>
+                                <p className='text-muted-foreground text-[9px] font-bold tracking-widest uppercase opacity-50'>
                                     Schedule Timing
                                 </p>
                             </div>
@@ -191,7 +191,7 @@ export default function CreateSchedulePage() {
                             href='https://cron.help/'
                             target='_blank'
                             rel='noopener noreferrer'
-                            className='text-xs text-primary hover:underline flex items-center gap-1 font-bold'
+                            className='text-primary flex items-center gap-1 text-xs font-bold hover:underline'
                         >
                             <ExternalLink className='h-3 w-3' />
                             {t('serverSchedules.cronHelper')}
@@ -208,7 +208,7 @@ export default function CreateSchedulePage() {
                                 value={formData.cron_minute}
                                 onChange={(e) => setFormData({ ...formData, cron_minute: e.target.value })}
                                 placeholder='*/5'
-                                className='font-mono bg-secondary/50 border-border/10'
+                                className='bg-secondary/50 border-border/10 font-mono'
                                 disabled={saving}
                             />
                         </div>
@@ -222,7 +222,7 @@ export default function CreateSchedulePage() {
                                 value={formData.cron_hour}
                                 onChange={(e) => setFormData({ ...formData, cron_hour: e.target.value })}
                                 placeholder='*'
-                                className='font-mono bg-secondary/50 border-border/10'
+                                className='bg-secondary/50 border-border/10 font-mono'
                                 disabled={saving}
                             />
                         </div>
@@ -236,7 +236,7 @@ export default function CreateSchedulePage() {
                                 value={formData.cron_day_of_month}
                                 onChange={(e) => setFormData({ ...formData, cron_day_of_month: e.target.value })}
                                 placeholder='*'
-                                className='font-mono bg-secondary/50 border-border/10'
+                                className='bg-secondary/50 border-border/10 font-mono'
                                 disabled={saving}
                             />
                         </div>
@@ -250,7 +250,7 @@ export default function CreateSchedulePage() {
                                 value={formData.cron_month}
                                 onChange={(e) => setFormData({ ...formData, cron_month: e.target.value })}
                                 placeholder='*'
-                                className='font-mono bg-secondary/50 border-border/10'
+                                className='bg-secondary/50 border-border/10 font-mono'
                                 disabled={saving}
                             />
                         </div>
@@ -264,23 +264,23 @@ export default function CreateSchedulePage() {
                                 value={formData.cron_day_of_week}
                                 onChange={(e) => setFormData({ ...formData, cron_day_of_week: e.target.value })}
                                 placeholder='*'
-                                className='font-mono bg-secondary/50 border-border/10'
+                                className='bg-secondary/50 border-border/10 font-mono'
                                 disabled={saving}
                             />
                         </div>
                     </div>
 
-                    <p className='text-xs text-muted-foreground'>{t('serverSchedules.cronHelp')}</p>
+                    <p className='text-muted-foreground text-xs'>{t('serverSchedules.cronHelp')}</p>
                 </div>
 
-                <div className='bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl p-8 space-y-6'>
-                    <div className='flex items-center gap-4 border-b border-border/10 pb-6'>
-                        <div className='h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20'>
-                            <Calendar className='h-5 w-5 text-primary' />
+                <div className='bg-card/50 border-border/50 space-y-6 rounded-3xl border p-8 backdrop-blur-3xl'>
+                    <div className='border-border/10 flex items-center gap-4 border-b pb-6'>
+                        <div className='bg-primary/10 border-primary/20 flex h-10 w-10 items-center justify-center rounded-xl border'>
+                            <Calendar className='text-primary h-5 w-5' />
                         </div>
                         <div className='space-y-0.5'>
-                            <h2 className='text-xl font-black uppercase tracking-tight italic'>Options</h2>
-                            <p className='text-[9px] font-bold text-muted-foreground tracking-widest uppercase opacity-50'>
+                            <h2 className='text-xl font-black tracking-tight uppercase italic'>Options</h2>
+                            <p className='text-muted-foreground text-[9px] font-bold tracking-widest uppercase opacity-50'>
                                 Configuration
                             </p>
                         </div>
@@ -301,7 +301,7 @@ export default function CreateSchedulePage() {
                                 disabled={saving}
                                 buttonClassName='h-12 bg-secondary/50 border-border/10 focus:border-primary/50 rounded-xl text-sm font-extrabold transition-all'
                             />
-                            <p className='text-xs text-muted-foreground ml-1'>
+                            <p className='text-muted-foreground ml-1 text-xs'>
                                 {t('serverSchedules.onlyWhenOnlineHelp')}
                             </p>
                         </div>
@@ -320,14 +320,14 @@ export default function CreateSchedulePage() {
                                 disabled={saving}
                                 buttonClassName='h-12 bg-secondary/50 border-border/10 focus:border-primary/50 rounded-xl text-sm font-extrabold transition-all'
                             />
-                            <p className='text-xs text-muted-foreground ml-1'>
+                            <p className='text-muted-foreground ml-1 text-xs'>
                                 {t('serverSchedules.scheduleEnabledHelp')}
                             </p>
                         </div>
                     </div>
                 </div>
 
-                <div className='md:hidden flex flex-col gap-3'>
+                <div className='flex flex-col gap-3 md:hidden'>
                     <Button
                         type='submit'
                         size='default'
@@ -336,7 +336,7 @@ export default function CreateSchedulePage() {
                         loading={saving}
                         className='w-full text-[10px]'
                     >
-                        <Plus className='h-4 w-4 mr-2' />
+                        <Plus className='mr-2 h-4 w-4' />
                         {t('serverSchedules.create')}
                     </Button>
                     <Button

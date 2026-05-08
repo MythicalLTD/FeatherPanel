@@ -27,12 +27,12 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
     ({ className, children, label, description, error, ...props }, ref) => {
         return (
             <Field>
-                {label && <Label className='block text-sm font-semibold text-foreground mb-2'>{label}</Label>}
-                {description && <Description className='text-sm text-muted-foreground mb-2'>{description}</Description>}
+                {label && <Label className='text-foreground mb-2 block text-sm font-semibold'>{label}</Label>}
+                {description && <Description className='text-muted-foreground mb-2 text-sm'>{description}</Description>}
                 <div className='relative'>
                     <select
                         className={cn(
-                            'w-full h-12 rounded-xl border bg-muted/30 text-sm transition-all duration-200 px-4 py-3 appearance-none focus:outline-none focus:ring-4 disabled:cursor-not-allowed disabled:opacity-50 placeholder:text-muted-foreground/50 shadow-sm hover:shadow-md focus:shadow-lg font-semibold text-foreground [&>option]:bg-zinc-900 [&>option]:text-white',
+                            'bg-muted/30 placeholder:text-muted-foreground/50 text-foreground h-12 w-full appearance-none rounded-xl border px-4 py-3 text-sm font-semibold shadow-sm transition-all duration-200 hover:shadow-md focus:shadow-lg focus:ring-4 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 [&>option]:bg-zinc-900 [&>option]:text-white',
                             error
                                 ? 'border-destructive focus:border-destructive focus:ring-destructive/20'
                                 : 'border-border/50 focus:border-primary focus:ring-primary/20 hover:border-border',
@@ -43,7 +43,7 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
                     >
                         {children}
                     </select>
-                    <div className='absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none'>
+                    <div className='pointer-events-none absolute inset-y-0 right-0 flex items-center px-4'>
                         <svg
                             className='h-4 w-4 opacity-50'
                             xmlns='http://www.w3.org/2000/svg'
@@ -59,7 +59,7 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
                     </div>
                 </div>
                 {error && (
-                    <Description className='text-sm text-destructive mt-2 flex items-center gap-1 animate-fade-in'>
+                    <Description className='text-destructive animate-fade-in mt-2 flex items-center gap-1 text-sm'>
                         <svg className='h-4 w-4' fill='none' viewBox='0 0 24 24' stroke='currentColor'>
                             <path
                                 strokeLinecap='round'

@@ -43,10 +43,10 @@ export default function Loading() {
     });
 
     return (
-        <div className='motion-always flex min-h-screen items-center justify-center bg-background'>
+        <div className='motion-always bg-background flex min-h-screen items-center justify-center'>
             <div className='relative'>
                 <div
-                    className='h-16 w-16 rounded-full border-4 border-transparent animate-spin'
+                    className='h-16 w-16 animate-spin rounded-full border-4 border-transparent'
                     style={{
                         borderTopColor: `hsl(${accentColor})`,
                         borderRightColor: `hsl(${accentColor} / 0.3)`,
@@ -56,7 +56,7 @@ export default function Loading() {
 
                 <div className='absolute inset-0 flex items-center justify-center'>
                     <div
-                        className='h-3 w-3 rounded-full animate-pulse'
+                        className='h-3 w-3 animate-pulse rounded-full'
                         style={{
                             backgroundColor: `hsl(${accentColor})`,
                             animationDuration: '1.5s',
@@ -65,7 +65,7 @@ export default function Loading() {
                 </div>
 
                 <div
-                    className='absolute inset-0 rounded-full blur-xl opacity-20 animate-pulse'
+                    className='absolute inset-0 animate-pulse rounded-full opacity-20 blur-xl'
                     style={{
                         backgroundColor: `hsl(${accentColor})`,
                         animationDuration: '2s',

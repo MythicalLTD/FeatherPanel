@@ -19,9 +19,9 @@ import { PageCard } from '@/components/featherui/PageCard';
 export function TutorialVM() {
     return (
         <PageCard title='How to create Debian 13 / Ubuntu 24.04 Proxmox templates' icon={Info} className='mt-6'>
-            <div className='text-sm text-muted-foreground space-y-4'>
+            <div className='text-muted-foreground space-y-4 text-sm'>
                 <p className='font-medium'>1. Download latest cloud images on your Proxmox node</p>
-                <pre className='bg-muted/60 rounded-md p-3 overflow-x-auto text-xs'>
+                <pre className='bg-muted/60 overflow-x-auto rounded-md p-3 text-xs'>
                     <code>{`cd /var/lib/vz/template/iso
 
 # Debian 13 (trixie)
@@ -33,14 +33,14 @@ wget https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.i
 
                 <p className='font-medium'>2. Create a Debian 13 cloud-init template (example VMID 9000)</p>
                 <p>In the Proxmox UI, use these settings when you click &quot;Create VM&quot;:</p>
-                <ul className='list-disc list-inside text-xs space-y-1'>
+                <ul className='list-inside list-disc space-y-1 text-xs'>
                     <li>
                         <span className='font-semibold'>General:</span> set VMID <code>9000</code>, name e.g.
                         <code>debian-13-cloudinit</code>.
                     </li>
                     <li>
                         <span className='font-semibold'>OS tab:</span>{' '}
-                        <span className='font-semibold text-foreground'>do not attach any ISO</span>. Set the CD/DVD
+                        <span className='text-foreground font-semibold'>do not attach any ISO</span>. Set the CD/DVD
                         option to <code>Do not use any media</code>.
                     </li>
                     <li>
@@ -70,11 +70,11 @@ wget https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.i
                     <span className='font-semibold'>remove the default scsi0 disk</span>, and make sure you still have
                     an EFI disk (<code>efidisk0</code>) and a free IDE slot for cloud-init (<code>ide2</code>). Then on
                     the node shell run the commands below.{' '}
-                    <span className='font-semibold text-foreground'>Do not literally type</span>{' '}
+                    <span className='text-foreground font-semibold'>Do not literally type</span>{' '}
                     <code>&lt;storage&gt;</code> – replace it with your storage ID from <code>qm config</code> (for
                     example <code>local</code> or <code>local-lvm</code>).
                 </p>
-                <pre className='bg-muted/60 rounded-md p-3 overflow-x-auto text-xs'>
+                <pre className='bg-muted/60 overflow-x-auto rounded-md p-3 text-xs'>
                     <code>{`cd /var/lib/vz/template/iso
 
 # (Optional) rename to .qcow2 and resize to desired template size
@@ -108,7 +108,7 @@ qm set 9000 --serial0 socket --vga serial0`}</code>
                 <p className='text-xs'>
                     Go to <code>Hardware</code> and make sure you have an EFI disk (<code>efidisk0</code>) and a
                     <span className='font-semibold'> CloudInit drive</span> on <code>ide2</code>.{' '}
-                    <span className='font-semibold text-foreground'>Do not remove the CloudInit drive</span> – it is
+                    <span className='text-foreground font-semibold'>Do not remove the CloudInit drive</span> – it is
                     required for FeatherPanel to inject IP, user, password and SSH keys. Finally, right‑click the VM in
                     the tree, choose <code>Convert to template</code> and confirm. This gives you a ready‑to‑use
                     cloud-init template for that OS.
@@ -123,7 +123,7 @@ qm set 9000 --serial0 socket --vga serial0`}</code>
 
                 <p className='font-medium'>3. Create an Ubuntu 24.04 cloud-init template (example VMID 9001)</p>
                 <p>In the Proxmox UI, repeat the same VM creation flow for Ubuntu:</p>
-                <ul className='list-disc list-inside text-xs space-y-1'>
+                <ul className='list-inside list-disc space-y-1 text-xs'>
                     <li>
                         <span className='font-semibold'>General:</span> VMID <code>9001</code>, name e.g.
                         <code>ubuntu-24-cloudinit</code>.
@@ -145,7 +145,7 @@ qm set 9000 --serial0 socket --vga serial0`}</code>
                 <p className='text-xs'>
                     Then on the node shell import the Ubuntu cloud image and attach it as <code>scsi0</code>:
                 </p>
-                <pre className='bg-muted/60 rounded-md p-3 overflow-x-auto text-xs'>
+                <pre className='bg-muted/60 overflow-x-auto rounded-md p-3 text-xs'>
                     <code>{`cd /var/lib/vz/template/iso
 
 mv noble-server-cloudimg-amd64.img noble-server-cloudimg-amd64.qcow2
@@ -175,7 +175,7 @@ qm set 9001 --serial0 socket --vga serial0`}</code>
                 <p className='text-xs'>
                     Go to <code>Hardware</code> and make sure you have an EFI disk (<code>efidisk0</code>) and a
                     <span className='font-semibold'> CloudInit drive</span> on <code>ide2</code>.{' '}
-                    <span className='font-semibold text-foreground'>Do not remove the CloudInit drive</span> – it is
+                    <span className='text-foreground font-semibold'>Do not remove the CloudInit drive</span> – it is
                     required for FeatherPanel to inject IP, user, password and SSH keys. Finally, right‑click the VM in
                     the tree, choose <code>Convert to template</code> and confirm. This gives you a ready‑to‑use
                     cloud-init template for that OS.
@@ -195,12 +195,12 @@ qm set 9001 --serial0 socket --vga serial0`}</code>
                     that ship proper cloud-init images and UEFI support.
                 </p>
 
-                <div className='bg-primary/5 rounded-lg border border-primary/20 p-4 mt-6'>
-                    <p className='font-medium text-primary flex items-center gap-2'>
+                <div className='bg-primary/5 border-primary/20 mt-6 rounded-lg border p-4'>
+                    <p className='text-primary flex items-center gap-2 font-medium'>
                         <ShieldAlert className='h-4 w-4' />
                         Best Practice: Why use VMs?
                     </p>
-                    <p className='text-xs mt-1 text-muted-foreground'>
+                    <p className='text-muted-foreground mt-1 text-xs'>
                         VMs (QEMU/KVM) provide the strongest isolation and best compatibility with modern workloads like
                         Docker and complex networking. FeatherPanel developers and security experts recommend VMs over
                         LXC for all commercial hosting applications to prevent container escapes and resource abuse.

@@ -61,7 +61,7 @@ export function DeleteDialog({ open, onOpenChange, uuid, root, files, onSuccess 
                         {t('files.dialogs.delete.description', { count: String(files.length) })}
                     </DialogDescription>
                 </DialogHeader>
-                <div className='max-h-32 overflow-y-auto rounded bg-muted/50 p-2 text-sm text-muted-foreground'>
+                <div className='bg-muted/50 text-muted-foreground max-h-32 overflow-y-auto rounded p-2 text-sm'>
                     <ul className='list-inside list-disc'>
                         {files.map((f) => (
                             <li key={f}>{f}</li>

@@ -57,32 +57,32 @@ export function MountsTab({ form, setForm, assignableMounts, loading }: MountsTa
                 description={t('admin.servers.edit.mounts.description')}
             >
                 {loading ? (
-                    <div className='flex items-center gap-2 text-muted-foreground py-8'>
+                    <div className='text-muted-foreground flex items-center gap-2 py-8'>
                         <Loader2 className='h-5 w-5 animate-spin' />
                         <span>{t('admin.servers.edit.mounts.loading')}</span>
                     </div>
                 ) : assignableMounts.length === 0 ? (
-                    <p className='text-sm text-muted-foreground py-4'>{t('admin.servers.edit.mounts.empty')}</p>
+                    <p className='text-muted-foreground py-4 text-sm'>{t('admin.servers.edit.mounts.empty')}</p>
                 ) : (
                     <div className='space-y-3'>
                         {assignableMounts.map((m) => (
                             <div
                                 key={m.id}
-                                className='flex items-start gap-3 rounded-xl border border-border/60 bg-muted/20 p-4'
+                                className='border-border/60 bg-muted/20 flex items-start gap-3 rounded-xl border p-4'
                             >
                                 <Checkbox
                                     id={`mount-${m.id}`}
                                     checked={form.mount_ids.includes(m.id)}
                                     onCheckedChange={() => toggle(m.id)}
                                 />
-                                <div className='flex-1 min-w-0 space-y-1'>
-                                    <Label htmlFor={`mount-${m.id}`} className='text-base font-medium cursor-pointer'>
+                                <div className='min-w-0 flex-1 space-y-1'>
+                                    <Label htmlFor={`mount-${m.id}`} className='cursor-pointer text-base font-medium'>
                                         {m.name}
                                     </Label>
-                                    <p className='text-xs font-mono text-muted-foreground break-all'>
+                                    <p className='text-muted-foreground font-mono text-xs break-all'>
                                         {m.source} → {m.target}
                                     </p>
-                                    <p className='text-xs text-muted-foreground'>
+                                    <p className='text-muted-foreground text-xs'>
                                         {m.read_only ? t('admin.mounts.read_only') : t('admin.mounts.read_write')}
                                     </p>
                                 </div>

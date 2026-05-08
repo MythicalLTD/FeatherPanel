@@ -47,19 +47,19 @@ export function NodeHeader({
         <PageHeader
             title={node.name}
             description={
-                <div className='flex items-center gap-2 mt-1'>
-                    <span className='text-sm text-muted-foreground'>{node.fqdn}</span>
+                <div className='mt-1 flex items-center gap-2'>
+                    <span className='text-muted-foreground text-sm'>{node.fqdn}</span>
                     <span className='text-muted-foreground/30'>•</span>
-                    <span className='text-sm text-muted-foreground'>{locationName}</span>
+                    <span className='text-muted-foreground text-sm'>{locationName}</span>
                 </div>
             }
             icon={Activity}
             actions={
                 <div className='flex items-center gap-3'>
-                    <div className='flex items-center gap-2 mr-2 px-3 py-1.5 rounded-full bg-background/50 border border-border/50'>
+                    <div className='bg-background/50 border-border/50 mr-2 flex items-center gap-2 rounded-full border px-3 py-1.5'>
                         {isOnline ? (
                             <>
-                                <div className='h-2 w-2 rounded-full bg-green-500 animate-pulse' />
+                                <div className='h-2 w-2 animate-pulse rounded-full bg-green-500' />
                                 <span className='text-xs font-medium text-green-500'>
                                     {t('admin.node.health.online')}
                                 </span>
@@ -74,15 +74,15 @@ export function NodeHeader({
                         )}
                     </div>
                     <Button variant='outline' size='sm' onClick={onBack}>
-                        <ArrowLeft className='h-4 w-4 mr-2' />
+                        <ArrowLeft className='mr-2 h-4 w-4' />
                         {t('common.back')}
                     </Button>
                     <Button variant='outline' size='sm' onClick={onDatabases}>
-                        <Database className='h-4 w-4 mr-2' />
+                        <Database className='mr-2 h-4 w-4' />
                         {t('admin.node.view.databases')}
                     </Button>
                     <Button variant='outline' size='sm' onClick={onAllocations}>
-                        <Network className='h-4 w-4 mr-2' />
+                        <Network className='mr-2 h-4 w-4' />
                         {t('admin.node.view.allocations')}
                     </Button>
                 </div>

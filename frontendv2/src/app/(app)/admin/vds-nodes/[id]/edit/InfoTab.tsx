@@ -143,8 +143,8 @@ function CircleGauge({
                     <span className='text-xs font-bold tabular-nums'>{Math.round(percent)}%</span>
                 </div>
             </div>
-            <span className='text-[11px] font-semibold text-muted-foreground uppercase tracking-wide'>{label}</span>
-            {sub && <span className='text-[10px] text-muted-foreground'>{sub}</span>}
+            <span className='text-muted-foreground text-[11px] font-semibold tracking-wide uppercase'>{label}</span>
+            {sub && <span className='text-muted-foreground text-[10px]'>{sub}</span>}
         </div>
     );
 }
@@ -168,7 +168,7 @@ function StatBar({
     return (
         <div className='space-y-1.5'>
             <div className='flex items-center justify-between text-xs'>
-                <span className='flex items-center gap-1.5 font-medium text-muted-foreground'>
+                <span className='text-muted-foreground flex items-center gap-1.5 font-medium'>
                     <Icon className='h-3.5 w-3.5' />
                     {label}
                 </span>
@@ -176,7 +176,7 @@ function StatBar({
                     {used} <span className='text-muted-foreground'>/ {max}</span>
                 </span>
             </div>
-            <div className='h-2 w-full rounded-full bg-muted/40 overflow-hidden'>
+            <div className='bg-muted/40 h-2 w-full overflow-hidden rounded-full'>
                 <div
                     className={cn('h-full rounded-full transition-all duration-700', colorClass)}
                     style={{ width: `${Math.min(pct, 100)}%` }}
@@ -204,7 +204,7 @@ function NodeCard({ node }: { node: ProxmoxNode }) {
     return (
         <div
             className={cn(
-                'rounded-2xl border p-5 space-y-5 transition-all',
+                'space-y-5 rounded-2xl border p-5 transition-all',
                 isOnline ? 'border-green-500/20 bg-green-500/5' : 'border-red-500/20 bg-red-500/5 opacity-70',
             )}
         >
@@ -213,31 +213,31 @@ function NodeCard({ node }: { node: ProxmoxNode }) {
                 <div className='flex items-center gap-3'>
                     <div
                         className={cn(
-                            'h-9 w-9 rounded-xl flex items-center justify-center',
+                            'flex h-9 w-9 items-center justify-center rounded-xl',
                             isOnline ? 'bg-green-500/10' : 'bg-red-500/10',
                         )}
                     >
                         <Server className={cn('h-4.5 w-4.5', isOnline ? 'text-green-500' : 'text-red-500')} />
                     </div>
                     <div>
-                        <p className='font-bold font-mono'>{node.node}</p>
-                        <p className='text-[10px] uppercase font-semibold text-muted-foreground tracking-widest'>
+                        <p className='font-mono font-bold'>{node.node}</p>
+                        <p className='text-muted-foreground text-[10px] font-semibold tracking-widest uppercase'>
                             {node.type}
                         </p>
                     </div>
                 </div>
                 <div className='flex items-center gap-2'>
                     {node.level && (
-                        <span className='text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20'>
+                        <span className='bg-primary/10 text-primary border-primary/20 rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase'>
                             {node.level}
                         </span>
                     )}
                     <span
                         className={cn(
-                            'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold',
+                            'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold',
                             isOnline
-                                ? 'bg-green-500/10 text-green-600 border border-green-500/20'
-                                : 'bg-red-500/10 text-red-500 border border-red-500/20',
+                                ? 'border border-green-500/20 bg-green-500/10 text-green-600'
+                                : 'border border-red-500/20 bg-red-500/10 text-red-500',
                         )}
                     >
                         {isOnline ? <CheckCircle2 className='h-3.5 w-3.5' /> : <XCircle className='h-3.5 w-3.5' />}
@@ -273,7 +273,7 @@ function NodeCard({ node }: { node: ProxmoxNode }) {
                     </div>
 
                     {/* Detailed stat bars */}
-                    <div className='space-y-3 pt-1 border-t border-border/40'>
+                    <div className='border-border/40 space-y-3 border-t pt-1'>
                         <StatBar
                             icon={Cpu}
                             label='CPU Usage'
@@ -308,7 +308,7 @@ function NodeCard({ node }: { node: ProxmoxNode }) {
 
                     {/* Uptime */}
                     {node.uptime !== undefined && node.uptime > 0 && (
-                        <div className='flex items-center gap-2 text-xs text-muted-foreground pt-1 border-t border-border/40'>
+                        <div className='text-muted-foreground border-border/40 flex items-center gap-2 border-t pt-1 text-xs'>
                             <Clock className='h-3.5 w-3.5' />
                             <span>
                                 Uptime:{' '}
@@ -356,29 +356,29 @@ export function InfoTab({ nodeId, nodeName }: InfoTabProps) {
                 description={t('admin.vdsNodes.info.version_description', { name: nodeName })}
                 action={
                     <Button variant='outline' size='sm' onClick={fetchInfo} loading={loading}>
-                        <RefreshCw className='h-4 w-4 mr-2' />
+                        <RefreshCw className='mr-2 h-4 w-4' />
                         {t('common.refresh')}
                     </Button>
                 }
             >
                 {loading && !info ? (
                     <div className='flex items-center justify-center py-10'>
-                        <Loader2 className='h-6 w-6 animate-spin text-primary' />
+                        <Loader2 className='text-primary h-6 w-6 animate-spin' />
                     </div>
                 ) : error ? (
                     <div className='flex items-center gap-3 rounded-xl border border-red-500/30 bg-red-500/5 px-4 py-4'>
-                        <XCircle className='h-5 w-5 text-red-500 shrink-0' />
-                        <p className='text-sm text-red-600 font-medium'>{error}</p>
+                        <XCircle className='h-5 w-5 shrink-0 text-red-500' />
+                        <p className='text-sm font-medium text-red-600'>{error}</p>
                     </div>
                 ) : info && !info.version_ok ? (
                     <div className='flex items-center gap-3 rounded-xl border border-red-500/30 bg-red-500/5 px-4 py-4'>
-                        <XCircle className='h-5 w-5 text-red-500 shrink-0' />
-                        <p className='text-sm text-red-600 font-medium'>
+                        <XCircle className='h-5 w-5 shrink-0 text-red-500' />
+                        <p className='text-sm font-medium text-red-600'>
                             {info.version_error ?? t('admin.vdsNodes.info.version_fetch_failed')}
                         </p>
                     </div>
                 ) : info?.version ? (
-                    <div className='grid grid-cols-2 sm:grid-cols-4 gap-4'>
+                    <div className='grid grid-cols-2 gap-4 sm:grid-cols-4'>
                         {[
                             { icon: Tag, label: t('admin.vdsNodes.info.pve_version'), value: info.version.version },
                             { icon: Info, label: t('admin.vdsNodes.info.pve_release'), value: info.version.release },
@@ -395,14 +395,14 @@ export function InfoTab({ nodeId, nodeName }: InfoTabProps) {
                         ].map(({ icon: Icon, label, value }) => (
                             <div
                                 key={label}
-                                className='flex items-start gap-3 p-4 rounded-xl border border-border/50 bg-muted/20'
+                                className='border-border/50 bg-muted/20 flex items-start gap-3 rounded-xl border p-4'
                             >
-                                <Icon className='h-5 w-5 text-primary mt-0.5 shrink-0' />
+                                <Icon className='text-primary mt-0.5 h-5 w-5 shrink-0' />
                                 <div>
-                                    <p className='text-[10px] font-bold uppercase tracking-wider text-muted-foreground'>
+                                    <p className='text-muted-foreground text-[10px] font-bold tracking-wider uppercase'>
                                         {label}
                                     </p>
-                                    <p className='font-mono font-semibold text-sm mt-0.5' title={value}>
+                                    <p className='mt-0.5 font-mono text-sm font-semibold' title={value}>
                                         {value}
                                     </p>
                                 </div>
@@ -412,7 +412,7 @@ export function InfoTab({ nodeId, nodeName }: InfoTabProps) {
                 ) : null}
 
                 {lastFetched && (
-                    <p className='text-[10px] text-muted-foreground mt-3 italic'>
+                    <p className='text-muted-foreground mt-3 text-[10px] italic'>
                         {t('admin.vdsNodes.info.last_fetched', { time: lastFetched.toLocaleTimeString() })}
                     </p>
                 )}
@@ -426,19 +426,19 @@ export function InfoTab({ nodeId, nodeName }: InfoTabProps) {
             >
                 {loading && !info ? (
                     <div className='flex items-center justify-center py-10'>
-                        <Loader2 className='h-6 w-6 animate-spin text-primary' />
+                        <Loader2 className='text-primary h-6 w-6 animate-spin' />
                     </div>
                 ) : info && !info.nodes_ok ? (
                     <div className='flex items-center gap-3 rounded-xl border border-red-500/30 bg-red-500/5 px-4 py-4'>
-                        <XCircle className='h-5 w-5 text-red-500 shrink-0' />
-                        <p className='text-sm text-red-600 font-medium'>
+                        <XCircle className='h-5 w-5 shrink-0 text-red-500' />
+                        <p className='text-sm font-medium text-red-600'>
                             {info.nodes_error ?? t('admin.vdsNodes.info.nodes_fetch_failed')}
                         </p>
                     </div>
                 ) : info && info.nodes.length === 0 ? (
-                    <p className='text-sm text-muted-foreground italic py-4'>{t('admin.vdsNodes.info.no_nodes')}</p>
+                    <p className='text-muted-foreground py-4 text-sm italic'>{t('admin.vdsNodes.info.no_nodes')}</p>
                 ) : info ? (
-                    <div className='grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4'>
+                    <div className='grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3'>
                         {info.nodes.map((node) => (
                             <NodeCard key={node.node} node={node} />
                         ))}

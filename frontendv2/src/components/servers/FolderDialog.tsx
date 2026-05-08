@@ -54,15 +54,15 @@ export function FolderDialog({ isOpen, onClose, onSave, editingFolder, formData,
                             leaveFrom='opacity-100 scale-100'
                             leaveTo='opacity-0 scale-95'
                         >
-                            <DialogPanel className='w-full max-w-md transform overflow-hidden rounded-3xl bg-card border border-border shadow-2xl transition-all'>
+                            <DialogPanel className='bg-card border-border w-full max-w-md transform overflow-hidden rounded-3xl border shadow-2xl transition-all'>
                                 <div className='p-8'>
-                                    <DialogTitle className='text-2xl font-bold mb-6'>
+                                    <DialogTitle className='mb-6 text-2xl font-bold'>
                                         {editingFolder ? t('servers.editFolder') : t('servers.createFolder')}
                                     </DialogTitle>
 
                                     <div className='space-y-4'>
                                         <div>
-                                            <label className='block text-sm font-medium mb-2'>
+                                            <label className='mb-2 block text-sm font-medium'>
                                                 {t('servers.folderName')}
                                             </label>
                                             <input
@@ -70,12 +70,12 @@ export function FolderDialog({ isOpen, onClose, onSave, editingFolder, formData,
                                                 value={formData.name}
                                                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                                 placeholder={t('servers.folderNamePlaceholder')}
-                                                className='w-full px-4 py-3 bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary transition-all'
+                                                className='bg-background border-border focus:ring-primary w-full rounded-xl border px-4 py-3 transition-all focus:ring-2 focus:outline-none'
                                             />
                                         </div>
 
                                         <div>
-                                            <label className='block text-sm font-medium mb-2'>
+                                            <label className='mb-2 block text-sm font-medium'>
                                                 {t('servers.folderDescription')}
                                             </label>
                                             <textarea
@@ -85,22 +85,22 @@ export function FolderDialog({ isOpen, onClose, onSave, editingFolder, formData,
                                                 }
                                                 placeholder={t('servers.folderDescriptionPlaceholder')}
                                                 rows={3}
-                                                className='w-full px-4 py-3 bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary transition-all resize-none'
+                                                className='bg-background border-border focus:ring-primary w-full resize-none rounded-xl border px-4 py-3 transition-all focus:ring-2 focus:outline-none'
                                             />
                                         </div>
                                     </div>
 
-                                    <div className='flex gap-3 mt-8'>
+                                    <div className='mt-8 flex gap-3'>
                                         <button
                                             onClick={onSave}
                                             disabled={!formData.name.trim()}
-                                            className='flex-1 px-6 py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+                                            className='bg-primary text-primary-foreground hover:bg-primary/90 flex-1 rounded-xl px-6 py-3 font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50'
                                         >
                                             {editingFolder ? t('servers.saveChanges') : t('servers.createFolder')}
                                         </button>
                                         <button
                                             onClick={onClose}
-                                            className='px-6 py-3 bg-muted text-foreground rounded-xl font-semibold hover:bg-muted/80 transition-colors'
+                                            className='bg-muted text-foreground hover:bg-muted/80 rounded-xl px-6 py-3 font-semibold transition-colors'
                                         >
                                             {t('servers.cancel')}
                                         </button>

@@ -81,18 +81,18 @@ export function PageCard({
         <div
             id={id}
             className={cn(
-                'backdrop-blur-xl border rounded-3xl p-8 space-y-6 relative overflow-hidden group transition-all',
+                'group relative space-y-6 overflow-hidden rounded-3xl border p-8 backdrop-blur-xl transition-all',
                 styles.bg,
                 styles.border,
                 className,
             )}
         >
-            <div className='flex items-center justify-between border-b border-border/10 pb-6 relative z-10'>
+            <div className='border-border/10 relative z-10 flex items-center justify-between border-b pb-6'>
                 <div className='flex items-center gap-4'>
                     {(Icon || iconSrc) && (
                         <div
                             className={cn(
-                                'h-10 w-10 rounded-xl flex items-center justify-center border overflow-hidden p-2',
+                                'flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl border p-2',
                                 styles.iconBg,
                                 styles.iconBorder,
                             )}
@@ -105,10 +105,10 @@ export function PageCard({
                             )}
                         </div>
                     )}
-                    <div className='space-y-0.5 flex-1 min-w-0'>
+                    <div className='min-w-0 flex-1 space-y-0.5'>
                         <h2
                             className={cn(
-                                'text-lg font-black uppercase tracking-tight line-clamp-2 break-all',
+                                'line-clamp-2 text-lg font-black tracking-tight break-all uppercase',
                                 styles.title,
                             )}
                             title={title}
@@ -116,7 +116,7 @@ export function PageCard({
                             {title}
                         </h2>
                         {description && (
-                            <p className='text-[9px] font-bold text-muted-foreground tracking-widest uppercase opacity-50 truncate'>
+                            <p className='text-muted-foreground truncate text-[9px] font-bold tracking-widest uppercase opacity-50'>
                                 {description}
                             </p>
                         )}
@@ -127,7 +127,7 @@ export function PageCard({
 
             <div className='relative z-10'>{children}</div>
 
-            {footer && <div className='pt-4 border-t border-border/10 relative z-10'>{footer}</div>}
+            {footer && <div className='border-border/10 relative z-10 border-t pt-4'>{footer}</div>}
         </div>
     );
 }

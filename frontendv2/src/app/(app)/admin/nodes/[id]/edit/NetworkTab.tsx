@@ -33,7 +33,7 @@ export function NetworkTab({ form, setForm, errors }: NetworkTabProps) {
 
     return (
         <PageCard title={t('admin.node.form.network')} icon={Network}>
-            <div className='grid grid-cols-1 md:grid-cols-2 gap-8'>
+            <div className='grid grid-cols-1 gap-8 md:grid-cols-2'>
                 <div className='space-y-6'>
                     <div className='space-y-2'>
                         <Label className='text-sm font-semibold'>{t('admin.node.form.fqdn')}</Label>
@@ -45,7 +45,7 @@ export function NetworkTab({ form, setForm, errors }: NetworkTabProps) {
                             }
                             error={!!errors.fqdn}
                         />
-                        <p className='text-xs text-muted-foreground/70 italic'>{t('admin.node.form.fqdn_help')}</p>
+                        <p className='text-muted-foreground/70 text-xs italic'>{t('admin.node.form.fqdn_help')}</p>
                     </div>
                     <div className='space-y-2'>
                         <Label className='text-sm font-semibold'>{t('admin.node.form.sftp_subdomain')}</Label>
@@ -57,7 +57,7 @@ export function NetworkTab({ form, setForm, errors }: NetworkTabProps) {
                             }
                             error={!!errors.sftp_subdomain}
                         />
-                        <p className='text-xs text-muted-foreground/70 italic'>
+                        <p className='text-muted-foreground/70 text-xs italic'>
                             {t('admin.node.form.sftp_subdomain_help')}
                         </p>
                     </div>
@@ -75,7 +75,7 @@ export function NetworkTab({ form, setForm, errors }: NetworkTabProps) {
                             <option value='http'>{t('admin.node.form.ssl_http')}</option>
                         </Select>
                         {form.scheme === 'https' && (
-                            <p className='text-xs text-yellow-500 font-medium italic'>
+                            <p className='text-xs font-medium text-yellow-500 italic'>
                                 {t('admin.node.form.ssl_warning')}
                             </p>
                         )}
@@ -91,7 +91,7 @@ export function NetworkTab({ form, setForm, errors }: NetworkTabProps) {
                             <option value='false'>{t('admin.node.form.proxy_none')}</option>
                             <option value='true'>{t('admin.node.form.proxy_yes')}</option>
                         </Select>
-                        <p className='text-xs text-muted-foreground/70 italic'>{t('admin.node.form.proxy_help')}</p>
+                        <p className='text-muted-foreground/70 text-xs italic'>{t('admin.node.form.proxy_help')}</p>
                     </div>
                 </div>
             </div>

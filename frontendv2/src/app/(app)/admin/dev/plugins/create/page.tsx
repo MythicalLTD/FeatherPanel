@@ -233,14 +233,14 @@ export default function CreatePluginPage() {
     if (developerModeLoading) {
         return (
             <div className='flex items-center justify-center p-12'>
-                <Loader2 className='w-8 h-8 animate-spin text-primary' />
+                <Loader2 className='text-primary h-8 w-8 animate-spin' />
             </div>
         );
     }
 
     if (isDeveloperModeEnabled === false) {
         return (
-            <div className='max-w-4xl mx-auto py-8 px-4'>
+            <div className='mx-auto max-w-4xl px-4 py-8'>
                 <EmptyState
                     title={t('admin.dev.developerModeRequired')}
                     description={
@@ -261,14 +261,14 @@ export default function CreatePluginPage() {
     return (
         <>
             <WidgetRenderer widgets={getWidgets('admin-dev-plugins-create', 'top-of-page')} />
-            <div className='max-w-4xl mx-auto py-8 px-4'>
+            <div className='mx-auto max-w-4xl px-4 py-8'>
                 <PageHeader
                     title={t('admin.dev.plugins.create.title')}
                     description={t('admin.dev.plugins.create.description')}
                     icon={Code}
                     actions={
                         <Button variant='outline' onClick={() => router.back()}>
-                            <ArrowLeft className='h-4 w-4 mr-2' />
+                            <ArrowLeft className='mr-2 h-4 w-4' />
                             {t('common.back')}
                         </Button>
                     }
@@ -279,13 +279,13 @@ export default function CreatePluginPage() {
                         e.preventDefault();
                         createPlugin();
                     }}
-                    className='space-y-8 mt-8'
+                    className='mt-8 space-y-8'
                 >
                     <PageCard title={t('admin.dev.plugins.create.basic_info')} icon={Code}>
                         <div className='space-y-6'>
-                            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                            <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
                                 <div>
-                                    <Label className='text-sm font-semibold mb-2 block'>
+                                    <Label className='mb-2 block text-sm font-semibold'>
                                         {t('admin.dev.plugins.create.name')} *
                                     </Label>
                                     <Input
@@ -294,12 +294,12 @@ export default function CreatePluginPage() {
                                         placeholder='MyAwesomePlugin'
                                         maxLength={32}
                                     />
-                                    <p className='text-xs text-muted-foreground mt-1'>
+                                    <p className='text-muted-foreground mt-1 text-xs'>
                                         {t('admin.dev.plugins.create.name_help')}
                                     </p>
                                 </div>
                                 <div>
-                                    <Label className='text-sm font-semibold mb-2 block'>
+                                    <Label className='mb-2 block text-sm font-semibold'>
                                         {t('admin.dev.plugins.create.identifier')} *
                                     </Label>
                                     <Input
@@ -309,14 +309,14 @@ export default function CreatePluginPage() {
                                         maxLength={32}
                                         className='lowercase'
                                     />
-                                    <p className='text-xs text-muted-foreground mt-1'>
+                                    <p className='text-muted-foreground mt-1 text-xs'>
                                         {t('admin.dev.plugins.create.identifier_help')}
                                     </p>
                                 </div>
                             </div>
 
                             <div>
-                                <Label className='text-sm font-semibold mb-2 block'>
+                                <Label className='mb-2 block text-sm font-semibold'>
                                     {t('admin.dev.plugins.create.description')}
                                 </Label>
                                 <Textarea
@@ -327,9 +327,9 @@ export default function CreatePluginPage() {
                                 />
                             </div>
 
-                            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                            <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
                                 <div>
-                                    <Label className='text-sm font-semibold mb-2 block'>
+                                    <Label className='mb-2 block text-sm font-semibold'>
                                         {t('admin.dev.plugins.create.version')}
                                     </Label>
                                     <Input
@@ -339,7 +339,7 @@ export default function CreatePluginPage() {
                                     />
                                 </div>
                                 <div>
-                                    <Label className='text-sm font-semibold mb-2 block'>
+                                    <Label className='mb-2 block text-sm font-semibold'>
                                         {t('admin.dev.plugins.create.target')}
                                     </Label>
                                     <Select
@@ -356,7 +356,7 @@ export default function CreatePluginPage() {
                             </div>
 
                             <div>
-                                <Label className='text-sm font-semibold mb-2 block'>
+                                <Label className='mb-2 block text-sm font-semibold'>
                                     {t('admin.dev.plugins.create.template')}
                                 </Label>
                                 <Select
@@ -374,7 +374,7 @@ export default function CreatePluginPage() {
                                         </option>
                                     ))}
                                 </Select>
-                                <p className='text-xs text-muted-foreground mt-1'>
+                                <p className='text-muted-foreground mt-1 text-xs'>
                                     {t('admin.dev.plugins.create.template_help')}
                                 </p>
                             </div>
@@ -418,7 +418,7 @@ export default function CreatePluginPage() {
                             >
                                 {t('admin.dev.plugins.create.add_author')}
                             </Button>
-                            <p className='text-xs text-muted-foreground'>
+                            <p className='text-muted-foreground text-xs'>
                                 {t('admin.dev.plugins.create.authors_help')}
                             </p>
                         </div>
@@ -484,7 +484,7 @@ export default function CreatePluginPage() {
                             >
                                 {t('admin.dev.plugins.create.add_flag')}
                             </Button>
-                            <p className='text-xs text-muted-foreground'>{t('admin.dev.plugins.create.flags_help')}</p>
+                            <p className='text-muted-foreground text-xs'>{t('admin.dev.plugins.create.flags_help')}</p>
                         </div>
                     </PageCard>
 
@@ -647,7 +647,7 @@ export default function CreatePluginPage() {
                     <PageCard title={t('admin.dev.plugins.create.config_fields')} icon={Code}>
                         <div className='space-y-4'>
                             {form.requiredConfigs.map((config, index) => (
-                                <div key={index} className='p-4 border rounded-lg space-y-3'>
+                                <div key={index} className='space-y-3 rounded-lg border p-4'>
                                     <div className='flex items-center justify-between'>
                                         <h4 className='font-medium'>
                                             {t('admin.dev.plugins.create.config_field')} {index + 1}
@@ -665,9 +665,9 @@ export default function CreatePluginPage() {
                                         </Button>
                                     </div>
 
-                                    <div className='grid grid-cols-1 md:grid-cols-2 gap-3'>
+                                    <div className='grid grid-cols-1 gap-3 md:grid-cols-2'>
                                         <div>
-                                            <Label className='text-xs font-medium mb-1 block'>
+                                            <Label className='mb-1 block text-xs font-medium'>
                                                 {t('admin.dev.plugins.create.field_name')} *
                                             </Label>
                                             <Input
@@ -682,7 +682,7 @@ export default function CreatePluginPage() {
                                             />
                                         </div>
                                         <div>
-                                            <Label className='text-xs font-medium mb-1 block'>
+                                            <Label className='mb-1 block text-xs font-medium'>
                                                 {t('admin.dev.plugins.create.display_name')} *
                                             </Label>
                                             <Input
@@ -701,9 +701,9 @@ export default function CreatePluginPage() {
                                         </div>
                                     </div>
 
-                                    <div className='grid grid-cols-1 md:grid-cols-2 gap-3'>
+                                    <div className='grid grid-cols-1 gap-3 md:grid-cols-2'>
                                         <div>
-                                            <Label className='text-xs font-medium mb-1 block'>
+                                            <Label className='mb-1 block text-xs font-medium'>
                                                 {t('admin.dev.plugins.create.field_type')}
                                             </Label>
                                             <Select
@@ -726,7 +726,7 @@ export default function CreatePluginPage() {
                                             </Select>
                                         </div>
                                         <div>
-                                            <Label className='text-xs font-medium mb-1 block'>
+                                            <Label className='mb-1 block text-xs font-medium'>
                                                 {t('admin.dev.plugins.create.default_value')}
                                             </Label>
                                             <Input
@@ -746,7 +746,7 @@ export default function CreatePluginPage() {
                                     </div>
 
                                     <div>
-                                        <Label className='text-xs font-medium mb-1 block'>
+                                        <Label className='mb-1 block text-xs font-medium'>
                                             {t('admin.dev.plugins.create.description')}
                                         </Label>
                                         <Textarea
@@ -765,9 +765,9 @@ export default function CreatePluginPage() {
                                         />
                                     </div>
 
-                                    <div className='grid grid-cols-1 md:grid-cols-2 gap-3'>
+                                    <div className='grid grid-cols-1 gap-3 md:grid-cols-2'>
                                         <div>
-                                            <Label className='text-xs font-medium mb-1 block'>
+                                            <Label className='mb-1 block text-xs font-medium'>
                                                 {t('admin.dev.plugins.create.validation_regex')}
                                             </Label>
                                             <Input
@@ -788,7 +788,7 @@ export default function CreatePluginPage() {
                                             />
                                         </div>
                                         <div>
-                                            <Label className='text-xs font-medium mb-1 block'>
+                                            <Label className='mb-1 block text-xs font-medium'>
                                                 {t('admin.dev.plugins.create.validation_message')}
                                             </Label>
                                             <Input
@@ -864,7 +864,7 @@ export default function CreatePluginPage() {
                             {t('common.cancel')}
                         </Button>
                         <Button type='submit' loading={loading}>
-                            <Save className='h-4 w-4 mr-2' />
+                            <Save className='mr-2 h-4 w-4' />
                             {loading
                                 ? t('admin.dev.plugins.create.creating')
                                 : t('admin.dev.plugins.create.create_plugin')}

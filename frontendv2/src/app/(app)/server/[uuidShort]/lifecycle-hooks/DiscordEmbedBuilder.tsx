@@ -49,26 +49,26 @@ function DiscordEmbedLivePreview({ preview }: { preview: DiscordEmbedPayloadPrev
     return (
         <div
             className={cn(
-                'rounded-2xl border border-border/40 bg-[#313338]/95 backdrop-blur-sm overflow-hidden shadow-xl',
+                'border-border/40 overflow-hidden rounded-2xl border bg-[#313338]/95 shadow-xl backdrop-blur-sm',
                 'min-h-[120px]',
             )}
         >
-            <div className='flex items-center gap-2 border-b border-white/10 px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-white/45'>
+            <div className='flex items-center gap-2 border-b border-white/10 px-3 py-2 text-[11px] font-semibold tracking-wider text-white/45 uppercase'>
                 <LayoutTemplate className='h-3.5 w-3.5' />
                 {t('lifecycleHooks.discord.previewTitle')}
             </div>
-            <div className='p-3 space-y-2'>
+            <div className='space-y-2 p-3'>
                 {!preview?.hasBody ? (
-                    <p className='text-xs text-muted-foreground italic px-1 py-4 text-center'>
+                    <p className='text-muted-foreground px-1 py-4 text-center text-xs italic'>
                         {t('lifecycleHooks.discord.previewEmpty')}
                     </p>
                 ) : (
                     <>
                         {preview.username ? (
-                            <div className='text-xs text-white/55 font-semibold truncate'>{preview.username}</div>
+                            <div className='truncate text-xs font-semibold text-white/55'>{preview.username}</div>
                         ) : null}
                         {preview.content ? (
-                            <div className='text-sm text-[#dcddde] whitespace-pre-wrap wrap-break-word'>
+                            <div className='text-sm wrap-break-word whitespace-pre-wrap text-[#dcddde]'>
                                 {preview.content}
                             </div>
                         ) : null}
@@ -81,7 +81,7 @@ function DiscordEmbedLivePreview({ preview }: { preview: DiscordEmbedPayloadPrev
                             return (
                                 <div
                                     key={idx}
-                                    className='rounded-md bg-[#2b2d31] border-l-4 pl-3 pr-2 py-2 max-w-full'
+                                    className='max-w-full rounded-md border-l-4 bg-[#2b2d31] py-2 pr-2 pl-3'
                                     style={{ borderLeftColor: accent }}
                                 >
                                     <div className='flex gap-2'>
@@ -90,18 +90,18 @@ function DiscordEmbedLivePreview({ preview }: { preview: DiscordEmbedPayloadPrev
                                             <img
                                                 src={emb.thumbnail.url}
                                                 alt=''
-                                                className='h-14 w-14 shrink-0 rounded object-cover mt-0.5'
+                                                className='mt-0.5 h-14 w-14 shrink-0 rounded object-cover'
                                             />
                                         ) : null}
-                                        <div className='flex-1 min-w-0 space-y-1'>
+                                        <div className='min-w-0 flex-1 space-y-1'>
                                             {emb.author?.name ? (
-                                                <div className='flex items-center gap-2 mb-1'>
+                                                <div className='mb-1 flex items-center gap-2'>
                                                     {emb.author.icon_url ? (
                                                         /* eslint-disable-next-line @next/next/no-img-element */
                                                         <img
                                                             src={emb.author.icon_url}
                                                             alt=''
-                                                            className='h-5 w-5 rounded-full shrink-0'
+                                                            className='h-5 w-5 shrink-0 rounded-full'
                                                         />
                                                     ) : null}
                                                     <span className='text-sm font-semibold text-white'>
@@ -110,19 +110,19 @@ function DiscordEmbedLivePreview({ preview }: { preview: DiscordEmbedPayloadPrev
                                                 </div>
                                             ) : null}
                                             {emb.title ? (
-                                                <div className='text-sm font-semibold text-white mb-1 wrap-break-word'>
+                                                <div className='mb-1 text-sm font-semibold wrap-break-word text-white'>
                                                     {emb.title}
                                                 </div>
                                             ) : null}
                                             {emb.description ? (
-                                                <div className='text-xs text-[#dcddde] whitespace-pre-wrap wrap-break-word'>
+                                                <div className='text-xs wrap-break-word whitespace-pre-wrap text-[#dcddde]'>
                                                     {emb.description}
                                                 </div>
                                             ) : null}
                                         </div>
                                     </div>
                                     {emb.fields && emb.fields.length > 0 ? (
-                                        <div className='mt-2 grid grid-cols-1 sm:grid-cols-3 gap-2'>
+                                        <div className='mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3'>
                                             {emb.fields.map((f, fi) => (
                                                 <div
                                                     key={fi}
@@ -132,10 +132,10 @@ function DiscordEmbedLivePreview({ preview }: { preview: DiscordEmbedPayloadPrev
                                                         !f.inline && 'sm:col-span-3',
                                                     )}
                                                 >
-                                                    <div className='text-[10px] font-bold uppercase text-white/50 truncate'>
+                                                    <div className='truncate text-[10px] font-bold text-white/50 uppercase'>
                                                         {f.name}
                                                     </div>
-                                                    <div className='text-xs text-[#dcddde] whitespace-pre-wrap wrap-break-word'>
+                                                    <div className='text-xs wrap-break-word whitespace-pre-wrap text-[#dcddde]'>
                                                         {f.value}
                                                     </div>
                                                 </div>
@@ -147,7 +147,7 @@ function DiscordEmbedLivePreview({ preview }: { preview: DiscordEmbedPayloadPrev
                                         <img
                                             src={emb.image.url}
                                             alt=''
-                                            className='mt-2 rounded max-h-36 w-full object-cover'
+                                            className='mt-2 max-h-36 w-full rounded object-cover'
                                         />
                                     ) : null}
                                     {emb.footer?.text ? (
@@ -226,12 +226,12 @@ export function DiscordEmbedBuilder({
     };
 
     return (
-        <div className={cn('grid grid-cols-1 lg:grid-cols-2 gap-6', className)}>
-            <div className='space-y-4 order-2 lg:order-1'>
+        <div className={cn('grid grid-cols-1 gap-6 lg:grid-cols-2', className)}>
+            <div className='order-2 space-y-4 lg:order-1'>
                 <div className='flex flex-wrap items-center justify-between gap-2'>
                     <Label className='text-base'>{t('lifecycleHooks.discord.embedBuilder')}</Label>
                     <Button type='button' size='sm' variant='outline' onClick={addEmbed} disabled={embeds.length >= 10}>
-                        <Plus className='h-3.5 w-3.5 mr-1.5' />
+                        <Plus className='mr-1.5 h-3.5 w-3.5' />
                         {t('lifecycleHooks.discord.addEmbed')}
                     </Button>
                 </div>
@@ -243,17 +243,17 @@ export function DiscordEmbedBuilder({
                             <div
                                 key={ei}
                                 className={cn(
-                                    'rounded-2xl border border-border/30 bg-card/40 overflow-hidden transition-shadow',
-                                    isOpen && 'ring-1 ring-primary/35 shadow-md',
+                                    'border-border/30 bg-card/40 overflow-hidden rounded-2xl border transition-shadow',
+                                    isOpen && 'ring-primary/35 shadow-md ring-1',
                                 )}
                             >
                                 <button
                                     type='button'
-                                    className='flex w-full items-center gap-2 px-3 py-3 text-left bg-background/40 hover:bg-background/55'
+                                    className='bg-background/40 hover:bg-background/55 flex w-full items-center gap-2 px-3 py-3 text-left'
                                     onClick={() => setOpenIndex(ei)}
                                 >
-                                    <GripVertical className='h-4 w-4 text-muted-foreground shrink-0' />
-                                    <span className='flex-1 min-w-0 font-semibold truncate text-sm'>
+                                    <GripVertical className='text-muted-foreground h-4 w-4 shrink-0' />
+                                    <span className='min-w-0 flex-1 truncate text-sm font-semibold'>
                                         {embed.title.trim()
                                             ? embed.title.trim()
                                             : t('lifecycleHooks.discord.embedNumber', { n: String(ei + 1) })}
@@ -262,7 +262,7 @@ export function DiscordEmbedBuilder({
                                         type='button'
                                         size='sm'
                                         variant='ghost'
-                                        className='shrink-0 h-8 px-2'
+                                        className='h-8 shrink-0 px-2'
                                         disabled={embeds.length <= 1}
                                         onClick={(e) => {
                                             e.stopPropagation();
@@ -270,13 +270,13 @@ export function DiscordEmbedBuilder({
                                         }}
                                         aria-label={t('lifecycleHooks.discord.removeEmbed')}
                                     >
-                                        <Trash2 className='h-3.5 w-3.5 text-destructive' />
+                                        <Trash2 className='text-destructive h-3.5 w-3.5' />
                                     </Button>
                                 </button>
 
                                 {isOpen ? (
-                                    <div className='space-y-4 p-4 border-t border-border/20'>
-                                        <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
+                                    <div className='border-border/20 space-y-4 border-t p-4'>
+                                        <div className='grid grid-cols-1 gap-3 sm:grid-cols-2'>
                                             <div className='space-y-2'>
                                                 <Label>{t('lifecycleHooks.discord.embedTitle')}</Label>
                                                 <Input
@@ -305,7 +305,7 @@ export function DiscordEmbedBuilder({
                                                 onChange={(e) => updateEmbed(ei, { description: e.target.value })}
                                                 placeholder={t('lifecycleHooks.discord.placeholders.description')}
                                             />
-                                            <p className='text-[11px] text-muted-foreground text-right'>
+                                            <p className='text-muted-foreground text-right text-[11px]'>
                                                 {embed.description.length} / 4096
                                             </p>
                                         </div>
@@ -315,7 +315,7 @@ export function DiscordEmbedBuilder({
                                                 <div className='flex items-center gap-2'>
                                                     <input
                                                         type='color'
-                                                        className='h-10 w-14 cursor-pointer rounded-lg border border-border/30 bg-transparent p-1'
+                                                        className='border-border/30 h-10 w-14 cursor-pointer rounded-lg border bg-transparent p-1'
                                                         value={
                                                             /^#[0-9A-Fa-f]{6}$/.test(embed.color)
                                                                 ? embed.color
@@ -332,10 +332,10 @@ export function DiscordEmbedBuilder({
                                                     />
                                                 </div>
                                             </div>
-                                            <label className='flex items-center gap-2 text-sm font-medium pb-2 cursor-pointer select-none'>
+                                            <label className='flex cursor-pointer items-center gap-2 pb-2 text-sm font-medium select-none'>
                                                 <input
                                                     type='checkbox'
-                                                    className='rounded border-border'
+                                                    className='border-border rounded'
                                                     checked={embed.timestamp}
                                                     onChange={(e) => updateEmbed(ei, { timestamp: e.target.checked })}
                                                 />
@@ -343,12 +343,12 @@ export function DiscordEmbedBuilder({
                                             </label>
                                         </div>
 
-                                        <details className='rounded-xl border border-border/20 bg-background/40 px-3 py-2'>
-                                            <summary className='cursor-pointer text-sm font-semibold py-2'>
+                                        <details className='border-border/20 bg-background/40 rounded-xl border px-3 py-2'>
+                                            <summary className='cursor-pointer py-2 text-sm font-semibold'>
                                                 {t('lifecycleHooks.discord.mediaAndFooter')}
                                             </summary>
                                             <div className='space-y-3 pt-2 pb-2'>
-                                                <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
+                                                <div className='grid grid-cols-1 gap-3 sm:grid-cols-2'>
                                                     <div className='space-y-2'>
                                                         <Label>{t('lifecycleHooks.discord.thumbnailUrl')}</Label>
                                                         <Input
@@ -372,7 +372,7 @@ export function DiscordEmbedBuilder({
                                                         />
                                                     </div>
                                                 </div>
-                                                <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
+                                                <div className='grid grid-cols-1 gap-3 sm:grid-cols-2'>
                                                     <div className='space-y-2'>
                                                         <Label>{t('lifecycleHooks.discord.footerText')}</Label>
                                                         <Input
@@ -397,7 +397,7 @@ export function DiscordEmbedBuilder({
                                                 </div>
                                                 <div className='space-y-2'>
                                                     <Label>{t('lifecycleHooks.discord.author')}</Label>
-                                                    <div className='grid grid-cols-1 sm:grid-cols-3 gap-2'>
+                                                    <div className='grid grid-cols-1 gap-2 sm:grid-cols-3'>
                                                         <Input
                                                             value={embed.author_name}
                                                             maxLength={256}
@@ -440,12 +440,12 @@ export function DiscordEmbedBuilder({
                                                     size='sm'
                                                     onClick={() => addField(ei)}
                                                 >
-                                                    <Plus className='h-3.5 w-3.5 mr-1.5' />
+                                                    <Plus className='mr-1.5 h-3.5 w-3.5' />
                                                     {t('lifecycleHooks.discord.addField')}
                                                 </Button>
                                             </div>
                                             {embed.fields.length === 0 ? (
-                                                <p className='text-xs text-muted-foreground'>
+                                                <p className='text-muted-foreground text-xs'>
                                                     {t('lifecycleHooks.discord.fieldsHint')}
                                                 </p>
                                             ) : (
@@ -453,7 +453,7 @@ export function DiscordEmbedBuilder({
                                                     {embed.fields.map((field, fi) => (
                                                         <div
                                                             key={fi}
-                                                            className='rounded-xl border border-border/25 bg-background/40 p-3 space-y-2'
+                                                            className='border-border/25 bg-background/40 space-y-2 rounded-xl border p-3'
                                                         >
                                                             <div className='flex gap-2'>
                                                                 <Input
@@ -488,7 +488,7 @@ export function DiscordEmbedBuilder({
                                                                     updateField(ei, fi, { value: e.target.value })
                                                                 }
                                                             />
-                                                            <label className='flex items-center gap-2 text-xs text-muted-foreground'>
+                                                            <label className='text-muted-foreground flex items-center gap-2 text-xs'>
                                                                 <input
                                                                     type='checkbox'
                                                                     checked={field.inline}
@@ -513,7 +513,7 @@ export function DiscordEmbedBuilder({
                 </div>
             </div>
 
-            <div className='order-1 lg:order-2 lg:sticky lg:top-24 h-fit space-y-2'>
+            <div className='order-1 h-fit space-y-2 lg:sticky lg:top-24 lg:order-2'>
                 <Label className='text-base'>{t('lifecycleHooks.discord.livePreview')}</Label>
                 <DiscordEmbedLivePreview preview={preview} />
             </div>

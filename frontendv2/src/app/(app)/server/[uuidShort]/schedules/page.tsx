@@ -254,20 +254,21 @@ export default function ServerSchedulesPage() {
         if (schedule.is_active) return t('serverSchedules.statusActive');
         return t('serverSchedules.statusInactive');
     };
+    const showHeaderCreateAction = canCreate && schedules.length > 0;
 
     if (permissionsLoading || settingsLoading) return null;
 
     if (!isEnabled(settings?.server_allow_schedules)) {
         return (
-            <div className='flex flex-col items-center justify-center py-24 text-center space-y-8 bg-[#0A0A0A]/40 backdrop-blur-3xl rounded-[3rem] border border-white/5 '>
+            <div className='flex flex-col items-center justify-center space-y-8 rounded-[3rem] border border-white/5 bg-[#0A0A0A]/40 py-24 text-center backdrop-blur-3xl'>
                 <div className='relative'>
-                    <div className='absolute inset-0 bg-red-500/20 blur-3xl rounded-full scale-150' />
-                    <div className='relative h-32 w-32 rounded-3xl bg-red-500/10 flex items-center justify-center border-2 border-red-500/20 rotate-3'>
+                    <div className='absolute inset-0 scale-150 rounded-full bg-red-500/20 blur-3xl' />
+                    <div className='relative flex h-32 w-32 rotate-3 items-center justify-center rounded-3xl border-2 border-red-500/20 bg-red-500/10'>
                         <Lock className='h-16 w-16 text-red-500' />
                     </div>
                 </div>
                 <div className='max-w-md space-y-3 px-4'>
-                    <h2 className='text-3xl font-black uppercase tracking-tight'>
+                    <h2 className='text-3xl font-black tracking-tight uppercase'>
                         {t('serverSchedules.featureDisabled')}
                     </h2>
                     <p className='text-muted-foreground text-lg leading-relaxed font-medium'>
@@ -277,7 +278,7 @@ export default function ServerSchedulesPage() {
                 <Button
                     variant='outline'
                     size='default'
-                    className='mt-8 rounded-2xl h-14 px-10'
+                    className='mt-8 h-14 rounded-2xl px-10'
                     onClick={() => router.push(`/server/${uuidShort}`)}
                 >
                     {t('common.goBack')}
@@ -289,8 +290,8 @@ export default function ServerSchedulesPage() {
     if (loading && schedules.length === 0) {
         return (
             <div key={pathname} className='flex flex-col items-center justify-center py-24'>
-                <Loader2 className='h-12 w-12 animate-spin text-primary opacity-50' />
-                <p className='mt-4 text-muted-foreground font-medium animate-pulse'>{t('common.loading')}</p>
+                <Loader2 className='text-primary h-12 w-12 animate-spin opacity-50' />
+                <p className='text-muted-foreground mt-4 animate-pulse font-medium'>{t('common.loading')}</p>
             </div>
         );
     }
@@ -298,10 +299,10 @@ export default function ServerSchedulesPage() {
     if (!canRead) {
         return (
             <div className='flex flex-col items-center justify-center py-24 text-center'>
-                <div className='h-20 w-20 rounded-3xl bg-red-500/10 flex items-center justify-center mb-6'>
+                <div className='mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-red-500/10'>
                     <Lock className='h-10 w-10 text-red-500' />
                 </div>
-                <h1 className='text-2xl font-black uppercase tracking-tight'>{t('common.accessDenied')}</h1>
+                <h1 className='text-2xl font-black tracking-tight uppercase'>{t('common.accessDenied')}</h1>
                 <p className='text-muted-foreground mt-2'>{t('common.noPermission')}</p>
                 <Button variant='outline' className='mt-8' onClick={() => router.back()}>
                     {t('common.goBack')}
@@ -318,15 +319,29 @@ export default function ServerSchedulesPage() {
                 title={t('serverSchedules.title')}
                 description={t('serverSchedules.description')}
                 actions={
-                    <div className='flex items-center gap-3'>
+                    <div className='flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-3'>
+                        {showHeaderCreateAction && (
+                            <Button
+                                size='default'
+                                variant='default'
+                                onClick={() => router.push(`/server/${uuidShort}/schedules/new`)}
+                                disabled={loading}
+                                className='order-1 w-full sm:order-3 sm:w-auto'
+                            >
+                                <Plus className='mr-2 h-5 w-5' />
+                                {t('serverSchedules.createSchedule')}
+                            </Button>
+                        )}
                         <Button
                             variant='glass'
                             size='default'
                             onClick={() => fetchData(pagination.current_page)}
                             disabled={loading}
+                            className='order-2 sm:order-1'
+                            aria-label={t('common.refresh')}
                         >
-                            <RefreshCw className={cn('h-5 w-5 mr-2', loading && 'animate-spin')} />
-                            {t('common.refresh')}
+                            <RefreshCw className={cn('h-5 w-5 sm:mr-2', loading && 'animate-spin')} />
+                            <span className='hidden sm:inline'>{t('common.refresh')}</span>
                         </Button>
                         {canCreate && (
                             <Button
@@ -337,20 +352,11 @@ export default function ServerSchedulesPage() {
                                     setIsImportOpen(true);
                                 }}
                                 disabled={loading}
+                                className='order-2 sm:order-2'
+                                aria-label={t('serverSchedules.import')}
                             >
-                                <Upload className='h-5 w-5 mr-2' />
-                                {t('serverSchedules.import')}
-                            </Button>
-                        )}
-                        {canCreate && (
-                            <Button
-                                size='default'
-                                variant='default'
-                                onClick={() => router.push(`/server/${uuidShort}/schedules/new`)}
-                                disabled={loading}
-                            >
-                                <Plus className='h-5 w-5 mr-2' />
-                                {t('serverSchedules.createSchedule')}
+                                <Upload className='h-5 w-5 sm:mr-2' />
+                                <span className='hidden sm:inline'>{t('serverSchedules.import')}</span>
                             </Button>
                         )}
                     </div>
@@ -370,7 +376,7 @@ export default function ServerSchedulesPage() {
                                 variant='default'
                                 onClick={() => router.push(`/server/${uuidShort}/schedules/new`)}
                             >
-                                <Plus className='h-6 w-6 mr-2' />
+                                <Plus className='mr-2 h-6 w-6' />
                                 {t('serverSchedules.createSchedule')}
                             </Button>
                         ) : undefined
@@ -379,7 +385,7 @@ export default function ServerSchedulesPage() {
             ) : (
                 <>
                     {pagination.total > pagination.per_page && (
-                        <div className='flex items-center justify-between gap-4 py-3 px-4 rounded-xl border border-border bg-card/50 mb-4'>
+                        <div className='border-border bg-card/50 mb-4 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
                             <Button
                                 variant='outline'
                                 size='sm'
@@ -420,8 +426,8 @@ export default function ServerSchedulesPage() {
                                 title={schedule.name}
                                 description={
                                     <div className='flex flex-col gap-1'>
-                                        <div className='flex items-center gap-3 text-xs font-medium text-muted-foreground'>
-                                            <span className='flex items-center gap-1.5 font-mono bg-white/5 px-2 py-1 rounded-lg'>
+                                        <div className='text-muted-foreground flex items-center gap-3 text-xs font-medium'>
+                                            <span className='flex items-center gap-1.5 rounded-lg bg-white/5 px-2 py-1 font-mono'>
                                                 <Clock className='h-3 w-3' />
                                                 {formatCronExpression(schedule)}
                                             </span>
@@ -455,7 +461,7 @@ export default function ServerSchedulesPage() {
                                                     router.push(`/server/${uuidShort}/schedules/${schedule.id}/edit`)
                                                 }
                                             >
-                                                <Pencil className='h-3.5 w-3.5 mr-1.5' />
+                                                <Pencil className='mr-1.5 h-3.5 w-3.5' />
                                                 <span className='hidden sm:inline'>{t('common.edit')}</span>
                                             </Button>
                                         )}
@@ -466,7 +472,7 @@ export default function ServerSchedulesPage() {
                                                 router.push(`/server/${uuidShort}/schedules/${schedule.id}/tasks`)
                                             }
                                         >
-                                            <ListTodo className='h-3.5 w-3.5 mr-1.5' />
+                                            <ListTodo className='mr-1.5 h-3.5 w-3.5' />
                                             <span className='hidden sm:inline'>{t('serverSchedules.tasks')}</span>
                                         </Button>
                                         {canUpdate && (
@@ -477,9 +483,9 @@ export default function ServerSchedulesPage() {
                                                 onClick={() => handleRunNow(schedule)}
                                             >
                                                 {runningNow === schedule.id ? (
-                                                    <Loader2 className='h-3.5 w-3.5 mr-1.5 animate-spin' />
+                                                    <Loader2 className='mr-1.5 h-3.5 w-3.5 animate-spin' />
                                                 ) : (
-                                                    <Play className='h-3.5 w-3.5 mr-1.5' />
+                                                    <Play className='mr-1.5 h-3.5 w-3.5' />
                                                 )}
                                                 <span className='hidden sm:inline'>{t('serverSchedules.runNow')}</span>
                                             </Button>
@@ -491,9 +497,9 @@ export default function ServerSchedulesPage() {
                                             onClick={() => handleExport(schedule)}
                                         >
                                             {exporting === schedule.id ? (
-                                                <Loader2 className='h-3.5 w-3.5 mr-1.5 animate-spin' />
+                                                <Loader2 className='mr-1.5 h-3.5 w-3.5 animate-spin' />
                                             ) : (
-                                                <Download className='h-3.5 w-3.5 mr-1.5' />
+                                                <Download className='mr-1.5 h-3.5 w-3.5' />
                                             )}
                                             <span className='hidden sm:inline'>{t('serverSchedules.export')}</span>
                                         </Button>
@@ -503,7 +509,7 @@ export default function ServerSchedulesPage() {
                                                 size='sm'
                                                 onClick={() => handleToggle(schedule)}
                                             >
-                                                <Power className='h-3.5 w-3.5 mr-1.5' />
+                                                <Power className='mr-1.5 h-3.5 w-3.5' />
                                                 <span className='hidden sm:inline'>
                                                     {schedule.is_active ? t('common.disable') : t('common.enable')}
                                                 </span>
@@ -518,7 +524,7 @@ export default function ServerSchedulesPage() {
                                                     setIsDeleteOpen(true);
                                                 }}
                                             >
-                                                <Trash2 className='h-3.5 w-3.5 mr-1.5' />
+                                                <Trash2 className='mr-1.5 h-3.5 w-3.5' />
                                                 <span className='hidden sm:inline'>{t('common.delete')}</span>
                                             </Button>
                                         )}
@@ -528,8 +534,8 @@ export default function ServerSchedulesPage() {
                         ))}
                     </div>
                     {pagination.total > pagination.per_page && (
-                        <div className='flex items-center justify-between gap-3 pt-4 border-t border-white/5'>
-                            <div className='text-xs text-muted-foreground'>
+                        <div className='flex items-center justify-between gap-3 border-t border-white/5 pt-4'>
+                            <div className='text-muted-foreground text-xs'>
                                 {t('serverSchedules.showing', {
                                     from: String(pagination.from),
                                     to: String(pagination.to),
@@ -545,7 +551,7 @@ export default function ServerSchedulesPage() {
                                 >
                                     <ChevronLeft className='h-4 w-4' />
                                 </Button>
-                                <div className='text-sm px-2'>
+                                <div className='px-2 text-sm'>
                                     {pagination.current_page} / {pagination.last_page}
                                 </div>
                                 <Button
@@ -601,11 +607,11 @@ export default function ServerSchedulesPage() {
             >
                 <div className='flex flex-col gap-4 pt-2'>
                     <div
-                        className='flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-white/10 bg-white/5 p-6 cursor-pointer hover:border-white/20 transition-colors'
+                        className='flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-white/10 bg-white/5 p-6 transition-colors hover:border-white/20'
                         onClick={() => importFileRef.current?.click()}
                     >
-                        <Upload className='h-8 w-8 text-muted-foreground' />
-                        <p className='text-sm text-muted-foreground'>{t('serverSchedules.clickToUploadJson')}</p>
+                        <Upload className='text-muted-foreground h-8 w-8' />
+                        <p className='text-muted-foreground text-sm'>{t('serverSchedules.clickToUploadJson')}</p>
                         <input
                             ref={importFileRef}
                             type='file'
@@ -614,13 +620,13 @@ export default function ServerSchedulesPage() {
                             onChange={handleImportFileChange}
                         />
                     </div>
-                    <div className='flex items-center gap-3 text-xs text-muted-foreground'>
-                        <div className='flex-1 h-px bg-white/10' />
+                    <div className='text-muted-foreground flex items-center gap-3 text-xs'>
+                        <div className='h-px flex-1 bg-white/10' />
                         <span>{t('serverSchedules.orPasteJson')}</span>
-                        <div className='flex-1 h-px bg-white/10' />
+                        <div className='h-px flex-1 bg-white/10' />
                     </div>
                     <textarea
-                        className='w-full min-h-[160px] rounded-xl border border-white/10 bg-white/5 p-3 font-mono text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none'
+                        className='text-foreground placeholder:text-muted-foreground focus:ring-primary min-h-[160px] w-full resize-none rounded-xl border border-white/10 bg-white/5 p-3 font-mono text-xs focus:ring-1 focus:outline-none'
                         placeholder='{"name": "My Schedule", "cron_minute": "0", ...}'
                         value={importJson}
                         onChange={(e) => setImportJson(e.target.value)}

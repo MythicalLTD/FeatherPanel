@@ -113,10 +113,10 @@ export default function CreateSubdomainPage() {
     if (!canManage) {
         return (
             <div className='flex flex-col items-center justify-center py-24 text-center'>
-                <div className='h-20 w-20 rounded-3xl bg-red-500/10 flex items-center justify-center mb-6'>
+                <div className='mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-red-500/10'>
                     <Lock className='h-10 w-10 text-red-500' />
                 </div>
-                <h1 className='text-2xl font-black uppercase tracking-tight'>{t('common.accessDenied')}</h1>
+                <h1 className='text-2xl font-black tracking-tight uppercase'>{t('common.accessDenied')}</h1>
                 <p className='text-muted-foreground mt-2'>{t('common.noPermission')}</p>
                 <Button variant='outline' className='mt-8' onClick={() => router.back()}>
                     {t('common.goBack')}
@@ -130,22 +130,22 @@ export default function CreateSubdomainPage() {
 
     if (availableDomains.length === 0 && !loading) {
         return (
-            <div className='flex flex-col items-center justify-center py-24 text-center space-y-8 bg-card/40 backdrop-blur-3xl rounded-[3rem] border border-border/5 '>
+            <div className='bg-card/40 border-border/5 flex flex-col items-center justify-center space-y-8 rounded-[3rem] border py-24 text-center backdrop-blur-3xl'>
                 <div className='relative'>
-                    <div className='absolute inset-0 bg-primary/20 blur-3xl rounded-full scale-150' />
-                    <div className='relative h-32 w-32 rounded-3xl bg-primary/10 flex items-center justify-center border-2 border-primary/20 rotate-3'>
-                        <Globe className='h-16 w-16 text-primary' />
+                    <div className='bg-primary/20 absolute inset-0 scale-150 rounded-full blur-3xl' />
+                    <div className='bg-primary/10 border-primary/20 relative flex h-32 w-32 rotate-3 items-center justify-center rounded-3xl border-2'>
+                        <Globe className='text-primary h-16 w-16' />
                     </div>
                 </div>
                 <div className='max-w-md space-y-3 px-4'>
-                    <h2 className='text-3xl font-black uppercase tracking-tight'>
+                    <h2 className='text-3xl font-black tracking-tight uppercase'>
                         {t('serverSubdomains.noDomainsAvailable')}
                     </h2>
                 </div>
                 <Button
                     variant='outline'
                     size='default'
-                    className='mt-8 rounded-2xl h-14 px-10'
+                    className='mt-8 h-14 rounded-2xl px-10'
                     onClick={() => router.back()}
                 >
                     {t('common.goBack')}
@@ -155,7 +155,7 @@ export default function CreateSubdomainPage() {
     }
 
     return (
-        <div className='max-w-6xl mx-auto space-y-8 pb-16 '>
+        <div className='mx-auto max-w-6xl space-y-8 pb-16'>
             <WidgetRenderer widgets={getWidgets('server-subdomains-new', 'top-of-page')} />
             <PageHeader
                 title={t('serverSubdomains.createButton')}
@@ -176,7 +176,7 @@ export default function CreateSubdomainPage() {
                                 t('common.saving')
                             ) : (
                                 <>
-                                    <Plus className='h-4 w-4 mr-2' />
+                                    <Plus className='mr-2 h-4 w-4' />
                                     {t('serverSubdomains.createButton')}
                                 </>
                             )}
@@ -186,18 +186,18 @@ export default function CreateSubdomainPage() {
             />
             <WidgetRenderer widgets={getWidgets('server-subdomains-new', 'after-header')} />
 
-            <div className='grid grid-cols-1 lg:grid-cols-12 gap-8'>
-                <div className='lg:col-span-8 space-y-8'>
+            <div className='grid grid-cols-1 gap-8 lg:grid-cols-12'>
+                <div className='space-y-8 lg:col-span-8'>
                     {limitReached && (
-                        <div className='rounded-2xl border border-yellow-500/20 bg-yellow-500/5 p-5 flex items-start gap-4'>
-                            <div className='h-10 w-10 rounded-xl bg-yellow-500/20 flex items-center justify-center shrink-0 border border-yellow-500/30'>
+                        <div className='flex items-start gap-4 rounded-2xl border border-yellow-500/20 bg-yellow-500/5 p-5'>
+                            <div className='flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-yellow-500/30 bg-yellow-500/20'>
                                 <Info className='h-5 w-5 text-yellow-500' />
                             </div>
                             <div className='space-y-1'>
-                                <h4 className='text-sm font-bold text-yellow-500 uppercase tracking-wide'>
+                                <h4 className='text-sm font-bold tracking-wide text-yellow-500 uppercase'>
                                     {t('serverSubdomains.limitReached')}
                                 </h4>
-                                <p className='text-xs text-yellow-500/70 leading-relaxed font-medium'>
+                                <p className='text-xs leading-relaxed font-medium text-yellow-500/70'>
                                     {t('serverSubdomains.limitReachedDescription', {
                                         limit: String(overview?.max_allowed),
                                     })}
@@ -206,16 +206,16 @@ export default function CreateSubdomainPage() {
                         </div>
                     )}
 
-                    <div className='bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl p-8 space-y-6'>
-                        <div className='flex items-center gap-4 border-b border-border/10 pb-6'>
-                            <div className='h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20'>
-                                <Globe className='h-5 w-5 text-primary' />
+                    <div className='bg-card/50 border-border/50 space-y-6 rounded-3xl border p-8 backdrop-blur-3xl'>
+                        <div className='border-border/10 flex items-center gap-4 border-b pb-6'>
+                            <div className='bg-primary/10 border-primary/20 flex h-10 w-10 items-center justify-center rounded-xl border'>
+                                <Globe className='text-primary h-5 w-5' />
                             </div>
                             <div className='space-y-0.5'>
-                                <h2 className='text-xl font-black uppercase tracking-tight italic'>
+                                <h2 className='text-xl font-black tracking-tight uppercase italic'>
                                     {t('serverSubdomains.configuration')}
                                 </h2>
-                                <p className='text-[9px] font-bold text-muted-foreground tracking-widest uppercase opacity-50'>
+                                <p className='text-muted-foreground text-[9px] font-bold tracking-widest uppercase opacity-50'>
                                     Setup
                                 </p>
                             </div>
@@ -223,7 +223,7 @@ export default function CreateSubdomainPage() {
 
                         <div className='space-y-6'>
                             <div className='space-y-2.5'>
-                                <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                     {t('serverSubdomains.domainLabel')} <span className='text-primary'>*</span>
                                 </label>
                                 <HeadlessSelect
@@ -242,7 +242,7 @@ export default function CreateSubdomainPage() {
                             </div>
 
                             <div className='space-y-2.5'>
-                                <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                     {t('serverSubdomains.subdomainLabel')} <span className='text-primary'>*</span>
                                 </label>
                                 <Input
@@ -250,9 +250,9 @@ export default function CreateSubdomainPage() {
                                     onChange={(e) => setFormData({ ...formData, subdomain: e.target.value })}
                                     placeholder={t('serverSubdomains.subdomainPlaceholder')}
                                     disabled={saving}
-                                    className='h-12 bg-secondary/50 border-border/10 focus:border-primary/50 rounded-xl text-sm font-extrabold transition-all'
+                                    className='bg-secondary/50 border-border/10 focus:border-primary/50 h-12 rounded-xl text-sm font-extrabold transition-all'
                                 />
-                                <p className='text-xs text-muted-foreground ml-1'>
+                                <p className='text-muted-foreground ml-1 text-xs'>
                                     {t('serverSubdomains.subdomainHint')}
                                 </p>
                             </div>
@@ -260,65 +260,65 @@ export default function CreateSubdomainPage() {
                     </div>
                 </div>
 
-                <div className='lg:col-span-4 space-y-8'>
-                    <div className='bg-blue-500/5 border border-blue-500/10 backdrop-blur-3xl rounded-3xl p-8 space-y-4 relative overflow-hidden group'>
-                        <div className='absolute -bottom-6 -right-6 w-24 h-24 bg-blue-500/10 blur-2xl pointer-events-none group-hover:scale-150 transition-transform duration-1000' />
-                        <div className='h-10 w-10 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20 relative z-10'>
+                <div className='space-y-8 lg:col-span-4'>
+                    <div className='group relative space-y-4 overflow-hidden rounded-3xl border border-blue-500/10 bg-blue-500/5 p-8 backdrop-blur-3xl'>
+                        <div className='pointer-events-none absolute -right-6 -bottom-6 h-24 w-24 bg-blue-500/10 blur-2xl transition-transform duration-1000 group-hover:scale-150' />
+                        <div className='relative z-10 flex h-10 w-10 items-center justify-center rounded-xl border border-blue-500/20 bg-blue-500/10'>
                             <Info className='h-5 w-5 text-blue-500' />
                         </div>
-                        <div className='space-y-2 relative z-10'>
-                            <h3 className='text-lg font-black uppercase tracking-tight text-blue-500 leading-none italic'>
+                        <div className='relative z-10 space-y-2'>
+                            <h3 className='text-lg leading-none font-black tracking-tight text-blue-500 uppercase italic'>
                                 {t('serverSubdomains.helpfulTips')}
                             </h3>
-                            <p className='text-blue-500/70 font-bold text-[11px] leading-relaxed italic'>
+                            <p className='text-[11px] leading-relaxed font-bold text-blue-500/70 italic'>
                                 {t('serverSubdomains.noSubdomainsDescription')}
                             </p>
                         </div>
                     </div>
 
-                    <div className='bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl p-8 space-y-6 relative overflow-hidden'>
-                        <div className='flex items-center gap-4 border-b border-border/10 pb-6 relative z-10'>
-                            <div className='h-10 w-10 rounded-xl bg-secondary/50 flex items-center justify-center border border-border/10'>
-                                <Settings2 className='h-5 w-5 text-muted-foreground' />
+                    <div className='bg-card/50 border-border/50 relative space-y-6 overflow-hidden rounded-3xl border p-8 backdrop-blur-3xl'>
+                        <div className='border-border/10 relative z-10 flex items-center gap-4 border-b pb-6'>
+                            <div className='bg-secondary/50 border-border/10 flex h-10 w-10 items-center justify-center rounded-xl border'>
+                                <Settings2 className='text-muted-foreground h-5 w-5' />
                             </div>
                             <div className='space-y-0.5'>
-                                <h2 className='text-xl font-black uppercase tracking-tight italic'>
+                                <h2 className='text-xl font-black tracking-tight uppercase italic'>
                                     {t('serverSubdomains.guide')}
                                 </h2>
-                                <p className='text-[9px] font-bold text-muted-foreground tracking-widest uppercase opacity-50 italic'>
+                                <p className='text-muted-foreground text-[9px] font-bold tracking-widest uppercase italic opacity-50'>
                                     Info
                                 </p>
                             </div>
                         </div>
-                        <ul className='space-y-4 relative z-10'>
-                            <li className='flex gap-3 text-xs text-muted-foreground'>
-                                <span className='h-1.5 w-1.5 rounded-full bg-primary mt-1.5 shrink-0' />
+                        <ul className='relative z-10 space-y-4'>
+                            <li className='text-muted-foreground flex gap-3 text-xs'>
+                                <span className='bg-primary mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full' />
                                 <span>
                                     Subdomains allow you to give your server a custom address, like{' '}
                                     <code>play.example.com</code>.
                                 </span>
                             </li>
-                            <li className='flex gap-3 text-xs text-muted-foreground'>
-                                <span className='h-1.5 w-1.5 rounded-full bg-primary mt-1.5 shrink-0' />
+                            <li className='text-muted-foreground flex gap-3 text-xs'>
+                                <span className='bg-primary mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full' />
                                 <span>You can create multiple subdomains for different purposes.</span>
                             </li>
                         </ul>
                     </div>
 
-                    <div className='md:hidden pt-2'>
+                    <div className='pt-2 md:hidden'>
                         <Button
                             size='default'
                             variant='default'
                             onClick={handleCreate}
                             disabled={saving || limitReached}
                             loading={saving}
-                            className='w-full h-12 text-[10px]'
+                            className='h-12 w-full text-[10px]'
                         >
                             {saving ? (
                                 t('common.saving')
                             ) : (
                                 <>
-                                    <Plus className='h-4 w-4 mr-2' />
+                                    <Plus className='mr-2 h-4 w-4' />
                                     {t('serverSubdomains.createButton')}
                                 </>
                             )}

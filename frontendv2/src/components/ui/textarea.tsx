@@ -26,28 +26,19 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
     ({ className = '', label, description, error, ...props }, ref) => {
         return (
             <Field>
-                {label && <Label className='block text-sm font-semibold text-foreground mb-2'>{label}</Label>}
-                {description && <Description className='text-sm text-muted-foreground mb-2'>{description}</Description>}
+                {label && <Label className='text-foreground mb-2 block text-sm font-semibold'>{label}</Label>}
+                {description && <Description className='text-muted-foreground mb-2 text-sm'>{description}</Description>}
                 <HeadlessTextarea
-                    className={`
-            flex min-h-[120px] w-full rounded-xl border bg-muted/30 px-4 py-3 text-sm
-            transition-all duration-200 font-semibold
-            ${
-                error
-                    ? 'border-destructive focus:border-destructive focus:ring-destructive/20'
-                    : 'border-border/50 focus:border-primary focus:ring-primary/20 hover:border-border'
-            }
-            focus:outline-none focus:ring-4
-            disabled:cursor-not-allowed disabled:opacity-50
-            placeholder:text-muted-foreground/50
-            shadow-sm hover:shadow-md focus:shadow-lg
-            ${className}
-          `}
+                    className={`bg-muted/30 flex min-h-[120px] w-full rounded-xl border px-4 py-3 text-sm font-semibold transition-all duration-200 ${
+                        error
+                            ? 'border-destructive focus:border-destructive focus:ring-destructive/20'
+                            : 'border-border/50 focus:border-primary focus:ring-primary/20 hover:border-border'
+                    } placeholder:text-muted-foreground/50 shadow-sm hover:shadow-md focus:shadow-lg focus:ring-4 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${className} `}
                     ref={ref}
                     {...props}
                 />
                 {error && (
-                    <Description className='text-sm text-destructive mt-2 flex items-center gap-1 animate-fade-in'>
+                    <Description className='text-destructive animate-fade-in mt-2 flex items-center gap-1 text-sm'>
                         <svg className='h-4 w-4' fill='none' viewBox='0 0 24 24' stroke='currentColor'>
                             <path
                                 strokeLinecap='round'

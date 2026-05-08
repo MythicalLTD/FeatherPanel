@@ -46,7 +46,7 @@ export default function AuthLoading() {
         <div className='motion-always flex min-h-screen items-center justify-center'>
             <div className='relative'>
                 <div
-                    className='h-12 w-12 rounded-full border-3 border-transparent animate-spin'
+                    className='h-12 w-12 animate-spin rounded-full border-3 border-transparent'
                     style={{
                         borderTopColor: `hsl(${accentColor})`,
                         borderRightColor: `hsl(${accentColor} / 0.3)`,
@@ -56,7 +56,7 @@ export default function AuthLoading() {
 
                 <div className='absolute inset-0 flex items-center justify-center'>
                     <div
-                        className='h-2 w-2 rounded-full animate-pulse'
+                        className='h-2 w-2 animate-pulse rounded-full'
                         style={{
                             backgroundColor: `hsl(${accentColor})`,
                             animationDuration: '1.2s',

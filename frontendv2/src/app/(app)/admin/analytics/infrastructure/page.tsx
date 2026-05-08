@@ -178,19 +178,19 @@ export default function InfrastructureAnalyticsPage() {
 
     if (loading) {
         return (
-            <div className='flex items-center justify-center min-h-[400px]'>
-                <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-primary'></div>
+            <div className='flex min-h-[400px] items-center justify-center'>
+                <div className='border-primary h-8 w-8 animate-spin rounded-full border-b-2'></div>
             </div>
         );
     }
 
     if (error) {
         return (
-            <div className='flex flex-col items-center justify-center min-h-[400px] text-center'>
-                <p className='text-red-500 mb-4'>{error}</p>
+            <div className='flex min-h-[400px] flex-col items-center justify-center text-center'>
+                <p className='mb-4 text-red-500'>{error}</p>
                 <button
                     onClick={fetchData}
-                    className='px-4 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-opacity'
+                    className='bg-primary text-primary-foreground rounded-md px-4 py-2 transition-opacity hover:opacity-90'
                 >
                     {t('admin.analytics.activity.retry')}
                 </button>
@@ -217,7 +217,7 @@ export default function InfrastructureAnalyticsPage() {
                                 count: String(overview.locations?.with_nodes ?? 0),
                             })}
                             icon={MapPin}
-                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                            className='bg-card/50 shadow-none! backdrop-blur-sm'
                         />
                         <ResourceCard
                             title={(overview.nodes?.total ?? 0).toString()}
@@ -226,7 +226,7 @@ export default function InfrastructureAnalyticsPage() {
                                 percentage: String(overview.nodes?.percentage_public ?? 0),
                             })}
                             icon={Server}
-                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                            className='bg-card/50 shadow-none! backdrop-blur-sm'
                         />
                         <ResourceCard
                             title={(overview.allocations?.total ?? 0).toString()}
@@ -235,21 +235,21 @@ export default function InfrastructureAnalyticsPage() {
                                 percentage: String(overview.allocations?.percentage_in_use ?? 0),
                             })}
                             icon={Network}
-                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                            className='bg-card/50 shadow-none! backdrop-blur-sm'
                         />
                         <ResourceCard
                             title={(overview.databases?.hosts ?? 0).toString()}
                             subtitle={t('admin.analytics.infrastructure.db_hosts')}
                             description={t('admin.analytics.infrastructure.across_nodes')}
                             icon={Database}
-                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                            className='bg-card/50 shadow-none! backdrop-blur-sm'
                         />
                         <ResourceCard
                             title={topPort ? String(topPort.port) : '0'}
                             subtitle='Top used port'
                             description={`Assigned: ${topPort?.assigned ?? 0} allocations`}
                             icon={EthernetPort}
-                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                            className='bg-card/50 shadow-none! backdrop-blur-sm'
                         />
                         <ResourceCard
                             title={topIp ? String(topIp.total_ports) : '0'}
@@ -258,7 +258,7 @@ export default function InfrastructureAnalyticsPage() {
                                 topIp ? `${topIp.ip} (${topIp.usage_percentage}% used)` : 'No allocation usage data'
                             }
                             icon={Globe}
-                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                            className='bg-card/50 shadow-none! backdrop-blur-sm'
                         />
                     </div>
                 )}

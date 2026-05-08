@@ -376,10 +376,10 @@ export default function VdsSettingsPage() {
 
     if (instanceLoading) {
         return (
-            <div className='flex items-center justify-center min-h-[60vh]'>
+            <div className='flex min-h-[60vh] items-center justify-center'>
                 <div className='flex flex-col items-center gap-4'>
-                    <Loader2 className='h-10 w-10 animate-spin text-primary' />
-                    <p className='text-muted-foreground font-medium animate-pulse'>Loading VDS settings…</p>
+                    <Loader2 className='text-primary h-10 w-10 animate-spin' />
+                    <p className='text-muted-foreground animate-pulse font-medium'>Loading VDS settings…</p>
                 </div>
             </div>
         );
@@ -387,10 +387,10 @@ export default function VdsSettingsPage() {
 
     if (!instance) {
         return (
-            <div className='flex items-center justify-center min-h-[60vh]'>
-                <div className='text-center space-y-4'>
-                    <div className='h-20 w-20 mx-auto rounded-3xl bg-destructive/10 flex items-center justify-center'>
-                        <AlertTriangle className='h-10 w-10 text-destructive' />
+            <div className='flex min-h-[60vh] items-center justify-center'>
+                <div className='space-y-4 text-center'>
+                    <div className='bg-destructive/10 mx-auto flex h-20 w-20 items-center justify-center rounded-3xl'>
+                        <AlertTriangle className='text-destructive h-10 w-10' />
                     </div>
                     <h2 className='text-2xl font-black'>VDS Not Found</h2>
                     <Button variant='outline' onClick={() => router.push('/dashboard')}>
@@ -406,12 +406,12 @@ export default function VdsSettingsPage() {
 
     if (!canSettings) {
         return (
-            <div className='flex flex-col items-center justify-center py-24 text-center space-y-6'>
-                <div className='h-20 w-20 rounded-3xl bg-red-500/10 flex items-center justify-center'>
+            <div className='flex flex-col items-center justify-center space-y-6 py-24 text-center'>
+                <div className='flex h-20 w-20 items-center justify-center rounded-3xl bg-red-500/10'>
                     <Lock className='h-10 w-10 text-red-400' />
                 </div>
                 <div>
-                    <h2 className='text-2xl font-black font-header uppercase tracking-tighter italic'>Access Denied</h2>
+                    <h2 className='font-header text-2xl font-black tracking-tighter uppercase italic'>Access Denied</h2>
                     <p className='text-muted-foreground mt-2'>You do not have permission to access VDS settings.</p>
                 </div>
                 <Button variant='outline' onClick={() => router.push(`/vds/${id}`)}>
@@ -430,7 +430,7 @@ export default function VdsSettingsPage() {
                 description='Manage your VDS instance settings and reinstall options.'
                 actions={
                     <Button variant='glass' size='sm' onClick={fetchTemplates} disabled={templatesLoading}>
-                        <RefreshCw className={cn('h-4 w-4 mr-1.5', templatesLoading && 'animate-spin')} />
+                        <RefreshCw className={cn('mr-1.5 h-4 w-4', templatesLoading && 'animate-spin')} />
                         Refresh
                     </Button>
                 }
@@ -439,12 +439,12 @@ export default function VdsSettingsPage() {
             {/* Instance info summary */}
             <Card className='border-border/20 bg-card/30 backdrop-blur-sm'>
                 <CardHeader>
-                    <CardTitle className='text-sm font-black uppercase tracking-widest flex items-center gap-2'>
-                        <Server className='h-4 w-4 text-primary' />
+                    <CardTitle className='flex items-center gap-2 text-sm font-black tracking-widest uppercase'>
+                        <Server className='text-primary h-4 w-4' />
                         Instance Info
                     </CardTitle>
                 </CardHeader>
-                <CardContent className='grid grid-cols-2 md:grid-cols-4 gap-4'>
+                <CardContent className='grid grid-cols-2 gap-4 md:grid-cols-4'>
                     {[
                         { label: 'Hostname', value: instance.hostname ?? '—' },
                         { label: 'VMID', value: String(instance.vmid) },
@@ -452,10 +452,10 @@ export default function VdsSettingsPage() {
                         { label: 'Node', value: instance.node_name ?? instance.pve_node ?? '—' },
                     ].map(({ label, value }) => (
                         <div key={label} className='flex flex-col gap-1'>
-                            <span className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>
+                            <span className='text-muted-foreground/50 text-[10px] font-black tracking-widest uppercase'>
                                 {label}
                             </span>
-                            <span className='text-sm font-bold font-mono'>{value}</span>
+                            <span className='font-mono text-sm font-bold'>{value}</span>
                         </div>
                     ))}
                 </CardContent>
@@ -465,8 +465,8 @@ export default function VdsSettingsPage() {
             {isQemu && (
                 <Card className='border-border/20 bg-card/30 backdrop-blur-sm'>
                     <CardHeader>
-                        <CardTitle className='text-sm font-black uppercase tracking-widest flex items-center gap-2'>
-                            <Server className='h-4 w-4 text-primary' />
+                        <CardTitle className='flex items-center gap-2 text-sm font-black tracking-widest uppercase'>
+                            <Server className='text-primary h-4 w-4' />
                             {t('vds.settings.hardware.title') ?? 'QEMU Hardware (EFI / TPM)'}
                         </CardTitle>
                         <CardDescription className='text-muted-foreground'>
@@ -476,14 +476,14 @@ export default function VdsSettingsPage() {
                     </CardHeader>
                     <CardContent className='space-y-5'>
                         {qemuHardwareLoading ? (
-                            <div className='flex items-center gap-2 text-muted-foreground'>
+                            <div className='text-muted-foreground flex items-center gap-2'>
                                 <Loader2 className='h-4 w-4 animate-spin' />
                                 {t('vds.settings.hardware.loading') ?? 'Loading hardware…'}
                             </div>
                         ) : (
                             <div className='space-y-4'>
                                 <div className='space-y-2'>
-                                    <div className='text-xs font-semibold text-muted-foreground'>
+                                    <div className='text-muted-foreground text-xs font-semibold'>
                                         {t('vds.settings.hardware.bios_label') ?? 'BIOS / Firmware'}
                                     </div>
                                     <select
@@ -497,7 +497,7 @@ export default function VdsSettingsPage() {
                                                 if (next === 'ovmf') setEfiEnabled(true);
                                             })()
                                         }
-                                        className='w-full h-11 rounded-xl bg-muted/30 border border-border/30 px-3'
+                                        className='bg-muted/30 border-border/30 h-11 w-full rounded-xl border px-3'
                                     >
                                         <option value='seabios'>
                                             {t('vds.settings.hardware.bios_seabios') ?? 'Legacy (SeaBIOS)'}
@@ -521,7 +521,7 @@ export default function VdsSettingsPage() {
                                         />
                                         {t('vds.settings.hardware.efi_label') ?? 'Enable EFI disk'}
                                     </label>
-                                    <p className='text-xs text-muted-foreground'>
+                                    <p className='text-muted-foreground text-xs'>
                                         {t('vds.settings.hardware.efi_help') ??
                                             'Adds efidisk0 (UEFI firmware required for TPM).'}
                                     </p>
@@ -543,7 +543,7 @@ export default function VdsSettingsPage() {
                                         />
                                         {t('vds.settings.hardware.tpm_label') ?? 'Enable TPM 2.0'}
                                     </label>
-                                    <p className='text-xs text-muted-foreground'>
+                                    <p className='text-muted-foreground text-xs'>
                                         {t('vds.settings.hardware.tpm_help') ??
                                             'Adds tpmstate0 (v2.0). Usually requires EFI/OVMF.'}
                                     </p>
@@ -562,7 +562,7 @@ export default function VdsSettingsPage() {
                                         {t('vds.settings.hardware.disable_serial_label') ??
                                             'Disable serial port (Windows)'}
                                     </label>
-                                    <p className='text-xs text-muted-foreground'>
+                                    <p className='text-muted-foreground text-xs'>
                                         {t('vds.settings.hardware.disable_serial_help') ??
                                             'Removes `serial0` so the console renders graphical output instead of serial.'}
                                     </p>
@@ -574,7 +574,7 @@ export default function VdsSettingsPage() {
                                         disabled={qemuHardwareSaving || qemuHardwareLoading}
                                         onClick={handleApplyQemuHardware}
                                     >
-                                        {qemuHardwareSaving && <Loader2 className='h-4 w-4 mr-2 animate-spin' />}
+                                        {qemuHardwareSaving && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
                                         {t('vds.settings.hardware.apply_button') ?? 'Apply'}
                                     </Button>
                                 </div>
@@ -588,8 +588,8 @@ export default function VdsSettingsPage() {
             {isQemu && (
                 <Card className='border-border/20 bg-card/30 backdrop-blur-sm'>
                     <CardHeader>
-                        <CardTitle className='text-sm font-black uppercase tracking-widest flex items-center gap-2'>
-                            <Server className='h-4 w-4 text-primary' />
+                        <CardTitle className='flex items-center gap-2 text-sm font-black tracking-widest uppercase'>
+                            <Server className='text-primary h-4 w-4' />
                             {t('vds.settings.iso.title') ?? 'ISO Mount'}
                         </CardTitle>
                         <CardDescription className='text-muted-foreground'>
@@ -598,26 +598,26 @@ export default function VdsSettingsPage() {
                     </CardHeader>
                     <CardContent className='space-y-5'>
                         <div className='space-y-2'>
-                            <div className='text-xs font-semibold text-muted-foreground'>
+                            <div className='text-muted-foreground text-xs font-semibold'>
                                 {t('vds.settings.iso.current_label') ?? 'Current ISO'}
                             </div>
                             {isoCurrentLoading ? (
-                                <div className='flex items-center gap-2 text-muted-foreground'>
+                                <div className='text-muted-foreground flex items-center gap-2'>
                                     <Loader2 className='h-4 w-4 animate-spin' />
                                     {t('vds.settings.iso.loading') ?? 'Loading…'}
                                 </div>
                             ) : mountedIso ? (
-                                <div className='flex flex-col gap-1 rounded-xl border border-border/50 bg-muted/20 px-3 py-2'>
-                                    <div className='text-sm font-bold font-mono truncate'>
+                                <div className='border-border/50 bg-muted/20 flex flex-col gap-1 rounded-xl border px-3 py-2'>
+                                    <div className='truncate font-mono text-sm font-bold'>
                                         {mountedIso.filename ?? mountedIso.volid}
                                     </div>
-                                    <div className='text-xs text-muted-foreground'>
+                                    <div className='text-muted-foreground text-xs'>
                                         {t('vds.settings.iso.mounted_as') ?? 'Mounted as'}{' '}
                                         <span className='font-mono'>{mountedIso.slot ?? 'ide2'}</span>
                                     </div>
                                 </div>
                             ) : (
-                                <p className='text-sm text-muted-foreground italic'>
+                                <p className='text-muted-foreground text-sm italic'>
                                     {t('vds.settings.iso.none') ?? 'No ISO mounted.'}
                                 </p>
                             )}
@@ -628,27 +628,27 @@ export default function VdsSettingsPage() {
                                     disabled={!mountedIso || isoUninstalling}
                                     onClick={handleUnmountIso}
                                 >
-                                    {isoUninstalling && <Loader2 className='h-4 w-4 mr-2 animate-spin' />}
+                                    {isoUninstalling && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
                                     {t('vds.settings.iso.unmount_button') ?? 'Unmount ISO'}
                                 </Button>
                             </div>
                         </div>
 
                         <div className='space-y-2'>
-                            <div className='text-xs font-semibold text-muted-foreground'>
+                            <div className='text-muted-foreground text-xs font-semibold'>
                                 {t('vds.settings.iso.storage_label') ?? 'ISO Storage'}
                             </div>
                             {isoStoragesLoading ? (
-                                <div className='flex items-center gap-2 text-muted-foreground'>
+                                <div className='text-muted-foreground flex items-center gap-2'>
                                     <Loader2 className='h-4 w-4 animate-spin' />
                                     {t('vds.settings.iso.loading') ?? 'Loading…'}
                                 </div>
                             ) : isoStorages.length === 0 ? (
-                                <p className='text-sm text-muted-foreground italic'>
+                                <p className='text-muted-foreground text-sm italic'>
                                     {t('vds.settings.iso.no_storages') ?? 'No ISO storage available'}
                                 </p>
                             ) : (
-                                <div className='w-full h-11 rounded-xl bg-muted/30 border border-border/30 px-4 flex items-center text-sm font-mono'>
+                                <div className='bg-muted/30 border-border/30 flex h-11 w-full items-center rounded-xl border px-4 font-mono text-sm'>
                                     {isoStorage}
                                 </div>
                             )}
@@ -656,7 +656,7 @@ export default function VdsSettingsPage() {
 
                         <div className='space-y-3'>
                             <div className='space-y-2'>
-                                <div className='text-xs font-semibold text-muted-foreground'>
+                                <div className='text-muted-foreground text-xs font-semibold'>
                                     {t('vds.settings.iso.url_label') ?? 'ISO URL'}
                                 </div>
                                 <Input
@@ -674,7 +674,7 @@ export default function VdsSettingsPage() {
                                     disabled={isoUninstalling || isoFetchingFromUrl || !isoStorage || !isoUrl.trim()}
                                     onClick={handleFetchAndMountIsoFromUrl}
                                 >
-                                    {isoFetchingFromUrl && <Loader2 className='h-4 w-4 mr-2 animate-spin' />}
+                                    {isoFetchingFromUrl && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
                                     {t('vds.settings.iso.fetch_button') ?? 'Fetch & Mount'}
                                 </Button>
                             </div>
@@ -687,8 +687,8 @@ export default function VdsSettingsPage() {
             {canReinstall && (
                 <Card className='border-border/20 bg-card/40 backdrop-blur-sm'>
                     <CardHeader>
-                        <CardTitle className='text-sm font-black uppercase tracking-widest flex items-center gap-2'>
-                            <RotateCcw className='h-4 w-4 text-primary' />
+                        <CardTitle className='flex items-center gap-2 text-sm font-black tracking-widest uppercase'>
+                            <RotateCcw className='text-primary h-4 w-4' />
                             {t('vds.settings.reinstall.title') ?? 'Reinstall Operating System'}
                         </CardTitle>
                         <CardDescription className='text-muted-foreground'>
@@ -697,31 +697,31 @@ export default function VdsSettingsPage() {
                     </CardHeader>
                     <CardContent className='space-y-4'>
                         {templatesLoading ? (
-                            <div className='flex items-center gap-2 text-muted-foreground'>
+                            <div className='text-muted-foreground flex items-center gap-2'>
                                 <Loader2 className='h-4 w-4 animate-spin' />
                                 <span className='text-sm'>{t('vds.settings.reinstall.templates_loading')}</span>
                             </div>
                         ) : templates.length === 0 ? (
-                            <p className='text-sm text-muted-foreground italic'>
+                            <p className='text-muted-foreground text-sm italic'>
                                 {t('vds.settings.reinstall.templates_none', {
                                     template_type: isQemu ? 'QEMU/KVM' : 'LXC',
                                 })}
                             </p>
                         ) : (
-                            <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3'>
+                            <div className='grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3'>
                                 {templates.map((tpl) => (
                                     <button
                                         key={tpl.id}
                                         onClick={() => setSelectedTemplate(tpl.id)}
                                         className={cn(
-                                            'flex flex-col items-start gap-1 p-4 rounded-2xl border-2 text-left transition-all',
+                                            'flex flex-col items-start gap-1 rounded-2xl border-2 p-4 text-left transition-all',
                                             selectedTemplate === tpl.id
                                                 ? 'border-primary bg-primary/10'
                                                 : 'border-border/20 bg-card/30 hover:border-border/40',
                                         )}
                                     >
-                                        <span className='font-bold text-sm'>{tpl.name}</span>
-                                        {tpl.os && <span className='text-xs text-muted-foreground'>{tpl.os}</span>}
+                                        <span className='text-sm font-bold'>{tpl.name}</span>
+                                        {tpl.os && <span className='text-muted-foreground text-xs'>{tpl.os}</span>}
                                     </button>
                                 ))}
                             </div>
@@ -734,7 +734,7 @@ export default function VdsSettingsPage() {
                             onClick={() => setReinstallOpen(true)}
                             className='mt-2 rounded-2xl'
                         >
-                            <RotateCcw className='h-4 w-4 mr-2' />
+                            <RotateCcw className='mr-2 h-4 w-4' />
                             {t('vds.settings.reinstall.button')}
                         </Button>
                     </CardContent>
@@ -749,8 +749,8 @@ export default function VdsSettingsPage() {
                 description={t('vds.settings.reinstall.confirm_desc')}
             >
                 <div className='space-y-6 py-4'>
-                    <div className='flex items-start gap-4 p-4 rounded-2xl bg-red-500/10 border border-red-500/20'>
-                        <AlertTriangle className='h-5 w-5 text-red-400 shrink-0 mt-0.5' />
+                    <div className='flex items-start gap-4 rounded-2xl border border-red-500/20 bg-red-500/10 p-4'>
+                        <AlertTriangle className='mt-0.5 h-5 w-5 shrink-0 text-red-400' />
                         <p className='text-sm text-red-300'>
                             {t('vds.settings.reinstall.confirm_body_prefix')}
                             <strong>{templates.find((t) => t.id === selectedTemplate)?.name}</strong>
@@ -760,19 +760,19 @@ export default function VdsSettingsPage() {
                         </p>
                     </div>
 
-                    <div className='flex items-start gap-4 p-4 rounded-2xl bg-primary/10 border border-primary/20'>
-                        <Lock className='h-5 w-5 text-primary shrink-0 mt-0.5' />
-                        <p className='text-sm text-foreground/90'>{t('vds.settings.reinstall.password_notice')}</p>
+                    <div className='bg-primary/10 border-primary/20 flex items-start gap-4 rounded-2xl border p-4'>
+                        <Lock className='text-primary mt-0.5 h-5 w-5 shrink-0' />
+                        <p className='text-foreground/90 text-sm'>{t('vds.settings.reinstall.password_notice')}</p>
                     </div>
 
                     {isQemu && (
                         <div className='space-y-4'>
-                            <p className='text-xs font-black uppercase tracking-widest text-primary/70'>
+                            <p className='text-primary/70 text-xs font-black tracking-widest uppercase'>
                                 {t('vds.settings.reinstall.cloud_init_credentials_optional')}
                             </p>
                             <div className='space-y-3'>
                                 <div>
-                                    <label className='text-xs font-semibold text-muted-foreground block mb-1'>
+                                    <label className='text-muted-foreground mb-1 block text-xs font-semibold'>
                                         {t('vds.settings.reinstall.cloud_init.username_label')}
                                     </label>
                                     <Input
@@ -783,7 +783,7 @@ export default function VdsSettingsPage() {
                                     />
                                 </div>
                                 <div>
-                                    <label className='text-xs font-semibold text-muted-foreground block mb-1'>
+                                    <label className='text-muted-foreground mb-1 block text-xs font-semibold'>
                                         {t('vds.settings.reinstall.cloud_init.password_label')}
                                     </label>
                                     <div className='relative'>
@@ -797,7 +797,7 @@ export default function VdsSettingsPage() {
                                         <button
                                             type='button'
                                             onClick={() => setShowPassword((v) => !v)}
-                                            className='absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground'
+                                            className='text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2'
                                         >
                                             {showPassword ? (
                                                 <EyeOff className='h-4 w-4' />
@@ -808,7 +808,7 @@ export default function VdsSettingsPage() {
                                     </div>
                                 </div>
                                 <div>
-                                    <label className='text-xs font-semibold text-muted-foreground block mb-1'>
+                                    <label className='text-muted-foreground mb-1 block text-xs font-semibold'>
                                         {t('vds.settings.reinstall.cloud_init.ssh_keys_label')}
                                     </label>
                                     <textarea
@@ -816,7 +816,7 @@ export default function VdsSettingsPage() {
                                         onChange={(e) => setCiSshKeys(e.target.value)}
                                         placeholder={t('vds.settings.reinstall.cloud_init.ssh_keys_placeholder')}
                                         rows={3}
-                                        className='w-full rounded-xl border border-border/20 bg-background/50 px-4 py-3 text-sm font-mono resize-none focus:outline-none focus:ring-2 focus:ring-primary/50'
+                                        className='border-border/20 bg-background/50 focus:ring-primary/50 w-full resize-none rounded-xl border px-4 py-3 font-mono text-sm focus:ring-2 focus:outline-none'
                                     />
                                 </div>
                             </div>
@@ -824,7 +824,7 @@ export default function VdsSettingsPage() {
                     )}
                 </div>
 
-                <div className='flex justify-end gap-3 pt-4 border-t border-border/5'>
+                <div className='border-border/5 flex justify-end gap-3 border-t pt-4'>
                     <Button
                         variant='outline'
                         size='default'

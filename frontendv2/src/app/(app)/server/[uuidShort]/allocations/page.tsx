@@ -281,11 +281,11 @@ export default function ServerAllocationsPage() {
 
     if (!permissionsLoading && !canRead) {
         return (
-            <div className='flex flex-col items-center justify-center min-h-[400px] p-4 text-center'>
-                <div className='p-4 rounded-full bg-red-500/10 mb-4'>
-                    <Network className='w-10 h-10 text-red-500' />
+            <div className='flex min-h-[400px] flex-col items-center justify-center p-4 text-center'>
+                <div className='mb-4 rounded-full bg-red-500/10 p-4'>
+                    <Network className='h-10 w-10 text-red-500' />
                 </div>
-                <h2 className='text-2xl font-semibold mb-2'>{t('serverAllocations.noAllocationPermission')}</h2>
+                <h2 className='mb-2 text-2xl font-semibold'>{t('serverAllocations.noAllocationPermission')}</h2>
                 <p className='text-muted-foreground max-w-md'>{t('common.contactAdmin')}</p>
             </div>
         );
@@ -295,14 +295,14 @@ export default function ServerAllocationsPage() {
         server && server.allocation_limit !== 0 && (server.current_allocations || 0) >= server.allocation_limit;
 
     return (
-        <div key={pathname} className='space-y-8 pb-12 '>
+        <div key={pathname} className='space-y-8 pb-12'>
             <PageHeader
                 title={t('serverAllocations.title')}
                 description={
                     <div className='flex items-center gap-3'>
                         <span>{t('serverAllocations.description')}</span>
                         {server && (
-                            <span className='px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-primary/5 text-primary border border-primary/20'>
+                            <span className='bg-primary/5 text-primary border-primary/20 rounded-full border px-3 py-1 text-[10px] font-black tracking-widest uppercase'>
                                 {server.current_allocations || allocations.length} /{' '}
                                 {server.allocation_limit === 0 ? '∞' : server.allocation_limit}
                             </span>
@@ -312,7 +312,7 @@ export default function ServerAllocationsPage() {
                 actions={
                     <div className='flex items-center gap-3'>
                         <Button variant='glass' size='default' onClick={() => fetchAllocations()} disabled={loading}>
-                            <RefreshCw className={cn('h-5 w-5 mr-2', loading && 'animate-spin')} />
+                            <RefreshCw className={cn('mr-2 h-5 w-5', loading && 'animate-spin')} />
                             {t('serverAllocations.refresh')}
                         </Button>
 
@@ -333,7 +333,7 @@ export default function ServerAllocationsPage() {
                                     size='default'
                                     onClick={handleAutoAllocate}
                                     disabled={limitReached || isAutoAllocating || loading}
-                                    className='active:scale-95 transition-all'
+                                    className='transition-all active:scale-95'
                                 >
                                     {isAutoAllocating ? (
                                         <Loader2 className='mr-2 h-5 w-5 animate-spin' />
@@ -351,16 +351,16 @@ export default function ServerAllocationsPage() {
             <WidgetRenderer widgets={getWidgets('server-allocations', 'allocation-header')} />
 
             {limitReached && (
-                <div className='relative overflow-hidden p-6 rounded-3xl bg-yellow-500/10 border border-yellow-500/20 backdrop-blur-xl animate-in slide-in-from-top duration-500'>
+                <div className='animate-in slide-in-from-top relative overflow-hidden rounded-3xl border border-yellow-500/20 bg-yellow-500/10 p-6 backdrop-blur-xl duration-500'>
                     <div className='relative z-10 flex items-start gap-5'>
-                        <div className='h-12 w-12 rounded-2xl bg-yellow-500/20 flex items-center justify-center border border-yellow-500/30'>
+                        <div className='flex h-12 w-12 items-center justify-center rounded-2xl border border-yellow-500/30 bg-yellow-500/20'>
                             <AlertTriangle className='h-6 w-6 text-yellow-500' />
                         </div>
                         <div className='space-y-1'>
-                            <h3 className='text-lg font-bold text-yellow-500 leading-none'>
+                            <h3 className='text-lg leading-none font-bold text-yellow-500'>
                                 {t('serverAllocations.limitReached')}
                             </h3>
-                            <p className='text-sm text-yellow-500/80 leading-relaxed font-medium'>
+                            <p className='text-sm leading-relaxed font-medium text-yellow-500/80'>
                                 {t('serverAllocations.allocationStatusDescription', {
                                     current: String(server?.current_allocations ?? allocations.length),
                                     limit: String(server?.allocation_limit),
@@ -373,21 +373,21 @@ export default function ServerAllocationsPage() {
 
             <div className='space-y-6'>
                 <div className='flex items-center gap-4'>
-                    <div className='relative flex-1 group'>
-                        <Search className='absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors' />
+                    <div className='group relative flex-1'>
+                        <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 transition-colors' />
                         <Input
                             placeholder={t('serverAllocations.searchAllocations')}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className='pl-12 h-14 text-lg'
+                            className='h-14 pl-12 text-lg'
                         />
                     </div>
                 </div>
 
                 {permissionsLoading || loading ? (
-                    <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
+                    <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3'>
                         {[1, 2, 3, 4, 5, 6].map((i) => (
-                            <div key={i} className='h-40 rounded-3xl bg-card/20 animate-pulse' />
+                            <div key={i} className='bg-card/20 h-40 animate-pulse rounded-3xl' />
                         ))}
                     </div>
                 ) : allocations.length === 0 ? (
@@ -423,7 +423,7 @@ export default function ServerAllocationsPage() {
                                     allocation.is_primary && (
                                         <Badge
                                             variant='secondary'
-                                            className='bg-primary/20 text-primary border-primary/20 text-[10px] uppercase font-bold tracking-widest leading-none px-3 py-1'
+                                            className='bg-primary/20 text-primary border-primary/20 px-3 py-1 text-[10px] leading-none font-bold tracking-widest uppercase'
                                         >
                                             {t('serverAllocations.primary')}
                                         </Badge>
@@ -431,21 +431,21 @@ export default function ServerAllocationsPage() {
                                 }
                                 description={
                                     <div className='flex flex-wrap items-center gap-x-6 gap-y-2'>
-                                        <div className='flex items-center gap-2 text-muted-foreground p-1 px-2 rounded-lg bg-black/40 border border-white/5'>
+                                        <div className='text-muted-foreground flex items-center gap-2 rounded-lg border border-white/5 bg-black/40 p-1 px-2'>
                                             <span className='text-xs font-bold uppercase opacity-60'>IP</span>
-                                            <span className='text-sm font-mono font-bold text-foreground/80'>
+                                            <span className='text-foreground/80 font-mono text-sm font-bold'>
                                                 {allocation.ip}
                                             </span>
                                         </div>
-                                        <div className='flex items-center gap-2 text-muted-foreground p-1 px-2 rounded-lg bg-black/40 border border-white/5'>
+                                        <div className='text-muted-foreground flex items-center gap-2 rounded-lg border border-white/5 bg-black/40 p-1 px-2'>
                                             <span className='text-xs font-bold uppercase opacity-60'>Port</span>
-                                            <span className='text-sm font-mono font-bold text-foreground/80'>
+                                            <span className='text-foreground/80 font-mono text-sm font-bold'>
                                                 {allocation.port}
                                             </span>
                                         </div>
                                         {allocation.notes && (
-                                            <div className='flex items-center gap-2 text-muted-foreground'>
-                                                <div className='w-1 h-1 rounded-full bg-white/20' />
+                                            <div className='text-muted-foreground flex items-center gap-2'>
+                                                <div className='h-1 w-1 rounded-full bg-white/20' />
                                                 <span className='text-sm italic opacity-70'>
                                                     &quot;{allocation.notes}&quot;
                                                 </span>
@@ -467,12 +467,12 @@ export default function ServerAllocationsPage() {
 
                                         {!allocation.is_primary && (canUpdate || canDelete) && (
                                             <DropdownMenu>
-                                                <DropdownMenuTrigger className='h-12 w-12 flex items-center justify-center rounded-xl bg-card/40 border border-white/5 hover:bg-white/10 transition-all outline-none group-hover:bg-card/60'>
-                                                    <MoreVertical className='h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors' />
+                                                <DropdownMenuTrigger className='bg-card/40 group-hover:bg-card/60 flex h-12 w-12 items-center justify-center rounded-xl border border-white/5 transition-all outline-none hover:bg-white/10'>
+                                                    <MoreVertical className='text-muted-foreground group-hover:text-primary h-6 w-6 transition-colors' />
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent
                                                     align='end'
-                                                    className='w-56 bg-card/90 backdrop-blur-xl border-border/40 p-2 rounded-2xl '
+                                                    className='bg-card/90 border-border/40 w-56 rounded-2xl p-2 backdrop-blur-xl'
                                                 >
                                                     {canUpdate && (
                                                         <DropdownMenuItem
@@ -480,7 +480,7 @@ export default function ServerAllocationsPage() {
                                                                 setSelectedAllocation(allocation);
                                                                 setPrimaryDialogOpen(true);
                                                             }}
-                                                            className='flex items-center gap-3 p-3 rounded-xl cursor-pointer'
+                                                            className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
                                                         >
                                                             <Star className='h-4 w-4 text-yellow-400' />
                                                             <span className='font-bold'>
@@ -499,7 +499,7 @@ export default function ServerAllocationsPage() {
                                                                     setSelectedAllocation(allocation);
                                                                     setDeleteDialogOpen(true);
                                                                 }}
-                                                                className='flex items-center gap-3 p-3 rounded-xl cursor-pointer text-red-500 focus:text-red-500 focus:bg-red-500/10'
+                                                                className='flex cursor-pointer items-center gap-3 rounded-xl p-3 text-red-500 focus:bg-red-500/10 focus:text-red-500'
                                                             >
                                                                 <Trash2 className='h-4 w-4' />
                                                                 <span className='font-bold'>{t('common.delete')}</span>
@@ -519,15 +519,15 @@ export default function ServerAllocationsPage() {
                 <WidgetRenderer widgets={getWidgets('server-allocations', 'allocation-bottom')} />
 
                 <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-                    <DialogContent className='max-w-md p-0 overflow-hidden bg-card/90 backdrop-blur-2xl border-white/10 sm:rounded-3xl'>
-                        <div className='p-6 space-y-6'>
+                    <DialogContent className='bg-card/90 max-w-md overflow-hidden border-white/10 p-0 backdrop-blur-2xl sm:rounded-3xl'>
+                        <div className='space-y-6 p-6'>
                             <DialogHeader>
                                 <div className='flex items-center gap-4'>
-                                    <div className='h-12 w-12 rounded-xl bg-red-500/10 flex items-center justify-center border border-red-500/20 shadow-inner'>
+                                    <div className='flex h-12 w-12 items-center justify-center rounded-xl border border-red-500/20 bg-red-500/10 shadow-inner'>
                                         <Trash2 className='h-6 w-6 text-red-500' />
                                     </div>
                                     <div className='space-y-0.5'>
-                                        <DialogTitle className='text-xl font-bold leading-none'>
+                                        <DialogTitle className='text-xl leading-none font-bold'>
                                             {t('serverAllocations.confirmDeleteTitle')}
                                         </DialogTitle>
                                         <DialogDescription className='text-sm opacity-70'>
@@ -549,7 +549,7 @@ export default function ServerAllocationsPage() {
                                 <Button
                                     variant='ghost'
                                     onClick={() => setDeleteDialogOpen(false)}
-                                    className='h-12 flex-1 font-bold rounded-xl'
+                                    className='h-12 flex-1 rounded-xl font-bold'
                                 >
                                     {t('common.cancel')}
                                 </Button>
@@ -568,15 +568,15 @@ export default function ServerAllocationsPage() {
                 </Dialog>
 
                 <Dialog open={primaryDialogOpen} onOpenChange={setPrimaryDialogOpen}>
-                    <DialogContent className='max-w-md p-0 overflow-hidden bg-card/90 backdrop-blur-2xl border-white/10 sm:rounded-3xl'>
-                        <div className='p-6 space-y-6'>
+                    <DialogContent className='bg-card/90 max-w-md overflow-hidden border-white/10 p-0 backdrop-blur-2xl sm:rounded-3xl'>
+                        <div className='space-y-6 p-6'>
                             <DialogHeader>
                                 <div className='flex items-center gap-4'>
-                                    <div className='h-12 w-12 rounded-xl bg-yellow-500/10 flex items-center justify-center border border-yellow-500/20 shadow-inner'>
-                                        <Star className='h-6 w-6 text-yellow-500 fill-yellow-500' />
+                                    <div className='flex h-12 w-12 items-center justify-center rounded-xl border border-yellow-500/20 bg-yellow-500/10 shadow-inner'>
+                                        <Star className='h-6 w-6 fill-yellow-500 text-yellow-500' />
                                     </div>
                                     <div className='space-y-0.5'>
-                                        <DialogTitle className='text-xl font-bold leading-none'>
+                                        <DialogTitle className='text-xl leading-none font-bold'>
                                             {t('serverAllocations.confirmSetPrimaryTitle')}
                                         </DialogTitle>
                                         <DialogDescription className='text-sm opacity-70'>
@@ -586,7 +586,7 @@ export default function ServerAllocationsPage() {
                                 </div>
                             </DialogHeader>
 
-                            <div className='p-4 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-between'>
+                            <div className='bg-primary/10 border-primary/20 flex items-center justify-between rounded-2xl border p-4'>
                                 <span className='font-mono text-sm font-bold'>
                                     {selectedAllocation?.ip}:{selectedAllocation?.port}
                                 </span>
@@ -599,7 +599,7 @@ export default function ServerAllocationsPage() {
                                 <Button
                                     variant='ghost'
                                     onClick={() => setPrimaryDialogOpen(false)}
-                                    className='h-12 flex-1 font-bold rounded-xl'
+                                    className='h-12 flex-1 rounded-xl font-bold'
                                 >
                                     {t('common.cancel')}
                                 </Button>
@@ -617,15 +617,15 @@ export default function ServerAllocationsPage() {
                 </Dialog>
 
                 <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
-                    <DialogContent className='max-w-lg p-0 overflow-hidden bg-card/90 backdrop-blur-2xl border-white/10 sm:rounded-3xl'>
-                        <div className='p-6 space-y-6'>
+                    <DialogContent className='bg-card/90 max-w-lg overflow-hidden border-white/10 p-0 backdrop-blur-2xl sm:rounded-3xl'>
+                        <div className='space-y-6 p-6'>
                             <DialogHeader>
                                 <div className='flex items-center gap-4'>
-                                    <div className='h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20 shadow-inner'>
-                                        <Plus className='h-6 w-6 text-primary' />
+                                    <div className='bg-primary/10 border-primary/20 flex h-12 w-12 items-center justify-center rounded-xl border shadow-inner'>
+                                        <Plus className='text-primary h-6 w-6' />
                                     </div>
                                     <div className='space-y-0.5'>
-                                        <DialogTitle className='text-xl font-bold leading-none'>
+                                        <DialogTitle className='text-xl leading-none font-bold'>
                                             {t('serverAllocations.assignAllocation')}
                                         </DialogTitle>
                                         <DialogDescription className='text-sm opacity-70'>
@@ -635,13 +635,13 @@ export default function ServerAllocationsPage() {
                                 </div>
                             </DialogHeader>
 
-                            <div className='max-h-[50vh] overflow-y-auto space-y-2 pr-2 custom-scrollbar'>
+                            <div className='custom-scrollbar max-h-[50vh] space-y-2 overflow-y-auto pr-2'>
                                 {isLoadingAvailable ? (
                                     <div className='flex justify-center py-12'>
-                                        <Loader2 className='h-8 w-8 animate-spin text-primary opacity-50' />
+                                        <Loader2 className='text-primary h-8 w-8 animate-spin opacity-50' />
                                     </div>
                                 ) : availableAllocations.length === 0 ? (
-                                    <div className='flex flex-col items-center justify-center py-12 text-center border-2 border-dashed border-white/10 rounded-2xl'>
+                                    <div className='flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-white/10 py-12 text-center'>
                                         <p className='text-muted-foreground font-medium'>
                                             {t('serverAllocations.noAvailableAllocations')}
                                         </p>
@@ -651,20 +651,20 @@ export default function ServerAllocationsPage() {
                                         <div
                                             key={item.id}
                                             className={cn(
-                                                'p-4 rounded-2xl border cursor-pointer flex justify-between items-center transition-all duration-200',
+                                                'flex cursor-pointer items-center justify-between rounded-2xl border p-4 transition-all duration-200',
                                                 selectedAssignId === item.id
                                                     ? 'bg-primary/10 border-primary/50 scale-[1.02]'
-                                                    : 'bg-black/20 border-white/5 hover:bg-black/40 hover:border-white/10',
+                                                    : 'border-white/5 bg-black/20 hover:border-white/10 hover:bg-black/40',
                                             )}
                                             onClick={() => setSelectedAssignId(item.id)}
                                         >
                                             <div className='flex items-center gap-4'>
                                                 <div
                                                     className={cn(
-                                                        'h-10 w-10 rounded-xl flex items-center justify-center border transition-colors',
+                                                        'flex h-10 w-10 items-center justify-center rounded-xl border transition-colors',
                                                         selectedAssignId === item.id
                                                             ? 'bg-primary/20 border-primary/30'
-                                                            : 'bg-white/5 border-white/5',
+                                                            : 'border-white/5 bg-white/5',
                                                     )}
                                                 >
                                                     <Network
@@ -680,13 +680,13 @@ export default function ServerAllocationsPage() {
                                                     <span className='font-mono text-sm font-bold tracking-tight'>
                                                         {item.ip}:{item.port}
                                                     </span>
-                                                    <span className='text-xs text-muted-foreground font-medium uppercase tracking-wider'>
+                                                    <span className='text-muted-foreground text-xs font-medium tracking-wider uppercase'>
                                                         {item.ip_alias || 'No Alias'}
                                                     </span>
                                                 </div>
                                             </div>
                                             {selectedAssignId === item.id && (
-                                                <div className='h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center transform scale-100 transition-transform'>
+                                                <div className='bg-primary text-primary-foreground flex h-8 w-8 scale-100 transform items-center justify-center rounded-full transition-transform'>
                                                     <Check className='h-5 w-5' />
                                                 </div>
                                             )}
@@ -695,11 +695,11 @@ export default function ServerAllocationsPage() {
                                 )}
                             </div>
 
-                            <DialogFooter className='border-t border-border/40 pt-4'>
+                            <DialogFooter className='border-border/40 border-t pt-4'>
                                 <Button
                                     variant='ghost'
                                     onClick={() => setAssignDialogOpen(false)}
-                                    className='h-12 flex-1 font-bold rounded-xl'
+                                    className='h-12 flex-1 rounded-xl font-bold'
                                 >
                                     {t('common.cancel')}
                                 </Button>

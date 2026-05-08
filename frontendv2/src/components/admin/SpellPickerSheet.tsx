@@ -212,7 +212,7 @@ export function SpellPickerSheet({
                 onOpenChange(next);
             }}
         >
-            <SheetContent className='sm:max-w-3xl overflow-y-auto'>
+            <SheetContent className='overflow-y-auto sm:max-w-3xl'>
                 <SheetHeader>
                     <SheetTitle>{t('admin.servers.form.select_spell')}</SheetTitle>
                     <SheetDescription>
@@ -234,12 +234,12 @@ export function SpellPickerSheet({
                 </SheetHeader>
 
                 <div className='mt-6 space-y-4'>
-                    <div className='flex rounded-xl border border-border/60 p-1 bg-muted/30 gap-1'>
+                    <div className='border-border/60 bg-muted/30 flex gap-1 rounded-xl border p-1'>
                         <button
                             type='button'
                             onClick={() => setPickerMode('browse')}
                             className={cn(
-                                'flex-1 inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                                'inline-flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
                                 pickerMode === 'browse'
                                     ? 'bg-background text-foreground shadow-sm'
                                     : 'text-muted-foreground hover:text-foreground',
@@ -252,7 +252,7 @@ export function SpellPickerSheet({
                             type='button'
                             onClick={() => setPickerMode('cloud')}
                             className={cn(
-                                'flex-1 inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                                'inline-flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
                                 pickerMode === 'cloud'
                                     ? 'bg-background text-foreground shadow-sm'
                                     : 'text-muted-foreground hover:text-foreground',
@@ -265,8 +265,8 @@ export function SpellPickerSheet({
 
                     {pickerMode === 'browse' ? (
                         <>
-                            <div className='relative group'>
-                                <SearchIcon className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground' />
+                            <div className='group relative'>
+                                <SearchIcon className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform' />
                                 <Input
                                     placeholder={t('common.search')}
                                     value={spellSearch}
@@ -276,7 +276,7 @@ export function SpellPickerSheet({
                             </div>
 
                             {pagination && pagination.total_pages > 1 && (
-                                <div className='flex items-center justify-between gap-2 py-2 px-3 rounded-lg border border-border bg-muted/30'>
+                                <div className='border-border bg-muted/30 flex items-center justify-between gap-2 rounded-lg border px-3 py-2'>
                                     <Button
                                         variant='outline'
                                         size='sm'
@@ -284,7 +284,7 @@ export function SpellPickerSheet({
                                         onClick={() =>
                                             setSpellPagination((p) => ({ ...p, current_page: p.current_page - 1 }))
                                         }
-                                        className='gap-1 h-8'
+                                        className='h-8 gap-1'
                                     >
                                         <ChevronLeft className='h-3 w-3' />
                                         {t('common.previous')}
@@ -299,7 +299,7 @@ export function SpellPickerSheet({
                                         onClick={() =>
                                             setSpellPagination((p) => ({ ...p, current_page: p.current_page + 1 }))
                                         }
-                                        className='gap-1 h-8'
+                                        className='h-8 gap-1'
                                     >
                                         {t('common.next')}
                                         <ChevronRight className='h-3 w-3' />
@@ -307,15 +307,15 @@ export function SpellPickerSheet({
                                 </div>
                             )}
 
-                            <div className='space-y-2 max-h-[min(56vh,420px)] overflow-y-auto'>
+                            <div className='max-h-[min(56vh,420px)] space-y-2 overflow-y-auto'>
                                 {spells.length === 0 ? (
-                                    <div className='text-center py-8 text-muted-foreground space-y-4'>
+                                    <div className='text-muted-foreground space-y-4 py-8 text-center'>
                                         <p>{t('common.no_results')}</p>
                                         <p className='text-sm'>
                                             {t('admin.servers.form.spell_picker_browse_empty_hint')}
                                         </p>
                                         <Button type='button' onClick={() => setPickerMode('cloud')}>
-                                            <CloudDownload className='h-4 w-4 mr-2' />
+                                            <CloudDownload className='mr-2 h-4 w-4' />
                                             {t('admin.servers.form.spell_picker_cloud')}
                                         </Button>
                                     </div>
@@ -325,12 +325,12 @@ export function SpellPickerSheet({
                                             key={spell.id}
                                             type='button'
                                             onClick={() => onSelectSpell(spell)}
-                                            className='w-full p-3 rounded-xl border border-border/50 hover:border-primary hover:bg-primary/5 cursor-pointer transition-all text-left'
+                                            className='border-border/50 hover:border-primary hover:bg-primary/5 w-full cursor-pointer rounded-xl border p-3 text-left transition-all'
                                         >
                                             <div className='flex flex-col'>
                                                 <span className='font-semibold'>{spell.name}</span>
                                                 {spell.description && (
-                                                    <span className='text-xs text-muted-foreground line-clamp-2'>
+                                                    <span className='text-muted-foreground line-clamp-2 text-xs'>
                                                         {spell.description}
                                                     </span>
                                                 )}
@@ -341,8 +341,8 @@ export function SpellPickerSheet({
                             </div>
 
                             {pagination && pagination.total_pages > 1 && (
-                                <div className='flex items-center justify-between pt-4 border-t border-border/50'>
-                                    <div className='text-sm text-muted-foreground'>
+                                <div className='border-border/50 flex items-center justify-between border-t pt-4'>
+                                    <div className='text-muted-foreground text-sm'>
                                         {t('common.showing', {
                                             from: String((pagination.current_page - 1) * pagination.per_page + 1),
                                             to: String(
@@ -363,7 +363,7 @@ export function SpellPickerSheet({
                                             }
                                             disabled={!pagination.has_prev}
                                         >
-                                            <ChevronLeft className='h-4 w-4 mr-2' />
+                                            <ChevronLeft className='mr-2 h-4 w-4' />
                                             {t('common.previous')}
                                         </Button>
                                         <Button
@@ -375,7 +375,7 @@ export function SpellPickerSheet({
                                             disabled={!pagination.has_next}
                                         >
                                             {t('common.next')}
-                                            <ChevronRight className='h-4 w-4 ml-2' />
+                                            <ChevronRight className='ml-2 h-4 w-4' />
                                         </Button>
                                     </div>
                                 </div>
@@ -383,12 +383,12 @@ export function SpellPickerSheet({
                         </>
                     ) : (
                         <div className='space-y-4'>
-                            <div className='flex flex-col sm:flex-row gap-3'>
-                                <div className='relative flex-1 group'>
-                                    <SearchIcon className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground' />
+                            <div className='flex flex-col gap-3 sm:flex-row'>
+                                <div className='group relative flex-1'>
+                                    <SearchIcon className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
                                     <Input
                                         placeholder={t('admin.marketplace.spells.search_placeholder')}
-                                        className='pl-10 h-11'
+                                        className='h-11 pl-10'
                                         value={cloudSearch}
                                         onChange={(e) => setCloudSearch(e.target.value)}
                                         onKeyDown={(e) => {
@@ -398,7 +398,7 @@ export function SpellPickerSheet({
                                 </div>
                                 <Button asChild variant='outline' className='shrink-0'>
                                     <Link href='/admin/feathercloud/spells' target='_blank' rel='noopener noreferrer'>
-                                        <ExternalLink className='h-4 w-4 mr-2' />
+                                        <ExternalLink className='mr-2 h-4 w-4' />
                                         {t('admin.spells.browse_marketplace')}
                                     </Link>
                                 </Button>
@@ -420,7 +420,7 @@ export function SpellPickerSheet({
                                             variant='outline'
                                             onClick={() => void fetchOnlineSpells(1, debouncedCloudSearch)}
                                         >
-                                            <RefreshCw className='h-4 w-4 mr-2' />
+                                            <RefreshCw className='mr-2 h-4 w-4' />
                                             {t('admin.marketplace.plugins.try_again')}
                                         </Button>
                                     }
@@ -432,13 +432,13 @@ export function SpellPickerSheet({
                                     icon={Settings}
                                 />
                             ) : (
-                                <div className='space-y-4 max-h-[min(52vh,480px)] overflow-y-auto pr-1'>
+                                <div className='max-h-[min(52vh,480px)] space-y-4 overflow-y-auto pr-1'>
                                     {onlineSpells.map((spell) => {
                                         const IconComponent = ({ className }: { className?: string }) =>
                                             spell.icon ? (
                                                 <div
                                                     className={cn(
-                                                        'relative h-10 w-10 rounded-lg overflow-hidden shrink-0',
+                                                        'relative h-10 w-10 shrink-0 overflow-hidden rounded-lg',
                                                         className,
                                                     )}
                                                 >
@@ -499,12 +499,12 @@ export function SpellPickerSheet({
                                                 badges={badges}
                                                 description={
                                                     <div className='space-y-3'>
-                                                        <p className='text-sm text-muted-foreground line-clamp-3 leading-relaxed'>
+                                                        <p className='text-muted-foreground line-clamp-3 text-sm leading-relaxed'>
                                                             {spell.description ||
                                                                 t('admin.marketplace.spells.grid.no_description')}
                                                         </p>
                                                         {!spell.verified && (
-                                                            <div className='text-[10px] text-amber-700 bg-amber-500/10 border border-amber-500/20 rounded-lg p-2 flex items-center gap-2'>
+                                                            <div className='flex items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/10 p-2 text-[10px] text-amber-700'>
                                                                 <AlertCircle className='h-3 w-3 shrink-0' />
                                                                 <span>
                                                                     {t('admin.marketplace.spells.grid.external_source')}
@@ -514,7 +514,7 @@ export function SpellPickerSheet({
                                                     </div>
                                                 }
                                                 actions={
-                                                    <div className='flex items-center gap-2 w-full'>
+                                                    <div className='flex w-full items-center gap-2'>
                                                         <Button
                                                             variant='default'
                                                             className='flex-1'
@@ -522,9 +522,9 @@ export function SpellPickerSheet({
                                                             onClick={() => void handleCloudInstall(spell)}
                                                         >
                                                             {installingId === spell.identifier ? (
-                                                                <RefreshCw className='h-4 w-4 animate-spin mr-2' />
+                                                                <RefreshCw className='mr-2 h-4 w-4 animate-spin' />
                                                             ) : (
-                                                                <CloudDownload className='h-4 w-4 mr-2' />
+                                                                <CloudDownload className='mr-2 h-4 w-4' />
                                                             )}
                                                             {t('admin.servers.form.spell_install_to_realm')}
                                                         </Button>
@@ -548,7 +548,7 @@ export function SpellPickerSheet({
                                 </div>
                             )}
                             {onlinePagination && onlinePagination.total_pages > 1 && (
-                                <p className='text-xs text-center text-muted-foreground'>
+                                <p className='text-muted-foreground text-center text-xs'>
                                     {t('admin.servers.form.spell_picker_cloud_more_pages', {
                                         total: String(onlinePagination.total_pages),
                                     })}

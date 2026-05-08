@@ -136,9 +136,9 @@ export default function AdminDashboardPage() {
                         <button
                             onClick={() => setIsCustomizing(!isCustomizing)}
                             className={cn(
-                                'flex items-center gap-2 px-4 md:px-5 py-2.5 md:py-3 rounded-xl md:rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 border',
+                                'flex items-center gap-2 rounded-xl border px-4 py-2.5 text-[10px] font-black tracking-widest uppercase transition-all hover:scale-105 active:scale-95 md:rounded-2xl md:px-5 md:py-3',
                                 isCustomizing
-                                    ? 'bg-amber-500/10 border-amber-500/50 text-amber-500 '
+                                    ? 'border-amber-500/50 bg-amber-500/10 text-amber-500'
                                     : 'bg-secondary/50 hover:bg-secondary border-border/50',
                             )}
                         >
@@ -153,7 +153,7 @@ export default function AdminDashboardPage() {
                         <button
                             onClick={clearCache}
                             disabled={isClearingCache}
-                            className='flex items-center gap-2 px-4 md:px-6 py-2.5 md:py-3 rounded-xl md:rounded-2xl bg-secondary hover:bg-secondary/80 border border-border/50 text-[10px] font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-100'
+                            className='bg-secondary hover:bg-secondary/80 border-border/50 flex items-center gap-2 rounded-xl border px-4 py-2.5 text-[10px] font-black tracking-widest uppercase transition-all hover:scale-105 active:scale-95 disabled:scale-100 disabled:opacity-50 md:rounded-2xl md:px-6 md:py-3'
                         >
                             <Trash2 className={cn('h-4 w-4', isClearingCache && 'animate-pulse')} />
                             <span className='hidden sm:inline'>{t('admin.dashboard.clear_cache')}</span>
@@ -161,7 +161,7 @@ export default function AdminDashboardPage() {
                         </button>
                         <Link
                             href='/admin/settings'
-                            className='flex items-center gap-2 px-4 md:px-6 py-2.5 md:py-3 rounded-xl md:rounded-2xl bg-primary text-primary-foreground text-[10px] font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 '
+                            className='bg-primary text-primary-foreground flex items-center gap-2 rounded-xl px-4 py-2.5 text-[10px] font-black tracking-widest uppercase transition-all hover:scale-105 active:scale-95 md:rounded-2xl md:px-6 md:py-3'
                         >
                             <Settings className='h-4 w-4' />
                             <span className='hidden sm:inline'>{t('admin.dashboard.global_settings')}</span>
@@ -174,33 +174,33 @@ export default function AdminDashboardPage() {
             <WidgetRenderer widgets={getWidgets('admin-home', 'after-header')} />
 
             {showAppUrlWarning && (
-                <div className='p-4 md:p-6 rounded-2xl md:rounded-[2.5rem] bg-red-500/10 border border-red-500/20 backdrop-blur-3xl animate-in slide-in-from-top-4 duration-500 relative group overflow-hidden'>
-                    <div className='absolute top-0 right-0 w-32 h-32 bg-red-500/10 blur-3xl -mr-16 -mt-16 rounded-full group-hover:bg-red-500/20 transition-all duration-700' />
+                <div className='animate-in slide-in-from-top-4 group relative overflow-hidden rounded-2xl border border-red-500/20 bg-red-500/10 p-4 backdrop-blur-3xl duration-500 md:rounded-[2.5rem] md:p-6'>
+                    <div className='absolute top-0 right-0 -mt-16 -mr-16 h-32 w-32 rounded-full bg-red-500/10 blur-3xl transition-all duration-700 group-hover:bg-red-500/20' />
 
-                    <div className='relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-6'>
-                        <div className='flex items-start gap-3 md:gap-4 min-w-0 flex-1'>
-                            <div className='h-10 w-10 md:h-12 md:w-12 rounded-xl md:rounded-2xl bg-red-500/20 flex items-center justify-center text-red-500 border border-red-500/30  shrink-0'>
+                    <div className='relative z-10 flex flex-col justify-between gap-4 md:flex-row md:items-center md:gap-6'>
+                        <div className='flex min-w-0 flex-1 items-start gap-3 md:gap-4'>
+                            <div className='flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-red-500/30 bg-red-500/20 text-red-500 md:h-12 md:w-12 md:rounded-2xl'>
                                 <AlertTriangle className='h-5 w-5 md:h-6 md:w-6' />
                             </div>
-                            <div className='space-y-1 min-w-0 flex-1'>
-                                <h3 className='text-lg md:text-xl font-black text-red-500 uppercase tracking-tight'>
+                            <div className='min-w-0 flex-1 space-y-1'>
+                                <h3 className='text-lg font-black tracking-tight text-red-500 uppercase md:text-xl'>
                                     {t('admin.dashboard.app_url_warning.title')}
                                 </h3>
-                                <p className='text-xs md:text-sm text-red-500/70 font-bold leading-relaxed'>
+                                <p className='text-xs leading-relaxed font-bold text-red-500/70 md:text-sm'>
                                     {t('admin.dashboard.app_url_warning.message')}
                                 </p>
                             </div>
                         </div>
-                        <div className='flex flex-col sm:flex-row items-stretch sm:items-center gap-2 shrink-0'>
+                        <div className='flex shrink-0 flex-col items-stretch gap-2 sm:flex-row sm:items-center'>
                             <button
                                 onClick={dismissWarning}
-                                className='px-4 md:px-5 py-2 md:py-2.5 rounded-xl border border-red-500/20 text-red-500 text-[10px] font-black uppercase tracking-widest hover:bg-red-500/10 transition-all whitespace-nowrap'
+                                className='rounded-xl border border-red-500/20 px-4 py-2 text-[10px] font-black tracking-widest whitespace-nowrap text-red-500 uppercase transition-all hover:bg-red-500/10 md:px-5 md:py-2.5'
                             >
                                 {t('admin.dashboard.app_url_warning.remind_me')}
                             </button>
                             <button
                                 onClick={() => router.push('/admin/settings')}
-                                className='px-4 md:px-5 py-2 md:py-2.5 rounded-xl bg-red-500 text-white text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all whitespace-nowrap'
+                                className='rounded-xl bg-red-500 px-4 py-2 text-[10px] font-black tracking-widest whitespace-nowrap text-white uppercase transition-all hover:scale-105 md:px-5 md:py-2.5'
                             >
                                 {t('admin.dashboard.app_url_warning.update_settings')}
                             </button>
@@ -214,7 +214,7 @@ export default function AdminDashboardPage() {
                     {isCustomizing && (
                         <button
                             onClick={() => toggleWidgetVisibility('welcome')}
-                            className='absolute -top-3 -right-3 z-20 p-2 rounded-full bg-background border border-border hover:scale-105 transition-transform text-muted-foreground'
+                            className='bg-background border-border text-muted-foreground absolute -top-3 -right-3 z-20 rounded-full border p-2 transition-transform hover:scale-105'
                         >
                             {hiddenWidgets.includes('welcome') ? (
                                 <Eye className='h-4 w-4' />
@@ -234,7 +234,7 @@ export default function AdminDashboardPage() {
                     {isCustomizing && (
                         <button
                             onClick={() => toggleWidgetVisibility('stats')}
-                            className='absolute -top-3 -right-3 z-20 p-2 rounded-full bg-background border border-border hover:scale-105 transition-transform text-muted-foreground'
+                            className='bg-background border-border text-muted-foreground absolute -top-3 -right-3 z-20 rounded-full border p-2 transition-transform hover:scale-105'
                         >
                             {hiddenWidgets.includes('stats') ? (
                                 <Eye className='h-4 w-4' />
@@ -251,14 +251,14 @@ export default function AdminDashboardPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-home', 'before-widgets-grid')} />
 
-            <div className='grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 items-start'>
+            <div className='grid grid-cols-1 items-start gap-6 md:gap-8 lg:grid-cols-2'>
                 <div className='space-y-6 md:space-y-8'>
                     <div className={cn('transition-all duration-500', !isVisible('health') && 'hidden')}>
                         <div className='relative'>
                             {isCustomizing && (
                                 <button
                                     onClick={() => toggleWidgetVisibility('health')}
-                                    className='absolute -top-3 -right-3 z-20 p-2 rounded-full bg-background border border-border hover:scale-105 transition-transform text-muted-foreground'
+                                    className='bg-background border-border text-muted-foreground absolute -top-3 -right-3 z-20 rounded-full border p-2 transition-transform hover:scale-105'
                                 >
                                     {hiddenWidgets.includes('health') ? (
                                         <Eye className='h-4 w-4' />
@@ -278,7 +278,7 @@ export default function AdminDashboardPage() {
                             {isCustomizing && (
                                 <button
                                     onClick={() => toggleWidgetVisibility('cron')}
-                                    className='absolute -top-3 -right-3 z-20 p-2 rounded-full bg-background border border-border hover:scale-105 transition-transform text-muted-foreground'
+                                    className='bg-background border-border text-muted-foreground absolute -top-3 -right-3 z-20 rounded-full border p-2 transition-transform hover:scale-105'
                                 >
                                     {hiddenWidgets.includes('cron') ? (
                                         <Eye className='h-4 w-4' />
@@ -299,7 +299,7 @@ export default function AdminDashboardPage() {
                             {isCustomizing && (
                                 <button
                                     onClick={() => toggleWidgetVisibility('version')}
-                                    className='absolute -top-3 -right-3 z-20 p-2 rounded-full bg-background border border-border hover:scale-105 transition-transform text-muted-foreground'
+                                    className='bg-background border-border text-muted-foreground absolute -top-3 -right-3 z-20 rounded-full border p-2 transition-transform hover:scale-105'
                                 >
                                     {hiddenWidgets.includes('version') ? (
                                         <Eye className='h-4 w-4' />
@@ -319,7 +319,7 @@ export default function AdminDashboardPage() {
                             {isCustomizing && (
                                 <button
                                     onClick={() => toggleWidgetVisibility('links')}
-                                    className='absolute -top-3 -right-3 z-20 p-2 rounded-full bg-background border border-border hover:scale-105 transition-transform text-muted-foreground'
+                                    className='bg-background border-border text-muted-foreground absolute -top-3 -right-3 z-20 rounded-full border p-2 transition-transform hover:scale-105'
                                 >
                                     {hiddenWidgets.includes('links') ? (
                                         <Eye className='h-4 w-4' />
@@ -343,7 +343,7 @@ export default function AdminDashboardPage() {
                     {isCustomizing && (
                         <button
                             onClick={() => toggleWidgetVisibility('eula')}
-                            className='absolute -top-3 -right-3 z-20 p-2 rounded-full bg-background border border-border hover:scale-105 transition-transform text-muted-foreground'
+                            className='bg-background border-border text-muted-foreground absolute -top-3 -right-3 z-20 rounded-full border p-2 transition-transform hover:scale-105'
                         >
                             {hiddenWidgets.includes('eula') ? (
                                 <Eye className='h-4 w-4' />

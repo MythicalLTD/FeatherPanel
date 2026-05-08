@@ -313,8 +313,8 @@ export default function VdsActivitiesPage() {
     if (instanceLoading || (loading && activities.length === 0)) {
         return (
             <div className='flex flex-col items-center justify-center py-24'>
-                <Loader2 className='h-12 w-12 animate-spin text-primary opacity-50' />
-                <p className='mt-4 text-muted-foreground font-medium animate-pulse'>{t('common.loading')}</p>
+                <Loader2 className='text-primary h-12 w-12 animate-spin opacity-50' />
+                <p className='text-muted-foreground mt-4 animate-pulse font-medium'>{t('common.loading')}</p>
             </div>
         );
     }
@@ -322,14 +322,14 @@ export default function VdsActivitiesPage() {
     if (!instance) {
         return (
             <div className='flex flex-col items-center justify-center py-24 text-center'>
-                <AlertTriangle className='h-12 w-12 text-destructive mb-4' />
+                <AlertTriangle className='text-destructive mb-4 h-12 w-12' />
                 <h2 className='text-xl font-black'>Instance Not Found</h2>
             </div>
         );
     }
 
     return (
-        <div key={pathname} className='space-y-8 pb-12 '>
+        <div key={pathname} className='space-y-8 pb-12'>
             <WidgetRenderer widgets={getWidgets('vds-activities', 'top-of-page')} />
 
             <PageHeader
@@ -340,7 +340,7 @@ export default function VdsActivitiesPage() {
                             {t('vds.activities.description') ||
                                 'All power, subuser, backup and console actions for this VDS instance.'}
                         </span>
-                        <span className='px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-primary/5 text-primary border border-primary/20'>
+                        <span className='bg-primary/5 text-primary border-primary/20 rounded-full border px-3 py-1 text-[10px] font-black tracking-widest uppercase'>
                             {pagination.total_records} {t('serverActivities.events') || 'events'}
                         </span>
                     </div>
@@ -348,41 +348,41 @@ export default function VdsActivitiesPage() {
                 actions={
                     <div className='flex items-center gap-3'>
                         <Button variant='glass' size='default' onClick={() => fetchActivities()} disabled={loading}>
-                            <RefreshCw className={cn('h-5 w-5 mr-2', loading && 'animate-spin')} />
+                            <RefreshCw className={cn('mr-2 h-5 w-5', loading && 'animate-spin')} />
                             {t('common.refresh')}
                         </Button>
                     </div>
                 }
             />
 
-            <div className='flex flex-col md:flex-row gap-4'>
-                <div className='relative flex-1 group'>
-                    <Search className='absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground/80 group-focus-within:text-foreground transition-colors' />
+            <div className='flex flex-col gap-4 md:flex-row'>
+                <div className='group relative flex-1'>
+                    <Search className='text-muted-foreground/80 group-focus-within:text-foreground absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 transition-colors' />
                     <Input
                         placeholder={t('serverActivities.searchPlaceholder') || 'Search events…'}
-                        className='pl-12 h-14 text-base'
+                        className='h-14 pl-12 text-base'
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
                 </div>
-                <div className='w-full md:w-auto flex gap-2'>
+                <div className='flex w-full gap-2 md:w-auto'>
                     <Button
                         variant='glass'
                         size='default'
                         onClick={openFilterDialog}
-                        className='h-14 min-w-48 md:min-w-56 bg-[#0A0A0A]/20 backdrop-blur-md border border-white/5 rounded-xl text-base px-6 hover:bg-[#0A0A0A]/40 transition-colors font-medium flex items-center justify-between gap-3'
+                        className='flex h-14 min-w-48 items-center justify-between gap-3 rounded-xl border border-white/5 bg-[#0A0A0A]/20 px-6 text-base font-medium backdrop-blur-md transition-colors hover:bg-[#0A0A0A]/40 md:min-w-56'
                     >
-                        <SlidersHorizontal className='h-5 w-5 shrink-0 text-muted-foreground' />
+                        <SlidersHorizontal className='text-muted-foreground h-5 w-5 shrink-0' />
                         <span className='truncate'>{selectedFilterLabel}</span>
                         {(selectedEventFilter !== 'all' || searchQuery) && (
-                            <span className='shrink-0 w-2 h-2 rounded-full bg-primary' aria-hidden />
+                            <span className='bg-primary h-2 w-2 shrink-0 rounded-full' aria-hidden />
                         )}
                     </Button>
                     {(searchQuery || selectedEventFilter !== 'all') && (
                         <Button
                             variant='glass'
                             size='icon'
-                            className='h-14 w-14 rounded-xl hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/50'
+                            className='h-14 w-14 rounded-xl hover:border-red-500/50 hover:bg-red-500/10 hover:text-red-500'
                             onClick={() => {
                                 setSearchQuery('');
                                 setSelectedEventFilter('all');
@@ -396,7 +396,7 @@ export default function VdsActivitiesPage() {
             </div>
 
             {pagination.total_records > pagination.per_page && (
-                <div className='flex items-center justify-between gap-4 py-3 px-4 rounded-xl border border-border bg-card/50 mb-4'>
+                <div className='border-border bg-card/50 mb-4 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
                     <Button
                         variant='glass'
                         size='sm'
@@ -444,7 +444,7 @@ export default function VdsActivitiesPage() {
                                     setSelectedEventFilter('all');
                                     setTimeout(() => fetchActivities(1), 0);
                                 }}
-                                className='h-14 px-10 text-lg rounded-xl'
+                                className='h-14 rounded-xl px-10 text-lg'
                             >
                                 {t('common.clear')}
                             </Button>
@@ -461,34 +461,34 @@ export default function VdsActivitiesPage() {
                                 setDetailsOpen(true);
                             }}
                             style={{ animationDelay: `${index * 50}ms` }}
-                            className='cursor-pointer animate-in slide-in-from-bottom-2 duration-500 fill-mode-both'
+                            className='animate-in slide-in-from-bottom-2 fill-mode-both cursor-pointer duration-500'
                             icon={getEventIcon(activity.event)}
                             iconWrapperClassName={getEventIconClass(activity.event)}
                             title={formatEvent(activity.event)}
                             badges={
-                                <span className='px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest leading-none bg-background/50 border border-border/40'>
+                                <span className='bg-background/50 border-border/40 rounded-full border px-3 py-1 text-[10px] leading-none font-black tracking-widest uppercase'>
                                     #{activity.id}
                                 </span>
                             }
                             description={
                                 <>
-                                    <div className='flex flex-wrap items-center gap-x-6 gap-y-2 pt-2 border-t border-border/10 w-full mt-2'>
-                                        <div className='flex items-center gap-2 text-muted-foreground'>
+                                    <div className='border-border/10 mt-2 flex w-full flex-wrap items-center gap-x-6 gap-y-2 border-t pt-2'>
+                                        <div className='text-muted-foreground flex items-center gap-2'>
                                             <User className='h-4 w-4 opacity-50' />
-                                            <span className='text-sm font-bold uppercase tracking-tight'>
+                                            <span className='text-sm font-bold tracking-tight uppercase'>
                                                 {activity.user?.username || t('serverActivities.details.system')}
                                             </span>
                                         </div>
-                                        <div className='flex items-center gap-2 text-muted-foreground'>
+                                        <div className='text-muted-foreground flex items-center gap-2'>
                                             <Clock className='h-4 w-4 opacity-50' />
                                             <span className='text-sm font-semibold'>
                                                 {activity.timestamp ? formatRelativeTime(activity.timestamp, t) : '—'}
                                             </span>
                                         </div>
                                         {activity.ip && (
-                                            <div className='flex items-center gap-2 text-muted-foreground'>
+                                            <div className='text-muted-foreground flex items-center gap-2'>
                                                 <Globe className='h-4 w-4 opacity-50' />
-                                                <span className='text-xs font-mono font-bold opacity-60 italic'>
+                                                <span className='font-mono text-xs font-bold italic opacity-60'>
                                                     {activity.ip}
                                                 </span>
                                             </div>
@@ -497,7 +497,7 @@ export default function VdsActivitiesPage() {
                                 </>
                             }
                             actions={
-                                <div className='h-12 w-12 rounded-xl group-hover:bg-primary/10 text-muted-foreground group-hover:text-primary transition-all flex items-center justify-center'>
+                                <div className='group-hover:bg-primary/10 text-muted-foreground group-hover:text-primary flex h-12 w-12 items-center justify-center rounded-xl transition-all'>
                                     <Eye className='h-6 w-6' />
                                 </div>
                             }
@@ -507,8 +507,8 @@ export default function VdsActivitiesPage() {
             )}
 
             {pagination.total_records > pagination.per_page && (
-                <div className='flex items-center justify-between py-8 border-t border-border/40 px-6'>
-                    <p className='text-sm font-bold opacity-40 uppercase tracking-widest'>
+                <div className='border-border/40 flex items-center justify-between border-t px-6 py-8'>
+                    <p className='text-sm font-bold tracking-widest uppercase opacity-40'>
                         {t('serverActivities.pagination.showing', {
                             from: String(pagination.from),
                             to: String(pagination.to),
@@ -521,11 +521,11 @@ export default function VdsActivitiesPage() {
                             size='sm'
                             disabled={!pagination.has_prev || loading}
                             onClick={() => changePage(pagination.current_page - 1)}
-                            className='h-10 w-10 p-0 rounded-xl'
+                            className='h-10 w-10 rounded-xl p-0'
                         >
                             <ChevronLeft className='h-5 w-5' />
                         </Button>
-                        <span className='h-10 px-4 rounded-xl text-sm font-black bg-primary/5 text-primary border border-primary/20 flex items-center justify-center min-w-12'>
+                        <span className='bg-primary/5 text-primary border-primary/20 flex h-10 min-w-12 items-center justify-center rounded-xl border px-4 text-sm font-black'>
                             {pagination.current_page} / {pagination.total_pages}
                         </span>
                         <Button
@@ -533,7 +533,7 @@ export default function VdsActivitiesPage() {
                             size='sm'
                             disabled={!pagination.has_next || loading}
                             onClick={() => changePage(pagination.current_page + 1)}
-                            className='h-10 w-10 p-0 rounded-xl'
+                            className='h-10 w-10 rounded-xl p-0'
                         >
                             <ChevronRight className='h-5 w-5' />
                         </Button>
@@ -551,21 +551,21 @@ export default function VdsActivitiesPage() {
                         {t('serverActivities.filterDialog.whatToShow')}
                     </DialogDescription>
                 </DialogHeader>
-                <div className='mt-6 space-y-2 max-h-[min(60vh,400px)] overflow-y-auto pr-1 custom-scrollbar'>
+                <div className='custom-scrollbar mt-6 max-h-[min(60vh,400px)] space-y-2 overflow-y-auto pr-1'>
                     {filterOptions.map((option) => (
                         <button
                             key={option.id}
                             type='button'
                             onClick={() => setPendingFilter(option.id)}
                             className={cn(
-                                'w-full flex items-center justify-between gap-4 rounded-xl border px-4 py-3.5 text-left font-medium transition-all',
+                                'flex w-full items-center justify-between gap-4 rounded-xl border px-4 py-3.5 text-left font-medium transition-all',
                                 pendingFilter === option.id
                                     ? 'bg-primary/15 border-primary/40 text-primary'
                                     : 'bg-muted/20 border-border/30 text-foreground hover:bg-muted/40 hover:border-border/50',
                             )}
                         >
                             <span>{option.name}</span>
-                            {pendingFilter === option.id && <Check className='h-5 w-5 shrink-0 text-primary' />}
+                            {pendingFilter === option.id && <Check className='text-primary h-5 w-5 shrink-0' />}
                         </button>
                     ))}
                 </div>
@@ -581,7 +581,7 @@ export default function VdsActivitiesPage() {
                     >
                         {t('common.cancel')}
                     </Button>
-                    <Button size='default' onClick={applyFilter} className='order-1 sm:order-3 px-8 font-semibold'>
+                    <Button size='default' onClick={applyFilter} className='order-1 px-8 font-semibold sm:order-3'>
                         {t('serverActivities.filterDialog.apply')}
                     </Button>
                 </DialogFooter>
@@ -590,23 +590,23 @@ export default function VdsActivitiesPage() {
             {/* Detail dialog */}
             <Dialog open={detailsOpen} onClose={() => setDetailsOpen(false)} className='max-w-[1200px]'>
                 {selectedItem && (
-                    <div className='space-y-8 p-2 w-full'>
+                    <div className='w-full space-y-8 p-2'>
                         <DialogHeader>
                             <div className='flex items-center gap-6'>
                                 <div
                                     className={cn(
-                                        'h-20 w-20 rounded-4xl flex items-center justify-center border-4 transition-transform group-hover:scale-105 group-hover:rotate-2 shrink-0',
+                                        'flex h-20 w-20 shrink-0 items-center justify-center rounded-4xl border-4 transition-transform group-hover:scale-105 group-hover:rotate-2',
                                         getEventIconClass(selectedItem.event),
                                     )}
                                 >
                                     {React.createElement(getEventIcon(selectedItem.event), { className: 'h-10 w-10' })}
                                 </div>
-                                <div className='space-y-1.5 flex-1'>
+                                <div className='flex-1 space-y-1.5'>
                                     <div className='flex items-center gap-3'>
-                                        <DialogTitle className='text-4xl font-black uppercase tracking-tighter leading-none'>
+                                        <DialogTitle className='text-4xl leading-none font-black tracking-tighter uppercase'>
                                             {formatEvent(selectedItem.event)}
                                         </DialogTitle>
-                                        <span className='px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-[0.2em] bg-white/10 border border-white/5 opacity-40'>
+                                        <span className='rounded-full border border-white/5 bg-white/10 px-4 py-1.5 text-xs font-black tracking-[0.2em] uppercase opacity-40'>
                                             #{selectedItem.id}
                                         </span>
                                     </div>
@@ -620,25 +620,25 @@ export default function VdsActivitiesPage() {
                             </div>
                         </DialogHeader>
 
-                        <div className='grid grid-cols-1 xl:grid-cols-2 gap-8'>
+                        <div className='grid grid-cols-1 gap-8 xl:grid-cols-2'>
                             <div className='space-y-6'>
                                 <div className='flex items-center justify-between border-b border-white/5 pb-4'>
-                                    <h3 className='text-xs font-black uppercase tracking-[0.3em] text-primary flex items-center gap-3'>
-                                        <div className='w-1.5 h-4 bg-primary rounded-full' />
+                                    <h3 className='text-primary flex items-center gap-3 text-xs font-black tracking-[0.3em] uppercase'>
+                                        <div className='bg-primary h-4 w-1.5 rounded-full' />
                                         Metadata
                                     </h3>
                                 </div>
-                                <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
-                                    <div className='flex flex-col gap-2 p-5 rounded-3xl bg-white/5 border border-white/5 shrink-0'>
-                                        <span className='text-[10px] font-black text-primary/50 uppercase tracking-widest'>
+                                <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
+                                    <div className='flex shrink-0 flex-col gap-2 rounded-3xl border border-white/5 bg-white/5 p-5'>
+                                        <span className='text-primary/50 text-[10px] font-black tracking-widest uppercase'>
                                             User
                                         </span>
                                         <span className='text-lg font-bold'>
                                             {selectedItem.user?.username || t('serverActivities.details.system')}
                                         </span>
                                     </div>
-                                    <div className='flex flex-col gap-2 p-5 rounded-3xl bg-white/5 border border-white/5 shrink-0'>
-                                        <span className='text-[10px] font-black text-primary/50 uppercase tracking-widest'>
+                                    <div className='flex shrink-0 flex-col gap-2 rounded-3xl border border-white/5 bg-white/5 p-5'>
+                                        <span className='text-primary/50 text-[10px] font-black tracking-widest uppercase'>
                                             Timestamp
                                         </span>
                                         <span className='text-lg font-bold'>
@@ -648,23 +648,23 @@ export default function VdsActivitiesPage() {
                                         </span>
                                     </div>
                                     {selectedItem.ip && (
-                                        <div className='flex flex-col gap-2 p-5 rounded-3xl bg-white/5 border border-white/5 col-span-2'>
-                                            <span className='text-[10px] font-black text-primary/50 uppercase tracking-widest'>
+                                        <div className='col-span-2 flex flex-col gap-2 rounded-3xl border border-white/5 bg-white/5 p-5'>
+                                            <span className='text-primary/50 text-[10px] font-black tracking-widest uppercase'>
                                                 IP Address
                                             </span>
-                                            <span className='text-lg font-mono font-bold'>{selectedItem.ip}</span>
+                                            <span className='font-mono text-lg font-bold'>{selectedItem.ip}</span>
                                         </div>
                                     )}
                                     {selectedItem.metadata &&
                                         Object.entries(selectedItem.metadata).map(([k, v]) => (
                                             <div
                                                 key={k}
-                                                className='flex flex-col gap-2 p-5 rounded-3xl bg-white/5 border border-white/5 group hover:bg-white/10 transition-all'
+                                                className='group flex flex-col gap-2 rounded-3xl border border-white/5 bg-white/5 p-5 transition-all hover:bg-white/10'
                                             >
-                                                <span className='text-[10px] font-black text-primary/50 uppercase tracking-widest underline decoration-primary/20 decoration-2 underline-offset-4'>
+                                                <span className='text-primary/50 decoration-primary/20 text-[10px] font-black tracking-widest uppercase underline decoration-2 underline-offset-4'>
                                                     {k}
                                                 </span>
-                                                <span className='text-base font-mono font-bold break-all leading-tight opacity-90 group-hover:opacity-100'>
+                                                <span className='font-mono text-base leading-tight font-bold break-all opacity-90 group-hover:opacity-100'>
                                                     {typeof v === 'object' ? JSON.stringify(v) : String(v)}
                                                 </span>
                                             </div>
@@ -674,33 +674,33 @@ export default function VdsActivitiesPage() {
 
                             <div className='space-y-6'>
                                 <div className='flex items-center justify-between border-b border-white/5 pb-4'>
-                                    <h3 className='text-xs font-black uppercase tracking-[0.3em] text-primary flex items-center gap-3'>
-                                        <div className='w-1.5 h-4 bg-primary rounded-full' />
+                                    <h3 className='text-primary flex items-center gap-3 text-xs font-black tracking-[0.3em] uppercase'>
+                                        <div className='bg-primary h-4 w-1.5 rounded-full' />
                                         Raw Payload
                                     </h3>
                                     <Button
                                         variant='glass'
                                         size='sm'
-                                        className='h-8 px-4 font-black uppercase tracking-wider opacity-40 hover:opacity-100 border-white/5'
+                                        className='h-8 border-white/5 px-4 font-black tracking-wider uppercase opacity-40 hover:opacity-100'
                                         onClick={() => {
                                             navigator.clipboard.writeText(rawJson);
                                             toast.success('Payload copied');
                                         }}
                                     >
-                                        <Copy className='h-3.5 w-3.5 mr-2' />
+                                        <Copy className='mr-2 h-3.5 w-3.5' />
                                         Copy
                                     </Button>
                                 </div>
-                                <pre className='max-h-[500px] bg-black/40 text-emerald-400 p-8 rounded-4xl overflow-x-auto font-mono text-sm border border-white/5 custom-scrollbar leading-relaxed backdrop-blur-3xl'>
+                                <pre className='custom-scrollbar max-h-[500px] overflow-x-auto rounded-4xl border border-white/5 bg-black/40 p-8 font-mono text-sm leading-relaxed text-emerald-400 backdrop-blur-3xl'>
                                     {rawJson || '// No additional metadata'}
                                 </pre>
                             </div>
                         </div>
 
-                        <DialogFooter className='border-t border-white/5 pt-8 mt-4 flex items-center justify-end'>
+                        <DialogFooter className='mt-4 flex items-center justify-end border-t border-white/5 pt-8'>
                             <Button
                                 size='default'
-                                className='px-12 h-14 rounded-2xl font-black uppercase tracking-[0.2em]'
+                                className='h-14 rounded-2xl px-12 font-black tracking-[0.2em] uppercase'
                                 onClick={() => setDetailsOpen(false)}
                             >
                                 Close

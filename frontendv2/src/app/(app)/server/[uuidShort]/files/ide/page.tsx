@@ -330,32 +330,32 @@ export default function ServerFilesIDEPage({
 
     if (!canRead) {
         return (
-            <div className='fixed inset-0 z-40 bg-gradient-to-br from-[#060112] via-[#110429] to-[#050115] flex items-center justify-center'>
+            <div className='fixed inset-0 z-40 flex items-center justify-center bg-gradient-to-br from-[#060112] via-[#110429] to-[#050115]'>
                 <p className='text-muted-foreground'>{t('files.list.empty_description')}</p>
             </div>
         );
     }
 
     return (
-        <div className='fixed inset-0 z-40 bg-gradient-to-br from-[#060112] via-[#110429] to-[#050115] flex flex-col gap-3 p-4'>
+        <div className='fixed inset-0 z-40 flex flex-col gap-3 bg-gradient-to-br from-[#060112] via-[#110429] to-[#050115] p-4'>
             <div className='flex items-center justify-between rounded-2xl border border-white/10 bg-black/40 px-4 py-2 backdrop-blur-xl'>
                 <div className='flex items-center gap-3'>
-                    <div className='h-8 w-8 rounded-xl bg-primary/20 border border-primary/40 flex items-center justify-center overflow-hidden'>
+                    <div className='bg-primary/20 border-primary/40 flex h-8 w-8 items-center justify-center overflow-hidden rounded-xl border'>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={appLogo} alt={appName} className='h-6 w-6 object-contain' />
                     </div>
                     <div className='flex flex-col'>
-                        <span className='text-[10px] font-semibold uppercase tracking-[0.25em] text-muted-foreground'>
+                        <span className='text-muted-foreground text-[10px] font-semibold tracking-[0.25em] uppercase'>
                             {appName}
                         </span>
-                        <span className='text-sm font-semibold text-foreground'>
+                        <span className='text-foreground text-sm font-semibold'>
                             {t('files.editor.window_title', { defaultValue: 'File Editor' })}
                         </span>
                     </div>
                 </div>
                 <div className='flex items-center gap-3'>
                     {currentFileName && (
-                        <span className='max-w-[220px] truncate text-xs text-muted-foreground'>{currentFileName}</span>
+                        <span className='text-muted-foreground max-w-[220px] truncate text-xs'>{currentFileName}</span>
                     )}
                     <Button
                         variant='ghost'
@@ -369,13 +369,13 @@ export default function ServerFilesIDEPage({
                 </div>
             </div>
 
-            <div className='flex flex-1 min-h-0 gap-4'>
+            <div className='flex min-h-0 flex-1 gap-4'>
                 {/* Sidebar file tree */}
-                <aside className='w-64 shrink-0 rounded-2xl border border-border/50 bg-card/50 backdrop-blur-xl flex flex-col overflow-hidden'>
-                    <div className='px-3 py-2 border-b border-border/50 flex items-center justify-between'>
+                <aside className='border-border/50 bg-card/50 flex w-64 shrink-0 flex-col overflow-hidden rounded-2xl border backdrop-blur-xl'>
+                    <div className='border-border/50 flex items-center justify-between border-b px-3 py-2'>
                         <div className='flex items-center gap-2'>
-                            <Folder className='h-4 w-4 text-primary' />
-                            <span className='text-xs font-semibold uppercase tracking-widest'>
+                            <Folder className='text-primary h-4 w-4' />
+                            <span className='text-xs font-semibold tracking-widest uppercase'>
                                 {t('files.breadcrumbs.home')}
                             </span>
                         </div>
@@ -390,9 +390,9 @@ export default function ServerFilesIDEPage({
                             <ChevronLeft className='h-4 w-4' />
                         </Button>
                     </div>
-                    <div className='px-3 py-2 border-b border-border/30 flex flex-col gap-1'>
+                    <div className='border-border/30 flex flex-col gap-1 border-b px-3 py-2'>
                         <div
-                            className='text-[11px] text-muted-foreground truncate'
+                            className='text-muted-foreground truncate text-[11px]'
                             onDragOver={(e) => {
                                 e.preventDefault();
                             }}
@@ -470,14 +470,14 @@ export default function ServerFilesIDEPage({
                                     value={fileFilter}
                                     onChange={(e) => setFileFilter(e.target.value)}
                                     placeholder={t('files.search.files_placeholder')}
-                                    className='w-full rounded-lg bg-background/70 border border-border/60 px-2 py-1 text-[11px] pr-7 focus:outline-none focus:ring-1 focus:ring-primary'
+                                    className='bg-background/70 border-border/60 focus:ring-primary w-full rounded-lg border px-2 py-1 pr-7 text-[11px] focus:ring-1 focus:outline-none'
                                 />
-                                <SearchIcon className='h-3.5 w-3.5 text-muted-foreground absolute right-2 top-1.5' />
+                                <SearchIcon className='text-muted-foreground absolute top-1.5 right-2 h-3.5 w-3.5' />
                             </div>
                             <Button
                                 variant='ghost'
                                 size='icon'
-                                className='h-7 w-7 text-muted-foreground hover:text-foreground'
+                                className='text-muted-foreground hover:text-foreground h-7 w-7'
                                 onClick={async () => {
                                     const root = currentDirectory || '/';
                                     const name = window.prompt(t('files.toolbar.new_file'), 'new-file.txt');
@@ -499,7 +499,7 @@ export default function ServerFilesIDEPage({
                             <Button
                                 variant='ghost'
                                 size='icon'
-                                className='h-7 w-7 text-muted-foreground hover:text-foreground'
+                                className='text-muted-foreground hover:text-foreground h-7 w-7'
                                 onClick={async () => {
                                     const name = window.prompt(t('files.toolbar.new_folder'), 'new-folder');
                                     if (!name) return;
@@ -519,7 +519,7 @@ export default function ServerFilesIDEPage({
                         </div>
                     </div>
                     <div
-                        className='flex-1 overflow-auto custom-scrollbar'
+                        className='custom-scrollbar flex-1 overflow-auto'
                         onDragOver={(e) => {
                             // Allow dropping anywhere in the sidebar to move into the visible main directory
                             e.preventDefault();
@@ -611,16 +611,16 @@ export default function ServerFilesIDEPage({
                     >
                         {fileFilter.trim() ? (
                             filesLoading ? (
-                                <div className='p-4 text-xs text-muted-foreground flex items-center gap-2'>
+                                <div className='text-muted-foreground flex items-center gap-2 p-4 text-xs'>
                                     <Loader2 className='h-3 w-3 animate-spin' />
                                     {t('servers.loading')}
                                 </div>
                             ) : filteredFiles.length === 0 ? (
-                                <div className='p-4 text-xs text-muted-foreground'>
+                                <div className='text-muted-foreground p-4 text-xs'>
                                     {t('files.list.empty_description')}
                                 </div>
                             ) : (
-                                <ul className='p-2 space-y-0.5 text-sm'>
+                                <ul className='space-y-0.5 p-2 text-sm'>
                                     {filteredFiles.map((file) => {
                                         const isActive = file.isFile && file.name === currentFileName;
                                         return (
@@ -661,11 +661,11 @@ export default function ServerFilesIDEPage({
                                                     }`}
                                                 >
                                                     {file.isFile ? (
-                                                        <FileText className='h-4 w-4 text-muted-foreground' />
+                                                        <FileText className='text-muted-foreground h-4 w-4' />
                                                     ) : (
-                                                        <Folder className='h-4 w-4 text-muted-foreground' />
+                                                        <Folder className='text-muted-foreground h-4 w-4' />
                                                     )}
-                                                    <span className='truncate flex-1'>{file.name}</span>
+                                                    <span className='flex-1 truncate'>{file.name}</span>
                                                     {!file.isFile && <ChevronRight className='h-3 w-3 opacity-40' />}
                                                 </button>
                                             </li>
@@ -680,7 +680,7 @@ export default function ServerFilesIDEPage({
 
                                 if (filesLoading && rootFiles.length === 0) {
                                     return (
-                                        <div className='p-4 text-xs text-muted-foreground flex items-center gap-2'>
+                                        <div className='text-muted-foreground flex items-center gap-2 p-4 text-xs'>
                                             <Loader2 className='h-3 w-3 animate-spin' />
                                             {t('servers.loading')}
                                         </div>
@@ -689,7 +689,7 @@ export default function ServerFilesIDEPage({
 
                                 if (!rootFiles || rootFiles.length === 0) {
                                     return (
-                                        <div className='p-4 text-xs text-muted-foreground'>
+                                        <div className='text-muted-foreground p-4 text-xs'>
                                             {t('files.list.empty_description')}
                                         </div>
                                     );
@@ -860,16 +860,16 @@ export default function ServerFilesIDEPage({
                                                     style={{ paddingLeft: 8 + level * 12 }}
                                                 >
                                                     {isFolder ? (
-                                                        <Folder className='h-4 w-4 text-muted-foreground' />
+                                                        <Folder className='text-muted-foreground h-4 w-4' />
                                                     ) : (
-                                                        <FileText className='h-4 w-4 text-muted-foreground' />
+                                                        <FileText className='text-muted-foreground h-4 w-4' />
                                                     )}
-                                                    <span className='truncate flex-1'>{file.name}</span>
+                                                    <span className='flex-1 truncate'>{file.name}</span>
                                                     {isFolder && (
                                                         <div className='flex items-center gap-1'>
                                                             <button
                                                                 type='button'
-                                                                className='p-0.5 rounded hover:bg-muted text-muted-foreground'
+                                                                className='hover:bg-muted text-muted-foreground rounded p-0.5'
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
                                                                     const root = entryPath || '/';
@@ -898,7 +898,7 @@ export default function ServerFilesIDEPage({
                                                             </button>
                                                             <button
                                                                 type='button'
-                                                                className='p-0.5 rounded hover:bg-muted text-muted-foreground'
+                                                                className='hover:bg-muted text-muted-foreground rounded p-0.5'
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
                                                                     const root = entryPath || '/';
@@ -942,15 +942,15 @@ export default function ServerFilesIDEPage({
                                     });
                                 };
 
-                                return <ul className='p-2 space-y-0.5 text-sm'>{renderDirectory(rootDir, 0)}</ul>;
+                                return <ul className='space-y-0.5 p-2 text-sm'>{renderDirectory(rootDir, 0)}</ul>;
                             })()
                         )}
                     </div>
-                    <div className='px-3 py-2 border-t border-border/50 flex items-center justify-between'>
+                    <div className='border-border/50 flex items-center justify-between border-t px-3 py-2'>
                         <Button
                             variant='ghost'
                             size='sm'
-                            className='text-xs text-muted-foreground hover:text-foreground'
+                            className='text-muted-foreground hover:text-foreground text-xs'
                             onClick={handleBackToFiles}
                         >
                             {t('files.toolbar.refresh')}
@@ -959,18 +959,18 @@ export default function ServerFilesIDEPage({
                 </aside>
 
                 {/* Editor area */}
-                <section className='flex-1 rounded-3xl border border-border/50 bg-card/50 backdrop-blur-3xl overflow-hidden flex flex-col'>
-                    <div className='flex items-center justify-between px-4 py-3 border-b border-border/40 bg-muted/30'>
+                <section className='border-border/50 bg-card/50 flex flex-1 flex-col overflow-hidden rounded-3xl border backdrop-blur-3xl'>
+                    <div className='border-border/40 bg-muted/30 flex items-center justify-between border-b px-4 py-3'>
                         <div className='flex items-center gap-3'>
-                            <div className='flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 '>
+                            <div className='bg-primary/10 text-primary border-primary/20 flex h-9 w-9 items-center justify-center rounded-xl border'>
                                 <FileText className='h-5 w-5' />
                             </div>
                             <div className='flex flex-col'>
-                                <span className='text-xs font-bold uppercase tracking-widest text-foreground/80'>
+                                <span className='text-foreground/80 text-xs font-bold tracking-widest uppercase'>
                                     {currentFileName || t('files.list.empty_title')}
                                 </span>
                                 {hasUnsavedChanges && currentFileName && (
-                                    <span className='text-[10px] text-yellow-500 font-medium uppercase tracking-[0.2em]'>
+                                    <span className='text-[10px] font-medium tracking-[0.2em] text-yellow-500 uppercase'>
                                         {t('files.editor.unsaved_prompt')}
                                     </span>
                                 )}
@@ -978,7 +978,7 @@ export default function ServerFilesIDEPage({
                         </div>
                         <div className='flex items-center gap-2'>
                             {!canEdit && (
-                                <div className='bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 px-3 py-1 rounded-lg border border-yellow-500/20 text-xs font-bold uppercase tracking-wider flex items-center gap-2'>
+                                <div className='flex items-center gap-2 rounded-lg border border-yellow-500/20 bg-yellow-500/10 px-3 py-1 text-xs font-bold tracking-wider text-yellow-600 uppercase dark:text-yellow-400'>
                                     <Lock className='h-3 w-3' />
                                     {t('files.editor.read_only')}
                                 </div>
@@ -992,7 +992,7 @@ export default function ServerFilesIDEPage({
                                 {t('files.editor.cancel')}
                             </Button>
                             <Button
-                                className='bg-primary hover:bg-primary/90 text-primary-foreground active:scale-95 transition-all'
+                                className='bg-primary hover:bg-primary/90 text-primary-foreground transition-all active:scale-95'
                                 size='sm'
                                 onClick={() => handleSave()}
                                 disabled={saving || !hasUnsavedChanges || !currentFileName}
@@ -1012,13 +1012,13 @@ export default function ServerFilesIDEPage({
                         </div>
                     </div>
 
-                    <div className='flex-1 relative min-h-0'>
+                    <div className='relative min-h-0 flex-1'>
                         {!currentFileName ? (
-                            <div className='flex h-full items-center justify-center text-sm text-muted-foreground px-4 text-center'>
+                            <div className='text-muted-foreground flex h-full items-center justify-center px-4 text-center text-sm'>
                                 {t('files.list.empty_description')}
                             </div>
                         ) : loadingContent ? (
-                            <div className='flex h-full items-center justify-center gap-3 text-sm text-muted-foreground'>
+                            <div className='text-muted-foreground flex h-full items-center justify-center gap-3 text-sm'>
                                 <Loader2 className='h-4 w-4 animate-spin' />
                                 {t('files.editor.loading_title')}
                             </div>
@@ -1058,13 +1058,13 @@ export default function ServerFilesIDEPage({
 
             {contextMenu && (
                 <div
-                    className='fixed z-50 min-w-[160px] rounded-md border border-border bg-card shadow-lg text-sm py-1'
+                    className='border-border bg-card fixed z-50 min-w-[160px] rounded-md border py-1 text-sm shadow-lg'
                     style={{ top: contextMenu.y, left: contextMenu.x }}
                     onMouseLeave={() => setContextMenu(null)}
                 >
                     <button
                         type='button'
-                        className='w-full px-3 py-1.5 text-left hover:bg-muted'
+                        className='hover:bg-muted w-full px-3 py-1.5 text-left'
                         onClick={() => {
                             if (contextMenu.file.isFile) {
                                 void handleOpenFile(contextMenu.file, contextMenu.directory);
@@ -1092,7 +1092,7 @@ export default function ServerFilesIDEPage({
                     </button>
                     <button
                         type='button'
-                        className='w-full px-3 py-1.5 text-left hover:bg-muted'
+                        className='hover:bg-muted w-full px-3 py-1.5 text-left'
                         onClick={async () => {
                             const root = contextMenu.directory || currentDirectory || '/';
                             const name = window.prompt(t('common.edit'), contextMenu.file.name);
@@ -1116,7 +1116,7 @@ export default function ServerFilesIDEPage({
                     </button>
                     <button
                         type='button'
-                        className='w-full px-3 py-1.5 text-left text-destructive hover:bg-destructive/10'
+                        className='text-destructive hover:bg-destructive/10 w-full px-3 py-1.5 text-left'
                         onClick={async () => {
                             const root = contextMenu.directory || currentDirectory || '/';
                             const ok = window.confirm(t('common.delete_confirm_description'));
@@ -1140,7 +1140,7 @@ export default function ServerFilesIDEPage({
                     </button>
                     <button
                         type='button'
-                        className='w-full px-3 py-1.5 text-left hover:bg-muted'
+                        className='hover:bg-muted w-full px-3 py-1.5 text-left'
                         onClick={async () => {
                             const baseDir = contextMenu.directory || currentDirectory || '/';
                             const root = contextMenu.file.isFile
@@ -1163,7 +1163,7 @@ export default function ServerFilesIDEPage({
                     </button>
                     <button
                         type='button'
-                        className='w-full px-3 py-1.5 text-left hover:bg-muted'
+                        className='hover:bg-muted w-full px-3 py-1.5 text-left'
                         onClick={async () => {
                             const baseDir = contextMenu.directory || currentDirectory || '/';
                             const root = contextMenu.file.isFile

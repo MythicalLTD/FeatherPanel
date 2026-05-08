@@ -108,9 +108,9 @@ export function LocalStorageManagerDialog({
         <>
             <Dialog open={open} onOpenChange={onOpenChange} className='max-w-2xl'>
                 <DialogContent className='flex max-h-[min(90dvh,56rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl'>
-                    <DialogHeader className='space-y-0 border-b border-border/50 bg-muted/15 px-4 py-4 text-left sm:px-5'>
+                    <DialogHeader className='border-border/50 bg-muted/15 space-y-0 border-b px-4 py-4 text-left sm:px-5'>
                         <div className='flex gap-3'>
-                            <div className='flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border/50 bg-card/80 text-primary shadow-sm'>
+                            <div className='border-border/50 bg-card/80 text-primary flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border shadow-sm'>
                                 <Database className='h-5 w-5' aria-hidden />
                             </div>
                             <div className='min-w-0 flex-1 space-y-1'>
@@ -120,14 +120,14 @@ export function LocalStorageManagerDialog({
                                 <DialogDescription className='text-xs leading-relaxed sm:text-sm'>
                                     {tx('navbar.localStorageDesc')}
                                 </DialogDescription>
-                                <p className='text-[11px] text-muted-foreground/90 pt-1'>
+                                <p className='text-muted-foreground/90 pt-1 text-[11px]'>
                                     {tx('navbar.localStorageFootnote')}
                                 </p>
                             </div>
                         </div>
                     </DialogHeader>
 
-                    <div className='flex flex-col gap-3 border-b border-border/40 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5'>
+                    <div className='border-border/40 flex flex-col gap-3 border-b px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5'>
                         <Input
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
@@ -135,7 +135,7 @@ export function LocalStorageManagerDialog({
                             className='border-border/60 bg-background/50 sm:max-w-[220px]'
                         />
                         <div className='flex flex-wrap items-center gap-2 sm:justify-end'>
-                            <span className='inline-flex items-center rounded-md border border-border/50 bg-muted/20 px-2 py-1 text-[11px] tabular-nums text-muted-foreground'>
+                            <span className='border-border/50 bg-muted/20 text-muted-foreground inline-flex items-center rounded-md border px-2 py-1 text-[11px] tabular-nums'>
                                 {tx('navbar.localStorageSummary', {
                                     keys: String(entries.length),
                                     chars: String(totalChars),
@@ -149,29 +149,29 @@ export function LocalStorageManagerDialog({
                     </div>
 
                     <div className='min-h-0 flex-1 overflow-y-auto px-3 py-2 sm:px-4'>
-                        <div className='rounded-xl border border-border/50 bg-card/40'>
+                        <div className='border-border/50 bg-card/40 rounded-xl border'>
                             {filtered.length === 0 ? (
-                                <p className='p-8 text-center text-sm text-muted-foreground'>
+                                <p className='text-muted-foreground p-8 text-center text-sm'>
                                     {tx('navbar.localStorageEmpty')}
                                 </p>
                             ) : (
-                                <ul className='divide-y divide-border/40'>
+                                <ul className='divide-border/40 divide-y'>
                                     {filtered.map((e) => {
                                         const isOpen = expanded === e.key;
                                         return (
                                             <li
                                                 key={e.key}
-                                                className='group px-3 py-3 transition-colors hover:bg-muted/20 sm:px-4'
+                                                className='group hover:bg-muted/20 px-3 py-3 transition-colors sm:px-4'
                                             >
                                                 <div className='flex items-start justify-between gap-2'>
                                                     <div className='min-w-0 flex-1'>
                                                         <p
-                                                            className='font-mono text-[11px] font-semibold text-foreground break-all sm:text-xs'
+                                                            className='text-foreground font-mono text-[11px] font-semibold break-all sm:text-xs'
                                                             title={e.key}
                                                         >
                                                             {e.key}
                                                         </p>
-                                                        <p className='mt-0.5 text-[10px] text-muted-foreground'>
+                                                        <p className='text-muted-foreground mt-0.5 text-[10px]'>
                                                             {tx('navbar.localStorageChars', { n: String(e.size) })}
                                                         </p>
                                                     </div>
@@ -190,7 +190,7 @@ export function LocalStorageManagerDialog({
                                                             type='button'
                                                             variant='ghost'
                                                             size='sm'
-                                                            className='h-8 w-8 p-0 text-destructive hover:text-destructive'
+                                                            className='text-destructive hover:text-destructive h-8 w-8 p-0'
                                                             aria-label={tx('navbar.localStorageDelete')}
                                                             onClick={() => handleDelete(e.key)}
                                                         >
@@ -219,7 +219,7 @@ export function LocalStorageManagerDialog({
                                                 </div>
                                                 <p
                                                     className={cn(
-                                                        'mt-2 rounded-md border border-border/30 bg-muted/15 px-2 py-1.5 font-mono text-[10px] text-muted-foreground break-all sm:text-[11px]',
+                                                        'border-border/30 bg-muted/15 text-muted-foreground mt-2 rounded-md border px-2 py-1.5 font-mono text-[10px] break-all sm:text-[11px]',
                                                         !isOpen && 'line-clamp-2',
                                                     )}
                                                 >
@@ -233,7 +233,7 @@ export function LocalStorageManagerDialog({
                         </div>
                     </div>
 
-                    <DialogFooter className='flex-col gap-2 border-t border-border/50 bg-muted/10 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:px-5'>
+                    <DialogFooter className='border-border/50 bg-muted/10 flex-col gap-2 border-t px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:px-5'>
                         <Button
                             type='button'
                             variant='destructive'

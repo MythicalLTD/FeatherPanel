@@ -333,29 +333,29 @@ export default function TranslationsPage() {
                             id='translation-file-upload'
                         />
                         <Button onClick={() => setCreateOpen(true)}>
-                            <Plus className='h-4 w-4 mr-2' />
+                            <Plus className='mr-2 h-4 w-4' />
                             {t('admin.translations.create')}
                         </Button>
                         <DropdownMenu>
-                            <DropdownMenuTrigger className='inline-flex items-center justify-center whitespace-nowrap rounded-2xl text-sm font-bold transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 overflow-hidden relative border border-white/10 bg-white/5 hover:bg-white/10 text-foreground backdrop-blur-sm h-11 px-6'>
-                                <MoreHorizontal className='h-4 w-4 mr-2' />
+                            <DropdownMenuTrigger className='focus-visible:ring-ring text-foreground relative inline-flex h-11 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-white/5 px-6 text-sm font-bold whitespace-nowrap backdrop-blur-sm transition-all hover:bg-white/10 focus-visible:ring-1 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50'>
+                                <MoreHorizontal className='mr-2 h-4 w-4' />
                                 Actions
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align='end' className='w-64'>
                                 <DropdownMenuItem onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
-                                    <Upload className='h-4 w-4 mr-2' />
+                                    <Upload className='mr-2 h-4 w-4' />
                                     {isUploading ? 'Uploading...' : t('admin.translations.upload')}
                                 </DropdownMenuItem>
                                 {!hasEnglishTranslations && (
                                     <DropdownMenuItem onClick={handleImportDefault} disabled={isImporting}>
-                                        <Upload className='h-4 w-4 mr-2' />
+                                        <Upload className='mr-2 h-4 w-4' />
                                         {isImporting ? 'Importing...' : t('admin.translations.import_default')}
                                     </DropdownMenuItem>
                                 )}
                                 <DropdownMenuItem
                                     onClick={() => (location.href = 'https://github.com/featherpanel-com/translations')}
                                 >
-                                    <Users className='h-4 w-4 mr-2' />
+                                    <Users className='mr-2 h-4 w-4' />
                                     {t('admin.translations.community_made')}
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
@@ -366,14 +366,14 @@ export default function TranslationsPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-translations', 'after-header')} />
 
-            <div className='flex flex-col sm:flex-row gap-4 items-center bg-card/40 backdrop-blur-md p-4 rounded-2xl shadow-sm'>
-                <div className='relative flex-1 group w-full'>
-                    <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
+            <div className='bg-card/40 flex flex-col items-center gap-4 rounded-2xl p-4 shadow-sm backdrop-blur-md sm:flex-row'>
+                <div className='group relative w-full flex-1'>
+                    <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
                     <Input
                         placeholder={t('admin.translations.search_placeholder')}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className='pl-10 h-11 w-full'
+                        className='h-11 w-full pl-10'
                     />
                 </div>
             </div>
@@ -396,16 +396,16 @@ export default function TranslationsPage() {
                             subtitle={
                                 <div className='flex items-center gap-2 text-xs'>
                                     <span
-                                        className={`px-2 py-1 rounded ${file.enabled ? 'bg-green-500/10 text-green-600 border border-green-500/20' : 'bg-muted text-muted-foreground'}`}
+                                        className={`rounded px-2 py-1 ${file.enabled ? 'border border-green-500/20 bg-green-500/10 text-green-600' : 'bg-muted text-muted-foreground'}`}
                                     >
                                         {file.enabled ? (
                                             <>
-                                                <Check className='h-3 w-3 inline mr-1' />
+                                                <Check className='mr-1 inline h-3 w-3' />
                                                 Enabled
                                             </>
                                         ) : (
                                             <>
-                                                <X className='h-3 w-3 inline mr-1' />
+                                                <X className='mr-1 inline h-3 w-3' />
                                                 Disabled
                                             </>
                                         )}
@@ -424,7 +424,7 @@ export default function TranslationsPage() {
                                 },
                             ]}
                             description={
-                                <div className='flex flex-col gap-1 mt-2 text-sm text-muted-foreground'>
+                                <div className='text-muted-foreground mt-2 flex flex-col gap-1 text-sm'>
                                     <div className='flex items-center gap-2'>
                                         <FileCode className='h-3 w-3 shrink-0 opacity-50' />
                                         <span>{file.file}</span>
@@ -463,14 +463,14 @@ export default function TranslationsPage() {
                 </div>
             )}
 
-            <div className='grid grid-cols-1 md:grid-cols-2 gap-6 pt-6'>
+            <div className='grid grid-cols-1 gap-6 pt-6 md:grid-cols-2'>
                 <PageCard title={t('admin.translations.help.what_is.title')} icon={Globe}>
-                    <p className='text-sm text-muted-foreground leading-relaxed'>
+                    <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.translations.help.what_is.description')}
                     </p>
                 </PageCard>
                 <PageCard title={t('admin.translations.help.fallback.title')} icon={Globe}>
-                    <p className='text-sm text-muted-foreground leading-relaxed'>
+                    <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.translations.help.fallback.description')}
                     </p>
                 </PageCard>
@@ -484,7 +484,7 @@ export default function TranslationsPage() {
                             {t('admin.translations.form.edit_description', { lang: selectedLang || '' })}
                         </SheetDescription>
                     </SheetHeader>
-                    <div className='h-[calc(100vh-300px)] min-h-[500px] border rounded-lg overflow-hidden'>
+                    <div className='h-[calc(100vh-300px)] min-h-[500px] overflow-hidden rounded-lg border'>
                         <Editor
                             height='100%'
                             defaultLanguage='json'
@@ -531,7 +531,7 @@ export default function TranslationsPage() {
                                 placeholder={t('admin.translations.form.language_code_placeholder')}
                                 required
                             />
-                            <p className='text-xs text-muted-foreground'>
+                            <p className='text-muted-foreground text-xs'>
                                 {t('admin.translations.form.language_code_help')}
                             </p>
                         </div>

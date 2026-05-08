@@ -29,36 +29,26 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
     ({ label, description, error, icon, className = '', ...props }, ref) => {
         return (
             <Field>
-                {label && <Label className='block text-sm font-semibold text-foreground mb-2'>{label}</Label>}
-                {description && <Description className='text-sm text-muted-foreground mb-2'>{description}</Description>}
-                <div className='relative group'>
+                {label && <Label className='text-foreground mb-2 block text-sm font-semibold'>{label}</Label>}
+                {description && <Description className='text-muted-foreground mb-2 text-sm'>{description}</Description>}
+                <div className='group relative'>
                     {icon && (
-                        <div className='absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors'>
+                        <div className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 -translate-y-1/2 transition-colors'>
                             {icon}
                         </div>
                     )}
                     <HeadlessInput
                         ref={ref}
-                        className={`
-              w-full h-12 rounded-xl border bg-muted/30 text-sm
-              transition-all duration-200 font-semibold
-              ${icon ? 'pl-10 pr-4' : 'px-4'} py-3
-              ${
-                  error
-                      ? 'border-destructive focus:border-destructive focus:ring-destructive/20'
-                      : 'border-border/50 focus:border-primary focus:ring-primary/20 hover:border-border'
-              }
-              focus:outline-none focus:ring-4
-              disabled:cursor-not-allowed disabled:opacity-50
-              placeholder:text-muted-foreground/50
-              shadow-sm hover:shadow-md focus:shadow-lg
-              ${className}
-            `}
+                        className={`bg-muted/30 h-12 w-full rounded-xl border text-sm font-semibold transition-all duration-200 ${icon ? 'pr-4 pl-10' : 'px-4'} py-3 ${
+                            error
+                                ? 'border-destructive focus:border-destructive focus:ring-destructive/20'
+                                : 'border-border/50 focus:border-primary focus:ring-primary/20 hover:border-border'
+                        } placeholder:text-muted-foreground/50 shadow-sm hover:shadow-md focus:shadow-lg focus:ring-4 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${className} `}
                         {...props}
                     />
                 </div>
                 {error && (
-                    <Description className='text-sm text-destructive mt-2 flex items-center gap-1 animate-fade-in'>
+                    <Description className='text-destructive animate-fade-in mt-2 flex items-center gap-1 text-sm'>
                         <svg className='h-4 w-4' fill='none' viewBox='0 0 24 24' stroke='currentColor'>
                             <path
                                 strokeLinecap='round'

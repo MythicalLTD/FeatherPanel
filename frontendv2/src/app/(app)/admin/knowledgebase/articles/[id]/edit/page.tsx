@@ -320,11 +320,11 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
                 actions={
                     <div className='flex items-center gap-2'>
                         <Button variant='outline' onClick={() => router.back()}>
-                            <ChevronLeft className='h-4 w-4 mr-2' />
+                            <ChevronLeft className='mr-2 h-4 w-4' />
                             {t('common.back')}
                         </Button>
                         <Button onClick={handleSave} loading={saveLoading}>
-                            <Save className='h-4 w-4 mr-2' />
+                            <Save className='mr-2 h-4 w-4' />
                             {t('admin.knowledgebase.edit.form.save')}
                         </Button>
                     </div>
@@ -333,31 +333,31 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
 
             <WidgetRenderer widgets={getWidgets('admin-knowledgebase-article-edit', 'after-header')} />
 
-            <div className='grid grid-cols-1 lg:grid-cols-3 gap-8'>
-                <div className='lg:col-span-2 space-y-6'>
+            <div className='grid grid-cols-1 gap-8 lg:grid-cols-3'>
+                <div className='space-y-6 lg:col-span-2'>
                     <WidgetRenderer widgets={getWidgets('admin-knowledgebase-article-edit', 'before-content')} />
                     <Tabs defaultValue='content' className='w-full'>
-                        <div className='flex items-center justify-between bg-card/40 backdrop-blur-md p-2 rounded-2xl shadow-sm mb-6'>
-                            <TabsList className='bg-transparent h-10'>
+                        <div className='bg-card/40 mb-6 flex items-center justify-between rounded-2xl p-2 shadow-sm backdrop-blur-md'>
+                            <TabsList className='h-10 bg-transparent'>
                                 <TabsTrigger
                                     value='content'
-                                    className='rounded-xl data-[state=active]:bg-primary/10 data-[state=active]:text-primary'
+                                    className='data-[state=active]:bg-primary/10 data-[state=active]:text-primary rounded-xl'
                                 >
-                                    <FileText className='h-4 w-4 mr-2' />
+                                    <FileText className='mr-2 h-4 w-4' />
                                     {t('admin.knowledgebase.edit.tabs.content')}
                                 </TabsTrigger>
                                 <TabsTrigger
                                     value='attachments'
-                                    className='rounded-xl data-[state=active]:bg-primary/10 data-[state=active]:text-primary'
+                                    className='data-[state=active]:bg-primary/10 data-[state=active]:text-primary rounded-xl'
                                 >
-                                    <Paperclip className='h-4 w-4 mr-2' />
+                                    <Paperclip className='mr-2 h-4 w-4' />
                                     {t('admin.knowledgebase.edit.tabs.attachments')}
                                 </TabsTrigger>
                                 <TabsTrigger
                                     value='tags'
-                                    className='rounded-xl data-[state=active]:bg-primary/10 data-[state=active]:text-primary'
+                                    className='data-[state=active]:bg-primary/10 data-[state=active]:text-primary rounded-xl'
                                 >
-                                    <Tags className='h-4 w-4 mr-2' />
+                                    <Tags className='mr-2 h-4 w-4' />
                                     {t('admin.knowledgebase.edit.tabs.tags')}
                                 </TabsTrigger>
                             </TabsList>
@@ -366,17 +366,17 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
                                 <Button
                                     variant='outline'
                                     size='sm'
-                                    className='rounded-xl h-full'
+                                    className='h-full rounded-xl'
                                     onClick={() => setPreviewMode(!previewMode)}
                                 >
                                     {previewMode ? (
                                         <>
-                                            <Pencil className='h-4 w-4 mr-2' />{' '}
+                                            <Pencil className='mr-2 h-4 w-4' />{' '}
                                             {t('admin.knowledgebase.articles.form.edit')}
                                         </>
                                     ) : (
                                         <>
-                                            <Eye className='h-4 w-4 mr-2' />{' '}
+                                            <Eye className='mr-2 h-4 w-4' />{' '}
                                             {t('admin.knowledgebase.articles.form.preview')}
                                         </>
                                     )}
@@ -385,7 +385,7 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
                         </div>
 
                         <TabsContent value='content' className='m-0 border-none p-0 outline-none'>
-                            <div className='bg-card/40 backdrop-blur-md p-6 rounded-2xl shadow-sm space-y-4'>
+                            <div className='bg-card/40 space-y-4 rounded-2xl p-6 shadow-sm backdrop-blur-md'>
                                 <div className='space-y-2'>
                                     <Label htmlFor='title'>{t('admin.knowledgebase.articles.form.title')}</Label>
                                     <Input
@@ -398,27 +398,27 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
                                 </div>
 
                                 {previewMode ? (
-                                    <div className='prose dark:prose-invert max-w-none min-h-[400px] p-6 rounded-2xl bg-muted/30 border border-border/50'>
+                                    <div className='prose dark:prose-invert bg-muted/30 border-border/50 min-h-[400px] max-w-none rounded-2xl border p-6'>
                                         <ReactMarkdown
                                             remarkPlugins={[remarkGfm]}
                                             components={{
                                                 p: ({ children }) => (
-                                                    <p className='leading-relaxed mb-4 text-muted-foreground/90'>
+                                                    <p className='text-muted-foreground/90 mb-4 leading-relaxed'>
                                                         {children}
                                                     </p>
                                                 ),
                                                 code: ({ children }) => (
-                                                    <code className='bg-muted px-1.5 py-0.5 rounded text-primary font-mono text-sm'>
+                                                    <code className='bg-muted text-primary rounded px-1.5 py-0.5 font-mono text-sm'>
                                                         {children}
                                                     </code>
                                                 ),
                                                 pre: ({ children }) => (
-                                                    <pre className='bg-muted/50 p-4 rounded-xl border border-border/50 overflow-x-auto my-6'>
+                                                    <pre className='bg-muted/50 border-border/50 my-6 overflow-x-auto rounded-xl border p-4'>
                                                         {children}
                                                     </pre>
                                                 ),
                                                 blockquote: ({ children }) => (
-                                                    <blockquote className='border-l-4 border-primary/30 pl-4 italic text-muted-foreground my-6'>
+                                                    <blockquote className='border-primary/30 text-muted-foreground my-6 border-l-4 pl-4 italic'>
                                                         {children}
                                                     </blockquote>
                                                 ),
@@ -426,7 +426,7 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
                                                     <img
                                                         {...props}
                                                         alt={props.alt || ''}
-                                                        className='rounded-xl border border-border/50 shadow-md my-8 mx-auto block max-w-full'
+                                                        className='border-border/50 mx-auto my-8 block max-w-full rounded-xl border shadow-md'
                                                     />
                                                 ),
                                                 a: ({ href, children, ...props }) => {
@@ -438,7 +438,7 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
                                                             <img
                                                                 src={href}
                                                                 alt={typeof children === 'string' ? children : ''}
-                                                                className='rounded-xl border border-border/50 shadow-md my-8 mx-auto block max-w-full'
+                                                                className='border-border/50 mx-auto my-8 block max-w-full rounded-xl border shadow-md'
                                                             />
                                                         );
                                                     }
@@ -446,14 +446,14 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
                                                         <a
                                                             {...props}
                                                             href={href}
-                                                            className='text-primary hover:underline font-medium'
+                                                            className='text-primary font-medium hover:underline'
                                                         >
                                                             {children}
                                                         </a>
                                                     );
                                                 },
                                                 table: ({ children }) => (
-                                                    <div className='overflow-x-auto my-6'>
+                                                    <div className='my-6 overflow-x-auto'>
                                                         <table className='w-full border-collapse text-sm'>
                                                             {children}
                                                         </table>
@@ -463,25 +463,25 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
                                                     <thead className='bg-muted/50'>{children}</thead>
                                                 ),
                                                 tbody: ({ children }) => (
-                                                    <tbody className='divide-y divide-border/50'>{children}</tbody>
+                                                    <tbody className='divide-border/50 divide-y'>{children}</tbody>
                                                 ),
                                                 tr: ({ children }) => (
-                                                    <tr className='border-b border-border/50 hover:bg-muted/30 transition-colors'>
+                                                    <tr className='border-border/50 hover:bg-muted/30 border-b transition-colors'>
                                                         {children}
                                                     </tr>
                                                 ),
                                                 th: ({ children }) => (
-                                                    <th className='px-4 py-3 text-left font-semibold text-foreground border border-border/50'>
+                                                    <th className='text-foreground border-border/50 border px-4 py-3 text-left font-semibold'>
                                                         {children}
                                                     </th>
                                                 ),
                                                 td: ({ children }) => (
-                                                    <td className='px-4 py-3 text-muted-foreground border border-border/50'>
+                                                    <td className='text-muted-foreground border-border/50 border px-4 py-3'>
                                                         {children}
                                                     </td>
                                                 ),
                                                 strong: ({ children }) => (
-                                                    <strong className='font-semibold text-foreground'>
+                                                    <strong className='text-foreground font-semibold'>
                                                         {children}
                                                     </strong>
                                                 ),
@@ -494,7 +494,7 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
                                     <textarea
                                         value={form.content}
                                         onChange={(e) => setForm({ ...form, content: e.target.value })}
-                                        className='w-full min-h-[400px] p-6 rounded-2xl bg-muted/30 border border-border/50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all font-mono text-sm leading-relaxed resize-y'
+                                        className='bg-muted/30 border-border/50 focus:ring-primary/20 min-h-[400px] w-full resize-y rounded-2xl border p-6 font-mono text-sm leading-relaxed transition-all focus:ring-2 focus:outline-none'
                                         placeholder={t('admin.knowledgebase.articles.form.content')}
                                     />
                                 )}
@@ -502,18 +502,18 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
                         </TabsContent>
 
                         <TabsContent value='attachments' className='m-0 border-none p-0 outline-none'>
-                            <div className='bg-card/40 backdrop-blur-md p-6 rounded-2xl shadow-sm space-y-6'>
+                            <div className='bg-card/40 space-y-6 rounded-2xl p-6 shadow-sm backdrop-blur-md'>
                                 <div className='flex items-center justify-between'>
                                     <div>
                                         <h3 className='text-lg font-bold'>
                                             {t('admin.knowledgebase.edit.attachments.title')}
                                         </h3>
-                                        <p className='text-sm text-muted-foreground'>
+                                        <p className='text-muted-foreground text-sm'>
                                             {t('admin.knowledgebase.edit.attachments.description')}
                                         </p>
                                     </div>
                                     <div className='flex items-center gap-4'>
-                                        <div className='flex items-center gap-2 bg-muted/30 px-3 py-2 rounded-xl border border-border/50'>
+                                        <div className='bg-muted/30 border-border/50 flex items-center gap-2 rounded-xl border px-3 py-2'>
                                             <Checkbox
                                                 id='user_downloadable'
                                                 checked={userDownloadable}
@@ -521,7 +521,7 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
                                             />
                                             <Label
                                                 htmlFor='user_downloadable'
-                                                className='text-xs font-medium cursor-pointer whitespace-nowrap'
+                                                className='cursor-pointer text-xs font-medium whitespace-nowrap'
                                             >
                                                 {t('admin.knowledgebase.edit.attachments.make_downloadable')}
                                             </Label>
@@ -531,7 +531,7 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
                                             onClick={() => attachmentInputRef.current?.click()}
                                             loading={uploadLoading}
                                         >
-                                            <Plus className='h-4 w-4 mr-2' />
+                                            <Plus className='mr-2 h-4 w-4' />
                                             {t('admin.knowledgebase.edit.attachments.upload')}
                                         </Button>
                                     </div>
@@ -544,36 +544,36 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
                                 </div>
 
                                 {attachments.length === 0 ? (
-                                    <div className='p-12 border-2 border-dashed border-border/50 rounded-2xl flex flex-col items-center justify-center text-muted-foreground'>
-                                        <Paperclip className='h-12 w-12 mb-4 opacity-20' />
+                                    <div className='border-border/50 text-muted-foreground flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-12'>
+                                        <Paperclip className='mb-4 h-12 w-12 opacity-20' />
                                         <p>{t('admin.knowledgebase.edit.attachments.no_attachments')}</p>
                                     </div>
                                 ) : (
-                                    <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                                    <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
                                         {attachments.map((att) => (
                                             <div
                                                 key={att.id}
-                                                className='p-4 rounded-2xl bg-muted/30 border border-border/30 hover:border-primary/30 transition-all group'
+                                                className='bg-muted/30 border-border/30 hover:border-primary/30 group rounded-2xl border p-4 transition-all'
                                             >
                                                 <div className='flex items-start justify-between gap-4'>
                                                     <div className='flex items-center gap-3 overflow-hidden'>
-                                                        <div className='h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0'>
-                                                            <Paperclip className='h-5 w-5 text-primary' />
+                                                        <div className='bg-primary/10 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl'>
+                                                            <Paperclip className='text-primary h-5 w-5' />
                                                         </div>
                                                         <div className='overflow-hidden'>
-                                                            <p className='text-sm font-semibold truncate'>
+                                                            <p className='truncate text-sm font-semibold'>
                                                                 {att.file_name}
                                                             </p>
-                                                            <p className='text-xs text-muted-foreground'>
+                                                            <p className='text-muted-foreground text-xs'>
                                                                 {formatFileSize(att.file_size)}
                                                             </p>
                                                         </div>
                                                     </div>
-                                                    <div className='flex items-center gap-1 shrink-0'>
+                                                    <div className='flex shrink-0 items-center gap-1'>
                                                         <Button
                                                             variant='outline'
                                                             size='icon'
-                                                            className='h-8 w-8 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity'
+                                                            className='h-8 w-8 rounded-lg opacity-0 transition-opacity group-hover:opacity-100'
                                                             onClick={() => {
                                                                 const isImage = att.file_type.startsWith('image/');
                                                                 const md = isImage
@@ -587,7 +587,7 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
                                                         <Button
                                                             variant='destructive'
                                                             size='icon'
-                                                            className='h-8 w-8 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity'
+                                                            className='h-8 w-8 rounded-lg opacity-0 transition-opacity group-hover:opacity-100'
                                                             onClick={() => handleDeleteAttachment(att.id)}
                                                         >
                                                             <Trash2 className='h-4 w-4' />
@@ -602,25 +602,25 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
                         </TabsContent>
 
                         <TabsContent value='tags' className='m-0 border-none p-0 outline-none'>
-                            <div className='bg-card/40 backdrop-blur-md p-6 rounded-2xl shadow-sm space-y-6'>
+                            <div className='bg-card/40 space-y-6 rounded-2xl p-6 shadow-sm backdrop-blur-md'>
                                 <div className='flex items-center justify-between'>
                                     <div>
                                         <h3 className='text-lg font-bold'>
                                             {t('admin.knowledgebase.edit.tags.title')}
                                         </h3>
-                                        <p className='text-sm text-muted-foreground'>
+                                        <p className='text-muted-foreground text-sm'>
                                             {t('admin.knowledgebase.help.attachments.description')}
                                         </p>
                                     </div>
                                     <Button variant='outline' onClick={() => setTagsDialogOpen(true)}>
-                                        <Plus className='h-4 w-4 mr-2' />
+                                        <Plus className='mr-2 h-4 w-4' />
                                         {t('admin.knowledgebase.edit.tags.add')}
                                     </Button>
                                 </div>
 
                                 {tags.length === 0 ? (
-                                    <div className='p-12 border-2 border-dashed border-border/50 rounded-2xl flex flex-col items-center justify-center text-muted-foreground'>
-                                        <Tags className='h-12 w-12 mb-4 opacity-20' />
+                                    <div className='border-border/50 text-muted-foreground flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-12'>
+                                        <Tags className='mb-4 h-12 w-12 opacity-20' />
                                         <p>{t('admin.knowledgebase.edit.tags.no_tags')}</p>
                                     </div>
                                 ) : (
@@ -628,12 +628,12 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
                                         {tags.map((tag) => (
                                             <div
                                                 key={tag.id}
-                                                className='flex items-center gap-2 px-3 py-1.5 rounded-xl bg-primary/10 border border-primary/20 text-primary group transition-all hover:pr-1'
+                                                className='bg-primary/10 border-primary/20 text-primary group flex items-center gap-2 rounded-xl border px-3 py-1.5 transition-all hover:pr-1'
                                             >
                                                 <span className='text-sm font-medium'>{tag.tag_name}</span>
                                                 <button
                                                     onClick={() => handleDeleteTag(tag.id)}
-                                                    className='h-5 w-5 rounded-lg flex items-center justify-center hover:bg-primary/20 transition-colors opacity-0 group-hover:opacity-100'
+                                                    className='hover:bg-primary/20 flex h-5 w-5 items-center justify-center rounded-lg opacity-0 transition-colors group-hover:opacity-100'
                                                 >
                                                     <X className='h-3 w-3' />
                                                 </button>
@@ -645,14 +645,14 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
                         </TabsContent>
                     </Tabs>
 
-                    <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+                    <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
                         <PageCard title={t('admin.knowledgebase.help.managing.title')} icon={Layout}>
-                            <p className='text-sm text-muted-foreground leading-relaxed'>
+                            <p className='text-muted-foreground text-sm leading-relaxed'>
                                 {t('admin.knowledgebase.help.managing.description')}
                             </p>
                         </PageCard>
                         <PageCard title={t('admin.knowledgebase.help.content.title')} icon={Info}>
-                            <p className='text-sm text-muted-foreground leading-relaxed'>
+                            <p className='text-muted-foreground text-sm leading-relaxed'>
                                 {t('admin.knowledgebase.help.content.description')}
                             </p>
                         </PageCard>
@@ -660,8 +660,8 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
                 </div>
 
                 <div className='space-y-6'>
-                    <div className='bg-card/40 backdrop-blur-md p-6 rounded-2xl shadow-sm space-y-6 overflow-hidden'>
-                        <h3 className='font-bold text-lg mb-2'>{t('common.details')}</h3>
+                    <div className='bg-card/40 space-y-6 overflow-hidden rounded-2xl p-6 shadow-sm backdrop-blur-md'>
+                        <h3 className='mb-2 text-lg font-bold'>{t('common.details')}</h3>
 
                         <div className='space-y-2'>
                             <Label>{t('admin.knowledgebase.edit.form.category')}</Label>
@@ -694,21 +694,21 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
                             </Select>
                         </div>
 
-                        <div className='flex items-center gap-3 bg-muted/30 p-4 rounded-xl'>
+                        <div className='bg-muted/30 flex items-center gap-3 rounded-xl p-4'>
                             <Checkbox
                                 id='pinned'
                                 checked={form.pinned === 'true'}
                                 onCheckedChange={(val) => setForm({ ...form, pinned: val ? 'true' : 'false' })}
                             />
-                            <Label htmlFor='pinned' className='text-sm font-medium leading-none cursor-pointer'>
+                            <Label htmlFor='pinned' className='cursor-pointer text-sm leading-none font-medium'>
                                 {t('admin.knowledgebase.articles.form.pinned')}
                             </Label>
                         </div>
 
-                        <div className='space-y-3 pt-2 border-t border-border/30'>
+                        <div className='border-border/30 space-y-3 border-t pt-2'>
                             <Label>{t('admin.knowledgebase.articles.form.icon')}</Label>
                             <div className='flex items-center gap-4'>
-                                <div className='h-20 w-20 rounded-2xl bg-primary/5 flex items-center justify-center overflow-hidden border border-border/50 shrink-0'>
+                                <div className='bg-primary/5 border-border/50 flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border'>
                                     {iconPreview ? (
                                         <Image
                                             src={iconPreview}
@@ -719,10 +719,10 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
                                             unoptimized
                                         />
                                     ) : (
-                                        <ImageIcon className='h-8 w-8 text-muted-foreground/30' />
+                                        <ImageIcon className='text-muted-foreground/30 h-8 w-8' />
                                     )}
                                 </div>
-                                <div className='space-y-2 flex-1'>
+                                <div className='flex-1 space-y-2'>
                                     <Button
                                         type='button'
                                         variant='outline'
@@ -745,7 +745,7 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
                     </div>
 
                     <PageCard title={t('admin.knowledgebase.help.attachments.title')} icon={Shield} variant='danger'>
-                        <p className='text-sm text-muted-foreground leading-relaxed'>
+                        <p className='text-muted-foreground text-sm leading-relaxed'>
                             {t('admin.knowledgebase.help.attachments.description')}
                         </p>
                     </PageCard>
@@ -753,7 +753,7 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
             </div>
 
             <Dialog open={tagsDialogOpen} onOpenChange={setTagsDialogOpen}>
-                <DialogContent className='sm:max-w-[425px] rounded-3xl'>
+                <DialogContent className='rounded-3xl sm:max-w-[425px]'>
                     <DialogHeader>
                         <DialogTitle>{t('admin.knowledgebase.edit.tags.add_dialog_title')}</DialogTitle>
                         <DialogDescription>
@@ -765,9 +765,9 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
                             placeholder={t('admin.knowledgebase.edit.tags.placeholder')}
                             value={newTags}
                             onChange={(e) => setNewTags(e.target.value)}
-                            className='h-12 rounded-xl focus-visible:ring-primary/20'
+                            className='focus-visible:ring-primary/20 h-12 rounded-xl'
                         />
-                        <p className='mt-2 text-[10px] text-muted-foreground font-medium uppercase tracking-wider text-center'>
+                        <p className='text-muted-foreground mt-2 text-center text-[10px] font-medium tracking-wider uppercase'>
                             {t('admin.knowledgebase.edit.tags.messages.added_help')}
                         </p>
                     </div>

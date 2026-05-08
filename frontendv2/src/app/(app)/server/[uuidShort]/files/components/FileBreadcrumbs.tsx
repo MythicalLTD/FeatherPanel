@@ -82,7 +82,7 @@ function CrumbButton({ path, isCurrent, onDropFilesToPath, onClick, className, t
             size='sm'
             className={cn(
                 className,
-                isDropTarget && !isCurrent && 'bg-primary/15 text-primary ring-2 ring-inset ring-primary/70',
+                isDropTarget && !isCurrent && 'bg-primary/15 text-primary ring-primary/70 ring-2 ring-inset',
             )}
             onClick={onClick}
             title={title}
@@ -112,13 +112,13 @@ export function FileBreadcrumbs({
     };
 
     return (
-        <div className='flex flex-col md:flex-row md:items-center justify-between gap-4 p-1'>
-            <div className='flex items-center gap-1 overflow-x-auto no-scrollbar'>
+        <div className='flex flex-col justify-between gap-4 p-1 md:flex-row md:items-center'>
+            <div className='no-scrollbar flex items-center gap-1 overflow-x-auto'>
                 <CrumbButton
                     path='/'
                     isCurrent={normalizedCurrent === '/'}
                     onDropFilesToPath={onDropFilesToPath}
-                    className='h-8 w-8 p-0 text-muted-foreground hover:text-foreground shrink-0 transition-colors'
+                    className='text-muted-foreground hover:text-foreground h-8 w-8 shrink-0 p-0 transition-colors'
                     onClick={() => onNavigate('/')}
                     title={t('files.breadcrumbs.home')}
                 >
@@ -129,8 +129,8 @@ export function FileBreadcrumbs({
                     const path = getPath(index);
                     const isCurrent = index === segments.length - 1;
                     return (
-                        <div key={index} className='flex items-center gap-1 shrink-0'>
-                            <ChevronRight className='h-4 w-4 text-muted-foreground/40' />
+                        <div key={index} className='flex shrink-0 items-center gap-1'>
+                            <ChevronRight className='text-muted-foreground/40 h-4 w-4' />
                             <CrumbButton
                                 path={path}
                                 isCurrent={isCurrent}
@@ -138,7 +138,7 @@ export function FileBreadcrumbs({
                                 className={cn(
                                     'h-8 px-2 whitespace-nowrap transition-colors',
                                     isCurrent
-                                        ? 'font-bold text-foreground pointer-events-none bg-white/5'
+                                        ? 'text-foreground pointer-events-none bg-white/5 font-bold'
                                         : 'text-muted-foreground hover:text-foreground hover:bg-white/5',
                                 )}
                                 onClick={() => onNavigate(path)}
@@ -150,21 +150,21 @@ export function FileBreadcrumbs({
                 })}
             </div>
 
-            <div className='relative w-full md:w-64 group'>
-                <div className='absolute inset-y-0 left-3 flex items-center pointer-events-none'>
-                    <Search className='h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
+            <div className='group relative w-full md:w-64'>
+                <div className='pointer-events-none absolute inset-y-0 left-3 flex items-center'>
+                    <Search className='text-muted-foreground group-focus-within:text-primary h-4 w-4 transition-colors' />
                 </div>
                 <Input
                     id='file-search-input'
                     value={searchQuery}
                     onChange={(e) => onSearchChange(e.target.value)}
                     placeholder={t('files.breadcrumbs.search_placeholder')}
-                    className='h-10 pl-10 pr-10 bg-black/5 dark:bg-black/20 border-black/10 dark:border-white/5 focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all rounded-2xl text-sm font-medium'
+                    className='focus:border-primary/50 focus:ring-primary/10 h-10 rounded-2xl border-black/10 bg-black/5 pr-10 pl-10 text-sm font-medium transition-all focus:ring-4 dark:border-white/5 dark:bg-black/20'
                 />
                 {searchQuery && (
                     <button
                         onClick={() => onSearchChange('')}
-                        className='absolute inset-y-0 right-3 flex items-center text-muted-foreground hover:text-white transition-colors'
+                        className='text-muted-foreground absolute inset-y-0 right-3 flex items-center transition-colors hover:text-white'
                     >
                         <X className='h-3.5 w-3.5' />
                     </button>

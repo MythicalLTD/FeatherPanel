@@ -32,7 +32,7 @@ export function StartupTab({ form, setForm, errors }: TabProps) {
             <div className='space-y-3'>
                 <Label className='flex items-center gap-1.5'>
                     {t('admin.servers.form.startup')}
-                    <span className='text-red-500 font-bold'>*</span>
+                    <span className='font-bold text-red-500'>*</span>
                 </Label>
                 <Input
                     value={form.startup}
@@ -41,14 +41,14 @@ export function StartupTab({ form, setForm, errors }: TabProps) {
                     className={`bg-muted/30 h-11 font-mono ${errors.startup ? 'border-red-500' : ''}`}
                 />
                 {errors.startup && <p className='text-xs text-red-500'>{errors.startup}</p>}
-                <p className='text-xs text-muted-foreground'>{t('admin.servers.form.startup_help')}</p>
+                <p className='text-muted-foreground text-xs'>{t('admin.servers.form.startup_help')}</p>
 
-                <div className='mt-4 p-4 bg-muted/20 rounded-xl border border-border/50'>
-                    <p className='text-sm font-medium mb-2'>{t('admin.servers.edit.startup.available_variables')}</p>
+                <div className='bg-muted/20 border-border/50 mt-4 rounded-xl border p-4'>
+                    <p className='mb-2 text-sm font-medium'>{t('admin.servers.edit.startup.available_variables')}</p>
                     <div className='flex flex-wrap gap-2'>
-                        <code className='px-2 py-1 bg-muted rounded text-xs'>{'{{SERVER_MEMORY}}'}</code>
-                        <code className='px-2 py-1 bg-muted rounded text-xs'>{'{{SERVER_IP}}'}</code>
-                        <code className='px-2 py-1 bg-muted rounded text-xs'>{'{{SERVER_PORT}}'}</code>
+                        <code className='bg-muted rounded px-2 py-1 text-xs'>{'{{SERVER_MEMORY}}'}</code>
+                        <code className='bg-muted rounded px-2 py-1 text-xs'>{'{{SERVER_IP}}'}</code>
+                        <code className='bg-muted rounded px-2 py-1 text-xs'>{'{{SERVER_PORT}}'}</code>
                     </div>
                 </div>
             </div>

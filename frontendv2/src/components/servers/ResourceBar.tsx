@@ -28,16 +28,16 @@ export function ResourceBar({ label, used, limit, formatter }: ResourceBarProps)
     const isUnlimited = limit === 0;
 
     return (
-        <div className='flex flex-col gap-1.5 min-w-0'>
-            <div className='flex items-center justify-between gap-2 text-[10px] sm:text-xs min-w-0'>
-                <span className='font-semibold text-muted-foreground truncate shrink'>{label}</span>
-                <span className='font-medium tabular-nums text-right truncate max-w-[min(100%,11rem)] sm:max-w-none'>
+        <div className='flex min-w-0 flex-col gap-1.5'>
+            <div className='flex min-w-0 items-center justify-between gap-2 text-[10px] sm:text-xs'>
+                <span className='text-muted-foreground shrink truncate font-semibold'>{label}</span>
+                <span className='max-w-[min(100%,11rem)] truncate text-right font-medium tabular-nums sm:max-w-none'>
                     {isUnlimited
                         ? `${formatter ? formatter(used) : used} / ∞`
                         : `${formatter ? formatter(used) : used} / ${formatter ? formatter(limit) : limit}`}
                 </span>
             </div>
-            <div className='h-2 bg-muted rounded-full overflow-hidden'>
+            <div className='bg-muted h-2 overflow-hidden rounded-full'>
                 <div
                     className={cn('h-full transition-all duration-500', getProgressColor(percentage, isUnlimited))}
                     style={{ width: getProgressWidth(used, limit) }}

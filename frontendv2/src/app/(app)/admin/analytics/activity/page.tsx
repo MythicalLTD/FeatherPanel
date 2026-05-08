@@ -99,19 +99,19 @@ export default function ActivityAnalyticsPage() {
 
     if (loading) {
         return (
-            <div className='flex items-center justify-center min-h-[400px]'>
-                <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-primary'></div>
+            <div className='flex min-h-[400px] items-center justify-center'>
+                <div className='border-primary h-8 w-8 animate-spin rounded-full border-b-2'></div>
             </div>
         );
     }
 
     if (error) {
         return (
-            <div className='flex flex-col items-center justify-center min-h-[400px] text-center'>
-                <p className='text-red-500 mb-4'>{error}</p>
+            <div className='flex min-h-[400px] flex-col items-center justify-center text-center'>
+                <p className='mb-4 text-red-500'>{error}</p>
                 <button
                     onClick={fetchData}
-                    className='px-4 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-opacity'
+                    className='bg-primary text-primary-foreground rounded-md px-4 py-2 transition-opacity hover:opacity-90'
                 >
                     {t('admin.analytics.activity.retry')}
                 </button>
@@ -138,42 +138,42 @@ export default function ActivityAnalyticsPage() {
                                 count: String(stats.active_users_today),
                             })}
                             icon={Activity}
-                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                            className='bg-card/50 shadow-none! backdrop-blur-sm'
                         />
                         <ResourceCard
                             title={stats.this_week.toString()}
                             subtitle={t('admin.analytics.activity.this_week')}
                             description={t('admin.analytics.activity.last_7_days')}
                             icon={Calendar}
-                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                            className='bg-card/50 shadow-none! backdrop-blur-sm'
                         />
                         <ResourceCard
                             title={stats.this_month.toString()}
                             subtitle={t('admin.analytics.activity.this_month')}
                             description={t('admin.analytics.activity.last_30_days')}
                             icon={Calendar}
-                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                            className='bg-card/50 shadow-none! backdrop-blur-sm'
                         />
                         <ResourceCard
                             title={`${stats.peak_hour}:00`}
                             subtitle={t('admin.analytics.activity.peak_hour')}
                             description={t('admin.analytics.activity.most_active_time')}
                             icon={Clock}
-                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                            className='bg-card/50 shadow-none! backdrop-blur-sm'
                         />
                         <ResourceCard
                             title={stats.total.toString()}
                             subtitle='Total activities'
                             description='All-time platform activity events'
                             icon={TrendingUp}
-                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                            className='bg-card/50 shadow-none! backdrop-blur-sm'
                         />
                         <ResourceCard
                             title={(topActivities[0]?.count ?? 0).toString()}
                             subtitle='Top activity type'
                             description={topActivities[0]?.name ?? 'No activity data'}
                             icon={List}
-                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                            className='bg-card/50 shadow-none! backdrop-blur-sm'
                         />
                     </div>
                 )}

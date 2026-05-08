@@ -28,29 +28,29 @@ export function TableSkeleton({ count = 5, className }: TableSkeletonProps) {
             {Array.from({ length: count }).map((_, i) => (
                 <div
                     key={i}
-                    className='group relative overflow-hidden rounded-3xl bg-card/30 backdrop-blur-sm border border-border/50 p-6 flex flex-col md:flex-row md:items-center gap-6'
+                    className='group bg-card/30 border-border/50 relative flex flex-col gap-6 overflow-hidden rounded-3xl border p-6 backdrop-blur-sm md:flex-row md:items-center'
                 >
-                    <div className='h-16 w-16 rounded-2xl bg-secondary/50 animate-pulse shrink-0' />
+                    <div className='bg-secondary/50 h-16 w-16 shrink-0 animate-pulse rounded-2xl' />
 
-                    <div className='flex-1 space-y-3 min-w-0'>
+                    <div className='min-w-0 flex-1 space-y-3'>
                         <div className='flex flex-wrap items-center gap-3'>
-                            <div className='h-6 w-48 bg-secondary/50 rounded-lg animate-pulse' />
+                            <div className='bg-secondary/50 h-6 w-48 animate-pulse rounded-lg' />
 
-                            <div className='h-5 w-20 bg-secondary/30 rounded-md animate-pulse' />
+                            <div className='bg-secondary/30 h-5 w-20 animate-pulse rounded-md' />
                         </div>
 
-                        <div className='h-4 w-32 bg-secondary/30 rounded-lg animate-pulse' />
+                        <div className='bg-secondary/30 h-4 w-32 animate-pulse rounded-lg' />
 
                         <div className='flex gap-4 pt-1'>
-                            <div className='h-3 w-24 bg-secondary/20 rounded-md animate-pulse' />
-                            <div className='h-3 w-32 bg-secondary/20 rounded-md animate-pulse' />
-                            <div className='h-3 w-20 bg-secondary/20 rounded-md animate-pulse' />
+                            <div className='bg-secondary/20 h-3 w-24 animate-pulse rounded-md' />
+                            <div className='bg-secondary/20 h-3 w-32 animate-pulse rounded-md' />
+                            <div className='bg-secondary/20 h-3 w-20 animate-pulse rounded-md' />
                         </div>
                     </div>
 
                     <div className='flex items-center gap-2 md:self-center'>
-                        <div className='h-9 w-9 bg-secondary/40 rounded-lg animate-pulse' />
-                        <div className='h-9 w-9 bg-secondary/40 rounded-lg animate-pulse' />
+                        <div className='bg-secondary/40 h-9 w-9 animate-pulse rounded-lg' />
+                        <div className='bg-secondary/40 h-9 w-9 animate-pulse rounded-lg' />
                     </div>
                 </div>
             ))}

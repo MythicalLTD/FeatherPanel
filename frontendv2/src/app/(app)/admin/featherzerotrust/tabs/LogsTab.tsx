@@ -190,7 +190,7 @@ const LogsTab = () => {
             ) : (
                 <>
                     {pagination.totalPages > 1 && (
-                        <div className='flex items-center justify-between gap-4 py-3 px-4 rounded-xl border border-border bg-card/50 mb-4'>
+                        <div className='border-border bg-card/50 mb-4 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
                             <Button
                                 variant='outline'
                                 size='sm'
@@ -236,14 +236,14 @@ const LogsTab = () => {
                                     },
                                 ]}
                                 description={
-                                    <div className='grid grid-cols-2 md:grid-cols-4 gap-4 mt-2'>
-                                        <div className='flex items-center gap-2 text-xs text-muted-foreground'>
+                                    <div className='mt-2 grid grid-cols-2 gap-4 md:grid-cols-4'>
+                                        <div className='text-muted-foreground flex items-center gap-2 text-xs'>
                                             <Server className='h-3 w-3' />
                                             <span>
                                                 {log.total_servers_scanned} {t('admin.featherzerotrust.logs.servers')}
                                             </span>
                                         </div>
-                                        <div className='flex items-center gap-2 text-xs text-muted-foreground'>
+                                        <div className='text-muted-foreground flex items-center gap-2 text-xs'>
                                             <AlertTriangle
                                                 className={cn(
                                                     'h-3 w-3',
@@ -260,11 +260,11 @@ const LogsTab = () => {
                                                 {log.total_detections} {t('admin.featherzerotrust.logs.detections')}
                                             </span>
                                         </div>
-                                        <div className='flex items-center gap-2 text-xs text-muted-foreground'>
+                                        <div className='text-muted-foreground flex items-center gap-2 text-xs'>
                                             <Clock className='h-3 w-3' />
                                             <span>{formatDuration(log.details?.duration_seconds)}</span>
                                         </div>
-                                        <div className='text-xs text-muted-foreground'>
+                                        <div className='text-muted-foreground text-xs'>
                                             {t('admin.featherzerotrust.logs.completed')}:{' '}
                                             {log.completed_at
                                                 ? formatDate(log.completed_at)
@@ -279,7 +279,7 @@ const LogsTab = () => {
                                         className='transition-all hover:scale-105'
                                         onClick={() => fetchLogDetails(log.execution_id)}
                                     >
-                                        <Eye className='h-4 w-4 mr-2' />
+                                        <Eye className='mr-2 h-4 w-4' />
                                         {t('admin.featherzerotrust.logs.viewDetails')}
                                     </Button>
                                 }
@@ -287,7 +287,7 @@ const LogsTab = () => {
                         ))}
                     </div>
                     {pagination.totalPages > 1 && (
-                        <div className='flex items-center justify-center gap-2 mt-8'>
+                        <div className='mt-8 flex items-center justify-center gap-2'>
                             <Button
                                 variant='outline'
                                 size='icon'
@@ -313,7 +313,7 @@ const LogsTab = () => {
             )}
 
             <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
-                <SheetContent side='right' className='sm:max-w-2xl overflow-y-auto'>
+                <SheetContent side='right' className='overflow-y-auto sm:max-w-2xl'>
                     <SheetHeader>
                         <SheetTitle>Execution Details</SheetTitle>
                         <SheetDescription>
@@ -323,15 +323,15 @@ const LogsTab = () => {
 
                     {detailsLoading ? (
                         <div className='flex items-center justify-center py-12'>
-                            <RefreshCw className='h-6 w-6 animate-spin text-primary' />
+                            <RefreshCw className='text-primary h-6 w-6 animate-spin' />
                         </div>
                     ) : (
                         executionLog && (
-                            <div className='space-y-6 mt-6'>
+                            <div className='mt-6 space-y-6'>
                                 <div className='grid grid-cols-2 gap-4'>
                                     <Card className='bg-muted/30 border-border/50'>
                                         <CardContent className='p-4'>
-                                            <div className='text-xs text-muted-foreground'>Total Servers</div>
+                                            <div className='text-muted-foreground text-xs'>Total Servers</div>
                                             <div className='text-2xl font-bold'>
                                                 {executionLog.total_servers_scanned}
                                             </div>
@@ -345,7 +345,7 @@ const LogsTab = () => {
                                         )}
                                     >
                                         <CardContent className='p-4'>
-                                            <div className='text-xs text-muted-foreground'>Total Detections</div>
+                                            <div className='text-muted-foreground text-xs'>Total Detections</div>
                                             <div
                                                 className={cn(
                                                     'text-2xl font-bold',
@@ -359,12 +359,12 @@ const LogsTab = () => {
                                 </div>
 
                                 <div className='space-y-4'>
-                                    <h4 className='text-sm font-semibold flex items-center gap-2'>
-                                        <Server className='h-4 w-4 text-primary' />
+                                    <h4 className='flex items-center gap-2 text-sm font-semibold'>
+                                        <Server className='text-primary h-4 w-4' />
                                         Server Scan History
                                     </h4>
                                     {scanLogs.length === 0 ? (
-                                        <p className='text-sm text-muted-foreground italic'>
+                                        <p className='text-muted-foreground text-sm italic'>
                                             No individual server logs found.
                                         </p>
                                     ) : (
@@ -372,7 +372,7 @@ const LogsTab = () => {
                                             {scanLogs.map((log) => (
                                                 <div
                                                     key={log.id}
-                                                    className='p-4 rounded-xl border border-border/50 bg-card hover:border-primary/30 transition-all'
+                                                    className='border-border/50 bg-card hover:border-primary/30 rounded-xl border p-4 transition-all'
                                                 >
                                                     <div className='flex items-start justify-between'>
                                                         <div>
@@ -380,7 +380,7 @@ const LogsTab = () => {
                                                                 {log.server_name ||
                                                                     t('admin.featherzerotrust.logs.unknownServer')}
                                                             </div>
-                                                            <div className='text-[10px] text-muted-foreground font-mono'>
+                                                            <div className='text-muted-foreground font-mono text-[10px]'>
                                                                 {log.server_uuid}
                                                             </div>
                                                         </div>
@@ -393,9 +393,9 @@ const LogsTab = () => {
                                                             {log.status.toUpperCase()}
                                                         </Badge>
                                                     </div>
-                                                    <div className='grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-border/30'>
+                                                    <div className='border-border/30 mt-3 grid grid-cols-3 gap-2 border-t pt-3'>
                                                         <div>
-                                                            <div className='text-[10px] text-muted-foreground'>
+                                                            <div className='text-muted-foreground text-[10px]'>
                                                                 Files Scanned
                                                             </div>
                                                             <div className='text-xs font-semibold'>
@@ -403,7 +403,7 @@ const LogsTab = () => {
                                                             </div>
                                                         </div>
                                                         <div>
-                                                            <div className='text-[10px] text-muted-foreground'>
+                                                            <div className='text-muted-foreground text-[10px]'>
                                                                 Detections
                                                             </div>
                                                             <div
@@ -416,7 +416,7 @@ const LogsTab = () => {
                                                             </div>
                                                         </div>
                                                         <div>
-                                                            <div className='text-[10px] text-muted-foreground'>
+                                                            <div className='text-muted-foreground text-[10px]'>
                                                                 Duration
                                                             </div>
                                                             <div className='text-xs font-semibold'>
@@ -425,7 +425,7 @@ const LogsTab = () => {
                                                         </div>
                                                     </div>
                                                     {log.error_message && (
-                                                        <div className='mt-3 p-2 bg-destructive/10 rounded-lg text-xs text-destructive border border-destructive/20'>
+                                                        <div className='bg-destructive/10 text-destructive border-destructive/20 mt-3 rounded-lg border p-2 text-xs'>
                                                             {log.error_message}
                                                         </div>
                                                     )}

@@ -32,11 +32,11 @@ export function Step5FeatureLimits({ formData, setFormData }: StepProps) {
                 icon={Shield}
                 className='animate-in fade-in-0 slide-in-from-right-4 duration-300'
             >
-                <div className='grid grid-cols-1 md:grid-cols-3 gap-8'>
+                <div className='grid grid-cols-1 gap-8 md:grid-cols-3'>
                     <div className='space-y-4'>
                         <div className='flex items-center gap-3'>
-                            <div className='p-2 bg-primary/10 rounded-lg'>
-                                <Database className='h-5 w-5 text-primary' />
+                            <div className='bg-primary/10 rounded-lg p-2'>
+                                <Database className='text-primary h-5 w-5' />
                             </div>
                             <Label className='text-base font-semibold'>{t('admin.servers.form.database_limit')}</Label>
                         </div>
@@ -50,12 +50,12 @@ export function Step5FeatureLimits({ formData, setFormData }: StepProps) {
                             min={0}
                             className='bg-muted/30'
                         />
-                        <p className='text-xs text-muted-foreground'>{t('admin.servers.form.database_limit_help')}</p>
+                        <p className='text-muted-foreground text-xs'>{t('admin.servers.form.database_limit_help')}</p>
                     </div>
 
                     <div className='space-y-4'>
                         <div className='flex items-center gap-3'>
-                            <div className='p-2 bg-blue-500/10 rounded-lg'>
+                            <div className='rounded-lg bg-blue-500/10 p-2'>
                                 <Plug className='h-5 w-5 text-blue-500' />
                             </div>
                             <Label className='text-base font-semibold'>
@@ -72,12 +72,12 @@ export function Step5FeatureLimits({ formData, setFormData }: StepProps) {
                             min={0}
                             className='bg-muted/30'
                         />
-                        <p className='text-xs text-muted-foreground'>{t('admin.servers.form.allocation_limit_help')}</p>
+                        <p className='text-muted-foreground text-xs'>{t('admin.servers.form.allocation_limit_help')}</p>
                     </div>
 
                     <div className='space-y-4'>
                         <div className='flex items-center gap-3'>
-                            <div className='p-2 bg-emerald-500/10 rounded-lg'>
+                            <div className='rounded-lg bg-emerald-500/10 p-2'>
                                 <Archive className='h-5 w-5 text-emerald-500' />
                             </div>
                             <Label className='text-base font-semibold'>{t('admin.servers.form.backup_limit')}</Label>
@@ -92,7 +92,7 @@ export function Step5FeatureLimits({ formData, setFormData }: StepProps) {
                             min={0}
                             className='bg-muted/30'
                         />
-                        <p className='text-xs text-muted-foreground'>{t('admin.servers.form.backup_limit_help')}</p>
+                        <p className='text-muted-foreground text-xs'>{t('admin.servers.form.backup_limit_help')}</p>
                     </div>
                 </div>
             </PageCard>

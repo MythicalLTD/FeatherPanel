@@ -313,8 +313,8 @@ export default function ServerBackupsPage() {
     if (loading && backups.length === 0) {
         return (
             <div className='flex flex-col items-center justify-center py-24'>
-                <Loader2 className='h-12 w-12 animate-spin text-primary opacity-50' />
-                <p className='mt-4 text-muted-foreground font-medium animate-pulse'>{t('common.loading')}</p>
+                <Loader2 className='text-primary h-12 w-12 animate-spin opacity-50' />
+                <p className='text-muted-foreground mt-4 animate-pulse font-medium'>{t('common.loading')}</p>
             </div>
         );
     }
@@ -324,14 +324,14 @@ export default function ServerBackupsPage() {
     const limitReached = server && server.backup_limit > 0 && backupCountTotal >= server.backup_limit && !fifoRolling;
 
     return (
-        <div className='space-y-8 pb-12 '>
+        <div className='space-y-8 pb-12'>
             <PageHeader
                 title={t('serverBackups.title')}
                 description={
                     <div className='flex items-center gap-3'>
                         <span>{t('serverBackups.description')}</span>
                         {server && (
-                            <span className='px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-primary/5 text-primary border border-primary/20'>
+                            <span className='bg-primary/5 text-primary border-primary/20 rounded-full border px-3 py-1 text-[10px] font-black tracking-widest uppercase'>
                                 {backupCountTotal} / {server.backup_limit === 0 ? '∞' : server.backup_limit}
                                 {fifoRolling ? ' · FIFO' : ''}
                             </span>
@@ -341,7 +341,7 @@ export default function ServerBackupsPage() {
                 actions={
                     <div className='flex items-center gap-3'>
                         <Button variant='glass' size='default' onClick={() => fetchBackups()} disabled={loading}>
-                            <RefreshCw className={cn('h-5 w-5 mr-2', loading && 'animate-spin')} />
+                            <RefreshCw className={cn('mr-2 h-5 w-5', loading && 'animate-spin')} />
                             {t('serverBackups.refresh')}
                         </Button>
                         {canCreate && (
@@ -353,9 +353,9 @@ export default function ServerBackupsPage() {
                                     setIgnoredFiles([]);
                                     setCreateDialogOpen(true);
                                 }}
-                                className='active:scale-95 transition-all'
+                                className='transition-all active:scale-95'
                             >
-                                <Plus className='h-5 w-5 mr-2' />
+                                <Plus className='mr-2 h-5 w-5' />
                                 {t('serverBackups.createBackup')}
                             </Button>
                         )}
@@ -366,16 +366,16 @@ export default function ServerBackupsPage() {
             <WidgetRenderer widgets={getWidgets('server-backups', 'backup-header')} />
 
             {server && fifoRolling && server.backup_limit > 0 && (
-                <div className='relative overflow-hidden p-6 rounded-3xl bg-sky-500/10 border border-sky-500/20 backdrop-blur-xl animate-in slide-in-from-top duration-500'>
+                <div className='animate-in slide-in-from-top relative overflow-hidden rounded-3xl border border-sky-500/20 bg-sky-500/10 p-6 backdrop-blur-xl duration-500'>
                     <div className='relative z-10 flex items-start gap-5'>
-                        <div className='h-12 w-12 rounded-2xl bg-sky-500/20 flex items-center justify-center border border-sky-500/30'>
+                        <div className='flex h-12 w-12 items-center justify-center rounded-2xl border border-sky-500/30 bg-sky-500/20'>
                             <Info className='h-6 w-6 text-sky-500' />
                         </div>
                         <div className='space-y-1'>
-                            <h3 className='text-lg font-bold text-sky-600 dark:text-sky-400 leading-none'>
+                            <h3 className='text-lg leading-none font-bold text-sky-600 dark:text-sky-400'>
                                 {t('serverBackups.fifoRollingTitle')}
                             </h3>
-                            <p className='text-sm text-sky-600/85 dark:text-sky-400/85 leading-relaxed font-medium'>
+                            <p className='text-sm leading-relaxed font-medium text-sky-600/85 dark:text-sky-400/85'>
                                 {t('serverBackups.fifoRollingDescription', {
                                     limit: String(server.backup_limit),
                                 })}
@@ -386,16 +386,16 @@ export default function ServerBackupsPage() {
             )}
 
             {limitReached && (
-                <div className='relative overflow-hidden p-6 rounded-3xl bg-yellow-500/10 border border-yellow-500/20 backdrop-blur-xl animate-in slide-in-from-top duration-500'>
+                <div className='animate-in slide-in-from-top relative overflow-hidden rounded-3xl border border-yellow-500/20 bg-yellow-500/10 p-6 backdrop-blur-xl duration-500'>
                     <div className='relative z-10 flex items-start gap-5'>
-                        <div className='h-12 w-12 rounded-2xl bg-yellow-500/20 flex items-center justify-center border border-yellow-500/30'>
+                        <div className='flex h-12 w-12 items-center justify-center rounded-2xl border border-yellow-500/30 bg-yellow-500/20'>
                             <AlertTriangle className='h-6 w-6 text-yellow-500' />
                         </div>
                         <div className='space-y-1'>
-                            <h3 className='text-lg font-bold text-yellow-500 leading-none'>
+                            <h3 className='text-lg leading-none font-bold text-yellow-500'>
                                 {t('serverBackups.backupLimitReached')}
                             </h3>
-                            <p className='text-sm text-yellow-500/80 leading-relaxed font-medium'>
+                            <p className='text-sm leading-relaxed font-medium text-yellow-500/80'>
                                 {t('serverBackups.backupLimitReachedDescription', {
                                     limit: String(server?.backup_limit || 0),
                                 })}
@@ -407,11 +407,11 @@ export default function ServerBackupsPage() {
 
             <div className='space-y-6'>
                 <div className='flex items-center gap-4'>
-                    <div className='relative flex-1 group'>
-                        <Search className='absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground/80 group-focus-within:text-foreground transition-colors' />
+                    <div className='group relative flex-1'>
+                        <Search className='text-muted-foreground/80 group-focus-within:text-foreground absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 transition-colors' />
                         <Input
                             placeholder={t('serverBackups.searchPlaceholder')}
-                            className='pl-12 h-14 text-base'
+                            className='h-14 pl-12 text-base'
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
@@ -419,7 +419,7 @@ export default function ServerBackupsPage() {
                 </div>
 
                 {pagination.total > pagination.per_page && (
-                    <div className='flex items-center justify-between gap-4 py-3 px-4 rounded-xl border border-border bg-card/50'>
+                    <div className='border-border bg-card/50 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
                         <Button
                             variant='glass'
                             size='sm'
@@ -466,7 +466,7 @@ export default function ServerBackupsPage() {
                                     }}
                                     className='h-14 px-10 text-lg'
                                 >
-                                    <Plus className='h-6 w-6 mr-2' />
+                                    <Plus className='mr-2 h-6 w-6' />
                                     {t('serverBackups.createBackup')}
                                 </Button>
                             ) : undefined
@@ -501,9 +501,9 @@ export default function ServerBackupsPage() {
                                     <>
                                         <span
                                             className={cn(
-                                                'px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest leading-none',
+                                                'rounded-full px-3 py-1 text-[10px] leading-none font-black tracking-widest uppercase',
                                                 !backup.completed_at && !backup.is_successful
-                                                    ? 'bg-blue-500 text-white animate-pulse'
+                                                    ? 'animate-pulse bg-blue-500 text-white'
                                                     : backup.is_successful
                                                       ? 'bg-emerald-500 text-white'
                                                       : 'bg-red-500 text-white',
@@ -516,7 +516,7 @@ export default function ServerBackupsPage() {
                                                   : t('serverBackups.statusFailed')}
                                         </span>
                                         {backup.is_locked === 1 && (
-                                            <span className='bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 leading-none'>
+                                            <span className='flex items-center gap-1.5 rounded-full border border-yellow-500/20 bg-yellow-500/10 px-3 py-1 text-[10px] leading-none font-black tracking-widest text-yellow-500 uppercase'>
                                                 <Lock className='h-3 w-3' />
                                                 {t('serverBackups.statusLocked')}
                                             </span>
@@ -525,19 +525,19 @@ export default function ServerBackupsPage() {
                                 }
                                 description={
                                     <div className='flex flex-wrap items-center gap-x-6 gap-y-2'>
-                                        <div className='flex items-center gap-2 text-muted-foreground'>
+                                        <div className='text-muted-foreground flex items-center gap-2'>
                                             <HardDrive className='h-4 w-4 opacity-50' />
                                             <span className='text-sm font-semibold'>
                                                 {formatMib(backup.bytes / 1024 / 1024)}
                                             </span>
                                         </div>
-                                        <div className='flex items-center gap-2 text-muted-foreground'>
+                                        <div className='text-muted-foreground flex items-center gap-2'>
                                             <Database className='h-4 w-4 opacity-50' />
-                                            <span className='text-sm font-semibold uppercase tracking-tight'>
+                                            <span className='text-sm font-semibold tracking-tight uppercase'>
                                                 {backup.disk}
                                             </span>
                                         </div>
-                                        <div className='flex items-center gap-2 text-muted-foreground'>
+                                        <div className='text-muted-foreground flex items-center gap-2'>
                                             <Calendar className='h-4 w-4 opacity-50' />
                                             <span className='text-sm font-semibold'>
                                                 {new Date(backup.created_at).toLocaleString()}
@@ -548,12 +548,12 @@ export default function ServerBackupsPage() {
                                 actions={
                                     (canRestore || canDownload || canDelete) && (
                                         <DropdownMenu>
-                                            <DropdownMenuTrigger className='h-12 w-12 rounded-xl group-hover:bg-primary/10 transition-colors flex items-center justify-center outline-none'>
-                                                <MoreVertical className='h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors' />
+                                            <DropdownMenuTrigger className='group-hover:bg-primary/10 flex h-12 w-12 items-center justify-center rounded-xl transition-colors outline-none'>
+                                                <MoreVertical className='text-muted-foreground group-hover:text-primary h-6 w-6 transition-colors' />
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent
                                                 align='end'
-                                                className='w-56 bg-card/90 backdrop-blur-xl border-border/40 p-2 rounded-2xl'
+                                                className='bg-card/90 border-border/40 w-56 rounded-2xl p-2 backdrop-blur-xl'
                                             >
                                                 {canRestore && backup.is_successful === 1 && (
                                                     <DropdownMenuItem
@@ -562,7 +562,7 @@ export default function ServerBackupsPage() {
                                                             setBackupToRestore(backup);
                                                             setRestoreDialogOpen(true);
                                                         }}
-                                                        className='flex items-center gap-3 p-3 rounded-xl cursor-pointer'
+                                                        className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
                                                     >
                                                         <RotateCcw className='h-4 w-4 text-emerald-500' />
                                                         <span className='font-bold'>{t('serverBackups.restore')}</span>
@@ -571,7 +571,7 @@ export default function ServerBackupsPage() {
                                                 {canDownload && backup.is_successful === 1 && (
                                                     <DropdownMenuItem
                                                         onClick={() => handleDownloadBackup(backup)}
-                                                        className='flex items-center gap-3 p-3 rounded-xl cursor-pointer'
+                                                        className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
                                                     >
                                                         <Download className='h-4 w-4 text-blue-500' />
                                                         <span className='font-bold'>{t('serverBackups.download')}</span>
@@ -581,7 +581,7 @@ export default function ServerBackupsPage() {
                                                     <DropdownMenuItem
                                                         disabled={backup.is_locked === 1}
                                                         onClick={() => handleDeleteBackup(backup)}
-                                                        className='flex items-center gap-3 p-3 rounded-xl cursor-pointer text-red-500 focus:text-red-500 focus:bg-red-500/10'
+                                                        className='flex cursor-pointer items-center gap-3 rounded-xl p-3 text-red-500 focus:bg-red-500/10 focus:text-red-500'
                                                     >
                                                         <Trash2 className='h-4 w-4' />
                                                         <span className='font-bold'>{t('serverBackups.delete')}</span>
@@ -590,7 +590,7 @@ export default function ServerBackupsPage() {
                                                 <DropdownMenuSeparator className='bg-border/40 my-1' />
                                                 <DropdownMenuItem
                                                     onClick={() => handleLockBackup(backup, backup.is_locked === 0)}
-                                                    className='flex items-center gap-3 p-3 rounded-xl cursor-pointer'
+                                                    className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
                                                 >
                                                     {backup.is_locked === 1 ? (
                                                         <>
@@ -616,8 +616,8 @@ export default function ServerBackupsPage() {
                 )}
 
                 {pagination.total > pagination.per_page && (
-                    <div className='flex items-center justify-between py-8 border-t border-border/40 px-6'>
-                        <p className='text-sm font-bold opacity-40 uppercase tracking-widest'>
+                    <div className='border-border/40 flex items-center justify-between border-t px-6 py-8'>
+                        <p className='text-sm font-bold tracking-widest uppercase opacity-40'>
                             {t('serverActivities.pagination.showing', {
                                 from: String((pagination.current_page - 1) * pagination.per_page + 1),
                                 to: String(Math.min(pagination.current_page * pagination.per_page, pagination.total)),
@@ -633,11 +633,11 @@ export default function ServerBackupsPage() {
                                     setPage((p) => p - 1);
                                     fetchBackups(pagination.current_page - 1);
                                 }}
-                                className='h-10 w-10 p-0 rounded-xl'
+                                className='h-10 w-10 rounded-xl p-0'
                             >
                                 <ChevronLeft className='h-5 w-5' />
                             </Button>
-                            <span className='h-10 px-4 rounded-xl text-sm font-black bg-primary/5 text-primary border border-primary/20 flex items-center justify-center min-w-12'>
+                            <span className='bg-primary/5 text-primary border-primary/20 flex h-10 min-w-12 items-center justify-center rounded-xl border px-4 text-sm font-black'>
                                 {pagination.current_page} / {pagination.last_page}
                             </span>
                             <Button
@@ -648,7 +648,7 @@ export default function ServerBackupsPage() {
                                     setPage((p) => p + 1);
                                     fetchBackups(pagination.current_page + 1);
                                 }}
-                                className='h-10 w-10 p-0 rounded-xl'
+                                className='h-10 w-10 rounded-xl p-0'
                             >
                                 <ChevronRight className='h-5 w-5' />
                             </Button>
@@ -663,11 +663,11 @@ export default function ServerBackupsPage() {
                 <div className='space-y-6 p-2'>
                     <DialogHeader>
                         <div className='flex items-center gap-4'>
-                            <div className='h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20'>
-                                <Plus className='h-6 w-6 text-primary' />
+                            <div className='bg-primary/10 border-primary/20 flex h-12 w-12 items-center justify-center rounded-xl border'>
+                                <Plus className='text-primary h-6 w-6' />
                             </div>
                             <div className='space-y-0.5'>
-                                <DialogTitle className='text-xl font-bold leading-none'>
+                                <DialogTitle className='text-xl leading-none font-bold'>
                                     {t('serverBackups.createBackup')}
                                 </DialogTitle>
                                 <DialogDescription className='text-sm opacity-70'>
@@ -680,7 +680,7 @@ export default function ServerBackupsPage() {
                     <form onSubmit={handleCreateBackup} className='space-y-6'>
                         <div className='space-y-4'>
                             <div className='space-y-2 px-1'>
-                                <label className='text-[10px] uppercase font-bold opacity-40 tracking-widest ml-1'>
+                                <label className='ml-1 text-[10px] font-bold tracking-widest uppercase opacity-40'>
                                     {t('serverBackups.name')}
                                 </label>
                                 <Input
@@ -688,12 +688,12 @@ export default function ServerBackupsPage() {
                                     onChange={(e) => setNewBackupName(e.target.value)}
                                     placeholder={t('serverBackups.namePlaceholder')}
                                     required
-                                    className='h-12 bg-black/20 border-white/5 focus:border-primary/50 transition-all rounded-xl'
+                                    className='focus:border-primary/50 h-12 rounded-xl border-white/5 bg-black/20 transition-all'
                                 />
                             </div>
 
                             <div className='space-y-3 px-1'>
-                                <label className='text-[10px] uppercase font-bold opacity-40 tracking-widest ml-1'>
+                                <label className='ml-1 text-[10px] font-bold tracking-widest uppercase opacity-40'>
                                     {t('serverBackups.ignoreFiles')}
                                 </label>
                                 <div className='flex gap-2'>
@@ -701,39 +701,39 @@ export default function ServerBackupsPage() {
                                         value={newIgnorePattern}
                                         onChange={(e) => setNewIgnorePattern(e.target.value)}
                                         placeholder={t('serverBackups.ignoreFilesPlaceholder')}
-                                        className='h-12 bg-black/20 border-white/5 focus:border-primary/50 transition-all rounded-xl'
+                                        className='focus:border-primary/50 h-12 rounded-xl border-white/5 bg-black/20 transition-all'
                                         onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addIgnorePattern())}
                                     />
                                     <Button
                                         type='button'
                                         variant='glass'
-                                        className='h-12 px-5 rounded-xl bg-background/50 hover:bg-background border-border/40'
+                                        className='bg-background/50 hover:bg-background border-border/40 h-12 rounded-xl px-5'
                                         onClick={addIgnorePattern}
                                     >
                                         <Plus className='h-5 w-5' />
                                     </Button>
                                 </div>
-                                <p className='text-[10px] text-muted-foreground italic leading-relaxed px-1'>
+                                <p className='text-muted-foreground px-1 text-[10px] leading-relaxed italic'>
                                     {t('serverBackups.ignoreFilesHelp')}
                                 </p>
 
                                 {ignoredFiles.length > 0 && (
-                                    <div className='space-y-2 pt-2 px-1'>
-                                        <div className='flex items-center gap-1.5 text-[10px] font-bold uppercase opacity-40 tracking-widest ml-1'>
+                                    <div className='space-y-2 px-1 pt-2'>
+                                        <div className='ml-1 flex items-center gap-1.5 text-[10px] font-bold tracking-widest uppercase opacity-40'>
                                             <FileX className='h-3 w-3' />
                                             {t('serverBackups.ignoreFilesList')}
                                         </div>
-                                        <div className='flex flex-wrap gap-2 max-h-32 overflow-y-auto p-2 bg-black/20 rounded-xl border border-white/5'>
+                                        <div className='flex max-h-32 flex-wrap gap-2 overflow-y-auto rounded-xl border border-white/5 bg-black/20 p-2'>
                                             {ignoredFiles.map((pattern, i) => (
                                                 <span
                                                     key={i}
-                                                    className='flex items-center bg-red-500/5 text-red-500 border border-red-500/20 py-1.5 pl-3 pr-2 rounded-lg gap-2 font-mono text-[10px]'
+                                                    className='flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/5 py-1.5 pr-2 pl-3 font-mono text-[10px] text-red-500'
                                                 >
                                                     {pattern}
                                                     <button
                                                         type='button'
                                                         onClick={() => removeIgnorePattern(pattern)}
-                                                        className='hover:bg-red-500/10 rounded-sm p-0.5 transition-colors'
+                                                        className='rounded-sm p-0.5 transition-colors hover:bg-red-500/10'
                                                     >
                                                         <Trash2 className='h-3 w-3' />
                                                     </button>
@@ -745,7 +745,7 @@ export default function ServerBackupsPage() {
                             </div>
                         </div>
 
-                        <DialogFooter className='border-t border-border/40 pt-6 mt-4 px-1'>
+                        <DialogFooter className='border-border/40 mt-4 border-t px-1 pt-6'>
                             <Button
                                 type='button'
                                 variant='ghost'
@@ -766,11 +766,11 @@ export default function ServerBackupsPage() {
                 <div className='space-y-6 p-2'>
                     <DialogHeader>
                         <div className='flex items-center gap-4'>
-                            <div className='h-12 w-12 rounded-xl bg-orange-500/10 flex items-center justify-center border border-orange-500/20'>
+                            <div className='flex h-12 w-12 items-center justify-center rounded-xl border border-orange-500/20 bg-orange-500/10'>
                                 <RotateCcw className='h-6 w-6 text-orange-500' />
                             </div>
                             <div className='space-y-0.5'>
-                                <DialogTitle className='text-xl font-bold leading-none'>
+                                <DialogTitle className='text-xl leading-none font-bold'>
                                     {t('serverBackups.confirmRestoreTitle')}
                                 </DialogTitle>
                                 <DialogDescription className='text-sm opacity-70'>
@@ -780,21 +780,21 @@ export default function ServerBackupsPage() {
                         </div>
                     </DialogHeader>
 
-                    <div className='rounded-2xl border border-orange-500/20 bg-orange-500/5 p-5 backdrop-blur-sm space-y-3 mx-1'>
+                    <div className='mx-1 space-y-3 rounded-2xl border border-orange-500/20 bg-orange-500/5 p-5 backdrop-blur-sm'>
                         <div className='flex items-center gap-3 text-orange-500'>
                             <AlertTriangle className='h-5 w-5' />
-                            <h4 className='text-[10px] font-black uppercase tracking-widest leading-none'>
+                            <h4 className='text-[10px] leading-none font-black tracking-widest uppercase'>
                                 {t('serverBackups.caution')}
                             </h4>
                         </div>
-                        <p className='text-sm text-orange-700/80 dark:text-orange-500/80 leading-relaxed font-medium'>
+                        <p className='text-sm leading-relaxed font-medium text-orange-700/80 dark:text-orange-500/80'>
                             {t('serverBackups.truncateDirectoryHelp')}
                         </p>
                     </div>
 
                     <form onSubmit={handleRestoreBackup} className='space-y-6'>
                         <div
-                            className='flex items-center gap-4 p-5 bg-black/20 rounded-3xl border border-white/5 cursor-pointer group hover:bg-black/30 transition-all mx-1'
+                            className='group mx-1 flex cursor-pointer items-center gap-4 rounded-3xl border border-white/5 bg-black/20 p-5 transition-all hover:bg-black/30'
                             onClick={() => setTruncateDirectory(!truncateDirectory)}
                         >
                             <Checkbox
@@ -806,17 +806,17 @@ export default function ServerBackupsPage() {
                             <div className='space-y-0.5'>
                                 <label
                                     htmlFor='truncate-directory'
-                                    className='text-sm font-bold cursor-pointer group-hover:text-primary transition-colors block leading-tight'
+                                    className='group-hover:text-primary block cursor-pointer text-sm leading-tight font-bold transition-colors'
                                 >
                                     {t('serverBackups.truncateDirectory')}
                                 </label>
-                                <p className='text-[10px] opacity-40 font-bold uppercase tracking-tighter'>
+                                <p className='text-[10px] font-bold tracking-tighter uppercase opacity-40'>
                                     {t('serverBackups.truncateDirectoryDescription')}
                                 </p>
                             </div>
                         </div>
 
-                        <DialogFooter className='border-t border-border/40 pt-6 mt-4 px-1'>
+                        <DialogFooter className='border-border/40 mt-4 border-t px-1 pt-6'>
                             <Button
                                 type='button'
                                 variant='ghost'
@@ -848,20 +848,20 @@ export default function ServerBackupsPage() {
                         <div className='flex items-center gap-4'>
                             <div
                                 className={cn(
-                                    'h-12 w-12 rounded-xl flex items-center justify-center border',
+                                    'flex h-12 w-12 items-center justify-center rounded-xl border',
                                     confirmAction?.variant === 'destructive'
-                                        ? 'bg-red-500/10 border-red-500/20'
+                                        ? 'border-red-500/20 bg-red-500/10'
                                         : 'bg-primary/10 border-primary/20',
                                 )}
                             >
                                 {confirmAction?.variant === 'destructive' ? (
                                     <Trash2 className='h-6 w-6 text-red-500' />
                                 ) : (
-                                    <Info className='h-6 w-6 text-primary' />
+                                    <Info className='text-primary h-6 w-6' />
                                 )}
                             </div>
                             <div className='space-y-0.5'>
-                                <DialogTitle className='text-xl font-bold leading-none'>
+                                <DialogTitle className='text-xl leading-none font-bold'>
                                     {confirmAction?.title}
                                 </DialogTitle>
                                 <DialogDescription className='text-sm opacity-70'>
@@ -871,17 +871,17 @@ export default function ServerBackupsPage() {
                         </div>
                     </DialogHeader>
 
-                    <DialogFooter className='border-t border-border/40 pt-6 mt-4 px-1'>
+                    <DialogFooter className='border-border/40 mt-4 border-t px-1 pt-6'>
                         <Button
                             variant='ghost'
-                            className='h-12 flex-1 font-bold rounded-xl'
+                            className='h-12 flex-1 rounded-xl font-bold'
                             onClick={() => setConfirmDialogOpen(false)}
                         >
                             {t('common.cancel')}
                         </Button>
                         <Button
                             variant={confirmAction?.variant === 'destructive' ? 'destructive' : 'default'}
-                            className='h-12 flex-1 font-bold rounded-xl'
+                            className='h-12 flex-1 rounded-xl font-bold'
                             onClick={async () => {
                                 setActionLoading(true);
                                 try {

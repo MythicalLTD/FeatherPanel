@@ -66,27 +66,27 @@ export function Step6Review({ formData, setFormData, selectedEntities }: StepPro
             >
                 <div className='space-y-8'>
                     <div className='space-y-4'>
-                        <h3 className='text-lg font-semibold flex items-center gap-2'>
-                            <ServerIcon className='h-5 w-5 text-primary' />
+                        <h3 className='flex items-center gap-2 text-lg font-semibold'>
+                            <ServerIcon className='text-primary h-5 w-5' />
                             {t('admin.servers.form.wizard.review.core_details')}
                         </h3>
-                        <div className='grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-muted/20 rounded-xl'>
+                        <div className='bg-muted/20 grid grid-cols-1 gap-4 rounded-xl p-4 md:grid-cols-2'>
                             <div>
-                                <span className='text-sm text-muted-foreground'>
+                                <span className='text-muted-foreground text-sm'>
                                     {t('admin.servers.form.wizard.review.server_name')}
                                 </span>
                                 <p className='font-medium'>{formData.name || noValue}</p>
                             </div>
                             <div>
-                                <span className='text-sm text-muted-foreground'>
+                                <span className='text-muted-foreground text-sm'>
                                     {t('admin.servers.form.wizard.review.owner')}
                                 </span>
                                 <div className='flex items-center gap-2'>
-                                    <UserIcon className='h-4 w-4 text-primary' />
+                                    <UserIcon className='text-primary h-4 w-4' />
                                     <p className='font-medium'>
                                         {selectedEntities.owner?.username || noValue}
                                         {selectedEntities.owner?.email && (
-                                            <span className='text-muted-foreground text-sm ml-1'>
+                                            <span className='text-muted-foreground ml-1 text-sm'>
                                                 ({selectedEntities.owner.email})
                                             </span>
                                         )}
@@ -95,7 +95,7 @@ export function Step6Review({ formData, setFormData, selectedEntities }: StepPro
                             </div>
                             {formData.description && (
                                 <div className='md:col-span-2'>
-                                    <span className='text-sm text-muted-foreground'>
+                                    <span className='text-muted-foreground text-sm'>
                                         {t('admin.servers.form.wizard.review.description')}
                                     </span>
                                     <p className='font-medium'>{formData.description}</p>
@@ -105,28 +105,28 @@ export function Step6Review({ formData, setFormData, selectedEntities }: StepPro
                     </div>
 
                     <div className='space-y-4'>
-                        <h3 className='text-lg font-semibold flex items-center gap-2'>
+                        <h3 className='flex items-center gap-2 text-lg font-semibold'>
                             <Plug className='h-5 w-5 text-blue-500' />
                             {t('admin.servers.form.wizard.review.allocation')}
                         </h3>
-                        <div className='grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-muted/20 rounded-xl'>
+                        <div className='bg-muted/20 grid grid-cols-1 gap-4 rounded-xl p-4 md:grid-cols-3'>
                             <div>
-                                <span className='text-sm text-muted-foreground'>
+                                <span className='text-muted-foreground text-sm'>
                                     {t('admin.servers.form.wizard.review.location')}
                                 </span>
                                 <div className='flex items-center gap-2'>
-                                    <MapPin className='h-4 w-4 text-primary' />
+                                    <MapPin className='text-primary h-4 w-4' />
                                     <p className='font-medium'>{selectedEntities.location?.name || noValue}</p>
                                 </div>
                             </div>
                             <div>
-                                <span className='text-sm text-muted-foreground'>
+                                <span className='text-muted-foreground text-sm'>
                                     {t('admin.servers.form.wizard.review.node')}
                                 </span>
                                 <p className='font-medium'>{selectedEntities.node?.name || noValue}</p>
                             </div>
                             <div>
-                                <span className='text-sm text-muted-foreground'>
+                                <span className='text-muted-foreground text-sm'>
                                     {t('admin.servers.form.wizard.review.allocation')}
                                 </span>
                                 <p className='font-medium'>
@@ -139,43 +139,43 @@ export function Step6Review({ formData, setFormData, selectedEntities }: StepPro
                     </div>
 
                     <div className='space-y-4'>
-                        <h3 className='text-lg font-semibold flex items-center gap-2'>
+                        <h3 className='flex items-center gap-2 text-lg font-semibold'>
                             <Wand2 className='h-5 w-5 text-purple-500' />
                             {t('admin.servers.form.wizard.review.application')}
                         </h3>
-                        <div className='grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-muted/20 rounded-xl'>
+                        <div className='bg-muted/20 grid grid-cols-1 gap-4 rounded-xl p-4 md:grid-cols-3'>
                             <div>
-                                <span className='text-sm text-muted-foreground'>
+                                <span className='text-muted-foreground text-sm'>
                                     {t('admin.servers.form.wizard.review.realm')}
                                 </span>
                                 <div className='flex items-center gap-2'>
-                                    <Box className='h-4 w-4 text-primary' />
+                                    <Box className='text-primary h-4 w-4' />
                                     <p className='font-medium'>{selectedEntities.realm?.name || noValue}</p>
                                 </div>
                             </div>
                             <div>
-                                <span className='text-sm text-muted-foreground'>
+                                <span className='text-muted-foreground text-sm'>
                                     {t('admin.servers.form.wizard.review.spell')}
                                 </span>
                                 <p className='font-medium'>{selectedEntities.spell?.name || noValue}</p>
                             </div>
                             <div>
-                                <span className='text-sm text-muted-foreground'>
+                                <span className='text-muted-foreground text-sm'>
                                     {t('admin.servers.form.wizard.review.docker_image')}
                                 </span>
-                                <p className='font-medium text-xs break-all'>{formData.dockerImage || noValue}</p>
+                                <p className='text-xs font-medium break-all'>{formData.dockerImage || noValue}</p>
                             </div>
                         </div>
                     </div>
 
                     <div className='space-y-4'>
-                        <h3 className='text-lg font-semibold flex items-center gap-2'>
+                        <h3 className='flex items-center gap-2 text-lg font-semibold'>
                             <Cpu className='h-5 w-5 text-orange-500' />
                             {t('admin.servers.form.wizard.review.resource_limits')}
                         </h3>
-                        <div className='grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-muted/20 rounded-xl'>
+                        <div className='bg-muted/20 grid grid-cols-2 gap-4 rounded-xl p-4 md:grid-cols-4'>
                             <div>
-                                <span className='text-sm text-muted-foreground flex items-center gap-1'>
+                                <span className='text-muted-foreground flex items-center gap-1 text-sm'>
                                     <MemoryStick className='h-3 w-3' />
                                     {t('admin.servers.form.wizard.review.memory')}
                                 </span>
@@ -184,14 +184,14 @@ export function Step6Review({ formData, setFormData, selectedEntities }: StepPro
                                 </p>
                             </div>
                             <div>
-                                <span className='text-sm text-muted-foreground flex items-center gap-1'>
+                                <span className='text-muted-foreground flex items-center gap-1 text-sm'>
                                     <MemoryStick className='h-3 w-3' />
                                     {t('admin.servers.form.wizard.review.swap')}
                                 </span>
                                 <p className='font-medium'>{formatSwapValue()}</p>
                             </div>
                             <div>
-                                <span className='text-sm text-muted-foreground flex items-center gap-1'>
+                                <span className='text-muted-foreground flex items-center gap-1 text-sm'>
                                     <HardDrive className='h-3 w-3' />
                                     {t('admin.servers.form.wizard.review.disk')}
                                 </span>
@@ -200,7 +200,7 @@ export function Step6Review({ formData, setFormData, selectedEntities }: StepPro
                                 </p>
                             </div>
                             <div>
-                                <span className='text-sm text-muted-foreground flex items-center gap-1'>
+                                <span className='text-muted-foreground flex items-center gap-1 text-sm'>
                                     <Cpu className='h-3 w-3' />
                                     {t('admin.servers.form.wizard.review.cpu')}
                                 </span>
@@ -210,25 +210,25 @@ export function Step6Review({ formData, setFormData, selectedEntities }: StepPro
                     </div>
 
                     <div className='space-y-4'>
-                        <h3 className='text-lg font-semibold flex items-center gap-2'>
+                        <h3 className='flex items-center gap-2 text-lg font-semibold'>
                             <Database className='h-5 w-5 text-emerald-500' />
                             {t('admin.servers.form.wizard.review.feature_limits')}
                         </h3>
-                        <div className='grid grid-cols-3 gap-4 p-4 bg-muted/20 rounded-xl'>
+                        <div className='bg-muted/20 grid grid-cols-3 gap-4 rounded-xl p-4'>
                             <div>
-                                <span className='text-sm text-muted-foreground'>
+                                <span className='text-muted-foreground text-sm'>
                                     {t('admin.servers.form.wizard.review.databases')}
                                 </span>
                                 <p className='font-medium'>{formData.databaseLimit}</p>
                             </div>
                             <div>
-                                <span className='text-sm text-muted-foreground'>
+                                <span className='text-muted-foreground text-sm'>
                                     {t('admin.servers.form.wizard.review.allocations')}
                                 </span>
                                 <p className='font-medium'>{formData.allocationLimit}</p>
                             </div>
                             <div>
-                                <span className='text-sm text-muted-foreground flex items-center gap-1'>
+                                <span className='text-muted-foreground flex items-center gap-1 text-sm'>
                                     <Archive className='h-3 w-3' />
                                     {t('admin.servers.form.wizard.review.backups')}
                                 </span>
@@ -238,7 +238,7 @@ export function Step6Review({ formData, setFormData, selectedEntities }: StepPro
                     </div>
 
                     <div className='space-y-4'>
-                        <h3 className='text-lg font-semibold flex items-center gap-2'>
+                        <h3 className='flex items-center gap-2 text-lg font-semibold'>
                             <Terminal className='h-5 w-5 text-cyan-500' />
                             {t('admin.servers.form.wizard.review.startup_command')}
                         </h3>
@@ -250,7 +250,7 @@ export function Step6Review({ formData, setFormData, selectedEntities }: StepPro
                                 placeholder={t('admin.servers.form.startup_command')}
                                 className='bg-muted/30 font-mono text-sm'
                             />
-                            <p className='text-xs text-muted-foreground'>
+                            <p className='text-muted-foreground text-xs'>
                                 {t('admin.servers.form.startup_command_help')}
                             </p>
                         </div>

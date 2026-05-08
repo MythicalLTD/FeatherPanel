@@ -142,19 +142,19 @@ export default function ContentAnalyticsPage() {
 
     if (loading) {
         return (
-            <div className='flex items-center justify-center min-h-[400px]'>
-                <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-primary'></div>
+            <div className='flex min-h-[400px] items-center justify-center'>
+                <div className='border-primary h-8 w-8 animate-spin rounded-full border-b-2'></div>
             </div>
         );
     }
 
     if (error) {
         return (
-            <div className='flex flex-col items-center justify-center min-h-[400px] text-center'>
-                <p className='text-red-500 mb-4'>{error}</p>
+            <div className='flex min-h-[400px] flex-col items-center justify-center text-center'>
+                <p className='mb-4 text-red-500'>{error}</p>
                 <button
                     onClick={fetchData}
-                    className='px-4 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-opacity'
+                    className='bg-primary text-primary-foreground rounded-md px-4 py-2 transition-opacity hover:opacity-90'
                 >
                     {t('admin.analytics.activity.retry')}
                 </button>
@@ -181,7 +181,7 @@ export default function ContentAnalyticsPage() {
                                 count: String(overview.realms.with_spells),
                             })}
                             icon={Box}
-                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                            className='bg-card/50 shadow-none! backdrop-blur-sm'
                         />
                         <ResourceCard
                             title={overview.spells.total.toString()}
@@ -190,35 +190,35 @@ export default function ContentAnalyticsPage() {
                                 percentage: String(overview.spells.percentage_in_use),
                             })}
                             icon={Layers}
-                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                            className='bg-card/50 shadow-none! backdrop-blur-sm'
                         />
                         <ResourceCard
                             title={overview.images.total.toString()}
                             subtitle={t('admin.analytics.content.images')}
                             description={t('admin.analytics.content.library')}
                             icon={ImageIcon}
-                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                            className='bg-card/50 shadow-none! backdrop-blur-sm'
                         />
                         <ResourceCard
                             title={overview.redirects.total.toString()}
                             subtitle={t('admin.analytics.content.redirects')}
                             description={t('admin.analytics.content.active_links')}
                             icon={ExternalLink}
-                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                            className='bg-card/50 shadow-none! backdrop-blur-sm'
                         />
                         <ResourceCard
                             title={(spellOverview?.with_variables ?? 0).toString()}
                             subtitle='Spells with variables'
                             description={`Privileged scripts: ${spellOverview?.privileged_scripts ?? 0}`}
                             icon={ShieldAlert}
-                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                            className='bg-card/50 shadow-none! backdrop-blur-sm'
                         />
                         <ResourceCard
                             title={mailTemplatesTotal.toString()}
                             subtitle='Mail templates'
                             description='Templates available for notifications'
                             icon={Mail}
-                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                            className='bg-card/50 shadow-none! backdrop-blur-sm'
                         />
                     </div>
                 )}

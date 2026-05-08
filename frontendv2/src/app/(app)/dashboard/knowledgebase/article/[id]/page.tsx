@@ -103,8 +103,8 @@ export default function ArticlePage({ params }: { params: Promise<{ id: string }
     if (loading) {
         return (
             <div className='flex h-[50vh] items-center justify-center'>
-                <div className='flex items-center gap-3 text-muted-foreground'>
-                    <div className='animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent' />
+                <div className='text-muted-foreground flex items-center gap-3'>
+                    <div className='border-primary h-6 w-6 animate-spin rounded-full border-2 border-t-transparent' />
                     <span>{t('dashboard.knowledgebase.loadingArticle')}</span>
                 </div>
             </div>
@@ -114,7 +114,7 @@ export default function ArticlePage({ params }: { params: Promise<{ id: string }
     if (!article) return null;
 
     return (
-        <div className='max-w-4xl mx-auto space-y-6 flex flex-col pt-2 pb-12'>
+        <div className='mx-auto flex max-w-4xl flex-col space-y-6 pt-2 pb-12'>
             <WidgetRenderer widgets={getWidgets('dashboard-knowledgebase-article', 'top-of-page')} />
 
             <div className='flex items-center gap-4 px-1'>
@@ -122,14 +122,14 @@ export default function ArticlePage({ params }: { params: Promise<{ id: string }
                     <Button
                         variant='ghost'
                         size='icon'
-                        className='rounded-full h-10 w-10 border border-border/50 hover:bg-card'
+                        className='border-border/50 hover:bg-card h-10 w-10 rounded-full border'
                     >
                         <ChevronLeft className='h-5 w-5' />
                     </Button>
                 </Link>
                 <div>
-                    <h1 className='text-3xl font-bold tracking-tight text-foreground'>{article.title}</h1>
-                    <div className='flex items-center gap-2 text-sm text-muted-foreground mt-1'>
+                    <h1 className='text-foreground text-3xl font-bold tracking-tight'>{article.title}</h1>
+                    <div className='text-muted-foreground mt-1 flex items-center gap-2 text-sm'>
                         <span>{article.category?.name}</span>
                         <span>•</span>
                         <span>{new Date(article.updated_at).toLocaleDateString()}</span>
@@ -139,19 +139,19 @@ export default function ArticlePage({ params }: { params: Promise<{ id: string }
             </div>
 
             <WidgetRenderer widgets={getWidgets('dashboard-knowledgebase-article', 'before-article-content')} />
-            <div className='bg-card rounded-xl border border-border/50 shadow-sm overflow-hidden'>
+            <div className='bg-card border-border/50 overflow-hidden rounded-xl border shadow-sm'>
                 <div className='p-8'>
                     <div className='prose prose-blue dark:prose-invert max-w-none'>
                         <ReactMarkdown
                             remarkPlugins={[remarkGfm]}
                             components={{
                                 p: ({ children }) => (
-                                    <p className='leading-relaxed mb-4 text-muted-foreground/90'>{children}</p>
+                                    <p className='text-muted-foreground/90 mb-4 leading-relaxed'>{children}</p>
                                 ),
                                 code: ({ inline, children, ...props }: MarkdownCodeProps) => {
                                     if (inline) {
                                         return (
-                                            <code className='bg-muted px-1.5 py-0.5 rounded text-primary font-mono text-sm'>
+                                            <code className='bg-muted text-primary rounded px-1.5 py-0.5 font-mono text-sm'>
                                                 {children}
                                             </code>
                                         );
@@ -163,12 +163,12 @@ export default function ArticlePage({ params }: { params: Promise<{ id: string }
                                     );
                                 },
                                 pre: ({ children }) => (
-                                    <pre className='bg-muted/50 p-4 rounded-xl border border-border/50 overflow-x-auto my-6'>
+                                    <pre className='bg-muted/50 border-border/50 my-6 overflow-x-auto rounded-xl border p-4'>
                                         {children}
                                     </pre>
                                 ),
                                 blockquote: ({ children }) => (
-                                    <blockquote className='border-l-4 border-primary/30 pl-4 italic text-muted-foreground my-6'>
+                                    <blockquote className='border-primary/30 text-muted-foreground my-6 border-l-4 pl-4 italic'>
                                         {children}
                                     </blockquote>
                                 ),
@@ -176,7 +176,7 @@ export default function ArticlePage({ params }: { params: Promise<{ id: string }
                                     <img
                                         {...props}
                                         alt={props.alt || ''}
-                                        className='rounded-xl border border-border/50 shadow-md my-8 mx-auto block max-w-full'
+                                        className='border-border/50 mx-auto my-8 block max-w-full rounded-xl border shadow-md'
                                     />
                                 ),
                                 a: ({ node, href, children, ...props }) => {
@@ -185,42 +185,42 @@ export default function ArticlePage({ params }: { params: Promise<{ id: string }
                                             <img
                                                 src={href}
                                                 alt={typeof children === 'string' ? children : ''}
-                                                className='rounded-xl border border-border/50 shadow-md my-8 mx-auto block max-w-full'
+                                                className='border-border/50 mx-auto my-8 block max-w-full rounded-xl border shadow-md'
                                             />
                                         );
                                     }
                                     return (
-                                        <a {...props} href={href} className='text-primary hover:underline font-medium'>
+                                        <a {...props} href={href} className='text-primary font-medium hover:underline'>
                                             {children}
                                         </a>
                                     );
                                 },
                                 table: ({ children }) => (
-                                    <div className='overflow-x-auto my-6'>
+                                    <div className='my-6 overflow-x-auto'>
                                         <table className='w-full border-collapse text-sm'>{children}</table>
                                     </div>
                                 ),
                                 thead: ({ children }) => <thead className='bg-muted/50'>{children}</thead>,
                                 tbody: ({ children }) => (
-                                    <tbody className='divide-y divide-border/50'>{children}</tbody>
+                                    <tbody className='divide-border/50 divide-y'>{children}</tbody>
                                 ),
                                 tr: ({ children }) => (
-                                    <tr className='border-b border-border/50 hover:bg-muted/30 transition-colors'>
+                                    <tr className='border-border/50 hover:bg-muted/30 border-b transition-colors'>
                                         {children}
                                     </tr>
                                 ),
                                 th: ({ children }) => (
-                                    <th className='px-4 py-3 text-left font-semibold text-foreground border border-border/50'>
+                                    <th className='text-foreground border-border/50 border px-4 py-3 text-left font-semibold'>
                                         {children}
                                     </th>
                                 ),
                                 td: ({ children }) => (
-                                    <td className='px-4 py-3 text-muted-foreground border border-border/50'>
+                                    <td className='text-muted-foreground border-border/50 border px-4 py-3'>
                                         {children}
                                     </td>
                                 ),
                                 strong: ({ children }) => (
-                                    <strong className='font-semibold text-foreground'>{children}</strong>
+                                    <strong className='text-foreground font-semibold'>{children}</strong>
                                 ),
                             }}
                         >
@@ -229,12 +229,12 @@ export default function ArticlePage({ params }: { params: Promise<{ id: string }
                     </div>
 
                     {article.tags && article.tags.length > 0 && (
-                        <div className='mt-12 pt-8 border-t border-border/50 flex flex-wrap gap-2'>
+                        <div className='border-border/50 mt-12 flex flex-wrap gap-2 border-t pt-8'>
                             {article.tags.map((tag) => (
                                 <Badge
                                     key={tag.id}
                                     variant='secondary'
-                                    className='px-3 py-1 bg-muted/50 border-0 text-muted-foreground'
+                                    className='bg-muted/50 text-muted-foreground border-0 px-3 py-1'
                                 >
                                     #{tag.name}
                                 </Badge>
@@ -249,23 +249,23 @@ export default function ArticlePage({ params }: { params: Promise<{ id: string }
                 <>
                     <WidgetRenderer widgets={getWidgets('dashboard-knowledgebase-article', 'before-attachments')} />
                     <div className='space-y-4'>
-                        <h3 className='text-lg font-semibold px-1'>{t('dashboard.knowledgebase.attachments')}</h3>
-                        <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
+                        <h3 className='px-1 text-lg font-semibold'>{t('dashboard.knowledgebase.attachments')}</h3>
+                        <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
                             {article.attachments.map((attachment) => (
                                 <a
                                     key={attachment.id}
                                     href={attachment.url}
-                                    className='flex items-center justify-between p-4 rounded-xl border border-border/50 bg-card hover:bg-white/5 hover:border-primary/30 transition-all group shadow-sm'
+                                    className='border-border/50 bg-card hover:border-primary/30 group flex items-center justify-between rounded-xl border p-4 shadow-sm transition-all hover:bg-white/5'
                                 >
-                                    <div className='flex items-center gap-4 min-w-0'>
-                                        <div className='p-3 rounded-lg bg-primary/5 text-primary group-hover:scale-110 transition-transform'>
+                                    <div className='flex min-w-0 items-center gap-4'>
+                                        <div className='bg-primary/5 text-primary rounded-lg p-3 transition-transform group-hover:scale-110'>
                                             <FileText className='h-6 w-6' />
                                         </div>
                                         <div className='min-w-0'>
-                                            <p className='font-semibold text-foreground truncate group-hover:text-primary transition-colors'>
+                                            <p className='text-foreground group-hover:text-primary truncate font-semibold transition-colors'>
                                                 {attachment.file_name}
                                             </p>
-                                            <p className='text-xs text-muted-foreground'>
+                                            <p className='text-muted-foreground text-xs'>
                                                 {formatFileSize(attachment.file_size)}
                                             </p>
                                         </div>

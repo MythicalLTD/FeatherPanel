@@ -298,14 +298,14 @@ export default function StorageSensePage() {
         sub?: string;
         icon: LucideIcon;
     }) => (
-        <div className='rounded-xl border border-border/60 bg-card/60 backdrop-blur-sm p-4 flex gap-3'>
-            <div className='rounded-lg bg-primary/10 p-2.5 h-fit text-primary'>
+        <div className='border-border/60 bg-card/60 flex gap-3 rounded-xl border p-4 backdrop-blur-sm'>
+            <div className='bg-primary/10 text-primary h-fit rounded-lg p-2.5'>
                 <Icon className='h-5 w-5' />
             </div>
             <div className='min-w-0'>
-                <p className='text-xs font-medium text-muted-foreground uppercase tracking-wide'>{label}</p>
-                <p className='text-xl font-semibold tabular-nums truncate'>{value}</p>
-                {sub ? <p className='text-xs text-muted-foreground mt-0.5'>{sub}</p> : null}
+                <p className='text-muted-foreground text-xs font-medium tracking-wide uppercase'>{label}</p>
+                <p className='truncate text-xl font-semibold tabular-nums'>{value}</p>
+                {sub ? <p className='text-muted-foreground mt-0.5 text-xs'>{sub}</p> : null}
             </div>
         </div>
     );
@@ -319,21 +319,21 @@ export default function StorageSensePage() {
                 icon={BrushCleaning}
             />
 
-            <div className='relative overflow-hidden rounded-2xl border border-primary/20 bg-linear-to-br from-primary/10 via-background to-background p-4 sm:p-5'>
+            <div className='border-primary/20 from-primary/10 via-background to-background relative overflow-hidden rounded-2xl border bg-linear-to-br p-4 sm:p-5'>
                 <div className='relative z-10 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4'>
-                    <TriangleAlert className='h-10 w-10 text-amber-600 dark:text-amber-400 shrink-0' />
+                    <TriangleAlert className='h-10 w-10 shrink-0 text-amber-600 dark:text-amber-400' />
                     <div>
-                        <p className='font-semibold text-foreground'>{t('common.warning')}</p>
-                        <p className='text-sm text-muted-foreground mt-1 max-w-3xl'>
+                        <p className='text-foreground font-semibold'>{t('common.warning')}</p>
+                        <p className='text-muted-foreground mt-1 max-w-3xl text-sm'>
                             {t('admin.storage_sense.warning')}
                         </p>
                     </div>
                 </div>
-                <div className='absolute -right-8 -bottom-8 h-32 w-32 rounded-full bg-primary/5 blur-2xl pointer-events-none' />
+                <div className='bg-primary/5 pointer-events-none absolute -right-8 -bottom-8 h-32 w-32 rounded-full blur-2xl' />
             </div>
 
             {totals && !loading ? (
-                <div className='grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3'>
+                <div className='grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4'>
                     <StatMini
                         label={t('admin.storage_sense.stats_tables')}
                         value={String(totals.tables_tracked)}
@@ -365,16 +365,16 @@ export default function StorageSensePage() {
 
             {disk && !loading ? (
                 <PageCard>
-                    <div className='flex flex-col md:flex-row md:items-center md:justify-between gap-4'>
+                    <div className='flex flex-col gap-4 md:flex-row md:items-center md:justify-between'>
                         <div>
-                            <h3 className='font-semibold flex items-center gap-2'>
+                            <h3 className='flex items-center gap-2 font-semibold'>
                                 <HardDrive className='h-4 w-4' />
                                 {t('admin.storage_sense.disk_card_title')}
                             </h3>
-                            <p className='text-sm text-muted-foreground mt-1 max-w-xl'>
+                            <p className='text-muted-foreground mt-1 max-w-xl text-sm'>
                                 {t('admin.storage_sense.disk_card_desc')}
                             </p>
-                            <p className='text-xs font-mono text-muted-foreground mt-2'>
+                            <p className='text-muted-foreground mt-2 font-mono text-xs'>
                                 {disk.path} · {formatFileSize(disk.bytes)}
                             </p>
                         </div>
@@ -387,9 +387,9 @@ export default function StorageSensePage() {
 
             <PageCard className='space-y-4'>
                 <div className='flex flex-col gap-4 lg:flex-row lg:flex-wrap lg:items-end'>
-                    <div className='space-y-2 flex-1 min-w-[12rem]'>
+                    <div className='min-w-[12rem] flex-1 space-y-2'>
                         <Label>{t('admin.storage_sense.retention_label')}</Label>
-                        <p className='text-xs text-muted-foreground'>{t('admin.storage_sense.retention_presets')}</p>
+                        <p className='text-muted-foreground text-xs'>{t('admin.storage_sense.retention_presets')}</p>
                         <div className='flex flex-wrap gap-2'>
                             {PRESETS.map((d) => (
                                 <Button
@@ -412,11 +412,11 @@ export default function StorageSensePage() {
                             onChange={(e) => setDaysInput(e.target.value)}
                             className='max-w-[11rem]'
                         />
-                        <p className='text-xs text-muted-foreground'>{t('admin.storage_sense.retention_hint')}</p>
+                        <p className='text-muted-foreground text-xs'>{t('admin.storage_sense.retention_hint')}</p>
                     </div>
-                    <div className='flex flex-1 flex-wrap gap-2 items-center min-w-48'>
-                        <div className='relative flex-1 min-w-40'>
-                            <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground' />
+                    <div className='flex min-w-48 flex-1 flex-wrap items-center gap-2'>
+                        <div className='relative min-w-40 flex-1'>
+                            <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
                             <Input
                                 placeholder={t('admin.storage_sense.search_placeholder')}
                                 value={search}
@@ -445,7 +445,7 @@ export default function StorageSensePage() {
                         {t('admin.storage_sense.no_edit_permission')}
                     </p>
                 ) : (
-                    <div className='flex flex-wrap items-center gap-2 pt-2 border-t border-border/50'>
+                    <div className='border-border/50 flex flex-wrap items-center gap-2 border-t pt-2'>
                         <Button
                             type='button'
                             variant='secondary'
@@ -453,7 +453,7 @@ export default function StorageSensePage() {
                             onClick={selectAllEligible}
                             disabled={loading}
                         >
-                            <CheckSquare className='h-4 w-4 mr-2' />
+                            <CheckSquare className='mr-2 h-4 w-4' />
                             {t('admin.storage_sense.select_visible')}
                         </Button>
                         <Button
@@ -465,7 +465,7 @@ export default function StorageSensePage() {
                         >
                             {t('admin.storage_sense.clear_selection')}
                         </Button>
-                        <span className='text-sm text-muted-foreground mx-1'>
+                        <span className='text-muted-foreground mx-1 text-sm'>
                             {t('admin.storage_sense.batch_selected', { count: String(selected.size) })}
                         </span>
                         <Button
@@ -475,7 +475,7 @@ export default function StorageSensePage() {
                             disabled={loading || selected.size === 0}
                             onClick={() => setBatchOpen(true)}
                         >
-                            <Trash2 className='h-4 w-4 mr-2' />
+                            <Trash2 className='mr-2 h-4 w-4' />
                             {t('admin.storage_sense.batch_purge')}
                         </Button>
                     </div>
@@ -484,39 +484,39 @@ export default function StorageSensePage() {
 
             <PageCard className='overflow-hidden p-0'>
                 {loading ? (
-                    <div className='p-8 space-y-4 animate-pulse'>
-                        <div className='h-10 bg-muted rounded-lg' />
-                        <div className='h-12 bg-muted rounded-lg' />
-                        <div className='h-12 bg-muted rounded-lg' />
-                        <div className='h-12 bg-muted rounded-lg' />
+                    <div className='animate-pulse space-y-4 p-8'>
+                        <div className='bg-muted h-10 rounded-lg' />
+                        <div className='bg-muted h-12 rounded-lg' />
+                        <div className='bg-muted h-12 rounded-lg' />
+                        <div className='bg-muted h-12 rounded-lg' />
                     </div>
                 ) : (
                     <div className='overflow-x-auto'>
                         <table className='w-full text-sm'>
                             <thead>
-                                <tr className='border-b border-border bg-muted/40 text-left'>
+                                <tr className='border-border bg-muted/40 border-b text-left'>
                                     {canPurge ? (
-                                        <th className='p-3 w-10'>
+                                        <th className='w-10 p-3'>
                                             <span className='sr-only'>{t('admin.storage_sense.select')}</span>
                                         </th>
                                     ) : null}
-                                    <th className='p-3 min-w-56'>{t('admin.storage_sense.table')}</th>
-                                    <th className='p-3 text-right tabular-nums whitespace-nowrap'>
+                                    <th className='min-w-56 p-3'>{t('admin.storage_sense.table')}</th>
+                                    <th className='p-3 text-right whitespace-nowrap tabular-nums'>
                                         {t('admin.storage_sense.rows_total')}
                                     </th>
-                                    <th className='p-3 text-right tabular-nums whitespace-nowrap'>
+                                    <th className='p-3 text-right whitespace-nowrap tabular-nums'>
                                         {t('admin.storage_sense.rows_purgeable')}
                                     </th>
-                                    <th className='p-3 text-right whitespace-nowrap hidden md:table-cell'>
+                                    <th className='hidden p-3 text-right whitespace-nowrap md:table-cell'>
                                         {t('admin.storage_sense.approx_size')}
                                     </th>
-                                    <th className='p-3 min-w-32 hidden lg:table-cell'>
+                                    <th className='hidden min-w-32 p-3 lg:table-cell'>
                                         {t('admin.storage_sense.progress_legend')}
                                     </th>
                                     <th className='p-3 text-right'>{t('common.actions')}</th>
                                 </tr>
                             </thead>
-                            <tbody className='divide-y divide-border/60'>
+                            <tbody className='divide-border/60 divide-y'>
                                 {filtered.map((row) => {
                                     const Icon = CATEGORY_ICONS[row.id] ?? Database;
                                     const ratio =
@@ -540,40 +540,40 @@ export default function StorageSensePage() {
                                                 </td>
                                             ) : null}
                                             <td className='p-3 align-middle'>
-                                                <div className='flex gap-3 min-w-0'>
-                                                    <div className='rounded-lg bg-primary/10 p-2 text-primary h-fit shrink-0'>
+                                                <div className='flex min-w-0 gap-3'>
+                                                    <div className='bg-primary/10 text-primary h-fit shrink-0 rounded-lg p-2'>
                                                         <Icon className='h-4 w-4' />
                                                     </div>
                                                     <div className='min-w-0'>
                                                         <div className='font-medium'>{categoryTitle(row.id)}</div>
-                                                        <div className='text-xs text-muted-foreground line-clamp-2'>
+                                                        <div className='text-muted-foreground line-clamp-2 text-xs'>
                                                             {categoryDesc(row.id)}
                                                         </div>
-                                                        <div className='text-[10px] font-mono text-muted-foreground/90 mt-1 truncate'>
+                                                        <div className='text-muted-foreground/90 mt-1 truncate font-mono text-[10px]'>
                                                             {row.table}
                                                         </div>
                                                         {!row.uses_retention_days ? (
-                                                            <span className='inline-flex mt-1 text-[10px] font-semibold uppercase tracking-wide text-primary'>
+                                                            <span className='text-primary mt-1 inline-flex text-[10px] font-semibold tracking-wide uppercase'>
                                                                 {t('admin.storage_sense.retention_na')}
                                                             </span>
                                                         ) : null}
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className='p-3 text-right tabular-nums align-middle'>
+                                            <td className='p-3 text-right align-middle tabular-nums'>
                                                 {row.available ? row.row_count.toLocaleString() : '—'}
                                             </td>
-                                            <td className='p-3 text-right tabular-nums align-middle font-medium'>
+                                            <td className='p-3 text-right align-middle font-medium tabular-nums'>
                                                 {!row.available
                                                     ? t('admin.storage_sense.not_installed')
                                                     : row.purgeable_count.toLocaleString()}
                                             </td>
-                                            <td className='p-3 text-right align-middle hidden md:table-cell'>
+                                            <td className='hidden p-3 text-right align-middle md:table-cell'>
                                                 {row.available ? (
                                                     <div>
                                                         <div>{formatFileSize(row.approx_data_bytes)}</div>
                                                         {totals && totals.approx_data_bytes > 0 ? (
-                                                            <div className='text-[10px] text-muted-foreground'>
+                                                            <div className='text-muted-foreground text-[10px]'>
                                                                 {t('admin.storage_sense.tracked_percent', {
                                                                     percent: String(shareDb),
                                                                 })}
@@ -584,16 +584,16 @@ export default function StorageSensePage() {
                                                     '—'
                                                 )}
                                             </td>
-                                            <td className='p-3 align-middle hidden lg:table-cell'>
+                                            <td className='hidden p-3 align-middle lg:table-cell'>
                                                 {row.available && row.row_count > 0 ? (
-                                                    <div className='space-y-1 max-w-[180px]'>
-                                                        <div className='h-2 rounded-full bg-muted overflow-hidden'>
+                                                    <div className='max-w-[180px] space-y-1'>
+                                                        <div className='bg-muted h-2 overflow-hidden rounded-full'>
                                                             <div
                                                                 className='h-full rounded-full bg-amber-500/80'
                                                                 style={{ width: `${ratio}%` }}
                                                             />
                                                         </div>
-                                                        <span className='text-[10px] text-muted-foreground'>
+                                                        <span className='text-muted-foreground text-[10px]'>
                                                             {t('admin.storage_sense.eligible_percent', {
                                                                 percent: String(ratio),
                                                             })}
@@ -658,7 +658,7 @@ export default function StorageSensePage() {
                         >
                             {purging ? (
                                 <>
-                                    <Loader2 className='h-4 w-4 animate-spin mr-2 inline' />
+                                    <Loader2 className='mr-2 inline h-4 w-4 animate-spin' />
                                     {t('admin.storage_sense.purge')}
                                 </>
                             ) : (
@@ -680,7 +680,7 @@ export default function StorageSensePage() {
                                     days: String(daysOld),
                                 })}
                             </p>
-                            <ul className='list-disc pl-4 max-h-40 overflow-y-auto text-sm'>
+                            <ul className='max-h-40 list-disc overflow-y-auto pl-4 text-sm'>
                                 {Array.from(selected).map((id) => (
                                     <li key={id}>{categoryTitle(id)}</li>
                                 ))}
@@ -699,7 +699,7 @@ export default function StorageSensePage() {
                         >
                             {purging ? (
                                 <>
-                                    <Loader2 className='h-4 w-4 animate-spin mr-2 inline' />
+                                    <Loader2 className='mr-2 inline h-4 w-4 animate-spin' />
                                     {t('admin.storage_sense.batch_purge')}
                                 </>
                             ) : (

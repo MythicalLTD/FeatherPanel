@@ -148,7 +148,6 @@ export function CommandsEditor({
     const [localForm, setLocalForm] = useState<CommandsForm>(form);
 
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         setLocalForm(form);
     }, [content, form]);
 
@@ -196,12 +195,12 @@ export function CommandsEditor({
     };
 
     return (
-        <Card className='bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl shadow-sm'>
-            <CardHeader className='border-b border-border/10 pb-6'>
+        <Card className='bg-card/50 border-border/50 rounded-3xl border shadow-sm backdrop-blur-3xl'>
+            <CardHeader className='border-border/10 border-b pb-6'>
                 <div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
                     <div className='space-y-2'>
                         <CardTitle className='text-2xl font-bold'>{t('files.editors.commandsConfig.title')}</CardTitle>
-                        <CardDescription className='text-sm text-muted-foreground'>
+                        <CardDescription className='text-muted-foreground text-sm'>
                             {t('files.editors.commandsConfig.description')}
                         </CardDescription>
                     </div>
@@ -219,29 +218,29 @@ export function CommandsEditor({
                     </div>
                 </div>
             </CardHeader>
-            <div className='p-8 space-y-10'>
+            <div className='space-y-10 p-8'>
                 <section className='space-y-6'>
-                    <div className='flex items-center gap-4 border-b border-border/10 pb-6'>
-                        <div className='h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20'>
-                            <ListChecks className='h-5 w-5 text-primary' />
+                    <div className='border-border/10 flex items-center gap-4 border-b pb-6'>
+                        <div className='bg-primary/10 border-primary/20 flex h-10 w-10 items-center justify-center rounded-xl border'>
+                            <ListChecks className='text-primary h-5 w-5' />
                         </div>
                         <div className='space-y-0.5'>
-                            <h3 className='text-xl font-black uppercase tracking-tight italic'>
+                            <h3 className='text-xl font-black tracking-tight uppercase italic'>
                                 {t('files.editors.commandsConfig.sections.general')}
                             </h3>
-                            <p className='text-[9px] font-bold text-muted-foreground tracking-widest uppercase opacity-50'>
+                            <p className='text-muted-foreground text-[9px] font-bold tracking-widest uppercase opacity-50'>
                                 {t('files.editors.commandsConfig.sectionsDescriptions.general')}
                             </p>
                         </div>
                     </div>
 
-                    <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6'>
+                    <div className='bg-card/30 border-border/30 space-y-3 rounded-xl border p-6'>
                         <div className='flex items-start justify-between gap-4'>
                             <div className='space-y-1'>
-                                <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                     {t('files.editors.commandsConfig.fields.ignoreVanillaPermissions.label')}
                                 </label>
-                                <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                     {t('files.editors.commandsConfig.fields.ignoreVanillaPermissions.description')}
                                 </p>
                             </div>
@@ -253,8 +252,8 @@ export function CommandsEditor({
                         </div>
                     </div>
 
-                    <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6'>
-                        <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                    <div className='bg-card/30 border-border/30 space-y-3 rounded-xl border p-6'>
+                        <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                             {t('files.editors.commandsConfig.fields.commandBlockOverrides.label')}
                         </label>
                         <Textarea
@@ -263,23 +262,23 @@ export function CommandsEditor({
                             readOnly={readonly}
                             rows={4}
                         />
-                        <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                        <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                             {t('files.editors.commandsConfig.fields.commandBlockOverrides.description')}
                         </p>
                     </div>
                 </section>
 
                 <section className='space-y-6'>
-                    <div className='flex items-center justify-between border-b border-border/10 pb-6'>
+                    <div className='border-border/10 flex items-center justify-between border-b pb-6'>
                         <div className='flex items-center gap-4'>
-                            <div className='h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20'>
-                                <ListChecks className='h-5 w-5 text-primary' />
+                            <div className='bg-primary/10 border-primary/20 flex h-10 w-10 items-center justify-center rounded-xl border'>
+                                <ListChecks className='text-primary h-5 w-5' />
                             </div>
                             <div className='space-y-0.5'>
-                                <h3 className='text-xl font-black uppercase tracking-tight italic'>
+                                <h3 className='text-xl font-black tracking-tight uppercase italic'>
                                     {t('files.editors.commandsConfig.sections.aliases')}
                                 </h3>
-                                <p className='text-[9px] font-bold text-muted-foreground tracking-widest uppercase opacity-50'>
+                                <p className='text-muted-foreground text-[9px] font-bold tracking-widest uppercase opacity-50'>
                                     {t('files.editors.commandsConfig.sectionsDescriptions.aliases')}
                                 </p>
                             </div>
@@ -297,7 +296,7 @@ export function CommandsEditor({
                     </div>
 
                     {localForm.aliases.length === 0 && (
-                        <div className='rounded-xl border border-dashed border-border/30 p-8 text-sm text-muted-foreground bg-muted/10 text-center'>
+                        <div className='border-border/30 text-muted-foreground bg-muted/10 rounded-xl border border-dashed p-8 text-center text-sm'>
                             {t('files.editors.commandsConfig.fields.aliases.emptyState')}
                         </div>
                     )}
@@ -305,11 +304,11 @@ export function CommandsEditor({
                     {localForm.aliases.map((alias, index) => (
                         <div
                             key={`alias-${index}`}
-                            className='space-y-6 rounded-xl bg-card/30 border border-border/30 p-6'
+                            className='bg-card/30 border-border/30 space-y-6 rounded-xl border p-6'
                         >
                             <div className='flex items-start gap-4'>
                                 <div className='flex-1 space-y-3'>
-                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                    <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                         {t('files.editors.commandsConfig.fields.aliases.aliasName')}
                                     </label>
                                     <Input
@@ -331,7 +330,7 @@ export function CommandsEditor({
                                 </Button>
                             </div>
                             <div className='space-y-3'>
-                                <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                     {t('files.editors.commandsConfig.fields.aliases.aliasCommands')}
                                 </label>
                                 <Textarea
@@ -341,7 +340,7 @@ export function CommandsEditor({
                                     rows={3}
                                     placeholder='say Hello world'
                                 />
-                                <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                     {t('files.editors.commandsConfig.fields.aliases.aliasCommandsHint')}
                                 </p>
                             </div>

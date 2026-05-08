@@ -72,7 +72,7 @@ export function PermissionsDialog({ open, onOpenChange, uuid, root, files, onSuc
             <DialogContent className='sm:max-w-md'>
                 <DialogHeader>
                     <div className='flex items-center gap-3'>
-                        <div className='flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20'>
+                        <div className='bg-primary/10 text-primary border-primary/20 flex h-10 w-10 items-center justify-center rounded-xl border'>
                             <ShieldCheck className='h-5 w-5' />
                         </div>
                         <div>
@@ -85,22 +85,22 @@ export function PermissionsDialog({ open, onOpenChange, uuid, root, files, onSuc
                 </DialogHeader>
 
                 <div className='flex flex-col gap-4 py-4'>
-                    <div className='flex items-start gap-3 bg-amber-500/5 p-4 rounded-xl border border-amber-500/10'>
-                        <Info className='h-5 w-5 text-amber-500 shrink-0 mt-0.5' />
-                        <p className='text-xs text-amber-100/70 leading-relaxed'>
+                    <div className='flex items-start gap-3 rounded-xl border border-amber-500/10 bg-amber-500/5 p-4'>
+                        <Info className='mt-0.5 h-5 w-5 shrink-0 text-amber-500' />
+                        <p className='text-xs leading-relaxed text-amber-100/70'>
                             {t('files.dialogs.permissions.info')}
                         </p>
                     </div>
 
                     <div className='space-y-2'>
-                        <label className='text-xs font-semibold uppercase tracking-wider text-muted-foreground ml-1'>
+                        <label className='text-muted-foreground ml-1 text-xs font-semibold tracking-wider uppercase'>
                             {t('files.dialogs.permissions.mode_label')}
                         </label>
                         <Input
                             placeholder={t('files.dialogs.permissions.mode_placeholder')}
                             value={mode}
                             onChange={(e) => setMode(e.target.value)}
-                            className='bg-white/5 border-white/10 text-center text-lg font-mono tracking-widest'
+                            className='border-white/10 bg-white/5 text-center font-mono text-lg tracking-widest'
                             maxLength={4}
                         />
                     </div>
@@ -110,7 +110,7 @@ export function PermissionsDialog({ open, onOpenChange, uuid, root, files, onSuc
                     <Button variant='ghost' onClick={() => onOpenChange(false)}>
                         {t('files.dialogs.permissions.cancel')}
                     </Button>
-                    <Button variant='default' onClick={handleUpdate} disabled={loading || !mode} className=' h-10 px-6'>
+                    <Button variant='default' onClick={handleUpdate} disabled={loading || !mode} className='h-10 px-6'>
                         {t('files.dialogs.permissions.update')}
                     </Button>
                 </DialogFooter>

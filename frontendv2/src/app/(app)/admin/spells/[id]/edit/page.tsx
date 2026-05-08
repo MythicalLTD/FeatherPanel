@@ -327,7 +327,7 @@ export default function EditSpellPage() {
         return (
             <div className='flex items-center justify-center py-12'>
                 <div className='flex items-center gap-3'>
-                    <div className='animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent'></div>
+                    <div className='border-primary h-6 w-6 animate-spin rounded-full border-2 border-t-transparent'></div>
                     <span className='text-muted-foreground'>Loading spell...</span>
                 </div>
             </div>
@@ -345,7 +345,7 @@ export default function EditSpellPage() {
                 actions={
                     <div className='flex items-center gap-2'>
                         <Button variant='outline' onClick={() => router.push('/admin/spells')}>
-                            <ArrowLeft className='h-4 w-4 mr-2' />
+                            <ArrowLeft className='mr-2 h-4 w-4' />
                             Back
                         </Button>
                         <Button onClick={handleSave} loading={saving}>
@@ -411,11 +411,11 @@ export default function EditSpellPage() {
                                 />
                                 {form.banner && (
                                     <div className='mt-2'>
-                                        <div className='text-sm text-muted-foreground mb-1'>
+                                        <div className='text-muted-foreground mb-1 text-sm'>
                                             {t('admin.spells.form.banner_preview')}
                                         </div>
                                         <div
-                                            className='w-full h-24 rounded-lg border border-border bg-cover bg-center bg-no-repeat'
+                                            className='border-border h-24 w-full rounded-lg border bg-cover bg-center bg-no-repeat'
                                             style={{ backgroundImage: `url(${form.banner})` }}
                                         />
                                     </div>
@@ -486,7 +486,7 @@ export default function EditSpellPage() {
                                         setForm({ ...form, force_outgoing_ip: checked as boolean })
                                     }
                                 />
-                                <label htmlFor='force-ip' className='text-sm font-medium cursor-pointer'>
+                                <label htmlFor='force-ip' className='cursor-pointer text-sm font-medium'>
                                     {t('admin.spells.form.force_outgoing_ip')}
                                 </label>
                             </div>
@@ -602,7 +602,7 @@ export default function EditSpellPage() {
                                     <option value='true'>{t('admin.spells.form.privileged')}</option>
                                     <option value='false'>{t('admin.spells.form.non_privileged')}</option>
                                 </Select>
-                                <p className='text-xs text-muted-foreground'>
+                                <p className='text-muted-foreground text-xs'>
                                     {t('admin.spells.form.script_privilege_help')}
                                 </p>
                             </div>
@@ -630,18 +630,18 @@ export default function EditSpellPage() {
                                 disabled={addingVariable || editingVariable !== null}
                                 onClick={startAddVariable}
                             >
-                                <Plus className='h-4 w-4 mr-2' />
+                                <Plus className='mr-2 h-4 w-4' />
                                 {t('admin.spells.variables.add')}
                             </Button>
                         }
                     >
-                        <div className='text-sm text-muted-foreground space-y-2'>
+                        <div className='text-muted-foreground space-y-2 text-sm'>
                             <p>{t('admin.spells.variables.help_text')}</p>
                             <div className='space-y-1'>
-                                <p className='font-semibold text-foreground'>
+                                <p className='text-foreground font-semibold'>
                                     {t('admin.spells.variables.field_types_help')}
                                 </p>
-                                <ul className='space-y-0.5 list-disc list-inside ml-2'>
+                                <ul className='ml-2 list-inside list-disc space-y-0.5'>
                                     <li>{t('admin.spells.variables.field_types_info')}</li>
                                     <li>{t('admin.spells.variables.rules_info')}</li>
                                 </ul>
@@ -661,7 +661,7 @@ export default function EditSpellPage() {
                                         Cancel
                                     </Button>
                                     <Button size='sm' onClick={submitVariable}>
-                                        <Plus className='h-4 w-4 mr-2' />
+                                        <Plus className='mr-2 h-4 w-4' />
                                         {t('admin.spells.variables.create_variable')}
                                     </Button>
                                 </div>
@@ -754,7 +754,7 @@ export default function EditSpellPage() {
                                                 })
                                             }
                                         />
-                                        <label htmlFor='add-viewable' className='text-sm font-medium cursor-pointer'>
+                                        <label htmlFor='add-viewable' className='cursor-pointer text-sm font-medium'>
                                             {t('admin.spells.variables.user_viewable')}
                                         </label>
                                     </div>
@@ -769,7 +769,7 @@ export default function EditSpellPage() {
                                                 })
                                             }
                                         />
-                                        <label htmlFor='add-editable' className='text-sm font-medium cursor-pointer'>
+                                        <label htmlFor='add-editable' className='cursor-pointer text-sm font-medium'>
                                             {t('admin.spells.variables.user_editable')}
                                         </label>
                                     </div>
@@ -836,7 +836,7 @@ export default function EditSpellPage() {
                                                 Cancel
                                             </Button>
                                             <Button size='sm' onClick={submitVariable}>
-                                                <Pencil className='h-4 w-4 mr-2' />
+                                                <Pencil className='mr-2 h-4 w-4' />
                                                 {t('admin.spells.variables.save_changes')}
                                             </Button>
                                         </div>
@@ -947,7 +947,7 @@ export default function EditSpellPage() {
                                                 />
                                                 <label
                                                     htmlFor={`edit-viewable-${variable.id}`}
-                                                    className='text-sm font-medium cursor-pointer'
+                                                    className='cursor-pointer text-sm font-medium'
                                                 >
                                                     {t('admin.spells.variables.user_viewable')}
                                                 </label>
@@ -965,7 +965,7 @@ export default function EditSpellPage() {
                                                 />
                                                 <label
                                                     htmlFor={`edit-editable-${variable.id}`}
-                                                    className='text-sm font-medium cursor-pointer'
+                                                    className='cursor-pointer text-sm font-medium'
                                                 >
                                                     {t('admin.spells.variables.user_editable')}
                                                 </label>
@@ -974,7 +974,7 @@ export default function EditSpellPage() {
                                     </div>
                                 ) : (
                                     <div className='space-y-3'>
-                                        <p className='text-sm text-muted-foreground leading-relaxed'>
+                                        <p className='text-muted-foreground text-sm leading-relaxed'>
                                             {variable.description}
                                         </p>
                                         <div className='grid grid-cols-2 gap-4 text-sm'>
@@ -1018,9 +1018,9 @@ export default function EditSpellPage() {
                                             </div>
                                         </div>
                                         {variable.rules && (
-                                            <div className='text-sm pt-2 border-t'>
+                                            <div className='border-t pt-2 text-sm'>
                                                 <span className='text-muted-foreground'>Validation Rules:</span>
-                                                <code className='ml-2 text-xs bg-muted px-2 py-1 rounded font-mono'>
+                                                <code className='bg-muted ml-2 rounded px-2 py-1 font-mono text-xs'>
                                                     {variable.rules}
                                                 </code>
                                             </div>
@@ -1032,10 +1032,10 @@ export default function EditSpellPage() {
                     </div>
 
                     {!addingVariable && variables.length === 0 && (
-                        <div className='text-center py-8'>
-                            <Settings className='h-12 w-12 mx-auto text-muted-foreground mb-3' />
-                            <p className='text-sm text-muted-foreground'>{t('admin.spells.variables.no_variables')}</p>
-                            <p className='text-xs text-muted-foreground mt-1'>
+                        <div className='py-8 text-center'>
+                            <Settings className='text-muted-foreground mx-auto mb-3 h-12 w-12' />
+                            <p className='text-muted-foreground text-sm'>{t('admin.spells.variables.no_variables')}</p>
+                            <p className='text-muted-foreground mt-1 text-xs'>
                                 {t('admin.spells.variables.no_variables_help')}
                             </p>
                         </div>

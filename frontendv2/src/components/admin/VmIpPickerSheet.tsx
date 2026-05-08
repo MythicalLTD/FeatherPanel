@@ -200,7 +200,7 @@ export function VmIpPickerSheet({
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent className='sm:max-w-2xl overflow-y-auto'>
+            <SheetContent className='overflow-y-auto sm:max-w-2xl'>
                 <SheetHeader>
                     <SheetTitle>{t('admin.vmInstances.primary_ip') || 'Primary IP'}</SheetTitle>
                     <SheetDescription>
@@ -210,12 +210,12 @@ export function VmIpPickerSheet({
                     </SheetDescription>
                 </SheetHeader>
                 <div className='mt-6 space-y-4'>
-                    <div className='flex rounded-xl border border-border/60 p-1 bg-muted/30 gap-1'>
+                    <div className='border-border/60 bg-muted/30 flex gap-1 rounded-xl border p-1'>
                         <button
                             type='button'
                             onClick={() => setMode('browse')}
                             className={cn(
-                                'flex-1 inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                                'inline-flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
                                 mode === 'browse'
                                     ? 'bg-background text-foreground shadow-sm'
                                     : 'text-muted-foreground hover:text-foreground',
@@ -228,7 +228,7 @@ export function VmIpPickerSheet({
                             type='button'
                             onClick={() => setMode('create')}
                             className={cn(
-                                'flex-1 inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                                'inline-flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
                                 mode === 'create'
                                     ? 'bg-background text-foreground shadow-sm'
                                     : 'text-muted-foreground hover:text-foreground',
@@ -242,7 +242,7 @@ export function VmIpPickerSheet({
                     {mode === 'browse' ? (
                         <>
                             <div className='relative'>
-                                <SearchIcon className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground' />
+                                <SearchIcon className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
                                 <Input
                                     placeholder={t('common.search') || 'Search'}
                                     value={search}
@@ -250,9 +250,9 @@ export function VmIpPickerSheet({
                                     className='pl-10'
                                 />
                             </div>
-                            <div className='space-y-2 max-h-[60vh] overflow-y-auto'>
+                            <div className='max-h-[60vh] space-y-2 overflow-y-auto'>
                                 {filtered.length === 0 ? (
-                                    <p className='text-center py-6 text-muted-foreground'>{t('common.no_results')}</p>
+                                    <p className='text-muted-foreground py-6 text-center'>{t('common.no_results')}</p>
                                 ) : (
                                     filtered.map((ip) => (
                                         <button
@@ -263,19 +263,19 @@ export function VmIpPickerSheet({
                                                 onOpenChange(false);
                                             }}
                                             className={cn(
-                                                'w-full p-3 rounded-xl border text-left transition-all',
+                                                'w-full rounded-xl border p-3 text-left transition-all',
                                                 selectedIpId === ip.id
                                                     ? 'border-primary bg-primary/5'
                                                     : 'border-border/50 hover:border-primary hover:bg-primary/5',
                                             )}
                                         >
                                             <div className='flex items-start gap-3'>
-                                                <div className='p-2 bg-primary/10 rounded-lg mt-0.5'>
-                                                    <Network className='h-4 w-4 text-primary' />
+                                                <div className='bg-primary/10 mt-0.5 rounded-lg p-2'>
+                                                    <Network className='text-primary h-4 w-4' />
                                                 </div>
                                                 <div>
-                                                    <div className='font-semibold font-mono'>{ip.ip}</div>
-                                                    <div className='text-xs text-muted-foreground font-mono'>
+                                                    <div className='font-mono font-semibold'>{ip.ip}</div>
+                                                    <div className='text-muted-foreground font-mono text-xs'>
                                                         {ip.cidr !== null ? `/${ip.cidr}` : 'No CIDR'} ·{' '}
                                                         {ip.gateway || 'No gateway'}
                                                     </div>
@@ -288,13 +288,13 @@ export function VmIpPickerSheet({
                         </>
                     ) : (
                         <div className='space-y-6'>
-                            <div className='flex p-1 bg-muted/50 rounded-xl gap-1'>
+                            <div className='bg-muted/50 flex gap-1 rounded-xl p-1'>
                                 <Button
                                     type='button'
                                     variant='ghost'
                                     className={cn(
-                                        'flex-1 rounded-lg h-9 text-xs',
-                                        createType === 'single' && 'bg-background shadow-sm hover:bg-background',
+                                        'h-9 flex-1 rounded-lg text-xs',
+                                        createType === 'single' && 'bg-background hover:bg-background shadow-sm',
                                     )}
                                     onClick={() => setCreateType('single')}
                                 >
@@ -304,8 +304,8 @@ export function VmIpPickerSheet({
                                     type='button'
                                     variant='ghost'
                                     className={cn(
-                                        'flex-1 rounded-lg h-9 text-xs',
-                                        createType === 'bulk' && 'bg-background shadow-sm hover:bg-background',
+                                        'h-9 flex-1 rounded-lg text-xs',
+                                        createType === 'bulk' && 'bg-background hover:bg-background shadow-sm',
                                     )}
                                     onClick={() => setCreateType('bulk')}
                                 >
@@ -321,7 +321,7 @@ export function VmIpPickerSheet({
                                         className='min-h-[120px] font-mono'
                                         onChange={(e) => setBulkIpsInput(e.target.value)}
                                     />
-                                    <p className='text-xs text-muted-foreground'>
+                                    <p className='text-muted-foreground text-xs'>
                                         One IP per line, or comma/space separated. CIDR/gateway/notes apply to all.
                                     </p>
                                 </div>
@@ -336,7 +336,7 @@ export function VmIpPickerSheet({
                                         onChange={(e) => setCreateForm((p) => ({ ...p, ip: e.target.value }))}
                                     />
                                     {createErrors.ip && (
-                                        <p className='text-[10px] uppercase font-bold text-red-500'>
+                                        <p className='text-[10px] font-bold text-red-500 uppercase'>
                                             {createErrors.ip}
                                         </p>
                                     )}
@@ -355,7 +355,7 @@ export function VmIpPickerSheet({
                                         onChange={(e) => setCreateForm((p) => ({ ...p, cidr: e.target.value }))}
                                     />
                                     {createErrors.cidr && (
-                                        <p className='text-[10px] uppercase font-bold text-red-500'>
+                                        <p className='text-[10px] font-bold text-red-500 uppercase'>
                                             {createErrors.cidr}
                                         </p>
                                     )}
@@ -371,7 +371,7 @@ export function VmIpPickerSheet({
                                         onChange={(e) => setCreateForm((p) => ({ ...p, gateway: e.target.value }))}
                                     />
                                     {createErrors.gateway && (
-                                        <p className='text-[10px] uppercase font-bold text-red-500'>
+                                        <p className='text-[10px] font-bold text-red-500 uppercase'>
                                             {createErrors.gateway}
                                         </p>
                                     )}
@@ -395,7 +395,7 @@ export function VmIpPickerSheet({
                                     onClick={() => void (createType === 'bulk' ? handleCreateBulk() : handleCreate())}
                                     loading={creating}
                                 >
-                                    <Plus className='h-4 w-4 mr-2' />
+                                    <Plus className='mr-2 h-4 w-4' />
                                     {t('common.create')}
                                 </Button>
                             </div>

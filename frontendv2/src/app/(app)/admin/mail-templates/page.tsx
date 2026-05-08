@@ -265,7 +265,7 @@ export default function MailTemplatesPage() {
     };
 
     return (
-        <div className='space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500'>
+        <div className='animate-in fade-in slide-in-from-bottom-4 space-y-6 duration-500'>
             <WidgetRenderer widgets={getWidgets('admin-mail-templates', 'top-of-page')} />
             <PageHeader
                 title={t('admin.mail_templates.title')}
@@ -274,15 +274,15 @@ export default function MailTemplatesPage() {
                 actions={
                     <div className='flex gap-2'>
                         <Button variant='outline' onClick={() => setTestEmailOpen(true)}>
-                            <Mail className='w-4 h-4 mr-2' />
+                            <Mail className='mr-2 h-4 w-4' />
                             {t('admin.mail_templates.send_test_email')}
                         </Button>
                         <Button variant='outline' onClick={() => setMassEmailOpen(true)}>
-                            <Send className='w-4 h-4 mr-2' />
+                            <Send className='mr-2 h-4 w-4' />
                             {t('admin.mail_templates.send_mass_email')}
                         </Button>
                         <Button onClick={openCreate}>
-                            <Plus className='w-4 h-4 mr-2' />
+                            <Plus className='mr-2 h-4 w-4' />
                             {t('admin.mail_templates.create')}
                         </Button>
                     </div>
@@ -291,11 +291,11 @@ export default function MailTemplatesPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-mail-templates', 'after-header')} />
 
-            <div className='flex flex-col sm:flex-row gap-4 items-center bg-card/40 backdrop-blur-md p-4 rounded-2xl shadow-sm'>
-                <div className='relative flex-1 group w-full'>
-                    <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
+            <div className='bg-card/40 flex flex-col items-center gap-4 rounded-2xl p-4 shadow-sm backdrop-blur-md sm:flex-row'>
+                <div className='group relative w-full flex-1'>
+                    <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
                     <Input
-                        className='pl-10 h-11 w-full'
+                        className='h-11 w-full pl-10'
                         placeholder={t('admin.mail_templates.search_placeholder')}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
@@ -306,7 +306,7 @@ export default function MailTemplatesPage() {
             <WidgetRenderer widgets={getWidgets('admin-mail-templates', 'before-list')} />
 
             {pagination.total > pagination.pageSize && !loading && (
-                <div className='flex items-center justify-between gap-4 py-3 px-4 rounded-xl border border-border bg-card/50 mb-4'>
+                <div className='border-border bg-card/50 mb-4 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
                     <Button
                         variant='outline'
                         size='sm'
@@ -385,10 +385,10 @@ export default function MailTemplatesPage() {
                                     </div>
                                 }
                                 description={
-                                    <div className='flex flex-col gap-1 mt-2 text-sm text-muted-foreground'>
+                                    <div className='text-muted-foreground mt-2 flex flex-col gap-1 text-sm'>
                                         <div className='flex items-center gap-2 truncate'>
                                             <FileText className='h-3 w-3 shrink-0 opacity-50' />
-                                            <span className='truncate opacity-70 italic'>
+                                            <span className='truncate italic opacity-70'>
                                                 {template.body.replace(/<[^>]*>?/gm, '').substring(0, 100)}...
                                             </span>
                                         </div>
@@ -399,7 +399,7 @@ export default function MailTemplatesPage() {
                     </div>
 
                     {pagination.total > pagination.pageSize && (
-                        <div className='flex items-center justify-center gap-2 mt-8'>
+                        <div className='mt-8 flex items-center justify-center gap-2'>
                             <Button
                                 variant='outline'
                                 size='icon'
@@ -429,26 +429,26 @@ export default function MailTemplatesPage() {
                     icon={Mail}
                     action={
                         <Button onClick={openCreate}>
-                            <Plus className='w-4 h-4 mr-2' />
+                            <Plus className='mr-2 h-4 w-4' />
                             {t('admin.mail_templates.create')}
                         </Button>
                     }
                 />
             )}
 
-            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-6 border-t border-border/50'>
+            <div className='border-border/50 grid grid-cols-1 gap-6 border-t pt-6 md:grid-cols-2 lg:grid-cols-3'>
                 <PageCard title={t('admin.mail_templates.help.what_is.title')} icon={FileText}>
-                    <p className='text-sm text-muted-foreground leading-relaxed'>
+                    <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.mail_templates.help.what_is.description')}
                     </p>
                 </PageCard>
                 <PageCard title={t('admin.mail_templates.help.mass_email.title')} icon={Send}>
-                    <p className='text-sm text-muted-foreground leading-relaxed'>
+                    <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.mail_templates.help.mass_email.description')}
                     </p>
                 </PageCard>
                 <PageCard title={t('admin.mail_templates.help.legal.title')} icon={Scale}>
-                    <p className='text-sm text-muted-foreground leading-relaxed'>
+                    <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.mail_templates.help.legal.description')}
                     </p>
                 </PageCard>
@@ -488,7 +488,7 @@ export default function MailTemplatesPage() {
                                 onChange={(e) => setFormData({ ...formData, body: e.target.value })}
                                 required
                             />
-                            <p className='text-xs text-muted-foreground'>{t('admin.mail_templates.form.html_help')}</p>
+                            <p className='text-muted-foreground text-xs'>{t('admin.mail_templates.form.html_help')}</p>
                         </div>
                         <SheetFooter>
                             <Button type='submit' loading={processing}>
@@ -539,7 +539,7 @@ export default function MailTemplatesPage() {
                                 onChange={(e) => setFormData({ ...formData, body: e.target.value })}
                                 required
                             />
-                            <p className='text-xs text-muted-foreground'>{t('admin.mail_templates.form.html_help')}</p>
+                            <p className='text-muted-foreground text-xs'>{t('admin.mail_templates.form.html_help')}</p>
                         </div>
                         <SheetFooter>
                             <Button type='submit' loading={processing}>
@@ -569,18 +569,18 @@ export default function MailTemplatesPage() {
                     <div className='space-y-6 pt-6'>
                         <div className='space-y-4'>
                             <div className='space-y-1'>
-                                <Label className='text-muted-foreground text-xs uppercase tracking-wider font-bold'>
+                                <Label className='text-muted-foreground text-xs font-bold tracking-wider uppercase'>
                                     {t('admin.mail_templates.form.subject')}
                                 </Label>
                                 <p className='text-base font-semibold'>{selectedTemplate?.subject}</p>
                             </div>
                             <div className='space-y-1'>
-                                <Label className='text-muted-foreground text-xs uppercase tracking-wider font-bold'>
+                                <Label className='text-muted-foreground text-xs font-bold tracking-wider uppercase'>
                                     {t('admin.mail_templates.form.body')}
                                 </Label>
-                                <div className='rounded-xl border border-border/50 bg-white dark:bg-zinc-950 overflow-hidden min-h-[400px]'>
+                                <div className='border-border/50 min-h-[400px] overflow-hidden rounded-xl border bg-white dark:bg-zinc-950'>
                                     <div
-                                        className='p-6 prose prose-sm dark:prose-invert max-w-none'
+                                        className='prose prose-sm dark:prose-invert max-w-none p-6'
                                         dangerouslySetInnerHTML={{ __html: selectedTemplate?.body || '' }}
                                     />
                                 </div>
@@ -626,7 +626,7 @@ export default function MailTemplatesPage() {
                                     onChange={(e) => setMassEmailData({ ...massEmailData, body: e.target.value })}
                                     required
                                 />
-                                <p className='text-xs text-muted-foreground'>
+                                <p className='text-muted-foreground text-xs'>
                                     {t('admin.mail_templates.form.html_help')}
                                 </p>
                             </div>
@@ -665,7 +665,7 @@ export default function MailTemplatesPage() {
                                     onChange={(e) => setTestEmailData({ ...testEmailData, email: e.target.value })}
                                     required
                                 />
-                                <p className='text-xs text-muted-foreground'>
+                                <p className='text-muted-foreground text-xs'>
                                     {t('admin.mail_templates.form.test_email_help')}
                                 </p>
                             </div>
@@ -687,14 +687,14 @@ export default function MailTemplatesPage() {
                                     onChange={(e) => setTestEmailData({ ...testEmailData, body: e.target.value })}
                                     required
                                 />
-                                <p className='text-xs text-muted-foreground'>
+                                <p className='text-muted-foreground text-xs'>
                                     {t('admin.mail_templates.form.html_help')}
                                 </p>
                             </div>
                         </div>
                         <SheetFooter>
                             <Button type='submit' loading={processing}>
-                                <Mail className='w-4 h-4 mr-2' />
+                                <Mail className='mr-2 h-4 w-4' />
                                 {t('admin.mail_templates.form.send_test')}
                             </Button>
                         </SheetFooter>

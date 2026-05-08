@@ -60,7 +60,7 @@ export function NetworkTab({
         <form onSubmit={onSave}>
             <PageCard title={t('admin.vmInstances.edit_tabs.network') ?? 'Network'} icon={Wifi}>
                 <div className='space-y-4'>
-                    <p className='text-sm text-muted-foreground'>
+                    <p className='text-muted-foreground text-sm'>
                         {isLxc
                             ? (t('admin.vmInstances.network_multi_hint') ??
                               'Add or remove IPs (Proxmox net0, net1, …). Select IP from pool for each interface.')
@@ -79,20 +79,20 @@ export function NetworkTab({
                             return (
                                 <div
                                     key={n.key}
-                                    className='flex flex-wrap items-center gap-2 rounded-xl border border-border/50 p-3 bg-muted/20'
+                                    className='border-border/50 bg-muted/20 flex flex-wrap items-center gap-2 rounded-xl border p-3'
                                 >
                                     <div className='w-20 shrink-0'>
                                         <span className='font-mono text-sm'>{n.key}</span>
-                                        <p className='text-[10px] text-muted-foreground mt-1'>
+                                        <p className='text-muted-foreground mt-1 text-[10px]'>
                                             {n.key === 'net0'
                                                 ? (t('admin.vmInstances.primary_ip') ?? 'Primary')
                                                 : (t('admin.vmInstances.secondary_ip') ?? 'Secondary')}
                                         </p>
                                     </div>
-                                    <div className='flex flex-col gap-1 min-w-[180px]'>
+                                    <div className='flex min-w-[180px] flex-col gap-1'>
                                         {rowIp && (
                                             <span
-                                                className='text-foreground font-semibold text-base tabular-nums'
+                                                className='text-foreground text-base font-semibold tabular-nums'
                                                 title={rowIp}
                                             >
                                                 {rowIp}
@@ -141,14 +141,14 @@ export function NetworkTab({
                             );
                         })}
                     {newNetworkRow && (
-                        <div className='flex flex-wrap items-center gap-2 rounded-xl border border-primary/30 p-3 bg-primary/5'>
-                            <span className='font-mono text-sm w-12 shrink-0'>{newNetworkRow.key}</span>
-                            <div className='flex flex-col gap-1 min-w-[180px]'>
+                        <div className='border-primary/30 bg-primary/5 flex flex-wrap items-center gap-2 rounded-xl border p-3'>
+                            <span className='w-12 shrink-0 font-mono text-sm'>{newNetworkRow.key}</span>
+                            <div className='flex min-w-[180px] flex-col gap-1'>
                                 {newNetworkRow.vm_ip_id != null &&
                                     (() => {
                                         const ip = freeIps.find((i) => i.id === newNetworkRow.vm_ip_id)?.ip;
                                         return ip ? (
-                                            <span className='text-foreground font-semibold text-base tabular-nums'>
+                                            <span className='text-foreground text-base font-semibold tabular-nums'>
                                                 {ip}
                                             </span>
                                         ) : null;
@@ -197,14 +197,14 @@ export function NetworkTab({
                             setNewNetworkRow({ key: next, vm_ip_id: null, bridge: bridges[0] || 'vmbr0' });
                         }}
                     >
-                        <Plus className='h-4 w-4 mr-2' />
+                        <Plus className='mr-2 h-4 w-4' />
                         {t('admin.vmInstances.add_ip') ?? 'Add IP'}
                     </Button>
                 </div>
             </PageCard>
-            <div className='flex justify-end mt-4'>
+            <div className='mt-4 flex justify-end'>
                 <Button type='submit' loading={saving}>
-                    <Save className='h-4 w-4 mr-2' />
+                    <Save className='mr-2 h-4 w-4' />
                     {t('common.save_changes')}
                 </Button>
             </div>

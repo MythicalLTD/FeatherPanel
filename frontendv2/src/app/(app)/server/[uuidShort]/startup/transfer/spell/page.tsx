@@ -416,23 +416,23 @@ export default function ServerTransferSpellPage() {
     if (permissionsLoading || settingsLoading || loading) {
         return (
             <div className='flex flex-col items-center justify-center py-24'>
-                <Loader2 className='h-12 w-12 animate-spin text-primary opacity-50' />
-                <p className='mt-4 text-muted-foreground font-medium'>{t('common.loading')}</p>
+                <Loader2 className='text-primary h-12 w-12 animate-spin opacity-50' />
+                <p className='text-muted-foreground mt-4 font-medium'>{t('common.loading')}</p>
             </div>
         );
     }
 
     if (!canChangeSpell) {
         return (
-            <div className='flex flex-col items-center justify-center py-24 text-center space-y-8 bg-[#0A0A0A]/40 backdrop-blur-3xl rounded-[3rem] border border-white/5 '>
+            <div className='flex flex-col items-center justify-center space-y-8 rounded-[3rem] border border-white/5 bg-[#0A0A0A]/40 py-24 text-center backdrop-blur-3xl'>
                 <div className='relative'>
-                    <div className='absolute inset-0 bg-red-500/20 blur-3xl rounded-full scale-150' />
-                    <div className='relative h-32 w-32 rounded-3xl bg-red-500/10 flex items-center justify-center border-2 border-red-500/20 rotate-3'>
+                    <div className='absolute inset-0 scale-150 rounded-full bg-red-500/20 blur-3xl' />
+                    <div className='relative flex h-32 w-32 rotate-3 items-center justify-center rounded-3xl border-2 border-red-500/20 bg-red-500/10'>
                         <Lock className='h-16 w-16 text-red-500' />
                     </div>
                 </div>
                 <div className='max-w-md space-y-3 px-4'>
-                    <h2 className='text-3xl font-black uppercase tracking-tight'>
+                    <h2 className='text-3xl font-black tracking-tight uppercase'>
                         {t('serverStartup.featureDisabled')}
                     </h2>
                     <p className='text-muted-foreground text-lg leading-relaxed font-medium'>
@@ -442,7 +442,7 @@ export default function ServerTransferSpellPage() {
                 <Button
                     variant='outline'
                     size='default'
-                    className='mt-8 rounded-2xl h-14 px-10'
+                    className='mt-8 h-14 rounded-2xl px-10'
                     onClick={() => router.push(`/server/${uuidShort}`)}
                 >
                     {t('common.goBack')}
@@ -452,7 +452,7 @@ export default function ServerTransferSpellPage() {
     }
 
     return (
-        <div key={pathname} className='max-w-6xl mx-auto space-y-8 pb-16  font-sans'>
+        <div key={pathname} className='mx-auto max-w-6xl space-y-8 pb-16 font-sans'>
             <WidgetRenderer widgets={getWidgets('server-startup-transfer-spell', 'top-of-page')} />
 
             <PageHeader
@@ -465,7 +465,7 @@ export default function ServerTransferSpellPage() {
                             size='default'
                             onClick={() => handleBackToStep(1)}
                             disabled={currentStep === 1 || saving}
-                            className='bg-transparent hover:bg-white/5 border border-transparent hover:border-white/10 text-[10px]'
+                            className='border border-transparent bg-transparent text-[10px] hover:border-white/10 hover:bg-white/5'
                         >
                             {t('common.cancel')}
                         </Button>
@@ -480,7 +480,7 @@ export default function ServerTransferSpellPage() {
                                 t('common.saving')
                             ) : (
                                 <>
-                                    <Zap className='h-5 w-5 mr-3' />
+                                    <Zap className='mr-3 h-5 w-5' />
                                     {t('serverStartup.applySpellChange')}
                                 </>
                             )}
@@ -504,19 +504,19 @@ export default function ServerTransferSpellPage() {
                         key={s.step}
                         onClick={() => !s.disabled && currentStep > s.step && handleBackToStep(s.step as 1 | 2 | 3)}
                         className={cn(
-                            'relative overflow-hidden p-4 rounded-xl border transition-all duration-300',
+                            'relative overflow-hidden rounded-xl border p-4 transition-all duration-300',
                             currentStep === s.step
-                                ? 'bg-primary/10 border-primary/30 '
+                                ? 'bg-primary/10 border-primary/30'
                                 : currentStep > s.step && !s.disabled
-                                  ? 'bg-emerald-500/5 border-emerald-500/20 cursor-pointer hover:bg-emerald-500/10'
-                                  : 'bg-white/5 border-white/5 opacity-40',
+                                  ? 'cursor-pointer border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/10'
+                                  : 'border-white/5 bg-white/5 opacity-40',
                             s.disabled && currentStep !== s.step && 'cursor-not-allowed',
                         )}
                     >
                         <div className='flex items-center justify-between'>
                             <span
                                 className={cn(
-                                    'text-[10px] font-black uppercase tracking-widest',
+                                    'text-[10px] font-black tracking-widest uppercase',
                                     currentStep === s.step
                                         ? 'text-primary'
                                         : currentStep > s.step
@@ -527,12 +527,12 @@ export default function ServerTransferSpellPage() {
                                 {t('serverStartup.stepLabel', { step: String(s.step) })}
                             </span>
                             {currentStep > s.step && (
-                                <Check className='h-4 w-4 text-emerald-500 animate-in zoom-in-0 duration-500' />
+                                <Check className='animate-in zoom-in-0 h-4 w-4 text-emerald-500 duration-500' />
                             )}
                         </div>
                         <h3
                             className={cn(
-                                'text-sm font-bold uppercase tracking-tight mt-1',
+                                'mt-1 text-sm font-bold tracking-tight uppercase',
                                 currentStep === s.step
                                     ? 'text-foreground'
                                     : currentStep > s.step
@@ -548,10 +548,10 @@ export default function ServerTransferSpellPage() {
 
             <div className='relative min-h-[400px]'>
                 {currentStep === 1 && (
-                    <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 '>
+                    <div className='grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3'>
                         {loadingRealms ? (
                             <div className='col-span-full flex items-center justify-center py-12'>
-                                <Loader2 className='h-8 w-8 animate-spin text-primary opacity-50' />
+                                <Loader2 className='text-primary h-8 w-8 animate-spin opacity-50' />
                             </div>
                         ) : (
                             availableRealms.map((realm) => (
@@ -559,25 +559,25 @@ export default function ServerTransferSpellPage() {
                                     key={realm.id}
                                     onClick={() => handleRealmSelect(String(realm.id))}
                                     className={cn(
-                                        'group relative overflow-hidden p-8 rounded-3xl bg-card/10 border border-white/5 hover:border-primary/40 hover:bg-card/30 transition-all duration-500 cursor-pointer',
+                                        'group bg-card/10 hover:border-primary/40 hover:bg-card/30 relative cursor-pointer overflow-hidden rounded-3xl border border-white/5 p-8 transition-all duration-500',
                                         selectedRealmId === String(realm.id) && 'border-primary/50 bg-primary/5',
                                     )}
                                 >
-                                    <div className='absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:bg-primary/10 transition-colors' />
-                                    <div className='space-y-4 relative z-10'>
-                                        <div className='h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 '>
-                                            <Boxes className='h-7 w-7 text-primary' />
+                                    <div className='bg-primary/5 group-hover:bg-primary/10 absolute top-0 right-0 h-32 w-32 translate-x-1/2 -translate-y-1/2 blur-3xl transition-colors' />
+                                    <div className='relative z-10 space-y-4'>
+                                        <div className='bg-primary/10 border-primary/20 flex h-14 w-14 items-center justify-center rounded-2xl border transition-all duration-500 group-hover:scale-110 group-hover:rotate-3'>
+                                            <Boxes className='text-primary h-7 w-7' />
                                         </div>
                                         <div>
-                                            <h3 className='text-2xl font-black uppercase tracking-tight'>
+                                            <h3 className='text-2xl font-black tracking-tight uppercase'>
                                                 {realm.name}
                                             </h3>
-                                            <p className='text-muted-foreground text-sm font-medium mt-1 leading-relaxed line-clamp-2'>
+                                            <p className='text-muted-foreground mt-1 line-clamp-2 text-sm leading-relaxed font-medium'>
                                                 {realm.description || t('serverStartup.discoverRealmsHelp')}
                                             </p>
                                         </div>
-                                        <div className='pt-2 flex items-center text-[10px] font-black uppercase tracking-widest text-primary opacity-0 group-hover:opacity-100 transition-all translate-x-[-10px] group-hover:translate-x-0'>
-                                            {t('serverStartup.viewSpells')} <ChevronRight className='h-3 w-3 ml-1' />
+                                        <div className='text-primary flex translate-x-[-10px] items-center pt-2 text-[10px] font-black tracking-widest uppercase opacity-0 transition-all group-hover:translate-x-0 group-hover:opacity-100'>
+                                            {t('serverStartup.viewSpells')} <ChevronRight className='ml-1 h-3 w-3' />
                                         </div>
                                     </div>
                                 </div>
@@ -587,11 +587,11 @@ export default function ServerTransferSpellPage() {
                 )}
 
                 {currentStep === 2 && (
-                    <div className='space-y-8 '>
-                        <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                    <div className='space-y-8'>
+                        <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
                             {loadingSpells ? (
                                 <div className='col-span-full flex items-center justify-center py-12'>
-                                    <Loader2 className='h-8 w-8 animate-spin text-primary opacity-50' />
+                                    <Loader2 className='text-primary h-8 w-8 animate-spin opacity-50' />
                                 </div>
                             ) : (
                                 availableSpells.map((spell) => (
@@ -599,11 +599,11 @@ export default function ServerTransferSpellPage() {
                                         key={spell.id}
                                         onClick={() => handleSpellSelect(String(spell.id))}
                                         className={cn(
-                                            'group flex items-center gap-6 p-6 rounded-3xl bg-card/20 border border-white/5 hover:border-primary/30 hover:bg-card/40 transition-all duration-300 cursor-pointer',
+                                            'group bg-card/20 hover:border-primary/30 hover:bg-card/40 flex cursor-pointer items-center gap-6 rounded-3xl border border-white/5 p-6 transition-all duration-300',
                                             selectedSpellId === String(spell.id) && 'border-primary/40 bg-primary/5',
                                         )}
                                     >
-                                        <div className='h-16 w-16 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 group-hover:border-primary/20 transition-all'>
+                                        <div className='group-hover:border-primary/20 flex h-16 w-16 items-center justify-center rounded-2xl border border-white/10 bg-white/5 transition-all'>
                                             <Zap
                                                 className={cn(
                                                     'h-8 w-8 transition-colors',
@@ -613,21 +613,21 @@ export default function ServerTransferSpellPage() {
                                                 )}
                                             />
                                         </div>
-                                        <div className='flex-1 min-w-0'>
-                                            <h3 className='text-xl font-bold uppercase tracking-tight truncate'>
+                                        <div className='min-w-0 flex-1'>
+                                            <h3 className='truncate text-xl font-bold tracking-tight uppercase'>
                                                 {spell.name}
                                             </h3>
-                                            <div className='flex items-center gap-2 mt-0.5'>
-                                                <span className='text-[9px] font-black uppercase tracking-widest text-muted-foreground opacity-50'>
+                                            <div className='mt-0.5 flex items-center gap-2'>
+                                                <span className='text-muted-foreground text-[9px] font-black tracking-widest uppercase opacity-50'>
                                                     {t('serverStartup.apiId', { id: String(spell.id) })}
                                                 </span>
                                                 <div className='h-1 w-1 rounded-full bg-white/10' />
-                                                <span className='text-[9px] font-black uppercase tracking-widest text-primary/60'>
+                                                <span className='text-primary/60 text-[9px] font-black tracking-widest uppercase'>
                                                     {t('serverStartup.compatible')}
                                                 </span>
                                             </div>
                                         </div>
-                                        <div className='h-10 w-10 rounded-full bg-white/5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all'>
+                                        <div className='flex h-10 w-10 items-center justify-center rounded-full bg-white/5 opacity-0 transition-all group-hover:opacity-100'>
                                             <ChevronRight className='h-5 w-5' />
                                         </div>
                                     </div>
@@ -638,18 +638,18 @@ export default function ServerTransferSpellPage() {
                 )}
 
                 {currentStep === 3 && targetSpell && (
-                    <div className='space-y-8 '>
-                        <div className='bg-orange-500/5 border border-orange-500/10 rounded-3xl p-8 '>
+                    <div className='space-y-8'>
+                        <div className='rounded-3xl border border-orange-500/10 bg-orange-500/5 p-8'>
                             <div className='flex items-start gap-6'>
-                                <div className='h-14 w-14 rounded-2xl bg-orange-500/10 flex items-center justify-center border border-orange-500/20 shrink-0 '>
+                                <div className='flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-orange-500/20 bg-orange-500/10'>
                                     <AlertTriangle className='h-7 w-7 text-orange-500' />
                                 </div>
                                 <div className='space-y-4'>
                                     <div className='space-y-1'>
-                                        <h3 className='text-2xl font-black uppercase tracking-tight text-orange-500'>
+                                        <h3 className='text-2xl font-black tracking-tight text-orange-500 uppercase'>
                                             {t('serverStartup.configureNewVariables')}
                                         </h3>
-                                        <p className='text-orange-500/70 font-medium'>
+                                        <p className='font-medium text-orange-500/70'>
                                             {t('serverStartup.transitionTo')}{' '}
                                             <span className='text-foreground font-black uppercase underline decoration-2 underline-offset-4'>
                                                 {targetSpell.name}
@@ -658,17 +658,17 @@ export default function ServerTransferSpellPage() {
                                         </p>
                                     </div>
 
-                                    <div className='flex items-center gap-4 bg-black/20 p-4 rounded-2xl border border-white/5'>
+                                    <div className='flex items-center gap-4 rounded-2xl border border-white/5 bg-black/20 p-4'>
                                         <div
-                                            className='relative flex items-center cursor-pointer select-none group/wipe'
+                                            className='group/wipe relative flex cursor-pointer items-center select-none'
                                             onClick={() => setWipeFiles(!wipeFiles)}
                                         >
                                             <div
                                                 className={cn(
-                                                    'h-6 w-11 rounded-full transition-all duration-300 border-2',
+                                                    'h-6 w-11 rounded-full border-2 transition-all duration-300',
                                                     wipeFiles
-                                                        ? 'bg-orange-500 border-orange-500'
-                                                        : 'bg-white/5 border-white/10',
+                                                        ? 'border-orange-500 bg-orange-500'
+                                                        : 'border-white/10 bg-white/5',
                                                 )}
                                             >
                                                 <div
@@ -679,10 +679,10 @@ export default function ServerTransferSpellPage() {
                                                 />
                                             </div>
                                             <div className='ml-3'>
-                                                <h4 className='text-xs font-black uppercase tracking-widest text-orange-500'>
+                                                <h4 className='text-xs font-black tracking-widest text-orange-500 uppercase'>
                                                     {t('serverStartup.wipeFilesOnSpellChange')}
                                                 </h4>
-                                                <p className='text-[10px] text-orange-500/50 font-medium uppercase tracking-tighter'>
+                                                <p className='text-[10px] font-medium tracking-tighter text-orange-500/50 uppercase'>
                                                     {t('serverStartup.wipeFilesRecommendation')}
                                                 </p>
                                             </div>
@@ -693,17 +693,17 @@ export default function ServerTransferSpellPage() {
                         </div>
 
                         {targetVariables.length === 0 ? (
-                            <div className='flex flex-col items-center justify-center py-16 text-center space-y-4 bg-card/10 rounded-3xl border border-dashed border-border/40 text-muted-foreground'>
+                            <div className='bg-card/10 border-border/40 text-muted-foreground flex flex-col items-center justify-center space-y-4 rounded-3xl border border-dashed py-16 text-center'>
                                 <Zap className='h-16 w-16 opacity-10' />
-                                <p className='font-black uppercase tracking-widest text-xs opacity-50'>
+                                <p className='text-xs font-black tracking-widest uppercase opacity-50'>
                                     {t('serverStartup.unconfiguredVariables')}
                                 </p>
                             </div>
                         ) : (
-                            <div className='grid grid-cols-1 md:grid-cols-2 gap-8'>
+                            <div className='grid grid-cols-1 gap-8 md:grid-cols-2'>
                                 {targetVariables.map((v) => (
                                     <div key={v.variable_id} className='group/var space-y-4'>
-                                        <div className='flex items-center justify-between ml-1'>
+                                        <div className='ml-1 flex items-center justify-between'>
                                             <div className='flex items-center gap-3'>
                                                 <div
                                                     className={cn(
@@ -713,7 +713,7 @@ export default function ServerTransferSpellPage() {
                                                             : 'bg-primary/40 group-hover/var:bg-primary',
                                                     )}
                                                 />
-                                                <label className='text-xs font-black uppercase tracking-[0.15em] text-muted-foreground group-hover/var:text-foreground transition-all'>
+                                                <label className='text-muted-foreground group-hover/var:text-foreground text-xs font-black tracking-[0.15em] uppercase transition-all'>
                                                     {v.name}{' '}
                                                     {v.rules && v.rules.includes('required') && (
                                                         <span className='text-primary'>*</span>
@@ -723,7 +723,7 @@ export default function ServerTransferSpellPage() {
                                             {v.rules && v.rules.includes('required') && (
                                                 <Badge
                                                     variant='outline'
-                                                    className='text-[8px] font-black uppercase tracking-widest border-primary/20 bg-primary/5 text-primary'
+                                                    className='border-primary/20 bg-primary/5 text-primary text-[8px] font-black tracking-widest uppercase'
                                                 >
                                                     {t('serverStartup.required')}
                                                 </Badge>
@@ -745,12 +745,12 @@ export default function ServerTransferSpellPage() {
                                         </div>
 
                                         {variableErrors[v.variable_id] ? (
-                                            <p className='text-[9px] font-black text-red-500 ml-2 uppercase tracking-widest animate-in slide-in-from-left-2'>
+                                            <p className='animate-in slide-in-from-left-2 ml-2 text-[9px] font-black tracking-widest text-red-500 uppercase'>
                                                 {variableErrors[v.variable_id]}
                                             </p>
                                         ) : (
                                             v.description && (
-                                                <p className='text-[9px] font-bold text-muted-foreground/40 ml-2 line-clamp-1 group-hover/var:line-clamp-none transition-all'>
+                                                <p className='text-muted-foreground/40 ml-2 line-clamp-1 text-[9px] font-bold transition-all group-hover/var:line-clamp-none'>
                                                     {v.description}
                                                 </p>
                                             )
@@ -760,8 +760,8 @@ export default function ServerTransferSpellPage() {
                             </div>
                         )}
 
-                        <div className='pt-8 border-t border-white/5 flex flex-col items-center'>
-                            <p className='text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40 mb-6'>
+                        <div className='flex flex-col items-center border-t border-white/5 pt-8'>
+                            <p className='text-muted-foreground/40 mb-6 text-[10px] font-black tracking-[0.2em] uppercase'>
                                 {t('serverStartup.doubleCheckConfiguration')}
                             </p>
                             <Button
@@ -776,7 +776,7 @@ export default function ServerTransferSpellPage() {
                                     t('common.processing')
                                 ) : (
                                     <>
-                                        <Zap className='h-6 w-6 mr-3 fill-primary-foreground' />
+                                        <Zap className='fill-primary-foreground mr-3 h-6 w-6' />
                                         {t('serverStartup.applyNewSoftware')}
                                     </>
                                 )}

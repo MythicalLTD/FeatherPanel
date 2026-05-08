@@ -304,7 +304,7 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                 description={t('admin.vdsNodes.ips.description', { name: nodeName })}
                 action={
                     <Button size='sm' onClick={() => setCreateOpen(true)}>
-                        <Plus className='h-4 w-4 mr-2' />
+                        <Plus className='mr-2 h-4 w-4' />
                         {t('admin.vdsNodes.ips.add_button')}
                     </Button>
                 }
@@ -312,7 +312,7 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                 <div className='space-y-4'>
                     <TabToolbar>
                         <div className='relative flex-1'>
-                            <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground' />
+                            <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
                             <Input
                                 placeholder={t('admin.vdsNodes.ips.search_placeholder')}
                                 value={searchQuery}
@@ -326,7 +326,7 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                     </TabToolbar>
 
                     {pagination.totalPages > 1 && (
-                        <div className='flex items-center justify-between gap-4 py-3 px-4 rounded-xl border border-border bg-card/50'>
+                        <div className='border-border bg-card/50 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
                             <Button
                                 variant='outline'
                                 size='sm'
@@ -363,33 +363,33 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                     ) : (
                         <TabTableShell>
                             <table className='w-full text-sm'>
-                                <thead className='bg-muted/20 border-b border-border/50'>
+                                <thead className='bg-muted/20 border-border/50 border-b'>
                                     <tr>
-                                        <th className='px-4 py-3 text-left font-medium text-muted-foreground'>ID</th>
-                                        <th className='px-4 py-3 text-left font-medium text-muted-foreground'>
+                                        <th className='text-muted-foreground px-4 py-3 text-left font-medium'>ID</th>
+                                        <th className='text-muted-foreground px-4 py-3 text-left font-medium'>
                                             {t('admin.vdsNodes.ips.col_ip')}
                                         </th>
-                                        <th className='px-4 py-3 text-left font-medium text-muted-foreground'>
+                                        <th className='text-muted-foreground px-4 py-3 text-left font-medium'>
                                             {t('admin.vdsNodes.ips.col_cidr')}
                                         </th>
-                                        <th className='px-4 py-3 text-left font-medium text-muted-foreground'>
+                                        <th className='text-muted-foreground px-4 py-3 text-left font-medium'>
                                             {t('admin.vdsNodes.ips.col_gateway')}
                                         </th>
-                                        <th className='px-4 py-3 text-left font-medium text-muted-foreground'>
+                                        <th className='text-muted-foreground px-4 py-3 text-left font-medium'>
                                             {t('admin.vdsNodes.ips.col_notes')}
                                         </th>
-                                        <th className='px-4 py-3 text-left font-medium text-muted-foreground'>
+                                        <th className='text-muted-foreground px-4 py-3 text-left font-medium'>
                                             {t('admin.vdsNodes.ips.col_status')}
                                         </th>
-                                        <th className='px-4 py-3 text-right font-medium text-muted-foreground'>
+                                        <th className='text-muted-foreground px-4 py-3 text-right font-medium'>
                                             {t('common.actions')}
                                         </th>
                                     </tr>
                                 </thead>
-                                <tbody className='divide-y divide-border/50'>
+                                <tbody className='divide-border/50 divide-y'>
                                     {filteredIps.map((ip) => (
                                         <tr key={ip.id} className='hover:bg-muted/20 transition-colors'>
-                                            <td className='px-4 py-3 font-mono text-xs text-muted-foreground'>
+                                            <td className='text-muted-foreground px-4 py-3 font-mono text-xs'>
                                                 {ip.id}
                                             </td>
                                             <td className='px-4 py-3'>
@@ -397,7 +397,7 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                                                     <span className='font-mono'>{ip.ip}</span>
                                                     {ip.is_primary === 'true' && (
                                                         <span
-                                                            className='px-2 py-0.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-bold uppercase rounded-full border border-amber-500/30'
+                                                            className='rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold text-amber-600 uppercase dark:text-amber-400'
                                                             title={t('admin.vdsNodes.ips.primary_proxmox_help')}
                                                         >
                                                             {t('admin.vdsNodes.ips.primary_badge')}
@@ -405,18 +405,18 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                                                     )}
                                                 </div>
                                             </td>
-                                            <td className='px-4 py-3 font-mono text-muted-foreground'>
+                                            <td className='text-muted-foreground px-4 py-3 font-mono'>
                                                 {ip.cidr !== null ? `/${ip.cidr}` : '-'}
                                             </td>
-                                            <td className='px-4 py-3 font-mono text-muted-foreground'>
+                                            <td className='text-muted-foreground px-4 py-3 font-mono'>
                                                 {ip.gateway || '-'}
                                             </td>
-                                            <td className='px-4 py-3 text-muted-foreground truncate max-w-[180px]'>
+                                            <td className='text-muted-foreground max-w-[180px] truncate px-4 py-3'>
                                                 {ip.notes || '-'}
                                             </td>
                                             <td className='px-4 py-3'>
                                                 {ip.in_use ? (
-                                                    <span className='px-2 py-0.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] font-medium rounded-full border border-blue-500/30'>
+                                                    <span className='rounded-full border border-blue-500/30 bg-blue-500/10 px-2 py-0.5 text-[10px] font-medium text-blue-600 dark:text-blue-400'>
                                                         {t('admin.vdsNodes.ips.in_use_badge')}
                                                     </span>
                                                 ) : (
@@ -503,8 +503,8 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                     )}
 
                     {pagination.totalPages > 1 && (
-                        <div className='flex items-center justify-between mt-4'>
-                            <p className='text-xs text-muted-foreground'>
+                        <div className='mt-4 flex items-center justify-between'>
+                            <p className='text-muted-foreground text-xs'>
                                 {t('common.pagination.showing', {
                                     from: String((page - 1) * pageSize + 1),
                                     to: String(Math.min(page * pageSize, pagination.total)),
@@ -520,7 +520,7 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                                 >
                                     <ChevronLeft className='h-4 w-4' />
                                 </Button>
-                                <span className='text-xs font-medium px-2'>
+                                <span className='px-2 text-xs font-medium'>
                                     {page} / {pagination.totalPages}
                                 </span>
                                 <Button
@@ -537,7 +537,7 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                 </div>
             </PageCard>
 
-            <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+            <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
                 <TabHintCard
                     icon={Network}
                     title={t('admin.vdsNodes.ips.help.what_are_ips')}
@@ -555,15 +555,15 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                     <SheetTitle>{t('admin.vdsNodes.ips.create.title')}</SheetTitle>
                     <SheetDescription>{t('admin.vdsNodes.ips.create.description')}</SheetDescription>
                 </SheetHeader>
-                <div className='space-y-6 mt-8'>
-                    <div className='flex p-1 bg-muted/50 rounded-xl gap-1'>
+                <div className='mt-8 space-y-6'>
+                    <div className='bg-muted/50 flex gap-1 rounded-xl p-1'>
                         <Button
                             type='button'
                             variant='ghost'
                             className={
                                 createMode === 'single'
-                                    ? 'flex-1 rounded-lg h-9 text-xs bg-background shadow-sm hover:bg-background'
-                                    : 'flex-1 rounded-lg h-9 text-xs'
+                                    ? 'bg-background hover:bg-background h-9 flex-1 rounded-lg text-xs shadow-sm'
+                                    : 'h-9 flex-1 rounded-lg text-xs'
                             }
                             onClick={() => setCreateMode('single')}
                         >
@@ -574,8 +574,8 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                             variant='ghost'
                             className={
                                 createMode === 'bulk'
-                                    ? 'flex-1 rounded-lg h-9 text-xs bg-background shadow-sm hover:bg-background'
-                                    : 'flex-1 rounded-lg h-9 text-xs'
+                                    ? 'bg-background hover:bg-background h-9 flex-1 rounded-lg text-xs shadow-sm'
+                                    : 'h-9 flex-1 rounded-lg text-xs'
                             }
                             onClick={() => setCreateMode('bulk')}
                         >
@@ -591,7 +591,7 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                                 className='min-h-[120px] font-mono'
                                 onChange={(e) => setBulkIpsInput(e.target.value)}
                             />
-                            <p className='text-xs text-muted-foreground'>
+                            <p className='text-muted-foreground text-xs'>
                                 One IP per line, or comma/space separated. CIDR/gateway/notes apply to all.
                             </p>
                         </div>
@@ -606,7 +606,7 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                                 onChange={(e) => setCreateForm((p) => ({ ...p, ip: e.target.value }))}
                             />
                             {createErrors.ip && (
-                                <p className='text-[10px] uppercase font-bold text-red-500'>{createErrors.ip}</p>
+                                <p className='text-[10px] font-bold text-red-500 uppercase'>{createErrors.ip}</p>
                             )}
                         </div>
                     )}
@@ -623,7 +623,7 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                                 onChange={(e) => setCreateForm((p) => ({ ...p, cidr: e.target.value }))}
                             />
                             {createErrors.cidr && (
-                                <p className='text-[10px] uppercase font-bold text-red-500'>{createErrors.cidr}</p>
+                                <p className='text-[10px] font-bold text-red-500 uppercase'>{createErrors.cidr}</p>
                             )}
                         </div>
                         <div className='space-y-2'>
@@ -635,7 +635,7 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                                 onChange={(e) => setCreateForm((p) => ({ ...p, gateway: e.target.value }))}
                             />
                             {createErrors.gateway && (
-                                <p className='text-[10px] uppercase font-bold text-red-500'>{createErrors.gateway}</p>
+                                <p className='text-[10px] font-bold text-red-500 uppercase'>{createErrors.gateway}</p>
                             )}
                         </div>
                     </div>
@@ -666,11 +666,11 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                         {editIp && t('admin.vdsNodes.ips.edit.description', { ip: editIp.ip })}
                     </SheetDescription>
                 </SheetHeader>
-                <div className='space-y-6 mt-8'>
+                <div className='mt-8 space-y-6'>
                     <div className='space-y-2'>
                         <Label className='text-sm font-semibold'>{t('admin.vdsNodes.ips.col_ip')}</Label>
-                        <Input value={editForm.ip} disabled className='h-11 font-mono bg-muted/30' />
-                        <p className='text-[10px] text-muted-foreground italic'>
+                        <Input value={editForm.ip} disabled className='bg-muted/30 h-11 font-mono' />
+                        <p className='text-muted-foreground text-[10px] italic'>
                             {t('admin.vdsNodes.ips.edit.ip_immutable')}
                         </p>
                     </div>
@@ -687,7 +687,7 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                                 onChange={(e) => setEditForm((p) => ({ ...p, cidr: e.target.value }))}
                             />
                             {editErrors.cidr && (
-                                <p className='text-[10px] uppercase font-bold text-red-500'>{editErrors.cidr}</p>
+                                <p className='text-[10px] font-bold text-red-500 uppercase'>{editErrors.cidr}</p>
                             )}
                         </div>
                         <div className='space-y-2'>
@@ -699,7 +699,7 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                                 onChange={(e) => setEditForm((p) => ({ ...p, gateway: e.target.value }))}
                             />
                             {editErrors.gateway && (
-                                <p className='text-[10px] uppercase font-bold text-red-500'>{editErrors.gateway}</p>
+                                <p className='text-[10px] font-bold text-red-500 uppercase'>{editErrors.gateway}</p>
                             )}
                         </div>
                     </div>

@@ -112,7 +112,7 @@ export function AllocationsTab({
                             onClick={fetchServerAllocations}
                             loading={loading}
                         >
-                            <RefreshCw className='h-4 w-4 mr-2' />
+                            <RefreshCw className='mr-2 h-4 w-4' />
                             {t('common.refresh')}
                         </Button>
                     </div>
@@ -120,7 +120,7 @@ export function AllocationsTab({
                         <div
                             role='button'
                             tabIndex={0}
-                            className='flex-1 h-11 px-3 bg-muted/30 rounded-xl border border-border/50 text-sm flex items-center cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
+                            className='bg-muted/30 border-border/50 focus-visible:ring-ring flex h-11 flex-1 cursor-pointer items-center rounded-xl border px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-offset-2'
                             onClick={() => openAllocationModal('primary')}
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter' || e.key === ' ') {
@@ -131,8 +131,8 @@ export function AllocationsTab({
                         >
                             {selectedEntities.allocation ? (
                                 <div className='flex items-center gap-2'>
-                                    <Plug className='h-4 w-4 text-primary' />
-                                    <span className='font-medium text-foreground font-mono'>
+                                    <Plug className='text-primary h-4 w-4' />
+                                    <span className='text-foreground font-mono font-medium'>
                                         {selectedEntities.allocation.ip}:{selectedEntities.allocation.port}
                                     </span>
                                 </div>
@@ -149,7 +149,7 @@ export function AllocationsTab({
                 </div>
 
                 {serverAllocations.server && (
-                    <div className='p-4 bg-muted/20 rounded-xl border border-border/50 flex items-center justify-between'>
+                    <div className='bg-muted/20 border-border/50 flex items-center justify-between rounded-xl border p-4'>
                         <div className='text-sm'>
                             {t('admin.servers.edit.allocations.using')}{' '}
                             <span className='font-bold'>{serverAllocations.server.current_allocations}</span>{' '}
@@ -170,15 +170,15 @@ export function AllocationsTab({
                         {serverAllocations.allocations.map((allocation) => (
                             <div
                                 key={allocation.id}
-                                className='flex items-center justify-between p-4 bg-muted/20 rounded-xl border border-border/50'
+                                className='bg-muted/20 border-border/50 flex items-center justify-between rounded-xl border p-4'
                             >
                                 <div className='flex items-center gap-3'>
-                                    <Plug className='h-4 w-4 text-muted-foreground' />
+                                    <Plug className='text-muted-foreground h-4 w-4' />
                                     <div>
-                                        <div className='font-medium font-mono'>
+                                        <div className='font-mono font-medium'>
                                             {allocation.ip}:{allocation.port}
                                         </div>
-                                        <div className='text-xs text-muted-foreground'>
+                                        <div className='text-muted-foreground text-xs'>
                                             {allocation.ip_alias || t('admin.servers.edit.allocations.no_alias')}
                                         </div>
                                     </div>
@@ -194,7 +194,7 @@ export function AllocationsTab({
                                             loading={settingPrimaryId === allocation.id}
                                             disabled={deletingId === allocation.id}
                                         >
-                                            <Star className='h-4 w-4 mr-2' />
+                                            <Star className='mr-2 h-4 w-4' />
                                             {t('admin.servers.edit.allocations.set_primary')}
                                         </Button>
                                         <Button

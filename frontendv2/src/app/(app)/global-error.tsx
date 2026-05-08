@@ -114,7 +114,7 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
     return (
         <html lang='en' suppressHydrationWarning>
             <body className='bg-background text-foreground'>
-                <div className='relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-background p-4'>
+                <div className='bg-background relative flex min-h-screen flex-col items-center justify-center overflow-hidden p-4'>
                     {renderBackground()}
                     {hasOverlay && (
                         <div className='pointer-events-none absolute inset-0 z-[1]' style={overlayStyle} aria-hidden />
@@ -125,48 +125,48 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
                     </div>
 
                     <div className='relative z-10 w-full max-w-2xl'>
-                        <div className='relative group'>
-                            <div className='absolute -inset-0.5 bg-linear-to-r from-destructive/50 to-destructive/30 rounded-3xl blur opacity-20 group-hover:opacity-30 transition duration-1000' />
+                        <div className='group relative'>
+                            <div className='from-destructive/50 to-destructive/30 absolute -inset-0.5 rounded-3xl bg-linear-to-r opacity-20 blur transition duration-1000 group-hover:opacity-30' />
 
-                            <div className='relative rounded-3xl border border-border/50 bg-card/95 backdrop-blur-xl p-8 md:p-12 '>
-                                <div className='text-center space-y-6'>
+                            <div className='border-border/50 bg-card/95 relative rounded-3xl border p-8 backdrop-blur-xl md:p-12'>
+                                <div className='space-y-6 text-center'>
                                     <div className='relative'>
-                                        <h1 className='text-9xl md:text-[12rem] font-black bg-linear-to-br from-destructive via-destructive/80 to-destructive/60 bg-clip-text text-transparent leading-none'>
+                                        <h1 className='from-destructive via-destructive/80 to-destructive/60 bg-linear-to-br bg-clip-text text-9xl leading-none font-black text-transparent md:text-[12rem]'>
                                             500
                                         </h1>
                                         <div className='absolute inset-0 flex items-center justify-center'>
-                                            <div className='text-6xl md:text-7xl opacity-10'>⚠️</div>
+                                            <div className='text-6xl opacity-10 md:text-7xl'>⚠️</div>
                                         </div>
                                     </div>
 
                                     <div className='space-y-3'>
-                                        <h2 className='text-2xl md:text-3xl font-bold tracking-tight'>
+                                        <h2 className='text-2xl font-bold tracking-tight md:text-3xl'>
                                             {staleVersion ? 'New Version Available' : 'Critical Error'}
                                         </h2>
-                                        <p className='text-muted-foreground max-w-md mx-auto'>
+                                        <p className='text-muted-foreground mx-auto max-w-md'>
                                             {staleVersion
                                                 ? 'The app was updated. Please refresh the page to load the latest version.'
                                                 : 'A critical error occurred that prevented the application from loading. Please try refreshing the page.'}
                                         </p>
                                         {!staleVersion && error.digest && (
-                                            <p className='text-xs text-muted-foreground font-mono bg-muted px-3 py-1 rounded-lg inline-block'>
+                                            <p className='text-muted-foreground bg-muted inline-block rounded-lg px-3 py-1 font-mono text-xs'>
                                                 Error ID: {error.digest}
                                             </p>
                                         )}
                                     </div>
 
-                                    <div className='flex flex-col sm:flex-row gap-3 justify-center pt-4'>
+                                    <div className='flex flex-col justify-center gap-3 pt-4 sm:flex-row'>
                                         <Button
                                             onClick={staleVersion ? hardRefresh : reset}
                                             variant='outline'
                                             className='group'
                                         >
-                                            <RefreshCw className='h-4 w-4 mr-2 group-hover:rotate-180 transition-transform duration-500' />
+                                            <RefreshCw className='mr-2 h-4 w-4 transition-transform duration-500 group-hover:rotate-180' />
                                             {staleVersion ? 'Refresh Page' : 'Try Again'}
                                         </Button>
                                         <Link href='/'>
-                                            <Button className='w-full sm:w-auto group'>
-                                                <Home className='h-4 w-4 mr-2' />
+                                            <Button className='group w-full sm:w-auto'>
+                                                <Home className='mr-2 h-4 w-4' />
                                                 Go Home
                                             </Button>
                                         </Link>
@@ -176,13 +176,13 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
                         </div>
                     </div>
 
-                    <div className='relative z-10 mt-8 text-center text-xs text-muted-foreground'>
+                    <div className='text-muted-foreground relative z-10 mt-8 text-center text-xs'>
                         <p className='mb-2 font-medium'>Running on FeatherPanel {version ? `v${version}` : ''}</p>
                         <a
                             href='https://featherpanel.com'
                             target='_blank'
                             rel='noopener noreferrer'
-                            className='inline-flex items-center gap-1.5 text-primary transition-all duration-200 hover:text-primary/80 hover:underline underline-offset-4 font-medium'
+                            className='text-primary hover:text-primary/80 inline-flex items-center gap-1.5 font-medium underline-offset-4 transition-all duration-200 hover:underline'
                         >
                             MythicalSystems
                             <svg className='h-3.5 w-3.5' fill='none' viewBox='0 0 24 24' stroke='currentColor'>

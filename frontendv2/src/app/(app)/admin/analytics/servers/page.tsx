@@ -247,19 +247,19 @@ export default function ServerAnalyticsPage() {
 
     if (loading) {
         return (
-            <div className='flex items-center justify-center min-h-[400px]'>
-                <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-primary'></div>
+            <div className='flex min-h-[400px] items-center justify-center'>
+                <div className='border-primary h-8 w-8 animate-spin rounded-full border-b-2'></div>
             </div>
         );
     }
 
     if (error) {
         return (
-            <div className='flex flex-col items-center justify-center min-h-[400px] text-center'>
-                <p className='text-red-500 mb-4'>{error}</p>
+            <div className='flex min-h-[400px] flex-col items-center justify-center text-center'>
+                <p className='mb-4 text-red-500'>{error}</p>
                 <button
                     onClick={fetchData}
-                    className='px-4 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-opacity'
+                    className='bg-primary text-primary-foreground rounded-md px-4 py-2 transition-opacity hover:opacity-90'
                 >
                     {t('admin.analytics.activity.retry')}
                 </button>
@@ -284,7 +284,7 @@ export default function ServerAnalyticsPage() {
                             subtitle={t('admin.analytics.servers.total')}
                             description={t('admin.analytics.servers.active_servers')}
                             icon={Server}
-                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                            className='bg-card/50 shadow-none! backdrop-blur-sm'
                         />
                         <ResourceCard
                             title={overview.running.toString()}
@@ -293,7 +293,7 @@ export default function ServerAnalyticsPage() {
                                 percentage: String(overview.percentage_running),
                             })}
                             icon={Cpu}
-                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                            className='bg-card/50 shadow-none! backdrop-blur-sm'
                         />
                         <ResourceCard
                             title={overview.suspended.toString()}
@@ -302,14 +302,14 @@ export default function ServerAnalyticsPage() {
                                 percentage: String(overview.percentage_suspended),
                             })}
                             icon={Archive}
-                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                            className='bg-card/50 shadow-none! backdrop-blur-sm'
                         />
                         <ResourceCard
                             title={overview.installing.toString()}
                             subtitle={t('admin.analytics.servers.installing')}
                             description={t('admin.analytics.servers.being_installed')}
                             icon={HardDrive}
-                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                            className='bg-card/50 shadow-none! backdrop-blur-sm'
                         />
                     </div>
                 )}
@@ -324,7 +324,7 @@ export default function ServerAnalyticsPage() {
                                     count: String(backupStats.avg_backups_per_server),
                                 })}
                                 icon={Archive}
-                                className='shadow-none! bg-card/50 backdrop-blur-sm'
+                                className='bg-card/50 shadow-none! backdrop-blur-sm'
                             />
                         )}
                         {scheduleStats && (
@@ -335,7 +335,7 @@ export default function ServerAnalyticsPage() {
                                     count: String(scheduleStats.avg_schedules_per_server),
                                 })}
                                 icon={Clock}
-                                className='shadow-none! bg-card/50 backdrop-blur-sm'
+                                className='bg-card/50 shadow-none! backdrop-blur-sm'
                             />
                         )}
                         {subuserStats && (
@@ -346,7 +346,7 @@ export default function ServerAnalyticsPage() {
                                     count: String(subuserStats.avg_subusers_per_server),
                                 })}
                                 icon={Users}
-                                className='shadow-none! bg-card/50 backdrop-blur-sm'
+                                className='bg-card/50 shadow-none! backdrop-blur-sm'
                             />
                         )}
                         {installationStats && (
@@ -357,7 +357,7 @@ export default function ServerAnalyticsPage() {
                                     minutes: String(installationStats.avg_installation_time_minutes),
                                 })}
                                 icon={Clock}
-                                className='shadow-none! bg-card/50 backdrop-blur-sm'
+                                className='bg-card/50 shadow-none! backdrop-blur-sm'
                             />
                         )}
                     </div>
@@ -371,7 +371,7 @@ export default function ServerAnalyticsPage() {
                                 subtitle='Avg DB limit'
                                 description={`Avg backup limit: ${limitStats.avg_backup_limit}`}
                                 icon={HardDrive}
-                                className='shadow-none! bg-card/50 backdrop-blur-sm'
+                                className='bg-card/50 shadow-none! backdrop-blur-sm'
                             />
                         )}
                         {configurationStats && (
@@ -380,7 +380,7 @@ export default function ServerAnalyticsPage() {
                                 subtitle='Skip scripts enabled'
                                 description={`OOM disabled: ${configurationStats.oom_disabled}`}
                                 icon={Settings}
-                                className='shadow-none! bg-card/50 backdrop-blur-sm'
+                                className='bg-card/50 shadow-none! backdrop-blur-sm'
                             />
                         )}
                         {variableStats && (
@@ -389,7 +389,7 @@ export default function ServerAnalyticsPage() {
                                 subtitle='Server variables'
                                 description='Custom runtime variable values'
                                 icon={ShieldAlert}
-                                className='shadow-none! bg-card/50 backdrop-blur-sm'
+                                className='bg-card/50 shadow-none! backdrop-blur-sm'
                             />
                         )}
                         {serverActivityStats && (
@@ -398,7 +398,7 @@ export default function ServerAnalyticsPage() {
                                 subtitle='Server activity events'
                                 description='Operational events across all servers'
                                 icon={Activity}
-                                className='shadow-none! bg-card/50 backdrop-blur-sm'
+                                className='bg-card/50 shadow-none! backdrop-blur-sm'
                             />
                         )}
                     </div>

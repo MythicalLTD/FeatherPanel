@@ -176,9 +176,9 @@ export default function SetupTwoFactorForm() {
 
     if (loading) {
         return (
-            <div className='text-center py-12'>
-                <div className='inline-block animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent' />
-                <p className='mt-4 text-sm text-muted-foreground'>{t('auth.setup_2fa.setting_up')}</p>
+            <div className='py-12 text-center'>
+                <div className='border-primary inline-block h-8 w-8 animate-spin rounded-full border-2 border-t-transparent' />
+                <p className='text-muted-foreground mt-4 text-sm'>{t('auth.setup_2fa.setting_up')}</p>
             </div>
         );
     }
@@ -187,24 +187,24 @@ export default function SetupTwoFactorForm() {
         <div className='space-y-6'>
             <WidgetRenderer widgets={getWidgets('auth-setup-2fa', 'auth-setup-2fa-top')} />
 
-            <div className='text-center space-y-3'>
-                <div className='inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-2'>
-                    <ShieldCheck className='h-8 w-8 text-primary' />
+            <div className='space-y-3 text-center'>
+                <div className='bg-primary/10 mb-2 inline-flex h-16 w-16 items-center justify-center rounded-2xl'>
+                    <ShieldCheck className='text-primary h-8 w-8' />
                 </div>
                 <h2 className='text-2xl font-bold tracking-tight'>{t('auth.setup_2fa.title')}</h2>
-                <p className='text-sm text-muted-foreground'>{t('auth.setup_2fa.subtitle')}</p>
+                <p className='text-muted-foreground text-sm'>{t('auth.setup_2fa.subtitle')}</p>
             </div>
 
             <WidgetRenderer widgets={getWidgets('auth-setup-2fa', 'auth-setup-2fa-before-form')} />
             <form onSubmit={handleSubmit} className='space-y-6'>
-                <div className='flex justify-center p-6 bg-white dark:bg-muted/20 rounded-2xl border border-border/50'>
+                <div className='dark:bg-muted/20 border-border/50 flex justify-center rounded-2xl border bg-white p-6'>
                     <QRCode value={qrCodeUrl} size={200} level='M' />
                 </div>
 
                 <div className='space-y-3'>
-                    <p className='text-sm text-center text-muted-foreground'>{t('auth.setup_2fa.manual_entry')}</p>
+                    <p className='text-muted-foreground text-center text-sm'>{t('auth.setup_2fa.manual_entry')}</p>
                     <div className='flex items-center gap-2'>
-                        <code className='flex-1 bg-muted px-4 py-3 rounded-xl text-sm font-mono text-center'>
+                        <code className='bg-muted flex-1 rounded-xl px-4 py-3 text-center font-mono text-sm'>
                             {secret}
                         </code>
                         <Button
@@ -218,13 +218,13 @@ export default function SetupTwoFactorForm() {
                         </Button>
                     </div>
                     {copied && (
-                        <p className='text-xs text-center text-green-600 dark:text-green-400 animate-fade-in'>
+                        <p className='animate-fade-in text-center text-xs text-green-600 dark:text-green-400'>
                             {t('auth.setup_2fa.copied')}
                         </p>
                     )}
                 </div>
 
-                <div className='space-y-4 pt-4 border-t border-border'>
+                <div className='border-border space-y-4 border-t pt-4'>
                     <Input
                         label={t('auth.setup_2fa.code')}
                         description={t('auth.setup_2fa.code_description')}
@@ -236,7 +236,7 @@ export default function SetupTwoFactorForm() {
                         maxLength={6}
                         autoComplete='one-time-code'
                         inputMode='numeric'
-                        className='text-center text-2xl tracking-widest font-mono'
+                        className='text-center font-mono text-2xl tracking-widest'
                     />
 
                     {showTurnstile && (
@@ -258,22 +258,22 @@ export default function SetupTwoFactorForm() {
                         </div>
                     )}
 
-                    <Button type='submit' className='w-full group' disabled={code.length !== 6} loading={submitting}>
+                    <Button type='submit' className='group w-full' disabled={code.length !== 6} loading={submitting}>
                         {!submitting && (
                             <>
                                 {t('auth.setup_2fa.submit')}
-                                <ArrowRight className='ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform' />
+                                <ArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
                             </>
                         )}
                     </Button>
 
                     {error && (
-                        <div className='p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm animate-fade-in'>
+                        <div className='bg-destructive/10 border-destructive/20 text-destructive animate-fade-in rounded-xl border p-4 text-sm'>
                             {error}
                         </div>
                     )}
                     {success && (
-                        <div className='p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-green-600 dark:text-green-400 text-sm animate-fade-in'>
+                        <div className='animate-fade-in rounded-xl border border-green-500/20 bg-green-500/10 p-4 text-sm text-green-600 dark:text-green-400'>
                             {success}
                         </div>
                     )}

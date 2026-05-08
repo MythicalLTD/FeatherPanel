@@ -601,7 +601,7 @@ export default function ChatbotInterface({ open, onOpenChange, isDialog = false 
 
         return (
             <div
-                className={`${sizeClasses[size]} rounded-full bg-primary text-primary-foreground flex items-center justify-center font-semibold`}
+                className={`${sizeClasses[size]} bg-primary text-primary-foreground flex items-center justify-center rounded-full font-semibold`}
             >
                 {user?.first_name?.charAt(0) || user?.username?.charAt(0)}
             </div>
@@ -613,13 +613,13 @@ export default function ChatbotInterface({ open, onOpenChange, isDialog = false 
             {showConversationsSidebar && (
                 <>
                     <div
-                        className='fixed inset-0 bg-black/50 z-40 md:hidden'
+                        className='fixed inset-0 z-40 bg-black/50 md:hidden'
                         onClick={() => setShowConversationsSidebar(false)}
                     />
 
-                    <div className='fixed md:relative inset-y-0 left-0 z-50 w-72 md:w-64 border-r border-border bg-background flex flex-col shrink-0 md:z-0'>
-                        <div className='px-3 py-3 border-b border-border flex items-center justify-between'>
-                            <h3 className='font-semibold text-sm'>{t('chatbot.conversations')}</h3>
+                    <div className='border-border bg-background fixed inset-y-0 left-0 z-50 flex w-72 shrink-0 flex-col border-r md:relative md:z-0 md:w-64'>
+                        <div className='border-border flex items-center justify-between border-b px-3 py-3'>
+                            <h3 className='text-sm font-semibold'>{t('chatbot.conversations')}</h3>
                             <Button
                                 variant='ghost'
                                 size='icon'
@@ -630,9 +630,9 @@ export default function ChatbotInterface({ open, onOpenChange, isDialog = false 
                             </Button>
                         </div>
 
-                        <div className='px-3 py-2 border-b border-border'>
+                        <div className='border-border border-b px-3 py-2'>
                             <Button variant='default' size='sm' className='w-full' onClick={createNewConversation}>
-                                <Plus className='h-4 w-4 mr-2' />
+                                <Plus className='mr-2 h-4 w-4' />
                                 {t('chatbot.newChat')}
                             </Button>
                         </div>
@@ -640,16 +640,16 @@ export default function ChatbotInterface({ open, onOpenChange, isDialog = false 
                         <div className='flex-1 overflow-y-auto px-2 py-2'>
                             {loadingConversations ? (
                                 <div className='flex flex-col items-center justify-center py-8'>
-                                    <Loader2 className='h-5 w-5 animate-spin text-muted-foreground mb-2' />
-                                    <p className='text-sm text-muted-foreground'>{t('chatbot.loading')}</p>
+                                    <Loader2 className='text-muted-foreground mb-2 h-5 w-5 animate-spin' />
+                                    <p className='text-muted-foreground text-sm'>{t('chatbot.loading')}</p>
                                 </div>
                             ) : conversations.length === 0 ? (
-                                <div className='flex flex-col items-center justify-center py-8 px-4'>
-                                    <MessageSquare className='h-8 w-8 text-muted-foreground/40 mb-3' />
-                                    <p className='text-sm font-medium text-foreground mb-1'>
+                                <div className='flex flex-col items-center justify-center px-4 py-8'>
+                                    <MessageSquare className='text-muted-foreground/40 mb-3 h-8 w-8' />
+                                    <p className='text-foreground mb-1 text-sm font-medium'>
                                         {t('chatbot.noConversations')}
                                     </p>
-                                    <p className='text-xs text-muted-foreground text-center'>
+                                    <p className='text-muted-foreground text-center text-xs'>
                                         {t('chatbot.noConversationsDescription')}
                                     </p>
                                 </div>
@@ -658,7 +658,7 @@ export default function ChatbotInterface({ open, onOpenChange, isDialog = false 
                                     {conversations.map((conv) => (
                                         <button
                                             key={conv.id}
-                                            className={`group relative w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm transition-colors ${
+                                            className={`group relative flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm transition-colors ${
                                                 currentConversationId === conv.id
                                                     ? 'bg-primary/10 text-primary'
                                                     : 'hover:bg-muted text-foreground'
@@ -666,15 +666,15 @@ export default function ChatbotInterface({ open, onOpenChange, isDialog = false 
                                             onClick={() => loadConversation(conv.id)}
                                         >
                                             <MessageSquare className='h-4 w-4 shrink-0' />
-                                            <div className='flex-1 min-w-0 text-left'>
-                                                <div className='font-medium truncate'>
+                                            <div className='min-w-0 flex-1 text-left'>
+                                                <div className='truncate font-medium'>
                                                     {conv.title || t('chatbot.newConversation')}
                                                 </div>
-                                                <div className='flex items-center gap-1.5 mt-0.5 text-xs text-muted-foreground'>
+                                                <div className='text-muted-foreground mt-0.5 flex items-center gap-1.5 text-xs'>
                                                     <Clock className='h-3 w-3 shrink-0' />
                                                     <span className='truncate'>{formatDate(conv.updated_at)}</span>
                                                     {conv.message_count && conv.message_count > 0 && (
-                                                        <span className='ml-auto px-1.5 py-0.5 rounded text-[10px] font-medium bg-muted'>
+                                                        <span className='bg-muted ml-auto rounded px-1.5 py-0.5 text-[10px] font-medium'>
                                                             {conv.message_count}
                                                         </span>
                                                     )}
@@ -683,7 +683,7 @@ export default function ChatbotInterface({ open, onOpenChange, isDialog = false 
                                             <Button
                                                 variant='ghost'
                                                 size='icon'
-                                                className='h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 hover:bg-destructive/10 hover:text-destructive'
+                                                className='hover:bg-destructive/10 hover:text-destructive h-7 w-7 shrink-0 opacity-0 transition-opacity group-hover:opacity-100'
                                                 onClick={(e) => handleDeleteConversation(conv.id, e)}
                                             >
                                                 <Trash2 className='h-3.5 w-3.5' />
@@ -697,9 +697,9 @@ export default function ChatbotInterface({ open, onOpenChange, isDialog = false 
                 </>
             )}
 
-            <div className='flex-1 flex flex-col min-w-0'>
-                <div className='px-4 py-3 border-b border-border bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 flex items-center justify-between sticky top-0 z-10'>
-                    <div className='flex items-center gap-3 min-w-0 flex-1'>
+            <div className='flex min-w-0 flex-1 flex-col'>
+                <div className='border-border bg-background/95 supports-backdrop-filter:bg-background/60 sticky top-0 z-10 flex items-center justify-between border-b px-4 py-3 backdrop-blur'>
+                    <div className='flex min-w-0 flex-1 items-center gap-3'>
                         <Button
                             variant='ghost'
                             size='icon'
@@ -708,12 +708,12 @@ export default function ChatbotInterface({ open, onOpenChange, isDialog = false 
                         >
                             <Menu className='h-5 w-5' />
                         </Button>
-                        <div className='h-9 w-9 rounded-full bg-linear-to-br from-primary to-primary/60 flex items-center justify-center shrink-0'>
-                            <Bot className='h-5 w-5 text-primary-foreground' />
+                        <div className='from-primary to-primary/60 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-linear-to-br'>
+                            <Bot className='text-primary-foreground h-5 w-5' />
                         </div>
                         <div className='min-w-0 flex-1'>
-                            <h2 className='text-sm font-semibold text-foreground'>{t('chatbot.title')}</h2>
-                            <p className='text-xs text-muted-foreground truncate'>{chatModelName}</p>
+                            <h2 className='text-foreground text-sm font-semibold'>{t('chatbot.title')}</h2>
+                            <p className='text-muted-foreground truncate text-xs'>{chatModelName}</p>
                         </div>
                     </div>
                     {!isDialog && (
@@ -728,7 +728,7 @@ export default function ChatbotInterface({ open, onOpenChange, isDialog = false 
                     )}
                 </div>
 
-                <div className='flex-1 overflow-y-auto px-4 py-4 space-y-4'>
+                <div className='flex-1 space-y-4 overflow-y-auto px-4 py-4'>
                     {pendingActions.length > 0 && (
                         <div className='space-y-2'>
                             {pendingActions.map((action) => (
@@ -738,13 +738,13 @@ export default function ChatbotInterface({ open, onOpenChange, isDialog = false 
                                         action.type === 'pending'
                                             ? 'bg-primary/10 border-primary/30 text-primary'
                                             : action.type === 'success'
-                                              ? 'bg-green-500/10 border-green-500/30 text-green-600 dark:text-green-400'
-                                              : 'bg-red-500/10 border-red-500/30 text-red-600 dark:text-red-400'
+                                              ? 'border-green-500/30 bg-green-500/10 text-green-600 dark:text-green-400'
+                                              : 'border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-400'
                                     }`}
                                 >
                                     <div className='flex items-center gap-2'>
                                         {action.type === 'pending' && (
-                                            <Loader2 className='h-4 w-4 animate-spin shrink-0' />
+                                            <Loader2 className='h-4 w-4 shrink-0 animate-spin' />
                                         )}
                                         {action.type === 'success' && <div className='h-4 w-4 shrink-0'>✅</div>}
                                         {action.type === 'error' && <div className='h-4 w-4 shrink-0'>❌</div>}
@@ -756,13 +756,13 @@ export default function ChatbotInterface({ open, onOpenChange, isDialog = false 
                     )}
 
                     {messages.length === 0 && !isLoading ? (
-                        <div className='flex flex-col items-center justify-center h-full py-12'>
-                            <div className='text-center max-w-md px-4'>
-                                <div className='h-16 w-16 rounded-full bg-linear-to-br from-primary to-primary/60 flex items-center justify-center mx-auto mb-4'>
-                                    <Bot className='h-8 w-8 text-primary-foreground' />
+                        <div className='flex h-full flex-col items-center justify-center py-12'>
+                            <div className='max-w-md px-4 text-center'>
+                                <div className='from-primary to-primary/60 mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-linear-to-br'>
+                                    <Bot className='text-primary-foreground h-8 w-8' />
                                 </div>
-                                <h3 className='text-lg font-semibold text-foreground mb-2'>{t('chatbot.title')}</h3>
-                                <p className='text-sm text-muted-foreground'>{t('chatbot.description')}</p>
+                                <h3 className='text-foreground mb-2 text-lg font-semibold'>{t('chatbot.title')}</h3>
+                                <p className='text-muted-foreground text-sm'>{t('chatbot.description')}</p>
                             </div>
                         </div>
                     ) : (
@@ -773,16 +773,16 @@ export default function ChatbotInterface({ open, onOpenChange, isDialog = false 
                                     className={`flex gap-3 ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
                                 >
                                     {message.role === 'assistant' ? (
-                                        <div className='h-8 w-8 md:h-10 md:w-10 rounded-full bg-linear-to-br from-primary to-primary/60 flex items-center justify-center shrink-0'>
-                                            <Bot className='h-4 w-4 md:h-5 md:w-5 text-primary-foreground' />
+                                        <div className='from-primary to-primary/60 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-linear-to-br md:h-10 md:w-10'>
+                                            <Bot className='text-primary-foreground h-4 w-4 md:h-5 md:w-5' />
                                         </div>
                                     ) : (
                                         <UserAvatar size='md' />
                                     )}
 
-                                    <div className='flex-1 min-w-0 max-w-[85%] md:max-w-[75%]'>
-                                        <div className='flex items-center gap-2 mb-1'>
-                                            <span className='text-xs font-medium text-foreground'>
+                                    <div className='max-w-[85%] min-w-0 flex-1 md:max-w-[75%]'>
+                                        <div className='mb-1 flex items-center gap-2'>
+                                            <span className='text-foreground text-xs font-medium'>
                                                 {message.role === 'assistant'
                                                     ? t('chatbot.title')
                                                     : user?.first_name || user?.username || 'You'}
@@ -796,7 +796,7 @@ export default function ChatbotInterface({ open, onOpenChange, isDialog = false 
                                             }`}
                                         >
                                             {message.content ? (
-                                                <div className='text-sm leading-relaxed prose prose-sm dark:prose-invert max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0'>
+                                                <div className='prose prose-sm dark:prose-invert max-w-none text-sm leading-relaxed [&>*:first-child]:mt-0 [&>*:last-child]:mb-0'>
                                                     <ReactMarkdown>{message.content}</ReactMarkdown>
                                                 </div>
                                             ) : (
@@ -814,8 +814,8 @@ export default function ChatbotInterface({ open, onOpenChange, isDialog = false 
                     <div ref={messagesEndRef} />
                 </div>
 
-                <div className='border-t border-border bg-background p-4 sticky bottom-0'>
-                    <div className='flex gap-2 items-end max-w-4xl mx-auto'>
+                <div className='border-border bg-background sticky bottom-0 border-t p-4'>
+                    <div className='mx-auto flex max-w-4xl items-end gap-2'>
                         <textarea
                             ref={textareaRef}
                             value={inputMessage}
@@ -824,7 +824,7 @@ export default function ChatbotInterface({ open, onOpenChange, isDialog = false 
                             placeholder={t('chatbot.placeholder')}
                             disabled={isLoading}
                             rows={1}
-                            className='flex-1 min-h-[44px] max-h-32 resize-none rounded-2xl border border-input bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50'
+                            className='border-input bg-background text-foreground placeholder:text-muted-foreground focus-visible:ring-primary max-h-32 min-h-[44px] flex-1 resize-none rounded-2xl border px-4 py-3 text-sm focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50'
                             style={{
                                 height: 'auto',
                                 minHeight: '44px',
@@ -839,13 +839,13 @@ export default function ChatbotInterface({ open, onOpenChange, isDialog = false 
                         <Button
                             disabled={isLoading || !inputMessage.trim()}
                             size='icon'
-                            className='h-11 w-11 rounded-full shrink-0'
+                            className='h-11 w-11 shrink-0 rounded-full'
                             onClick={sendMessage}
                         >
                             {isLoading ? <Loader2 className='h-5 w-5 animate-spin' /> : <Send className='h-5 w-5' />}
                         </Button>
                     </div>
-                    <p className='text-xs text-muted-foreground text-center mt-2'>{t('chatbot.pressEnterToSend')}</p>
+                    <p className='text-muted-foreground mt-2 text-center text-xs'>{t('chatbot.pressEnterToSend')}</p>
                 </div>
             </div>
         </div>
@@ -860,12 +860,12 @@ export default function ChatbotInterface({ open, onOpenChange, isDialog = false 
                         <DialogHeader>
                             <DialogTitle className='flex items-center gap-2'>
                                 <div
-                                    className={`h-10 w-10 rounded-lg flex items-center justify-center ${confirmDialog.variant === 'destructive' ? 'bg-destructive/10' : 'bg-primary/10'}`}
+                                    className={`flex h-10 w-10 items-center justify-center rounded-lg ${confirmDialog.variant === 'destructive' ? 'bg-destructive/10' : 'bg-primary/10'}`}
                                 >
                                     {confirmDialog.variant === 'destructive' ? (
-                                        <AlertTriangle className='h-5 w-5 text-destructive' />
+                                        <AlertTriangle className='text-destructive h-5 w-5' />
                                     ) : (
-                                        <Bot className='h-5 w-5 text-primary' />
+                                        <Bot className='text-primary h-5 w-5' />
                                     )}
                                 </div>
                                 <span>{confirmDialog.title}</span>
@@ -889,7 +889,7 @@ export default function ChatbotInterface({ open, onOpenChange, isDialog = false 
                                 disabled={confirmLoading}
                                 onClick={handleConfirm}
                             >
-                                {confirmLoading && <Loader2 className='h-4 w-4 mr-2 animate-spin' />}
+                                {confirmLoading && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
                                 {confirmDialog.confirmText}
                             </Button>
                         </DialogFooter>
@@ -904,7 +904,7 @@ export default function ChatbotInterface({ open, onOpenChange, isDialog = false 
             <Sheet open={open} onOpenChange={onOpenChange}>
                 <SheetContent
                     side='right'
-                    className='w-full sm:max-w-2xl md:max-w-3xl lg:max-w-4xl flex flex-col p-0 bg-background border-l border-border [&>button]:hidden'
+                    className='bg-background border-border flex w-full flex-col border-l p-0 sm:max-w-2xl md:max-w-3xl lg:max-w-4xl [&>button]:hidden'
                 >
                     {content}
                 </SheetContent>
@@ -915,12 +915,12 @@ export default function ChatbotInterface({ open, onOpenChange, isDialog = false 
                     <DialogHeader>
                         <DialogTitle className='flex items-center gap-2'>
                             <div
-                                className={`h-10 w-10 rounded-lg flex items-center justify-center ${confirmDialog.variant === 'destructive' ? 'bg-destructive/10' : 'bg-primary/10'}`}
+                                className={`flex h-10 w-10 items-center justify-center rounded-lg ${confirmDialog.variant === 'destructive' ? 'bg-destructive/10' : 'bg-primary/10'}`}
                             >
                                 {confirmDialog.variant === 'destructive' ? (
-                                    <AlertTriangle className='h-5 w-5 text-destructive' />
+                                    <AlertTriangle className='text-destructive h-5 w-5' />
                                 ) : (
-                                    <Bot className='h-5 w-5 text-primary' />
+                                    <Bot className='text-primary h-5 w-5' />
                                 )}
                             </div>
                             <span>{confirmDialog.title}</span>
@@ -944,7 +944,7 @@ export default function ChatbotInterface({ open, onOpenChange, isDialog = false 
                             disabled={confirmLoading}
                             onClick={handleConfirm}
                         >
-                            {confirmLoading && <Loader2 className='h-4 w-4 mr-2 animate-spin' />}
+                            {confirmLoading && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
                             {confirmDialog.confirmText}
                         </Button>
                     </DialogFooter>

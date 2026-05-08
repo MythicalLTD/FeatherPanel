@@ -122,27 +122,27 @@ export default function ServerPerformance({
     ];
 
     return (
-        <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 min-w-0'>
+        <div className='grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4'>
             {charts.map((chart) => {
                 const Icon = chart.icon;
                 return (
                     <div
                         key={chart.title}
-                        className='rounded-xl border border-border/50 bg-card/50 backdrop-blur-xl p-6 transition-all min-w-0'
+                        className='border-border/50 bg-card/50 min-w-0 rounded-xl border p-6 backdrop-blur-xl transition-all'
                     >
-                        <div className='flex items-center justify-between mb-3'>
+                        <div className='mb-3 flex items-center justify-between'>
                             <h3 className='text-sm font-medium text-gray-900 dark:text-white'>{chart.title}</h3>
                             <div className='flex items-center gap-2'>
                                 <div
-                                    className='w-2 h-2 rounded-full animate-pulse'
+                                    className='h-2 w-2 animate-pulse rounded-full'
                                     style={{ backgroundColor: chart.color }}
                                 />
-                                <Icon className='h-4 w-4 text-muted-foreground' />
+                                <Icon className='text-muted-foreground h-4 w-4' />
                             </div>
                         </div>
 
                         <div className='space-y-3'>
-                            <div className='flex justify-between items-center text-xs'>
+                            <div className='flex items-center justify-between text-xs'>
                                 <span className='text-muted-foreground'>
                                     {t('servers.console.info_cards.limit', { limit: chart.limit })}
                                 </span>
@@ -151,7 +151,7 @@ export default function ServerPerformance({
                                 </span>
                             </div>
 
-                            <div className='h-[200px] w-full mt-4 min-h-[200px] min-w-0'>
+                            <div className='mt-4 h-[200px] min-h-[200px] w-full min-w-0'>
                                 {chart.data.length > 0 ? (
                                     <ResponsiveContainer width='100%' height='100%' minWidth={0} minHeight={200}>
                                         <LineChart data={chart.data}>
@@ -173,7 +173,7 @@ export default function ServerPerformance({
                                                     }
 
                                                     return (
-                                                        <div className='bg-background/95 backdrop-blur border border-border rounded-lg p-2'>
+                                                        <div className='bg-background/95 border-border rounded-lg border p-2 backdrop-blur'>
                                                             <p className='text-xs font-medium'>{formattedValue}</p>
                                                         </div>
                                                     );
@@ -190,7 +190,7 @@ export default function ServerPerformance({
                                         </LineChart>
                                     </ResponsiveContainer>
                                 ) : (
-                                    <div className='flex items-center justify-center h-full text-muted-foreground text-sm'>
+                                    <div className='text-muted-foreground flex h-full items-center justify-center text-sm'>
                                         {t('servers.console.performance.no_data')}
                                     </div>
                                 )}

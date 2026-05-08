@@ -57,14 +57,14 @@ export default function ChatbotWidget() {
     return (
         <>
             {!isOpen && (
-                <div className='fixed bottom-6 right-6 z-50'>
+                <div className='fixed right-6 bottom-6 z-50'>
                     <div className='relative'>
                         <Button
-                            className='relative h-14 w-14 md:h-16 md:w-16 rounded-full hover:scale-105 transition-all duration-200 bg-primary hover:bg-primary/90 border border-primary/20'
+                            className='bg-primary hover:bg-primary/90 border-primary/20 relative h-14 w-14 rounded-full border transition-all duration-200 hover:scale-105 md:h-16 md:w-16'
                             size='icon'
                             onClick={() => setIsOpen(true)}
                         >
-                            <MessageSquare className='h-6 w-6 md:h-7 md:w-7 text-primary-foreground' />
+                            <MessageSquare className='text-primary-foreground h-6 w-6 md:h-7 md:w-7' />
                             <span className='sr-only'>{t('chatbot.openChat')}</span>
                         </Button>
                     </div>

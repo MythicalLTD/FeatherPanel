@@ -98,7 +98,7 @@ export function AllocationPickerSheet({
                 onOpenChange(next);
             }}
         >
-            <SheetContent className='sm:max-w-2xl overflow-y-auto'>
+            <SheetContent className='overflow-y-auto sm:max-w-2xl'>
                 <SheetHeader>
                     <SheetTitle>{t('admin.servers.form.select_allocation')}</SheetTitle>
                     <SheetDescription>
@@ -120,12 +120,12 @@ export function AllocationPickerSheet({
                 </SheetHeader>
 
                 <div className='mt-6 space-y-4'>
-                    <div className='flex rounded-xl border border-border/60 p-1 bg-muted/30 gap-1'>
+                    <div className='border-border/60 bg-muted/30 flex gap-1 rounded-xl border p-1'>
                         <button
                             type='button'
                             onClick={() => setPickerMode('browse')}
                             className={cn(
-                                'flex-1 inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                                'inline-flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
                                 pickerMode === 'browse'
                                     ? 'bg-background text-foreground shadow-sm'
                                     : 'text-muted-foreground hover:text-foreground',
@@ -138,7 +138,7 @@ export function AllocationPickerSheet({
                             type='button'
                             onClick={() => setPickerMode('create')}
                             className={cn(
-                                'flex-1 inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                                'inline-flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
                                 pickerMode === 'create'
                                     ? 'bg-background text-foreground shadow-sm'
                                     : 'text-muted-foreground hover:text-foreground',
@@ -158,8 +158,8 @@ export function AllocationPickerSheet({
                         />
                     ) : (
                         <>
-                            <div className='relative group'>
-                                <SearchIcon className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground' />
+                            <div className='group relative'>
+                                <SearchIcon className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform' />
                                 <Input
                                     placeholder={t('common.search')}
                                     value={allocationSearch}
@@ -169,7 +169,7 @@ export function AllocationPickerSheet({
                             </div>
 
                             {pagination && pagination.total_pages > 1 && (
-                                <div className='flex items-center justify-between gap-2 py-2 px-3 rounded-lg border border-border bg-muted/30'>
+                                <div className='border-border bg-muted/30 flex items-center justify-between gap-2 rounded-lg border px-3 py-2'>
                                     <Button
                                         variant='outline'
                                         size='sm'
@@ -180,7 +180,7 @@ export function AllocationPickerSheet({
                                                 current_page: p.current_page - 1,
                                             }))
                                         }
-                                        className='gap-1 h-8'
+                                        className='h-8 gap-1'
                                     >
                                         <ChevronLeft className='h-3 w-3' />
                                         {t('common.previous')}
@@ -198,7 +198,7 @@ export function AllocationPickerSheet({
                                                 current_page: p.current_page + 1,
                                             }))
                                         }
-                                        className='gap-1 h-8'
+                                        className='h-8 gap-1'
                                     >
                                         {t('common.next')}
                                         <ChevronRight className='h-3 w-3' />
@@ -206,9 +206,9 @@ export function AllocationPickerSheet({
                                 </div>
                             )}
 
-                            <div className='space-y-2 max-h-[calc(100vh-300px)] overflow-y-auto'>
+                            <div className='max-h-[calc(100vh-300px)] space-y-2 overflow-y-auto'>
                                 {allocations.length === 0 ? (
-                                    <div className='text-center py-8 text-muted-foreground'>
+                                    <div className='text-muted-foreground py-8 text-center'>
                                         {t('common.no_results')}
                                     </div>
                                 ) : (
@@ -220,18 +220,18 @@ export function AllocationPickerSheet({
                                                 onSelectAllocation(allocation);
                                                 onOpenChange(false);
                                             }}
-                                            className='w-full p-3 rounded-xl border border-border/50 hover:border-primary hover:bg-primary/5 cursor-pointer transition-all text-left'
+                                            className='border-border/50 hover:border-primary hover:bg-primary/5 w-full cursor-pointer rounded-xl border p-3 text-left transition-all'
                                         >
                                             <div className='flex items-start gap-3'>
-                                                <div className='p-2 bg-primary/10 rounded-lg mt-0.5'>
-                                                    <Plug className='h-5 w-5 text-primary' />
+                                                <div className='bg-primary/10 mt-0.5 rounded-lg p-2'>
+                                                    <Plug className='text-primary h-5 w-5' />
                                                 </div>
-                                                <div className='flex-1 min-w-0'>
-                                                    <div className='font-semibold font-mono'>
+                                                <div className='min-w-0 flex-1'>
+                                                    <div className='font-mono font-semibold'>
                                                         {allocation.ip}:{allocation.port}
                                                     </div>
                                                     {allocation.ip_alias && (
-                                                        <div className='text-xs text-muted-foreground mt-0.5'>
+                                                        <div className='text-muted-foreground mt-0.5 text-xs'>
                                                             {allocation.ip_alias}
                                                         </div>
                                                     )}
@@ -243,8 +243,8 @@ export function AllocationPickerSheet({
                             </div>
 
                             {pagination && pagination.total_pages > 1 && (
-                                <div className='flex items-center justify-between pt-4 border-t border-border/50'>
-                                    <div className='text-sm text-muted-foreground'>
+                                <div className='border-border/50 flex items-center justify-between border-t pt-4'>
+                                    <div className='text-muted-foreground text-sm'>
                                         {t('common.showing', {
                                             from: String((pagination.current_page - 1) * pagination.per_page + 1),
                                             to: String(
@@ -268,7 +268,7 @@ export function AllocationPickerSheet({
                                             }
                                             disabled={!pagination.has_prev}
                                         >
-                                            <ChevronLeft className='h-4 w-4 mr-2' />
+                                            <ChevronLeft className='mr-2 h-4 w-4' />
                                             {t('common.previous')}
                                         </Button>
                                         <Button
@@ -283,7 +283,7 @@ export function AllocationPickerSheet({
                                             disabled={!pagination.has_next}
                                         >
                                             {t('common.next')}
-                                            <ChevronRight className='h-4 w-4 ml-2' />
+                                            <ChevronRight className='ml-2 h-4 w-4' />
                                         </Button>
                                     </div>
                                 </div>

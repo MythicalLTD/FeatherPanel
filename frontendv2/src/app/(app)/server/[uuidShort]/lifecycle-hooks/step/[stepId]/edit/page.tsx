@@ -176,8 +176,8 @@ export default function EditLifecycleHookStepPage() {
     if (permissionsLoading || loading) {
         return (
             <div className='flex flex-col items-center justify-center py-24'>
-                <Loader2 className='h-12 w-12 animate-spin text-primary opacity-50' />
-                <p className='mt-4 text-muted-foreground font-medium animate-pulse'>{t('common.loading')}</p>
+                <Loader2 className='text-primary h-12 w-12 animate-spin opacity-50' />
+                <p className='text-muted-foreground mt-4 animate-pulse font-medium'>{t('common.loading')}</p>
             </div>
         );
     }
@@ -185,7 +185,7 @@ export default function EditLifecycleHookStepPage() {
     if (!canRead) {
         return (
             <div className='flex flex-col items-center justify-center py-24 text-center'>
-                <Lock className='h-10 w-10 text-red-500 mb-4' />
+                <Lock className='mb-4 h-10 w-10 text-red-500' />
                 <p className='text-muted-foreground'>{t('common.noPermission')}</p>
                 <Button variant='outline' className='mt-6' type='button' onClick={() => router.back()}>
                     {t('common.goBack')}
@@ -202,7 +202,7 @@ export default function EditLifecycleHookStepPage() {
                     description={t('lifecycleHooks.stepEdit.notFoundDescription')}
                     actions={
                         <Button variant='glass' size='sm' type='button' onClick={back}>
-                            <ArrowLeft className='h-4 w-4 mr-2' />
+                            <ArrowLeft className='mr-2 h-4 w-4' />
                             {t('lifecycleHooks.backToHooks')}
                         </Button>
                     }
@@ -219,13 +219,13 @@ export default function EditLifecycleHookStepPage() {
                     description={t('lifecycleHooks.stepEdit.description')}
                     actions={
                         <Button variant='glass' size='sm' type='button' onClick={back}>
-                            <ArrowLeft className='h-4 w-4 mr-2' />
+                            <ArrowLeft className='mr-2 h-4 w-4' />
                             {t('lifecycleHooks.backToHooks')}
                         </Button>
                     }
                 />
                 <PageCard variant='warning' title={t('lifecycleHooks.featureDisabledTitle')} icon={Power}>
-                    <p className='text-sm text-muted-foreground'>{t('lifecycleHooks.featureDisabledBody')}</p>
+                    <p className='text-muted-foreground text-sm'>{t('lifecycleHooks.featureDisabledBody')}</p>
                 </PageCard>
             </div>
         );
@@ -239,13 +239,13 @@ export default function EditLifecycleHookStepPage() {
                     description={t('lifecycleHooks.stepEdit.description')}
                     actions={
                         <Button variant='glass' size='sm' type='button' onClick={back}>
-                            <ArrowLeft className='h-4 w-4 mr-2' />
+                            <ArrowLeft className='mr-2 h-4 w-4' />
                             {t('lifecycleHooks.backToHooks')}
                         </Button>
                     }
                 />
                 <PageCard variant='warning' title={t('common.accessDenied')} icon={Lock}>
-                    <p className='text-sm text-muted-foreground'>{t('common.noPermission')}</p>
+                    <p className='text-muted-foreground text-sm'>{t('common.noPermission')}</p>
                 </PageCard>
             </div>
         );
@@ -260,7 +260,7 @@ export default function EditLifecycleHookStepPage() {
                     description={t('lifecycleHooks.stepEdit.description')}
                     actions={
                         <Button variant='glass' size='sm' type='button' onClick={back}>
-                            <ArrowLeft className='h-4 w-4 mr-2' />
+                            <ArrowLeft className='mr-2 h-4 w-4' />
                             {t('lifecycleHooks.backToHooks')}
                         </Button>
                     }

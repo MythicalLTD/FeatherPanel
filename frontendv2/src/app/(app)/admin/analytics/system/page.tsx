@@ -89,19 +89,19 @@ export default function SystemAnalyticsPage() {
 
     if (loading) {
         return (
-            <div className='flex items-center justify-center min-h-[400px]'>
-                <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-primary'></div>
+            <div className='flex min-h-[400px] items-center justify-center'>
+                <div className='border-primary h-8 w-8 animate-spin rounded-full border-b-2'></div>
             </div>
         );
     }
 
     if (error) {
         return (
-            <div className='flex flex-col items-center justify-center min-h-[400px] text-center'>
-                <p className='text-red-500 mb-4'>{error}</p>
+            <div className='flex min-h-[400px] flex-col items-center justify-center text-center'>
+                <p className='mb-4 text-red-500'>{error}</p>
                 <button
                     onClick={fetchData}
-                    className='px-4 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-opacity'
+                    className='bg-primary text-primary-foreground rounded-md px-4 py-2 transition-opacity hover:opacity-90'
                 >
                     {t('admin.analytics.activity.retry')}
                 </button>
@@ -127,28 +127,28 @@ export default function SystemAnalyticsPage() {
                                 subtitle={t('admin.analytics.system.queued')}
                                 description={t('admin.analytics.system.pending_emails')}
                                 icon={Mail}
-                                className='shadow-none! bg-card/50 backdrop-blur-sm'
+                                className='bg-card/50 shadow-none! backdrop-blur-sm'
                             />
                             <ResourceCard
                                 title={stats.total_sent.toString()}
                                 subtitle={t('admin.analytics.system.sent')}
                                 description={t('admin.analytics.system.delivered')}
                                 icon={CheckCircle}
-                                className='shadow-none! bg-card/50 backdrop-blur-sm'
+                                className='bg-card/50 shadow-none! backdrop-blur-sm'
                             />
                             <ResourceCard
                                 title={stats.total_failed.toString()}
                                 subtitle={t('admin.analytics.system.failed')}
                                 description={t('admin.analytics.system.errors')}
                                 icon={XCircle}
-                                className='shadow-none! bg-card/50 backdrop-blur-sm'
+                                className='bg-card/50 shadow-none! backdrop-blur-sm'
                             />
                             <ResourceCard
                                 title={`${stats.success_rate}%`}
                                 subtitle={t('admin.analytics.system.success_rate')}
                                 description={t('admin.analytics.system.delivery_rate')}
                                 icon={Activity}
-                                className='shadow-none! bg-card/50 backdrop-blur-sm'
+                                className='bg-card/50 shadow-none! backdrop-blur-sm'
                             />
                         </div>
 
@@ -159,33 +159,33 @@ export default function SystemAnalyticsPage() {
                                     subtitle='Chat conversations'
                                     description={`Messages: ${featureStats.chatbot_messages}`}
                                     icon={Bot}
-                                    className='shadow-none! bg-card/50 backdrop-blur-sm'
+                                    className='bg-card/50 shadow-none! backdrop-blur-sm'
                                 />
                                 <ResourceCard
                                     title={featureStats.chatbot_active_users_30d.toString()}
                                     subtitle='Chat users (30d)'
                                     description={`Avg msgs/conversation: ${featureStats.avg_messages_per_conversation}`}
                                     icon={UserCircle}
-                                    className='shadow-none! bg-card/50 backdrop-blur-sm'
+                                    className='bg-card/50 shadow-none! backdrop-blur-sm'
                                 />
                                 <ResourceCard
                                     title={featureStats.api_clients.toString()}
                                     subtitle='API clients'
                                     description={`OAuth2 authorizations: ${featureStats.oauth2_authorizations}`}
                                     icon={KeyRound}
-                                    className='shadow-none! bg-card/50 backdrop-blur-sm'
+                                    className='bg-card/50 shadow-none! backdrop-blur-sm'
                                 />
                                 <ResourceCard
                                     title={featureStats.oidc_enabled_providers.toString()}
                                     subtitle='Enabled OIDC providers'
                                     description='Identity providers configured'
                                     icon={ShieldCheck}
-                                    className='shadow-none! bg-card/50 backdrop-blur-sm'
+                                    className='bg-card/50 shadow-none! backdrop-blur-sm'
                                 />
                             </div>
                         )}
 
-                        <div className='grid gap-4 grid-cols-1 md:grid-cols-3'>
+                        <div className='grid grid-cols-1 gap-4 md:grid-cols-3'>
                             <div className='md:col-span-1'>
                                 <SimplePieChart
                                     title={t('admin.analytics.system.queue_status')}
@@ -198,7 +198,7 @@ export default function SystemAnalyticsPage() {
                                 />
                             </div>
 
-                            <Card className='md:col-span-2 border-border/50 shadow-sm bg-card/50 backdrop-blur-sm'>
+                            <Card className='border-border/50 bg-card/50 shadow-sm backdrop-blur-sm md:col-span-2'>
                                 <CardHeader>
                                     <CardTitle>{t('admin.analytics.system.recent_activity')}</CardTitle>
                                     <CardDescription>
@@ -211,17 +211,17 @@ export default function SystemAnalyticsPage() {
                                             {stats.recent_queued.map((item) => (
                                                 <div
                                                     key={item.id}
-                                                    className='flex items-center justify-between pb-4 border-b last:border-0 last:pb-0'
+                                                    className='flex items-center justify-between border-b pb-4 last:border-0 last:pb-0'
                                                 >
                                                     <div className='space-y-1'>
                                                         <p className='text-sm font-medium'>{item.subject}</p>
-                                                        <p className='text-xs text-muted-foreground'>
+                                                        <p className='text-muted-foreground text-xs'>
                                                             {item.recipient}
                                                         </p>
                                                     </div>
                                                     <div className='text-right'>
                                                         <span
-                                                            className={`text-xs px-2 py-1 rounded-full ${
+                                                            className={`rounded-full px-2 py-1 text-xs ${
                                                                 item.status === 'sent'
                                                                     ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
                                                                     : item.status === 'failed'
@@ -232,7 +232,7 @@ export default function SystemAnalyticsPage() {
                                                             {t(`admin.analytics.system.status.${item.status}`) ||
                                                                 item.status}
                                                         </span>
-                                                        <p className='text-xs text-muted-foreground mt-1'>
+                                                        <p className='text-muted-foreground mt-1 text-xs'>
                                                             {formatDistanceToNow(new Date(item.created_at), {
                                                                 addSuffix: true,
                                                             })}
@@ -242,7 +242,7 @@ export default function SystemAnalyticsPage() {
                                             ))}
                                         </div>
                                     ) : (
-                                        <div className='flex justify-center py-8 text-muted-foreground'>
+                                        <div className='text-muted-foreground flex justify-center py-8'>
                                             {t('admin.analytics.system.no_activity')}
                                         </div>
                                     )}

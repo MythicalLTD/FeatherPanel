@@ -113,7 +113,7 @@ export default function ServerImportPage() {
     if (permissionsLoading || settingsLoading) {
         return (
             <div className='flex items-center justify-center p-12'>
-                <Loader2 className='w-8 h-8 animate-spin text-primary' />
+                <Loader2 className='text-primary h-8 w-8 animate-spin' />
             </div>
         );
     }
@@ -127,7 +127,7 @@ export default function ServerImportPage() {
                 actions={
                     <div className='flex items-center gap-3'>
                         <Button variant='glass' size='default' onClick={fetchImports} disabled={loading}>
-                            <RefreshCw className={cn('h-5 w-5 mr-2', loading && 'animate-spin')} />
+                            <RefreshCw className={cn('mr-2 h-5 w-5', loading && 'animate-spin')} />
                             {t('common.refresh')}
                         </Button>
                         {isImportEnabled && canManage && (
@@ -136,7 +136,7 @@ export default function ServerImportPage() {
                                 variant='default'
                                 onClick={() => router.push(`/server/${uuidShort}/import/new`)}
                             >
-                                <Plus className='h-5 w-5 mr-2' />
+                                <Plus className='mr-2 h-5 w-5' />
                                 {t('serverImport.createImport')}
                             </Button>
                         )}
@@ -146,8 +146,8 @@ export default function ServerImportPage() {
             <WidgetRenderer widgets={getWidgets('server-import', 'after-header')} />
 
             {!isImportEnabled && (
-                <div className='p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/20 flex items-center gap-3'>
-                    <AlertTriangle className='h-5 w-5 text-yellow-500 shrink-0' />
+                <div className='flex items-center gap-3 rounded-xl border border-yellow-500/20 bg-yellow-500/10 p-4'>
+                    <AlertTriangle className='h-5 w-5 shrink-0 text-yellow-500' />
                     <p className='text-sm font-medium text-yellow-500/90'>
                         {t('serverImport.featureDisabledDescription')}
                     </p>
@@ -169,7 +169,7 @@ export default function ServerImportPage() {
                                 variant='default'
                                 onClick={() => router.push(`/server/${uuidShort}/import/new`)}
                             >
-                                <Plus className='h-6 w-6 mr-2' />
+                                <Plus className='mr-2 h-6 w-6' />
                                 {t('serverImport.createImport')}
                             </Button>
                         )
@@ -189,11 +189,11 @@ export default function ServerImportPage() {
                                 title={item.host}
                                 description={
                                     <div className='flex flex-col gap-1'>
-                                        <span className='text-xs font-medium text-muted-foreground uppercase tracking-wider opacity-60'>
+                                        <span className='text-muted-foreground text-xs font-medium tracking-wider uppercase opacity-60'>
                                             {item.user} @ {item.type.toUpperCase()} ({item.port})
                                         </span>
                                         {item.error && (
-                                            <span className='text-xs text-red-500/80 font-medium'>{item.error}</span>
+                                            <span className='text-xs font-medium text-red-500/80'>{item.error}</span>
                                         )}
                                     </div>
                                 }
@@ -208,21 +208,21 @@ export default function ServerImportPage() {
                                     },
                                 ]}
                                 actions={
-                                    <div className='flex items-center gap-4 text-xs text-muted-foreground'>
+                                    <div className='text-muted-foreground flex items-center gap-4 text-xs'>
                                         <div className='flex flex-col items-end'>
-                                            <span className='font-medium text-foreground/80'>
+                                            <span className='text-foreground/80 font-medium'>
                                                 {item.source_location}
                                             </span>
-                                            <span className='opacity-50 text-[10px] uppercase tracking-wider'>
+                                            <span className='text-[10px] tracking-wider uppercase opacity-50'>
                                                 {t('serverImport.source')}
                                             </span>
                                         </div>
                                         <span className='text-muted-foreground/30'>→</span>
                                         <div className='flex flex-col items-start'>
-                                            <span className='font-medium text-foreground/80'>
+                                            <span className='text-foreground/80 font-medium'>
                                                 {item.destination_location}
                                             </span>
-                                            <span className='opacity-50 text-[10px] uppercase tracking-wider'>
+                                            <span className='text-[10px] tracking-wider uppercase opacity-50'>
                                                 {t('serverImport.destination')}
                                             </span>
                                         </div>

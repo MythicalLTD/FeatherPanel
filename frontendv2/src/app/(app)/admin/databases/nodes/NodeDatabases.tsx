@@ -378,7 +378,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                 icon={DatabaseIcon}
                 actions={
                     <Button onClick={() => setCreateOpen(true)}>
-                        <Plus className='h-4 w-4 mr-2' />
+                        <Plus className='mr-2 h-4 w-4' />
                         {t('admin.node_databases.create')}
                     </Button>
                 }
@@ -386,20 +386,20 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
 
             <WidgetRenderer widgets={getWidgets(slug, 'after-header')} context={widgetContext} />
 
-            <div className='flex flex-col sm:flex-row gap-4 items-center bg-card/40 backdrop-blur-md p-4 rounded-2xl shadow-sm'>
-                <div className='relative flex-1 group w-full'>
-                    <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
+            <div className='bg-card/40 flex flex-col items-center gap-4 rounded-2xl p-4 shadow-sm backdrop-blur-md sm:flex-row'>
+                <div className='group relative w-full flex-1'>
+                    <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
                     <Input
                         placeholder={t('admin.node_databases.search_placeholder')}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className='pl-10 h-11 w-full'
+                        className='h-11 w-full pl-10'
                     />
                 </div>
             </div>
 
             {pagination.totalPages > 1 && !loading && (
-                <div className='flex items-center justify-between gap-4 py-3 px-4 rounded-xl border border-border bg-card/50'>
+                <div className='border-border bg-card/50 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
                     <Button
                         variant='outline'
                         size='sm'
@@ -485,7 +485,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                                       ]),
                             ]}
                             description={
-                                <div className='flex flex-col gap-1 mt-2 text-sm text-muted-foreground font-mono'>
+                                <div className='text-muted-foreground mt-2 flex flex-col gap-1 font-mono text-sm'>
                                     <div className='flex items-center gap-2 truncate'>
                                         <Server className='h-3 w-3 shrink-0 opacity-50' />
                                         {db.database_subdomain || db.database_host}:{db.database_port}
@@ -553,7 +553,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
             )}
 
             {pagination.totalPages > 1 && (
-                <div className='flex items-center justify-center gap-2 mt-8'>
+                <div className='mt-8 flex items-center justify-center gap-2'>
                     <Button
                         variant='outline'
                         size='icon'
@@ -578,7 +578,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
 
             <div className='pt-6'>
                 <PageCard title={t('admin.node_databases.help.about_databases.title')} icon={DatabaseIcon}>
-                    <p className='text-sm text-muted-foreground leading-relaxed'>
+                    <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.node_databases.help.about_databases.description')}
                     </p>
                 </PageCard>
@@ -628,7 +628,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                                 placeholder={t('admin.node_databases.form.host_placeholder')}
                                 required
                             />
-                            <p className='text-xs text-muted-foreground'>{t('admin.node_databases.form.host_help')}</p>
+                            <p className='text-muted-foreground text-xs'>{t('admin.node_databases.form.host_help')}</p>
                         </div>
                         <div className='space-y-2'>
                             <Label>{t('admin.node_databases.form.database_subdomain')}</Label>
@@ -637,7 +637,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                                 onChange={(e) => setFormData({ ...formData, database_subdomain: e.target.value })}
                                 placeholder={t('admin.node_databases.form.database_subdomain_placeholder')}
                             />
-                            <p className='text-xs text-muted-foreground'>
+                            <p className='text-muted-foreground text-xs'>
                                 {t('admin.node_databases.form.database_subdomain_help')}
                             </p>
                         </div>
@@ -650,7 +650,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                                 placeholder={t('admin.node_databases.form.port_placeholder')}
                                 required
                             />
-                            <p className='text-xs text-muted-foreground'>{t('admin.node_databases.form.port_help')}</p>
+                            <p className='text-muted-foreground text-xs'>{t('admin.node_databases.form.port_help')}</p>
                         </div>
                         <div className='space-y-2'>
                             <Label>{t('admin.node_databases.form.username')}</Label>
@@ -703,7 +703,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                                     </>
                                 )}
                             </Select>
-                            <p className='text-xs text-muted-foreground'>
+                            <p className='text-muted-foreground text-xs'>
                                 {t('admin.node_databases.form.node_assignment_help')}
                             </p>
                             {!nodeId && hostScope === 'single' && (
@@ -800,7 +800,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                                     placeholder={t('admin.node_databases.form.password_placeholder')}
                                     autoComplete='new-password'
                                 />
-                                <p className='text-xs text-muted-foreground'>
+                                <p className='text-muted-foreground text-xs'>
                                     {t('admin.node_databases.form.password_edit_hint')}
                                 </p>
                             </div>
@@ -836,7 +836,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                                         </>
                                     )}
                                 </Select>
-                                <p className='text-xs text-muted-foreground'>
+                                <p className='text-muted-foreground text-xs'>
                                     {t('admin.node_databases.form.node_assignment_help')}
                                 </p>
                                 {!nodeId && hostScope === 'single' && (
@@ -869,20 +869,20 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                         <div className='space-y-6 text-left'>
                             <div className='grid grid-cols-2 gap-4'>
                                 <div className='space-y-1'>
-                                    <Label className='text-xs uppercase text-muted-foreground'>
+                                    <Label className='text-muted-foreground text-xs uppercase'>
                                         {t('admin.node_databases.form.name')}
                                     </Label>
                                     <div className='font-medium'>{selectedDatabase.name}</div>
                                 </div>
                                 <div className='space-y-1'>
-                                    <Label className='text-xs uppercase text-muted-foreground'>
+                                    <Label className='text-muted-foreground text-xs uppercase'>
                                         {t('admin.node_databases.form.type')}
                                     </Label>
                                     <div className='font-medium'>{selectedDatabase.database_type.toUpperCase()}</div>
                                 </div>
                             </div>
                             <div className='space-y-1'>
-                                <Label className='text-xs uppercase text-muted-foreground'>
+                                <Label className='text-muted-foreground text-xs uppercase'>
                                     {t('admin.node_databases.form.host')}
                                 </Label>
                                 <div className='font-mono text-sm'>
@@ -890,7 +890,7 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                                 </div>
                             </div>
                             <div className='space-y-1'>
-                                <Label className='text-xs uppercase text-muted-foreground'>
+                                <Label className='text-muted-foreground text-xs uppercase'>
                                     {t('admin.node_databases.form.database_subdomain')}
                                 </Label>
                                 <div className='font-mono text-sm'>
@@ -898,13 +898,13 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                                 </div>
                             </div>
                             <div className='space-y-1'>
-                                <Label className='text-xs uppercase text-muted-foreground'>
+                                <Label className='text-muted-foreground text-xs uppercase'>
                                     {t('admin.node_databases.form.username')}
                                 </Label>
                                 <div className='font-mono text-sm'>{selectedDatabase.database_username}</div>
                             </div>
                             <div className='space-y-1'>
-                                <Label className='text-xs uppercase text-muted-foreground'>
+                                <Label className='text-muted-foreground text-xs uppercase'>
                                     {t('admin.node_databases.form.node_assignment')}
                                 </Label>
                                 <div className='text-sm'>
@@ -917,16 +917,16 @@ export function NodeDatabases({ nodeId, slug = 'admin-databases-nodes' }: NodeDa
                             </div>
                             <div className='grid grid-cols-2 gap-4'>
                                 <div className='space-y-1'>
-                                    <Label className='text-xs uppercase text-muted-foreground'>
+                                    <Label className='text-muted-foreground text-xs uppercase'>
                                         {t('admin.node_databases.table.created')}
                                     </Label>
-                                    <div className='text-sm text-muted-foreground'>
+                                    <div className='text-muted-foreground text-sm'>
                                         {new Date(selectedDatabase.created_at).toLocaleString()}
                                     </div>
                                 </div>
                                 <div className='space-y-1'>
-                                    <Label className='text-xs uppercase text-muted-foreground'>Updated</Label>
-                                    <div className='text-sm text-muted-foreground'>
+                                    <Label className='text-muted-foreground text-xs uppercase'>Updated</Label>
+                                    <div className='text-muted-foreground text-sm'>
                                         {new Date(selectedDatabase.updated_at).toLocaleString()}
                                     </div>
                                 </div>

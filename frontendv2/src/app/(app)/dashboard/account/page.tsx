@@ -86,25 +86,25 @@ export default function AccountPage() {
         <div className='space-y-6'>
             <WidgetRenderer widgets={getWidgets('dashboard-account', 'top-of-page')} />
 
-            <div className='rounded-2xl border border-border/60 bg-card/70 backdrop-blur-xl p-6 sm:p-8'>
-                <div className='flex flex-col sm:flex-row sm:items-center gap-5 sm:gap-6'>
+            <div className='border-border/60 bg-card/70 rounded-2xl border p-6 backdrop-blur-xl sm:p-8'>
+                <div className='flex flex-col gap-5 sm:flex-row sm:items-center sm:gap-6'>
                     {user?.avatar ? (
                         <NextImage
                             src={user.avatar}
                             alt={user.username || 'User avatar'}
                             width={96}
                             height={96}
-                            className='h-20 w-20 sm:h-24 sm:w-24 rounded-full border-2 border-primary/20 object-cover'
+                            className='border-primary/20 h-20 w-20 rounded-full border-2 object-cover sm:h-24 sm:w-24'
                         />
                     ) : (
-                        <div className='h-20 w-20 sm:h-24 sm:w-24 rounded-full bg-linear-to-br from-primary/20 to-primary/10 border-2 border-primary/20 flex items-center justify-center'>
-                            <span className='text-2xl font-semibold text-primary'>{getUserInitials()}</span>
+                        <div className='from-primary/20 to-primary/10 border-primary/20 flex h-20 w-20 items-center justify-center rounded-full border-2 bg-linear-to-br sm:h-24 sm:w-24'>
+                            <span className='text-primary text-2xl font-semibold'>{getUserInitials()}</span>
                         </div>
                     )}
                     <div className='space-y-2 text-center sm:text-left'>
-                        <h2 className='text-xl sm:text-2xl font-bold text-foreground'>{user?.username}</h2>
+                        <h2 className='text-foreground text-xl font-bold sm:text-2xl'>{user?.username}</h2>
                         <p className='text-muted-foreground text-sm sm:text-base'>{user?.email}</p>
-                        <p className='text-xs sm:text-sm text-muted-foreground'>
+                        <p className='text-muted-foreground text-xs sm:text-sm'>
                             {t('account.memberSince')} {formatDate(user?.first_seen)}
                         </p>
                     </div>
@@ -112,13 +112,13 @@ export default function AccountPage() {
             </div>
             <WidgetRenderer widgets={getWidgets('dashboard-account', 'after-profile-card')} />
 
-            <div className='rounded-2xl border border-border/60 bg-card/60 backdrop-blur-xl overflow-hidden'>
+            <div className='border-border/60 bg-card/60 overflow-hidden rounded-2xl border backdrop-blur-xl'>
                 <Tab.Group selectedIndex={selectedIndex} onChange={handleTabChange}>
-                    <div className='block sm:hidden p-4 border-b border-border'>
+                    <div className='border-border block border-b p-4 sm:hidden'>
                         <select
                             value={selectedIndex}
                             onChange={(e) => handleTabChange(Number(e.target.value))}
-                            className='w-full p-3 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary'
+                            className='border-border bg-background focus:ring-primary w-full rounded-lg border p-3 text-sm focus:ring-2 focus:outline-none'
                         >
                             {tabs.map((tab, index) => (
                                 <option key={tab.id} value={index}>
@@ -128,17 +128,17 @@ export default function AccountPage() {
                         </select>
                     </div>
 
-                    <div className='hidden sm:block border-b border-border/60 p-3'>
-                        <Tab.List className='flex gap-2 overflow-x-auto custom-scrollbar'>
+                    <div className='border-border/60 hidden border-b p-3 sm:block'>
+                        <Tab.List className='custom-scrollbar flex gap-2 overflow-x-auto'>
                             {tabs.map((tab) => (
                                 <Tab
                                     key={tab.id}
                                     className={({ selected }) =>
                                         cn(
-                                            'px-4 py-2.5 text-sm font-medium transition-all focus:outline-none rounded-xl whitespace-nowrap',
+                                            'rounded-xl px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-all focus:outline-none',
                                             selected
-                                                ? 'bg-primary/10 text-primary border border-primary/20'
-                                                : 'text-muted-foreground hover:text-foreground border border-transparent hover:bg-muted/60',
+                                                ? 'bg-primary/10 text-primary border-primary/20 border'
+                                                : 'text-muted-foreground hover:text-foreground hover:bg-muted/60 border border-transparent',
                                         )
                                     }
                                 >

@@ -45,9 +45,9 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
                     <div className='mb-6 flex flex-col items-center gap-4'>
                         <Link
                             href='/'
-                            className='group flex flex-col items-center gap-3 font-medium transition-all duration-300 hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-2xl'
+                            className='group focus-visible:ring-primary focus-visible:ring-offset-background flex flex-col items-center gap-3 rounded-2xl font-medium transition-all duration-300 hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2'
                         >
-                            <div className='relative h-14 w-14 shrink-0 overflow-hidden rounded-2xl border border-white/20 bg-card/80 backdrop-blur-md transition-transform duration-300 group-hover:border-primary/40'>
+                            <div className='bg-card/80 group-hover:border-primary/40 relative h-14 w-14 shrink-0 overflow-hidden rounded-2xl border border-white/20 backdrop-blur-md transition-transform duration-300'>
                                 <Image
                                     src={logoUrl}
                                     alt={appName}
@@ -58,17 +58,17 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
                                     priority
                                 />
                             </div>
-                            <span className='text-xl font-bold tracking-tight text-foreground'>{appName}</span>
+                            <span className='text-foreground text-xl font-bold tracking-tight'>{appName}</span>
                         </Link>
                     </div>
 
-                    <div className='relative group motion-content'>
-                        <div className='relative rounded-3xl border border-white/15 bg-card/90 backdrop-blur-2xl p-8 transition-all duration-300 animate-fade-in-up'>
+                    <div className='group motion-content relative'>
+                        <div className='bg-card/90 animate-fade-in-up relative rounded-3xl border border-white/15 p-8 backdrop-blur-2xl transition-all duration-300'>
                             <div className='relative z-10'>{children}</div>
                         </div>
                     </div>
 
-                    <div className='mt-8 text-center text-xs text-muted-foreground transition-all duration-200'>
+                    <div className='text-muted-foreground mt-8 text-center text-xs transition-all duration-200'>
                         <p className='mb-2 font-medium'>
                             {t('branding.running_on', { name: appName, version: core?.version || '' }).trim()}
                         </p>
@@ -76,7 +76,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
                             href='https://featherpanel.com'
                             target='_blank'
                             rel='noopener noreferrer'
-                            className='inline-flex items-center gap-1.5 text-primary transition-all duration-200 hover:text-primary/80 hover:underline underline-offset-4 font-medium'
+                            className='text-primary hover:text-primary/80 inline-flex items-center gap-1.5 font-medium underline-offset-4 transition-all duration-200 hover:underline'
                         >
                             {t('branding.copyright', { company: 'MythicalSystems' })}
                             <svg className='h-3.5 w-3.5' fill='none' viewBox='0 0 24 24' stroke='currentColor'>

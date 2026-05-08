@@ -111,14 +111,14 @@ export function SelfUpdateTab({ nodeId, systemData, onRefresh }: SelfUpdateTabPr
 
     return (
         <div className='space-y-6'>
-            <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+            <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
                 <PageCard
                     title={t('admin.node.view.self_update.current_version')}
                     description='Currently installed binary'
                     icon={Terminal}
                     className='h-full'
                 >
-                    <h3 className='text-3xl font-bold font-mono text-primary'>
+                    <h3 className='text-primary font-mono text-3xl font-bold'>
                         {systemData?.wings.version || t('common.unknown')}
                     </h3>
                 </PageCard>
@@ -130,15 +130,15 @@ export function SelfUpdateTab({ nodeId, systemData, onRefresh }: SelfUpdateTabPr
                     className='h-full'
                 >
                     <div className='flex items-center gap-4'>
-                        <h3 className='text-3xl font-bold font-mono'>
+                        <h3 className='font-mono text-3xl font-bold'>
                             {loading ? (
-                                <RefreshCw className='h-8 w-8 animate-spin text-primary' />
+                                <RefreshCw className='text-primary h-8 w-8 animate-spin' />
                             ) : (
                                 versionStatus?.latest_version || t('common.unknown')
                             )}
                         </h3>
                         {versionStatus?.update_available && (
-                            <div className='px-2 py-1 rounded-md bg-orange-500/10 border border-orange-500/20 text-orange-500 text-[10px] font-bold uppercase tracking-wider'>
+                            <div className='rounded-md border border-orange-500/20 bg-orange-500/10 px-2 py-1 text-[10px] font-bold tracking-wider text-orange-500 uppercase'>
                                 {t('admin.node.view.self_update.update_ready')}
                             </div>
                         )}
@@ -153,33 +153,33 @@ export function SelfUpdateTab({ nodeId, systemData, onRefresh }: SelfUpdateTabPr
             >
                 <div className='space-y-8'>
                     <div className='space-y-4'>
-                        <Label className='text-xs font-bold uppercase tracking-widest text-muted-foreground'>
+                        <Label className='text-muted-foreground text-xs font-bold tracking-widest uppercase'>
                             {t('admin.node.view.self_update.source')}
                         </Label>
-                        <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
+                        <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
                             <button
                                 type='button'
                                 onClick={() => setOptions({ ...options, source: 'github' })}
-                                className={`flex items-start gap-4 p-4 rounded-2xl border transition-all text-left group ${
+                                className={`group flex items-start gap-4 rounded-2xl border p-4 text-left transition-all ${
                                     options.source === 'github'
-                                        ? 'bg-primary/5 border-primary '
+                                        ? 'bg-primary/5 border-primary'
                                         : 'bg-muted/30 border-border/50 hover:bg-muted/50'
                                 }`}
                             >
                                 <div
-                                    className={`p-3 rounded-xl transition-all ${
+                                    className={`rounded-xl p-3 transition-all ${
                                         options.source === 'github'
-                                            ? 'bg-primary text-white scale-110'
+                                            ? 'bg-primary scale-110 text-white'
                                             : 'bg-muted text-muted-foreground group-hover:scale-105'
                                     }`}
                                 >
                                     <GitBranch className='h-5 w-5' />
                                 </div>
                                 <div className='flex-1'>
-                                    <h4 className='font-bold text-sm'>
+                                    <h4 className='text-sm font-bold'>
                                         {t('admin.node.view.self_update.source_github')}
                                     </h4>
-                                    <p className='text-[11px] text-muted-foreground mt-1'>
+                                    <p className='text-muted-foreground mt-1 text-[11px]'>
                                         {t('admin.node.view.self_update.source_github_help')}
                                     </p>
                                 </div>
@@ -188,24 +188,24 @@ export function SelfUpdateTab({ nodeId, systemData, onRefresh }: SelfUpdateTabPr
                             <button
                                 type='button'
                                 onClick={() => setOptions({ ...options, source: 'url' })}
-                                className={`flex items-start gap-4 p-4 rounded-2xl border transition-all text-left group ${
+                                className={`group flex items-start gap-4 rounded-2xl border p-4 text-left transition-all ${
                                     options.source === 'url'
-                                        ? 'bg-blue-500/5 border-blue-500 '
+                                        ? 'border-blue-500 bg-blue-500/5'
                                         : 'bg-muted/30 border-border/50 hover:bg-muted/50'
                                 }`}
                             >
                                 <div
-                                    className={`p-3 rounded-xl transition-all ${
+                                    className={`rounded-xl p-3 transition-all ${
                                         options.source === 'url'
-                                            ? 'bg-blue-500 text-white scale-110'
+                                            ? 'scale-110 bg-blue-500 text-white'
                                             : 'bg-muted text-muted-foreground group-hover:scale-105'
                                     }`}
                                 >
                                     <Globe className='h-5 w-5' />
                                 </div>
                                 <div className='flex-1'>
-                                    <h4 className='font-bold text-sm'>{t('admin.node.view.self_update.source_url')}</h4>
-                                    <p className='text-[11px] text-muted-foreground mt-1'>
+                                    <h4 className='text-sm font-bold'>{t('admin.node.view.self_update.source_url')}</h4>
+                                    <p className='text-muted-foreground mt-1 text-[11px]'>
                                         {t('admin.node.view.self_update.source_url_help')}
                                     </p>
                                 </div>
@@ -213,7 +213,7 @@ export function SelfUpdateTab({ nodeId, systemData, onRefresh }: SelfUpdateTabPr
                         </div>
                     </div>
 
-                    <div className='grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-border/50'>
+                    <div className='border-border/50 grid grid-cols-1 gap-6 border-t pt-4 md:grid-cols-2'>
                         {options.source === 'github' ? (
                             <>
                                 <div className='space-y-2'>
@@ -224,7 +224,7 @@ export function SelfUpdateTab({ nodeId, systemData, onRefresh }: SelfUpdateTabPr
                                         id='repoOrder'
                                         value={options.repoOwner}
                                         onChange={(e) => setOptions({ ...options, repoOwner: e.target.value })}
-                                        className='rounded-xl bg-muted/30'
+                                        className='bg-muted/30 rounded-xl'
                                     />
                                 </div>
                                 <div className='space-y-2'>
@@ -235,7 +235,7 @@ export function SelfUpdateTab({ nodeId, systemData, onRefresh }: SelfUpdateTabPr
                                         id='repoName'
                                         value={options.repoName}
                                         onChange={(e) => setOptions({ ...options, repoName: e.target.value })}
-                                        className='rounded-xl bg-muted/30'
+                                        className='bg-muted/30 rounded-xl'
                                     />
                                 </div>
                             </>
@@ -249,7 +249,7 @@ export function SelfUpdateTab({ nodeId, systemData, onRefresh }: SelfUpdateTabPr
                                         id='url'
                                         value={options.url}
                                         onChange={(e) => setOptions({ ...options, url: e.target.value })}
-                                        className='rounded-xl bg-muted/30'
+                                        className='bg-muted/30 rounded-xl'
                                     />
                                 </div>
                                 <div className='space-y-2'>
@@ -260,7 +260,7 @@ export function SelfUpdateTab({ nodeId, systemData, onRefresh }: SelfUpdateTabPr
                                         id='sha256'
                                         value={options.sha256}
                                         onChange={(e) => setOptions({ ...options, sha256: e.target.value })}
-                                        className='rounded-xl bg-muted/30'
+                                        className='bg-muted/30 rounded-xl'
                                     />
                                 </div>
                             </>
@@ -275,25 +275,25 @@ export function SelfUpdateTab({ nodeId, systemData, onRefresh }: SelfUpdateTabPr
                                 value={options.version}
                                 onChange={(e) => setOptions({ ...options, version: e.target.value })}
                                 placeholder='e.g. v1.11.0'
-                                className='rounded-xl bg-muted/30'
+                                className='bg-muted/30 rounded-xl'
                             />
-                            <p className='text-[10px] text-muted-foreground leading-tight'>
+                            <p className='text-muted-foreground text-[10px] leading-tight'>
                                 {t('admin.node.view.self_update.version_help')}
                             </p>
                         </div>
                     </div>
 
-                    <div className='space-y-4 pt-6 border-t border-border/50'>
-                        <Label className='text-xs font-bold uppercase tracking-widest text-muted-foreground'>
+                    <div className='border-border/50 space-y-4 border-t pt-6'>
+                        <Label className='text-muted-foreground text-xs font-bold tracking-widest uppercase'>
                             {t('admin.node.view.self_update.flags')}
                         </Label>
-                        <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
-                            <div className='flex items-center justify-between p-4 rounded-2xl bg-muted/20 border border-border/30'>
+                        <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
+                            <div className='bg-muted/20 border-border/30 flex items-center justify-between rounded-2xl border p-4'>
                                 <div className='space-y-0.5'>
                                     <Label className='text-sm font-bold'>
                                         {t('admin.node.view.self_update.force')}
                                     </Label>
-                                    <p className='text-[10px] text-muted-foreground'>
+                                    <p className='text-muted-foreground text-[10px]'>
                                         {t('admin.node.view.self_update.force_help')}
                                     </p>
                                 </div>
@@ -303,12 +303,12 @@ export function SelfUpdateTab({ nodeId, systemData, onRefresh }: SelfUpdateTabPr
                                 />
                             </div>
                             {options.source === 'url' && (
-                                <div className='flex items-center justify-between p-4 rounded-2xl bg-muted/20 border border-border/30'>
+                                <div className='bg-muted/20 border-border/30 flex items-center justify-between rounded-2xl border p-4'>
                                     <div className='space-y-0.5'>
                                         <Label className='text-sm font-bold'>
                                             {t('admin.node.view.self_update.disable_checksum')}
                                         </Label>
-                                        <p className='text-[10px] text-muted-foreground'>
+                                        <p className='text-muted-foreground text-[10px]'>
                                             {t('admin.node.view.self_update.disable_checksum_help')}
                                         </p>
                                     </div>
@@ -323,42 +323,42 @@ export function SelfUpdateTab({ nodeId, systemData, onRefresh }: SelfUpdateTabPr
                         </div>
                     </div>
 
-                    <div className='flex justify-end pt-4 '>
+                    <div className='flex justify-end pt-4'>
                         <Button
-                            className='h-12 px-10 rounded-2xl  bg-primary hover:bg-primary/90 text-white'
+                            className='bg-primary hover:bg-primary/90 h-12 rounded-2xl px-10 text-white'
                             loading={updating}
                             onClick={handleUpdate}
                         >
-                            <ArrowUpCircle className='h-4 w-4 mr-2' />
+                            <ArrowUpCircle className='mr-2 h-4 w-4' />
                             {t('admin.node.view.self_update.trigger')}
                         </Button>
                     </div>
                 </div>
             </PageCard>
 
-            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-                <div className='p-4 bg-primary/10 border border-primary/20 rounded-2xl flex items-start gap-4'>
-                    <div className='p-2 bg-primary/20 rounded-xl h-fit'>
-                        <Shield className='h-5 w-5 text-primary' />
+            <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
+                <div className='bg-primary/10 border-primary/20 flex items-start gap-4 rounded-2xl border p-4'>
+                    <div className='bg-primary/20 h-fit rounded-xl p-2'>
+                        <Shield className='text-primary h-5 w-5' />
                     </div>
                     <div>
-                        <h4 className='text-sm font-bold text-primary mb-1'>
+                        <h4 className='text-primary mb-1 text-sm font-bold'>
                             {t('admin.node.view.self_update.safe_title')}
                         </h4>
-                        <p className='text-[11px] text-primary/70 leading-relaxed'>
+                        <p className='text-primary/70 text-[11px] leading-relaxed'>
                             {t('admin.node.view.self_update.safe_description')}
                         </p>
                     </div>
                 </div>
-                <div className='p-4 bg-blue-500/10 border border-blue-500/20 rounded-2xl flex items-start gap-4'>
-                    <div className='p-2 bg-blue-500/20 rounded-xl h-fit'>
+                <div className='flex items-start gap-4 rounded-2xl border border-blue-500/20 bg-blue-500/10 p-4'>
+                    <div className='h-fit rounded-xl bg-blue-500/20 p-2'>
                         <Info className='h-5 w-5 text-blue-500' />
                     </div>
                     <div>
-                        <h4 className='text-sm font-bold text-blue-500 mb-1'>
+                        <h4 className='mb-1 text-sm font-bold text-blue-500'>
                             {t('admin.node.view.self_update.auto_title')}
                         </h4>
-                        <p className='text-[11px] text-blue-500/70 leading-relaxed'>
+                        <p className='text-[11px] leading-relaxed text-blue-500/70'>
                             {t('admin.node.view.self_update.auto_description')}
                         </p>
                     </div>

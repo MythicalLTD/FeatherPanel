@@ -124,16 +124,16 @@ export function AllocationCreateForm({ nodeId, onCreated, onCancel, showFooter =
 
     return (
         <div className='space-y-6'>
-            {isLoadingIps && <p className='text-xs text-muted-foreground'>{t('admin.node.health.checking')}</p>}
+            {isLoadingIps && <p className='text-muted-foreground text-xs'>{t('admin.node.health.checking')}</p>}
             <div className='space-y-2'>
                 <Label className='text-sm font-semibold'>{t('admin.node.allocations.create.mode')}</Label>
-                <div className='flex p-1 bg-muted/50 rounded-xl gap-1'>
+                <div className='bg-muted/50 flex gap-1 rounded-xl p-1'>
                     <Button
                         type='button'
                         variant='ghost'
                         className={cn(
-                            'flex-1 rounded-lg h-9 text-xs',
-                            createMode === 'manual' && 'bg-background shadow-sm hover:bg-background',
+                            'h-9 flex-1 rounded-lg text-xs',
+                            createMode === 'manual' && 'bg-background hover:bg-background shadow-sm',
                         )}
                         onClick={() => setCreateMode('manual')}
                     >
@@ -143,8 +143,8 @@ export function AllocationCreateForm({ nodeId, onCreated, onCancel, showFooter =
                         type='button'
                         variant='ghost'
                         className={cn(
-                            'flex-1 rounded-lg h-9 text-xs',
-                            createMode === 'preset' && 'bg-background shadow-sm hover:bg-background',
+                            'h-9 flex-1 rounded-lg text-xs',
+                            createMode === 'preset' && 'bg-background hover:bg-background shadow-sm',
                         )}
                         onClick={() => setCreateMode('preset')}
                     >
@@ -220,11 +220,11 @@ export function AllocationCreateForm({ nodeId, onCreated, onCancel, showFooter =
                             onChange={(e) => setPresetPortCount(Number(e.target.value))}
                         />
                     </div>
-                    <div className='flex items-center gap-2 p-4 bg-muted/30 rounded-2xl border border-border/50'>
+                    <div className='bg-muted/30 border-border/50 flex items-center gap-2 rounded-2xl border p-4'>
                         <input
                             type='checkbox'
                             id='includeDefaultAllocationCreate'
-                            className='rounded border-border bg-background h-4 w-4 text-primary'
+                            className='border-border bg-background text-primary h-4 w-4 rounded'
                             checked={includeDefaultPort}
                             onChange={(e) => setIncludeDefaultPort(e.target.checked)}
                         />
@@ -233,7 +233,7 @@ export function AllocationCreateForm({ nodeId, onCreated, onCancel, showFooter =
                                 {t('admin.node.allocations.create.include_default')}
                             </span>
                             {selectedGamePreset && (
-                                <span className='block text-[10px] text-muted-foreground mt-0.5 uppercase font-bold tracking-wider'>
+                                <span className='text-muted-foreground mt-0.5 block text-[10px] font-bold tracking-wider uppercase'>
                                     {includeDefaultPort
                                         ? t('admin.node.allocations.create.include_default_help', {
                                               port: String(
@@ -265,7 +265,7 @@ export function AllocationCreateForm({ nodeId, onCreated, onCancel, showFooter =
                         className='h-11 font-mono'
                         onChange={(e) => setCreateForm((prev) => ({ ...prev, port: e.target.value }))}
                     />
-                    <p className='text-[10px] text-muted-foreground italic'>
+                    <p className='text-muted-foreground text-[10px] italic'>
                         {t('admin.node.allocations.create.port_range_help')}
                     </p>
                 </div>

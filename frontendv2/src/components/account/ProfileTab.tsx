@@ -225,7 +225,7 @@ export default function ProfileTab() {
         return (
             <div className='flex items-center justify-center py-12'>
                 <div className='flex items-center gap-3'>
-                    <div className='animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent'></div>
+                    <div className='border-primary h-6 w-6 animate-spin rounded-full border-2 border-t-transparent'></div>
                     <span className='text-muted-foreground'>{t('account.loadingProfile')}</span>
                 </div>
             </div>
@@ -234,17 +234,17 @@ export default function ProfileTab() {
 
     return (
         <div className='space-y-6'>
-            <div className='rounded-xl border border-border/50 bg-muted/20 p-4'>
-                <h3 className='text-lg font-semibold text-foreground'>{t('account.editProfile')}</h3>
-                <p className='text-sm text-muted-foreground mt-1'>{t('account.editProfileDescription')}</p>
+            <div className='border-border/50 bg-muted/20 rounded-xl border p-4'>
+                <h3 className='text-foreground text-lg font-semibold'>{t('account.editProfile')}</h3>
+                <p className='text-muted-foreground mt-1 text-sm'>{t('account.editProfileDescription')}</p>
             </div>
 
             <form onSubmit={handleSubmit} className='space-y-6'>
                 <Fieldset className='space-y-6'>
-                    <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+                    <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
                         {allowUsernameChange && (
                             <Field>
-                                <Label className='text-sm font-medium text-foreground'>{t('account.username')}</Label>
+                                <Label className='text-foreground text-sm font-medium'>{t('account.username')}</Label>
                                 <Input
                                     value={formData.username}
                                     onChange={(e) => setFormData((prev) => ({ ...prev, username: e.target.value }))}
@@ -257,7 +257,7 @@ export default function ProfileTab() {
 
                         {allowEmailChange && (
                             <Field>
-                                <Label className='text-sm font-medium text-foreground'>{t('account.email')}</Label>
+                                <Label className='text-foreground text-sm font-medium'>{t('account.email')}</Label>
                                 <Input
                                     type='email'
                                     value={formData.email}
@@ -271,7 +271,7 @@ export default function ProfileTab() {
 
                         {allowFirstNameChange && (
                             <Field>
-                                <Label className='text-sm font-medium text-foreground'>{t('account.firstName')}</Label>
+                                <Label className='text-foreground text-sm font-medium'>{t('account.firstName')}</Label>
                                 <Input
                                     value={formData.first_name}
                                     onChange={(e) => setFormData((prev) => ({ ...prev, first_name: e.target.value }))}
@@ -284,7 +284,7 @@ export default function ProfileTab() {
 
                         {allowLastNameChange && (
                             <Field>
-                                <Label className='text-sm font-medium text-foreground'>{t('account.lastName')}</Label>
+                                <Label className='text-foreground text-sm font-medium'>{t('account.lastName')}</Label>
                                 <Input
                                     value={formData.last_name}
                                     onChange={(e) => setFormData((prev) => ({ ...prev, last_name: e.target.value }))}
@@ -297,21 +297,21 @@ export default function ProfileTab() {
 
                         {allowAvatarChange && (
                             <Field>
-                                <Label className='text-sm font-medium text-foreground'>{t('account.avatar')}</Label>
+                                <Label className='text-foreground text-sm font-medium'>{t('account.avatar')}</Label>
                                 <input
                                     type='file'
                                     accept='image/*'
                                     onChange={handleAvatarChange}
                                     disabled={isSubmitting || isUploadingAvatar}
                                     className={cn(
-                                        'mt-2 block w-full text-sm text-foreground',
-                                        'file:mr-4 file:py-2 file:px-4',
+                                        'text-foreground mt-2 block w-full text-sm',
+                                        'file:mr-4 file:px-4 file:py-2',
                                         'file:rounded-lg file:border-0',
                                         'file:text-sm file:font-semibold',
                                         'file:bg-primary file:text-primary-foreground',
                                         'hover:file:bg-primary/90',
-                                        'file:cursor-pointer cursor-pointer',
-                                        'disabled:opacity-50 disabled:cursor-not-allowed',
+                                        'cursor-pointer file:cursor-pointer',
+                                        'disabled:cursor-not-allowed disabled:opacity-50',
                                     )}
                                 />
                                 {formData.avatar && (
@@ -321,7 +321,7 @@ export default function ProfileTab() {
                                             alt='Avatar preview'
                                             width={80}
                                             height={80}
-                                            className='h-20 w-20 rounded-full object-cover border-2 border-primary/20'
+                                            className='border-primary/20 h-20 w-20 rounded-full border-2 object-cover'
                                             unoptimized
                                         />
                                     </div>
@@ -330,7 +330,7 @@ export default function ProfileTab() {
                         )}
 
                         <Field>
-                            <Label className='text-sm font-medium text-foreground'>{t('account.newPassword')}</Label>
+                            <Label className='text-foreground text-sm font-medium'>{t('account.newPassword')}</Label>
                             <Input
                                 type='password'
                                 value={formData.password}
@@ -339,14 +339,14 @@ export default function ProfileTab() {
                                 placeholder={t('account.passwordPlaceholder')}
                                 className='mt-2'
                             />
-                            <Description className='text-xs text-muted-foreground mt-1'>
+                            <Description className='text-muted-foreground mt-1 text-xs'>
                                 {t('account.passwordHint')}
                             </Description>
                         </Field>
                     </div>
 
                     <Field>
-                        <Label className='text-sm font-medium text-foreground'>{t('account.ticketSignature')}</Label>
+                        <Label className='text-foreground text-sm font-medium'>{t('account.ticketSignature')}</Label>
                         <Textarea
                             value={formData.ticket_signature}
                             onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
@@ -357,18 +357,18 @@ export default function ProfileTab() {
                             rows={4}
                             className='mt-2 font-mono'
                         />
-                        <Description className='text-xs text-muted-foreground mt-1'>
+                        <Description className='text-muted-foreground mt-1 text-xs'>
                             {t('account.ticketSignatureHint')}
                         </Description>
                     </Field>
 
-                    <div className='space-y-3 rounded-xl border border-border/50 bg-muted/30 p-4'>
+                    <div className='border-border/50 bg-muted/30 space-y-3 rounded-xl border p-4'>
                         <div>
-                            <Label className='text-sm font-medium text-foreground'>{t('account.analytics')}</Label>
-                            <p className='text-xs text-muted-foreground mt-0.5'>{t('account.analyticsDescription')}</p>
+                            <Label className='text-foreground text-sm font-medium'>{t('account.analytics')}</Label>
+                            <p className='text-muted-foreground mt-0.5 text-xs'>{t('account.analyticsDescription')}</p>
                         </div>
                         <div className='flex items-center justify-between gap-4'>
-                            <span className='text-sm text-foreground'>{t('account.analyticsEnabled')}</span>
+                            <span className='text-foreground text-sm'>{t('account.analyticsEnabled')}</span>
                             <Switch
                                 checked={analyticsEnabled}
                                 onCheckedChange={handleAnalyticsChange}
@@ -378,7 +378,7 @@ export default function ProfileTab() {
                     </div>
                 </Fieldset>
 
-                <div className='space-y-4 pt-4 border-t border-border'>
+                <div className='border-border space-y-4 border-t pt-4'>
                     {isEnabled(settings?.turnstile_enabled) && settings?.turnstile_key_pub && (
                         <div className='flex justify-start'>
                             <Turnstile

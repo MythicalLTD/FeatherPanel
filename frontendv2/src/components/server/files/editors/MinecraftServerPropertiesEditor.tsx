@@ -323,14 +323,14 @@ export function MinecraftServerPropertiesEditor({
     };
 
     return (
-        <Card className='bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl shadow-sm'>
-            <CardHeader className='border-b border-border/10 pb-6'>
+        <Card className='bg-card/50 border-border/50 rounded-3xl border shadow-sm backdrop-blur-3xl'>
+            <CardHeader className='border-border/10 border-b pb-6'>
                 <div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
                     <div className='space-y-2'>
                         <CardTitle className='text-2xl font-bold'>
                             {t('files.editors.minecraftProperties.title')}
                         </CardTitle>
-                        <CardDescription className='text-sm text-muted-foreground'>
+                        <CardDescription className='text-muted-foreground text-sm'>
                             {t('files.editors.minecraftProperties.description') ||
                                 'Configure your Minecraft server properties visually'}
                         </CardDescription>
@@ -349,25 +349,25 @@ export function MinecraftServerPropertiesEditor({
                     </div>
                 </div>
             </CardHeader>
-            <div className='p-8 space-y-10'>
+            <div className='space-y-10 p-8'>
                 <section className='space-y-6'>
-                    <div className='flex items-center gap-4 border-b border-border/10 pb-6'>
-                        <div className='h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20'>
-                            <Settings2 className='h-5 w-5 text-primary' />
+                    <div className='border-border/10 flex items-center gap-4 border-b pb-6'>
+                        <div className='bg-primary/10 border-primary/20 flex h-10 w-10 items-center justify-center rounded-xl border'>
+                            <Settings2 className='text-primary h-5 w-5' />
                         </div>
                         <div className='space-y-0.5'>
-                            <h3 className='text-xl font-black uppercase tracking-tight italic'>
+                            <h3 className='text-xl font-black tracking-tight uppercase italic'>
                                 {t('files.editors.minecraftProperties.sections.serverInfo') || 'Server Information'}
                             </h3>
-                            <p className='text-[9px] font-bold text-muted-foreground tracking-widest uppercase opacity-50'>
+                            <p className='text-muted-foreground text-[9px] font-bold tracking-widest uppercase opacity-50'>
                                 {t('files.editors.minecraftProperties.sectionsDescriptions.serverInfo') ||
                                     'Basic server configuration'}
                             </p>
                         </div>
                     </div>
                     <div className='grid grid-cols-1 gap-6 xl:grid-cols-2'>
-                        <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6 xl:col-span-2'>
-                            <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                        <div className='bg-card/30 border-border/30 space-y-3 rounded-xl border p-6 xl:col-span-2'>
+                            <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                 {t('files.editors.minecraftProperties.fields.motd.label') || 'Message of the Day'}
                             </label>
                             <Textarea
@@ -376,15 +376,15 @@ export function MinecraftServerPropertiesEditor({
                                 readOnly={readonly}
                                 rows={3}
                             />
-                            <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                            <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                 {t('files.editors.minecraftProperties.fields.motd.description') ||
                                     'The message shown to players when they join'}
                             </p>
                         </div>
 
-                        <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6'>
-                            <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1 flex items-center gap-2'>
-                                <Users className='h-3 w-3 text-primary' />
+                        <div className='bg-card/30 border-border/30 space-y-3 rounded-xl border p-6'>
+                            <label className='text-muted-foreground ml-1 flex items-center gap-2 text-[9px] font-black tracking-[0.2em] uppercase'>
+                                <Users className='text-primary h-3 w-3' />
                                 {t('files.editors.minecraftProperties.fields.maxPlayers.label') || 'Max Players'}
                             </label>
                             <Input
@@ -395,14 +395,14 @@ export function MinecraftServerPropertiesEditor({
                                 min={1}
                                 max={2147483647}
                             />
-                            <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                            <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                 {t('files.editors.minecraftProperties.fields.maxPlayers.description') ||
                                     'Maximum number of players allowed on the server'}
                             </p>
                         </div>
 
-                        <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6'>
-                            <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                        <div className='bg-card/30 border-border/30 space-y-3 rounded-xl border p-6'>
+                            <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                 {t('files.editors.minecraftProperties.fields.gamemode.label') || 'Default Gamemode'}
                             </label>
                             <Select
@@ -423,14 +423,14 @@ export function MinecraftServerPropertiesEditor({
                                     {t('files.editors.minecraftProperties.options.gamemode.spectator') || 'Spectator'}
                                 </option>
                             </Select>
-                            <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                            <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                 {t('files.editors.minecraftProperties.fields.gamemode.description') ||
                                     'Default gamemode for new players'}
                             </p>
                         </div>
 
-                        <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6'>
-                            <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                        <div className='bg-card/30 border-border/30 space-y-3 rounded-xl border p-6'>
+                            <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                 {t('files.editors.minecraftProperties.fields.difficulty.label') || 'Difficulty'}
                             </label>
                             <Select
@@ -451,7 +451,7 @@ export function MinecraftServerPropertiesEditor({
                                     {t('files.editors.minecraftProperties.options.difficulty.hard') || 'Hard'}
                                 </option>
                             </Select>
-                            <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                            <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                 {t('files.editors.minecraftProperties.fields.difficulty.description') ||
                                     'Server difficulty level'}
                             </p>
@@ -460,24 +460,24 @@ export function MinecraftServerPropertiesEditor({
                 </section>
 
                 <section className='space-y-6'>
-                    <div className='flex items-center gap-4 border-b border-border/10 pb-6'>
-                        <div className='h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20'>
-                            <Globe className='h-5 w-5 text-primary' />
+                    <div className='border-border/10 flex items-center gap-4 border-b pb-6'>
+                        <div className='bg-primary/10 border-primary/20 flex h-10 w-10 items-center justify-center rounded-xl border'>
+                            <Globe className='text-primary h-5 w-5' />
                         </div>
                         <div className='space-y-0.5'>
-                            <h3 className='text-xl font-black uppercase tracking-tight italic'>
+                            <h3 className='text-xl font-black tracking-tight uppercase italic'>
                                 {t('files.editors.minecraftProperties.sections.worldSettings') || 'World Settings'}
                             </h3>
-                            <p className='text-[9px] font-bold text-muted-foreground tracking-widest uppercase opacity-50'>
+                            <p className='text-muted-foreground text-[9px] font-bold tracking-widest uppercase opacity-50'>
                                 {t('files.editors.minecraftProperties.sectionsDescriptions.worldSettings') ||
                                     'World generation and configuration'}
                             </p>
                         </div>
                     </div>
                     <div className='grid grid-cols-1 gap-6 xl:grid-cols-2'>
-                        <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6 xl:col-span-2'>
-                            <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1 flex items-center gap-2'>
-                                <Globe className='h-3 w-3 text-primary' />
+                        <div className='bg-card/30 border-border/30 space-y-3 rounded-xl border p-6 xl:col-span-2'>
+                            <label className='text-muted-foreground ml-1 flex items-center gap-2 text-[9px] font-black tracking-[0.2em] uppercase'>
+                                <Globe className='text-primary h-3 w-3' />
                                 {t('files.editors.minecraftProperties.fields.levelName.label') || 'Level Name'}
                             </label>
                             <Input
@@ -486,15 +486,15 @@ export function MinecraftServerPropertiesEditor({
                                 onChange={(e) => updateForm('levelName', e.target.value)}
                                 readOnly={readonly}
                             />
-                            <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                            <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                 {t('files.editors.minecraftProperties.fields.levelName.description') ||
                                     'Name of the world folder'}
                             </p>
                         </div>
 
-                        <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6 xl:col-span-2'>
-                            <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1 flex items-center gap-2'>
-                                <MountainSnow className='h-3 w-3 text-primary' />
+                        <div className='bg-card/30 border-border/30 space-y-3 rounded-xl border p-6 xl:col-span-2'>
+                            <label className='text-muted-foreground ml-1 flex items-center gap-2 text-[9px] font-black tracking-[0.2em] uppercase'>
+                                <MountainSnow className='text-primary h-3 w-3' />
                                 {t('files.editors.minecraftProperties.fields.levelSeed.label') || 'Level Seed'}
                             </label>
                             <Input
@@ -504,14 +504,14 @@ export function MinecraftServerPropertiesEditor({
                                 readOnly={readonly}
                                 placeholder='Random'
                             />
-                            <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                            <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                 {t('files.editors.minecraftProperties.fields.levelSeed.description') ||
                                     'Seed for world generation (leave empty for random)'}
                             </p>
                         </div>
 
-                        <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6'>
-                            <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                        <div className='bg-card/30 border-border/30 space-y-3 rounded-xl border p-6'>
+                            <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                 {t('files.editors.minecraftProperties.fields.levelType.label') || 'Level Type'}
                             </label>
                             <Select
@@ -537,15 +537,15 @@ export function MinecraftServerPropertiesEditor({
                                         'Single Biome'}
                                 </option>
                             </Select>
-                            <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                            <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                 {t('files.editors.minecraftProperties.fields.levelType.description') ||
                                     'World generation type'}
                             </p>
                         </div>
 
-                        <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6'>
-                            <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1 flex items-center gap-2'>
-                                <Sliders className='h-3 w-3 text-primary' />
+                        <div className='bg-card/30 border-border/30 space-y-3 rounded-xl border p-6'>
+                            <label className='text-muted-foreground ml-1 flex items-center gap-2 text-[9px] font-black tracking-[0.2em] uppercase'>
+                                <Sliders className='text-primary h-3 w-3' />
                                 {t('files.editors.minecraftProperties.fields.generatorSettings.label') ||
                                     'Generator Settings'}
                             </label>
@@ -555,20 +555,20 @@ export function MinecraftServerPropertiesEditor({
                                 onChange={(e) => updateForm('generatorSettings', e.target.value)}
                                 readOnly={readonly}
                             />
-                            <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                            <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                 {t('files.editors.minecraftProperties.fields.generatorSettings.description') ||
                                     'Custom generator settings (JSON format)'}
                             </p>
                         </div>
 
-                        <div className='space-y-3 rounded-xl bg-muted/10 border border-border/20 p-5 hover:border-border/40 transition-all'>
+                        <div className='bg-muted/10 border-border/20 hover:border-border/40 space-y-3 rounded-xl border p-5 transition-all'>
                             <div className='flex items-start justify-between gap-4'>
                                 <div className='space-y-1'>
-                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                    <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                         {t('files.editors.minecraftProperties.fields.generateStructures.label') ||
                                             'Generate Structures'}
                                     </label>
-                                    <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                    <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                         {t('files.editors.minecraftProperties.fields.generateStructures.description') ||
                                             'Generate structures like villages and temples'}
                                     </p>
@@ -581,14 +581,14 @@ export function MinecraftServerPropertiesEditor({
                             </div>
                         </div>
 
-                        <div className='space-y-3 rounded-xl bg-muted/10 border border-border/20 p-5 hover:border-border/40 transition-all'>
+                        <div className='bg-muted/10 border-border/20 hover:border-border/40 space-y-3 rounded-xl border p-5 transition-all'>
                             <div className='flex items-start justify-between gap-4'>
                                 <div className='space-y-1'>
-                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                    <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                         {t('files.editors.minecraftProperties.fields.hardcore.label') ||
                                             'Hardcore Mode'}
                                     </label>
-                                    <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                    <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                         {t('files.editors.minecraftProperties.fields.hardcore.description') ||
                                             'Enable hardcore mode (permanent death)'}
                                     </p>
@@ -604,28 +604,28 @@ export function MinecraftServerPropertiesEditor({
                 </section>
 
                 <section className='space-y-6'>
-                    <div className='flex items-center gap-4 border-b border-border/10 pb-6'>
-                        <div className='h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20'>
-                            <Gamepad2 className='h-5 w-5 text-primary' />
+                    <div className='border-border/10 flex items-center gap-4 border-b pb-6'>
+                        <div className='bg-primary/10 border-primary/20 flex h-10 w-10 items-center justify-center rounded-xl border'>
+                            <Gamepad2 className='text-primary h-5 w-5' />
                         </div>
                         <div className='space-y-0.5'>
-                            <h3 className='text-xl font-black uppercase tracking-tight italic'>
+                            <h3 className='text-xl font-black tracking-tight uppercase italic'>
                                 {t('files.editors.minecraftProperties.sections.gameplay') || 'Gameplay Settings'}
                             </h3>
-                            <p className='text-[9px] font-bold text-muted-foreground tracking-widest uppercase opacity-50'>
+                            <p className='text-muted-foreground text-[9px] font-bold tracking-widest uppercase opacity-50'>
                                 {t('files.editors.minecraftProperties.sectionsDescriptions.gameplay') ||
                                     'Gameplay and player behavior settings'}
                             </p>
                         </div>
                     </div>
                     <div className='grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3'>
-                        <div className='space-y-3 rounded-xl bg-muted/10 border border-border/20 p-5 hover:border-border/40 transition-all'>
+                        <div className='bg-muted/10 border-border/20 hover:border-border/40 space-y-3 rounded-xl border p-5 transition-all'>
                             <div className='flex items-start justify-between gap-4'>
                                 <div className='space-y-1'>
-                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                    <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                         {t('files.editors.minecraftProperties.fields.pvp.label') || 'PvP'}
                                     </label>
-                                    <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                    <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                         {t('files.editors.minecraftProperties.fields.pvp.description') ||
                                             'Allow player vs player combat'}
                                     </p>
@@ -638,14 +638,14 @@ export function MinecraftServerPropertiesEditor({
                             </div>
                         </div>
 
-                        <div className='space-y-3 rounded-xl bg-muted/10 border border-border/20 p-5 hover:border-border/40 transition-all'>
+                        <div className='bg-muted/10 border-border/20 hover:border-border/40 space-y-3 rounded-xl border p-5 transition-all'>
                             <div className='flex items-start justify-between gap-4'>
                                 <div className='space-y-1'>
-                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                    <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                         {t('files.editors.minecraftProperties.fields.allowFlight.label') ||
                                             'Allow Flight'}
                                     </label>
-                                    <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                    <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                         {t('files.editors.minecraftProperties.fields.allowFlight.description') ||
                                             'Allow players to fly'}
                                     </p>
@@ -658,14 +658,14 @@ export function MinecraftServerPropertiesEditor({
                             </div>
                         </div>
 
-                        <div className='space-y-3 rounded-xl bg-muted/10 border border-border/20 p-5 hover:border-border/40 transition-all'>
+                        <div className='bg-muted/10 border-border/20 hover:border-border/40 space-y-3 rounded-xl border p-5 transition-all'>
                             <div className='flex items-start justify-between gap-4'>
                                 <div className='space-y-1'>
-                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                    <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                         {t('files.editors.minecraftProperties.fields.spawnMonsters.label') ||
                                             'Spawn Monsters'}
                                     </label>
-                                    <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                    <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                         {t('files.editors.minecraftProperties.fields.spawnMonsters.description') ||
                                             'Allow monsters to spawn'}
                                     </p>
@@ -678,14 +678,14 @@ export function MinecraftServerPropertiesEditor({
                             </div>
                         </div>
 
-                        <div className='space-y-3 rounded-xl bg-muted/10 border border-border/20 p-5 hover:border-border/40 transition-all'>
+                        <div className='bg-muted/10 border-border/20 hover:border-border/40 space-y-3 rounded-xl border p-5 transition-all'>
                             <div className='flex items-start justify-between gap-4'>
                                 <div className='space-y-1'>
-                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                    <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                         {t('files.editors.minecraftProperties.fields.allowNether.label') ||
                                             'Allow Nether'}
                                     </label>
-                                    <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                    <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                         {t('files.editors.minecraftProperties.fields.allowNether.description') ||
                                             'Allow players to travel to the Nether'}
                                     </p>
@@ -698,14 +698,14 @@ export function MinecraftServerPropertiesEditor({
                             </div>
                         </div>
 
-                        <div className='space-y-3 rounded-xl bg-muted/10 border border-border/20 p-5 hover:border-border/40 transition-all'>
+                        <div className='bg-muted/10 border-border/20 hover:border-border/40 space-y-3 rounded-xl border p-5 transition-all'>
                             <div className='flex items-start justify-between gap-4'>
                                 <div className='space-y-1'>
-                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                    <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                         {t('files.editors.minecraftProperties.fields.forceGamemode.label') ||
                                             'Force Gamemode'}
                                     </label>
-                                    <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                    <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                         {t('files.editors.minecraftProperties.fields.forceGamemode.description') ||
                                             'Force players to default gamemode'}
                                     </p>
@@ -718,14 +718,14 @@ export function MinecraftServerPropertiesEditor({
                             </div>
                         </div>
 
-                        <div className='space-y-3 rounded-xl bg-muted/10 border border-border/20 p-5 hover:border-border/40 transition-all'>
+                        <div className='bg-muted/10 border-border/20 hover:border-border/40 space-y-3 rounded-xl border p-5 transition-all'>
                             <div className='flex items-start justify-between gap-4'>
                                 <div className='space-y-1'>
-                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                    <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                         {t('files.editors.minecraftProperties.fields.enableCommandBlock.label') ||
                                             'Enable Command Blocks'}
                                     </label>
-                                    <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                    <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                         {t('files.editors.minecraftProperties.fields.enableCommandBlock.description') ||
                                             'Enable command blocks in the world'}
                                     </p>
@@ -741,29 +741,29 @@ export function MinecraftServerPropertiesEditor({
                 </section>
 
                 <section className='space-y-6'>
-                    <div className='flex items-center gap-4 border-b border-border/10 pb-6'>
-                        <div className='h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20'>
-                            <Network className='h-5 w-5 text-primary' />
+                    <div className='border-border/10 flex items-center gap-4 border-b pb-6'>
+                        <div className='bg-primary/10 border-primary/20 flex h-10 w-10 items-center justify-center rounded-xl border'>
+                            <Network className='text-primary h-5 w-5' />
                         </div>
                         <div className='space-y-0.5'>
-                            <h3 className='text-xl font-black uppercase tracking-tight italic'>
+                            <h3 className='text-xl font-black tracking-tight uppercase italic'>
                                 {t('files.editors.minecraftProperties.sections.network') || 'Network & Security'}
                             </h3>
-                            <p className='text-[9px] font-bold text-muted-foreground tracking-widest uppercase opacity-50'>
+                            <p className='text-muted-foreground text-[9px] font-bold tracking-widest uppercase opacity-50'>
                                 {t('files.editors.minecraftProperties.sectionsDescriptions.network') ||
                                     'Network and security settings'}
                             </p>
                         </div>
                     </div>
                     <div className='grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3'>
-                        <div className='space-y-3 rounded-xl bg-muted/10 border border-border/20 p-5 hover:border-border/40 transition-all'>
+                        <div className='bg-muted/10 border-border/20 hover:border-border/40 space-y-3 rounded-xl border p-5 transition-all'>
                             <div className='flex items-start justify-between gap-4'>
                                 <div className='space-y-1'>
-                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                    <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                         {t('files.editors.minecraftProperties.fields.onlineMode.label') ||
                                             'Online Mode'}
                                     </label>
-                                    <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                    <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                         {t('files.editors.minecraftProperties.fields.onlineMode.description') ||
                                             'Verify players with Mojang (set to false for cracked servers)'}
                                     </p>
@@ -776,13 +776,13 @@ export function MinecraftServerPropertiesEditor({
                             </div>
                         </div>
 
-                        <div className='space-y-3 rounded-xl bg-muted/10 border border-border/20 p-5 hover:border-border/40 transition-all'>
+                        <div className='bg-muted/10 border-border/20 hover:border-border/40 space-y-3 rounded-xl border p-5 transition-all'>
                             <div className='flex items-start justify-between gap-4'>
                                 <div className='space-y-1'>
-                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                    <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                         {t('files.editors.minecraftProperties.fields.whiteList.label') || 'Whitelist'}
                                     </label>
-                                    <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                    <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                         {t('files.editors.minecraftProperties.fields.whiteList.description') ||
                                             'Enable whitelist to restrict access'}
                                     </p>
@@ -795,14 +795,14 @@ export function MinecraftServerPropertiesEditor({
                             </div>
                         </div>
 
-                        <div className='space-y-3 rounded-xl bg-muted/10 border border-border/20 p-5 hover:border-border/40 transition-all'>
+                        <div className='bg-muted/10 border-border/20 hover:border-border/40 space-y-3 rounded-xl border p-5 transition-all'>
                             <div className='flex items-start justify-between gap-4'>
                                 <div className='space-y-1'>
-                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                    <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                         {t('files.editors.minecraftProperties.fields.enforceWhitelist.label') ||
                                             'Enforce Whitelist'}
                                     </label>
-                                    <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                    <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                         {t('files.editors.minecraftProperties.fields.enforceWhitelist.description') ||
                                             'Automatically kick non-whitelisted players'}
                                     </p>
@@ -815,14 +815,14 @@ export function MinecraftServerPropertiesEditor({
                             </div>
                         </div>
 
-                        <div className='space-y-3 rounded-xl bg-muted/10 border border-border/20 p-5 hover:border-border/40 transition-all'>
+                        <div className='bg-muted/10 border-border/20 hover:border-border/40 space-y-3 rounded-xl border p-5 transition-all'>
                             <div className='flex items-start justify-between gap-4'>
                                 <div className='space-y-1'>
-                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                    <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                         {t('files.editors.minecraftProperties.fields.enforceSecureProfile.label') ||
                                             'Enforce Secure Profile'}
                                     </label>
-                                    <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                    <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                         {t(
                                             'files.editors.minecraftProperties.fields.enforceSecureProfile.description',
                                         ) || 'Require secure profile signatures'}
@@ -836,14 +836,14 @@ export function MinecraftServerPropertiesEditor({
                             </div>
                         </div>
 
-                        <div className='space-y-3 rounded-xl bg-muted/10 border border-border/20 p-5 hover:border-border/40 transition-all'>
+                        <div className='bg-muted/10 border-border/20 hover:border-border/40 space-y-3 rounded-xl border p-5 transition-all'>
                             <div className='flex items-start justify-between gap-4'>
                                 <div className='space-y-1'>
-                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                    <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                         {t('files.editors.minecraftProperties.fields.hideOnlinePlayers.label') ||
                                             'Hide Online Players'}
                                     </label>
-                                    <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                    <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                         {t('files.editors.minecraftProperties.fields.hideOnlinePlayers.description') ||
                                             'Hide player count from server list'}
                                     </p>
@@ -856,14 +856,14 @@ export function MinecraftServerPropertiesEditor({
                             </div>
                         </div>
 
-                        <div className='space-y-3 rounded-xl bg-muted/10 border border-border/20 p-5 hover:border-border/40 transition-all'>
+                        <div className='bg-muted/10 border-border/20 hover:border-border/40 space-y-3 rounded-xl border p-5 transition-all'>
                             <div className='flex items-start justify-between gap-4'>
                                 <div className='space-y-1'>
-                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                    <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                         {t('files.editors.minecraftProperties.fields.useNativeTransport.label') ||
                                             'Use Native Transport'}
                                     </label>
-                                    <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                    <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                         {t('files.editors.minecraftProperties.fields.useNativeTransport.description') ||
                                             'Use native network transport for better performance'}
                                     </p>
@@ -879,24 +879,24 @@ export function MinecraftServerPropertiesEditor({
                 </section>
 
                 <section className='space-y-6'>
-                    <div className='flex items-center gap-4 border-b border-border/10 pb-6'>
-                        <div className='h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20'>
-                            <Eye className='h-5 w-5 text-primary' />
+                    <div className='border-border/10 flex items-center gap-4 border-b pb-6'>
+                        <div className='bg-primary/10 border-primary/20 flex h-10 w-10 items-center justify-center rounded-xl border'>
+                            <Eye className='text-primary h-5 w-5' />
                         </div>
                         <div className='space-y-0.5'>
-                            <h3 className='text-xl font-black uppercase tracking-tight italic'>
+                            <h3 className='text-xl font-black tracking-tight uppercase italic'>
                                 {t('files.editors.minecraftProperties.sections.performance') || 'Performance Settings'}
                             </h3>
-                            <p className='text-[9px] font-bold text-muted-foreground tracking-widest uppercase opacity-50'>
+                            <p className='text-muted-foreground text-[9px] font-bold tracking-widest uppercase opacity-50'>
                                 {t('files.editors.minecraftProperties.sectionsDescriptions.performance') ||
                                     'Server performance and rendering settings'}
                             </p>
                         </div>
                     </div>
                     <div className='grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3'>
-                        <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6'>
-                            <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1 flex items-center gap-2'>
-                                <Shield className='h-3 w-3 text-primary' />
+                        <div className='bg-card/30 border-border/30 space-y-3 rounded-xl border p-6'>
+                            <label className='text-muted-foreground ml-1 flex items-center gap-2 text-[9px] font-black tracking-[0.2em] uppercase'>
+                                <Shield className='text-primary h-3 w-3' />
                                 {t('files.editors.minecraftProperties.fields.spawnProtection.label') ||
                                     'Spawn Protection'}
                             </label>
@@ -910,15 +910,15 @@ export function MinecraftServerPropertiesEditor({
                                 min={0}
                                 max={30000000}
                             />
-                            <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                            <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                 {t('files.editors.minecraftProperties.fields.spawnProtection.description') ||
                                     'Radius of spawn protection (0 to disable)'}
                             </p>
                         </div>
 
-                        <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6'>
-                            <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1 flex items-center gap-2'>
-                                <Eye className='h-3 w-3 text-primary' />
+                        <div className='bg-card/30 border-border/30 space-y-3 rounded-xl border p-6'>
+                            <label className='text-muted-foreground ml-1 flex items-center gap-2 text-[9px] font-black tracking-[0.2em] uppercase'>
+                                <Eye className='text-primary h-3 w-3' />
                                 {t('files.editors.minecraftProperties.fields.viewDistance.label') || 'View Distance'}
                             </label>
                             <Input
@@ -929,14 +929,14 @@ export function MinecraftServerPropertiesEditor({
                                 min={3}
                                 max={32}
                             />
-                            <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                            <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                 {t('files.editors.minecraftProperties.fields.viewDistance.description') ||
                                     'Maximum chunk render distance (3-32)'}
                             </p>
                         </div>
 
-                        <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6'>
-                            <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                        <div className='bg-card/30 border-border/30 space-y-3 rounded-xl border p-6'>
+                            <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                 {t('files.editors.minecraftProperties.fields.simulationDistance.label') ||
                                     'Simulation Distance'}
                             </label>
@@ -950,14 +950,14 @@ export function MinecraftServerPropertiesEditor({
                                 min={3}
                                 max={32}
                             />
-                            <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                            <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                 {t('files.editors.minecraftProperties.fields.simulationDistance.description') ||
                                     'Maximum chunk simulation distance (3-32)'}
                             </p>
                         </div>
 
-                        <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6'>
-                            <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                        <div className='bg-card/30 border-border/30 space-y-3 rounded-xl border p-6'>
+                            <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                 {t('files.editors.minecraftProperties.fields.maxWorldSize.label') || 'Max World Size'}
                             </label>
                             <Input
@@ -968,14 +968,14 @@ export function MinecraftServerPropertiesEditor({
                                 min={1}
                                 max={29999984}
                             />
-                            <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                            <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                 {t('files.editors.minecraftProperties.fields.maxWorldSize.description') ||
                                     'Maximum world size in blocks'}
                             </p>
                         </div>
 
-                        <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6'>
-                            <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                        <div className='bg-card/30 border-border/30 space-y-3 rounded-xl border p-6'>
+                            <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                 {t('files.editors.minecraftProperties.fields.maxChainedNeighborUpdates.label') ||
                                     'Max Chained Neighbor Updates'}
                             </label>
@@ -989,14 +989,14 @@ export function MinecraftServerPropertiesEditor({
                                 min={-1}
                                 max={16777215}
                             />
-                            <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                            <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                 {t('files.editors.minecraftProperties.fields.maxChainedNeighborUpdates.description') ||
                                     'Maximum chained block updates (-1 for unlimited)'}
                             </p>
                         </div>
 
-                        <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6'>
-                            <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                        <div className='bg-card/30 border-border/30 space-y-3 rounded-xl border p-6'>
+                            <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                 {t('files.editors.minecraftProperties.fields.entityBroadcastRangePercentage.label') ||
                                     'Entity Broadcast Range %'}
                             </label>
@@ -1013,7 +1013,7 @@ export function MinecraftServerPropertiesEditor({
                                 min={0}
                                 max={500}
                             />
-                            <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                            <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                 {t(
                                     'files.editors.minecraftProperties.fields.entityBroadcastRangePercentage.description',
                                 ) || 'Entity broadcast range percentage (0-500)'}
@@ -1023,29 +1023,29 @@ export function MinecraftServerPropertiesEditor({
                 </section>
 
                 <section className='space-y-6'>
-                    <div className='flex items-center gap-4 border-b border-border/10 pb-6'>
-                        <div className='h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20'>
-                            <FileArchive className='h-5 w-5 text-primary' />
+                    <div className='border-border/10 flex items-center gap-4 border-b pb-6'>
+                        <div className='bg-primary/10 border-primary/20 flex h-10 w-10 items-center justify-center rounded-xl border'>
+                            <FileArchive className='text-primary h-5 w-5' />
                         </div>
                         <div className='space-y-0.5'>
-                            <h3 className='text-xl font-black uppercase tracking-tight italic'>
+                            <h3 className='text-xl font-black tracking-tight uppercase italic'>
                                 {t('files.editors.minecraftProperties.sections.resourcePack') || 'Resource Pack'}
                             </h3>
-                            <p className='text-[9px] font-bold text-muted-foreground tracking-widest uppercase opacity-50'>
+                            <p className='text-muted-foreground text-[9px] font-bold tracking-widest uppercase opacity-50'>
                                 {t('files.editors.minecraftProperties.sectionsDescriptions.resourcePack') ||
                                     'Resource pack configuration'}
                             </p>
                         </div>
                     </div>
                     <div className='grid grid-cols-1 gap-6 xl:grid-cols-2'>
-                        <div className='space-y-3 rounded-xl bg-muted/10 border border-border/20 p-5 hover:border-border/40 transition-all'>
+                        <div className='bg-muted/10 border-border/20 hover:border-border/40 space-y-3 rounded-xl border p-5 transition-all'>
                             <div className='flex items-start justify-between gap-4'>
                                 <div className='space-y-1'>
-                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                    <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                         {t('files.editors.minecraftProperties.fields.requireResourcePack.label') ||
                                             'Require Resource Pack'}
                                     </label>
-                                    <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                    <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                         {t(
                                             'files.editors.minecraftProperties.fields.requireResourcePack.description',
                                         ) || 'Force players to use the resource pack'}
@@ -1059,9 +1059,9 @@ export function MinecraftServerPropertiesEditor({
                             </div>
                         </div>
 
-                        <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6 xl:col-span-2'>
-                            <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1 flex items-center gap-2'>
-                                <FileArchive className='h-3 w-3 text-primary' />
+                        <div className='bg-card/30 border-border/30 space-y-3 rounded-xl border p-6 xl:col-span-2'>
+                            <label className='text-muted-foreground ml-1 flex items-center gap-2 text-[9px] font-black tracking-[0.2em] uppercase'>
+                                <FileArchive className='text-primary h-3 w-3' />
                                 {t('files.editors.minecraftProperties.fields.resourcePack.label') ||
                                     'Resource Pack URL'}
                             </label>
@@ -1072,15 +1072,15 @@ export function MinecraftServerPropertiesEditor({
                                 readOnly={readonly}
                                 placeholder='https://example.com/resource-pack.zip'
                             />
-                            <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                            <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                 {t('files.editors.minecraftProperties.fields.resourcePack.description') ||
                                     'URL to the resource pack file'}
                             </p>
                         </div>
 
-                        <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6'>
-                            <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1 flex items-center gap-2'>
-                                <Hash className='h-3 w-3 text-primary' />
+                        <div className='bg-card/30 border-border/30 space-y-3 rounded-xl border p-6'>
+                            <label className='text-muted-foreground ml-1 flex items-center gap-2 text-[9px] font-black tracking-[0.2em] uppercase'>
+                                <Hash className='text-primary h-3 w-3' />
                                 {t('files.editors.minecraftProperties.fields.resourcePackSha1.label') ||
                                     'Resource Pack SHA1'}
                             </label>
@@ -1091,15 +1091,15 @@ export function MinecraftServerPropertiesEditor({
                                 readOnly={readonly}
                                 placeholder='0f1412443d23a48f1a74d661c45bc9a904269db2'
                             />
-                            <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                            <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                 {t('files.editors.minecraftProperties.fields.resourcePackSha1.description') ||
                                     'SHA1 hash of the resource pack'}
                             </p>
                         </div>
 
-                        <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6'>
-                            <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1 flex items-center gap-2'>
-                                <Hash className='h-3 w-3 text-primary' />
+                        <div className='bg-card/30 border-border/30 space-y-3 rounded-xl border p-6'>
+                            <label className='text-muted-foreground ml-1 flex items-center gap-2 text-[9px] font-black tracking-[0.2em] uppercase'>
+                                <Hash className='text-primary h-3 w-3' />
                                 {t('files.editors.minecraftProperties.fields.resourcePackId.label') ||
                                     'Resource Pack ID'}
                             </label>
@@ -1110,14 +1110,14 @@ export function MinecraftServerPropertiesEditor({
                                 readOnly={readonly}
                                 placeholder='119e9b1e-d244-5ba3-e070-bb226e6753d1'
                             />
-                            <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                            <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                 {t('files.editors.minecraftProperties.fields.resourcePackId.description') ||
                                     'Unique identifier for the resource pack'}
                             </p>
                         </div>
 
-                        <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6 xl:col-span-2'>
-                            <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                        <div className='bg-card/30 border-border/30 space-y-3 rounded-xl border p-6 xl:col-span-2'>
+                            <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                 {t('files.editors.minecraftProperties.fields.resourcePackPrompt.label') ||
                                     'Resource Pack Prompt'}
                             </label>
@@ -1127,7 +1127,7 @@ export function MinecraftServerPropertiesEditor({
                                 readOnly={readonly}
                                 rows={2}
                             />
-                            <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                            <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                 {t('files.editors.minecraftProperties.fields.resourcePackPrompt.description') ||
                                     'Message shown when prompting players to download the resource pack'}
                             </p>
@@ -1136,23 +1136,23 @@ export function MinecraftServerPropertiesEditor({
                 </section>
 
                 <section className='space-y-6'>
-                    <div className='flex items-center gap-4 border-b border-border/10 pb-6'>
-                        <div className='h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20'>
-                            <Sliders className='h-5 w-5 text-primary' />
+                    <div className='border-border/10 flex items-center gap-4 border-b pb-6'>
+                        <div className='bg-primary/10 border-primary/20 flex h-10 w-10 items-center justify-center rounded-xl border'>
+                            <Sliders className='text-primary h-5 w-5' />
                         </div>
                         <div className='space-y-0.5'>
-                            <h3 className='text-xl font-black uppercase tracking-tight italic'>
+                            <h3 className='text-xl font-black tracking-tight uppercase italic'>
                                 {t('files.editors.minecraftProperties.sections.advanced') || 'Advanced Settings'}
                             </h3>
-                            <p className='text-[9px] font-bold text-muted-foreground tracking-widest uppercase opacity-50'>
+                            <p className='text-muted-foreground text-[9px] font-bold tracking-widest uppercase opacity-50'>
                                 {t('files.editors.minecraftProperties.sectionsDescriptions.advanced') ||
                                     'Advanced server configuration'}
                             </p>
                         </div>
                     </div>
                     <div className='grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3'>
-                        <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6'>
-                            <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                        <div className='bg-card/30 border-border/30 space-y-3 rounded-xl border p-6'>
+                            <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                 {t('files.editors.minecraftProperties.fields.opPermissionLevel.label') ||
                                     'OP Permission Level'}
                             </label>
@@ -1166,14 +1166,14 @@ export function MinecraftServerPropertiesEditor({
                                 min={1}
                                 max={4}
                             />
-                            <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                            <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                 {t('files.editors.minecraftProperties.fields.opPermissionLevel.description') ||
                                     'Permission level for server operators (1-4)'}
                             </p>
                         </div>
 
-                        <div className='space-y-3 rounded-xl bg-card/30 border border-border/30 p-6'>
-                            <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                        <div className='bg-card/30 border-border/30 space-y-3 rounded-xl border p-6'>
+                            <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                 {t('files.editors.minecraftProperties.fields.functionPermissionLevel.label') ||
                                     'Function Permission Level'}
                             </label>
@@ -1187,20 +1187,20 @@ export function MinecraftServerPropertiesEditor({
                                 min={1}
                                 max={4}
                             />
-                            <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                            <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                 {t('files.editors.minecraftProperties.fields.functionPermissionLevel.description') ||
                                     'Permission level required to use functions (1-4)'}
                             </p>
                         </div>
 
-                        <div className='space-y-3 rounded-xl bg-muted/10 border border-border/20 p-5 hover:border-border/40 transition-all'>
+                        <div className='bg-muted/10 border-border/20 hover:border-border/40 space-y-3 rounded-xl border p-5 transition-all'>
                             <div className='flex items-start justify-between gap-4'>
                                 <div className='space-y-1'>
-                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                    <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                         {t('files.editors.minecraftProperties.fields.broadcastConsoleToOps.label') ||
                                             'Broadcast Console to OPs'}
                                     </label>
-                                    <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                    <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                         {t(
                                             'files.editors.minecraftProperties.fields.broadcastConsoleToOps.description',
                                         ) || 'Send console messages to operators'}
@@ -1214,14 +1214,14 @@ export function MinecraftServerPropertiesEditor({
                             </div>
                         </div>
 
-                        <div className='space-y-3 rounded-xl bg-muted/10 border border-border/20 p-5 hover:border-border/40 transition-all'>
+                        <div className='bg-muted/10 border-border/20 hover:border-border/40 space-y-3 rounded-xl border p-5 transition-all'>
                             <div className='flex items-start justify-between gap-4'>
                                 <div className='space-y-1'>
-                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                    <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                         {t('files.editors.minecraftProperties.fields.previewsChat.label') ||
                                             'Previews Chat'}
                                     </label>
-                                    <p className='text-[9px] font-black text-muted-foreground ml-1 uppercase tracking-widest opacity-60'>
+                                    <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
                                         {t('files.editors.minecraftProperties.fields.previewsChat.description') ||
                                             'Enable chat message previews'}
                                     </p>

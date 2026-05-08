@@ -122,12 +122,12 @@ function SettingFieldRow({
 }) {
     if (currentSetting.type === 'toggle' || (currentSetting.type as string) === 'boolean') {
         return (
-            <div className='flex flex-row items-center justify-between gap-4 rounded-2xl border border-border/50 bg-card/30 p-4 transition-colors hover:bg-card/50'>
+            <div className='border-border/50 bg-card/30 hover:bg-card/50 flex flex-row items-center justify-between gap-4 rounded-2xl border p-4 transition-colors'>
                 <div className='min-w-0 space-y-0.5 pr-2'>
                     <Label htmlFor={settingKey} className='text-base font-medium'>
                         {formattedName}
                     </Label>
-                    <p className='text-sm text-muted-foreground max-w-[min(100%,42rem)]'>
+                    <p className='text-muted-foreground max-w-[min(100%,42rem)] text-sm'>
                         {currentSetting.description}
                     </p>
                 </div>
@@ -156,7 +156,7 @@ function SettingFieldRow({
                     placeholder={currentSetting.placeholder}
                     className='min-h-[120px]'
                 />
-                <p className='text-sm text-muted-foreground'>{currentSetting.description}</p>
+                <p className='text-muted-foreground text-sm'>{currentSetting.description}</p>
             </div>
         );
     }
@@ -185,7 +185,7 @@ function SettingFieldRow({
                         );
                     })}
                 </Select>
-                <p className='text-sm text-muted-foreground'>{currentSetting.description}</p>
+                <p className='text-muted-foreground text-sm'>{currentSetting.description}</p>
             </div>
         );
     }
@@ -202,7 +202,7 @@ function SettingFieldRow({
                 onChange={(e) => onSettingChange(settingKey, e.target.value)}
                 placeholder={currentSetting.placeholder}
             />
-            <p className='text-sm text-muted-foreground'>{currentSetting.description}</p>
+            <p className='text-muted-foreground text-sm'>{currentSetting.description}</p>
         </div>
     );
 }
@@ -503,14 +503,14 @@ export default function SettingsPage() {
     if (loading) {
         return (
             <div className='flex flex-col items-center justify-center gap-4 p-16'>
-                <Loader2 className='w-10 h-10 animate-spin text-primary' />
-                <p className='text-sm text-muted-foreground'>{t('admin.settings.title')}…</p>
+                <Loader2 className='text-primary h-10 w-10 animate-spin' />
+                <p className='text-muted-foreground text-sm'>{t('admin.settings.title')}…</p>
             </div>
         );
     }
 
     if (!organizedSettings) {
-        return <div className='p-8 text-center text-muted-foreground'>{t('admin.settings.no_settings')}</div>;
+        return <div className='text-muted-foreground p-8 text-center'>{t('admin.settings.no_settings')}</div>;
     }
 
     return (
@@ -524,7 +524,7 @@ export default function SettingsPage() {
                 actions={
                     <div className='flex flex-wrap items-center justify-end gap-2'>
                         <Button variant='outline' onClick={handleUploadLogs} className='shrink-0'>
-                            <UploadCloud className='w-4 h-4 mr-2' />
+                            <UploadCloud className='mr-2 h-4 w-4' />
                             {t('admin.settings.actions.upload_logs')}
                         </Button>
                         <Button
@@ -534,9 +534,9 @@ export default function SettingsPage() {
                             className='shrink-0'
                         >
                             {updatingDocker ? (
-                                <Loader2 className='w-4 h-4 mr-2 animate-spin' />
+                                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
                             ) : (
-                                <RefreshCw className='w-4 h-4 mr-2' />
+                                <RefreshCw className='mr-2 h-4 w-4' />
                             )}
                             {updatingDocker
                                 ? t('admin.settings.docker_update.updating')
@@ -546,9 +546,9 @@ export default function SettingsPage() {
                         </Button>
                         <Button onClick={handleSave} disabled={saving} className='shrink-0'>
                             {saving ? (
-                                <Loader2 className='w-4 h-4 mr-2 animate-spin' />
+                                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
                             ) : (
-                                <Save className='w-4 h-4 mr-2' />
+                                <Save className='mr-2 h-4 w-4' />
                             )}
                             {t('admin.settings.actions.save')}
                         </Button>
@@ -558,9 +558,9 @@ export default function SettingsPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-settings', 'after-header')} />
 
-            <div className='relative rounded-2xl border border-border/50 bg-card/40 p-1.5 shadow-sm'>
+            <div className='border-border/50 bg-card/40 relative rounded-2xl border p-1.5 shadow-sm'>
                 <Search
-                    className='pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground'
+                    className='text-muted-foreground pointer-events-none absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2'
                     aria-hidden
                 />
                 <Input
@@ -568,14 +568,14 @@ export default function SettingsPage() {
                     value={settingsSearch}
                     onChange={(e) => setSettingsSearch(e.target.value)}
                     placeholder={t('admin.settings.search_placeholder')}
-                    className='h-11 w-full border-0 bg-transparent pl-11 pr-11 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0'
+                    className='h-11 w-full border-0 bg-transparent pr-11 pl-11 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0'
                     aria-label={t('admin.settings.search_placeholder')}
                 />
                 {settingsSearch ? (
                     <button
                         type='button'
                         onClick={() => setSettingsSearch('')}
-                        className='absolute right-2.5 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors'
+                        className='text-muted-foreground hover:bg-muted hover:text-foreground absolute top-1/2 right-2.5 -translate-y-1/2 rounded-lg p-1.5 transition-colors'
                         title={t('admin.settings.search_clear')}
                     >
                         <X className='h-4 w-4' />
@@ -588,10 +588,10 @@ export default function SettingsPage() {
                     value={activeTab || categoryKeys[0]}
                     onValueChange={handleCategoryChange}
                     orientation='vertical'
-                    className='w-full flex flex-col lg:flex-row gap-6 lg:gap-8'
+                    className='flex w-full flex-col gap-6 lg:flex-row lg:gap-8'
                 >
-                    <aside className='w-full lg:w-72 shrink-0 flex flex-col gap-3 min-h-0'>
-                        <TabsList className='flex flex-row lg:flex-col h-auto w-full max-w-full overflow-x-auto lg:overflow-y-auto lg:overflow-x-visible lg:max-h-[calc(100vh-12rem)] bg-card/30 border border-border/50 p-2 rounded-2xl gap-1 custom-scrollbar'>
+                    <aside className='flex min-h-0 w-full shrink-0 flex-col gap-3 lg:w-72'>
+                        <TabsList className='bg-card/30 border-border/50 custom-scrollbar flex h-auto w-full max-w-full flex-row gap-1 overflow-x-auto rounded-2xl border p-2 lg:max-h-[calc(100vh-12rem)] lg:flex-col lg:overflow-x-visible lg:overflow-y-auto'>
                             {Object.entries(organizedSettings).map(([key, data]) => {
                                 const Icon = getIconForCategory(key);
                                 const matchCount = categoryMatchCounts[key] ?? 0;
@@ -602,14 +602,14 @@ export default function SettingsPage() {
                                     <TabsTrigger
                                         key={key}
                                         value={key}
-                                        className='w-auto lg:w-full justify-start px-3 py-2.5 h-auto text-sm font-normal data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:font-medium transition-all rounded-xl border border-transparent data-[state=active]:border-primary/10 whitespace-nowrap shrink-0 lg:shrink'
+                                        className='data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:border-primary/10 h-auto w-auto shrink-0 justify-start rounded-xl border border-transparent px-3 py-2.5 text-sm font-normal whitespace-nowrap transition-all data-[state=active]:font-medium lg:w-full lg:shrink'
                                     >
-                                        <Icon className='w-4 h-4 mr-2 shrink-0 opacity-80' />
-                                        <span className='truncate text-left flex-1 min-w-0'>{data.category.name}</span>
+                                        <Icon className='mr-2 h-4 w-4 shrink-0 opacity-80' />
+                                        <span className='min-w-0 flex-1 truncate text-left'>{data.category.name}</span>
                                         {showCount ? (
                                             <span
                                                 className={cn(
-                                                    'ml-2 shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide tabular-nums',
+                                                    'ml-2 shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-semibold tracking-wide uppercase tabular-nums',
                                                     matchCount > 0
                                                         ? 'bg-primary/15 text-primary'
                                                         : 'bg-muted text-muted-foreground',
@@ -624,7 +624,7 @@ export default function SettingsPage() {
                         </TabsList>
                     </aside>
 
-                    <div className='flex-1 space-y-6 min-w-0'>
+                    <div className='min-w-0 flex-1 space-y-6'>
                         {Object.entries(organizedSettings).map(([key, data]) => {
                             const filteredEntries = Object.entries(data.settings).filter(([settingKey, setting]) => {
                                 const currentSetting = settings[settingKey] || setting;
@@ -658,7 +658,7 @@ export default function SettingsPage() {
                                         footer={
                                             <div className='flex flex-wrap items-center justify-between gap-3'>
                                                 {searchTrimmed && !anySearchMatch ? (
-                                                    <p className='text-sm text-muted-foreground'>
+                                                    <p className='text-muted-foreground text-sm'>
                                                         {t('admin.settings.search_try_other')}
                                                     </p>
                                                 ) : (
@@ -666,9 +666,9 @@ export default function SettingsPage() {
                                                 )}
                                                 <Button onClick={handleSave} disabled={saving} className='shrink-0'>
                                                     {saving ? (
-                                                        <Loader2 className='w-4 h-4 mr-2 animate-spin' />
+                                                        <Loader2 className='mr-2 h-4 w-4 animate-spin' />
                                                     ) : (
-                                                        <Save className='w-4 h-4 mr-2' />
+                                                        <Save className='mr-2 h-4 w-4' />
                                                     )}
                                                     {t('admin.settings.actions.save')}
                                                 </Button>
@@ -676,11 +676,11 @@ export default function SettingsPage() {
                                         }
                                     >
                                         {!anySearchMatch ? (
-                                            <div className='flex flex-col items-center justify-center gap-2 py-16 text-center px-4'>
-                                                <div className='rounded-full bg-muted/50 p-4'>
-                                                    <Search className='h-8 w-8 text-muted-foreground' />
+                                            <div className='flex flex-col items-center justify-center gap-2 px-4 py-16 text-center'>
+                                                <div className='bg-muted/50 rounded-full p-4'>
+                                                    <Search className='text-muted-foreground h-8 w-8' />
                                                 </div>
-                                                <p className='text-base font-medium text-foreground'>
+                                                <p className='text-foreground text-base font-medium'>
                                                     {t('admin.settings.search_no_results')}
                                                 </p>
                                                 <Button
@@ -692,8 +692,8 @@ export default function SettingsPage() {
                                                 </Button>
                                             </div>
                                         ) : shown === 0 ? (
-                                            <div className='flex flex-col items-center justify-center gap-2 py-14 text-center px-4'>
-                                                <p className='text-sm text-muted-foreground'>
+                                            <div className='flex flex-col items-center justify-center gap-2 px-4 py-14 text-center'>
+                                                <p className='text-muted-foreground text-sm'>
                                                     {t('admin.settings.search_no_results')}
                                                 </p>
                                                 <Button
@@ -708,14 +708,14 @@ export default function SettingsPage() {
                                             <div className='space-y-6'>
                                                 {key === 'email' && (
                                                     <div className='space-y-4'>
-                                                        <div className='rounded-2xl border border-border/50 bg-linear-to-br from-primary/5 to-primary/10 p-6'>
-                                                            <div className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4'>
+                                                        <div className='border-border/50 from-primary/5 to-primary/10 rounded-2xl border bg-linear-to-br p-6'>
+                                                            <div className='flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center'>
                                                                 <div className='space-y-1'>
-                                                                    <h3 className='text-base font-semibold text-foreground flex items-center gap-2'>
-                                                                        <Mail className='h-5 w-5 text-primary' />
+                                                                    <h3 className='text-foreground flex items-center gap-2 text-base font-semibold'>
+                                                                        <Mail className='text-primary h-5 w-5' />
                                                                         {t('admin.settings.email_test.title')}
                                                                     </h3>
-                                                                    <p className='text-sm text-muted-foreground max-w-xl'>
+                                                                    <p className='text-muted-foreground max-w-xl text-sm'>
                                                                         {t('admin.settings.email_test.description')}
                                                                     </p>
                                                                 </div>
@@ -723,12 +723,12 @@ export default function SettingsPage() {
                                                                     onClick={handleSendTestEmail}
                                                                     disabled={sendingTestEmail}
                                                                     variant='default'
-                                                                    className='shrink-0 w-full sm:w-auto'
+                                                                    className='w-full shrink-0 sm:w-auto'
                                                                 >
                                                                     {sendingTestEmail ? (
-                                                                        <Loader2 className='w-4 h-4 mr-2 animate-spin' />
+                                                                        <Loader2 className='mr-2 h-4 w-4 animate-spin' />
                                                                     ) : (
-                                                                        <Send className='w-4 h-4 mr-2' />
+                                                                        <Send className='mr-2 h-4 w-4' />
                                                                     )}
                                                                     {sendingTestEmail
                                                                         ? t('admin.settings.email_test.sending')
@@ -736,8 +736,8 @@ export default function SettingsPage() {
                                                                 </Button>
                                                             </div>
                                                         </div>
-                                                        <div className='rounded-xl border border-amber-200 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-950/20 p-4'>
-                                                            <p className='text-xs text-amber-900 dark:text-amber-200 font-mono'>
+                                                        <div className='rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/50 dark:bg-amber-950/20'>
+                                                            <p className='font-mono text-xs text-amber-900 dark:text-amber-200'>
                                                                 <strong className='font-semibold'>
                                                                     Troubleshooting:
                                                                 </strong>{' '}
@@ -798,7 +798,7 @@ export default function SettingsPage() {
                                         </Button>
                                     </div>
                                 ) : (
-                                    <p className='text-sm text-destructive'>
+                                    <p className='text-destructive text-sm'>
                                         {uploadedLogs.web.error || t('admin.settings.logs.upload_failed_generic')}
                                     </p>
                                 )}
@@ -821,7 +821,7 @@ export default function SettingsPage() {
                                         </Button>
                                     </div>
                                 ) : (
-                                    <p className='text-sm text-destructive'>
+                                    <p className='text-destructive text-sm'>
                                         {uploadedLogs.app.error || t('admin.settings.logs.upload_failed_generic')}
                                     </p>
                                 )}
@@ -845,7 +845,7 @@ export default function SettingsPage() {
                                             </Button>
                                         </div>
                                     ) : (
-                                        <p className='text-sm text-destructive'>
+                                        <p className='text-destructive text-sm'>
                                             {uploadedLogs.runner.error ||
                                                 t('admin.settings.logs.upload_failed_generic')}
                                         </p>

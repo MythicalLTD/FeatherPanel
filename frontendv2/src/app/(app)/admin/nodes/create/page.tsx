@@ -290,7 +290,7 @@ export default function CreateNodePage() {
     };
 
     return (
-        <div className='max-w-6xl mx-auto py-8 px-4'>
+        <div className='mx-auto max-w-6xl px-4 py-8'>
             <WidgetRenderer widgets={getWidgets('admin-nodes-create', 'top-of-page')} />
 
             <PageHeader
@@ -299,7 +299,7 @@ export default function CreateNodePage() {
                 icon={Server}
                 actions={
                     <Button variant='outline' onClick={() => router.back()}>
-                        <ArrowLeft className='h-4 w-4 mr-2' />
+                        <ArrowLeft className='mr-2 h-4 w-4' />
                         {t('common.back')}
                     </Button>
                 }
@@ -307,8 +307,8 @@ export default function CreateNodePage() {
 
             <WidgetRenderer widgets={getWidgets('admin-nodes-create', 'after-header')} />
 
-            <form onSubmit={handleSubmit} className='space-y-8 mt-8'>
-                <div className='grid grid-cols-1 lg:grid-cols-2 gap-8'>
+            <form onSubmit={handleSubmit} className='mt-8 space-y-8'>
+                <div className='grid grid-cols-1 gap-8 lg:grid-cols-2'>
                     <div className='space-y-8'>
                         <PageCard title={t('admin.node.form.basic_details')} icon={Server}>
                             <div className='space-y-6'>
@@ -337,12 +337,12 @@ export default function CreateNodePage() {
                                             type='button'
                                             onClick={openLocationPicker}
                                             aria-label={t('admin.node.form.select_location')}
-                                            className='flex-1 h-11 px-3 bg-muted/30 rounded-xl border border-border/50 text-sm flex items-center text-left cursor-pointer hover:bg-muted/45 hover:border-border transition-colors'
+                                            className='bg-muted/30 border-border/50 hover:bg-muted/45 hover:border-border flex h-11 flex-1 cursor-pointer items-center rounded-xl border px-3 text-left text-sm transition-colors'
                                         >
                                             {form.location_id && selectedLocationName ? (
                                                 <div className='flex items-center gap-2'>
-                                                    <MapPin className='h-4 w-4 text-primary' />
-                                                    <span className='font-medium text-foreground'>
+                                                    <MapPin className='text-primary h-4 w-4' />
+                                                    <span className='text-foreground font-medium'>
                                                         {selectedLocationName}
                                                     </span>
                                                 </div>
@@ -357,7 +357,7 @@ export default function CreateNodePage() {
                                         </Button>
                                     </div>
                                     {errors.location_id && (
-                                        <p className='text-[10px] uppercase font-bold text-red-500 mt-1'>
+                                        <p className='mt-1 text-[10px] font-bold text-red-500 uppercase'>
                                             {errors.location_id}
                                         </p>
                                     )}
@@ -371,7 +371,7 @@ export default function CreateNodePage() {
                                         <option value='true'>{t('admin.node.form.visibility_public')}</option>
                                         <option value='false'>{t('admin.node.form.visibility_private')}</option>
                                     </Select>
-                                    <p className='text-xs text-muted-foreground/70 italic'>
+                                    <p className='text-muted-foreground/70 text-xs italic'>
                                         {t('admin.node.form.visibility_help')}
                                     </p>
                                 </div>
@@ -391,7 +391,7 @@ export default function CreateNodePage() {
                                                     setForm({ ...form, memory: parseInt(e.target.value) || 0 })
                                                 }
                                             />
-                                            <span className='absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground/50'>
+                                            <span className='text-muted-foreground/50 absolute top-1/2 right-3 -translate-y-1/2 text-xs font-bold'>
                                                 {t('admin.node.form.memory_mib')}
                                             </span>
                                         </div>
@@ -411,7 +411,7 @@ export default function CreateNodePage() {
                                                     })
                                                 }
                                             />
-                                            <span className='absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground/50'>
+                                            <span className='text-muted-foreground/50 absolute top-1/2 right-3 -translate-y-1/2 text-xs font-bold'>
                                                 %
                                             </span>
                                         </div>
@@ -428,7 +428,7 @@ export default function CreateNodePage() {
                                                     setForm({ ...form, disk: parseInt(e.target.value) || 0 })
                                                 }
                                             />
-                                            <span className='absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground/50'>
+                                            <span className='text-muted-foreground/50 absolute top-1/2 right-3 -translate-y-1/2 text-xs font-bold'>
                                                 {t('admin.node.form.memory_mib')}
                                             </span>
                                         </div>
@@ -448,7 +448,7 @@ export default function CreateNodePage() {
                                                     })
                                                 }
                                             />
-                                            <span className='absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground/50'>
+                                            <span className='text-muted-foreground/50 absolute top-1/2 right-3 -translate-y-1/2 text-xs font-bold'>
                                                 %
                                             </span>
                                         </div>
@@ -462,7 +462,7 @@ export default function CreateNodePage() {
                                         onChange={(e) => setForm({ ...form, daemonBase: e.target.value })}
                                         error={!!errors.daemonBase}
                                     />
-                                    <p className='text-xs text-muted-foreground/70 italic'>
+                                    <p className='text-muted-foreground/70 text-xs italic'>
                                         {t('admin.node.form.daemon_base_help')}
                                     </p>
                                 </div>
@@ -481,7 +481,7 @@ export default function CreateNodePage() {
                                         onChange={(e) => setForm({ ...form, fqdn: e.target.value })}
                                         error={!!errors.fqdn}
                                     />
-                                    <p className='text-xs text-muted-foreground/70 italic'>
+                                    <p className='text-muted-foreground/70 text-xs italic'>
                                         {t('admin.node.form.fqdn_help')}
                                     </p>
                                 </div>
@@ -495,7 +495,7 @@ export default function CreateNodePage() {
                                         <option value='http'>{t('admin.node.form.ssl_http')}</option>
                                     </Select>
                                     {form.scheme === 'https' && (
-                                        <p className='text-xs text-yellow-500 font-medium italic'>
+                                        <p className='text-xs font-medium text-yellow-500 italic'>
                                             {t('admin.node.form.ssl_warning')}
                                         </p>
                                     )}
@@ -509,7 +509,7 @@ export default function CreateNodePage() {
                                         <option value='false'>{t('admin.node.form.proxy_none')}</option>
                                         <option value='true'>{t('admin.node.form.proxy_yes')}</option>
                                     </Select>
-                                    <p className='text-xs text-muted-foreground/70 italic'>
+                                    <p className='text-muted-foreground/70 text-xs italic'>
                                         {t('admin.node.form.proxy_help')}
                                     </p>
                                 </div>
@@ -544,7 +544,7 @@ export default function CreateNodePage() {
                                         />
                                     </div>
                                 </div>
-                                <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                                <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
                                     <div className='space-y-2'>
                                         <Label className='text-sm font-semibold'>{t('admin.node.form.ipv4')}</Label>
                                         <Input
@@ -574,7 +574,7 @@ export default function CreateNodePage() {
                                         onChange={(e) => setForm({ ...form, sftp_subdomain: e.target.value })}
                                         error={!!errors.sftp_subdomain}
                                     />
-                                    <p className='text-xs text-muted-foreground/70 italic'>
+                                    <p className='text-muted-foreground/70 text-xs italic'>
                                         {t('admin.node.form.sftp_subdomain_help')}
                                     </p>
                                 </div>
@@ -587,7 +587,7 @@ export default function CreateNodePage() {
                                         <option value='false'>{t('admin.node.form.maintenance_disabled')}</option>
                                         <option value='true'>{t('admin.node.form.maintenance_enabled')}</option>
                                     </Select>
-                                    <p className='text-xs text-muted-foreground/70 italic'>
+                                    <p className='text-muted-foreground/70 text-xs italic'>
                                         {t('admin.node.form.maintenance_help')}
                                     </p>
                                 </div>
@@ -601,11 +601,11 @@ export default function CreateNodePage() {
                                                 setForm({ ...form, upload_size: parseInt(e.target.value) || 0 })
                                             }
                                         />
-                                        <span className='absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground/50'>
+                                        <span className='text-muted-foreground/50 absolute top-1/2 right-3 -translate-y-1/2 text-xs font-bold'>
                                             {t('admin.node.form.memory_mib')}
                                         </span>
                                     </div>
-                                    <p className='text-xs text-muted-foreground/70 italic'>
+                                    <p className='text-muted-foreground/70 text-xs italic'>
                                         {t('admin.node.form.upload_size_help')}
                                     </p>
                                 </div>
@@ -618,9 +618,9 @@ export default function CreateNodePage() {
                     <Button
                         type='submit'
                         loading={loading}
-                        className='w-full sm:w-auto min-w-[200px] h-14 text-lg bg-primary hover:bg-primary/90 transition-all'
+                        className='bg-primary hover:bg-primary/90 h-14 w-full min-w-[200px] text-lg transition-all sm:w-auto'
                     >
-                        <Save className='h-5 w-5 mr-3' />
+                        <Save className='mr-3 h-5 w-5' />
                         {t('admin.node.form.submit_create')}
                     </Button>
                 </div>
@@ -649,12 +649,12 @@ export default function CreateNodePage() {
                     </SheetHeader>
 
                     <div className='mt-6 space-y-4'>
-                        <div className='flex rounded-xl border border-border/60 p-1 bg-muted/30 gap-1'>
+                        <div className='border-border/60 bg-muted/30 flex gap-1 rounded-xl border p-1'>
                             <button
                                 type='button'
                                 onClick={() => setLocationPickerMode('select')}
                                 className={cn(
-                                    'flex-1 inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                                    'inline-flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
                                     locationPickerMode === 'select'
                                         ? 'bg-background text-foreground shadow-sm'
                                         : 'text-muted-foreground hover:text-foreground',
@@ -667,7 +667,7 @@ export default function CreateNodePage() {
                                 type='button'
                                 onClick={() => setLocationPickerMode('create')}
                                 className={cn(
-                                    'flex-1 inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                                    'inline-flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
                                     locationPickerMode === 'create'
                                         ? 'bg-background text-foreground shadow-sm'
                                         : 'text-muted-foreground hover:text-foreground',
@@ -723,7 +723,7 @@ export default function CreateNodePage() {
                                         ))}
                                     </Select>
                                 </div>
-                                <div className='flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-2'>
+                                <div className='flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end'>
                                     <Button
                                         type='button'
                                         variant='outline'
@@ -732,7 +732,7 @@ export default function CreateNodePage() {
                                         {t('common.cancel')}
                                     </Button>
                                     <Button type='submit' loading={creatingLocation}>
-                                        <Plus className='h-4 w-4 mr-2' />
+                                        <Plus className='mr-2 h-4 w-4' />
                                         {t('admin.node.form.create_location_submit')}
                                     </Button>
                                 </div>
@@ -740,7 +740,7 @@ export default function CreateNodePage() {
                         ) : (
                             <>
                                 <div className='relative'>
-                                    <SearchIcon className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground' />
+                                    <SearchIcon className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform' />
                                     <Input
                                         placeholder={t('admin.node.form.search_locations')}
                                         value={locationSearch}
@@ -750,7 +750,7 @@ export default function CreateNodePage() {
                                 </div>
 
                                 {locationPagination.total_pages > 1 && (
-                                    <div className='flex items-center justify-between gap-2 py-2 px-3 rounded-lg border border-border bg-muted/30'>
+                                    <div className='border-border bg-muted/30 flex items-center justify-between gap-2 rounded-lg border px-3 py-2'>
                                         <Button
                                             variant='outline'
                                             size='sm'
@@ -761,7 +761,7 @@ export default function CreateNodePage() {
                                                     current_page: prev.current_page - 1,
                                                 }))
                                             }
-                                            className='gap-1 h-8'
+                                            className='h-8 gap-1'
                                         >
                                             <ChevronLeft className='h-3 w-3' />
                                             {t('common.previous')}
@@ -779,7 +779,7 @@ export default function CreateNodePage() {
                                                     current_page: prev.current_page + 1,
                                                 }))
                                             }
-                                            className='gap-1 h-8'
+                                            className='h-8 gap-1'
                                         >
                                             {t('common.next')}
                                             <ChevronRight className='h-3 w-3' />
@@ -787,9 +787,9 @@ export default function CreateNodePage() {
                                     </div>
                                 )}
 
-                                <div className='space-y-2 max-h-[calc(100vh-300px)] overflow-y-auto'>
+                                <div className='max-h-[calc(100vh-300px)] space-y-2 overflow-y-auto'>
                                     {locations.length === 0 ? (
-                                        <div className='text-center py-8 text-muted-foreground'>
+                                        <div className='text-muted-foreground py-8 text-center'>
                                             {t('admin.node.form.no_locations_found')}
                                         </div>
                                     ) : (
@@ -804,16 +804,16 @@ export default function CreateNodePage() {
                                                     setSelectedLocationName(location.name);
                                                     setLocationModalOpen(false);
                                                 }}
-                                                className='w-full p-3 rounded-lg border border-border/50 hover:bg-muted/50 hover:border-primary/50 transition-colors text-left'
+                                                className='border-border/50 hover:bg-muted/50 hover:border-primary/50 w-full rounded-lg border p-3 text-left transition-colors'
                                             >
                                                 <div className='flex items-start gap-3'>
-                                                    <div className='p-2 bg-primary/10 rounded-lg mt-0.5'>
-                                                        <MapPin className='h-5 w-5 text-primary' />
+                                                    <div className='bg-primary/10 mt-0.5 rounded-lg p-2'>
+                                                        <MapPin className='text-primary h-5 w-5' />
                                                     </div>
-                                                    <div className='flex-1 min-w-0'>
+                                                    <div className='min-w-0 flex-1'>
                                                         <div className='font-medium'>{location.name}</div>
                                                         {location.description && (
-                                                            <div className='text-sm text-muted-foreground mt-1'>
+                                                            <div className='text-muted-foreground mt-1 text-sm'>
                                                                 {location.description}
                                                             </div>
                                                         )}
@@ -825,8 +825,8 @@ export default function CreateNodePage() {
                                 </div>
 
                                 {locationPagination.total_pages > 1 && (
-                                    <div className='flex items-center justify-between pt-4 border-t'>
-                                        <div className='text-sm text-muted-foreground'>
+                                    <div className='flex items-center justify-between border-t pt-4'>
+                                        <div className='text-muted-foreground text-sm'>
                                             {t('common.showing', {
                                                 from: String(
                                                     locationPagination.current_page * locationPagination.per_page -

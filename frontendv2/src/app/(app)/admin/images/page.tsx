@@ -256,7 +256,7 @@ export default function ImagesPage() {
     };
 
     return (
-        <div className='space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500'>
+        <div className='animate-in fade-in slide-in-from-bottom-4 space-y-6 duration-500'>
             <WidgetRenderer widgets={getWidgets('admin-images', 'top-of-page')} />
             <PageHeader
                 title={t('admin.images.title')}
@@ -264,7 +264,7 @@ export default function ImagesPage() {
                 icon={ImageIcon}
                 actions={
                     <Button onClick={openCreate}>
-                        <Upload className='w-4 h-4 mr-2' />
+                        <Upload className='mr-2 h-4 w-4' />
                         {t('admin.images.create')}
                     </Button>
                 }
@@ -272,11 +272,11 @@ export default function ImagesPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-images', 'after-header')} />
 
-            <div className='flex flex-col sm:flex-row gap-4 items-center bg-card/40 backdrop-blur-md p-4 rounded-2xl shadow-sm'>
-                <div className='relative flex-1 group w-full'>
-                    <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
+            <div className='bg-card/40 flex flex-col items-center gap-4 rounded-2xl p-4 shadow-sm backdrop-blur-md sm:flex-row'>
+                <div className='group relative w-full flex-1'>
+                    <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
                     <Input
-                        className='pl-10 h-11 w-full'
+                        className='h-11 w-full pl-10'
                         placeholder={t('admin.images.search_placeholder')}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
@@ -287,7 +287,7 @@ export default function ImagesPage() {
             <WidgetRenderer widgets={getWidgets('admin-images', 'before-list')} />
 
             {pagination.total > pagination.pageSize && (
-                <div className='flex items-center justify-between gap-4 py-3 px-4 rounded-xl border border-border bg-card/50 mb-4'>
+                <div className='border-border bg-card/50 mb-4 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
                     <Button
                         variant='outline'
                         size='sm'
@@ -314,10 +314,10 @@ export default function ImagesPage() {
                 </div>
             )}
 
-            <div className='grid grid-cols-1 md:grid-cols-1 gap-4'>
+            <div className='grid grid-cols-1 gap-4 md:grid-cols-1'>
                 {loading ? (
                     Array.from({ length: 3 }).map((_, i) => (
-                        <div key={i} className='h-24 rounded-2xl bg-card/40 animate-pulse' />
+                        <div key={i} className='bg-card/40 h-24 animate-pulse rounded-2xl' />
                     ))
                 ) : images.length > 0 ? (
                     images.map((image) => (
@@ -328,13 +328,13 @@ export default function ImagesPage() {
                             title={image.name}
                             subtitle={
                                 <div className='flex items-center gap-1.5'>
-                                    <Calendar className='w-3 h-3' />
+                                    <Calendar className='h-3 w-3' />
                                     {formatDate(image.created_at)}
                                 </div>
                             }
                             description={
-                                <div className='flex items-center gap-1.5 mt-1'>
-                                    <LinkIcon className='w-3 h-3 shrink-0' />
+                                <div className='mt-1 flex items-center gap-1.5'>
+                                    <LinkIcon className='h-3 w-3 shrink-0' />
                                     <span className='truncate opacity-70'>{image.url}</span>
                                 </div>
                             }
@@ -346,7 +346,7 @@ export default function ImagesPage() {
                                         className='h-9 w-9 p-0'
                                         onClick={() => openView(image)}
                                     >
-                                        <Eye className='w-4 h-4' />
+                                        <Eye className='h-4 w-4' />
                                     </Button>
                                     <Button
                                         variant='ghost'
@@ -354,7 +354,7 @@ export default function ImagesPage() {
                                         className='h-9 w-9 p-0'
                                         onClick={() => openEdit(image)}
                                     >
-                                        <Pencil className='w-4 h-4' />
+                                        <Pencil className='h-4 w-4' />
                                     </Button>
                                     <Button
                                         variant='ghost'
@@ -362,15 +362,15 @@ export default function ImagesPage() {
                                         className='h-9 w-9 p-0'
                                         onClick={() => copyToClipboard(image.url)}
                                     >
-                                        <Copy className='w-4 h-4' />
+                                        <Copy className='h-4 w-4' />
                                     </Button>
                                     <Button
                                         variant='ghost'
                                         size='sm'
-                                        className='h-9 w-9 p-0 text-destructive hover:bg-destructive/10 hover:text-destructive'
+                                        className='text-destructive hover:bg-destructive/10 hover:text-destructive h-9 w-9 p-0'
                                         onClick={() => handleDelete(image.id)}
                                     >
-                                        <Trash2 className='w-4 h-4' />
+                                        <Trash2 className='h-4 w-4' />
                                     </Button>
                                 </div>
                             }
@@ -383,7 +383,7 @@ export default function ImagesPage() {
                         description={t('admin.images.search_placeholder')}
                         action={
                             <Button onClick={openCreate}>
-                                <Upload className='w-4 h-4 mr-2' />
+                                <Upload className='mr-2 h-4 w-4' />
                                 {t('admin.images.create')}
                             </Button>
                         }
@@ -392,7 +392,7 @@ export default function ImagesPage() {
             </div>
 
             {pagination.total > pagination.pageSize && (
-                <div className='flex items-center justify-center gap-2 mt-8'>
+                <div className='mt-8 flex items-center justify-center gap-2'>
                     <Button
                         variant='outline'
                         size='icon'
@@ -415,14 +415,14 @@ export default function ImagesPage() {
                 </div>
             )}
 
-            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+            <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
                 <PageCard icon={Upload} title={t('admin.images.help.upload.title')}>
-                    <p className='text-sm text-muted-foreground leading-relaxed'>
+                    <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.images.help.upload.description')}
                     </p>
                 </PageCard>
                 <PageCard icon={ImageIcon} title={t('admin.images.help.audit.title')}>
-                    <p className='text-sm text-muted-foreground leading-relaxed'>
+                    <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.images.help.audit.description')}
                     </p>
                 </PageCard>
@@ -447,13 +447,13 @@ export default function ImagesPage() {
                             <div className='space-y-2'>
                                 <Label>{t('admin.images.form.file')}</Label>
                                 <Input type='file' accept='image/*' required onChange={handleFileSelect} />
-                                <p className='text-xs text-muted-foreground'>{t('admin.images.form.file_help')}</p>
+                                <p className='text-muted-foreground text-xs'>{t('admin.images.form.file_help')}</p>
                             </div>
                             {filePreview && (
                                 <div className='space-y-2'>
                                     <Label>{t('admin.images.form.preview')}</Label>
-                                    <div className='w-full h-48 rounded-xl overflow-hidden border bg-card/50'>
-                                        <img src={filePreview} alt='Preview' className='w-full h-full object-contain' />
+                                    <div className='bg-card/50 h-48 w-full overflow-hidden rounded-xl border'>
+                                        <img src={filePreview} alt='Preview' className='h-full w-full object-contain' />
                                     </div>
                                 </div>
                             )}
@@ -512,23 +512,23 @@ export default function ImagesPage() {
                         </SheetDescription>
                     </SheetHeader>
                     <div className='space-y-8'>
-                        <div className='w-full h-80 rounded-2xl overflow-hidden border bg-black/20 flex items-center justify-center p-4'>
+                        <div className='flex h-80 w-full items-center justify-center overflow-hidden rounded-2xl border bg-black/20 p-4'>
                             <img
                                 src={selectedImage?.url}
                                 alt={selectedImage?.name}
-                                className='max-w-full max-h-full object-contain '
+                                className='max-h-full max-w-full object-contain'
                             />
                         </div>
 
-                        <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+                        <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
                             <div className='space-y-1.5'>
-                                <Label className='text-xs opacity-50 uppercase tracking-wider font-semibold'>
+                                <Label className='text-xs font-semibold tracking-wider uppercase opacity-50'>
                                     {t('admin.images.form.name')}
                                 </Label>
                                 <p className='font-medium'>{selectedImage?.name}</p>
                             </div>
                             <div className='space-y-1.5'>
-                                <Label className='text-xs opacity-50 uppercase tracking-wider font-semibold'>
+                                <Label className='text-xs font-semibold tracking-wider uppercase opacity-50'>
                                     {t('admin.images.form.createdAt')}
                                 </Label>
                                 <p className='font-medium'>
@@ -536,20 +536,20 @@ export default function ImagesPage() {
                                 </p>
                             </div>
                             <div className='col-span-full space-y-1.5'>
-                                <Label className='text-xs opacity-50 uppercase tracking-wider font-semibold'>
+                                <Label className='text-xs font-semibold tracking-wider uppercase opacity-50'>
                                     {t('admin.images.form.url')}
                                 </Label>
                                 <div className='flex items-center gap-2'>
-                                    <div className='flex-1 p-3 bg-card/40 rounded-xl text-sm truncate font-mono border border-white/5'>
+                                    <div className='bg-card/40 flex-1 truncate rounded-xl border border-white/5 p-3 font-mono text-sm'>
                                         {selectedImage?.url}
                                     </div>
                                     <Button
                                         size='sm'
                                         variant='outline'
-                                        className='h-11 w-11 p-0 shrink-0'
+                                        className='h-11 w-11 shrink-0 p-0'
                                         onClick={() => selectedImage && copyToClipboard(selectedImage.url)}
                                     >
-                                        <Copy className='w-4 h-4' />
+                                        <Copy className='h-4 w-4' />
                                     </Button>
                                 </div>
                             </div>

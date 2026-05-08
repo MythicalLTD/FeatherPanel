@@ -412,9 +412,9 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
 
     if (loading) {
         return (
-            <div className='flex items-center justify-center min-h-[50vh]'>
+            <div className='flex min-h-[50vh] items-center justify-center'>
                 <div className='flex items-center gap-3'>
-                    <div className='animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent'></div>
+                    <div className='border-primary h-6 w-6 animate-spin rounded-full border-2 border-t-transparent'></div>
                     <span className='text-muted-foreground'>{t('admin.users.edit.loading')}</span>
                 </div>
             </div>
@@ -423,11 +423,11 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
 
     if (!user) {
         return (
-            <div className='flex flex-col items-center justify-center min-h-[50vh] space-y-4'>
-                <AlertTriangle className='h-12 w-12 text-destructive' />
+            <div className='flex min-h-[50vh] flex-col items-center justify-center space-y-4'>
+                <AlertTriangle className='text-destructive h-12 w-12' />
                 <p className='text-xl font-semibold'>{t('admin.users.edit.error')}</p>
                 <Button variant='outline' onClick={() => router.push('/admin/users')}>
-                    <ArrowLeft className='h-4 w-4 mr-2' />
+                    <ArrowLeft className='mr-2 h-4 w-4' />
                     {t('admin.users.back_to_list')}
                 </Button>
             </div>
@@ -449,7 +449,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                 icon={User}
                 actions={
                     <Button variant='outline' onClick={() => router.push('/admin/users')}>
-                        <ArrowLeft className='h-4 w-4 mr-2' />
+                        <ArrowLeft className='mr-2 h-4 w-4' />
                         {t('admin.users.back_to_list')}
                     </Button>
                 }
@@ -457,8 +457,8 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
 
             <WidgetRenderer widgets={getWidgets('admin-users-edit', 'after-header')} context={widgetContext} />
 
-            <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
-                <div className='lg:col-span-2 space-y-6'>
+            <div className='grid grid-cols-1 gap-6 lg:grid-cols-3'>
+                <div className='space-y-6 lg:col-span-2'>
                     <PageCard title={t('admin.users.edit.form.title')} icon={User} className='h-full'>
                         <form onSubmit={handleSubmit} className='space-y-6'>
                             <div>
@@ -473,7 +473,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                 />
                             </div>
 
-                            <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+                            <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
                                 <div>
                                     <Label htmlFor='edit-firstname'>{t('admin.users.edit.form.first_name')}</Label>
                                     <Input
@@ -516,7 +516,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                     value={editForm.role_id}
                                     onChange={(e) => setEditForm({ ...editForm, role_id: e.target.value })}
                                     required
-                                    className='w-full mt-2'
+                                    className='mt-2 w-full'
                                 >
                                     <option value=''>{t('admin.users.create.form.select_role')}</option>
                                     {availableRoles.map((role) => (
@@ -542,7 +542,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                     placeholder={t('admin.users.edit.form.external_id_help')}
                                     className='mt-2'
                                 />
-                                <p className='text-xs text-muted-foreground mt-1.5'>
+                                <p className='text-muted-foreground mt-1.5 text-xs'>
                                     {t('admin.users.edit.form.external_id_help')}
                                 </p>
                             </div>
@@ -557,21 +557,21 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                     placeholder={t('admin.users.edit.form.password_placeholder')}
                                     className='mt-2'
                                 />
-                                <p className='text-xs text-muted-foreground mt-1.5'>
+                                <p className='text-muted-foreground mt-1.5 text-xs'>
                                     {t('admin.users.edit.form.password_help')}
                                 </p>
                             </div>
 
-                            <div className='flex justify-end pt-4 border-t border-border/50'>
+                            <div className='border-border/50 flex justify-end border-t pt-4'>
                                 <Button type='submit' disabled={submitting}>
                                     {submitting ? (
                                         <>
-                                            <RefreshCw className='h-4 w-4 mr-2 animate-spin' />
+                                            <RefreshCw className='mr-2 h-4 w-4 animate-spin' />
                                             {t('admin.users.messages.updating')}
                                         </>
                                     ) : (
                                         <>
-                                            <CheckCircle2 className='h-4 w-4 mr-2' />
+                                            <CheckCircle2 className='mr-2 h-4 w-4' />
                                             {t('admin.users.edit.form.save')}
                                         </>
                                     )}
@@ -583,14 +583,14 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
 
                 <div className='space-y-6'>
                     <PageCard title={t('admin.users.edit.account_info.title')} icon={User}>
-                        <div className='flex flex-col items-center mb-6'>
-                            <Avatar className='h-24 w-24 mb-4 ring-4 ring-background shadow-lg'>
+                        <div className='mb-6 flex flex-col items-center'>
+                            <Avatar className='ring-background mb-4 h-24 w-24 shadow-lg ring-4'>
                                 <AvatarImage src={user.avatar} alt={user.username} />
                             </Avatar>
                             <h2 className='text-xl font-bold'>{user.username}</h2>
                             <p className='text-muted-foreground text-sm'>{user.email}</p>
 
-                            <div className='flex flex-wrap gap-2 mt-4 justify-center'>
+                            <div className='mt-4 flex flex-wrap justify-center gap-2'>
                                 <Badge
                                     style={
                                         user.role?.color
@@ -612,27 +612,27 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                         : t('admin.users.badges.no_2fa')}
                                 </Badge>
                                 {user.discord_oauth2_linked === 'true' && (
-                                    <Badge className='bg-[#5865F2]/10 text-[#5865F2] border-[#5865F2]/20'>
+                                    <Badge className='border-[#5865F2]/20 bg-[#5865F2]/10 text-[#5865F2]'>
                                         {t('admin.users.badges.discord_linked')}
                                     </Badge>
                                 )}
                                 {user.ldap_provider_uuid && user.ldap_dn ? (
-                                    <Badge className='bg-purple-500/10 text-purple-600 border-purple-500/20'>
+                                    <Badge className='border-purple-500/20 bg-purple-500/10 text-purple-600'>
                                         {t('admin.users.badges.ldap')}
                                     </Badge>
                                 ) : user.oidc_provider && user.oidc_subject ? (
-                                    <Badge className='bg-cyan-500/10 text-cyan-600 border-cyan-500/20'>
+                                    <Badge className='border-cyan-500/20 bg-cyan-500/10 text-cyan-600'>
                                         {t('admin.users.badges.oidc')}
                                     </Badge>
                                 ) : (
-                                    <Badge className='bg-gray-500/10 text-gray-600 border-gray-500/20'>
+                                    <Badge className='border-gray-500/20 bg-gray-500/10 text-gray-600'>
                                         {t('admin.users.badges.local')}
                                     </Badge>
                                 )}
                             </div>
                         </div>
 
-                        <div className='space-y-3 text-sm border-t border-border/50 pt-4'>
+                        <div className='border-border/50 space-y-3 border-t pt-4 text-sm'>
                             <div className='flex justify-between'>
                                 <span className='text-muted-foreground'>
                                     {t('admin.users.edit.account_info.user_id')}
@@ -674,7 +674,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                 </div>
                             )}
                             {user.discord_oauth2_username && (
-                                <div className='flex justify-between mt-4 pt-4 border-t border-border/50'>
+                                <div className='border-border/50 mt-4 flex justify-between border-t pt-4'>
                                     <span className='text-muted-foreground'>
                                         {t('admin.users.edit.account_info.discord_user')}
                                     </span>
@@ -701,36 +701,36 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                             >
                                 {user.banned === 'true' ? (
                                     <>
-                                        <Unlock className='h-4 w-4 mr-2' /> {t('admin.users.edit.unban_user')}
+                                        <Unlock className='mr-2 h-4 w-4' /> {t('admin.users.edit.unban_user')}
                                     </>
                                 ) : (
                                     <>
-                                        <Ban className='h-4 w-4 mr-2' /> {t('admin.users.edit.ban_user')}
+                                        <Ban className='mr-2 h-4 w-4' /> {t('admin.users.edit.ban_user')}
                                     </>
                                 )}
                             </Button>
 
                             {user.two_fa_enabled === 'true' && (
                                 <Button variant='destructive' className='w-full justify-start' onClick={disable2FA}>
-                                    <Shield className='h-4 w-4 mr-2' /> {t('admin.users.edit.disable_2fa')}
+                                    <Shield className='mr-2 h-4 w-4' /> {t('admin.users.edit.disable_2fa')}
                                 </Button>
                             )}
 
                             {user.discord_oauth2_linked === 'true' && (
                                 <Button variant='destructive' className='w-full justify-start' onClick={unlinkDiscord}>
-                                    <Trash2 className='h-4 w-4 mr-2' /> {t('admin.users.edit.unlink_discord')}
+                                    <Trash2 className='mr-2 h-4 w-4' /> {t('admin.users.edit.unlink_discord')}
                                 </Button>
                             )}
                         </div>
 
-                        <div className='mt-6 pt-6 border-t border-border/50'>
-                            <Label className='mb-2 block text-xs uppercase text-muted-foreground font-bold tracking-wider'>
+                        <div className='border-border/50 mt-6 border-t pt-6'>
+                            <Label className='text-muted-foreground mb-2 block text-xs font-bold tracking-wider uppercase'>
                                 {t('admin.users.edit.actions.sso.title')}
                             </Label>
                             <div className='space-y-2'>
                                 {ssoLink ? (
                                     <div className='flex gap-2'>
-                                        <Input value={ssoLink} readOnly className='h-10 text-xs font-mono' />
+                                        <Input value={ssoLink} readOnly className='h-10 font-mono text-xs' />
                                         <Button size='icon' variant='outline' onClick={() => copyToClipboard(ssoLink)}>
                                             <Copy className='h-4 w-4' />
                                         </Button>
@@ -743,9 +743,9 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                         disabled={ssoGenerating}
                                     >
                                         {ssoGenerating ? (
-                                            <RefreshCw className='h-4 w-4 mr-2 animate-spin' />
+                                            <RefreshCw className='mr-2 h-4 w-4 animate-spin' />
                                         ) : (
-                                            <Key className='h-4 w-4 mr-2' />
+                                            <Key className='mr-2 h-4 w-4' />
                                         )}
                                         {t('admin.users.edit.actions.sso.generate')}
                                     </Button>
@@ -753,12 +753,12 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                             </div>
                         </div>
 
-                        <div className='mt-6 pt-6 border-t border-border/50'>
-                            <Label className='mb-2 block text-xs uppercase text-muted-foreground font-bold tracking-wider'>
+                        <div className='border-border/50 mt-6 border-t pt-6'>
+                            <Label className='text-muted-foreground mb-2 block text-xs font-bold tracking-wider uppercase'>
                                 {t('admin.users.edit.actions.email.title', { defaultValue: 'Direct Email' })}
                             </Label>
                             <Button variant='secondary' className='w-full' onClick={() => setSendEmailOpen(true)}>
-                                <Mail className='h-4 w-4 mr-2' />
+                                <Mail className='mr-2 h-4 w-4' />
                                 {t('admin.users.edit.actions.email.compose', { defaultValue: 'Compose email' })}
                             </Button>
                         </div>
@@ -767,7 +767,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
             </div>
 
             <Tabs defaultValue='servers' className='w-full'>
-                <div className='flex items-center justify-between mb-4'>
+                <div className='mb-4 flex items-center justify-between'>
                     <TabsList>
                         <TabsTrigger value='servers' className='gap-2'>
                             <ServerIcon className='h-4 w-4' />
@@ -806,16 +806,16 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                             <table className='w-full text-sm'>
                                 <thead>
                                     <tr className='border-b border-white/5 text-left'>
-                                        <th className='p-4 font-medium text-muted-foreground'>
+                                        <th className='text-muted-foreground p-4 font-medium'>
                                             {t('admin.users.edit.servers.name')}
                                         </th>
-                                        <th className='p-4 font-medium text-muted-foreground'>
+                                        <th className='text-muted-foreground p-4 font-medium'>
                                             {t('admin.users.edit.servers.status')}
                                         </th>
-                                        <th className='p-4 font-medium text-muted-foreground'>
+                                        <th className='text-muted-foreground p-4 font-medium'>
                                             {t('admin.users.edit.servers.created')}
                                         </th>
-                                        <th className='p-4 font-medium text-muted-foreground text-right'>
+                                        <th className='text-muted-foreground p-4 text-right font-medium'>
                                             {t('admin.users.edit.servers.actions')}
                                         </th>
                                     </tr>
@@ -823,7 +823,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                 <tbody>
                                     {ownedServers.length === 0 ? (
                                         <tr>
-                                            <td colSpan={4} className='p-8 text-center text-muted-foreground'>
+                                            <td colSpan={4} className='text-muted-foreground p-8 text-center'>
                                                 {t('admin.users.edit.servers.no_servers')}
                                             </td>
                                         </tr>
@@ -831,11 +831,11 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                         ownedServers.map((server) => (
                                             <tr
                                                 key={server.id}
-                                                className='border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors'
+                                                className='border-b border-white/5 transition-colors last:border-0 hover:bg-white/5'
                                             >
                                                 <td className='p-4'>
                                                     <div className='font-medium'>{server.name}</div>
-                                                    <div className='text-xs text-muted-foreground'>
+                                                    <div className='text-muted-foreground text-xs'>
                                                         {server.uuidShort}
                                                     </div>
                                                 </td>
@@ -848,9 +848,9 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                                         {server.status || t('admin.users.edit.servers.offline')}
                                                     </Badge>
                                                 </td>
-                                                <td className='p-4 text-muted-foreground'>{server.created_at}</td>
+                                                <td className='text-muted-foreground p-4'>{server.created_at}</td>
                                                 <td className='p-4 text-right'>
-                                                    <div className='flex gap-2 justify-end'>
+                                                    <div className='flex justify-end gap-2'>
                                                         <Button
                                                             size='sm'
                                                             variant='ghost'
@@ -886,16 +886,16 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                             <table className='w-full text-sm'>
                                 <thead>
                                     <tr className='border-b border-white/5 text-left'>
-                                        <th className='p-4 font-medium text-muted-foreground'>
+                                        <th className='text-muted-foreground p-4 font-medium'>
                                             {t('admin.users.edit.activities.name')}
                                         </th>
-                                        <th className='p-4 font-medium text-muted-foreground'>
+                                        <th className='text-muted-foreground p-4 font-medium'>
                                             {t('admin.users.edit.activities.context')}
                                         </th>
-                                        <th className='p-4 font-medium text-muted-foreground'>
+                                        <th className='text-muted-foreground p-4 font-medium'>
                                             {t('admin.users.edit.activities.ip')}
                                         </th>
-                                        <th className='p-4 font-medium text-muted-foreground'>
+                                        <th className='text-muted-foreground p-4 font-medium'>
                                             {t('admin.users.edit.activities.created')}
                                         </th>
                                     </tr>
@@ -903,7 +903,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                 <tbody>
                                     {!user.activities || user.activities.length === 0 ? (
                                         <tr>
-                                            <td colSpan={4} className='p-8 text-center text-muted-foreground'>
+                                            <td colSpan={4} className='text-muted-foreground p-8 text-center'>
                                                 {t('admin.users.edit.activities.no_activities')}
                                             </td>
                                         </tr>
@@ -911,12 +911,12 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                         user.activities.map((activity, index) => (
                                             <tr
                                                 key={index}
-                                                className='border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors'
+                                                className='border-b border-white/5 transition-colors last:border-0 hover:bg-white/5'
                                             >
                                                 <td className='p-4 font-medium'>{activity.name}</td>
-                                                <td className='p-4 text-muted-foreground'>{activity.context}</td>
+                                                <td className='text-muted-foreground p-4'>{activity.context}</td>
                                                 <td className='p-4 font-mono text-xs'>{activity.ip_address}</td>
-                                                <td className='p-4 text-muted-foreground'>{activity.created_at}</td>
+                                                <td className='text-muted-foreground p-4'>{activity.created_at}</td>
                                             </tr>
                                         ))
                                     )}
@@ -940,19 +940,19 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                             <table className='w-full text-sm'>
                                 <thead>
                                     <tr className='border-b border-white/5 text-left'>
-                                        <th className='p-4 font-medium text-muted-foreground'>
+                                        <th className='text-muted-foreground p-4 font-medium'>
                                             {t('admin.users.edit.vds.hostname', { defaultValue: 'Hostname' })}
                                         </th>
-                                        <th className='p-4 font-medium text-muted-foreground'>
+                                        <th className='text-muted-foreground p-4 font-medium'>
                                             {t('admin.users.edit.vds.status', { defaultValue: 'Status' })}
                                         </th>
-                                        <th className='p-4 font-medium text-muted-foreground'>
+                                        <th className='text-muted-foreground p-4 font-medium'>
                                             {t('admin.users.edit.vds.ip', { defaultValue: 'IP' })}
                                         </th>
-                                        <th className='p-4 font-medium text-muted-foreground'>
+                                        <th className='text-muted-foreground p-4 font-medium'>
                                             {t('admin.users.edit.vds.node', { defaultValue: 'Node' })}
                                         </th>
-                                        <th className='p-4 font-medium text-muted-foreground text-right'>
+                                        <th className='text-muted-foreground p-4 text-right font-medium'>
                                             {t('admin.users.edit.vds.actions', { defaultValue: 'Actions' })}
                                         </th>
                                     </tr>
@@ -960,7 +960,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                 <tbody>
                                     {ownedVms.length === 0 ? (
                                         <tr>
-                                            <td colSpan={5} className='p-8 text-center text-muted-foreground'>
+                                            <td colSpan={5} className='text-muted-foreground p-8 text-center'>
                                                 {t('admin.users.edit.vds.empty', {
                                                     defaultValue: 'This user does not own any VDS.',
                                                 })}
@@ -970,11 +970,11 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                         ownedVms.map((vm) => (
                                             <tr
                                                 key={vm.id}
-                                                className='border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors'
+                                                className='border-b border-white/5 transition-colors last:border-0 hover:bg-white/5'
                                             >
                                                 <td className='p-4'>
                                                     <div className='font-medium'>{vm.hostname || `VM #${vm.id}`}</div>
-                                                    <div className='text-xs text-muted-foreground'>
+                                                    <div className='text-muted-foreground text-xs'>
                                                         {vm.vm_type?.toUpperCase() || 'QEMU'} • VMID {vm.vmid}
                                                     </div>
                                                 </td>
@@ -996,11 +996,11 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                                     </Badge>
                                                 </td>
                                                 <td className='p-4 font-mono text-xs'>{vm.ip_address || '—'}</td>
-                                                <td className='p-4 text-muted-foreground'>
+                                                <td className='text-muted-foreground p-4'>
                                                     {vm.node_name || vm.pve_node || '—'}
                                                 </td>
                                                 <td className='p-4 text-right'>
-                                                    <div className='flex gap-2 justify-end'>
+                                                    <div className='flex justify-end gap-2'>
                                                         <Button
                                                             size='sm'
                                                             variant='ghost'
@@ -1034,16 +1034,16 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                             <table className='w-full text-sm'>
                                 <thead>
                                     <tr className='border-b border-white/5 text-left'>
-                                        <th className='p-4 font-medium text-muted-foreground'>
+                                        <th className='text-muted-foreground p-4 font-medium'>
                                             {t('admin.users.edit.mails.subject')}
                                         </th>
-                                        <th className='p-4 font-medium text-muted-foreground'>
+                                        <th className='text-muted-foreground p-4 font-medium'>
                                             {t('admin.users.edit.mails.status')}
                                         </th>
-                                        <th className='p-4 font-medium text-muted-foreground'>
+                                        <th className='text-muted-foreground p-4 font-medium'>
                                             {t('admin.users.edit.mails.created')}
                                         </th>
-                                        <th className='p-4 font-medium text-muted-foreground text-right'>
+                                        <th className='text-muted-foreground p-4 text-right font-medium'>
                                             {t('admin.users.edit.mails.actions')}
                                         </th>
                                     </tr>
@@ -1051,7 +1051,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                 <tbody>
                                     {!user.mails || user.mails.length === 0 ? (
                                         <tr>
-                                            <td colSpan={4} className='p-8 text-center text-muted-foreground'>
+                                            <td colSpan={4} className='text-muted-foreground p-8 text-center'>
                                                 {t('admin.users.edit.mails.no_mails')}
                                             </td>
                                         </tr>
@@ -1059,7 +1059,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                         user.mails.map((mail, index) => (
                                             <tr
                                                 key={index}
-                                                className='border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors'
+                                                className='border-b border-white/5 transition-colors last:border-0 hover:bg-white/5'
                                             >
                                                 <td className='p-4 font-medium'>{mail.subject}</td>
                                                 <td className='p-4'>
@@ -1069,7 +1069,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                                         {mail.status}
                                                     </Badge>
                                                 </td>
-                                                <td className='p-4 text-muted-foreground'>{mail.created_at}</td>
+                                                <td className='text-muted-foreground p-4'>{mail.created_at}</td>
                                                 <td className='p-4 text-right'>
                                                     <Button
                                                         size='sm'
@@ -1097,7 +1097,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                             {mailPreview?.created_at} | {mailPreview?.status}
                         </DialogDescription>
                     </DialogHeader>
-                    <div className='overflow-auto max-h-[60vh] border rounded-xl bg-muted/50 p-4 mt-4'>
+                    <div className='bg-muted/50 mt-4 max-h-[60vh] overflow-auto rounded-xl border p-4'>
                         <div
                             className='prose prose-sm dark:prose-invert max-w-none'
                             dangerouslySetInnerHTML={{ __html: mailPreview?.body || '' }}
@@ -1119,7 +1119,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                         </DialogDescription>
                     </DialogHeader>
 
-                    <form onSubmit={handleSendEmail} className='space-y-4 mt-2'>
+                    <form onSubmit={handleSendEmail} className='mt-2 space-y-4'>
                         <div>
                             <Label htmlFor='send-email-recipient'>
                                 {t('admin.users.edit.actions.email.to', { defaultValue: 'To' })}
@@ -1168,12 +1168,12 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                             <Button type='submit' disabled={sendingEmail}>
                                 {sendingEmail ? (
                                     <>
-                                        <RefreshCw className='h-4 w-4 mr-2 animate-spin' />
+                                        <RefreshCw className='mr-2 h-4 w-4 animate-spin' />
                                         {t('admin.users.messages.sending_email', { defaultValue: 'Sending...' })}
                                     </>
                                 ) : (
                                     <>
-                                        <Mail className='h-4 w-4 mr-2' />
+                                        <Mail className='mr-2 h-4 w-4' />
                                         {t('admin.users.edit.actions.email.send', { defaultValue: 'Send Email' })}
                                     </>
                                 )}

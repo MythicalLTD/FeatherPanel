@@ -104,7 +104,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const { settings } = useSettings();
 
     useLayoutEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         setMounted(true);
         const saved = localStorage.getItem('theme') as Theme | null;
         const savedAccent = localStorage.getItem('accentColor');

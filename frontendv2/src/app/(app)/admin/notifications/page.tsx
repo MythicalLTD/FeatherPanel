@@ -303,7 +303,7 @@ export default function NotificationsPage() {
                             setCreateOpen(true);
                         }}
                     >
-                        <Plus className='h-4 w-4 mr-2' />
+                        <Plus className='mr-2 h-4 w-4' />
                         {t('admin.notifications.create')}
                     </Button>
                 }
@@ -311,20 +311,20 @@ export default function NotificationsPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-notifications', 'after-header')} />
 
-            <div className='flex flex-col sm:flex-row gap-4 items-center bg-card/40 backdrop-blur-md p-4 rounded-2xl shadow-sm'>
-                <div className='relative flex-1 group w-full'>
-                    <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
+            <div className='bg-card/40 flex flex-col items-center gap-4 rounded-2xl p-4 shadow-sm backdrop-blur-md sm:flex-row'>
+                <div className='group relative w-full flex-1'>
+                    <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
                     <Input
                         placeholder={t('admin.notifications.search_placeholder')}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className='pl-10 h-11 w-full'
+                        className='h-11 w-full pl-10'
                     />
                 </div>
             </div>
 
             {pagination.totalPages > 1 && !loading && (
-                <div className='flex items-center justify-between gap-4 py-3 px-4 rounded-xl border border-border bg-card/50 mb-4'>
+                <div className='border-border bg-card/50 mb-4 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
                     <Button
                         variant='outline'
                         size='sm'
@@ -402,7 +402,7 @@ export default function NotificationsPage() {
                                 subtitle={new Date(notification.created_at).toLocaleString()}
                                 badges={badges}
                                 description={
-                                    <div className='line-clamp-2 text-sm text-muted-foreground mt-1'>
+                                    <div className='text-muted-foreground mt-1 line-clamp-2 text-sm'>
                                         <ReactMarkdown allowedElements={['p', 'strong', 'em', 'code']}>
                                             {notification.message_markdown}
                                         </ReactMarkdown>
@@ -438,7 +438,7 @@ export default function NotificationsPage() {
             )}
 
             {pagination.totalPages > 1 && (
-                <div className='flex items-center justify-center gap-2 mt-8'>
+                <div className='mt-8 flex items-center justify-center gap-2'>
                     <Button
                         variant='outline'
                         size='icon'
@@ -463,19 +463,19 @@ export default function NotificationsPage() {
                 </div>
             )}
 
-            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-10'>
+            <div className='grid grid-cols-1 gap-6 pt-10 md:grid-cols-2 lg:grid-cols-3'>
                 <PageCard title={t('admin.notifications.help.alerts.title')} icon={Bell}>
-                    <p className='text-sm text-muted-foreground leading-relaxed'>
+                    <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.notifications.help.alerts.description')}
                     </p>
                 </PageCard>
                 <PageCard title={t('admin.notifications.help.markdown.title')} icon={Info}>
-                    <p className='text-sm text-muted-foreground leading-relaxed'>
+                    <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.notifications.help.markdown.description')}
                     </p>
                 </PageCard>
                 <PageCard title={t('admin.notifications.help.delivery.title')} icon={KeyRound} variant='danger'>
-                    <ul className='list-disc list-inside space-y-1 text-sm text-muted-foreground'>
+                    <ul className='text-muted-foreground list-inside list-disc space-y-1 text-sm'>
                         <li>{t('admin.notifications.help.delivery.item1')}</li>
                         <li>{t('admin.notifications.help.delivery.item2')}</li>
                         <li>{t('admin.notifications.help.delivery.item3')}</li>
@@ -506,7 +506,7 @@ export default function NotificationsPage() {
                             <Label htmlFor='create-type'>{t('admin.notifications.form.type')}</Label>
                             <select
                                 id='create-type'
-                                className='flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
+                                className='border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50'
                                 value={newNotification.type}
                                 onChange={(e) =>
                                     setNewNotification({
@@ -592,7 +592,7 @@ export default function NotificationsPage() {
                                 <Label htmlFor='edit-type'>{t('admin.notifications.form.type')}</Label>
                                 <select
                                     id='edit-type'
-                                    className='flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
+                                    className='border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50'
                                     value={editingNotification.type}
                                     onChange={(e) =>
                                         setEditingNotification({
@@ -671,15 +671,15 @@ export default function NotificationsPage() {
                     {selectedNotification && (
                         <div className='space-y-6'>
                             <div className='space-y-1'>
-                                <Label className='text-muted-foreground text-xs uppercase tracking-wider'>
+                                <Label className='text-muted-foreground text-xs tracking-wider uppercase'>
                                     {t('admin.notifications.form.title')}
                                 </Label>
-                                <div className='font-medium text-lg'>{selectedNotification.title}</div>
+                                <div className='text-lg font-medium'>{selectedNotification.title}</div>
                             </div>
 
                             <div className='grid grid-cols-2 gap-4'>
                                 <div className='space-y-1'>
-                                    <Label className='text-muted-foreground text-xs uppercase tracking-wider'>
+                                    <Label className='text-muted-foreground text-xs tracking-wider uppercase'>
                                         {t('admin.notifications.type')}
                                     </Label>
                                     <div>
@@ -689,7 +689,7 @@ export default function NotificationsPage() {
                                     </div>
                                 </div>
                                 <div className='space-y-1'>
-                                    <Label className='text-muted-foreground text-xs uppercase tracking-wider'>
+                                    <Label className='text-muted-foreground text-xs tracking-wider uppercase'>
                                         {t('admin.notifications.created_at')}
                                     </Label>
                                     <div className='text-sm'>
@@ -699,10 +699,10 @@ export default function NotificationsPage() {
                             </div>
 
                             <div className='space-y-1'>
-                                <Label className='text-muted-foreground text-xs uppercase tracking-wider'>
+                                <Label className='text-muted-foreground text-xs tracking-wider uppercase'>
                                     {t('admin.notifications.message')}
                                 </Label>
-                                <div className='bg-muted p-4 rounded-lg text-sm border prose prose-sm dark:prose-invert max-w-none'>
+                                <div className='bg-muted prose prose-sm dark:prose-invert max-w-none rounded-lg border p-4 text-sm'>
                                     <ReactMarkdown>{selectedNotification.message_markdown}</ReactMarkdown>
                                 </div>
                             </div>

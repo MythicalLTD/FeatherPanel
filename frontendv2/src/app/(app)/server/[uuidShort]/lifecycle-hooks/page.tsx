@@ -333,7 +333,7 @@ export default function ServerLifecycleHooksPage() {
             try {
                 parsed = JSON.parse(step.payload);
             } catch {
-                return <span className='text-xs text-muted-foreground'>{t('lifecycleHooks.payloadUnavailable')}</span>;
+                return <span className='text-muted-foreground text-xs'>{t('lifecycleHooks.payloadUnavailable')}</span>;
             }
 
             if (step.task_type === 'discord_webhook') {
@@ -353,21 +353,21 @@ export default function ServerLifecycleHooksPage() {
                         : '';
                 const embeds = Array.isArray(parsed.embeds) ? parsed.embeds.length : 0;
                 return (
-                    <div className='text-xs space-y-1'>
+                    <div className='space-y-1 text-xs'>
                         <p className='text-muted-foreground'>
-                            <span className='font-semibold text-foreground/80'>
+                            <span className='text-foreground/80 font-semibold'>
                                 {t('lifecycleHooks.form.webhookUrl')}:
                             </span>{' '}
                             {safeUrl}
                         </p>
                         <p className='text-muted-foreground'>
-                            <span className='font-semibold text-foreground/80'>
+                            <span className='text-foreground/80 font-semibold'>
                                 {t('lifecycleHooks.form.content')}:
                             </span>{' '}
                             {content || t('lifecycleHooks.discord.contentEmpty')}
                         </p>
                         <p className='text-muted-foreground'>
-                            <span className='font-semibold text-foreground/80'>Embeds:</span> {embeds}
+                            <span className='text-foreground/80 font-semibold'>Embeds:</span> {embeds}
                         </p>
                     </div>
                 );
@@ -376,7 +376,7 @@ export default function ServerLifecycleHooksPage() {
             if (step.task_type === 'container_command') {
                 const command = typeof parsed.command === 'string' ? parsed.command : '';
                 return (
-                    <code className='text-xs whitespace-pre-wrap break-all'>
+                    <code className='text-xs break-all whitespace-pre-wrap'>
                         {command || t('lifecycleHooks.payloadUnavailable')}
                     </code>
                 );
@@ -385,13 +385,13 @@ export default function ServerLifecycleHooksPage() {
             const method = typeof parsed.method === 'string' ? parsed.method.toUpperCase() : 'GET';
             const url = typeof parsed.url === 'string' ? parsed.url : '';
             return (
-                <div className='text-xs space-y-1'>
+                <div className='space-y-1 text-xs'>
                     <p className='text-muted-foreground'>
-                        <span className='font-semibold text-foreground/80'>{t('lifecycleHooks.form.method')}:</span>{' '}
+                        <span className='text-foreground/80 font-semibold'>{t('lifecycleHooks.form.method')}:</span>{' '}
                         {method}
                     </p>
                     <p className='text-muted-foreground break-all'>
-                        <span className='font-semibold text-foreground/80'>{t('lifecycleHooks.form.url')}:</span>{' '}
+                        <span className='text-foreground/80 font-semibold'>{t('lifecycleHooks.form.url')}:</span>{' '}
                         {url || t('lifecycleHooks.payloadUnavailable')}
                     </p>
                 </div>
@@ -405,18 +405,18 @@ export default function ServerLifecycleHooksPage() {
     if (permissionsLoading || (!hasLoaded && loading)) {
         return (
             <div className='flex flex-col items-center justify-center py-24'>
-                <Loader2 className='h-12 w-12 animate-spin text-primary opacity-50' />
-                <p className='mt-4 text-muted-foreground font-medium animate-pulse'>{t('common.loading')}</p>
+                <Loader2 className='text-primary h-12 w-12 animate-spin opacity-50' />
+                <p className='text-muted-foreground mt-4 animate-pulse font-medium'>{t('common.loading')}</p>
             </div>
         );
     }
     if (!canRead) {
         return (
             <div className='flex flex-col items-center justify-center py-24 text-center'>
-                <div className='h-20 w-20 rounded-3xl bg-red-500/10 flex items-center justify-center mb-6'>
+                <div className='mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-red-500/10'>
                     <Lock className='h-10 w-10 text-red-500' />
                 </div>
-                <h1 className='text-2xl font-black uppercase tracking-tight'>{t('common.accessDenied')}</h1>
+                <h1 className='text-2xl font-black tracking-tight uppercase'>{t('common.accessDenied')}</h1>
                 <p className='text-muted-foreground mt-2'>{t('common.noPermission')}</p>
                 <Button variant='outline' className='mt-8' onClick={() => router.back()}>
                     {t('common.goBack')}
@@ -435,11 +435,11 @@ export default function ServerLifecycleHooksPage() {
                     actions={
                         <div className='flex flex-wrap items-center gap-2 sm:gap-3'>
                             <Button variant='glass' size='sm' onClick={fetchHooks} disabled={loading}>
-                                <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                                <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
                                 {t('common.refresh')}
                             </Button>
                             <Button variant='glass' size='sm' onClick={exportHooks} disabled={loading}>
-                                <Download className='h-4 w-4 mr-2' />
+                                <Download className='mr-2 h-4 w-4' />
                                 {t('lifecycleHooks.export')}
                             </Button>
                             {mutationsAllowed ? (
@@ -463,7 +463,7 @@ export default function ServerLifecycleHooksPage() {
                                         onClick={() => fileInputRef.current?.click()}
                                         disabled={importing}
                                     >
-                                        <Upload className='h-4 w-4 mr-2' />
+                                        <Upload className='mr-2 h-4 w-4' />
                                         {importing ? t('common.loading') : t('lifecycleHooks.import')}
                                     </Button>
                                 </>
@@ -474,17 +474,17 @@ export default function ServerLifecycleHooksPage() {
 
                 {!featureEnabled ? (
                     <PageCard variant='warning' title={t('lifecycleHooks.featureDisabledTitle')} icon={Settings2}>
-                        <p className='text-sm text-muted-foreground'>{t('lifecycleHooks.featureDisabledBody')}</p>
+                        <p className='text-muted-foreground text-sm'>{t('lifecycleHooks.featureDisabledBody')}</p>
                     </PageCard>
                 ) : null}
 
-                <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
                     {(['pre_start', 'pre_stop'] as LifecycleHookType[]).map((hookType) => (
                         <ResourceCard
                             key={hookType}
                             icon={Power}
                             onClick={() => setSelectedHookType(hookType)}
-                            className={selectedHookType === hookType ? 'ring-1 ring-primary/40 border-primary/40' : ''}
+                            className={selectedHookType === hookType ? 'ring-primary/40 border-primary/40 ring-1' : ''}
                             iconWrapperClassName={selectedHookType === hookType ? 'bg-primary/20' : undefined}
                             title={hookLabels[hookType]}
                             description={t('lifecycleHooks.configuredSteps', {
@@ -529,13 +529,13 @@ export default function ServerLifecycleHooksPage() {
                     ))}
                 </div>
 
-                <div className='rounded-2xl border border-border/30 bg-card/40 px-4 py-3 flex flex-wrap items-center justify-between gap-2'>
+                <div className='border-border/30 bg-card/40 flex flex-wrap items-center justify-between gap-2 rounded-2xl border px-4 py-3'>
                     <p className='text-sm font-medium'>
                         {t('lifecycleHooks.currentlyManaging', { hookType: hookLabels[selectedHookType] })}
                     </p>
                     {mutationsAllowed ? (
                         <Button type='button' size='sm' onClick={goCreateStep}>
-                            <Plus className='h-4 w-4 mr-2' />
+                            <Plus className='mr-2 h-4 w-4' />
                             {t('lifecycleHooks.addStep')}
                         </Button>
                     ) : null}
@@ -553,7 +553,7 @@ export default function ServerLifecycleHooksPage() {
                         action={
                             mutationsAllowed ? (
                                 <Button type='button' onClick={goCreateStep}>
-                                    <Plus className='h-4 w-4 mr-2' />
+                                    <Plus className='mr-2 h-4 w-4' />
                                     {t('lifecycleHooks.addStep')}
                                 </Button>
                             ) : undefined

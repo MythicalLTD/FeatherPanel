@@ -220,7 +220,7 @@ export default function SshKeysTab() {
         return (
             <div className='flex items-center justify-center py-12'>
                 <div className='flex items-center gap-3'>
-                    <div className='animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent'></div>
+                    <div className='border-primary h-6 w-6 animate-spin rounded-full border-2 border-t-transparent'></div>
                     <span className='text-muted-foreground'>{t('account.sshKeys.loading')}</span>
                 </div>
             </div>
@@ -230,17 +230,17 @@ export default function SshKeysTab() {
     return (
         <div className='space-y-5'>
             <div className='flex items-center justify-between'>
-                <div className='rounded-xl border border-border/50 bg-muted/20 p-4 flex-1'>
-                    <h3 className='text-lg font-semibold text-foreground'>{t('account.sshKeys.title')}</h3>
-                    <p className='text-sm text-muted-foreground mt-1'>{t('account.sshKeys.description')}</p>
+                <div className='border-border/50 bg-muted/20 flex-1 rounded-xl border p-4'>
+                    <h3 className='text-foreground text-lg font-semibold'>{t('account.sshKeys.title')}</h3>
+                    <p className='text-muted-foreground mt-1 text-sm'>{t('account.sshKeys.description')}</p>
                 </div>
-                <div className='flex gap-2 ml-3'>
+                <div className='ml-3 flex gap-2'>
                     <Button onClick={fetchKeys} variant='outline' size='sm'>
-                        <RefreshCw className='w-4 h-4 mr-2' />
+                        <RefreshCw className='mr-2 h-4 w-4' />
                         {t('account.sshKeys.refresh')}
                     </Button>
                     <Button onClick={() => setIsOpen(true)} size='sm'>
-                        <Plus className='w-4 h-4 mr-2' />
+                        <Plus className='mr-2 h-4 w-4' />
                         {t('account.sshKeys.addKey')}
                     </Button>
                 </div>
@@ -255,15 +255,15 @@ export default function SshKeysTab() {
                 />
             </div>
 
-            <div className='text-sm text-muted-foreground text-center'>
+            <div className='text-muted-foreground text-center text-sm'>
                 {t('account.sshKeys.totalKeys', { count: String(filteredKeys.length) })}
             </div>
 
             {filteredKeys.length === 0 ? (
-                <div className='rounded-lg border-2 border-dashed border-border bg-muted/20 p-12 text-center'>
-                    <Key className='w-12 h-12 text-muted-foreground mx-auto mb-4' />
-                    <h4 className='text-sm font-semibold text-foreground mb-2'>{t('account.sshKeys.noKeys')}</h4>
-                    <p className='text-sm text-muted-foreground mb-4'>{t('account.sshKeys.createFirst')}</p>
+                <div className='border-border bg-muted/20 rounded-lg border-2 border-dashed p-12 text-center'>
+                    <Key className='text-muted-foreground mx-auto mb-4 h-12 w-12' />
+                    <h4 className='text-foreground mb-2 text-sm font-semibold'>{t('account.sshKeys.noKeys')}</h4>
+                    <p className='text-muted-foreground mb-4 text-sm'>{t('account.sshKeys.createFirst')}</p>
                     <Button onClick={() => setIsOpen(true)} variant='outline'>
                         {t('account.sshKeys.addKey')}
                     </Button>
@@ -273,22 +273,22 @@ export default function SshKeysTab() {
                     {filteredKeys.map((key) => (
                         <div
                             key={key.id}
-                            className='rounded-lg border border-border/50 bg-card/50 backdrop-blur-xl p-4'
+                            className='border-border/50 bg-card/50 rounded-lg border p-4 backdrop-blur-xl'
                         >
-                            <div className='flex items-start justify-between mb-3'>
+                            <div className='mb-3 flex items-start justify-between'>
                                 <div className='flex-1'>
-                                    <h4 className='text-sm font-semibold text-foreground'>{key.name}</h4>
-                                    <p className='text-xs text-muted-foreground mt-1 font-mono truncate'>
+                                    <h4 className='text-foreground text-sm font-semibold'>{key.name}</h4>
+                                    <p className='text-muted-foreground mt-1 truncate font-mono text-xs'>
                                         {key.fingerprint || t('common.unknown')}
                                     </p>
-                                    <p className='text-xs text-muted-foreground mt-2'>
+                                    <p className='text-muted-foreground mt-2 text-xs'>
                                         {t('account.sshKeys.createdAt')}:{' '}
                                         {new Date(key.created_at).toLocaleDateString()}
                                     </p>
                                 </div>
                                 <div
                                     className={cn(
-                                        'px-2 py-1 rounded text-xs font-medium',
+                                        'rounded px-2 py-1 text-xs font-medium',
                                         key.deleted_at
                                             ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-green-200'
                                             : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
@@ -301,11 +301,11 @@ export default function SshKeysTab() {
                             </div>
                             <div className='flex gap-2'>
                                 <Button variant='outline' size='sm' onClick={() => viewKey(key)}>
-                                    <Eye className='w-4 h-4 mr-1' />
+                                    <Eye className='mr-1 h-4 w-4' />
                                     {t('account.sshKeys.viewDetails')}
                                 </Button>
                                 <Button variant='outline' size='sm' onClick={() => editKey(key)}>
-                                    <Pencil className='w-4 h-4 mr-1' />
+                                    <Pencil className='mr-1 h-4 w-4' />
                                     {t('account.sshKeys.edit')}
                                 </Button>
                                 {key.deleted_at ? (
@@ -321,7 +321,7 @@ export default function SshKeysTab() {
                                         setDeleteModal(true);
                                     }}
                                 >
-                                    <Trash2 className='w-4 h-4 mr-1' />
+                                    <Trash2 className='mr-1 h-4 w-4' />
                                     {key.deleted_at
                                         ? t('account.sshKeys.permanentlyDelete')
                                         : t('account.sshKeys.delete')}
@@ -344,17 +344,17 @@ export default function SshKeysTab() {
             >
                 <div className='fixed inset-0 bg-black/30' aria-hidden='true' />
                 <div className='fixed inset-0 flex items-center justify-center p-4'>
-                    <DialogPanel className='w-full max-w-2xl rounded-xl bg-card/50 backdrop-blur-xl border border-border/50 p-6'>
-                        <DialogTitle className='text-lg font-semibold text-foreground mb-2'>
+                    <DialogPanel className='bg-card/50 border-border/50 w-full max-w-2xl rounded-xl border p-6 backdrop-blur-xl'>
+                        <DialogTitle className='text-foreground mb-2 text-lg font-semibold'>
                             {editModal ? t('account.sshKeys.editKey') : t('account.sshKeys.addKey')}
                         </DialogTitle>
-                        <DialogDescription className='text-sm text-muted-foreground mb-6'>
+                        <DialogDescription className='text-muted-foreground mb-6 text-sm'>
                             {t('account.sshKeys.modalDescription')}
                         </DialogDescription>
 
                         <div className='space-y-4'>
                             <Field>
-                                <Label className='text-sm font-medium text-foreground'>
+                                <Label className='text-foreground text-sm font-medium'>
                                     {t('account.sshKeys.keyName')}
                                 </Label>
                                 <HeadlessInput
@@ -362,15 +362,15 @@ export default function SshKeysTab() {
                                     onChange={(e) => setNewKeyName(e.target.value)}
                                     placeholder={t('account.sshKeys.keyNamePlaceholder')}
                                     className={cn(
-                                        'mt-2 block w-full rounded-lg border border-border bg-background px-3 py-2',
-                                        'text-sm text-foreground placeholder:text-muted-foreground',
-                                        'focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent',
+                                        'border-border bg-background mt-2 block w-full rounded-lg border px-3 py-2',
+                                        'text-foreground placeholder:text-muted-foreground text-sm',
+                                        'focus:ring-primary focus:border-transparent focus:ring-2 focus:outline-none',
                                     )}
                                 />
                             </Field>
 
                             <Field>
-                                <Label className='text-sm font-medium text-foreground'>
+                                <Label className='text-foreground text-sm font-medium'>
                                     {t('account.sshKeys.publicKey')}
                                 </Label>
                                 <textarea
@@ -379,9 +379,9 @@ export default function SshKeysTab() {
                                     placeholder={t('account.sshKeys.publicKeyHint')}
                                     rows={8}
                                     className={cn(
-                                        'mt-2 block w-full rounded-lg border border-border bg-background px-3 py-2',
-                                        'text-sm text-foreground placeholder:text-muted-foreground font-mono',
-                                        'focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none custom-scrollbar',
+                                        'border-border bg-background mt-2 block w-full rounded-lg border px-3 py-2',
+                                        'text-foreground placeholder:text-muted-foreground font-mono text-sm',
+                                        'focus:ring-primary custom-scrollbar resize-none focus:border-transparent focus:ring-2 focus:outline-none',
                                     )}
                                 />
                             </Field>
@@ -411,24 +411,24 @@ export default function SshKeysTab() {
             <Dialog open={viewModal} onClose={() => setViewModal(false)} className='relative z-50'>
                 <div className='fixed inset-0 bg-black/30' aria-hidden='true' />
                 <div className='fixed inset-0 flex items-center justify-center p-4'>
-                    <DialogPanel className='w-full max-w-2xl rounded-xl bg-card/50 backdrop-blur-xl border border-border/50 p-6'>
-                        <DialogTitle className='text-lg font-semibold text-foreground mb-4'>
+                    <DialogPanel className='bg-card/50 border-border/50 w-full max-w-2xl rounded-xl border p-6 backdrop-blur-xl'>
+                        <DialogTitle className='text-foreground mb-4 text-lg font-semibold'>
                             {selectedKey?.name}
                         </DialogTitle>
                         {selectedKey && (
                             <div className='space-y-4'>
                                 <div>
-                                    <span className='text-sm font-medium text-muted-foreground'>
+                                    <span className='text-muted-foreground text-sm font-medium'>
                                         {t('account.sshKeys.fingerprint')}:
                                     </span>
-                                    <p className='mt-1 text-sm font-mono break-all'>{selectedKey.fingerprint}</p>
+                                    <p className='mt-1 font-mono text-sm break-all'>{selectedKey.fingerprint}</p>
                                 </div>
                                 <div>
-                                    <span className='text-sm font-medium text-muted-foreground'>
+                                    <span className='text-muted-foreground text-sm font-medium'>
                                         {t('account.sshKeys.publicKey')}:
                                     </span>
-                                    <div className='mt-2 p-3 bg-muted rounded-md custom-scrollbar overflow-auto max-h-64'>
-                                        <pre className='text-xs font-mono break-all whitespace-pre-wrap'>
+                                    <div className='bg-muted custom-scrollbar mt-2 max-h-64 overflow-auto rounded-md p-3'>
+                                        <pre className='font-mono text-xs break-all whitespace-pre-wrap'>
                                             {selectedKey.public_key}
                                         </pre>
                                     </div>
@@ -442,11 +442,11 @@ export default function SshKeysTab() {
             <Dialog open={deleteModal} onClose={() => setDeleteModal(false)} className='relative z-50'>
                 <div className='fixed inset-0 bg-black/30' aria-hidden='true' />
                 <div className='fixed inset-0 flex items-center justify-center p-4'>
-                    <DialogPanel className='w-full max-w-md rounded-xl bg-card/50 backdrop-blur-xl border border-border/50 p-6'>
-                        <DialogTitle className='text-lg font-semibold text-foreground mb-2'>
+                    <DialogPanel className='bg-card/50 border-border/50 w-full max-w-md rounded-xl border p-6 backdrop-blur-xl'>
+                        <DialogTitle className='text-foreground mb-2 text-lg font-semibold'>
                             {t('account.sshKeys.confirmDelete')}
                         </DialogTitle>
-                        <DialogDescription className='text-sm text-muted-foreground mb-6'>
+                        <DialogDescription className='text-muted-foreground mb-6 text-sm'>
                             {t('account.sshKeys.deleteWarning')}
                         </DialogDescription>
                         <div className='flex gap-3'>

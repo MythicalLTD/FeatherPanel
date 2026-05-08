@@ -193,7 +193,7 @@ export default function RealmsPage() {
                 icon={Sparkles}
                 actions={
                     <Button onClick={() => setCreateOpen(true)}>
-                        <Plus className='h-4 w-4 mr-2' />
+                        <Plus className='mr-2 h-4 w-4' />
                         {t('admin.realms.create')}
                     </Button>
                 }
@@ -201,20 +201,20 @@ export default function RealmsPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-realms', 'after-header')} />
 
-            <div className='flex flex-col sm:flex-row gap-4 items-center bg-card/40 backdrop-blur-md p-4 rounded-2xl shadow-sm'>
-                <div className='relative flex-1 group w-full'>
-                    <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
+            <div className='bg-card/40 flex flex-col items-center gap-4 rounded-2xl p-4 shadow-sm backdrop-blur-md sm:flex-row'>
+                <div className='group relative w-full flex-1'>
+                    <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
                     <Input
                         placeholder={t('admin.realms.search_placeholder')}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className='pl-10 h-11 w-full'
+                        className='h-11 w-full pl-10'
                     />
                 </div>
             </div>
 
             {pagination.totalPages > 1 && !loading && (
-                <div className='flex items-center justify-between gap-4 py-3 px-4 rounded-xl border border-border bg-card/50 mb-4'>
+                <div className='border-border bg-card/50 mb-4 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
                     <Button
                         variant='outline'
                         size='sm'
@@ -260,7 +260,7 @@ export default function RealmsPage() {
                             subtitle={new Date(realm.created_at).toLocaleDateString()}
                             icon={Sparkles}
                             description={
-                                <div className='text-sm text-muted-foreground mt-1'>
+                                <div className='text-muted-foreground mt-1 text-sm'>
                                     {realm.description || 'No description'}
                                 </div>
                             }
@@ -295,7 +295,7 @@ export default function RealmsPage() {
             )}
 
             {pagination.totalPages > 1 && (
-                <div className='flex items-center justify-center gap-2 mt-8'>
+                <div className='mt-8 flex items-center justify-center gap-2'>
                     <Button
                         variant='outline'
                         size='icon'
@@ -318,14 +318,14 @@ export default function RealmsPage() {
                 </div>
             )}
 
-            <div className='grid grid-cols-1 md:grid-cols-2 gap-6 pt-6'>
+            <div className='grid grid-cols-1 gap-6 pt-6 md:grid-cols-2'>
                 <PageCard title={t('admin.realms.help.what_are_realms.title')} icon={Sparkles}>
-                    <p className='text-sm text-muted-foreground leading-relaxed'>
+                    <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.realms.help.what_are_realms.description')}
                     </p>
                 </PageCard>
                 <PageCard title={t('admin.realms.help.organize_spells.title')} icon={FolderTree}>
-                    <p className='text-sm text-muted-foreground leading-relaxed'>
+                    <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.realms.help.organize_spells.description')}
                     </p>
                 </PageCard>

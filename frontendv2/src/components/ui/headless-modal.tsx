@@ -58,19 +58,19 @@ export function HeadlessModal({ isOpen, onClose, title, children, description, c
                         >
                             <Dialog.Panel
                                 className={cn(
-                                    'w-full max-w-md transform overflow-hidden rounded-2xl bg-card border border-border/50 text-left align-middle shadow-2xl transition-all relative',
+                                    'bg-card border-border/50 relative w-full max-w-md transform overflow-hidden rounded-2xl border text-left align-middle shadow-2xl transition-all',
                                     className,
                                 )}
                             >
-                                <div className='bg-card/95 backdrop-blur-xl border-b border-border/5 px-6 pt-6 pb-4'>
+                                <div className='bg-card/95 border-border/5 border-b px-6 pt-6 pb-4 backdrop-blur-xl'>
                                     <Dialog.Title
                                         as='h3'
-                                        className='text-lg font-semibold leading-6 text-foreground flex justify-between items-center mb-2'
+                                        className='text-foreground mb-2 flex items-center justify-between text-lg leading-6 font-semibold'
                                     >
                                         {title}
                                         <button
                                             type='button'
-                                            className='rounded-full p-2 hover:bg-muted transition-colors text-muted-foreground hover:text-foreground -mr-2 -mt-2'
+                                            className='hover:bg-muted text-muted-foreground hover:text-foreground -mt-2 -mr-2 rounded-full p-2 transition-colors'
                                             onClick={onClose}
                                         >
                                             <X className='h-4 w-4' />
@@ -78,7 +78,7 @@ export function HeadlessModal({ isOpen, onClose, title, children, description, c
                                     </Dialog.Title>
                                     {description && (
                                         <div className='mt-2'>
-                                            <p className='text-sm text-muted-foreground leading-relaxed'>
+                                            <p className='text-muted-foreground text-sm leading-relaxed'>
                                                 {description}
                                             </p>
                                         </div>

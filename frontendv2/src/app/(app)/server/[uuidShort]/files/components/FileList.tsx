@@ -79,31 +79,31 @@ export function FileList({
     if (loading && files.length === 0) {
         return (
             <div className='flex h-64 items-center justify-center rounded-xl border border-white/10 bg-black/20 backdrop-blur-sm'>
-                <Loader2 className='h-8 w-8 animate-spin text-primary' />
+                <Loader2 className='text-primary h-8 w-8 animate-spin' />
             </div>
         );
     }
 
     if (files.length === 0) {
         return (
-            <div className='flex h-[400px] flex-col items-center justify-center gap-6 rounded-3xl border border-dashed border-white/10 bg-white/2 text-muted-foreground backdrop-blur-3xl animate-in fade-in zoom-in-95 duration-700 relative overflow-hidden group'>
-                <div className='absolute inset-0 bg-linear-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000' />
+            <div className='text-muted-foreground animate-in fade-in zoom-in-95 group relative flex h-[400px] flex-col items-center justify-center gap-6 overflow-hidden rounded-3xl border border-dashed border-white/10 bg-white/2 backdrop-blur-3xl duration-700'>
+                <div className='from-primary/5 absolute inset-0 bg-linear-to-br via-transparent to-transparent opacity-0 transition-opacity duration-1000 group-hover:opacity-100' />
 
                 <div className='relative'>
-                    <div className='flex h-24 w-24 items-center justify-center rounded-3xl bg-white/5 text-white/20 border border-white/10 relative z-10'>
-                        <FolderOpen className='h-10 w-10 opacity-40 group-hover:scale-110 transition-transform duration-500' />
+                    <div className='relative z-10 flex h-24 w-24 items-center justify-center rounded-3xl border border-white/10 bg-white/5 text-white/20'>
+                        <FolderOpen className='h-10 w-10 opacity-40 transition-transform duration-500 group-hover:scale-110' />
                     </div>
 
-                    <div className='absolute -top-2 -right-2 h-8 w-8 rounded-full bg-primary/20 blur-xl animate-pulse' />
-                    <div className='absolute -bottom-4 -left-4 h-12 w-12 rounded-full bg-primary/10 blur-2xl animate-pulse delay-700' />
-                    <Sparkles className='absolute -top-6 -left-6 h-6 w-6 text-primary/40 animate-bounce delay-300' />
+                    <div className='bg-primary/20 absolute -top-2 -right-2 h-8 w-8 animate-pulse rounded-full blur-xl' />
+                    <div className='bg-primary/10 absolute -bottom-4 -left-4 h-12 w-12 animate-pulse rounded-full blur-2xl delay-700' />
+                    <Sparkles className='text-primary/40 absolute -top-6 -left-6 h-6 w-6 animate-bounce delay-300' />
                 </div>
 
-                <div className='text-center relative z-10 space-y-2'>
-                    <h3 className='text-xl font-bold bg-linear-to-br from-white to-white/40 bg-clip-text text-transparent'>
+                <div className='relative z-10 space-y-2 text-center'>
+                    <h3 className='bg-linear-to-br from-white to-white/40 bg-clip-text text-xl font-bold text-transparent'>
                         {t('files.list.empty_title')}
                     </h3>
-                    <p className='text-sm text-white/40 max-w-[280px] leading-relaxed mx-auto'>
+                    <p className='mx-auto max-w-[280px] text-sm leading-relaxed text-white/40'>
                         {t('files.list.empty_description')}
                     </p>
                 </div>
@@ -114,12 +114,12 @@ export function FileList({
     const allSelected = files.length > 0 && selectedFiles.length === files.length;
 
     return (
-        <div className='overflow-hidden rounded-3xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 backdrop-blur-xl '>
+        <div className='overflow-hidden rounded-3xl border border-gray-200 bg-white backdrop-blur-xl dark:border-white/10 dark:bg-white/5'>
             <div
-                className='flex items-center gap-3 border-b border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-white/5 px-4 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-foreground/60 dark:text-white/40'
+                className='text-foreground/60 flex items-center gap-3 border-b border-gray-200 bg-gray-50/50 px-4 py-4 text-[10px] font-bold tracking-[0.2em] uppercase dark:border-white/10 dark:bg-white/5 dark:text-white/40'
                 style={{ color: 'hsl(var(--foreground))', opacity: 0.6 }}
             >
-                <div className='flex items-center gap-3 flex-1'>
+                <div className='flex flex-1 items-center gap-3'>
                     <Checkbox
                         checked={allSelected}
                         onCheckedChange={onSelectAll}
@@ -127,8 +127,8 @@ export function FileList({
                     />
                     <span>{t('files.list.header_name')}</span>
                 </div>
-                <div className='hidden sm:block w-32 text-right'>{t('files.list.header_size')}</div>
-                <div className='hidden sm:block w-40 text-right'>{t('files.list.header_modified')}</div>
+                <div className='hidden w-32 text-right sm:block'>{t('files.list.header_size')}</div>
+                <div className='hidden w-40 text-right sm:block'>{t('files.list.header_modified')}</div>
                 <div className='w-10'></div>
             </div>
 

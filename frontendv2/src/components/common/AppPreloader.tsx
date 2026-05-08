@@ -42,9 +42,9 @@ export default function AppPreloader() {
             : settings?.app_logo_white || 'https://github.com/featherpanel-com.png';
 
     return (
-        <div className='fixed inset-0 z-9999 flex items-center justify-center bg-background animate-fade-in overflow-hidden'>
+        <div className='bg-background animate-fade-in fixed inset-0 z-9999 flex items-center justify-center overflow-hidden'>
             <div
-                className='absolute inset-0 opacity-5 animate-pulse'
+                className='absolute inset-0 animate-pulse opacity-5'
                 style={{
                     background: 'radial-gradient(circle at 50% 50%, rgb(255, 255, 255) 0%, transparent 50%)',
                     animationDuration: '3s',
@@ -52,25 +52,25 @@ export default function AppPreloader() {
             />
 
             <div className='relative z-10 flex flex-col items-center gap-6'>
-                <div className='relative animate-fade-in' style={{ animationDelay: '0.1s' }}>
+                <div className='animate-fade-in relative' style={{ animationDelay: '0.1s' }}>
                     <div
-                        className='relative h-20 w-20 flex items-center justify-center animate-bounce'
+                        className='relative flex h-20 w-20 animate-bounce items-center justify-center'
                         style={{ animationDuration: '2s' }}
                     >
                         <Image src={logoUrl} alt={appName} fill className='object-contain' sizes='80px' priority />
                     </div>
 
                     <div
-                        className='absolute inset-0 rounded-2xl blur-2xl animate-pulse bg-primary/20'
+                        className='bg-primary/20 absolute inset-0 animate-pulse rounded-2xl blur-2xl'
                         style={{
                             animationDuration: '2s',
                         }}
                     />
                 </div>
 
-                <div className='relative animate-fade-in' style={{ animationDelay: '0.2s' }}>
+                <div className='animate-fade-in relative' style={{ animationDelay: '0.2s' }}>
                     <div
-                        className='h-12 w-12 rounded-full border-3 border-transparent animate-spin'
+                        className='h-12 w-12 animate-spin rounded-full border-3 border-transparent'
                         style={{
                             borderTopColor: 'hsl(var(--primary))',
                             borderRightColor: 'hsl(var(--primary) / 0.3)',
@@ -79,9 +79,9 @@ export default function AppPreloader() {
                     />
                 </div>
 
-                <div className='text-center space-y-2 animate-fade-in' style={{ animationDelay: '0.3s' }}>
-                    <p className='text-lg font-semibold text-foreground'>Loading {appName}</p>
-                    <p className='text-sm text-muted-foreground animate-pulse'>Initializing application...</p>
+                <div className='animate-fade-in space-y-2 text-center' style={{ animationDelay: '0.3s' }}>
+                    <p className='text-foreground text-lg font-semibold'>Loading {appName}</p>
+                    <p className='text-muted-foreground animate-pulse text-sm'>Initializing application...</p>
                 </div>
             </div>
         </div>

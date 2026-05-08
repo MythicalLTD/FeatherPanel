@@ -163,7 +163,7 @@ export default function FeatherAiAgentPage() {
     const providerValue = String(getSettingValue('chatbot_ai_provider'));
 
     return (
-        <div className='min-h-screen space-y-8 pb-12 '>
+        <div className='min-h-screen space-y-8 pb-12'>
             <WidgetRenderer widgets={getWidgets('admin-ai-agent', 'top-of-page')} />
             <PageHeader
                 title={t('admin.featherai_agent.title')}
@@ -181,13 +181,13 @@ export default function FeatherAiAgentPage() {
                 icon={SettingsIcon}
             >
                 {loading ? (
-                    <div className='flex flex-col items-center justify-center py-16 text-center space-y-4'>
-                        <RefreshCw className='h-12 w-12 text-primary animate-spin' />
+                    <div className='flex flex-col items-center justify-center space-y-4 py-16 text-center'>
+                        <RefreshCw className='text-primary h-12 w-12 animate-spin' />
                         <div className='space-y-1'>
                             <h3 className='text-lg font-semibold'>
                                 {t('admin.featherai_agent.config.loading_settings')}
                             </h3>
-                            <p className='text-sm text-muted-foreground'>
+                            <p className='text-muted-foreground text-sm'>
                                 {t('admin.featherai_agent.config.loading_settings_description')}
                             </p>
                         </div>
@@ -200,13 +200,13 @@ export default function FeatherAiAgentPage() {
                             saveSettings();
                         }}
                     >
-                        <div className='rounded-2xl border border-primary/20 bg-primary/5 p-6'>
+                        <div className='border-primary/20 bg-primary/5 rounded-2xl border p-6'>
                             <div className='flex items-center justify-between gap-4'>
                                 <div className='space-y-1'>
-                                    <Label className='text-lg font-bold text-foreground'>
+                                    <Label className='text-foreground text-lg font-bold'>
                                         {t('admin.featherai_agent.config.enable')}
                                     </Label>
-                                    <p className='text-sm text-muted-foreground'>
+                                    <p className='text-muted-foreground text-sm'>
                                         {t('admin.featherai_agent.config.enable_description')}
                                     </p>
                                 </div>
@@ -224,8 +224,8 @@ export default function FeatherAiAgentPage() {
 
                         <div className='space-y-8'>
                             <div className='flex items-center gap-3 border-b pb-4'>
-                                <div className='p-2 bg-primary/10 rounded-lg'>
-                                    <SettingsIcon className='h-5 w-5 text-primary' />
+                                <div className='bg-primary/10 rounded-lg p-2'>
+                                    <SettingsIcon className='text-primary h-5 w-5' />
                                 </div>
                                 <h3 className='text-xl font-bold'>
                                     {t('admin.featherai_agent.config.general_settings')}
@@ -238,7 +238,7 @@ export default function FeatherAiAgentPage() {
                                         <Label className='text-sm font-semibold'>
                                             {t('admin.featherai_agent.config.ai_provider')}
                                         </Label>
-                                        <p className='text-xs text-muted-foreground'>
+                                        <p className='text-muted-foreground text-xs'>
                                             {t('admin.featherai_agent.config.ai_provider_description')}
                                         </p>
                                     </div>
@@ -261,7 +261,7 @@ export default function FeatherAiAgentPage() {
                                         <Label className='text-sm font-semibold'>
                                             {t('admin.featherai_agent.config.temperature')}
                                         </Label>
-                                        <p className='text-xs text-muted-foreground'>
+                                        <p className='text-muted-foreground text-xs'>
                                             {t('admin.featherai_agent.config.temperature_description')}
                                         </p>
                                     </div>
@@ -270,7 +270,7 @@ export default function FeatherAiAgentPage() {
                                         min='0'
                                         max='1'
                                         step='0.1'
-                                        className='h-12 border-primary/20 bg-background/50 focus:ring-primary'
+                                        className='border-primary/20 bg-background/50 focus:ring-primary h-12'
                                         value={Number(getSettingValue('chatbot_temperature') || 0.7)}
                                         onChange={(e) =>
                                             updateSettingValue('chatbot_temperature', Number(e.target.value))
@@ -283,7 +283,7 @@ export default function FeatherAiAgentPage() {
                                         <Label className='text-sm font-semibold'>
                                             {t('admin.featherai_agent.config.max_tokens')}
                                         </Label>
-                                        <p className='text-xs text-muted-foreground'>
+                                        <p className='text-muted-foreground text-xs'>
                                             {t('admin.featherai_agent.config.max_tokens_description')}
                                         </p>
                                     </div>
@@ -291,7 +291,7 @@ export default function FeatherAiAgentPage() {
                                         type='number'
                                         min='1'
                                         max='8192'
-                                        className='h-12 border-primary/20 bg-background/50 focus:ring-primary'
+                                        className='border-primary/20 bg-background/50 focus:ring-primary h-12'
                                         value={Number(getSettingValue('chatbot_max_tokens') || 2048)}
                                         onChange={(e) =>
                                             updateSettingValue('chatbot_max_tokens', Number(e.target.value))
@@ -304,7 +304,7 @@ export default function FeatherAiAgentPage() {
                                         <Label className='text-sm font-semibold'>
                                             {t('admin.featherai_agent.config.max_history')}
                                         </Label>
-                                        <p className='text-xs text-muted-foreground'>
+                                        <p className='text-muted-foreground text-xs'>
                                             {t('admin.featherai_agent.config.max_history_description')}
                                         </p>
                                     </div>
@@ -312,7 +312,7 @@ export default function FeatherAiAgentPage() {
                                         type='number'
                                         min='1'
                                         max='50'
-                                        className='h-12 border-primary/20 bg-background/50 focus:ring-primary'
+                                        className='border-primary/20 bg-background/50 focus:ring-primary h-12'
                                         value={Number(getSettingValue('chatbot_max_history') || 10)}
                                         onChange={(e) =>
                                             updateSettingValue('chatbot_max_history', Number(e.target.value))
@@ -323,7 +323,7 @@ export default function FeatherAiAgentPage() {
                         </div>
 
                         {providerValue !== 'basic' && providerValue !== '' && (
-                            <div className='rounded-3xl border border-primary/20 bg-muted/20 p-8 space-y-8 animate-in slide-in-from-left-4 duration-500'>
+                            <div className='border-primary/20 bg-muted/20 animate-in slide-in-from-left-4 space-y-8 rounded-3xl border p-8 duration-500'>
                                 <div className='flex items-center gap-3'>
                                     <Badge variant='outline' className='px-4 py-1 text-xs font-bold uppercase'>
                                         {providerValue.split('_').join(' ')}
@@ -529,8 +529,8 @@ export default function FeatherAiAgentPage() {
                             <div className='space-y-8'>
                                 <div className='flex items-center justify-between border-b pb-4'>
                                     <div className='flex items-center gap-3'>
-                                        <div className='p-2 bg-primary/10 rounded-lg'>
-                                            <Zap className='h-5 w-5 text-primary' />
+                                        <div className='bg-primary/10 rounded-lg p-2'>
+                                            <Zap className='text-primary h-5 w-5' />
                                         </div>
                                         <h3 className='text-xl font-bold'>
                                             {t('admin.featherai_agent.config.system_prompt_core')}
@@ -554,14 +554,14 @@ export default function FeatherAiAgentPage() {
                                         <Label className='text-sm font-semibold'>
                                             {t('admin.featherai_agent.config.system_prompt_core_readonly')}
                                         </Label>
-                                        <p className='text-xs text-muted-foreground'>
+                                        <p className='text-muted-foreground text-xs'>
                                             {t('admin.featherai_agent.config.system_prompt_core_description')}
                                         </p>
                                     </div>
                                     <Textarea
                                         readOnly
                                         disabled
-                                        className='min-h-[200px] font-mono text-xs bg-muted/50 resize-none'
+                                        className='bg-muted/50 min-h-[200px] resize-none font-mono text-xs'
                                         value={systemPrompt}
                                     />
                                 </div>
@@ -569,8 +569,8 @@ export default function FeatherAiAgentPage() {
 
                             <div className='space-y-8'>
                                 <div className='flex items-center gap-3 border-b pb-4'>
-                                    <div className='p-2 bg-primary/10 rounded-lg'>
-                                        <MessageSquare className='h-5 w-5 text-primary' />
+                                    <div className='bg-primary/10 rounded-lg p-2'>
+                                        <MessageSquare className='text-primary h-5 w-5' />
                                     </div>
                                     <h3 className='text-xl font-bold'>
                                         {t('admin.featherai_agent.config.custom_prompts')}
@@ -583,14 +583,14 @@ export default function FeatherAiAgentPage() {
                                             <Label className='text-sm font-semibold'>
                                                 {t('admin.featherai_agent.config.custom_system_prompt')}
                                             </Label>
-                                            <p className='text-xs text-muted-foreground'>
+                                            <p className='text-muted-foreground text-xs'>
                                                 {t('admin.featherai_agent.config.custom_system_prompt_description')}
                                             </p>
                                         </div>
                                         <Textarea
                                             placeholder='You are a helpful assistant for FeatherPanel...'
                                             maxLength={1000}
-                                            className='min-h-[120px] focus:ring-primary border-primary/20'
+                                            className='focus:ring-primary border-primary/20 min-h-[120px]'
                                             value={String(getSettingValue('chatbot_system_prompt') || '')}
                                             onChange={(e) =>
                                                 updateSettingValue('chatbot_system_prompt', e.target.value)
@@ -603,14 +603,14 @@ export default function FeatherAiAgentPage() {
                                             <Label className='text-sm font-semibold'>
                                                 {t('admin.featherai_agent.config.custom_user_prompt')}
                                             </Label>
-                                            <p className='text-xs text-muted-foreground'>
+                                            <p className='text-muted-foreground text-xs'>
                                                 {t('admin.featherai_agent.config.custom_user_prompt_description')}
                                             </p>
                                         </div>
                                         <Textarea
                                             placeholder='User is an admin with full access...'
                                             maxLength={1000}
-                                            className='min-h-[120px] focus:ring-primary border-primary/20'
+                                            className='focus:ring-primary border-primary/20 min-h-[120px]'
                                             value={String(getSettingValue('chatbot_user_prompt') || '')}
                                             onChange={(e) => updateSettingValue('chatbot_user_prompt', e.target.value)}
                                         />
@@ -619,27 +619,27 @@ export default function FeatherAiAgentPage() {
                             </div>
                         </div>
 
-                        <div className='flex items-center justify-end gap-3 pt-8 border-t'>
+                        <div className='flex items-center justify-end gap-3 border-t pt-8'>
                             <Button variant='outline' className='h-12 px-8' onClick={resetSettings}>
                                 Reset
                             </Button>
-                            <Button type='submit' size='lg' className='h-12 px-8 gap-2 ' disabled={saving}>
+                            <Button type='submit' size='lg' className='h-12 gap-2 px-8' disabled={saving}>
                                 {saving ? <RefreshCw className='h-4 w-4 animate-spin' /> : <Save className='h-4 w-4' />}
                                 {saving ? 'Saving...' : 'Save Changes'}
                             </Button>
                         </div>
                     </form>
                 ) : (
-                    <div className='flex flex-col items-center justify-center py-16 text-center space-y-4'>
-                        <AlertCircle className='h-12 w-12 text-destructive' />
+                    <div className='flex flex-col items-center justify-center space-y-4 py-16 text-center'>
+                        <AlertCircle className='text-destructive h-12 w-12' />
                         <div className='space-y-1'>
                             <h3 className='text-lg font-semibold'>{t('admin.featherai_agent.config.load_failed')}</h3>
-                            <p className='text-sm text-muted-foreground'>
+                            <p className='text-muted-foreground text-sm'>
                                 {t('admin.featherai_agent.config.load_failed_description')}
                             </p>
                         </div>
                         <Button onClick={fetchChatbotSettings} variant='outline' className='mt-4'>
-                            <RefreshCw className='h-4 w-4 mr-2' />
+                            <RefreshCw className='mr-2 h-4 w-4' />
                             Try Again
                         </Button>
                     </div>

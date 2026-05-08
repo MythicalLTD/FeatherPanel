@@ -909,7 +909,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
     }, [currentDirectory, addToUploadQueueFromDrop]);
 
     return (
-        <div className='flex flex-col gap-6 relative min-h-screen pb-20'>
+        <div className='relative flex min-h-screen flex-col gap-6 pb-20'>
             <WidgetRenderer widgets={getWidgets('server-files', 'top-of-page')} />
             <PageHeader
                 title={t('files.title')}
@@ -918,7 +918,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
             <WidgetRenderer widgets={getWidgets('server-files', 'after-header')} />
 
             <div className='flex flex-col gap-4'>
-                <div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-xl border border-white/5 bg-white/10 p-4 backdrop-blur-sm '>
+                <div className='flex flex-col gap-4 rounded-xl border border-white/5 bg-white/10 p-4 backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between'>
                     <FileBreadcrumbs
                         currentDirectory={currentDirectory || '/'}
                         onNavigate={navigate}
@@ -973,9 +973,9 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 />
 
                 {uploadQueue.length > 0 && (
-                    <div className='mb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-in slide-in-from-top-4 duration-500'>
-                        <div className='md:col-span-2 lg:col-span-3 flex items-center justify-between'>
-                            <span className='text-xs font-bold uppercase tracking-widest text-primary/80'>
+                    <div className='animate-in slide-in-from-top-4 mb-6 grid grid-cols-1 gap-4 duration-500 md:grid-cols-2 lg:grid-cols-3'>
+                        <div className='flex items-center justify-between md:col-span-2 lg:col-span-3'>
+                            <span className='text-primary/80 text-xs font-bold tracking-widest uppercase'>
                                 {uploadQueue.length === 1
                                     ? t('files.toolbar.upload')
                                     : t('files.messages.uploading_files_progress', {
@@ -1013,22 +1013,22 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                                 return (
                                     <div
                                         key={batchKey}
-                                        className='group relative overflow-hidden rounded-2xl border border-primary/20 bg-primary/5 p-4 backdrop-blur-xl transition-all hover:border-primary/40 text-left'
+                                        className='group border-primary/20 bg-primary/5 hover:border-primary/40 relative overflow-hidden rounded-2xl border p-4 text-left backdrop-blur-xl transition-all'
                                     >
-                                        <div className='absolute inset-0 bg-linear-to-br from-primary/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity' />
+                                        <div className='from-primary/10 absolute inset-0 bg-linear-to-br via-transparent to-transparent opacity-0 transition-opacity group-hover:opacity-100' />
                                         <div className='relative flex flex-col gap-3 text-left'>
                                             <div className='flex items-center justify-between'>
-                                                <div className='flex items-center gap-2 min-w-0'>
-                                                    <div className='flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/20 text-primary'>
+                                                <div className='flex min-w-0 items-center gap-2'>
+                                                    <div className='bg-primary/20 text-primary flex h-8 w-8 shrink-0 items-center justify-center rounded-lg'>
                                                         {allDone && <CheckCircle2 className='h-4 w-4 text-green-500' />}
                                                         {hasError && !allDone && (
-                                                            <AlertCircle className='h-4 w-4 text-destructive' />
+                                                            <AlertCircle className='text-destructive h-4 w-4' />
                                                         )}
                                                         {!allDone && !hasError && (
                                                             <Upload className='h-4 w-4 animate-pulse' />
                                                         )}
                                                     </div>
-                                                    <span className='text-sm font-medium truncate'>
+                                                    <span className='truncate text-sm font-medium'>
                                                         {allDone
                                                             ? t('files.messages.upload_folder_complete', {
                                                                   count: String(items.length),
@@ -1043,7 +1043,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                                                         variant='ghost'
                                                         size='icon'
                                                         onClick={() => removeUploadBatch(batchId)}
-                                                        className='h-7 w-7 shrink-0 text-muted-foreground hover:text-red-500'
+                                                        className='text-muted-foreground h-7 w-7 shrink-0 hover:text-red-500'
                                                     >
                                                         <X className='h-4 w-4' />
                                                     </Button>
@@ -1051,7 +1051,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                                             </div>
                                             {!allDone && !hasError && (
                                                 <div className='space-y-1.5'>
-                                                    <div className='flex justify-between text-[10px] font-bold uppercase tracking-tighter text-white/40'>
+                                                    <div className='flex justify-between text-[10px] font-bold tracking-tighter text-white/40 uppercase'>
                                                         <span>
                                                             {t('files.messages.uploading_folder_progress', {
                                                                 current: String(currentLabel),
@@ -1060,16 +1060,16 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                                                         </span>
                                                         <span className='text-primary'>{batchProgress}%</span>
                                                     </div>
-                                                    <div className='h-1.5 w-full overflow-hidden rounded-full bg-white/5 border border-white/5'>
+                                                    <div className='h-1.5 w-full overflow-hidden rounded-full border border-white/5 bg-white/5'>
                                                         <div
-                                                            className='h-full bg-linear-to-r from-primary to-primary-foreground transition-all duration-300'
+                                                            className='from-primary to-primary-foreground h-full bg-linear-to-r transition-all duration-300'
                                                             style={{ width: `${batchProgress}%` }}
                                                         />
                                                     </div>
                                                 </div>
                                             )}
                                             {hasError && !allDone && (
-                                                <p className='text-xs text-destructive'>
+                                                <p className='text-destructive text-xs'>
                                                     {t('files.messages.upload_folder_error')}
                                                 </p>
                                             )}
@@ -1082,13 +1082,13 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                             return (
                                 <div
                                     key={item.id}
-                                    className='group relative overflow-hidden rounded-2xl border border-primary/20 bg-primary/5 p-4 backdrop-blur-xl transition-all hover:border-primary/40 text-left'
+                                    className='group border-primary/20 bg-primary/5 hover:border-primary/40 relative overflow-hidden rounded-2xl border p-4 text-left backdrop-blur-xl transition-all'
                                 >
-                                    <div className='absolute inset-0 bg-linear-to-br from-primary/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity' />
+                                    <div className='from-primary/10 absolute inset-0 bg-linear-to-br via-transparent to-transparent opacity-0 transition-opacity group-hover:opacity-100' />
                                     <div className='relative flex flex-col gap-3 text-left'>
                                         <div className='flex items-center justify-between'>
-                                            <div className='flex items-center gap-2 min-w-0'>
-                                                <div className='flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/20 text-primary'>
+                                            <div className='flex min-w-0 items-center gap-2'>
+                                                <div className='bg-primary/20 text-primary flex h-8 w-8 shrink-0 items-center justify-center rounded-lg'>
                                                     {item.status === 'uploading' && (
                                                         <Upload className='h-4 w-4 animate-pulse' />
                                                     )}
@@ -1096,13 +1096,13 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                                                         <CheckCircle2 className='h-4 w-4 text-green-500' />
                                                     )}
                                                     {item.status === 'error' && (
-                                                        <AlertCircle className='h-4 w-4 text-destructive' />
+                                                        <AlertCircle className='text-destructive h-4 w-4' />
                                                     )}
                                                     {item.status === 'pending' && (
-                                                        <Upload className='h-4 w-4 text-muted-foreground' />
+                                                        <Upload className='text-muted-foreground h-4 w-4' />
                                                     )}
                                                 </div>
-                                                <span className='text-sm font-medium truncate' title={item.file.name}>
+                                                <span className='truncate text-sm font-medium' title={item.file.name}>
                                                     {item.file.name}
                                                 </span>
                                             </div>
@@ -1110,14 +1110,14 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                                                 variant='ghost'
                                                 size='icon'
                                                 onClick={() => removeUploadFromQueue(item.id)}
-                                                className='h-7 w-7 shrink-0 text-muted-foreground hover:text-red-500'
+                                                className='text-muted-foreground h-7 w-7 shrink-0 hover:text-red-500'
                                             >
                                                 <X className='h-4 w-4' />
                                             </Button>
                                         </div>
                                         {(item.status === 'uploading' || item.status === 'pending') && (
                                             <div className='space-y-1.5'>
-                                                <div className='flex justify-between text-[10px] font-bold uppercase tracking-tighter text-white/40'>
+                                                <div className='flex justify-between text-[10px] font-bold tracking-tighter text-white/40 uppercase'>
                                                     <span>
                                                         {item.status === 'uploading'
                                                             ? t('files.messages.uploading', { file: '' })
@@ -1125,9 +1125,9 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                                                     </span>
                                                     <span className='text-primary'>{item.progress}%</span>
                                                 </div>
-                                                <div className='h-1.5 w-full overflow-hidden rounded-full bg-white/5 border border-white/5'>
+                                                <div className='h-1.5 w-full overflow-hidden rounded-full border border-white/5 bg-white/5'>
                                                     <div
-                                                        className='h-full bg-linear-to-r from-primary to-primary-foreground transition-all duration-300'
+                                                        className='from-primary to-primary-foreground h-full bg-linear-to-r transition-all duration-300'
                                                         style={{ width: `${item.progress}%` }}
                                                     />
                                                 </div>
@@ -1139,7 +1139,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                                             </p>
                                         )}
                                         {item.status === 'error' && (
-                                            <p className='text-xs text-destructive truncate' title={item.error}>
+                                            <p className='text-destructive truncate text-xs' title={item.error}>
                                                 {item.error}
                                             </p>
                                         )}
@@ -1151,20 +1151,20 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 )}
 
                 {activePulls.length > 0 && (
-                    <div className='mb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-in slide-in-from-top-4 duration-500'>
+                    <div className='animate-in slide-in-from-top-4 mb-6 grid grid-cols-1 gap-4 duration-500 md:grid-cols-2 lg:grid-cols-3'>
                         {activePulls.map((pull) => (
                             <div
                                 key={pull.Identifier}
-                                className='group relative overflow-hidden rounded-2xl border border-primary/20 bg-primary/5 p-4 backdrop-blur-xl transition-all hover:border-primary/40 text-left'
+                                className='group border-primary/20 bg-primary/5 hover:border-primary/40 relative overflow-hidden rounded-2xl border p-4 text-left backdrop-blur-xl transition-all'
                             >
-                                <div className='absolute inset-0 bg-linear-to-br from-primary/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity' />
+                                <div className='from-primary/10 absolute inset-0 bg-linear-to-br via-transparent to-transparent opacity-0 transition-opacity group-hover:opacity-100' />
                                 <div className='relative flex flex-col gap-3 text-left'>
                                     <div className='flex items-center justify-between'>
                                         <div className='flex items-center gap-2'>
-                                            <div className='flex h-8 w-8 items-center justify-center rounded-lg bg-primary/20 text-primary'>
+                                            <div className='bg-primary/20 text-primary flex h-8 w-8 items-center justify-center rounded-lg'>
                                                 <Download className='h-4 w-4 animate-bounce' />
                                             </div>
-                                            <span className='text-xs font-bold uppercase tracking-widest text-primary/80'>
+                                            <span className='text-primary/80 text-xs font-bold tracking-widest uppercase'>
                                                 {t('files.messages.active_pull')}
                                             </span>
                                         </div>
@@ -1175,21 +1175,21 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                                                 e.stopPropagation();
                                                 cancelPull(pull.Identifier);
                                             }}
-                                            className='h-7 w-7 text-muted-foreground hover:text-red-500'
+                                            className='text-muted-foreground h-7 w-7 hover:text-red-500'
                                         >
                                             <X className='h-4 w-4' />
                                         </Button>
                                     </div>
                                     <div className='space-y-1.5'>
-                                        <div className='flex justify-between text-[10px] font-bold uppercase tracking-tighter text-white/40'>
+                                        <div className='flex justify-between text-[10px] font-bold tracking-tighter text-white/40 uppercase'>
                                             <span>
                                                 {t('files.messages.task_id', { id: pull.Identifier.slice(0, 8) })}...
                                             </span>
                                             <span className='text-primary'>{pull.Progress}%</span>
                                         </div>
-                                        <div className='h-1.5 w-full overflow-hidden rounded-full bg-white/5 border border-white/5'>
+                                        <div className='h-1.5 w-full overflow-hidden rounded-full border border-white/5 bg-white/5'>
                                             <div
-                                                className='h-full bg-linear-to-r from-primary to-primary-foreground transition-all duration-500 '
+                                                className='from-primary to-primary-foreground h-full bg-linear-to-r transition-all duration-500'
                                                 style={{ width: `${pull.Progress}%` }}
                                             />
                                         </div>
@@ -1232,13 +1232,13 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
             <input type='file' ref={folderInputRef} className='hidden' onChange={handleFileChange} />
 
             {isDragging && (
-                <div className='fixed inset-0 z-50 flex items-center justify-center bg-primary/20 backdrop-blur-md border-4 border-dashed border-primary animate-in fade-in zoom-in duration-300 pointer-events-none'>
-                    <div className='flex flex-col items-center gap-6 bg-background/80 p-12 rounded-3xl border border-primary/20 scale-110'>
-                        <div className='flex h-24 w-24 items-center justify-center rounded-3xl bg-primary text-primary-foreground  animate-bounce'>
+                <div className='bg-primary/20 border-primary animate-in fade-in zoom-in pointer-events-none fixed inset-0 z-50 flex items-center justify-center border-4 border-dashed backdrop-blur-md duration-300'>
+                    <div className='bg-background/80 border-primary/20 flex scale-110 flex-col items-center gap-6 rounded-3xl border p-12'>
+                        <div className='bg-primary text-primary-foreground flex h-24 w-24 animate-bounce items-center justify-center rounded-3xl'>
                             <Upload className='h-12 w-12' />
                         </div>
                         <div className='text-center'>
-                            <h2 className='text-3xl font-bold mb-2'>{t('files.messages.drop_to_upload')}</h2>
+                            <h2 className='mb-2 text-3xl font-bold'>{t('files.messages.drop_to_upload')}</h2>
                             <p className='text-muted-foreground'>
                                 {t('files.messages.drop_description')}{' '}
                                 <span className='text-primary font-mono'>{currentDirectory || '/'}</span>

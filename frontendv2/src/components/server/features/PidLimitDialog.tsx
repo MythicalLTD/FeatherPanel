@@ -64,14 +64,14 @@ export function PidLimitDialog({ isOpen, onClose, server, onRestarted }: PidLimi
             </DialogHeader>
 
             <div className='space-y-4 py-4'>
-                <div className='bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-4'>
+                <div className='rounded-lg border border-orange-200 bg-orange-50 p-4 dark:border-orange-800 dark:bg-orange-900/20'>
                     <p className='text-sm text-orange-800 dark:text-orange-200'>{t('features.pidLimit.explanation')}</p>
                 </div>
 
                 <div className='space-y-3'>
-                    <p className='text-sm text-muted-foreground'>{t('features.pidLimit.suggestions')}</p>
+                    <p className='text-muted-foreground text-sm'>{t('features.pidLimit.suggestions')}</p>
 
-                    <ul className='list-disc list-inside text-sm space-y-1 text-muted-foreground'>
+                    <ul className='text-muted-foreground list-inside list-disc space-y-1 text-sm'>
                         <li>{t('features.pidLimit.suggestion1')}</li>
                         <li>{t('features.pidLimit.suggestion2')}</li>
                         <li>{t('features.pidLimit.suggestion3')}</li>

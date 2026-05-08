@@ -245,14 +245,14 @@ export default function RateLimitsPage() {
                 actions={
                     <div className='flex gap-2'>
                         <Button variant='outline' onClick={fetchRateLimits} disabled={saving || loading}>
-                            <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                            <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
                             {t('admin.rate_limits.actions.refresh')}
                         </Button>
                         <Button onClick={handleSaveAll} disabled={saving || changedRoutes.size === 0}>
                             {saving ? (
-                                <RefreshCw className='w-4 h-4 mr-2 animate-spin' />
+                                <RefreshCw className='mr-2 h-4 w-4 animate-spin' />
                             ) : (
-                                <Save className='w-4 h-4 mr-2' />
+                                <Save className='mr-2 h-4 w-4' />
                             )}
                             {t('admin.rate_limits.actions.save_all')}
                         </Button>
@@ -273,8 +273,8 @@ export default function RateLimitsPage() {
             >
                 <div className='flex items-center justify-between p-2'>
                     <div className='flex flex-col gap-1'>
-                        <span className='font-medium text-base'>{t('admin.rate_limits.global.status_label')}</span>
-                        <span className='text-sm text-muted-foreground'>
+                        <span className='text-base font-medium'>{t('admin.rate_limits.global.status_label')}</span>
+                        <span className='text-muted-foreground text-sm'>
                             {t('admin.rate_limits.global.status_description')}
                         </span>
                     </div>
@@ -302,28 +302,28 @@ export default function RateLimitsPage() {
                     <table className='w-full'>
                         <thead>
                             <tr className='border-b border-white/5 text-left'>
-                                <th className='p-4 font-medium text-muted-foreground'>
+                                <th className='text-muted-foreground p-4 font-medium'>
                                     {t('admin.rate_limits.routes.table.route')}
                                 </th>
-                                <th className='p-4 font-medium text-muted-foreground w-32'>
+                                <th className='text-muted-foreground w-32 p-4 font-medium'>
                                     {t('admin.rate_limits.routes.table.status')}
                                 </th>
-                                <th className='p-4 font-medium text-muted-foreground w-24'>
+                                <th className='text-muted-foreground w-24 p-4 font-medium'>
                                     {t('admin.rate_limits.routes.table.per_second')}
                                 </th>
-                                <th className='p-4 font-medium text-muted-foreground w-24'>
+                                <th className='text-muted-foreground w-24 p-4 font-medium'>
                                     {t('admin.rate_limits.routes.table.per_minute')}
                                 </th>
-                                <th className='p-4 font-medium text-muted-foreground w-24'>
+                                <th className='text-muted-foreground w-24 p-4 font-medium'>
                                     {t('admin.rate_limits.routes.table.per_hour')}
                                 </th>
-                                <th className='p-4 font-medium text-muted-foreground w-24'>
+                                <th className='text-muted-foreground w-24 p-4 font-medium'>
                                     {t('admin.rate_limits.routes.table.per_day')}
                                 </th>
-                                <th className='p-4 font-medium text-muted-foreground w-40'>
+                                <th className='text-muted-foreground w-40 p-4 font-medium'>
                                     {t('admin.rate_limits.routes.table.namespace')}
                                 </th>
-                                <th className='p-4 font-medium text-muted-foreground text-right'>
+                                <th className='text-muted-foreground p-4 text-right font-medium'>
                                     {t('admin.rate_limits.routes.table.actions')}
                                 </th>
                             </tr>
@@ -331,7 +331,7 @@ export default function RateLimitsPage() {
                         <tbody>
                             {Object.keys(rateLimits).length === 0 ? (
                                 <tr>
-                                    <td colSpan={8} className='p-8 text-center text-muted-foreground'>
+                                    <td colSpan={8} className='text-muted-foreground p-8 text-center'>
                                         {t('admin.rate_limits.routes.table.empty')}
                                     </td>
                                 </tr>
@@ -339,7 +339,7 @@ export default function RateLimitsPage() {
                                 Object.entries(rateLimits).map(([route, config]) => (
                                     <tr
                                         key={route}
-                                        className='border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors'
+                                        className='border-b border-white/5 transition-colors last:border-0 hover:bg-white/5'
                                     >
                                         <td className='p-4 font-medium'>{route}</td>
                                         <td className='p-4'>
@@ -407,7 +407,7 @@ export default function RateLimitsPage() {
                                                     disabled={saving || !changedRoutes.has(route)}
                                                     onClick={() => handleSaveRoute(route)}
                                                 >
-                                                    <Save className='w-4 h-4' />
+                                                    <Save className='h-4 w-4' />
                                                 </Button>
                                                 <Button
                                                     size='sm'
@@ -415,7 +415,7 @@ export default function RateLimitsPage() {
                                                     disabled={saving}
                                                     onClick={() => handleResetRoute(route)}
                                                 >
-                                                    <RotateCcw className='w-4 h-4' />
+                                                    <RotateCcw className='h-4 w-4' />
                                                 </Button>
                                             </div>
                                         </td>

@@ -85,7 +85,7 @@ export function ServerCard({
         return (
             <div
                 className={cn(
-                    'flex flex-col sm:flex-row items-stretch sm:items-center gap-4 sm:gap-6 p-4 sm:p-5 md:p-6 bg-card/50 backdrop-blur-xl rounded-2xl border border-border/50 transition-all relative group',
+                    'bg-card/50 border-border/50 group relative flex flex-col items-stretch gap-4 rounded-2xl border p-4 backdrop-blur-xl transition-all sm:flex-row sm:items-center sm:gap-6 sm:p-5 md:p-6',
                     accessible ? 'hover:border-primary' : 'opacity-60',
                 )}
             >
@@ -101,24 +101,24 @@ export function ServerCard({
                 {server.spell?.banner && (
                     <Link
                         href={serverUrl}
-                        className='w-full sm:w-24 h-28 sm:h-16 rounded-lg overflow-hidden shrink-0 block cursor-pointer'
+                        className='block h-28 w-full shrink-0 cursor-pointer overflow-hidden rounded-lg sm:h-16 sm:w-24'
                     >
                         <div
-                            className='w-full h-full bg-cover bg-center'
+                            className='h-full w-full bg-cover bg-center'
                             style={{ backgroundImage: `url(${server.spell.banner})` }}
                         />
                     </Link>
                 )}
 
-                <Link href={serverUrl} className='flex-1 min-w-0 w-full block cursor-pointer'>
-                    <div className='flex flex-col gap-2 mb-1'>
-                        <div className='flex flex-wrap items-center gap-x-2 gap-y-1.5 min-w-0'>
-                            <h3 className='text-base sm:text-lg font-semibold truncate min-w-0 w-full sm:w-auto sm:max-w-[12rem] md:max-w-none flex-1'>
+                <Link href={serverUrl} className='block w-full min-w-0 flex-1 cursor-pointer'>
+                    <div className='mb-1 flex flex-col gap-2'>
+                        <div className='flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5'>
+                            <h3 className='w-full min-w-0 flex-1 truncate text-base font-semibold sm:w-auto sm:max-w-[12rem] sm:text-lg md:max-w-none'>
                                 {server.name}
                             </h3>
                             <div className='flex flex-wrap items-center gap-2'>
                                 {isSuspended ? (
-                                    <span className='px-2 py-0.5 bg-red-500/20 text-red-600 dark:text-red-400 text-[10px] sm:text-xs font-bold rounded-lg border border-red-500/30 uppercase tracking-wide'>
+                                    <span className='rounded-lg border border-red-500/30 bg-red-500/20 px-2 py-0.5 text-[10px] font-bold tracking-wide text-red-600 uppercase sm:text-xs dark:text-red-400'>
                                         {t('servers.status.suspended')}
                                     </span>
                                 ) : (
@@ -126,44 +126,44 @@ export function ServerCard({
                                 )}
                                 {isConnected && status === 'running' && !isSuspended && (
                                     <span
-                                        className='h-2 w-2 bg-green-500 rounded-full animate-pulse shrink-0'
+                                        className='h-2 w-2 shrink-0 animate-pulse rounded-full bg-green-500'
                                         title={t('servers.liveConnected')}
                                     />
                                 )}
                             </div>
                         </div>
                         {server.description ? (
-                            <p className='text-xs sm:text-sm text-muted-foreground line-clamp-2 wrap-break-word'>
+                            <p className='text-muted-foreground line-clamp-2 text-xs wrap-break-word sm:text-sm'>
                                 {server.description}
                             </p>
                         ) : null}
                     </div>
                 </Link>
 
-                <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between w-full sm:w-auto gap-3 sm:gap-4 mt-1 sm:mt-0 sm:shrink-0'>
+                <div className='mt-1 flex w-full flex-col gap-3 sm:mt-0 sm:w-auto sm:shrink-0 sm:flex-row sm:items-center sm:justify-between sm:gap-4'>
                     <Link
                         href={serverUrl}
-                        className='flex flex-wrap items-start gap-x-6 gap-y-2 cursor-pointer text-sm min-w-0'
+                        className='flex min-w-0 cursor-pointer flex-wrap items-start gap-x-6 gap-y-2 text-sm'
                     >
                         <div className='min-w-0'>
-                            <div className='text-muted-foreground text-[10px] sm:text-xs uppercase tracking-wider'>
+                            <div className='text-muted-foreground text-[10px] tracking-wider uppercase sm:text-xs'>
                                 {t('servers.node')}
                             </div>
-                            <div className='font-medium text-xs sm:text-sm truncate max-w-[10rem] sm:max-w-[14rem]'>
+                            <div className='max-w-[10rem] truncate text-xs font-medium sm:max-w-[14rem] sm:text-sm'>
                                 {server.node?.name}
                             </div>
                         </div>
                         <div className='min-w-0'>
-                            <div className='text-muted-foreground text-[10px] sm:text-xs uppercase tracking-wider'>
+                            <div className='text-muted-foreground text-[10px] tracking-wider uppercase sm:text-xs'>
                                 {t('servers.spell')}
                             </div>
-                            <div className='font-medium text-xs sm:text-sm truncate max-w-[10rem] sm:max-w-[14rem]'>
+                            <div className='max-w-[10rem] truncate text-xs font-medium sm:max-w-[14rem] sm:text-sm'>
                                 {server.spell?.name}
                             </div>
                         </div>
                     </Link>
 
-                    <div className='flex items-center gap-0.5 self-end sm:self-auto shrink-0'>
+                    <div className='flex shrink-0 items-center gap-0.5 self-end sm:self-auto'>
                         {showFavoriteToggle && onToggleFavorite ? (
                             <button
                                 type='button'
@@ -174,7 +174,7 @@ export function ServerCard({
                                     onToggleFavorite();
                                 }}
                                 className={cn(
-                                    'p-2 rounded-lg transition-colors focus:outline-none',
+                                    'rounded-lg p-2 transition-colors focus:outline-none',
                                     isFavorite
                                         ? 'text-amber-500 hover:bg-amber-500/10'
                                         : 'text-muted-foreground hover:bg-muted',
@@ -185,10 +185,10 @@ export function ServerCard({
                         ) : null}
                         <Menu as='div' className='relative'>
                             <MenuButton
-                                className='p-2 hover:bg-muted rounded-lg transition-colors focus:outline-none'
+                                className='hover:bg-muted rounded-lg p-2 transition-colors focus:outline-none'
                                 onClick={(e) => e.stopPropagation()}
                             >
-                                <MoreVertical className='h-5 w-5 text-muted-foreground' />
+                                <MoreVertical className='text-muted-foreground h-5 w-5' />
                             </MenuButton>
                             <Transition
                                 as={Fragment}
@@ -199,7 +199,7 @@ export function ServerCard({
                                 leaveFrom='transform opacity-100 scale-100'
                                 leaveTo='transform opacity-0 scale-95'
                             >
-                                <MenuItems className='absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-xl bg-popover border border-border focus:outline-none py-1'>
+                                <MenuItems className='bg-popover border-border absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-xl border py-1 focus:outline-none'>
                                     {server.folder_id ? (
                                         <MenuItem>
                                             {({ active }) => (
@@ -220,7 +220,7 @@ export function ServerCard({
                                         </MenuItem>
                                     ) : (
                                         <div className='px-1 py-1'>
-                                            <div className='px-3 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider'>
+                                            <div className='text-muted-foreground px-3 py-1 text-xs font-semibold tracking-wider uppercase'>
                                                 {t('servers.moveToFolder')}
                                             </div>
                                             {folders.map((folder) => (
@@ -232,7 +232,7 @@ export function ServerCard({
                                                                 onAssignFolder(folder.id);
                                                             }}
                                                             className={cn(
-                                                                'flex w-full items-center gap-2 px-4 py-2 text-sm rounded-lg',
+                                                                'flex w-full items-center gap-2 rounded-lg px-4 py-2 text-sm',
                                                                 active ? 'bg-muted' : '',
                                                             )}
                                                         >
@@ -243,7 +243,7 @@ export function ServerCard({
                                                 </MenuItem>
                                             ))}
                                             {folders.length === 0 && (
-                                                <div className='px-4 py-2 text-sm text-muted-foreground italic'>
+                                                <div className='text-muted-foreground px-4 py-2 text-sm italic'>
                                                     {t('servers.noFolders')}
                                                 </div>
                                             )}
@@ -261,7 +261,7 @@ export function ServerCard({
     return (
         <div
             className={cn(
-                'group relative bg-card/50 backdrop-blur-xl rounded-2xl border border-border/50 overflow-hidden transition-all',
+                'group bg-card/50 border-border/50 relative overflow-hidden rounded-2xl border backdrop-blur-xl transition-all',
                 accessible ? 'hover:border-primary' : 'opacity-60',
             )}
         >
@@ -279,7 +279,7 @@ export function ServerCard({
                             // eslint-disable-next-line @typescript-eslint/no-unused-expressions
                             onToggleSelect && onToggleSelect();
                         }}
-                        className='h-4 w-4 bg-card/80'
+                        className='bg-card/80 h-4 w-4'
                     />
                 </div>
             )}
@@ -290,29 +290,29 @@ export function ServerCard({
                             className='absolute inset-0 bg-cover bg-center transition-transform duration-300 group-hover:scale-105'
                             style={{ backgroundImage: `url(${server.spell.banner})` }}
                         />
-                        <div className='absolute inset-0 bg-linear-to-t from-card via-card/60 to-transparent' />
+                        <div className='from-card via-card/60 absolute inset-0 bg-linear-to-t to-transparent' />
                     </div>
                 )}
                 {isConnected && status === 'running' && (
                     <div className='absolute top-3 left-3'>
-                        <span className='px-2 py-1 bg-green-500/20 backdrop-blur-sm text-green-100 text-xs rounded-lg font-medium flex items-center gap-1.5'>
-                            <span className='h-1.5 w-1.5 bg-green-400 rounded-full animate-pulse' />
+                        <span className='flex items-center gap-1.5 rounded-lg bg-green-500/20 px-2 py-1 text-xs font-medium text-green-100 backdrop-blur-sm'>
+                            <span className='h-1.5 w-1.5 animate-pulse rounded-full bg-green-400' />
                             {t('servers.live')}
                         </span>
                     </div>
                 )}
             </Link>
 
-            <div className='p-4 sm:p-6 space-y-4'>
+            <div className='space-y-4 p-4 sm:p-6'>
                 <div className='flex items-start justify-between gap-4'>
-                    <Link href={serverUrl} className='flex-1 min-w-0 block cursor-pointer'>
-                        <h3 className='text-xl font-bold truncate mb-1'>{server.name}</h3>
-                        <p className='text-sm text-muted-foreground line-clamp-2'>
+                    <Link href={serverUrl} className='block min-w-0 flex-1 cursor-pointer'>
+                        <h3 className='mb-1 truncate text-xl font-bold'>{server.name}</h3>
+                        <p className='text-muted-foreground line-clamp-2 text-sm'>
                             {server.description || t('servers.noDescription')}
                         </p>
                     </Link>
 
-                    <div className='flex items-center gap-0.5 shrink-0'>
+                    <div className='flex shrink-0 items-center gap-0.5'>
                         {showFavoriteToggle && onToggleFavorite ? (
                             <button
                                 type='button'
@@ -323,7 +323,7 @@ export function ServerCard({
                                     onToggleFavorite();
                                 }}
                                 className={cn(
-                                    'p-2 rounded-lg transition-colors focus:outline-none',
+                                    'rounded-lg p-2 transition-colors focus:outline-none',
                                     isFavorite
                                         ? 'text-amber-500 hover:bg-amber-500/10'
                                         : 'text-muted-foreground hover:bg-muted',
@@ -334,10 +334,10 @@ export function ServerCard({
                         ) : null}
                         <Menu as='div' className='relative'>
                             <MenuButton
-                                className='p-2 hover:bg-muted rounded-lg transition-colors focus:outline-none'
+                                className='hover:bg-muted rounded-lg p-2 transition-colors focus:outline-none'
                                 onClick={(e) => e.stopPropagation()}
                             >
-                                <MoreVertical className='h-5 w-5 text-muted-foreground' />
+                                <MoreVertical className='text-muted-foreground h-5 w-5' />
                             </MenuButton>
                             <Transition
                                 as={Fragment}
@@ -348,7 +348,7 @@ export function ServerCard({
                                 leaveFrom='transform opacity-100 scale-100'
                                 leaveTo='transform opacity-0 scale-95'
                             >
-                                <MenuItems className='absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-xl bg-popover border border-border focus:outline-none py-1'>
+                                <MenuItems className='bg-popover border-border absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-xl border py-1 focus:outline-none'>
                                     {server.folder_id ? (
                                         <MenuItem>
                                             {({ active }) => (
@@ -369,7 +369,7 @@ export function ServerCard({
                                         </MenuItem>
                                     ) : (
                                         <div className='px-1 py-1'>
-                                            <div className='px-3 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider'>
+                                            <div className='text-muted-foreground px-3 py-1 text-xs font-semibold tracking-wider uppercase'>
                                                 {t('servers.moveToFolder')}
                                             </div>
                                             {folders.map((folder) => (
@@ -381,7 +381,7 @@ export function ServerCard({
                                                                 onAssignFolder(folder.id);
                                                             }}
                                                             className={cn(
-                                                                'flex w-full items-center gap-2 px-4 py-2 text-sm rounded-lg',
+                                                                'flex w-full items-center gap-2 rounded-lg px-4 py-2 text-sm',
                                                                 active ? 'bg-muted' : '',
                                                             )}
                                                         >
@@ -392,7 +392,7 @@ export function ServerCard({
                                                 </MenuItem>
                                             ))}
                                             {folders.length === 0 && (
-                                                <div className='px-4 py-2 text-sm text-muted-foreground italic'>
+                                                <div className='text-muted-foreground px-4 py-2 text-sm italic'>
                                                     {t('servers.noFolders')}
                                                 </div>
                                             )}
@@ -404,33 +404,33 @@ export function ServerCard({
                     </div>
                 </div>
 
-                <Link href={serverUrl} className='flex flex-wrap items-center gap-2 cursor-pointer'>
+                <Link href={serverUrl} className='flex cursor-pointer flex-wrap items-center gap-2'>
                     {isSuspended ? (
-                        <span className='px-2 py-1 bg-red-500/20 text-red-600 dark:text-red-400 text-xs font-bold rounded-lg border border-red-500/30 uppercase'>
+                        <span className='rounded-lg border border-red-500/30 bg-red-500/20 px-2 py-1 text-xs font-bold text-red-600 uppercase dark:text-red-400'>
                             {t('servers.status.suspended')}
                         </span>
                     ) : (
                         <StatusBadge status={status} t={t} />
                     )}
                     {server.is_subuser && (
-                        <span className='px-2 py-1 bg-blue-500/10 text-blue-500 text-xs font-medium rounded-lg'>
+                        <span className='rounded-lg bg-blue-500/10 px-2 py-1 text-xs font-medium text-blue-500'>
                             {t('servers.subuser')}
                         </span>
                     )}
                 </Link>
 
-                <Link href={serverUrl} className='grid grid-cols-1 min-[400px]:grid-cols-2 gap-3 pt-2 cursor-pointer'>
-                    <div className='text-sm min-w-0'>
+                <Link href={serverUrl} className='grid cursor-pointer grid-cols-1 gap-3 pt-2 min-[400px]:grid-cols-2'>
+                    <div className='min-w-0 text-sm'>
                         <div className='text-muted-foreground mb-1 text-xs'>{t('servers.node')}</div>
-                        <div className='font-medium truncate'>{server.node?.name || 'N/A'}</div>
+                        <div className='truncate font-medium'>{server.node?.name || 'N/A'}</div>
                     </div>
-                    <div className='text-sm min-w-0'>
+                    <div className='min-w-0 text-sm'>
                         <div className='text-muted-foreground mb-1 text-xs'>{t('servers.spell')}</div>
-                        <div className='font-medium truncate'>{server.spell?.name || 'N/A'}</div>
+                        <div className='truncate font-medium'>{server.spell?.name || 'N/A'}</div>
                     </div>
                 </Link>
 
-                <Link href={serverUrl} className='space-y-2 sm:space-y-2.5 pt-2 block cursor-pointer min-w-0'>
+                <Link href={serverUrl} className='block min-w-0 cursor-pointer space-y-2 pt-2 sm:space-y-2.5'>
                     <ResourceBar
                         label={t('servers.memoryShort')}
                         used={memory}

@@ -102,12 +102,12 @@ function DashboardBlockChrome({
     return (
         <div className='relative'>
             {isCustomizing && (
-                <div className='absolute -top-2 -right-2 z-20 flex flex-wrap items-center justify-end gap-1 max-w-[min(100%,12rem)]'>
+                <div className='absolute -top-2 -right-2 z-20 flex max-w-[min(100%,12rem)] flex-wrap items-center justify-end gap-1'>
                     <button
                         type='button'
                         onClick={() => onToggleHidden(blockId)}
                         title={hidden ? t('common.show') : t('common.hide')}
-                        className='p-2 rounded-full bg-background border border-border hover:scale-105 transition-transform text-muted-foreground shadow-sm'
+                        className='bg-background border-border text-muted-foreground rounded-full border p-2 shadow-sm transition-transform hover:scale-105'
                     >
                         {hidden ? (
                             <Eye className='h-3.5 w-3.5 sm:h-4 sm:w-4' />
@@ -122,7 +122,7 @@ function DashboardBlockChrome({
                                 disabled={!moveControls.canUp}
                                 onClick={moveControls.onUp}
                                 title={moveUpLabel}
-                                className='p-2 rounded-full bg-background border border-border hover:scale-105 transition-transform text-muted-foreground shadow-sm disabled:opacity-30 disabled:hover:scale-100'
+                                className='bg-background border-border text-muted-foreground rounded-full border p-2 shadow-sm transition-transform hover:scale-105 disabled:opacity-30 disabled:hover:scale-100'
                             >
                                 <ChevronUp className='h-3.5 w-3.5 sm:h-4 sm:w-4' />
                             </button>
@@ -131,7 +131,7 @@ function DashboardBlockChrome({
                                 disabled={!moveControls.canDown}
                                 onClick={moveControls.onDown}
                                 title={moveDownLabel}
-                                className='p-2 rounded-full bg-background border border-border hover:scale-105 transition-transform text-muted-foreground shadow-sm disabled:opacity-30 disabled:hover:scale-100'
+                                className='bg-background border-border text-muted-foreground rounded-full border p-2 shadow-sm transition-transform hover:scale-105 disabled:opacity-30 disabled:hover:scale-100'
                             >
                                 <ChevronDown className='h-3.5 w-3.5 sm:h-4 sm:w-4' />
                             </button>
@@ -142,14 +142,14 @@ function DashboardBlockChrome({
                             type='button'
                             onClick={onRemoveFromLayout}
                             title={removeLabel}
-                            className='p-2 rounded-full bg-background border border-destructive/40 text-destructive hover:scale-105 transition-transform shadow-sm'
+                            className='bg-background border-destructive/40 text-destructive rounded-full border p-2 shadow-sm transition-transform hover:scale-105'
                         >
                             <X className='h-3.5 w-3.5 sm:h-4 sm:w-4' />
                         </button>
                     )}
                 </div>
             )}
-            <div className={cn(hidden && isCustomizing && 'opacity-30 grayscale rounded-xl')}>{children}</div>
+            <div className={cn(hidden && isCustomizing && 'rounded-xl opacity-30 grayscale')}>{children}</div>
         </div>
     );
 }
@@ -347,8 +347,8 @@ export default function DashboardPage() {
         <div className='space-y-6'>
             <WidgetRenderer widgets={getWidgets('dashboard', 'before-server-list')} />
             <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4'>
-                <div className='flex items-center justify-between gap-3 min-w-0'>
-                    <h2 className='text-lg sm:text-xl font-bold truncate'>{t('dashboard.resources.title')}</h2>
+                <div className='flex min-w-0 items-center justify-between gap-3'>
+                    <h2 className='truncate text-lg font-bold sm:text-xl'>{t('dashboard.resources.title')}</h2>
                     <Link
                         href={
                             resourceFilter === 'all'
@@ -357,20 +357,20 @@ export default function DashboardPage() {
                                   ? '/dashboard/servers'
                                   : '/dashboard/vms'
                         }
-                        className='text-xs sm:text-sm font-medium text-primary hover:text-primary/80 transition-colors shrink-0 whitespace-nowrap'
+                        className='text-primary hover:text-primary/80 shrink-0 text-xs font-medium whitespace-nowrap transition-colors sm:text-sm'
                     >
                         {t('dashboard.resources.view_all')} &rarr;
                     </Link>
                 </div>
-                <div className='w-full min-w-0 overflow-x-auto overscroll-x-contain pb-0.5 -mx-0.5 px-0.5 sm:mx-0 sm:px-0 sm:w-auto sm:overflow-visible'>
-                    <div className='inline-flex sm:flex items-center gap-0.5 bg-background/30 rounded-lg p-1 border border-border/50 w-max max-w-full sm:w-auto'>
+                <div className='-mx-0.5 w-full min-w-0 overflow-x-auto overscroll-x-contain px-0.5 pb-0.5 sm:mx-0 sm:w-auto sm:overflow-visible sm:px-0'>
+                    <div className='bg-background/30 border-border/50 inline-flex w-max max-w-full items-center gap-0.5 rounded-lg border p-1 sm:flex sm:w-auto'>
                         {(['all', 'servers', 'vds'] as const).map((filter) => (
                             <button
                                 key={filter}
                                 type='button'
                                 onClick={() => setResourceFilter(filter)}
                                 className={cn(
-                                    'px-3 py-2 sm:px-4 rounded-md text-xs sm:text-sm font-medium transition-all whitespace-nowrap shrink-0',
+                                    'shrink-0 rounded-md px-3 py-2 text-xs font-medium whitespace-nowrap transition-all sm:px-4 sm:text-sm',
                                     resourceFilter === filter
                                         ? 'bg-primary text-primary-foreground shadow-md'
                                         : 'text-muted-foreground hover:text-foreground hover:bg-background/50',
@@ -389,7 +389,7 @@ export default function DashboardPage() {
 
             {loadingServers || loadingVms ? (
                 <div className='flex items-center justify-center py-12'>
-                    <Server className='h-8 w-8 animate-spin text-muted-foreground' />
+                    <Server className='text-muted-foreground h-8 w-8 animate-spin' />
                 </div>
             ) : (
                 <>
@@ -414,8 +414,8 @@ export default function DashboardPage() {
 
                         if (!showFavoriteBlock && otherResources.length === 0) {
                             return (
-                                <div className='rounded-xl border border-border/50 bg-card/50 backdrop-blur-xl p-12 text-center'>
-                                    <Server className='h-12 w-12 text-muted-foreground/50 mx-auto mb-3' />
+                                <div className='border-border/50 bg-card/50 rounded-xl border p-12 text-center backdrop-blur-xl'>
+                                    <Server className='text-muted-foreground/50 mx-auto mb-3 h-12 w-12' />
                                     <p className='text-muted-foreground font-medium'>
                                         {resourceFilter === 'all'
                                             ? t('dashboard.resources.no_resources')
@@ -423,7 +423,7 @@ export default function DashboardPage() {
                                               ? t('dashboard.resources.no_servers')
                                               : t('dashboard.resources.no_vms')}
                                     </p>
-                                    <p className='text-sm text-muted-foreground/70 mt-1'>
+                                    <p className='text-muted-foreground/70 mt-1 text-sm'>
                                         {t('dashboard.resources.create_first')}
                                     </p>
                                 </div>
@@ -449,12 +449,12 @@ export default function DashboardPage() {
                             <div className='space-y-6'>
                                 {showFavoriteBlock ? (
                                     <div className='space-y-3'>
-                                        <div className='flex items-center justify-between gap-3 min-w-0'>
-                                            <h3 className='text-sm font-semibold text-foreground truncate'>
+                                        <div className='flex min-w-0 items-center justify-between gap-3'>
+                                            <h3 className='text-foreground truncate text-sm font-semibold'>
                                                 {t('dashboard.favorite_servers.title')}
                                             </h3>
                                         </div>
-                                        <div className='space-y-3 stagger-children'>
+                                        <div className='stagger-children space-y-3'>
                                             {favoriteServerList.map((s) => (
                                                 <div key={`fav-${s.uuid}`} className='stagger-child'>
                                                     <ServerCard {...serverCardProps(s)} />
@@ -464,7 +464,7 @@ export default function DashboardPage() {
                                     </div>
                                 ) : null}
                                 {otherResources.length > 0 ? (
-                                    <div className='space-y-4 stagger-children'>
+                                    <div className='stagger-children space-y-4'>
                                         {otherResources.map((resource, idx) => (
                                             <div key={`${resource.type}-${idx}`} className='stagger-child'>
                                                 {resource.type === 'server' ? (
@@ -491,30 +491,30 @@ export default function DashboardPage() {
     const heroSection = (
         <div
             className={cn(
-                'relative overflow-hidden rounded-2xl bg-linear-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20 p-4 sm:p-6 md:p-8 transition-[opacity,filter]',
+                'from-primary/10 via-primary/5 border-primary/20 relative overflow-hidden rounded-2xl border bg-linear-to-br to-transparent p-4 transition-[opacity,filter] sm:p-6 md:p-8',
                 isCustomizing && heroHidden && 'opacity-30 grayscale',
             )}
         >
             <div className='relative z-10 flex flex-col gap-4 sm:gap-5'>
                 <div className='flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between lg:gap-6'>
                     <div className='min-w-0 flex-1 space-y-2'>
-                        <h1 className='text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-foreground'>
+                        <h1 className='text-foreground text-2xl font-bold tracking-tight sm:text-3xl md:text-4xl'>
                             {t('dashboard.welcome')}
                             {user ? `, ${user.first_name}` : ''}
                         </h1>
-                        <p className='text-sm sm:text-base md:text-lg text-muted-foreground max-w-2xl'>
+                        <p className='text-muted-foreground max-w-2xl text-sm sm:text-base md:text-lg'>
                             {t('dashboard.subtitle')}
                         </p>
                     </div>
 
-                    <div className='flex flex-col gap-2 w-full lg:w-auto lg:max-w-md lg:items-end lg:shrink-0'>
+                    <div className='flex w-full flex-col gap-2 lg:w-auto lg:max-w-md lg:shrink-0 lg:items-end'>
                         {isCustomizing && (
-                            <div className='flex flex-wrap items-center justify-end gap-2 w-full'>
+                            <div className='flex w-full flex-wrap items-center justify-end gap-2'>
                                 <button
                                     type='button'
                                     onClick={() => toggleHidden('hero')}
                                     title={heroHidden ? t('common.show') : t('common.hide')}
-                                    className='inline-flex items-center gap-1.5 rounded-lg border border-border/60 bg-background/70 px-2.5 py-2 text-xs font-medium text-muted-foreground hover:bg-background hover:text-foreground shadow-sm'
+                                    className='border-border/60 bg-background/70 text-muted-foreground hover:bg-background hover:text-foreground inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-2 text-xs font-medium shadow-sm'
                                 >
                                     {heroHidden ? <Eye className='h-3.5 w-3.5' /> : <EyeOff className='h-3.5 w-3.5' />}
                                     <span className='hidden sm:inline'>{t('dashboard.layout.block_labels.hero')}</span>
@@ -522,7 +522,7 @@ export default function DashboardPage() {
                                 <button
                                     type='button'
                                     onClick={toggleColumnsReversed}
-                                    className='inline-flex items-center gap-1.5 rounded-lg border border-border/60 bg-background/70 px-2.5 py-2 text-xs font-medium text-muted-foreground hover:bg-background hover:text-foreground shadow-sm'
+                                    className='border-border/60 bg-background/70 text-muted-foreground hover:bg-background hover:text-foreground inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-2 text-xs font-medium shadow-sm'
                                 >
                                     <ArrowLeftRight className='h-3.5 w-3.5 shrink-0' />
                                     <span className='hidden sm:inline'>{t('dashboard.layout.swap_columns')}</span>
@@ -543,7 +543,7 @@ export default function DashboardPage() {
                                     type='button'
                                     onClick={resetLayout}
                                     title={t('dashboard.layout.reset')}
-                                    className='inline-flex items-center gap-1.5 rounded-lg border border-border/60 bg-background/70 px-2.5 py-2 text-xs font-medium text-muted-foreground hover:bg-background hover:text-foreground shadow-sm'
+                                    className='border-border/60 bg-background/70 text-muted-foreground hover:bg-background hover:text-foreground inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-2 text-xs font-medium shadow-sm'
                                 >
                                     <RotateCcw className='h-3.5 w-3.5' />
                                     <span className='hidden sm:inline'>{t('dashboard.layout.reset')}</span>
@@ -554,11 +554,11 @@ export default function DashboardPage() {
                             type='button'
                             onClick={() => setIsCustomizing(!isCustomizing)}
                             className={cn(
-                                'inline-flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium shadow-sm transition-colors w-full sm:w-auto lg:ml-auto',
+                                'inline-flex w-full items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium shadow-sm transition-colors sm:w-auto lg:ml-auto',
                                 'border-primary/25 bg-background/65 text-foreground backdrop-blur-sm',
                                 'hover:bg-background/90 hover:border-primary/40',
                                 isCustomizing &&
-                                    'border-amber-500/45 bg-amber-500/10 text-amber-950 dark:text-amber-100 dark:border-amber-500/35',
+                                    'border-amber-500/45 bg-amber-500/10 text-amber-950 dark:border-amber-500/35 dark:text-amber-100',
                             )}
                         >
                             <LayoutDashboard className='h-4 w-4 shrink-0' />
@@ -572,13 +572,13 @@ export default function DashboardPage() {
                 </div>
             </div>
 
-            <div className='absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl z-0 pointer-events-none' />
-            <div className='absolute bottom-0 left-0 w-48 h-48 bg-primary/5 rounded-full blur-3xl z-0 pointer-events-none' />
+            <div className='bg-primary/5 pointer-events-none absolute top-0 right-0 z-0 h-64 w-64 rounded-full blur-3xl' />
+            <div className='bg-primary/5 pointer-events-none absolute bottom-0 left-0 z-0 h-48 w-48 rounded-full blur-3xl' />
         </div>
     );
 
     const profileBlock = user && (
-        <div className='rounded-xl border border-border/50 bg-card/50 backdrop-blur-xl p-6'>
+        <div className='border-border/50 bg-card/50 rounded-xl border p-6 backdrop-blur-xl'>
             <div className='flex items-center gap-4'>
                 {user.avatar ? (
                     <Image
@@ -587,23 +587,23 @@ export default function DashboardPage() {
                         width={64}
                         height={64}
                         unoptimized
-                        className='h-16 w-16 rounded-full border-2 border-primary/20 object-cover'
+                        className='border-primary/20 h-16 w-16 rounded-full border-2 object-cover'
                     />
                 ) : (
-                    <div className='h-16 w-16 rounded-full bg-linear-to-br from-primary/20 to-primary/10 border-2 border-primary/20 flex items-center justify-center'>
-                        <span className='text-2xl font-semibold text-primary'>
+                    <div className='from-primary/20 to-primary/10 border-primary/20 flex h-16 w-16 items-center justify-center rounded-full border-2 bg-linear-to-br'>
+                        <span className='text-primary text-2xl font-semibold'>
                             {`${user.first_name?.[0] || ''}${user.last_name?.[0] || ''}`.toUpperCase()}
                         </span>
                     </div>
                 )}
-                <div className='flex-1 min-w-0'>
-                    <h2 className='text-xl font-semibold text-foreground truncate mb-1'>
+                <div className='min-w-0 flex-1'>
+                    <h2 className='text-foreground mb-1 truncate text-xl font-semibold'>
                         {user.first_name} {user.last_name}
                     </h2>
                     {user.role && (
                         <div className='mb-1'>
                             <span
-                                className='inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold'
+                                className='inline-flex items-center rounded-md px-2.5 py-0.5 text-xs font-semibold'
                                 style={{
                                     backgroundColor: `${user.role.color}20`,
                                     color: user.role.color,
@@ -614,19 +614,19 @@ export default function DashboardPage() {
                             </span>
                         </div>
                     )}
-                    <p className='text-sm text-muted-foreground truncate'>@{user.username}</p>
+                    <p className='text-muted-foreground truncate text-sm'>@{user.username}</p>
                 </div>
             </div>
         </div>
     );
 
     const activityBlock = (
-        <div className='rounded-xl border border-border/50 bg-card/50 backdrop-blur-xl p-6'>
-            <div className='flex items-center justify-between mb-6'>
+        <div className='border-border/50 bg-card/50 rounded-xl border p-6 backdrop-blur-xl'>
+            <div className='mb-6 flex items-center justify-between'>
                 <h2 className='text-lg font-bold'>{t('dashboard.activity.title')}</h2>
                 <Link
                     href='/dashboard/account?tab=activity'
-                    className='text-xs font-medium text-primary hover:text-primary/80 transition-colors'
+                    className='text-primary hover:text-primary/80 text-xs font-medium transition-colors'
                 >
                     {t('dashboard.activity.view_all')} &rarr;
                 </Link>
@@ -634,14 +634,14 @@ export default function DashboardPage() {
 
             {loadingActivity ? (
                 <div className='flex items-center justify-center py-8'>
-                    <Clock className='h-6 w-6 animate-spin text-muted-foreground' />
+                    <Clock className='text-muted-foreground h-6 w-6 animate-spin' />
                 </div>
             ) : activities.length > 0 ? (
                 <ActivityFeed activities={activities} formatDate={formatDate} />
             ) : (
-                <div className='text-center py-8'>
-                    <Clock className='h-10 w-10 text-muted-foreground/50 mx-auto mb-3' />
-                    <p className='text-sm text-muted-foreground'>{t('dashboard.activity.no_activity')}</p>
+                <div className='py-8 text-center'>
+                    <Clock className='text-muted-foreground/50 mx-auto mb-3 h-10 w-10' />
+                    <p className='text-muted-foreground text-sm'>{t('dashboard.activity.no_activity')}</p>
                 </div>
             )}
         </div>
@@ -697,7 +697,7 @@ export default function DashboardPage() {
                                 <TicketList t={t} />
                             </div>
                         ) : (
-                            <p className='text-sm text-muted-foreground rounded-lg border border-dashed border-border/60 p-4'>
+                            <p className='text-muted-foreground border-border/60 rounded-lg border border-dashed p-4 text-sm'>
                                 {t('dashboard.layout.feature_disabled')}
                             </p>
                         )}
@@ -714,7 +714,7 @@ export default function DashboardPage() {
                                 <KnowledgeBaseList t={t} />
                             </div>
                         ) : (
-                            <p className='text-sm text-muted-foreground rounded-lg border border-dashed border-border/60 p-4'>
+                            <p className='text-muted-foreground border-border/60 rounded-lg border border-dashed p-4 text-sm'>
                                 {t('dashboard.layout.feature_disabled')}
                             </p>
                         )}
@@ -765,15 +765,15 @@ export default function DashboardPage() {
 
     const availablePanel =
         isCustomizing && (leftAvailable.length > 0 || rightAvailable.length > 0) ? (
-            <div className='rounded-xl border border-dashed border-primary/30 bg-primary/5 p-4 space-y-3'>
-                <p className='text-sm font-medium text-foreground'>{t('dashboard.layout.available_widgets')}</p>
+            <div className='border-primary/30 bg-primary/5 space-y-3 rounded-xl border border-dashed p-4'>
+                <p className='text-foreground text-sm font-medium'>{t('dashboard.layout.available_widgets')}</p>
                 <div className='flex flex-wrap gap-2'>
                     {leftAvailable.map((id) => (
                         <button
                             key={id}
                             type='button'
                             onClick={() => addToLeft(id)}
-                            className='text-xs px-3 py-1.5 rounded-lg bg-background border border-border hover:border-primary/40 transition-colors'
+                            className='bg-background border-border hover:border-primary/40 rounded-lg border px-3 py-1.5 text-xs transition-colors'
                         >
                             {blockLabel(id)} — {t('dashboard.layout.add_to_main')}
                         </button>
@@ -783,7 +783,7 @@ export default function DashboardPage() {
                             key={id}
                             type='button'
                             onClick={() => addToRight(id)}
-                            className='text-xs px-3 py-1.5 rounded-lg bg-background border border-border hover:border-primary/40 transition-colors'
+                            className='bg-background border-border hover:border-primary/40 rounded-lg border px-3 py-1.5 text-xs transition-colors'
                         >
                             {blockLabel(id)} — {t('dashboard.layout.add_to_side')}
                         </button>
@@ -793,7 +793,7 @@ export default function DashboardPage() {
         ) : null;
 
     const mainColumn = (
-        <div className={cn('lg:col-span-2 space-y-6 md:space-y-8', !columnsReversed ? 'lg:order-1' : 'lg:order-2')}>
+        <div className={cn('space-y-6 md:space-y-8 lg:col-span-2', !columnsReversed ? 'lg:order-1' : 'lg:order-2')}>
             {leftOrder.map((id) => {
                 const node = renderLeftBlock(id);
                 if (!node) return null;
@@ -842,7 +842,7 @@ export default function DashboardPage() {
                 </div>
             )}
 
-            <div className='grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8'>
+            <div className='grid grid-cols-1 gap-4 md:gap-6 lg:grid-cols-3 lg:gap-8'>
                 {mainColumn}
                 {sideColumn}
             </div>

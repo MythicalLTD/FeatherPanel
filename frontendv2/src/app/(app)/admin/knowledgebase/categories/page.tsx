@@ -284,7 +284,7 @@ export default function KnowledgeBaseCategoriesPage() {
                             setCreateOpen(true);
                         }}
                     >
-                        <Plus className='h-4 w-4 mr-2' />
+                        <Plus className='mr-2 h-4 w-4' />
                         {t('admin.knowledgebase.categories.create')}
                     </Button>
                 }
@@ -292,12 +292,12 @@ export default function KnowledgeBaseCategoriesPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-knowledgebase-categories', 'after-header')} />
 
-            <div className='flex flex-col sm:flex-row gap-4 items-center bg-card/40 backdrop-blur-md p-4 rounded-2xl shadow-sm'>
-                <div className='relative flex-1 group w-full'>
-                    <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
+            <div className='bg-card/40 flex flex-col items-center gap-4 rounded-2xl p-4 shadow-sm backdrop-blur-md sm:flex-row'>
+                <div className='group relative w-full flex-1'>
+                    <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
                     <Input
                         placeholder={t('admin.knowledgebase.categories.search_placeholder')}
-                        className='pl-10 h-11'
+                        className='h-11 pl-10'
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
@@ -307,7 +307,7 @@ export default function KnowledgeBaseCategoriesPage() {
             <WidgetRenderer widgets={getWidgets('admin-knowledgebase-categories', 'before-list')} />
 
             {pagination.totalPages > 1 && !loading && (
-                <div className='flex items-center justify-between gap-4 py-3 px-4 rounded-xl border border-border bg-card/50 mb-4'>
+                <div className='border-border bg-card/50 mb-4 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
                     <Button
                         variant='outline'
                         size='sm'
@@ -358,7 +358,7 @@ export default function KnowledgeBaseCategoriesPage() {
                     {categories.map((category) => {
                         const IconComponent = ({ className }: { className?: string }) => (
                             <div
-                                className={`flex items-center justify-center rounded-xl bg-primary/10 overflow-hidden ${className}`}
+                                className={`bg-primary/10 flex items-center justify-center overflow-hidden rounded-xl ${className}`}
                             >
                                 {category.icon ? (
                                     <Image
@@ -370,7 +370,7 @@ export default function KnowledgeBaseCategoriesPage() {
                                         unoptimized
                                     />
                                 ) : (
-                                    <BookOpen className='h-1/2 w-1/2 text-primary' />
+                                    <BookOpen className='text-primary h-1/2 w-1/2' />
                                 )}
                             </div>
                         );
@@ -451,7 +451,7 @@ export default function KnowledgeBaseCategoriesPage() {
             )}
 
             {pagination.totalPages > 1 && (
-                <div className='flex items-center justify-center gap-2 mt-8'>
+                <div className='mt-8 flex items-center justify-center gap-2'>
                     <Button
                         variant='outline'
                         size='icon'
@@ -476,26 +476,26 @@ export default function KnowledgeBaseCategoriesPage() {
                 </div>
             )}
 
-            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-10'>
+            <div className='grid grid-cols-1 gap-6 pt-10 md:grid-cols-2 lg:grid-cols-3'>
                 <PageCard title={t('admin.knowledgebase.help.managing.title')} icon={Layout}>
-                    <p className='text-sm text-muted-foreground leading-relaxed'>
+                    <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.knowledgebase.help.managing.description')}
                     </p>
                 </PageCard>
                 <PageCard title={t('admin.knowledgebase.help.content.title')} icon={Info}>
-                    <p className='text-sm text-muted-foreground leading-relaxed'>
+                    <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.knowledgebase.help.content.description')}
                     </p>
                 </PageCard>
                 <PageCard title={t('admin.knowledgebase.help.attachments.title')} icon={Shield} variant='danger'>
-                    <p className='text-sm text-muted-foreground leading-relaxed'>
+                    <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.knowledgebase.help.attachments.description')}
                     </p>
                 </PageCard>
             </div>
 
             <Sheet open={createOpen} onOpenChange={setCreateOpen}>
-                <div className='p-6 h-full flex flex-col'>
+                <div className='flex h-full flex-col p-6'>
                     <SheetHeader>
                         <SheetTitle>{t('admin.knowledgebase.categories.form.create_title')}</SheetTitle>
                         <SheetDescription>
@@ -503,7 +503,7 @@ export default function KnowledgeBaseCategoriesPage() {
                         </SheetDescription>
                     </SheetHeader>
 
-                    <form onSubmit={handleCreate} className='space-y-4 mt-6 flex-1'>
+                    <form onSubmit={handleCreate} className='mt-6 flex-1 space-y-4'>
                         <div className='space-y-2'>
                             <Label htmlFor='create-name'>{t('admin.knowledgebase.categories.form.name')}</Label>
                             <Input
@@ -517,7 +517,7 @@ export default function KnowledgeBaseCategoriesPage() {
                         <div className='space-y-2'>
                             <Label htmlFor='create-icon'>{t('admin.knowledgebase.categories.form.icon')}</Label>
                             <div className='flex items-center gap-4'>
-                                <div className='h-16 w-16 rounded-xl bg-primary/10 flex items-center justify-center overflow-hidden border border-border/50'>
+                                <div className='bg-primary/10 border-border/50 flex h-16 w-16 items-center justify-center overflow-hidden rounded-xl border'>
                                     {iconPreview ? (
                                         <Image
                                             src={iconPreview}
@@ -528,7 +528,7 @@ export default function KnowledgeBaseCategoriesPage() {
                                             unoptimized
                                         />
                                     ) : (
-                                        <ImageIcon className='h-6 w-6 text-muted-foreground' />
+                                        <ImageIcon className='text-muted-foreground h-6 w-6' />
                                     )}
                                 </div>
                                 <Button
@@ -583,7 +583,7 @@ export default function KnowledgeBaseCategoriesPage() {
             </Sheet>
 
             <Sheet open={editOpen} onOpenChange={setEditOpen}>
-                <div className='p-6 h-full flex flex-col'>
+                <div className='flex h-full flex-col p-6'>
                     <SheetHeader>
                         <SheetTitle>{t('admin.knowledgebase.categories.form.edit_title')}</SheetTitle>
                         <SheetDescription>
@@ -593,7 +593,7 @@ export default function KnowledgeBaseCategoriesPage() {
                         </SheetDescription>
                     </SheetHeader>
 
-                    <form onSubmit={handleEdit} className='space-y-4 mt-6 flex-1'>
+                    <form onSubmit={handleEdit} className='mt-6 flex-1 space-y-4'>
                         <div className='space-y-2'>
                             <Label htmlFor='edit-name'>{t('admin.knowledgebase.categories.form.name')}</Label>
                             <Input
@@ -607,7 +607,7 @@ export default function KnowledgeBaseCategoriesPage() {
                         <div className='space-y-2'>
                             <Label htmlFor='edit-icon'>{t('admin.knowledgebase.categories.form.icon')}</Label>
                             <div className='flex items-center gap-4'>
-                                <div className='h-16 w-16 rounded-xl bg-primary/10 flex items-center justify-center overflow-hidden border border-border/50'>
+                                <div className='bg-primary/10 border-border/50 flex h-16 w-16 items-center justify-center overflow-hidden rounded-xl border'>
                                     {iconPreview ? (
                                         <Image
                                             src={iconPreview}
@@ -618,7 +618,7 @@ export default function KnowledgeBaseCategoriesPage() {
                                             unoptimized
                                         />
                                     ) : (
-                                        <ImageIcon className='h-6 w-6 text-muted-foreground' />
+                                        <ImageIcon className='text-muted-foreground h-6 w-6' />
                                     )}
                                 </div>
                                 <Button
@@ -673,15 +673,15 @@ export default function KnowledgeBaseCategoriesPage() {
             </Sheet>
 
             <Sheet open={viewOpen} onOpenChange={setViewOpen}>
-                <div className='p-6 h-full flex flex-col'>
+                <div className='flex h-full flex-col p-6'>
                     <SheetHeader>
                         <SheetTitle>{selectedCategory?.name}</SheetTitle>
                         <SheetDescription>{selectedCategory?.slug}</SheetDescription>
                     </SheetHeader>
 
-                    <div className='mt-8 space-y-6 flex-1'>
+                    <div className='mt-8 flex-1 space-y-6'>
                         <div className='flex justify-center'>
-                            <div className='h-32 w-32 rounded-3xl bg-primary/5 flex items-center justify-center overflow-hidden border border-border/50'>
+                            <div className='bg-primary/5 border-border/50 flex h-32 w-32 items-center justify-center overflow-hidden rounded-3xl border'>
                                 {selectedCategory?.icon ? (
                                     <Image
                                         src={selectedCategory?.icon}
@@ -692,20 +692,20 @@ export default function KnowledgeBaseCategoriesPage() {
                                         unoptimized
                                     />
                                 ) : (
-                                    <BookOpen className='h-1/2 w-1/2 text-primary/40' />
+                                    <BookOpen className='text-primary/40 h-1/2 w-1/2' />
                                 )}
                             </div>
                         </div>
 
                         <div className='grid grid-cols-2 gap-4'>
-                            <div className='p-4 rounded-2xl bg-muted/50'>
-                                <p className='text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1'>
+                            <div className='bg-muted/50 rounded-2xl p-4'>
+                                <p className='text-muted-foreground mb-1 text-xs font-semibold tracking-wider uppercase'>
                                     {t('admin.knowledgebase.categories.form.position')}
                                 </p>
                                 <p className='text-lg font-bold'>{selectedCategory?.position}</p>
                             </div>
-                            <div className='p-4 rounded-2xl bg-muted/50'>
-                                <p className='text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1'>
+                            <div className='bg-muted/50 rounded-2xl p-4'>
+                                <p className='text-muted-foreground mb-1 text-xs font-semibold tracking-wider uppercase'>
                                     {t('admin.roles.labels.created')}
                                 </p>
                                 <p className='text-sm font-medium'>
@@ -717,10 +717,10 @@ export default function KnowledgeBaseCategoriesPage() {
                         </div>
 
                         <div className='space-y-2'>
-                            <p className='text-xs font-semibold text-muted-foreground uppercase tracking-wider'>
+                            <p className='text-muted-foreground text-xs font-semibold tracking-wider uppercase'>
                                 {t('admin.knowledgebase.categories.form.description')}
                             </p>
-                            <p className='text-sm text-muted-foreground bg-muted/30 p-4 rounded-2xl leading-relaxed'>
+                            <p className='text-muted-foreground bg-muted/30 rounded-2xl p-4 text-sm leading-relaxed'>
                                 {selectedCategory?.description || t('admin.knowledgebase.categories.no_results')}
                             </p>
                         </div>

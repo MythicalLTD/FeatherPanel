@@ -37,7 +37,7 @@ export function ConnectionTab({ form, setForm, errors }: ConnectionTabProps) {
                 <div className='space-y-8'>
                     <div className='space-y-6'>
                         <div>
-                            <Label className='text-sm font-semibold block mb-2'>{t('admin.vdsNodes.form.user')}</Label>
+                            <Label className='mb-2 block text-sm font-semibold'>{t('admin.vdsNodes.form.user')}</Label>
                             <Input
                                 placeholder='root@pam'
                                 value={form.user}
@@ -46,13 +46,13 @@ export function ConnectionTab({ form, setForm, errors }: ConnectionTabProps) {
                                 className='text-base'
                             />
                             {errors.user && (
-                                <p className='text-[10px] uppercase font-bold text-red-500 mt-2'>{errors.user}</p>
+                                <p className='mt-2 text-[10px] font-bold text-red-500 uppercase'>{errors.user}</p>
                             )}
-                            <p className='text-xs text-muted-foreground mt-2'>{t('admin.vdsNodes.form.user_help')}</p>
+                            <p className='text-muted-foreground mt-2 text-xs'>{t('admin.vdsNodes.form.user_help')}</p>
                         </div>
 
                         <div>
-                            <Label className='text-sm font-semibold block mb-2'>
+                            <Label className='mb-2 block text-sm font-semibold'>
                                 {t('admin.vdsNodes.form.token_id')}
                             </Label>
                             <Input
@@ -63,15 +63,15 @@ export function ConnectionTab({ form, setForm, errors }: ConnectionTabProps) {
                                 className='text-base'
                             />
                             {errors.token_id && (
-                                <p className='text-[10px] uppercase font-bold text-red-500 mt-2'>{errors.token_id}</p>
+                                <p className='mt-2 text-[10px] font-bold text-red-500 uppercase'>{errors.token_id}</p>
                             )}
-                            <p className='text-xs text-muted-foreground mt-2'>
+                            <p className='text-muted-foreground mt-2 text-xs'>
                                 {t('admin.vdsNodes.form.token_id_help')}
                             </p>
                         </div>
 
                         <div>
-                            <Label className='text-sm font-semibold block mb-2'>
+                            <Label className='mb-2 block text-sm font-semibold'>
                                 {t('admin.vdsNodes.form.secret')}
                             </Label>
                             <Input
@@ -81,14 +81,14 @@ export function ConnectionTab({ form, setForm, errors }: ConnectionTabProps) {
                                 onChange={(e) => setForm({ ...form, secret: e.target.value })}
                                 className='text-base'
                             />
-                            <p className='text-xs text-muted-foreground mt-2'>{t('admin.vdsNodes.form.secret_help')}</p>
+                            <p className='text-muted-foreground mt-2 text-xs'>{t('admin.vdsNodes.form.secret_help')}</p>
                         </div>
                     </div>
 
-                    <div className='border-t border-border/50 pt-8'>
+                    <div className='border-border/50 border-t pt-8'>
                         <div className='space-y-6'>
                             <div>
-                                <Label className='text-sm font-semibold block mb-2'>
+                                <Label className='mb-2 block text-sm font-semibold'>
                                     {t('admin.vdsNodes.form.fqdn')}
                                 </Label>
                                 <Input
@@ -99,13 +99,13 @@ export function ConnectionTab({ form, setForm, errors }: ConnectionTabProps) {
                                     className='text-base'
                                 />
                                 {errors.fqdn && (
-                                    <p className='text-[10px] uppercase font-bold text-red-500 mt-2'>{errors.fqdn}</p>
+                                    <p className='mt-2 text-[10px] font-bold text-red-500 uppercase'>{errors.fqdn}</p>
                                 )}
                             </div>
 
                             <div className='grid grid-cols-2 gap-4'>
                                 <div>
-                                    <Label className='text-sm font-semibold block mb-2'>
+                                    <Label className='mb-2 block text-sm font-semibold'>
                                         {t('admin.vdsNodes.form.scheme')}
                                     </Label>
                                     <Select
@@ -113,14 +113,14 @@ export function ConnectionTab({ form, setForm, errors }: ConnectionTabProps) {
                                         onChange={(e) =>
                                             setForm({ ...form, scheme: e.target.value as 'http' | 'https' })
                                         }
-                                        className='text-base h-11 px-3 rounded-lg'
+                                        className='h-11 rounded-lg px-3 text-base'
                                     >
                                         <option value='https'>{t('admin.vdsNodes.form.scheme_https')}</option>
                                         <option value='http'>{t('admin.vdsNodes.form.scheme_http')}</option>
                                     </Select>
                                 </div>
                                 <div>
-                                    <Label className='text-sm font-semibold block mb-2'>
+                                    <Label className='mb-2 block text-sm font-semibold'>
                                         {t('admin.vdsNodes.form.port')}
                                     </Label>
                                     <Input
@@ -131,7 +131,7 @@ export function ConnectionTab({ form, setForm, errors }: ConnectionTabProps) {
                                         className='text-base'
                                     />
                                     {errors.port && (
-                                        <p className='text-[10px] uppercase font-bold text-red-500 mt-2'>
+                                        <p className='mt-2 text-[10px] font-bold text-red-500 uppercase'>
                                             {errors.port}
                                         </p>
                                     )}
@@ -139,7 +139,7 @@ export function ConnectionTab({ form, setForm, errors }: ConnectionTabProps) {
                             </div>
 
                             <div>
-                                <Label className='text-sm font-semibold block mb-2'>
+                                <Label className='mb-2 block text-sm font-semibold'>
                                     {t('admin.vdsNodes.form.tls_no_verify')}
                                 </Label>
                                 <Select
@@ -147,7 +147,7 @@ export function ConnectionTab({ form, setForm, errors }: ConnectionTabProps) {
                                     onChange={(e) =>
                                         setForm({ ...form, tls_no_verify: e.target.value as 'true' | 'false' })
                                     }
-                                    className='text-base h-11 px-3 rounded-lg'
+                                    className='h-11 rounded-lg px-3 text-base'
                                 >
                                     <option value='false'>{t('admin.vdsNodes.form.tls_no_verify_false')}</option>
                                     <option value='true'>{t('admin.vdsNodes.form.tls_no_verify_true')}</option>
@@ -155,7 +155,7 @@ export function ConnectionTab({ form, setForm, errors }: ConnectionTabProps) {
                             </div>
 
                             <div>
-                                <Label className='text-sm font-semibold block mb-2'>
+                                <Label className='mb-2 block text-sm font-semibold'>
                                     {t('admin.vdsNodes.form.timeout')}
                                 </Label>
                                 <Input
@@ -166,7 +166,7 @@ export function ConnectionTab({ form, setForm, errors }: ConnectionTabProps) {
                                     className='text-base'
                                 />
                                 {errors.timeout && (
-                                    <p className='text-[10px] uppercase font-bold text-red-500 mt-2'>
+                                    <p className='mt-2 text-[10px] font-bold text-red-500 uppercase'>
                                         {errors.timeout}
                                     </p>
                                 )}

@@ -201,8 +201,8 @@ export default function VdsSubusersPage() {
     if (instanceLoading || loading) {
         return (
             <div className='flex flex-col items-center justify-center py-24'>
-                <Loader2 className='h-12 w-12 animate-spin text-primary opacity-50' />
-                <p className='mt-4 text-muted-foreground font-medium animate-pulse'>Loading subusers…</p>
+                <Loader2 className='text-primary h-12 w-12 animate-spin opacity-50' />
+                <p className='text-muted-foreground mt-4 animate-pulse font-medium'>Loading subusers…</p>
             </div>
         );
     }
@@ -210,7 +210,7 @@ export default function VdsSubusersPage() {
     if (!instance) {
         return (
             <div className='flex flex-col items-center justify-center py-24 text-center'>
-                <AlertTriangle className='h-12 w-12 text-destructive mb-4' />
+                <AlertTriangle className='text-destructive mb-4 h-12 w-12' />
                 <h2 className='text-xl font-black'>Instance Not Found</h2>
             </div>
         );
@@ -218,8 +218,8 @@ export default function VdsSubusersPage() {
 
     if (!instance.is_owner) {
         return (
-            <div className='flex flex-col items-center justify-center py-24 text-center space-y-6'>
-                <div className='h-20 w-20 rounded-3xl bg-red-500/10 flex items-center justify-center'>
+            <div className='flex flex-col items-center justify-center space-y-6 py-24 text-center'>
+                <div className='flex h-20 w-20 items-center justify-center rounded-3xl bg-red-500/10'>
                     <Lock className='h-10 w-10 text-red-400' />
                 </div>
                 <div>
@@ -242,7 +242,7 @@ export default function VdsSubusersPage() {
                 description={
                     <div className='flex items-center gap-3'>
                         <span>{t('vds.subusers.description')}</span>
-                        <span className='px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-primary/5 text-primary border border-primary/20'>
+                        <span className='bg-primary/5 text-primary border-primary/20 rounded-full border px-3 py-1 text-[10px] font-black tracking-widest uppercase'>
                             {subusers.length} {t('common.users') || 'users'}
                         </span>
                     </div>
@@ -256,15 +256,15 @@ export default function VdsSubusersPage() {
                             disabled={loading}
                             className='rounded-2xl'
                         >
-                            <RefreshCw className={cn('h-4 w-4 mr-2', loading && 'animate-spin')} />
+                            <RefreshCw className={cn('mr-2 h-4 w-4', loading && 'animate-spin')} />
                             {t('common.refresh')}
                         </Button>
                         <Button
                             size='default'
                             onClick={() => setIsAddOpen(true)}
-                            className='rounded-2xl shadow-lg shadow-primary/20'
+                            className='shadow-primary/20 rounded-2xl shadow-lg'
                         >
-                            <Plus className='h-4 w-4 mr-2' />
+                            <Plus className='mr-2 h-4 w-4' />
                             {t('vds.subusers.add')}
                         </Button>
                     </div>
@@ -278,7 +278,7 @@ export default function VdsSubusersPage() {
                     icon={Users}
                     action={
                         <Button size='default' onClick={() => setIsAddOpen(true)} className='h-14 px-10 text-lg'>
-                            <Plus className='h-6 w-6 mr-2' />
+                            <Plus className='mr-2 h-6 w-6' />
                             Add Subuser
                         </Button>
                     }
@@ -292,11 +292,11 @@ export default function VdsSubusersPage() {
                             iconWrapperClassName='bg-primary/10 border-primary/20 text-primary'
                             title={sub.username || `User #${sub.user_id}`}
                             description={
-                                <div className='flex flex-wrap gap-2 mt-1'>
+                                <div className='mt-1 flex flex-wrap gap-2'>
                                     {(sub.permissions || []).map((p) => (
                                         <span
                                             key={p}
-                                            className='px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-primary/5 text-primary border border-primary/20'
+                                            className='bg-primary/5 text-primary border-primary/20 rounded-full border px-2 py-0.5 text-[10px] font-black tracking-widest uppercase'
                                         >
                                             {p}
                                         </span>
@@ -309,9 +309,9 @@ export default function VdsSubusersPage() {
                                         variant='ghost'
                                         size='sm'
                                         onClick={() => openPermissions(sub)}
-                                        className='h-8 px-3 text-xs rounded-lg hover:bg-white/10'
+                                        className='h-8 rounded-lg px-3 text-xs hover:bg-white/10'
                                     >
-                                        <Shield className='h-3.5 w-3.5 mr-1.5' />
+                                        <Shield className='mr-1.5 h-3.5 w-3.5' />
                                         Permissions
                                     </Button>
                                     <Button
@@ -341,23 +341,23 @@ export default function VdsSubusersPage() {
             >
                 <div className='space-y-6 py-4'>
                     <div className='space-y-2'>
-                        <label className='text-sm font-black uppercase tracking-wider text-muted-foreground'>
+                        <label className='text-muted-foreground text-sm font-black tracking-wider uppercase'>
                             Email Address
                         </label>
                         <div className='relative'>
-                            <User className='absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10' />
+                            <User className='text-muted-foreground absolute top-1/2 left-4 z-10 h-5 w-5 -translate-y-1/2' />
                             <Input
                                 value={addEmail}
                                 onChange={(e) => setAddEmail(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
                                 type='email'
                                 placeholder={t('vds.subusers.email_placeholder') || 'e.g. admin@example.com'}
-                                className='pl-12 h-14 rounded-2xl'
+                                className='h-14 rounded-2xl pl-12'
                             />
                         </div>
                     </div>
                     <div className='space-y-3'>
-                        <label className='text-sm font-black uppercase tracking-wider text-muted-foreground'>
+                        <label className='text-muted-foreground text-sm font-black tracking-wider uppercase'>
                             Permissions
                         </label>
                         <div className='space-y-2'>
@@ -365,7 +365,7 @@ export default function VdsSubusersPage() {
                                 <label
                                     key={permKey}
                                     className={cn(
-                                        'flex items-start gap-4 p-4 rounded-2xl border transition-all cursor-pointer',
+                                        'flex cursor-pointer items-start gap-4 rounded-2xl border p-4 transition-all',
                                         addPermissions.includes(permKey)
                                             ? 'bg-primary/5 border-primary/20 shadow-[0_0_20px_-10px_rgba(var(--primary),0.2)]'
                                             : 'bg-card/30 border-border/10 hover:border-border/30',
@@ -380,7 +380,7 @@ export default function VdsSubusersPage() {
                                         />
                                         <div
                                             className={cn(
-                                                'h-6 w-6 rounded-lg border-2 transition-all flex items-center justify-center',
+                                                'flex h-6 w-6 items-center justify-center rounded-lg border-2 transition-all',
                                                 addPermissions.includes(permKey)
                                                     ? 'bg-primary border-primary'
                                                     : 'border-border/20 hover:border-primary/40',
@@ -392,10 +392,10 @@ export default function VdsSubusersPage() {
                                         </div>
                                     </div>
                                     <div>
-                                        <div className='font-bold text-sm'>
+                                        <div className='text-sm font-bold'>
                                             {t(`vds.subusers.permissions.${permKey}.label`) || permKey}
                                         </div>
-                                        <div className='text-xs text-muted-foreground mt-0.5'>
+                                        <div className='text-muted-foreground mt-0.5 text-xs'>
                                             {t(`vds.subusers.permissions.${permKey}.description`)}
                                         </div>
                                     </div>
@@ -404,7 +404,7 @@ export default function VdsSubusersPage() {
                         </div>
                     </div>
                 </div>
-                <div className='flex justify-end gap-3 pt-4 border-t border-border/5'>
+                <div className='border-border/5 flex justify-end gap-3 border-t pt-4'>
                     <Button
                         variant='outline'
                         size='default'
@@ -437,7 +437,7 @@ export default function VdsSubusersPage() {
                 title='Remove Subuser'
                 description={`Are you sure you want to remove ${selectedSubuser?.username || `user #${selectedSubuser?.user_id}`} from this VDS instance?`}
             >
-                <div className='flex justify-end gap-3 pt-6 border-t border-border/5'>
+                <div className='border-border/5 flex justify-end gap-3 border-t pt-6'>
                     <Button
                         variant='outline'
                         size='default'
@@ -477,7 +477,7 @@ export default function VdsSubusersPage() {
                         <label
                             key={permKey}
                             className={cn(
-                                'flex items-start gap-4 p-4 rounded-2xl border transition-all cursor-pointer',
+                                'flex cursor-pointer items-start gap-4 rounded-2xl border p-4 transition-all',
                                 editPerms.includes(permKey)
                                     ? 'bg-primary/5 border-primary/20 shadow-[0_0_20px_-10px_rgba(var(--primary),0.2)]'
                                     : 'bg-card/30 border-border/10 hover:border-border/30',
@@ -492,7 +492,7 @@ export default function VdsSubusersPage() {
                                 />
                                 <div
                                     className={cn(
-                                        'h-6 w-6 rounded-lg border-2 transition-all flex items-center justify-center',
+                                        'flex h-6 w-6 items-center justify-center rounded-lg border-2 transition-all',
                                         editPerms.includes(permKey)
                                             ? 'bg-primary border-primary'
                                             : 'border-border/20 hover:border-primary/40',
@@ -502,21 +502,21 @@ export default function VdsSubusersPage() {
                                 </div>
                             </div>
                             <div>
-                                <div className='font-bold text-sm'>
+                                <div className='text-sm font-bold'>
                                     {t(`vds.subusers.permissions.${permKey}.label`) || permKey}
                                 </div>
-                                <div className='text-xs text-muted-foreground mt-0.5'>
+                                <div className='text-muted-foreground mt-0.5 text-xs'>
                                     {t(`vds.subusers.permissions.${permKey}.description`)}
                                 </div>
                             </div>
                         </label>
                     ))}
-                    <div className='flex items-center gap-3 text-xs font-black uppercase tracking-widest text-primary/80 px-5 py-4 bg-primary/5 rounded-2xl border border-primary/10'>
+                    <div className='text-primary/80 bg-primary/5 border-primary/10 flex items-center gap-3 rounded-2xl border px-5 py-4 text-xs font-black tracking-widest uppercase'>
                         <Shield className='h-4 w-4' />
                         {editPerms.length} permission{editPerms.length !== 1 ? 's' : ''} selected
                     </div>
                 </div>
-                <div className='flex justify-end gap-3 pt-6 border-t border-border/5'>
+                <div className='border-border/5 flex justify-end gap-3 border-t pt-6'>
                     <Button
                         variant='outline'
                         size='default'

@@ -347,31 +347,31 @@ export default function ServersPage() {
 
             <div className='flex items-start justify-between'>
                 <div>
-                    <h1 className='text-2xl sm:text-4xl font-bold tracking-tight'>{t('servers.title')}</h1>
-                    <p className='mt-2 text-sm sm:text-lg text-muted-foreground'>{t('servers.description')}</p>
+                    <h1 className='text-2xl font-bold tracking-tight sm:text-4xl'>{t('servers.title')}</h1>
+                    <p className='text-muted-foreground mt-2 text-sm sm:text-lg'>{t('servers.description')}</p>
                 </div>
                 <WidgetRenderer widgets={getWidgets('dashboard-servers', 'after-header')} />
             </div>
 
-            <div className='flex flex-col gap-3 p-3 bg-card/50 backdrop-blur-xl rounded-2xl border border-border/50'>
+            <div className='bg-card/50 border-border/50 flex flex-col gap-3 rounded-2xl border p-3 backdrop-blur-xl'>
                 <div className='flex items-center gap-2'>
                     <input
                         type='text'
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder={t('servers.searchPlaceholder')}
-                        className='flex-1 min-w-0 px-4 py-2 bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary transition-all text-sm'
+                        className='bg-background border-border focus:ring-primary min-w-0 flex-1 rounded-xl border px-4 py-2 text-sm transition-all focus:ring-2 focus:outline-none'
                     />
 
                     <Listbox value={selectedSortOption} onChange={(option) => setSelectedSort(option.id)}>
                         <div className='relative shrink-0'>
-                            <ListboxButton className='relative cursor-pointer rounded-xl bg-background py-2 pl-3 pr-8 text-left border border-border focus:outline-none focus:ring-2 focus:ring-primary text-sm whitespace-nowrap'>
+                            <ListboxButton className='bg-background border-border focus:ring-primary relative cursor-pointer rounded-xl border py-2 pr-8 pl-3 text-left text-sm whitespace-nowrap focus:ring-2 focus:outline-none'>
                                 <span className='flex items-center gap-2'>
-                                    <Filter className='h-4 w-4 text-muted-foreground shrink-0' />
-                                    <span className='hidden sm:block truncate'>{selectedSortOption.name}</span>
+                                    <Filter className='text-muted-foreground h-4 w-4 shrink-0' />
+                                    <span className='hidden truncate sm:block'>{selectedSortOption.name}</span>
                                 </span>
                                 <span className='pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2'>
-                                    <ChevronsUpDown className='h-4 w-4 text-muted-foreground' />
+                                    <ChevronsUpDown className='text-muted-foreground h-4 w-4' />
                                 </span>
                             </ListboxButton>
                             <Transition
@@ -382,7 +382,7 @@ export default function ServersPage() {
                             >
                                 <ListboxOptions
                                     anchor='bottom end'
-                                    className='z-50 [--anchor-gap:4px] min-w-[160px] max-h-60 overflow-auto rounded-xl bg-popover border border-border py-1 focus:outline-none text-sm'
+                                    className='bg-popover border-border z-50 max-h-60 min-w-[160px] overflow-auto rounded-xl border py-1 text-sm [--anchor-gap:4px] focus:outline-none'
                                 >
                                     {sortOptions.map((option) => (
                                         <ListboxOption
@@ -390,7 +390,7 @@ export default function ServersPage() {
                                             value={option}
                                             className={({ focus }) =>
                                                 cn(
-                                                    'relative cursor-pointer select-none py-2 pl-9 pr-4 transition-colors',
+                                                    'relative cursor-pointer py-2 pr-4 pl-9 transition-colors select-none',
                                                     focus ? 'bg-primary/10 text-primary' : 'text-foreground',
                                                 )
                                             }
@@ -406,7 +406,7 @@ export default function ServersPage() {
                                                         {option.name}
                                                     </span>
                                                     {selected && (
-                                                        <span className='absolute inset-y-0 left-0 flex items-center pl-3 text-primary'>
+                                                        <span className='text-primary absolute inset-y-0 left-0 flex items-center pl-3'>
                                                             <Check className='h-4 w-4' />
                                                         </span>
                                                     )}
@@ -424,14 +424,14 @@ export default function ServersPage() {
                         onChange={(option) => setSelectedLayout(option.id as 'grid' | 'list')}
                         className='shrink-0'
                     >
-                        <div className='flex gap-1 p-1 bg-background rounded-xl border border-border'>
+                        <div className='bg-background border-border flex gap-1 rounded-xl border p-1'>
                             {layoutOptions.map((option) => (
                                 <RadioGroupOption
                                     key={option.id}
                                     value={option}
                                     className={({ checked }) =>
                                         cn(
-                                            'flex items-center justify-center cursor-pointer rounded-lg px-2.5 py-1 transition-all',
+                                            'flex cursor-pointer items-center justify-center rounded-lg px-2.5 py-1 transition-all',
                                             checked
                                                 ? 'bg-primary text-primary-foreground'
                                                 : 'text-muted-foreground hover:text-foreground hover:bg-muted',
@@ -441,7 +441,7 @@ export default function ServersPage() {
                                     {() => (
                                         <div className='flex items-center gap-1.5'>
                                             <option.icon className='h-4 w-4' />
-                                            <span className='sr-only sm:not-sr-only sm:text-xs font-medium'>
+                                            <span className='sr-only font-medium sm:not-sr-only sm:text-xs'>
                                                 {option.name}
                                             </span>
                                         </div>
@@ -452,17 +452,17 @@ export default function ServersPage() {
                     </RadioGroup>
 
                     <div
-                        className='flex items-center gap-2 cursor-pointer shrink-0'
+                        className='flex shrink-0 cursor-pointer items-center gap-2'
                         onClick={() => setShowOnlyRunning(!showOnlyRunning)}
                     >
                         <Switch
                             checked={showOnlyRunning}
                             onChange={setShowOnlyRunning}
-                            className='group relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 data-checked:bg-green-500 bg-muted shrink-0'
+                            className='group focus:ring-primary bg-muted relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none data-checked:bg-green-500'
                         >
-                            <span className='inline-block h-3 w-3 transform rounded-full bg-white transition-transform group-data-checked:translate-x-4 translate-x-1' />
+                            <span className='inline-block h-3 w-3 translate-x-1 transform rounded-full bg-white transition-transform group-data-checked:translate-x-4' />
                         </Switch>
-                        <span className='hidden sm:block text-sm font-medium whitespace-nowrap'>
+                        <span className='hidden text-sm font-medium whitespace-nowrap sm:block'>
                             {t('servers.runningOnly')}
                         </span>
                     </div>
@@ -472,7 +472,7 @@ export default function ServersPage() {
                             serverScope === 'all' ? void fetchAllOtherServers(pagination.current_page) : fetchServers()
                         }
                         disabled={loading}
-                        className='shrink-0 p-2 bg-background border border-border rounded-xl hover:bg-muted transition-colors disabled:opacity-50'
+                        className='bg-background border-border hover:bg-muted shrink-0 rounded-xl border p-2 transition-colors disabled:opacity-50'
                         title={t('servers.refresh')}
                     >
                         <RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} />
@@ -481,16 +481,16 @@ export default function ServersPage() {
 
                 <WidgetRenderer widgets={getWidgets('dashboard-servers', 'before-server-list')} />
                 {filteredServers.length > 0 && (
-                    <div className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-xl border border-border bg-card/60 px-4 py-3 mt-1'>
+                    <div className='border-border bg-card/60 mt-1 flex flex-col items-start justify-between gap-3 rounded-xl border px-4 py-3 sm:flex-row sm:items-center'>
                         <div className='flex items-center gap-2 text-sm'>
                             <button
                                 type='button'
                                 onClick={selectAllVisible}
-                                className='text-xs sm:text-sm font-medium text-primary hover:underline'
+                                className='text-primary text-xs font-medium hover:underline sm:text-sm'
                             >
                                 {t('servers.bulk.selectAllPage')}
                             </button>
-                            <span className='text-xs sm:text-sm text-muted-foreground'>
+                            <span className='text-muted-foreground text-xs sm:text-sm'>
                                 {selectedServers.length > 0
                                     ? t('servers.bulk.selectedCount', {
                                           count: String(selectedServers.length),
@@ -501,7 +501,7 @@ export default function ServersPage() {
                                 <button
                                     type='button'
                                     onClick={clearSelection}
-                                    className='text-xs sm:text-sm text-muted-foreground hover:text-foreground hover:underline'
+                                    className='text-muted-foreground hover:text-foreground text-xs hover:underline sm:text-sm'
                                 >
                                     {t('servers.bulk.clearSelection')}
                                 </button>
@@ -512,7 +512,7 @@ export default function ServersPage() {
                                 type='button'
                                 onClick={() => handleBulkPowerAction('start')}
                                 disabled={selectedServers.length === 0 || bulkActionLoading}
-                                className='inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-background text-xs sm:text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-muted'
+                                className='border-border bg-background hover:bg-muted inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm'
                             >
                                 {t('servers.start')}
                             </button>
@@ -520,7 +520,7 @@ export default function ServersPage() {
                                 type='button'
                                 onClick={() => handleBulkPowerAction('stop')}
                                 disabled={selectedServers.length === 0 || bulkActionLoading}
-                                className='inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-background text-xs sm:text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-muted'
+                                className='border-border bg-background hover:bg-muted inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm'
                             >
                                 {t('servers.stop')}
                             </button>
@@ -528,7 +528,7 @@ export default function ServersPage() {
                                 type='button'
                                 onClick={() => handleBulkPowerAction('restart')}
                                 disabled={selectedServers.length === 0 || bulkActionLoading}
-                                className='inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-background text-xs sm:text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-muted'
+                                className='border-border bg-background hover:bg-muted inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm'
                             >
                                 {t('servers.restart')}
                             </button>
@@ -542,7 +542,7 @@ export default function ServersPage() {
             {loading && (
                 <div className='flex items-center justify-center py-24'>
                     <div className='flex flex-col items-center gap-4'>
-                        <RefreshCw className='h-12 w-12 animate-spin text-primary' />
+                        <RefreshCw className='text-primary h-12 w-12 animate-spin' />
                         <p className='text-muted-foreground'>{t('servers.loading')}</p>
                     </div>
                 </div>
@@ -550,13 +550,13 @@ export default function ServersPage() {
 
             {error && !loading && (
                 <div className='flex items-center justify-center py-24'>
-                    <div className='text-center max-w-md'>
-                        <TriangleAlert className='h-16 w-16 text-destructive mx-auto mb-4' />
-                        <h3 className='text-xl font-semibold mb-2'>{t('servers.errorTitle')}</h3>
+                    <div className='max-w-md text-center'>
+                        <TriangleAlert className='text-destructive mx-auto mb-4 h-16 w-16' />
+                        <h3 className='mb-2 text-xl font-semibold'>{t('servers.errorTitle')}</h3>
                         <p className='text-muted-foreground mb-6'>{error}</p>
                         <button
                             onClick={() => fetchServers()}
-                            className='px-6 py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:bg-primary/90 transition-colors'
+                            className='bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl px-6 py-3 font-semibold transition-colors'
                         >
                             {t('servers.retry')}
                         </button>
@@ -567,14 +567,14 @@ export default function ServersPage() {
             {!loading && !error && (
                 <>
                     <div className='flex items-center justify-between gap-2'>
-                        <div className='flex items-center gap-2 flex-wrap'>
+                        <div className='flex flex-wrap items-center gap-2'>
                             {canViewAllServers && (
-                                <div className='flex gap-1 p-1 bg-card/50 backdrop-blur-xl rounded-xl border border-border/50'>
+                                <div className='bg-card/50 border-border/50 flex gap-1 rounded-xl border p-1 backdrop-blur-xl'>
                                     <button
                                         type='button'
                                         onClick={() => setServerScope('mine')}
                                         className={cn(
-                                            'px-4 py-2 text-sm font-semibold rounded-lg transition-all',
+                                            'rounded-lg px-4 py-2 text-sm font-semibold transition-all',
                                             serverScope === 'mine'
                                                 ? 'bg-primary text-primary-foreground'
                                                 : 'text-muted-foreground hover:text-foreground hover:bg-muted',
@@ -586,7 +586,7 @@ export default function ServersPage() {
                                         type='button'
                                         onClick={() => setServerScope('all')}
                                         className={cn(
-                                            'px-4 py-2 text-sm font-semibold rounded-lg transition-all',
+                                            'rounded-lg px-4 py-2 text-sm font-semibold transition-all',
                                             serverScope === 'all'
                                                 ? 'bg-primary text-primary-foreground'
                                                 : 'text-muted-foreground hover:text-foreground hover:bg-muted',
@@ -599,12 +599,12 @@ export default function ServersPage() {
                             )}
 
                             {serverScope === 'mine' && (
-                                <div className='flex gap-1 p-1 bg-card/50 backdrop-blur-xl rounded-xl border border-border/50'>
+                                <div className='bg-card/50 border-border/50 flex gap-1 rounded-xl border p-1 backdrop-blur-xl'>
                                     <button
                                         type='button'
                                         onClick={() => setViewMode('all')}
                                         className={cn(
-                                            'px-4 py-2 text-sm font-semibold rounded-lg transition-all',
+                                            'rounded-lg px-4 py-2 text-sm font-semibold transition-all',
                                             viewMode === 'all'
                                                 ? 'bg-primary text-primary-foreground'
                                                 : 'text-muted-foreground hover:text-foreground hover:bg-muted',
@@ -616,7 +616,7 @@ export default function ServersPage() {
                                         type='button'
                                         onClick={() => setViewMode('folders')}
                                         className={cn(
-                                            'px-4 py-2 text-sm font-semibold rounded-lg transition-all',
+                                            'rounded-lg px-4 py-2 text-sm font-semibold transition-all',
                                             viewMode === 'folders'
                                                 ? 'bg-primary text-primary-foreground'
                                                 : 'text-muted-foreground hover:text-foreground hover:bg-muted',
@@ -631,7 +631,7 @@ export default function ServersPage() {
                         {serverScope === 'mine' && viewMode === 'folders' && (
                             <button
                                 onClick={openCreateFolder}
-                                className='flex items-center gap-2 px-3 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-semibold hover:bg-primary/90 transition-colors shrink-0'
+                                className='bg-primary text-primary-foreground hover:bg-primary/90 flex shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold transition-colors'
                             >
                                 <FolderPlus className='h-4 w-4' />
                                 <span className='hidden sm:inline'>{t('servers.createFolder')}</span>
@@ -646,11 +646,11 @@ export default function ServersPage() {
                             ) : (
                                 <>
                                     {pagination.total_pages > 1 && (
-                                        <div className='flex items-center justify-between gap-4 py-3 px-4 rounded-xl border border-border bg-card/50 mb-4'>
+                                        <div className='border-border bg-card/50 mb-4 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
                                             <button
                                                 onClick={() => changePage(pagination.current_page - 1)}
                                                 disabled={!pagination.has_prev || loading}
-                                                className='inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium'
+                                                className='border-border hover:bg-muted inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50'
                                             >
                                                 <ChevronLeft className='h-5 w-5' />
                                                 {t('common.previous')}
@@ -664,7 +664,7 @@ export default function ServersPage() {
                                             <button
                                                 onClick={() => changePage(pagination.current_page + 1)}
                                                 disabled={!pagination.has_next || loading}
-                                                className='inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium'
+                                                className='border-border hover:bg-muted inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50'
                                             >
                                                 {t('common.next')}
                                                 <ChevronRight className='h-5 w-5' />
@@ -674,7 +674,7 @@ export default function ServersPage() {
                                     <div
                                         className={cn(
                                             selectedLayout === 'grid'
-                                                ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6'
+                                                ? 'grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3'
                                                 : 'flex flex-col gap-4',
                                         )}
                                     >
@@ -700,8 +700,8 @@ export default function ServersPage() {
                                         ))}
                                     </div>
                                     {pagination.total_pages > 1 && (
-                                        <div className='flex items-center justify-between py-6 px-4 mt-6 border-t border-border'>
-                                            <p className='text-sm text-muted-foreground'>
+                                        <div className='border-border mt-6 flex items-center justify-between border-t px-4 py-6'>
+                                            <p className='text-muted-foreground text-sm'>
                                                 {t('servers.pagination.showing', {
                                                     from: String(pagination.from),
                                                     to: String(pagination.to),
@@ -712,7 +712,7 @@ export default function ServersPage() {
                                                 <button
                                                     onClick={() => changePage(pagination.current_page - 1)}
                                                     disabled={!pagination.has_prev || loading}
-                                                    className='p-2 rounded-lg border border-border hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+                                                    className='border-border hover:bg-muted rounded-lg border p-2 transition-colors disabled:cursor-not-allowed disabled:opacity-50'
                                                 >
                                                     <ChevronLeft className='h-5 w-5' />
                                                 </button>
@@ -725,7 +725,7 @@ export default function ServersPage() {
                                                 <button
                                                     onClick={() => changePage(pagination.current_page + 1)}
                                                     disabled={!pagination.has_next || loading}
-                                                    className='p-2 rounded-lg border border-border hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+                                                    className='border-border hover:bg-muted rounded-lg border p-2 transition-colors disabled:cursor-not-allowed disabled:opacity-50'
                                                 >
                                                     <ChevronRight className='h-5 w-5' />
                                                 </button>
@@ -747,11 +747,11 @@ export default function ServersPage() {
                                     ) : (
                                         <>
                                             {pagination.total_pages > 1 && (
-                                                <div className='flex items-center justify-between gap-4 py-3 px-4 rounded-xl border border-border bg-card/50 mb-4'>
+                                                <div className='border-border bg-card/50 mb-4 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
                                                     <button
                                                         onClick={() => changePage(pagination.current_page - 1)}
                                                         disabled={!pagination.has_prev || loading}
-                                                        className='inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium'
+                                                        className='border-border hover:bg-muted inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50'
                                                     >
                                                         <ChevronLeft className='h-4 w-4' />
                                                         {t('common.previous')}
@@ -765,7 +765,7 @@ export default function ServersPage() {
                                                     <button
                                                         onClick={() => changePage(pagination.current_page + 1)}
                                                         disabled={!pagination.has_next || loading}
-                                                        className='inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium'
+                                                        className='border-border hover:bg-muted inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50'
                                                     >
                                                         {t('common.next')}
                                                         <ChevronRight className='h-4 w-4' />
@@ -775,7 +775,7 @@ export default function ServersPage() {
                                             <div
                                                 className={cn(
                                                     selectedLayout === 'grid'
-                                                        ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6'
+                                                        ? 'grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3'
                                                         : 'flex flex-col gap-4',
                                                 )}
                                             >
@@ -806,8 +806,8 @@ export default function ServersPage() {
                                     )}
 
                                     {pagination.total_pages > 1 && (
-                                        <div className='flex items-center justify-between py-6 px-4 mt-6 border-t border-border'>
-                                            <p className='text-sm text-muted-foreground'>
+                                        <div className='border-border mt-6 flex items-center justify-between border-t px-4 py-6'>
+                                            <p className='text-muted-foreground text-sm'>
                                                 {t('servers.pagination.showing', {
                                                     from: String(pagination.from),
                                                     to: String(pagination.to),
@@ -818,7 +818,7 @@ export default function ServersPage() {
                                                 <button
                                                     onClick={() => changePage(pagination.current_page - 1)}
                                                     disabled={!pagination.has_prev || loading}
-                                                    className='p-2 rounded-lg border border-border hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+                                                    className='border-border hover:bg-muted rounded-lg border p-2 transition-colors disabled:cursor-not-allowed disabled:opacity-50'
                                                 >
                                                     <ChevronLeft className='h-5 w-5' />
                                                 </button>
@@ -831,7 +831,7 @@ export default function ServersPage() {
                                                 <button
                                                     onClick={() => changePage(pagination.current_page + 1)}
                                                     disabled={!pagination.has_next || loading}
-                                                    className='p-2 rounded-lg border border-border hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+                                                    className='border-border hover:bg-muted rounded-lg border p-2 transition-colors disabled:cursor-not-allowed disabled:opacity-50'
                                                 >
                                                     <ChevronRight className='h-5 w-5' />
                                                 </button>
@@ -843,7 +843,7 @@ export default function ServersPage() {
                                 <TabPanel>
                                     <div className='space-y-4'>
                                         {pagination.total_records > 10 && (
-                                            <div className='p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl'>
+                                            <div className='rounded-xl border border-blue-500/20 bg-blue-500/10 p-4'>
                                                 <p className='text-sm text-blue-600 dark:text-blue-400'>
                                                     {t('servers.folderViewAllLoaded', {
                                                         total: String(pagination.total_records),
@@ -857,31 +857,31 @@ export default function ServersPage() {
                                             <div key={folder.id} className='space-y-4'>
                                                 <div className='flex items-center justify-between'>
                                                     <div className='flex items-center gap-3'>
-                                                        <Folder className='h-6 w-6 text-primary' />
+                                                        <Folder className='text-primary h-6 w-6' />
                                                         <div>
                                                             <h3 className='text-xl font-semibold'>{folder.name}</h3>
                                                             {folder.description && (
-                                                                <p className='text-sm text-muted-foreground'>
+                                                                <p className='text-muted-foreground text-sm'>
                                                                     {folder.description}
                                                                 </p>
                                                             )}
                                                         </div>
-                                                        <span className='px-3 py-1 bg-primary/10 text-primary text-sm font-medium rounded-full'>
+                                                        <span className='bg-primary/10 text-primary rounded-full px-3 py-1 text-sm font-medium'>
                                                             {folder.servers.length}
                                                         </span>
                                                     </div>
                                                     <div className='flex items-center gap-2'>
                                                         <button
                                                             onClick={(e) => openEditFolder(folder, e)}
-                                                            className='p-2 hover:bg-muted rounded-lg transition-colors'
+                                                            className='hover:bg-muted rounded-lg p-2 transition-colors'
                                                         >
-                                                            <Pencil className='h-5 w-5 text-muted-foreground' />
+                                                            <Pencil className='text-muted-foreground h-5 w-5' />
                                                         </button>
                                                         <button
                                                             onClick={(e) => handleDeleteFolder(folder.id, e)}
-                                                            className='p-2 hover:bg-destructive/10 rounded-lg transition-colors'
+                                                            className='hover:bg-destructive/10 rounded-lg p-2 transition-colors'
                                                         >
-                                                            <Trash2 className='h-5 w-5 text-destructive' />
+                                                            <Trash2 className='text-destructive h-5 w-5' />
                                                         </button>
                                                     </div>
                                                 </div>
@@ -889,7 +889,7 @@ export default function ServersPage() {
                                                     <div
                                                         className={cn(
                                                             selectedLayout === 'grid'
-                                                                ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6'
+                                                                ? 'grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3'
                                                                 : 'flex flex-col gap-4',
                                                         )}
                                                     >
@@ -925,16 +925,16 @@ export default function ServersPage() {
                                         {unassignedServers.length > 0 && (
                                             <div className='space-y-4'>
                                                 <div className='flex items-center gap-3'>
-                                                    <ServerIcon className='h-6 w-6 text-muted-foreground' />
+                                                    <ServerIcon className='text-muted-foreground h-6 w-6' />
                                                     <h3 className='text-xl font-semibold'>{t('servers.unassigned')}</h3>
-                                                    <span className='px-3 py-1 bg-muted text-muted-foreground text-sm font-medium rounded-full'>
+                                                    <span className='bg-muted text-muted-foreground rounded-full px-3 py-1 text-sm font-medium'>
                                                         {unassignedServers.length}
                                                     </span>
                                                 </div>
                                                 <div
                                                     className={cn(
                                                         selectedLayout === 'grid'
-                                                            ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6'
+                                                            ? 'grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3'
                                                             : 'flex flex-col gap-4',
                                                     )}
                                                 >

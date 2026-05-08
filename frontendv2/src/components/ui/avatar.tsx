@@ -46,7 +46,7 @@ const AvatarImage = React.forwardRef<HTMLImageElement, React.ImgHTMLAttributes<H
                 ref={ref}
                 src={src}
                 className={cn(
-                    'aspect-square h-full w-full object-cover object-center outline-none transition-opacity duration-150',
+                    'aspect-square h-full w-full object-cover object-center transition-opacity duration-150 outline-none',
                     loaded ? 'opacity-100' : 'opacity-0',
                     className,
                 )}

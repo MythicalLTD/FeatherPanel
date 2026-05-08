@@ -164,9 +164,9 @@ export default function ResetPasswordForm() {
 
     if (loading) {
         return (
-            <div className='text-center py-12'>
-                <div className='inline-block animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent' />
-                <p className='mt-4 text-sm text-muted-foreground'>{t('auth.reset_password.validating')}</p>
+            <div className='py-12 text-center'>
+                <div className='border-primary inline-block h-8 w-8 animate-spin rounded-full border-2 border-t-transparent' />
+                <p className='text-muted-foreground mt-4 text-sm'>{t('auth.reset_password.validating')}</p>
             </div>
         );
     }
@@ -174,11 +174,11 @@ export default function ResetPasswordForm() {
     if (!tokenValid) {
         return (
             <div className='space-y-6'>
-                <div className='text-center space-y-2'>
-                    <h2 className='text-2xl font-bold tracking-tight text-destructive'>
+                <div className='space-y-2 text-center'>
+                    <h2 className='text-destructive text-2xl font-bold tracking-tight'>
                         {t('auth.reset_password.invalid_token')}
                     </h2>
-                    <p className='text-sm text-muted-foreground'>{error || t('auth.reset_password.invalid_message')}</p>
+                    <p className='text-muted-foreground text-sm'>{error || t('auth.reset_password.invalid_message')}</p>
                 </div>
                 <Button variant='outline' className='w-full' onClick={() => router.push('/auth/forgot-password')}>
                     {t('auth.reset_password.request_new')}
@@ -191,9 +191,9 @@ export default function ResetPasswordForm() {
         <div className='space-y-6'>
             <WidgetRenderer widgets={getWidgets('auth-reset-password', 'auth-reset-password-top')} />
 
-            <div className='text-center space-y-2'>
+            <div className='space-y-2 text-center'>
                 <h2 className='text-2xl font-bold tracking-tight'>{t('auth.reset_password.title')}</h2>
-                <p className='text-sm text-muted-foreground'>{t('auth.reset_password.subtitle')}</p>
+                <p className='text-muted-foreground text-sm'>{t('auth.reset_password.subtitle')}</p>
             </div>
 
             <WidgetRenderer widgets={getWidgets('auth-reset-password', 'auth-reset-password-before-form')} />
@@ -239,33 +239,33 @@ export default function ResetPasswordForm() {
                     </div>
                 )}
 
-                <Button type='submit' className='w-full group' loading={submitting}>
+                <Button type='submit' className='group w-full' loading={submitting}>
                     {!submitting && (
                         <>
                             {t('auth.reset_password.submit')}
-                            <ArrowRight className='ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform' />
+                            <ArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
                         </>
                     )}
                 </Button>
 
                 {error && (
-                    <div className='p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm animate-fade-in'>
+                    <div className='bg-destructive/10 border-destructive/20 text-destructive animate-fade-in rounded-xl border p-4 text-sm'>
                         {error}
                     </div>
                 )}
                 {success && (
-                    <div className='p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-green-600 dark:text-green-400 text-sm animate-fade-in'>
+                    <div className='animate-fade-in rounded-xl border border-green-500/20 bg-green-500/10 p-4 text-sm text-green-600 dark:text-green-400'>
                         {success}
                     </div>
                 )}
             </form>
             <WidgetRenderer widgets={getWidgets('auth-reset-password', 'auth-reset-password-after-form')} />
 
-            <div className='text-center text-sm text-muted-foreground'>
+            <div className='text-muted-foreground text-center text-sm'>
                 {t('auth.reset_password.remember')}{' '}
                 <button
                     type='button'
-                    className='font-semibold text-primary hover:text-primary/80 transition-colors'
+                    className='text-primary hover:text-primary/80 font-semibold transition-colors'
                     onClick={() => router.push('/auth/login')}
                 >
                     {t('auth.reset_password.sign_in')}

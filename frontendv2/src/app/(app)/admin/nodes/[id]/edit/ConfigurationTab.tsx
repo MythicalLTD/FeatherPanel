@@ -32,7 +32,7 @@ export function ConfigurationTab({ form, setForm, errors }: ConfigurationTabProp
 
     return (
         <PageCard title={t('admin.node.form.configuration')} icon={Settings2}>
-            <div className='grid grid-cols-1 md:grid-cols-2 gap-8'>
+            <div className='grid grid-cols-1 gap-8 md:grid-cols-2'>
                 <div className='space-y-6'>
                     <div className='grid grid-cols-2 gap-4'>
                         <div className='space-y-2'>
@@ -45,7 +45,7 @@ export function ConfigurationTab({ form, setForm, errors }: ConfigurationTabProp
                                         setForm({ ...form, memory: parseInt(e.target.value) || 0 })
                                     }
                                 />
-                                <span className='absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground/50'>
+                                <span className='text-muted-foreground/50 absolute top-1/2 right-3 -translate-y-1/2 text-xs font-bold'>
                                     {t('admin.node.form.memory_mib')}
                                 </span>
                             </div>
@@ -63,7 +63,7 @@ export function ConfigurationTab({ form, setForm, errors }: ConfigurationTabProp
                                         })
                                     }
                                 />
-                                <span className='absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground/50'>
+                                <span className='text-muted-foreground/50 absolute top-1/2 right-3 -translate-y-1/2 text-xs font-bold'>
                                     %
                                 </span>
                             </div>
@@ -80,7 +80,7 @@ export function ConfigurationTab({ form, setForm, errors }: ConfigurationTabProp
                                         setForm({ ...form, disk: parseInt(e.target.value) || 0 })
                                     }
                                 />
-                                <span className='absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground/50'>
+                                <span className='text-muted-foreground/50 absolute top-1/2 right-3 -translate-y-1/2 text-xs font-bold'>
                                     {t('admin.node.form.memory_mib')}
                                 </span>
                             </div>
@@ -98,7 +98,7 @@ export function ConfigurationTab({ form, setForm, errors }: ConfigurationTabProp
                                         })
                                     }
                                 />
-                                <span className='absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground/50'>
+                                <span className='text-muted-foreground/50 absolute top-1/2 right-3 -translate-y-1/2 text-xs font-bold'>
                                     %
                                 </span>
                             </div>
@@ -116,7 +116,7 @@ export function ConfigurationTab({ form, setForm, errors }: ConfigurationTabProp
                             }
                             error={!!errors.daemonBase}
                         />
-                        <p className='text-xs text-muted-foreground/70 italic'>
+                        <p className='text-muted-foreground/70 text-xs italic'>
                             {t('admin.node.form.daemon_base_help')}
                         </p>
                     </div>

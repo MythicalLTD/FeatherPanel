@@ -307,8 +307,8 @@ export default function EditVdsNodePage() {
 
     if (loadingNode) {
         return (
-            <div className='flex items-center justify-center min-h-[60vh]'>
-                <RefreshCw className='h-8 w-8 animate-spin text-primary' />
+            <div className='flex min-h-[60vh] items-center justify-center'>
+                <RefreshCw className='text-primary h-8 w-8 animate-spin' />
             </div>
         );
     }
@@ -322,15 +322,15 @@ export default function EditVdsNodePage() {
                 actions={
                     <div className='flex flex-wrap items-center gap-3'>
                         <Button variant='outline' size='sm' onClick={() => router.push('/admin/vds-nodes')}>
-                            <ArrowLeft className='h-4 w-4 mr-2' />
+                            <ArrowLeft className='mr-2 h-4 w-4' />
                             {t('common.back')}
                         </Button>
                         <Button variant='outline' size='sm' onClick={handleTestConnection} loading={connectionTesting}>
-                            <Wifi className='h-4 w-4 mr-2' />
+                            <Wifi className='mr-2 h-4 w-4' />
                             {t('admin.vdsNodes.connection.test_button')}
                         </Button>
                         <Button size='sm' onClick={handleSave} loading={saving}>
-                            <Save className='h-4 w-4 mr-2' />
+                            <Save className='mr-2 h-4 w-4' />
                             {t('common.save')}
                         </Button>
                     </div>
@@ -339,18 +339,18 @@ export default function EditVdsNodePage() {
 
             {connectionResult && (
                 <div
-                    className={`rounded-2xl border-2 px-5 py-4 space-y-3 ${
+                    className={`space-y-3 rounded-2xl border-2 px-5 py-4 ${
                         connectionResult.ok ? 'border-green-500/40 bg-green-500/5' : 'border-red-500/40 bg-red-500/5'
                     }`}
                 >
                     <div className='flex items-center gap-3'>
                         {connectionResult.ok ? (
-                            <Wifi className='h-5 w-5 text-green-500 shrink-0' />
+                            <Wifi className='h-5 w-5 shrink-0 text-green-500' />
                         ) : (
-                            <WifiOff className='h-5 w-5 text-red-500 shrink-0' />
+                            <WifiOff className='h-5 w-5 shrink-0 text-red-500' />
                         )}
                         <p
-                            className={`font-semibold text-sm ${
+                            className={`text-sm font-semibold ${
                                 connectionResult.ok ? 'text-green-600' : 'text-red-600'
                             }`}
                         >
@@ -358,7 +358,7 @@ export default function EditVdsNodePage() {
                         </p>
                     </div>
                     {connectionResult.payload !== undefined && connectionResult.payload !== null && (
-                        <pre className='text-[11px] text-muted-foreground bg-background/60 border border-border/50 rounded-xl p-3 overflow-auto max-h-64 font-mono leading-relaxed whitespace-pre-wrap break-all'>
+                        <pre className='text-muted-foreground bg-background/60 border-border/50 max-h-64 overflow-auto rounded-xl border p-3 font-mono text-[11px] leading-relaxed break-all whitespace-pre-wrap'>
                             {JSON.stringify(connectionResult.payload, null, 2)}
                         </pre>
                     )}
@@ -368,9 +368,9 @@ export default function EditVdsNodePage() {
             <WidgetRenderer widgets={getWidgets('admin-vds-node-edit', 'top-of-page')} context={{ id }} />
 
             <div className='block'>
-                <Tabs defaultValue='details' orientation='vertical' className='w-full flex flex-col md:flex-row gap-6'>
-                    <aside className='w-full md:w-64 shrink-0 overflow-x-auto md:overflow-visible pb-2 md:pb-0'>
-                        <TabsList className='flex flex-row md:flex-col h-auto w-max md:w-full bg-card/30 border border-border/50 p-2 rounded-2xl gap-2 md:gap-1'>
+                <Tabs defaultValue='details' orientation='vertical' className='flex w-full flex-col gap-6 md:flex-row'>
+                    <aside className='w-full shrink-0 overflow-x-auto pb-2 md:w-64 md:overflow-visible md:pb-0'>
+                        <TabsList className='bg-card/30 border-border/50 flex h-auto w-max flex-row gap-2 rounded-2xl border p-2 md:w-full md:flex-col md:gap-1'>
                             {tabs.map((tab) => {
                                 const Icon = tab.icon;
 
@@ -378,9 +378,9 @@ export default function EditVdsNodePage() {
                                     <TabsTrigger
                                         key={tab.value}
                                         value={tab.value}
-                                        className='w-auto md:w-full justify-start px-4 py-3 h-auto text-sm md:text-base font-normal data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:font-medium transition-all rounded-xl border border-transparent data-[state=active]:border-primary/10 whitespace-nowrap'
+                                        className='data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:border-primary/10 h-auto w-auto justify-start rounded-xl border border-transparent px-4 py-3 text-sm font-normal whitespace-nowrap transition-all data-[state=active]:font-medium md:w-full md:text-base'
                                     >
-                                        <Icon className='w-4 h-4 mr-3' />
+                                        <Icon className='mr-3 h-4 w-4' />
                                         {tab.label}
                                     </TabsTrigger>
                                 );
@@ -388,7 +388,7 @@ export default function EditVdsNodePage() {
                         </TabsList>
                     </aside>
 
-                    <div className='flex-1 space-y-6 min-w-0'>
+                    <div className='min-w-0 flex-1 space-y-6'>
                         <TabsContent value='details' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
                             <DetailsTab
                                 nodeId={id}
@@ -461,7 +461,7 @@ export default function EditVdsNodePage() {
                     </SheetHeader>
                     <div className='mt-6 space-y-4'>
                         <div className='relative'>
-                            <RefreshCw className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground' />
+                            <RefreshCw className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
                             <Input
                                 placeholder={t('admin.vdsNodes.form.search_location')}
                                 value={locationSearch}
@@ -469,9 +469,9 @@ export default function EditVdsNodePage() {
                                 className='pl-10'
                             />
                         </div>
-                        <div className='space-y-2 max-h-[60vh] overflow-y-auto'>
+                        <div className='max-h-[60vh] space-y-2 overflow-y-auto'>
                             {filteredLocations.length === 0 ? (
-                                <p className='text-sm text-muted-foreground italic text-center py-6'>
+                                <p className='text-muted-foreground py-6 text-center text-sm italic'>
                                     {t('admin.vdsNodes.form.no_locations')}
                                 </p>
                             ) : (
@@ -484,11 +484,11 @@ export default function EditVdsNodePage() {
                                             setSelectedLocationName(loc.name);
                                             setLocationModalOpen(false);
                                         }}
-                                        className='w-full text-left px-4 py-3 rounded-xl border border-border/50 hover:bg-muted/40 transition-colors'
+                                        className='border-border/50 hover:bg-muted/40 w-full rounded-xl border px-4 py-3 text-left transition-colors'
                                     >
-                                        <div className='font-medium text-sm'>{loc.name}</div>
+                                        <div className='text-sm font-medium'>{loc.name}</div>
                                         {loc.description && (
-                                            <div className='text-xs text-muted-foreground mt-0.5'>
+                                            <div className='text-muted-foreground mt-0.5 text-xs'>
                                                 {loc.description}
                                             </div>
                                         )}

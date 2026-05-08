@@ -169,7 +169,7 @@ export default function CreateServerImportPage() {
     }
 
     return (
-        <div className='space-y-8 pb-16 '>
+        <div className='space-y-8 pb-16'>
             <WidgetRenderer widgets={getWidgets('server-import-new', 'top-of-page')} />
 
             <PageHeader
@@ -187,12 +187,12 @@ export default function CreateServerImportPage() {
                         <Button onClick={handleStartImport} disabled={saving}>
                             {saving ? (
                                 <>
-                                    <Loader2 className='h-4 w-4 mr-2 animate-spin' />
+                                    <Loader2 className='mr-2 h-4 w-4 animate-spin' />
                                     {t('common.saving')}
                                 </>
                             ) : (
                                 <>
-                                    <Zap className='h-4 w-4 mr-2' />
+                                    <Zap className='mr-2 h-4 w-4' />
                                     {t('serverImport.createImport')}
                                 </>
                             )}
@@ -202,19 +202,19 @@ export default function CreateServerImportPage() {
             />
             <WidgetRenderer widgets={getWidgets('server-import-new', 'after-header')} />
 
-            <div className='grid grid-cols-1 lg:grid-cols-12 gap-8'>
-                <div className='lg:col-span-8 space-y-8'>
-                    <div className='grid grid-cols-1 md:grid-cols-2 gap-8'>
-                        <div className='bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl p-8 space-y-6'>
-                            <div className='flex items-center gap-4 border-b border-border/10 pb-6'>
-                                <div className='h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20'>
-                                    <Globe className='h-5 w-5 text-primary' />
+            <div className='grid grid-cols-1 gap-8 lg:grid-cols-12'>
+                <div className='space-y-8 lg:col-span-8'>
+                    <div className='grid grid-cols-1 gap-8 md:grid-cols-2'>
+                        <div className='bg-card/50 border-border/50 space-y-6 rounded-3xl border p-8 backdrop-blur-3xl'>
+                            <div className='border-border/10 flex items-center gap-4 border-b pb-6'>
+                                <div className='bg-primary/10 border-primary/20 flex h-10 w-10 items-center justify-center rounded-xl border'>
+                                    <Globe className='text-primary h-5 w-5' />
                                 </div>
                                 <div className='space-y-0.5'>
-                                    <h2 className='text-xl font-black uppercase tracking-tight italic'>
+                                    <h2 className='text-xl font-black tracking-tight uppercase italic'>
                                         {t('serverImport.connection')}
                                     </h2>
-                                    <p className='text-[9px] font-bold text-muted-foreground tracking-widest uppercase opacity-50'>
+                                    <p className='text-muted-foreground text-[9px] font-bold tracking-widest uppercase opacity-50'>
                                         {t('serverImport.typeHelp')}
                                     </p>
                                 </div>
@@ -222,7 +222,7 @@ export default function CreateServerImportPage() {
 
                             <div className='space-y-6'>
                                 <div className='space-y-2.5'>
-                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                    <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                         {t('serverImport.type')}
                                     </label>
                                     <HeadlessSelect
@@ -244,7 +244,7 @@ export default function CreateServerImportPage() {
                                 </div>
 
                                 <div className='space-y-2.5'>
-                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                    <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                         {t('serverImport.host')} <span className='text-primary'>*</span>
                                     </label>
                                     <Input
@@ -255,14 +255,14 @@ export default function CreateServerImportPage() {
                                         className={cn(errors.host && 'border-red-500/50 bg-red-500/5')}
                                     />
                                     {errors.host && (
-                                        <p className='text-[9px] font-black text-red-500 ml-1 uppercase tracking-widest'>
+                                        <p className='ml-1 text-[9px] font-black tracking-widest text-red-500 uppercase'>
                                             {errors.host}
                                         </p>
                                     )}
                                 </div>
 
                                 <div className='space-y-2.5'>
-                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                    <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                         {t('serverImport.port')} <span className='text-primary'>*</span>
                                     </label>
                                     <Input
@@ -273,7 +273,7 @@ export default function CreateServerImportPage() {
                                         className={cn(errors.port && 'border-red-500/50 bg-red-500/5')}
                                     />
                                     {errors.port && (
-                                        <p className='text-[9px] font-black text-red-500 ml-1 uppercase tracking-widest'>
+                                        <p className='ml-1 text-[9px] font-black tracking-widest text-red-500 uppercase'>
                                             {errors.port}
                                         </p>
                                     )}
@@ -281,16 +281,16 @@ export default function CreateServerImportPage() {
                             </div>
                         </div>
 
-                        <div className='bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl p-8 space-y-6'>
-                            <div className='flex items-center gap-4 border-b border-border/10 pb-6'>
-                                <div className='h-10 w-10 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20'>
+                        <div className='bg-card/50 border-border/50 space-y-6 rounded-3xl border p-8 backdrop-blur-3xl'>
+                            <div className='border-border/10 flex items-center gap-4 border-b pb-6'>
+                                <div className='flex h-10 w-10 items-center justify-center rounded-xl border border-blue-500/20 bg-blue-500/10'>
                                     <User className='h-5 w-5 text-blue-500' />
                                 </div>
                                 <div className='space-y-0.5'>
-                                    <h2 className='text-xl font-black uppercase tracking-tight italic'>
+                                    <h2 className='text-xl font-black tracking-tight uppercase italic'>
                                         {t('serverImport.authentication')}
                                     </h2>
-                                    <p className='text-[9px] font-bold text-muted-foreground tracking-widest uppercase opacity-50'>
+                                    <p className='text-muted-foreground text-[9px] font-bold tracking-widest uppercase opacity-50'>
                                         {t('serverImport.credentialsHelp')}
                                     </p>
                                 </div>
@@ -298,7 +298,7 @@ export default function CreateServerImportPage() {
 
                             <div className='space-y-6'>
                                 <div className='space-y-2.5'>
-                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                    <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                         {t('serverImport.user')} <span className='text-primary'>*</span>
                                     </label>
                                     <Input
@@ -309,14 +309,14 @@ export default function CreateServerImportPage() {
                                         className={cn(errors.user && 'border-red-500/50 bg-red-500/5')}
                                     />
                                     {errors.user && (
-                                        <p className='text-[9px] font-black text-red-500 ml-1 uppercase tracking-widest'>
+                                        <p className='ml-1 text-[9px] font-black tracking-widest text-red-500 uppercase'>
                                             {errors.user}
                                         </p>
                                     )}
                                 </div>
 
                                 <div className='space-y-2.5'>
-                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1'>
+                                    <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                         {t('serverImport.password')} <span className='text-primary'>*</span>
                                     </label>
                                     <Input
@@ -328,7 +328,7 @@ export default function CreateServerImportPage() {
                                         className={cn(errors.password && 'border-red-500/50 bg-red-500/5')}
                                     />
                                     {errors.password && (
-                                        <p className='text-[9px] font-black text-red-500 ml-1 uppercase tracking-widest'>
+                                        <p className='ml-1 text-[9px] font-black tracking-widest text-red-500 uppercase'>
                                             {errors.password}
                                         </p>
                                     )}
@@ -337,32 +337,32 @@ export default function CreateServerImportPage() {
                         </div>
                     </div>
 
-                    <div className='bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl p-8 space-y-8 relative overflow-hidden'>
-                        <div className='absolute top-0 right-0 w-48 h-48 bg-emerald-500/5 blur-[80px] pointer-events-none' />
-                        <div className='flex items-center gap-5 border-b border-border/10 pb-8'>
-                            <div className='h-12 w-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20'>
+                    <div className='bg-card/50 border-border/50 relative space-y-8 overflow-hidden rounded-3xl border p-8 backdrop-blur-3xl'>
+                        <div className='pointer-events-none absolute top-0 right-0 h-48 w-48 bg-emerald-500/5 blur-[80px]' />
+                        <div className='border-border/10 flex items-center gap-5 border-b pb-8'>
+                            <div className='flex h-12 w-12 items-center justify-center rounded-2xl border border-emerald-500/20 bg-emerald-500/10'>
                                 <FolderUp className='h-6 w-6 text-emerald-500' />
                             </div>
                             <div className='space-y-1'>
-                                <h2 className='text-2xl font-black uppercase tracking-tight italic leading-none'>
+                                <h2 className='text-2xl leading-none font-black tracking-tight uppercase italic'>
                                     {t('serverImport.paths')}
                                 </h2>
-                                <p className='text-[9px] font-bold text-muted-foreground tracking-widest uppercase opacity-50 italic'>
+                                <p className='text-muted-foreground text-[9px] font-bold tracking-widest uppercase italic opacity-50'>
                                     {t('serverImport.pathsHelp')}
                                 </p>
                             </div>
                         </div>
 
-                        <div className='grid grid-cols-1 md:grid-cols-2 gap-8'>
+                        <div className='grid grid-cols-1 gap-8 md:grid-cols-2'>
                             <div className='space-y-3'>
-                                <div className='flex items-center gap-2.5 ml-1'>
-                                    <div className='w-1.5 h-1.5 rounded-full bg-emerald-500/50' />
-                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground'>
+                                <div className='ml-1 flex items-center gap-2.5'>
+                                    <div className='h-1.5 w-1.5 rounded-full bg-emerald-500/50' />
+                                    <label className='text-muted-foreground text-[9px] font-black tracking-[0.2em] uppercase'>
                                         {t('serverImport.sourceLocation')}
                                     </label>
                                 </div>
-                                <div className='relative group'>
-                                    <div className='absolute left-4 top-1/2 -translate-y-1/2 text-emerald-500/40 group-focus-within:text-emerald-500 transition-colors z-10'>
+                                <div className='group relative'>
+                                    <div className='absolute top-1/2 left-4 z-10 -translate-y-1/2 text-emerald-500/40 transition-colors group-focus-within:text-emerald-500'>
                                         <FolderUp className='h-4 w-4' />
                                     </div>
                                     <Input
@@ -379,21 +379,21 @@ export default function CreateServerImportPage() {
                                     />
                                 </div>
                                 {errors.sourceLocation && (
-                                    <p className='text-[9px] font-black text-red-500 ml-2 uppercase tracking-widest'>
+                                    <p className='ml-2 text-[9px] font-black tracking-widest text-red-500 uppercase'>
                                         {errors.sourceLocation}
                                     </p>
                                 )}
                             </div>
 
                             <div className='space-y-3'>
-                                <div className='flex items-center gap-2.5 ml-1'>
-                                    <div className='w-1.5 h-1.5 rounded-full bg-primary/50' />
-                                    <label className='text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground'>
+                                <div className='ml-1 flex items-center gap-2.5'>
+                                    <div className='bg-primary/50 h-1.5 w-1.5 rounded-full' />
+                                    <label className='text-muted-foreground text-[9px] font-black tracking-[0.2em] uppercase'>
                                         {t('serverImport.destinationLocation')}
                                     </label>
                                 </div>
-                                <div className='relative group'>
-                                    <div className='absolute left-4 top-1/2 -translate-y-1/2 text-primary/40 group-focus-within:text-primary transition-colors z-10'>
+                                <div className='group relative'>
+                                    <div className='text-primary/40 group-focus-within:text-primary absolute top-1/2 left-4 z-10 -translate-y-1/2 transition-colors'>
                                         <FolderDown className='h-4 w-4' />
                                     </div>
                                     <Input
@@ -410,7 +410,7 @@ export default function CreateServerImportPage() {
                                     />
                                 </div>
                                 {errors.destinationLocation && (
-                                    <p className='text-[9px] font-black text-red-500 ml-2 uppercase tracking-widest'>
+                                    <p className='ml-2 text-[9px] font-black tracking-widest text-red-500 uppercase'>
                                         {errors.destinationLocation}
                                     </p>
                                 )}
@@ -419,28 +419,28 @@ export default function CreateServerImportPage() {
                     </div>
                 </div>
 
-                <div className='lg:col-span-4 space-y-8'>
-                    <div className='bg-card/50 backdrop-blur-3xl border border-border/50 rounded-3xl p-8 space-y-6 relative overflow-hidden group'>
-                        <div className='absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-2xl pointer-events-none group-hover:bg-primary/10 transition-all duration-700' />
-                        <div className='flex items-center gap-4 border-b border-border/10 pb-6 relative z-10'>
-                            <div className='h-10 w-10 rounded-xl bg-secondary/50 flex items-center justify-center border border-border/10'>
-                                <Settings2 className='h-5 w-5 text-muted-foreground' />
+                <div className='space-y-8 lg:col-span-4'>
+                    <div className='bg-card/50 border-border/50 group relative space-y-6 overflow-hidden rounded-3xl border p-8 backdrop-blur-3xl'>
+                        <div className='bg-primary/5 group-hover:bg-primary/10 pointer-events-none absolute top-0 right-0 h-32 w-32 blur-2xl transition-all duration-700' />
+                        <div className='border-border/10 relative z-10 flex items-center gap-4 border-b pb-6'>
+                            <div className='bg-secondary/50 border-border/10 flex h-10 w-10 items-center justify-center rounded-xl border'>
+                                <Settings2 className='text-muted-foreground h-5 w-5' />
                             </div>
                             <div className='space-y-0.5'>
-                                <h2 className='text-xl font-black uppercase tracking-tight italic'>
+                                <h2 className='text-xl font-black tracking-tight uppercase italic'>
                                     {t('serverImport.options')}
                                 </h2>
-                                <p className='text-[9px] font-bold text-muted-foreground tracking-widest uppercase opacity-50 italic'>
+                                <p className='text-muted-foreground text-[9px] font-bold tracking-widest uppercase italic opacity-50'>
                                     Configuration
                                 </p>
                             </div>
                         </div>
 
-                        <div className='space-y-4 relative z-10'>
+                        <div className='relative z-10 space-y-4'>
                             <div
                                 onClick={() => !saving && setForm((prev) => ({ ...prev, wipe: !prev.wipe }))}
                                 className={cn(
-                                    'p-5 rounded-2xl border transition-all duration-500 cursor-pointer group/opt relative overflow-hidden',
+                                    'group/opt relative cursor-pointer overflow-hidden rounded-2xl border p-5 transition-all duration-500',
                                     form.wipe
                                         ? 'bg-primary/10 border-primary/40'
                                         : 'bg-secondary/30 border-border/20 hover:border-border/40',
@@ -450,25 +450,25 @@ export default function CreateServerImportPage() {
                                     <div className='space-y-0.5'>
                                         <p
                                             className={cn(
-                                                'font-black text-xs uppercase tracking-wider transition-colors',
+                                                'text-xs font-black tracking-wider uppercase transition-colors',
                                                 form.wipe ? 'text-primary' : 'text-muted-foreground',
                                             )}
                                         >
                                             {t('serverImport.wipe')}
                                         </p>
-                                        <p className='text-[9px] font-bold text-muted-foreground leading-relaxed italic opacity-70 pr-4'>
+                                        <p className='text-muted-foreground pr-4 text-[9px] leading-relaxed font-bold italic opacity-70'>
                                             {t('serverImport.wipeHelp')}
                                         </p>
                                     </div>
                                     <div
                                         className={cn(
-                                            'w-10 h-5 rounded-full transition-all duration-500 relative shrink-0',
+                                            'relative h-5 w-10 shrink-0 rounded-full transition-all duration-500',
                                             form.wipe ? 'bg-primary' : 'bg-muted',
                                         )}
                                     >
                                         <div
                                             className={cn(
-                                                'absolute top-1 w-3 h-3 rounded-full bg-background transition-all duration-500',
+                                                'bg-background absolute top-1 h-3 w-3 rounded-full transition-all duration-500',
                                                 form.wipe ? 'left-6' : 'left-1',
                                             )}
                                         />
@@ -481,9 +481,9 @@ export default function CreateServerImportPage() {
                                     !saving && setForm((prev) => ({ ...prev, wipeAllFiles: !prev.wipeAllFiles }))
                                 }
                                 className={cn(
-                                    'p-5 rounded-2xl border transition-all duration-500 cursor-pointer group/opt relative overflow-hidden',
+                                    'group/opt relative cursor-pointer overflow-hidden rounded-2xl border p-5 transition-all duration-500',
                                     form.wipeAllFiles
-                                        ? 'bg-red-500/10 border-red-500/40'
+                                        ? 'border-red-500/40 bg-red-500/10'
                                         : 'bg-secondary/30 border-border/20 hover:border-red-500/20',
                                 )}
                             >
@@ -491,25 +491,25 @@ export default function CreateServerImportPage() {
                                     <div className='space-y-0.5'>
                                         <p
                                             className={cn(
-                                                'font-black text-xs uppercase tracking-wider transition-colors',
+                                                'text-xs font-black tracking-wider uppercase transition-colors',
                                                 form.wipeAllFiles ? 'text-red-500' : 'text-muted-foreground',
                                             )}
                                         >
                                             {t('serverImport.wipeAllFiles')}
                                         </p>
-                                        <p className='text-[9px] font-bold text-muted-foreground leading-relaxed italic opacity-70 pr-4'>
+                                        <p className='text-muted-foreground pr-4 text-[9px] leading-relaxed font-bold italic opacity-70'>
                                             {t('serverImport.wipeAllFilesHelp')}
                                         </p>
                                     </div>
                                     <div
                                         className={cn(
-                                            'w-10 h-5 rounded-full transition-all duration-500 relative shrink-0',
+                                            'relative h-5 w-10 shrink-0 rounded-full transition-all duration-500',
                                             form.wipeAllFiles ? 'bg-red-500' : 'bg-muted',
                                         )}
                                     >
                                         <div
                                             className={cn(
-                                                'absolute top-1 w-3 h-3 rounded-full bg-background transition-all duration-500',
+                                                'bg-background absolute top-1 h-3 w-3 rounded-full transition-all duration-500',
                                                 form.wipeAllFiles ? 'left-6' : 'left-1',
                                             )}
                                         />
@@ -519,16 +519,16 @@ export default function CreateServerImportPage() {
                         </div>
 
                         {form.wipeAllFiles && (
-                            <div className='mt-4 p-5 rounded-2xl bg-red-500/10 border border-red-500/20 animate-in zoom-in-95 duration-500 relative z-10'>
+                            <div className='animate-in zoom-in-95 relative z-10 mt-4 rounded-2xl border border-red-500/20 bg-red-500/10 p-5 duration-500'>
                                 <div className='flex gap-3'>
-                                    <div className='h-8 w-8 rounded-xl bg-red-500/20 flex items-center justify-center shrink-0 border border-red-500/30'>
+                                    <div className='flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-red-500/30 bg-red-500/20'>
                                         <AlertTriangle className='h-4 w-4 text-red-500' />
                                     </div>
                                     <div className='space-y-0.5'>
-                                        <h4 className='text-red-500 font-black text-[10px] uppercase tracking-widest'>
+                                        <h4 className='text-[10px] font-black tracking-widest text-red-500 uppercase'>
                                             {t('common.warning')}
                                         </h4>
-                                        <p className='text-red-500/80 text-[9px] font-extrabold italic leading-relaxed'>
+                                        <p className='text-[9px] leading-relaxed font-extrabold text-red-500/80 italic'>
                                             {t('serverImport.wipeAllFilesWarning')}
                                         </p>
                                     </div>
@@ -537,16 +537,16 @@ export default function CreateServerImportPage() {
                         )}
                     </div>
 
-                    <div className='bg-blue-500/5 border border-blue-500/10 backdrop-blur-3xl rounded-3xl p-8 space-y-4 relative overflow-hidden group'>
-                        <div className='absolute -bottom-6 -right-6 w-24 h-24 bg-blue-500/10 blur-2xl pointer-events-none group-hover:scale-150 transition-transform duration-1000' />
-                        <div className='h-10 w-10 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20 relative z-10'>
+                    <div className='group relative space-y-4 overflow-hidden rounded-3xl border border-blue-500/10 bg-blue-500/5 p-8 backdrop-blur-3xl'>
+                        <div className='pointer-events-none absolute -right-6 -bottom-6 h-24 w-24 bg-blue-500/10 blur-2xl transition-transform duration-1000 group-hover:scale-150' />
+                        <div className='relative z-10 flex h-10 w-10 items-center justify-center rounded-xl border border-blue-500/20 bg-blue-500/10'>
                             <ShieldAlert className='h-5 w-5 text-blue-500' />
                         </div>
-                        <div className='space-y-2 relative z-10'>
-                            <h3 className='text-lg font-black uppercase tracking-tight text-blue-500 leading-none italic'>
+                        <div className='relative z-10 space-y-2'>
+                            <h3 className='text-lg leading-none font-black tracking-tight text-blue-500 uppercase italic'>
                                 {t('serverImport.infoTitle')}
                             </h3>
-                            <p className='text-blue-500/70 font-bold text-[11px] leading-relaxed italic'>
+                            <p className='text-[11px] leading-relaxed font-bold text-blue-500/70 italic'>
                                 {t('serverImport.infoDescription')}
                             </p>
                         </div>
@@ -554,7 +554,7 @@ export default function CreateServerImportPage() {
                 </div>
             </div>
 
-            <div className='fixed inset-0 bg-linear-to-br from-primary/5 via-transparent to-blue-500/5 pointer-events-none -z-10' />
+            <div className='from-primary/5 pointer-events-none fixed inset-0 -z-10 bg-linear-to-br via-transparent to-blue-500/5' />
             <WidgetRenderer widgets={getWidgets('server-import-new', 'bottom-of-page')} />
         </div>
     );

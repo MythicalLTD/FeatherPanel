@@ -455,7 +455,7 @@ export default function ServersPage() {
                 icon={Server}
                 actions={
                     <Button onClick={() => router.push('/admin/servers/create')}>
-                        <Plus className='h-4 w-4 mr-2' />
+                        <Plus className='mr-2 h-4 w-4' />
                         {t('admin.servers.create')}
                     </Button>
                 }
@@ -463,17 +463,17 @@ export default function ServersPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-servers', 'after-header')} />
 
-            <div className='flex flex-col gap-4 items-stretch bg-card/50 backdrop-blur-md p-4 rounded-2xl border border-border shadow-sm'>
-                <div className='relative flex-1 group w-full'>
-                    <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
+            <div className='bg-card/50 border-border flex flex-col items-stretch gap-4 rounded-2xl border p-4 shadow-sm backdrop-blur-md'>
+                <div className='group relative w-full flex-1'>
+                    <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
                     <Input
                         placeholder={t('admin.servers.search_placeholder')}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className='pl-10 h-11 w-full'
+                        className='h-11 w-full pl-10'
                     />
                 </div>
-                <div className='flex flex-col sm:flex-row gap-2 items-stretch sm:items-center justify-between'>
+                <div className='flex flex-col items-stretch justify-between gap-2 sm:flex-row sm:items-center'>
                     <div className='flex flex-wrap items-center gap-2'>
                         <Button
                             variant={filterOwner ? 'default' : 'outline'}
@@ -486,7 +486,7 @@ export default function ServersPage() {
                                 }
                             }}
                         >
-                            <User className='h-3.5 w-3.5 mr-2' />
+                            <User className='mr-2 h-3.5 w-3.5' />
                             {filterOwner
                                 ? t('admin.servers.filters.user_selected', { username: filterOwner.username })
                                 : t('admin.servers.filters.user')}
@@ -500,7 +500,7 @@ export default function ServersPage() {
                                 setIsNodeFilterModalOpen(true);
                             }}
                         >
-                            <Network className='h-3.5 w-3.5 mr-2' />
+                            <Network className='mr-2 h-3.5 w-3.5' />
                             {filterNode
                                 ? t('admin.servers.filters.node_selected', { name: filterNode.name })
                                 : t('admin.servers.filters.node')}
@@ -513,7 +513,7 @@ export default function ServersPage() {
                                 setIsRealmFilterModalOpen(true);
                             }}
                         >
-                            <Layers className='h-3.5 w-3.5 mr-2' />
+                            <Layers className='mr-2 h-3.5 w-3.5' />
                             {filterRealm
                                 ? t('admin.servers.filters.realm_selected', { name: filterRealm.name })
                                 : t('admin.servers.filters.realm')}
@@ -535,7 +535,7 @@ export default function ServersPage() {
                                 }
                             }}
                         >
-                            <Gauge className='h-3.5 w-3.5 mr-2' />
+                            <Gauge className='mr-2 h-3.5 w-3.5' />
                             {filterSpell
                                 ? t('admin.servers.filters.spell_selected', { name: filterSpell.name })
                                 : t('admin.servers.filters.spell')}
@@ -556,7 +556,7 @@ export default function ServersPage() {
                                 }
                             }}
                         >
-                            <Database className='h-3.5 w-3.5 mr-2' />
+                            <Database className='mr-2 h-3.5 w-3.5' />
                             {filterLocation
                                 ? t('admin.servers.filters.location_selected', { name: filterLocation.name })
                                 : t('admin.servers.filters.location')}
@@ -581,7 +581,7 @@ export default function ServersPage() {
                                 setSortBy(field);
                                 setSortOrder(order);
                             }}
-                            className='w-[220px] h-11 rounded-xl bg-background/50 border-border/50 text-sm'
+                            className='bg-background/50 border-border/50 h-11 w-[220px] rounded-xl text-sm'
                         >
                             <option value='id-DESC'>{t('admin.servers.sort.newest')}</option>
                             <option value='id-ASC'>{t('admin.servers.sort.oldest')}</option>
@@ -593,7 +593,7 @@ export default function ServersPage() {
                     </div>
                 </div>
                 {showAdvancedFilters && (
-                    <div className='grid grid-cols-1 md:grid-cols-3 gap-3 pt-2'>
+                    <div className='grid grid-cols-1 gap-3 pt-2 md:grid-cols-3'>
                         <Input
                             type='number'
                             min={1}
@@ -661,23 +661,23 @@ export default function ServersPage() {
                     description={t('admin.servers.search_placeholder')}
                     action={
                         <Button onClick={() => router.push('/admin/servers/create')}>
-                            <Plus className='h-4 w-4 mr-2' />
+                            <Plus className='mr-2 h-4 w-4' />
                             {t('admin.servers.create')}
                         </Button>
                     }
                 />
             ) : (
                 <>
-                    <div className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-xl border border-border bg-card/60 px-4 py-3 mb-4'>
+                    <div className='border-border bg-card/60 mb-4 flex flex-col items-start justify-between gap-3 rounded-xl border px-4 py-3 sm:flex-row sm:items-center'>
                         <div className='flex items-center gap-2 text-sm'>
                             <button
                                 type='button'
                                 onClick={selectAllVisible}
-                                className='text-xs sm:text-sm font-medium text-primary hover:underline'
+                                className='text-primary text-xs font-medium hover:underline sm:text-sm'
                             >
                                 {t('servers.bulk.selectAllPage')}
                             </button>
-                            <span className='text-xs sm:text-sm text-muted-foreground'>
+                            <span className='text-muted-foreground text-xs sm:text-sm'>
                                 {selectedServers.length > 0
                                     ? t('servers.bulk.selectedCount', {
                                           count: String(selectedServers.length),
@@ -688,7 +688,7 @@ export default function ServersPage() {
                                 <button
                                     type='button'
                                     onClick={clearSelection}
-                                    className='text-xs sm:text-sm text-muted-foreground hover:text-foreground hover:underline'
+                                    className='text-muted-foreground hover:text-foreground text-xs hover:underline sm:text-sm'
                                 >
                                     {t('servers.bulk.clearSelection')}
                                 </button>
@@ -725,7 +725,7 @@ export default function ServersPage() {
                         </div>
                     </div>
                     {pagination.totalPages > 1 && (
-                        <div className='flex items-center justify-between gap-4 py-3 px-4 rounded-xl border border-border bg-card/50 mb-4'>
+                        <div className='border-border bg-card/50 mb-4 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
                             <Button
                                 variant='outline'
                                 size='sm'
@@ -773,17 +773,17 @@ export default function ServersPage() {
                                     icon={Server}
                                     badges={badges}
                                     description={
-                                        <div className='flex items-center gap-4 mt-2 flex-wrap'>
+                                        <div className='mt-2 flex flex-wrap items-center gap-4'>
                                             <StatusBadge status={serverStatus} t={t} />
-                                            <div className='flex items-center gap-1.5 text-xs text-muted-foreground'>
+                                            <div className='text-muted-foreground flex items-center gap-1.5 text-xs'>
                                                 <Database className='h-3.5 w-3.5' />
                                                 <span>{formatMemory(server.memory)}</span>
                                             </div>
-                                            <div className='flex items-center gap-1.5 text-xs text-muted-foreground'>
+                                            <div className='text-muted-foreground flex items-center gap-1.5 text-xs'>
                                                 <Cpu className='h-3.5 w-3.5' />
                                                 <span>{formatCpu(server.cpu)}</span>
                                             </div>
-                                            <div className='flex items-center gap-1.5 text-xs text-muted-foreground'>
+                                            <div className='text-muted-foreground flex items-center gap-1.5 text-xs'>
                                                 <HardDrive className='h-3.5 w-3.5' />
                                                 <span>{formatDisk(server.disk)}</span>
                                             </div>
@@ -824,7 +824,7 @@ export default function ServersPage() {
                                                 <Button
                                                     size='sm'
                                                     variant='ghost'
-                                                    className='text-amber-500 hover:text-amber-600 hover:bg-amber-500/10'
+                                                    className='text-amber-500 hover:bg-amber-500/10 hover:text-amber-600'
                                                     onClick={() => handleCancelTransfer(server)}
                                                     loading={cancellingTransferId === server.id}
                                                     title={t('common.cancel')}
@@ -859,7 +859,7 @@ export default function ServersPage() {
                     </div>
 
                     {pagination.totalPages > 1 && (
-                        <div className='flex items-center justify-center gap-2 mt-8'>
+                        <div className='mt-8 flex items-center justify-center gap-2'>
                             <Button
                                 variant='outline'
                                 size='icon'
@@ -884,19 +884,19 @@ export default function ServersPage() {
                 </>
             )}
 
-            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+            <div className='grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3'>
                 <PageCard title={t('admin.servers.help.managing.title')} icon={Server}>
-                    <p className='text-sm text-muted-foreground leading-relaxed'>
+                    <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.servers.help.managing.description')}
                     </p>
                 </PageCard>
                 <PageCard title={t('admin.servers.help.relationships.title')} icon={Layers}>
-                    <p className='text-sm text-muted-foreground leading-relaxed'>
+                    <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.servers.help.relationships.description')}
                     </p>
                 </PageCard>
                 <PageCard title={t('admin.servers.help.resources.title')} icon={Gauge}>
-                    <p className='text-sm text-muted-foreground leading-relaxed'>
+                    <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.servers.help.resources.description')}
                     </p>
                 </PageCard>
@@ -905,7 +905,7 @@ export default function ServersPage() {
                     icon={HelpCircle}
                     className='md:col-span-2 lg:col-span-3'
                 >
-                    <ul className='text-sm text-muted-foreground leading-relaxed list-disc list-inside space-y-1'>
+                    <ul className='text-muted-foreground list-inside list-disc space-y-1 text-sm leading-relaxed'>
                         <li>{t('admin.servers.help.tips.item1')}</li>
                         <li>{t('admin.servers.help.tips.item2')}</li>
                         <li>{t('admin.servers.help.tips.item3')}</li>
@@ -914,14 +914,14 @@ export default function ServersPage() {
             </div>
 
             <Sheet open={isViewDrawerOpen} onOpenChange={setIsViewDrawerOpen}>
-                <SheetContent side='right' className='sm:max-w-2xl overflow-y-auto custom-scrollbar'>
+                <SheetContent side='right' className='custom-scrollbar overflow-y-auto sm:max-w-2xl'>
                     {selectedServer && (
                         <>
                             <SheetHeader>
                                 <div className='flex items-center justify-between'>
                                     <div>
                                         <SheetTitle className='flex items-center gap-2'>
-                                            <Server className='h-5 w-5 text-primary' />
+                                            <Server className='text-primary h-5 w-5' />
                                             {t('admin.servers.details.title')}
                                         </SheetTitle>
                                         <SheetDescription>
@@ -934,7 +934,7 @@ export default function ServersPage() {
                                         onClick={() => router.push(`/server/${selectedServer?.uuidShort}`)}
                                         className='rounded-xl border-dashed'
                                     >
-                                        <Eye className='h-4 w-4 mr-2' />
+                                        <Eye className='mr-2 h-4 w-4' />
                                         {t('admin.servers.details.view_console')}
                                     </Button>
                                 </div>
@@ -942,31 +942,31 @@ export default function ServersPage() {
 
                             <div className='mt-8 space-y-8'>
                                 <Tabs defaultValue='details' className='w-full'>
-                                    <TabsList className='grid w-full grid-cols-3 bg-muted/50 p-1 rounded-xl'>
+                                    <TabsList className='bg-muted/50 grid w-full grid-cols-3 rounded-xl p-1'>
                                         <TabsTrigger
                                             value='details'
-                                            className='rounded-lg font-bold text-xs uppercase tracking-widest'
+                                            className='rounded-lg text-xs font-bold tracking-widest uppercase'
                                         >
                                             {t('admin.servers.details.tabs.details')}
                                         </TabsTrigger>
                                         <TabsTrigger
                                             value='resources'
-                                            className='rounded-lg font-bold text-xs uppercase tracking-widest'
+                                            className='rounded-lg text-xs font-bold tracking-widest uppercase'
                                         >
                                             {t('admin.servers.details.tabs.resources')}
                                         </TabsTrigger>
                                         <TabsTrigger
                                             value='relationships'
-                                            className='rounded-lg font-bold text-xs uppercase tracking-widest'
+                                            className='rounded-lg text-xs font-bold tracking-widest uppercase'
                                         >
                                             {t('admin.servers.details.tabs.relationships')}
                                         </TabsTrigger>
                                     </TabsList>
 
                                     <TabsContent value='details' className='mt-6 space-y-6'>
-                                        <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-                                            <div className='p-5 rounded-2xl bg-muted/30 border border-border/50'>
-                                                <h4 className='text-xs font-black uppercase tracking-widest text-primary mb-4'>
+                                        <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
+                                            <div className='bg-muted/30 border-border/50 rounded-2xl border p-5'>
+                                                <h4 className='text-primary mb-4 text-xs font-black tracking-widest uppercase'>
                                                     {t('admin.servers.details.basic_info')}
                                                 </h4>
                                                 <div className='space-y-4'>
@@ -999,8 +999,8 @@ export default function ServersPage() {
                                                 </div>
                                             </div>
 
-                                            <div className='p-5 rounded-2xl bg-muted/30 border border-border/50'>
-                                                <h4 className='text-xs font-black uppercase tracking-widest text-primary mb-4'>
+                                            <div className='bg-muted/30 border-border/50 rounded-2xl border p-5'>
+                                                <h4 className='text-primary mb-4 text-xs font-black tracking-widest uppercase'>
                                                     {t('admin.servers.details.configuration')}
                                                 </h4>
                                                 <div className='space-y-4'>
@@ -1037,9 +1037,9 @@ export default function ServersPage() {
                                     </TabsContent>
 
                                     <TabsContent value='resources' className='mt-6 space-y-6'>
-                                        <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-                                            <div className='p-5 rounded-2xl bg-muted/30 border border-border/50'>
-                                                <h4 className='text-xs font-black uppercase tracking-widest text-primary mb-4'>
+                                        <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
+                                            <div className='bg-muted/30 border-border/50 rounded-2xl border p-5'>
+                                                <h4 className='text-primary mb-4 text-xs font-black tracking-widest uppercase'>
                                                     {t('admin.servers.details.resource_limits')}
                                                 </h4>
                                                 <div className='space-y-4'>
@@ -1066,8 +1066,8 @@ export default function ServersPage() {
                                                 </div>
                                             </div>
 
-                                            <div className='p-5 rounded-2xl bg-muted/30 border border-border/50'>
-                                                <h4 className='text-xs font-black uppercase tracking-widest text-primary mb-4'>
+                                            <div className='bg-muted/30 border-border/50 rounded-2xl border p-5'>
+                                                <h4 className='text-primary mb-4 text-xs font-black tracking-widest uppercase'>
                                                     {t('admin.servers.details.system_quotas')}
                                                 </h4>
                                                 <div className='space-y-4'>
@@ -1113,11 +1113,11 @@ export default function ServersPage() {
                                 </Tabs>
                             </div>
 
-                            <SheetFooter className='mt-8 pt-6 border-t border-border/50'>
+                            <SheetFooter className='border-border/50 mt-8 border-t pt-6'>
                                 <Button
                                     variant='outline'
                                     onClick={() => setIsViewDrawerOpen(false)}
-                                    className='w-full sm:w-auto rounded-xl'
+                                    className='w-full rounded-xl sm:w-auto'
                                 >
                                     {t('common.close')}
                                 </Button>
@@ -1133,7 +1133,7 @@ export default function ServersPage() {
             >
                 <AlertDialogContent className='sm:max-w-[500px]'>
                     <AlertDialogHeader>
-                        <AlertDialogTitle className='flex items-center gap-2 text-destructive'>
+                        <AlertDialogTitle className='text-destructive flex items-center gap-2'>
                             <AlertTriangle className='h-6 w-6' />
                             {isHardDelete
                                 ? t('admin.servers.messages.hard_delete_warning_title')
@@ -1142,15 +1142,15 @@ export default function ServersPage() {
                         <AlertDialogDescription className='space-y-4 pt-4'>
                             {isHardDelete ? (
                                 <>
-                                    <p className='font-bold text-foreground'>
+                                    <p className='text-foreground font-bold'>
                                         {t('admin.servers.messages.hard_delete_warning_p1')}
                                     </p>
-                                    <ul className='list-disc list-inside space-y-1 text-sm'>
+                                    <ul className='list-inside list-disc space-y-1 text-sm'>
                                         <li>{t('admin.servers.messages.hard_delete_item1')}</li>
                                         <li>{t('admin.servers.messages.hard_delete_item2')}</li>
                                         <li>{t('admin.servers.messages.hard_delete_item3')}</li>
                                     </ul>
-                                    <div className='p-4 bg-destructive/10 border border-destructive/20 rounded-xl text-destructive text-sm font-bold'>
+                                    <div className='bg-destructive/10 border-destructive/20 text-destructive rounded-xl border p-4 text-sm font-bold'>
                                         {t('admin.servers.messages.hard_delete_caution')}
                                     </div>
                                     <p className='text-xs italic'>{t('admin.servers.messages.hard_delete_p2')}</p>
@@ -1181,7 +1181,7 @@ export default function ServersPage() {
                                 disabled={deleting}
                                 className='bg-destructive hover:bg-destructive/90'
                             >
-                                {deleting ? <Loader2 className='h-4 w-4 animate-spin mr-2' /> : null}
+                                {deleting ? <Loader2 className='mr-2 h-4 w-4 animate-spin' /> : null}
                                 {t('admin.servers.actions.confirm_delete')}
                             </AlertDialogAction>
                         </div>
@@ -1196,7 +1196,7 @@ export default function ServersPage() {
             >
                 <div className='space-y-4'>
                     <div className='relative'>
-                        <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground' />
+                        <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
                         <Input
                             placeholder={t('admin.servers.filters.user_search_placeholder')}
                             value={ownerFilterSearch}
@@ -1205,16 +1205,16 @@ export default function ServersPage() {
                                 setOwnerFilterSearch(value);
                                 fetchOwnerFilterUsers(value);
                             }}
-                            className='pl-10 h-11'
+                            className='h-11 pl-10'
                         />
                     </div>
-                    <div className='max-h-[350px] overflow-y-auto space-y-2 custom-scrollbar pr-1'>
+                    <div className='custom-scrollbar max-h-[350px] space-y-2 overflow-y-auto pr-1'>
                         {ownerFilterLoading ? (
                             <div className='flex items-center justify-center py-10'>
-                                <Loader2 className='h-6 w-6 animate-spin text-primary' />
+                                <Loader2 className='text-primary h-6 w-6 animate-spin' />
                             </div>
                         ) : ownerFilterResults.length === 0 ? (
-                            <div className='text-center py-10 text-muted-foreground text-sm'>
+                            <div className='text-muted-foreground py-10 text-center text-sm'>
                                 {t('admin.servers.filters.user_no_results')}
                             </div>
                         ) : (
@@ -1227,19 +1227,19 @@ export default function ServersPage() {
                                         setPagination((p) => ({ ...p, page: 1 }));
                                         setIsOwnerFilterModalOpen(false);
                                     }}
-                                    className={`w-full p-4 rounded-xl border text-left transition-all ${
+                                    className={`w-full rounded-xl border p-4 text-left transition-all ${
                                         filterOwner?.id === user.id
-                                            ? 'border-primary bg-primary/5 '
+                                            ? 'border-primary bg-primary/5'
                                             : 'border-border/50 hover:bg-muted/50'
                                     }`}
                                 >
                                     <div className='flex items-center justify-between'>
                                         <div>
-                                            <p className='font-bold text-sm'>{user.username}</p>
-                                            <p className='text-xs text-muted-foreground'>{user.email}</p>
+                                            <p className='text-sm font-bold'>{user.username}</p>
+                                            <p className='text-muted-foreground text-xs'>{user.email}</p>
                                         </div>
                                         {filterOwner?.id === user.id && (
-                                            <ShieldCheck className='h-5 w-5 text-primary' />
+                                            <ShieldCheck className='text-primary h-5 w-5' />
                                         )}
                                     </div>
                                 </button>
@@ -1270,7 +1270,7 @@ export default function ServersPage() {
             >
                 <div className='space-y-4'>
                     <div className='relative'>
-                        <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground' />
+                        <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
                         <Input
                             placeholder={t('admin.servers.filters.node_search_placeholder')}
                             value={nodeSearch}
@@ -1278,16 +1278,16 @@ export default function ServersPage() {
                                 setNodeSearch(e.target.value);
                                 fetchNodes(e.target.value);
                             }}
-                            className='pl-10 h-11'
+                            className='h-11 pl-10'
                         />
                     </div>
-                    <div className='max-h-[350px] overflow-y-auto space-y-2 custom-scrollbar pr-1'>
+                    <div className='custom-scrollbar max-h-[350px] space-y-2 overflow-y-auto pr-1'>
                         {loadingNodes ? (
                             <div className='flex items-center justify-center py-10'>
-                                <Loader2 className='h-6 w-6 animate-spin text-primary' />
+                                <Loader2 className='text-primary h-6 w-6 animate-spin' />
                             </div>
                         ) : nodesList.length === 0 ? (
-                            <div className='text-center py-10 text-muted-foreground text-sm'>
+                            <div className='text-muted-foreground py-10 text-center text-sm'>
                                 {t('admin.servers.filters.node_no_results')}
                             </div>
                         ) : (
@@ -1300,18 +1300,18 @@ export default function ServersPage() {
                                         setPagination((p) => ({ ...p, page: 1 }));
                                         setIsNodeFilterModalOpen(false);
                                     }}
-                                    className={`w-full p-4 rounded-xl border text-left transition-all ${
+                                    className={`w-full rounded-xl border p-4 text-left transition-all ${
                                         filterNode?.id === node.id
-                                            ? 'border-primary bg-primary/5 '
+                                            ? 'border-primary bg-primary/5'
                                             : 'border-border/50 hover:bg-muted/50'
                                     }`}
                                 >
                                     <div className='flex items-center justify-between'>
                                         <div>
-                                            <p className='font-bold text-sm'>{node.name}</p>
-                                            <p className='text-xs text-muted-foreground'>{node.fqdn}</p>
+                                            <p className='text-sm font-bold'>{node.name}</p>
+                                            <p className='text-muted-foreground text-xs'>{node.fqdn}</p>
                                         </div>
-                                        {filterNode?.id === node.id && <ShieldCheck className='h-5 w-5 text-primary' />}
+                                        {filterNode?.id === node.id && <ShieldCheck className='text-primary h-5 w-5' />}
                                     </div>
                                 </button>
                             ))
@@ -1341,7 +1341,7 @@ export default function ServersPage() {
             >
                 <div className='space-y-4'>
                     <div className='relative'>
-                        <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground' />
+                        <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
                         <Input
                             placeholder={t('admin.servers.filters.realm_search_placeholder')}
                             value={realmFilterSearch}
@@ -1357,12 +1357,12 @@ export default function ServersPage() {
                                     setRealmsList([]);
                                 }
                             }}
-                            className='pl-10 h-11'
+                            className='h-11 pl-10'
                         />
                     </div>
-                    <div className='max-h-[350px] overflow-y-auto space-y-2 custom-scrollbar pr-1'>
+                    <div className='custom-scrollbar max-h-[350px] space-y-2 overflow-y-auto pr-1'>
                         {realmsList.length === 0 ? (
-                            <div className='text-center py-10 text-muted-foreground text-sm'>
+                            <div className='text-muted-foreground py-10 text-center text-sm'>
                                 {t('admin.servers.filters.realm_no_results')}
                             </div>
                         ) : (
@@ -1375,23 +1375,23 @@ export default function ServersPage() {
                                         setPagination((p) => ({ ...p, page: 1 }));
                                         setIsRealmFilterModalOpen(false);
                                     }}
-                                    className={`w-full p-4 rounded-xl border text-left transition-all ${
+                                    className={`w-full rounded-xl border p-4 text-left transition-all ${
                                         filterRealm?.id === realm.id
-                                            ? 'border-primary bg-primary/5 '
+                                            ? 'border-primary bg-primary/5'
                                             : 'border-border/50 hover:bg-muted/50'
                                     }`}
                                 >
                                     <div className='flex items-center justify-between'>
                                         <div>
-                                            <p className='font-bold text-sm'>{realm.name}</p>
+                                            <p className='text-sm font-bold'>{realm.name}</p>
                                             {realm.description && (
-                                                <p className='text-xs text-muted-foreground line-clamp-2'>
+                                                <p className='text-muted-foreground line-clamp-2 text-xs'>
                                                     {realm.description}
                                                 </p>
                                             )}
                                         </div>
                                         {filterRealm?.id === realm.id && (
-                                            <ShieldCheck className='h-5 w-5 text-primary' />
+                                            <ShieldCheck className='text-primary h-5 w-5' />
                                         )}
                                     </div>
                                 </button>
@@ -1422,7 +1422,7 @@ export default function ServersPage() {
             >
                 <div className='space-y-4'>
                     <div className='relative'>
-                        <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground' />
+                        <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
                         <Input
                             placeholder={t('admin.servers.filters.spell_search_placeholder')}
                             value={spellFilterSearch}
@@ -1443,12 +1443,12 @@ export default function ServersPage() {
                                     setSpellsList([]);
                                 }
                             }}
-                            className='pl-10 h-11'
+                            className='h-11 pl-10'
                         />
                     </div>
-                    <div className='max-h-[350px] overflow-y-auto space-y-2 custom-scrollbar pr-1'>
+                    <div className='custom-scrollbar max-h-[350px] space-y-2 overflow-y-auto pr-1'>
                         {spellsList.length === 0 ? (
-                            <div className='text-center py-10 text-muted-foreground text-sm'>
+                            <div className='text-muted-foreground py-10 text-center text-sm'>
                                 {t('admin.servers.filters.spell_no_results')}
                             </div>
                         ) : (
@@ -1461,23 +1461,23 @@ export default function ServersPage() {
                                         setPagination((p) => ({ ...p, page: 1 }));
                                         setIsSpellFilterModalOpen(false);
                                     }}
-                                    className={`w-full p-4 rounded-xl border text-left transition-all ${
+                                    className={`w-full rounded-xl border p-4 text-left transition-all ${
                                         filterSpell?.id === spell.id
-                                            ? 'border-primary bg-primary/5 '
+                                            ? 'border-primary bg-primary/5'
                                             : 'border-border/50 hover:bg-muted/50'
                                     }`}
                                 >
                                     <div className='flex items-center justify-between'>
                                         <div>
-                                            <p className='font-bold text-sm'>{spell.name}</p>
+                                            <p className='text-sm font-bold'>{spell.name}</p>
                                             {spell.description && (
-                                                <p className='text-xs text-muted-foreground line-clamp-2'>
+                                                <p className='text-muted-foreground line-clamp-2 text-xs'>
                                                     {spell.description}
                                                 </p>
                                             )}
                                         </div>
                                         {filterSpell?.id === spell.id && (
-                                            <ShieldCheck className='h-5 w-5 text-primary' />
+                                            <ShieldCheck className='text-primary h-5 w-5' />
                                         )}
                                     </div>
                                 </button>
@@ -1508,7 +1508,7 @@ export default function ServersPage() {
             >
                 <div className='space-y-4'>
                     <div className='relative'>
-                        <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground' />
+                        <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
                         <Input
                             placeholder={t('admin.servers.filters.location_search_placeholder')}
                             value={locationFilterSearch}
@@ -1529,12 +1529,12 @@ export default function ServersPage() {
                                     setLocationsList([]);
                                 }
                             }}
-                            className='pl-10 h-11'
+                            className='h-11 pl-10'
                         />
                     </div>
-                    <div className='max-h-[350px] overflow-y-auto space-y-2 custom-scrollbar pr-1'>
+                    <div className='custom-scrollbar max-h-[350px] space-y-2 overflow-y-auto pr-1'>
                         {locationsList.length === 0 ? (
-                            <div className='text-center py-10 text-muted-foreground text-sm'>
+                            <div className='text-muted-foreground py-10 text-center text-sm'>
                                 {t('admin.servers.filters.location_no_results')}
                             </div>
                         ) : (
@@ -1547,23 +1547,23 @@ export default function ServersPage() {
                                         setPagination((p) => ({ ...p, page: 1 }));
                                         setIsLocationFilterModalOpen(false);
                                     }}
-                                    className={`w-full p-4 rounded-xl border text-left transition-all ${
+                                    className={`w-full rounded-xl border p-4 text-left transition-all ${
                                         filterLocation?.id === location.id
-                                            ? 'border-primary bg-primary/5 '
+                                            ? 'border-primary bg-primary/5'
                                             : 'border-border/50 hover:bg-muted/50'
                                     }`}
                                 >
                                     <div className='flex items-center justify-between'>
                                         <div>
-                                            <p className='font-bold text-sm'>{location.name}</p>
+                                            <p className='text-sm font-bold'>{location.name}</p>
                                             {location.description && (
-                                                <p className='text-xs text-muted-foreground line-clamp-2'>
+                                                <p className='text-muted-foreground line-clamp-2 text-xs'>
                                                     {location.description}
                                                 </p>
                                             )}
                                         </div>
                                         {filterLocation?.id === location.id && (
-                                            <ShieldCheck className='h-5 w-5 text-primary' />
+                                            <ShieldCheck className='text-primary h-5 w-5' />
                                         )}
                                     </div>
                                 </button>
@@ -1591,9 +1591,9 @@ export default function ServersPage() {
                 open={isTransferDialogOpen}
                 onOpenChange={(open) => !open && !isInitiatingTransfer && setIsTransferDialogOpen(false)}
             >
-                <AlertDialogContent className='sm:max-w-2xl max-h-[90vh] overflow-y-auto custom-scrollbar'>
+                <AlertDialogContent className='custom-scrollbar max-h-[90vh] overflow-y-auto sm:max-w-2xl'>
                     <AlertDialogHeader>
-                        <AlertDialogTitle className='flex items-center gap-2 mb-2'>
+                        <AlertDialogTitle className='mb-2 flex items-center gap-2'>
                             <ArrowLeftRight className='h-5 w-5 text-amber-500' />
                             {t('admin.servers.transfer.title')}
                         </AlertDialogTitle>
@@ -1604,15 +1604,15 @@ export default function ServersPage() {
 
                     <div className='space-y-6 pt-4'>
                         {transferServer && (
-                            <div className='grid grid-cols-2 gap-4 p-4 rounded-2xl bg-muted/30 border border-border/50 text-sm'>
+                            <div className='bg-muted/30 border-border/50 grid grid-cols-2 gap-4 rounded-2xl border p-4 text-sm'>
                                 <div>
-                                    <p className='text-xs text-muted-foreground uppercase font-bold tracking-wider mb-1'>
+                                    <p className='text-muted-foreground mb-1 text-xs font-bold tracking-wider uppercase'>
                                         {t('admin.servers.transfer.server')}
                                     </p>
                                     <p className='font-bold'>{transferServer.name}</p>
                                 </div>
                                 <div>
-                                    <p className='text-xs text-muted-foreground uppercase font-bold tracking-wider mb-1'>
+                                    <p className='text-muted-foreground mb-1 text-xs font-bold tracking-wider uppercase'>
                                         {t('admin.servers.transfer.current_node')}
                                     </p>
                                     <p className='font-bold'>{transferServer.node?.name || 'Unknown'}</p>
@@ -1627,7 +1627,7 @@ export default function ServersPage() {
                                 </label>
                                 <Button
                                     variant='outline'
-                                    className='w-full h-12 justify-between rounded-xl px-4 border border-border  bg-background/50'
+                                    className='border-border bg-background/50 h-12 w-full justify-between rounded-xl border px-4'
                                     onClick={() => {
                                         fetchNodes();
                                         setIsNodeModalOpen(true);
@@ -1643,7 +1643,7 @@ export default function ServersPage() {
                                             ? `${selectedNode.name} (${selectedNode.fqdn})`
                                             : t('admin.servers.transfer.select_node')}
                                     </span>
-                                    <ChevronRight className='h-4 w-4 text-muted-foreground' />
+                                    <ChevronRight className='text-muted-foreground h-4 w-4' />
                                 </Button>
                             </div>
 
@@ -1653,7 +1653,7 @@ export default function ServersPage() {
                                 </label>
                                 <Button
                                     variant='outline'
-                                    className='w-full h-12 justify-between rounded-xl px-4 border border-border  bg-background/50'
+                                    className='border-border bg-background/50 h-12 w-full justify-between rounded-xl border px-4'
                                     onClick={() => {
                                         if (selectedNode) {
                                             fetchAllocations(selectedNode.id);
@@ -1673,26 +1673,26 @@ export default function ServersPage() {
                                             ? `${selectedAllocation.ip}:${selectedAllocation.port}`
                                             : t('admin.servers.transfer.select_allocation')}
                                     </span>
-                                    <ChevronRight className='h-4 w-4 text-muted-foreground' />
+                                    <ChevronRight className='text-muted-foreground h-4 w-4' />
                                 </Button>
                             </div>
                         </div>
 
                         <div className='space-y-4'>
-                            <div className='p-4 bg-red-500/10 border border-red-500/20 rounded-2xl'>
-                                <p className='text-sm font-black text-red-500 text-center mb-2'>
+                            <div className='rounded-2xl border border-red-500/20 bg-red-500/10 p-4'>
+                                <p className='mb-2 text-center text-sm font-black text-red-500'>
                                     {t('admin.servers.transfer.warning_banner')}
                                 </p>
-                                <p className='text-xs text-red-500/80 leading-relaxed'>
+                                <p className='text-xs leading-relaxed text-red-500/80'>
                                     {t('admin.servers.transfer.warning_text')}
                                 </p>
                             </div>
 
-                            <div className='p-5 bg-amber-500/5 border border-amber-500/20 rounded-2xl space-y-3'>
+                            <div className='space-y-3 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-5'>
                                 <p className='text-sm font-bold text-amber-500'>
                                     {t('admin.servers.transfer.beta_title')}
                                 </p>
-                                <ul className='text-xs text-amber-600/80 space-y-1 list-disc list-inside'>
+                                <ul className='list-inside list-disc space-y-1 text-xs text-amber-600/80'>
                                     <li>{t('admin.servers.transfer.beta_item1')}</li>
                                     <li>{t('admin.servers.transfer.beta_item2')}</li>
                                     <li>{t('admin.servers.transfer.beta_item5')}</li>
@@ -1703,18 +1703,18 @@ export default function ServersPage() {
                         </div>
                     </div>
 
-                    <AlertDialogFooter className='pt-6 border-t border-border/50 mt-6'>
+                    <AlertDialogFooter className='border-border/50 mt-6 border-t pt-6'>
                         <AlertDialogCancel disabled={isInitiatingTransfer} className='rounded-xl'>
                             {t('common.cancel')}
                         </AlertDialogCancel>
                         <Button
                             onClick={initiateTransfer}
                             disabled={!selectedNode || !selectedAllocation || isInitiatingTransfer}
-                            className='bg-amber-500 hover:bg-amber-600 text-white rounded-xl h-11 px-6 '
+                            className='h-11 rounded-xl bg-amber-500 px-6 text-white hover:bg-amber-600'
                         >
                             {isInitiatingTransfer ? (
                                 <>
-                                    <Loader2 className='h-4 w-4 animate-spin mr-2' />
+                                    <Loader2 className='mr-2 h-4 w-4 animate-spin' />
                                     {t('admin.servers.transfer.submitting')}
                                 </>
                             ) : (
@@ -1732,7 +1732,7 @@ export default function ServersPage() {
             >
                 <div className='space-y-4'>
                     <div className='relative'>
-                        <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground' />
+                        <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
                         <Input
                             placeholder='Search nodes...'
                             value={nodeSearch}
@@ -1740,16 +1740,16 @@ export default function ServersPage() {
                                 setNodeSearch(e.target.value);
                                 fetchNodes(e.target.value);
                             }}
-                            className='pl-10 h-11'
+                            className='h-11 pl-10'
                         />
                     </div>
-                    <div className='max-h-[350px] overflow-y-auto space-y-2 custom-scrollbar pr-1'>
+                    <div className='custom-scrollbar max-h-[350px] space-y-2 overflow-y-auto pr-1'>
                         {loadingNodes ? (
                             <div className='flex items-center justify-center py-10'>
-                                <Loader2 className='h-6 w-6 animate-spin text-primary' />
+                                <Loader2 className='text-primary h-6 w-6 animate-spin' />
                             </div>
                         ) : nodesList.length === 0 ? (
-                            <div className='text-center py-10 text-muted-foreground'>No results found</div>
+                            <div className='text-muted-foreground py-10 text-center'>No results found</div>
                         ) : (
                             nodesList.map((node) => (
                                 <button
@@ -1759,15 +1759,15 @@ export default function ServersPage() {
                                         setSelectedAllocation(null);
                                         setIsNodeModalOpen(false);
                                     }}
-                                    className={`w-full p-4 rounded-xl border text-left transition-all ${selectedNode?.id === node.id ? 'border-primary bg-primary/5 ' : 'border-border/50 hover:bg-muted/50'}`}
+                                    className={`w-full rounded-xl border p-4 text-left transition-all ${selectedNode?.id === node.id ? 'border-primary bg-primary/5' : 'border-border/50 hover:bg-muted/50'}`}
                                 >
                                     <div className='flex items-center justify-between'>
                                         <div>
-                                            <p className='font-bold text-sm'>{node.name}</p>
-                                            <p className='text-xs text-muted-foreground'>{node.fqdn}</p>
+                                            <p className='text-sm font-bold'>{node.name}</p>
+                                            <p className='text-muted-foreground text-xs'>{node.fqdn}</p>
                                         </div>
                                         {selectedNode?.id === node.id && (
-                                            <ShieldCheck className='h-5 w-5 text-primary' />
+                                            <ShieldCheck className='text-primary h-5 w-5' />
                                         )}
                                     </div>
                                 </button>
@@ -1784,7 +1784,7 @@ export default function ServersPage() {
             >
                 <div className='space-y-4'>
                     <div className='relative'>
-                        <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground' />
+                        <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
                         <Input
                             placeholder='Search allocations...'
                             value={allocationSearch}
@@ -1792,16 +1792,16 @@ export default function ServersPage() {
                                 setAllocationSearch(e.target.value);
                                 if (selectedNode) fetchAllocations(selectedNode.id, e.target.value);
                             }}
-                            className='pl-10 h-11'
+                            className='h-11 pl-10'
                         />
                     </div>
-                    <div className='max-h-[350px] overflow-y-auto space-y-2 custom-scrollbar pr-1'>
+                    <div className='custom-scrollbar max-h-[350px] space-y-2 overflow-y-auto pr-1'>
                         {loadingAllocations ? (
                             <div className='flex items-center justify-center py-10'>
-                                <Loader2 className='h-6 w-6 animate-spin text-primary' />
+                                <Loader2 className='text-primary h-6 w-6 animate-spin' />
                             </div>
                         ) : allocationsList.length === 0 ? (
-                            <div className='text-center py-10 text-muted-foreground'>No free allocations found</div>
+                            <div className='text-muted-foreground py-10 text-center'>No free allocations found</div>
                         ) : (
                             allocationsList.map((allc) => (
                                 <button
@@ -1810,19 +1810,19 @@ export default function ServersPage() {
                                         setSelectedAllocation(allc);
                                         setIsAllocationModalOpen(false);
                                     }}
-                                    className={`w-full p-4 rounded-xl border text-left transition-all ${selectedAllocation?.id === allc.id ? 'border-primary bg-primary/5 ' : 'border-border/50 hover:bg-muted/50'}`}
+                                    className={`w-full rounded-xl border p-4 text-left transition-all ${selectedAllocation?.id === allc.id ? 'border-primary bg-primary/5' : 'border-border/50 hover:bg-muted/50'}`}
                                 >
                                     <div className='flex items-center justify-between'>
                                         <div>
-                                            <p className='font-bold text-sm'>
+                                            <p className='text-sm font-bold'>
                                                 {allc.ip}:{allc.port}
                                             </p>
-                                            <p className='text-xs text-muted-foreground'>
+                                            <p className='text-muted-foreground text-xs'>
                                                 {allc.ip_alias || 'No Alias'}
                                             </p>
                                         </div>
                                         {selectedAllocation?.id === allc.id && (
-                                            <ShieldCheck className='h-5 w-5 text-primary' />
+                                            <ShieldCheck className='text-primary h-5 w-5' />
                                         )}
                                     </div>
                                 </button>
@@ -1848,7 +1848,7 @@ function DetailItem({
 }) {
     return (
         <div className='flex flex-col gap-1'>
-            <span className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>{label}</span>
+            <span className='text-muted-foreground/50 text-[10px] font-black tracking-widest uppercase'>{label}</span>
             <div className={`text-sm font-medium ${isMono ? 'font-mono text-xs' : ''} ${truncate ? 'truncate' : ''}`}>
                 {value}
             </div>
@@ -1868,17 +1868,17 @@ function RelationCard({
     detail?: string;
 }) {
     return (
-        <div className='p-4 rounded-2xl bg-muted/30 border border-border/50 group hover:border-primary/30 transition-all'>
-            <div className='flex items-center gap-3 mb-2'>
-                <div className='p-2 rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-all'>
+        <div className='bg-muted/30 border-border/50 group hover:border-primary/30 rounded-2xl border p-4 transition-all'>
+            <div className='mb-2 flex items-center gap-3'>
+                <div className='bg-primary/10 text-primary group-hover:bg-primary rounded-lg p-2 transition-all group-hover:text-white'>
                     {Icon && typeof Icon === 'function' ? <Icon className='h-3.5 w-3.5' /> : null}
                 </div>
-                <span className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>
+                <span className='text-muted-foreground/50 text-[10px] font-black tracking-widest uppercase'>
                     {title}
                 </span>
             </div>
-            <p className='text-sm font-bold truncate'>{name || 'N/A'}</p>
-            {detail && <p className='text-xs text-muted-foreground truncate'>{detail}</p>}
+            <p className='truncate text-sm font-bold'>{name || 'N/A'}</p>
+            {detail && <p className='text-muted-foreground truncate text-xs'>{detail}</p>}
         </div>
     );
 }

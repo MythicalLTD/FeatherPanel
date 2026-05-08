@@ -336,7 +336,7 @@ export default function RolesPage() {
                             setCreateOpen(true);
                         }}
                     >
-                        <Plus className='h-4 w-4 mr-2' />
+                        <Plus className='mr-2 h-4 w-4' />
                         {t('admin.roles.create')}
                     </Button>
                 }
@@ -344,20 +344,20 @@ export default function RolesPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-roles', 'after-header')} />
 
-            <div className='flex flex-col sm:flex-row gap-4 items-center bg-card/50 backdrop-blur-md p-4 rounded-2xl border border-border shadow-sm'>
-                <div className='relative flex-1 group w-full'>
-                    <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
+            <div className='bg-card/50 border-border flex flex-col items-center gap-4 rounded-2xl border p-4 shadow-sm backdrop-blur-md sm:flex-row'>
+                <div className='group relative w-full flex-1'>
+                    <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
                     <Input
                         placeholder={t('admin.roles.search_placeholder')}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className='pl-10 h-11 w-full'
+                        className='h-11 w-full pl-10'
                     />
                 </div>
             </div>
 
             {pagination.totalPages > 1 && !loading && (
-                <div className='flex items-center justify-between gap-4 py-3 px-4 rounded-xl border border-border bg-card/50 mb-4'>
+                <div className='border-border bg-card/50 mb-4 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
                     <Button
                         variant='outline'
                         size='sm'
@@ -426,12 +426,12 @@ export default function RolesPage() {
                                     boxShadow: `0 0 10px -5px ${role.color}`,
                                 }}
                                 description={
-                                    <div className='flex items-center gap-2 mt-2'>
+                                    <div className='mt-2 flex items-center gap-2'>
                                         <div
-                                            className='w-6 h-6 rounded-md border border-border'
+                                            className='border-border h-6 w-6 rounded-md border'
                                             style={{ backgroundColor: role.color }}
                                         />
-                                        <span className='text-sm text-muted-foreground'>
+                                        <span className='text-muted-foreground text-sm'>
                                             {t('admin.roles.labels.created')}:{' '}
                                             {new Date(role.created_at).toLocaleDateString(undefined, {
                                                 year: 'numeric',
@@ -444,7 +444,7 @@ export default function RolesPage() {
                                 actions={
                                     <div className='flex items-center gap-2'>
                                         <Button size='sm' variant='outline' onClick={() => openPermissions(role)}>
-                                            <Shield className='h-4 w-4 mr-2' />
+                                            <Shield className='mr-2 h-4 w-4' />
                                             {t('admin.roles.form.permissions')}
                                         </Button>
                                         <Button size='sm' variant='ghost' onClick={() => openEdit(role)}>
@@ -472,7 +472,7 @@ export default function RolesPage() {
             )}
 
             {pagination.totalPages > 1 && (
-                <div className='flex items-center justify-center gap-2 mt-8'>
+                <div className='mt-8 flex items-center justify-center gap-2'>
                     <Button
                         variant='outline'
                         size='icon'
@@ -497,19 +497,19 @@ export default function RolesPage() {
                 </div>
             )}
 
-            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-10'>
+            <div className='grid grid-cols-1 gap-6 pt-10 md:grid-cols-2 lg:grid-cols-3'>
                 <PageCard title={t('admin.roles.help.managing.title')} icon={Shield}>
-                    <p className='text-sm text-muted-foreground leading-relaxed'>
+                    <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.roles.help.managing.description')}
                     </p>
                 </PageCard>
                 <PageCard title={t('admin.roles.help.permissions.title')} icon={AlertCircle}>
-                    <p className='text-sm text-muted-foreground leading-relaxed'>
+                    <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.roles.help.permissions.description')}
                     </p>
                 </PageCard>
                 <PageCard title={t('admin.roles.help.security.title')} icon={KeyRound} variant='danger'>
-                    <ul className='list-disc list-inside space-y-1 text-sm text-muted-foreground'>
+                    <ul className='text-muted-foreground list-inside list-disc space-y-1 text-sm'>
                         <li>{t('admin.roles.help.security.item1')}</li>
                         <li>{t('admin.roles.help.security.item2')}</li>
                         <li>{t('admin.roles.help.security.item3')}</li>
@@ -558,7 +558,7 @@ export default function RolesPage() {
                                         setNewRole({ ...newRole, color: e.target.value });
                                         setRoleColorHex(e.target.value.toUpperCase());
                                     }}
-                                    className='w-12 h-10 p-1 cursor-pointer'
+                                    className='h-10 w-12 cursor-pointer p-1'
                                 />
                                 <Input
                                     id='create-color'
@@ -622,7 +622,7 @@ export default function RolesPage() {
                                         id='edit-color-picker'
                                         value={editingRole.color}
                                         onChange={(e) => setEditingRole({ ...editingRole, color: e.target.value })}
-                                        className='w-12 h-10 p-1 cursor-pointer'
+                                        className='h-10 w-12 cursor-pointer p-1'
                                     />
                                     <Input
                                         id='edit-color'
@@ -645,7 +645,7 @@ export default function RolesPage() {
             </Sheet>
 
             <Sheet open={permissionsOpen} onOpenChange={setPermissionsOpen}>
-                <div className='h-full flex flex-col'>
+                <div className='flex h-full flex-col'>
                     <SheetHeader>
                         <SheetTitle className='flex items-center gap-2'>
                             {t('admin.roles.permissions.title')}
@@ -661,20 +661,20 @@ export default function RolesPage() {
                         <SheetDescription>{t('admin.roles.permissions.description')}</SheetDescription>
                     </SheetHeader>
 
-                    <div className='flex-1 overflow-hidden flex flex-col gap-4 mt-6'>
-                        <div className='relative group'>
-                            <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
+                    <div className='mt-6 flex flex-1 flex-col gap-4 overflow-hidden'>
+                        <div className='group relative'>
+                            <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
                             <Input
                                 placeholder={t('admin.roles.permissions.search')}
                                 value={permissionSearch}
                                 onChange={(e) => setPermissionSearch(e.target.value)}
-                                className='pl-10 h-11 bg-background/20 border-none focus-visible:ring-1 focus-visible:ring-primary/30'
+                                className='bg-background/20 focus-visible:ring-primary/30 h-11 border-none pl-10 focus-visible:ring-1'
                             />
 
                             {permissionSearch && (
-                                <div className='absolute left-0 right-0 top-[calc(100%+4px)] z-50 rounded-xl max-h-[280px] overflow-auto bg-popover p-1 border-none'>
+                                <div className='bg-popover absolute top-[calc(100%+4px)] right-0 left-0 z-50 max-h-[280px] overflow-auto rounded-xl border-none p-1'>
                                     {filteredAvailablePermissions.length === 0 ? (
-                                        <div className='p-4 text-sm text-muted-foreground text-center'>
+                                        <div className='text-muted-foreground p-4 text-center text-sm'>
                                             {t('admin.roles.no_results')}
                                         </div>
                                     ) : (
@@ -682,19 +682,19 @@ export default function RolesPage() {
                                             {filteredAvailablePermissions.map((perm) => (
                                                 <div
                                                     key={perm.value}
-                                                    className='flex flex-col p-2 hover:bg-accent hover:text-accent-foreground cursor-pointer rounded-lg transition-colors group/item'
+                                                    className='hover:bg-accent hover:text-accent-foreground group/item flex cursor-pointer flex-col rounded-lg p-2 transition-colors'
                                                     onClick={() => {
                                                         handleAddPermission(perm.value);
                                                         setPermissionSearch('');
                                                     }}
                                                 >
                                                     <div className='flex items-center justify-between'>
-                                                        <span className='font-bold text-sm font-mono'>
+                                                        <span className='font-mono text-sm font-bold'>
                                                             {perm.value}
                                                         </span>
-                                                        <Plus className='h-3 w-3 opacity-0 group-hover/item:opacity-100 transition-opacity' />
+                                                        <Plus className='h-3 w-3 opacity-0 transition-opacity group-hover/item:opacity-100' />
                                                     </div>
-                                                    <span className='text-xs text-muted-foreground line-clamp-1'>
+                                                    <span className='text-muted-foreground line-clamp-1 text-xs'>
                                                         {perm.description}
                                                     </span>
                                                 </div>
@@ -705,34 +705,34 @@ export default function RolesPage() {
                             )}
                         </div>
 
-                        <div className='flex-1 overflow-y-auto rounded-xl bg-card/20'>
+                        <div className='bg-card/20 flex-1 overflow-y-auto rounded-xl'>
                             {loadingPermissions ? (
-                                <div className='h-full flex flex-col items-center justify-center p-4 gap-2'>
-                                    <RefreshCw className='h-5 w-5 animate-spin text-muted-foreground' />
-                                    <span className='text-xs text-muted-foreground'>
+                                <div className='flex h-full flex-col items-center justify-center gap-2 p-4'>
+                                    <RefreshCw className='text-muted-foreground h-5 w-5 animate-spin' />
+                                    <span className='text-muted-foreground text-xs'>
                                         {t('admin.roles.permissions.syncing')}
                                     </span>
                                 </div>
                             ) : rolePermissions.length === 0 ? (
-                                <div className='h-full flex items-center justify-center p-8 text-center text-muted-foreground text-sm'>
+                                <div className='text-muted-foreground flex h-full items-center justify-center p-8 text-center text-sm'>
                                     {t('admin.roles.form.no_permissions')}
                                 </div>
                             ) : (
-                                <div className='divide-y divide-border/20'>
+                                <div className='divide-border/20 divide-y'>
                                     {rolePermissions.map((perm) => (
                                         <div
                                             key={perm.id}
-                                            className='p-3 flex items-center justify-between hover:bg-muted/30 transition-colors group/row'
+                                            className='hover:bg-muted/30 group/row flex items-center justify-between p-3 transition-colors'
                                         >
-                                            <div className='flex flex-col min-w-0 pr-2'>
-                                                <span className='font-mono text-sm font-medium truncate'>
+                                            <div className='flex min-w-0 flex-col pr-2'>
+                                                <span className='truncate font-mono text-sm font-medium'>
                                                     {perm.permission}
                                                 </span>
                                             </div>
                                             <Button
                                                 size='sm'
                                                 variant='ghost'
-                                                className='h-8 w-8 p-0 text-destructive/50 hover:text-destructive hover:bg-destructive/10'
+                                                className='text-destructive/50 hover:text-destructive hover:bg-destructive/10 h-8 w-8 p-0'
                                                 onClick={() => handleDeletePermission(perm.id)}
                                             >
                                                 <X className='h-4 w-4' />

@@ -68,7 +68,7 @@ export function Dialog({ open, onClose, onOpenChange, children, className }: Dia
                         >
                             <DialogPanel
                                 className={cn(
-                                    'w-full transform overflow-hidden rounded-2xl bg-card border border-border/50 p-6 text-left align-middle shadow-2xl transition-all',
+                                    'bg-card border-border/50 w-full transform overflow-hidden rounded-2xl border p-6 text-left align-middle shadow-2xl transition-all',
                                     !className?.includes('max-w-') && 'max-w-md',
                                     className,
                                 )}
@@ -99,7 +99,7 @@ interface DialogTitleProps {
 
 export function DialogTitleComponent({ children, className }: DialogTitleProps) {
     return (
-        <DialogTitle className={cn('text-lg font-semibold leading-6 text-foreground', className)}>
+        <DialogTitle className={cn('text-foreground text-lg leading-6 font-semibold', className)}>
             {children}
         </DialogTitle>
     );
@@ -111,7 +111,7 @@ interface DialogDescriptionProps {
 }
 
 export function DialogDescription({ children, className }: DialogDescriptionProps) {
-    return <Description className={cn('mt-2 text-sm text-muted-foreground', className)}>{children}</Description>;
+    return <Description className={cn('text-muted-foreground mt-2 text-sm', className)}>{children}</Description>;
 }
 
 interface DialogFooterProps {
@@ -120,7 +120,7 @@ interface DialogFooterProps {
 }
 
 export function DialogFooter({ children, className }: DialogFooterProps) {
-    return <div className={cn('mt-6 flex gap-3 justify-end', className)}>{children}</div>;
+    return <div className={cn('mt-6 flex justify-end gap-3', className)}>{children}</div>;
 }
 
 export function DialogContent({ className, children }: { className?: string; children: React.ReactNode }) {

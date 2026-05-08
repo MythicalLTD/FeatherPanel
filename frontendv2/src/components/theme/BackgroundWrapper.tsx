@@ -128,7 +128,7 @@ export default function BackgroundWrapper({ children }: { children: React.ReactN
     };
 
     return (
-        <div className='min-h-screen transition-all duration-500 relative'>
+        <div className='relative min-h-screen transition-all duration-500'>
             {/* Background layer: Aurora or gradient/solid/pattern/image */}
             {useAurora ? (
                 <>

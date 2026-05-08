@@ -402,11 +402,11 @@ export default function AdminMountsPage() {
                 actions={
                     <div className='flex gap-2'>
                         <Button variant='outline' size='sm' onClick={() => loadMounts()} disabled={loading}>
-                            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                            <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
                             {t('navigation.items.refresh')}
                         </Button>
                         <Button size='sm' onClick={openCreate}>
-                            <Plus className='h-4 w-4 mr-2' />
+                            <Plus className='mr-2 h-4 w-4' />
                             {t('admin.mounts.create')}
                         </Button>
                     </div>
@@ -415,27 +415,27 @@ export default function AdminMountsPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-mounts', 'after-header')} />
 
-            <div className='flex flex-col sm:flex-row gap-4 items-center bg-card/40 backdrop-blur-md p-4 rounded-2xl shadow-sm'>
-                <div className='relative flex-1 group w-full'>
-                    <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground' />
+            <div className='bg-card/40 flex flex-col items-center gap-4 rounded-2xl p-4 shadow-sm backdrop-blur-md sm:flex-row'>
+                <div className='group relative w-full flex-1'>
+                    <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
                     <Input
                         placeholder={t('admin.mounts.search_placeholder')}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className='pl-10 h-11 w-full'
+                        className='h-11 w-full pl-10'
                     />
                 </div>
             </div>
 
             {pagination.totalPages > 1 && !loading && (
-                <div className='flex items-center justify-between gap-4 py-3 px-4 rounded-xl border border-border bg-card/50'>
+                <div className='border-border bg-card/50 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
                     <Button
                         variant='outline'
                         size='sm'
                         disabled={!pagination.hasPrev}
                         onClick={() => setPagination((p) => ({ ...p, page: p.page - 1 }))}
                     >
-                        <ChevronLeft className='h-4 w-4 mr-1' />
+                        <ChevronLeft className='mr-1 h-4 w-4' />
                         {t('common.previous')}
                     </Button>
                     <span className='text-sm'>
@@ -448,7 +448,7 @@ export default function AdminMountsPage() {
                         onClick={() => setPagination((p) => ({ ...p, page: p.page + 1 }))}
                     >
                         {t('common.next')}
-                        <ChevronRight className='h-4 w-4 ml-1' />
+                        <ChevronRight className='ml-1 h-4 w-4' />
                     </Button>
                 </div>
             )}
@@ -462,7 +462,7 @@ export default function AdminMountsPage() {
                     description={t('admin.mounts.description')}
                     action={
                         <Button onClick={openCreate}>
-                            <Plus className='h-4 w-4 mr-2' />
+                            <Plus className='mr-2 h-4 w-4' />
                             {t('admin.mounts.create')}
                         </Button>
                     }
@@ -503,7 +503,7 @@ export default function AdminMountsPage() {
                                 badges={badges}
                                 description={
                                     m.description ? (
-                                        <p className='text-sm text-muted-foreground mt-1 line-clamp-2'>
+                                        <p className='text-muted-foreground mt-1 line-clamp-2 text-sm'>
                                             {m.description}
                                         </p>
                                     ) : undefined
@@ -557,7 +557,7 @@ export default function AdminMountsPage() {
             )}
 
             <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-                <SheetContent className='sm:max-w-lg overflow-y-auto'>
+                <SheetContent className='overflow-y-auto sm:max-w-lg'>
                     <SheetHeader>
                         <SheetTitle>
                             {mode === 'create'
@@ -603,7 +603,7 @@ export default function AdminMountsPage() {
                         <div className='flex items-center justify-between gap-4'>
                             <div>
                                 <Label>{t('admin.mounts.form.read_only')}</Label>
-                                <p className='text-xs text-muted-foreground'>{t('admin.mounts.columns.read_only')}</p>
+                                <p className='text-muted-foreground text-xs'>{t('admin.mounts.columns.read_only')}</p>
                             </div>
                             <Switch
                                 checked={form.read_only}
@@ -613,12 +613,12 @@ export default function AdminMountsPage() {
                         <div className='flex items-start justify-between gap-4'>
                             <div className='space-y-1 pr-2'>
                                 <Label>{t('admin.mounts.form.user_mountable')}</Label>
-                                <p className='text-xs text-muted-foreground'>
+                                <p className='text-muted-foreground text-xs'>
                                     {t('admin.mounts.form.user_mountable_help')}
                                 </p>
                             </div>
                             <Switch
-                                className='shrink-0 mt-1'
+                                className='mt-1 shrink-0'
                                 checked={form.user_mountable}
                                 onCheckedChange={(v) => setForm((f) => ({ ...f, user_mountable: v }))}
                             />
@@ -626,7 +626,7 @@ export default function AdminMountsPage() {
 
                         <PageCard title={t('admin.mounts.links.nodes')} description={t('admin.mounts.links.hint')}>
                             {linksLoading ? (
-                                <p className='text-sm text-muted-foreground'>
+                                <p className='text-muted-foreground text-sm'>
                                     {t('admin.servers.edit.mounts.loading')}
                                 </p>
                             ) : (
@@ -637,11 +637,11 @@ export default function AdminMountsPage() {
                                         placeholder={t('admin.mounts.links_nodes_filter_placeholder')}
                                         className='bg-muted/30'
                                     />
-                                    <div className='max-h-48 overflow-y-auto space-y-2 pr-1'>
+                                    <div className='max-h-48 space-y-2 overflow-y-auto pr-1'>
                                         {filteredNodesForPicker.map((n) => (
                                             <label
                                                 key={n.id}
-                                                className='flex items-center gap-3 cursor-pointer rounded-lg border border-border/60 p-2'
+                                                className='border-border/60 flex cursor-pointer items-center gap-3 rounded-lg border p-2'
                                             >
                                                 <Checkbox
                                                     checked={selectedNodeIds.includes(n.id)}
@@ -662,7 +662,7 @@ export default function AdminMountsPage() {
 
                         <PageCard title={t('admin.mounts.links.spells')}>
                             {linksLoading ? (
-                                <p className='text-sm text-muted-foreground'>
+                                <p className='text-muted-foreground text-sm'>
                                     {t('admin.servers.edit.mounts.loading')}
                                 </p>
                             ) : (
@@ -673,11 +673,11 @@ export default function AdminMountsPage() {
                                         placeholder={t('admin.mounts.links_spells_filter_placeholder')}
                                         className='bg-muted/30'
                                     />
-                                    <div className='max-h-48 overflow-y-auto space-y-2 pr-1'>
+                                    <div className='max-h-48 space-y-2 overflow-y-auto pr-1'>
                                         {filteredSpellsForPicker.map((s) => (
                                             <label
                                                 key={s.id}
-                                                className='flex items-center gap-3 cursor-pointer rounded-lg border border-border/60 p-2'
+                                                className='border-border/60 flex cursor-pointer items-center gap-3 rounded-lg border p-2'
                                             >
                                                 <Checkbox
                                                     checked={selectedSpellIds.includes(s.id)}

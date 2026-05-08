@@ -296,7 +296,7 @@ export default function PluginsPage() {
         if (!onlinePagination || onlinePagination.total_pages <= 1) return null;
 
         return (
-            <div className='flex items-center justify-center gap-2 mt-8'>
+            <div className='mt-8 flex items-center justify-center gap-2'>
                 <Button
                     variant='outline'
                     size='icon'
@@ -332,7 +332,7 @@ export default function PluginsPage() {
                 icon={Puzzle}
                 actions={
                     <Button variant='outline' onClick={() => router.push('/admin/feathercloud/marketplace')}>
-                        <ArrowLeft className='h-4 w-4 mr-2' />
+                        <ArrowLeft className='mr-2 h-4 w-4' />
                         {t('admin.marketplace.plugins.back')}
                     </Button>
                 }
@@ -347,11 +347,11 @@ export default function PluginsPage() {
                     variant='danger'
                 >
                     <div className='space-y-4'>
-                        <p className='text-sm text-destructive/80'>
+                        <p className='text-destructive/80 text-sm'>
                             {t('admin.marketplace.plugins.cloud_missing.description')}
                         </p>
                         <Button variant='destructive' size='sm' onClick={() => router.push('/admin/cloud-management')}>
-                            <Key className='h-4 w-4 mr-2' />
+                            <Key className='mr-2 h-4 w-4' />
                             {t('admin.marketplace.plugins.cloud_missing.action')}
                         </Button>
                     </div>
@@ -362,30 +362,30 @@ export default function PluginsPage() {
                 <PageCard title={t('admin.marketplace.plugins.cloud_connected.title')} icon={Info}>
                     <div className='flex flex-wrap gap-6'>
                         {cloudCredits && (
-                            <div className='flex items-center gap-3 bg-primary/10 px-4 py-2 rounded-2xl border border-primary/20'>
-                                <div className='p-2 bg-primary/20 rounded-xl'>
-                                    <Coins className='h-5 w-5 text-primary' />
+                            <div className='bg-primary/10 border-primary/20 flex items-center gap-3 rounded-2xl border px-4 py-2'>
+                                <div className='bg-primary/20 rounded-xl p-2'>
+                                    <Coins className='text-primary h-5 w-5' />
                                 </div>
                                 <div>
-                                    <div className='text-[10px] uppercase tracking-wider text-primary/70 font-bold'>
+                                    <div className='text-primary/70 text-[10px] font-bold tracking-wider uppercase'>
                                         {t('admin.marketplace.plugins.cloud_connected.credits')}
                                     </div>
-                                    <div className='text-lg font-black text-primary leading-tight'>
+                                    <div className='text-primary text-lg leading-tight font-black'>
                                         {cloudCredits.total_credits.toLocaleString()}
                                     </div>
                                 </div>
                             </div>
                         )}
                         {cloudTeam?.team && (
-                            <div className='flex items-center gap-3 bg-primary/10 px-4 py-2 rounded-2xl border border-primary/20'>
-                                <div className='p-2 bg-primary/20 rounded-xl'>
-                                    <Users className='h-5 w-5 text-primary' />
+                            <div className='bg-primary/10 border-primary/20 flex items-center gap-3 rounded-2xl border px-4 py-2'>
+                                <div className='bg-primary/20 rounded-xl p-2'>
+                                    <Users className='text-primary h-5 w-5' />
                                 </div>
                                 <div>
-                                    <div className='text-[10px] uppercase tracking-wider text-primary/70 font-bold'>
+                                    <div className='text-primary/70 text-[10px] font-bold tracking-wider uppercase'>
                                         {t('admin.marketplace.plugins.cloud_connected.team')}
                                     </div>
-                                    <div className='text-lg font-black text-primary leading-tight'>
+                                    <div className='text-primary text-lg leading-tight font-black'>
                                         {cloudTeam.team.name}
                                     </div>
                                 </div>
@@ -394,7 +394,7 @@ export default function PluginsPage() {
                     </div>
                     <div className='flex justify-end'>
                         <Button variant='outline' onClick={() => router.push('/admin/cloud-management')}>
-                            <Key className='h-4 w-4 mr-2' />
+                            <Key className='mr-2 h-4 w-4' />
                             {t('admin.marketplace.plugins.cloud_connected.action')}
                         </Button>
                     </div>
@@ -420,7 +420,7 @@ export default function PluginsPage() {
                                             src={addon.icon}
                                             alt={addon.name}
                                             fill
-                                            className='object-cover rounded-lg'
+                                            className='rounded-lg object-cover'
                                             unoptimized
                                         />
                                     </div>
@@ -472,25 +472,25 @@ export default function PluginsPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-feathercloud-plugins', 'before-content')} />
 
-            <div className='flex flex-col sm:flex-row gap-4 items-center bg-card/50 backdrop-blur-md p-4 rounded-2xl border border-border shadow-sm'>
-                <div className='relative flex-1 group'>
-                    <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
+            <div className='bg-card/50 border-border flex flex-col items-center gap-4 rounded-2xl border p-4 shadow-sm backdrop-blur-md sm:flex-row'>
+                <div className='group relative flex-1'>
+                    <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
                     <Input
                         placeholder={t('admin.marketplace.plugins.search_placeholder')}
-                        className='pl-10 h-11'
+                        className='h-11 pl-10'
                         value={onlineSearch}
                         onChange={(e) => setOnlineSearch(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && fetchOnlineAddons(1)}
                     />
                 </div>
-                <div className='flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0 w-full sm:w-auto'>
+                <div className='flex w-full items-center gap-2 overflow-x-auto pb-2 sm:w-auto sm:pb-0'>
                     <Button
                         variant={verifiedOnly ? 'default' : 'outline'}
                         size='sm'
                         className='h-11 px-4 whitespace-nowrap'
                         onClick={() => setVerifiedOnly(!verifiedOnly)}
                     >
-                        <BadgeCheck className='h-4 w-4 mr-2' />
+                        <BadgeCheck className='mr-2 h-4 w-4' />
                         {t('admin.marketplace.plugins.verified_only')}
                     </Button>
                     <Select
@@ -512,7 +512,7 @@ export default function PluginsPage() {
                 <div className='flex items-center gap-2'>
                     <Badge
                         variant='secondary'
-                        className='pl-3 pr-1 py-1 h-8 rounded-full bg-primary/10 text-primary border-primary/20 gap-2'
+                        className='bg-primary/10 text-primary border-primary/20 h-8 gap-2 rounded-full py-1 pr-1 pl-3'
                     >
                         {t('admin.marketplace.plugins.tag_label')} {selectedTag}
                         <button
@@ -538,7 +538,7 @@ export default function PluginsPage() {
                     icon={AlertCircle}
                     action={
                         <Button variant='outline' onClick={() => fetchOnlineAddons()}>
-                            <RefreshCw className='h-4 w-4 mr-2' />
+                            <RefreshCw className='mr-2 h-4 w-4' />
                             {t('admin.marketplace.plugins.try_again')}
                         </Button>
                     }
@@ -570,7 +570,7 @@ export default function PluginsPage() {
                                         src={addon.icon}
                                         alt={addon.name}
                                         fill
-                                        className='object-cover rounded-lg'
+                                        className='rounded-lg object-cover'
                                         unoptimized
                                     />
                                 </div>
@@ -617,16 +617,16 @@ export default function PluginsPage() {
                                 }
                                 description={
                                     <div className='space-y-4'>
-                                        <p className='text-sm text-muted-foreground line-clamp-2'>
+                                        <p className='text-muted-foreground line-clamp-2 text-sm'>
                                             {addon.description || t('admin.marketplace.plugins.details.no_description')}
                                         </p>
-                                        <div className='flex flex-wrap items-center gap-4 text-xs text-muted-foreground font-medium'>
+                                        <div className='text-muted-foreground flex flex-wrap items-center gap-4 text-xs font-medium'>
                                             <div className='flex items-center gap-1.5'>
                                                 <CloudDownload className='h-3.5 w-3.5' />
                                                 {addon.downloads.toLocaleString()}
                                             </div>
                                             {addon.premium === 1 && addon.premium_price && (
-                                                <div className='flex items-center gap-1.5 text-amber-600 font-bold'>
+                                                <div className='flex items-center gap-1.5 font-bold text-amber-600'>
                                                     <Coins className='h-3.5 w-3.5' />€{addon.premium_price}
                                                 </div>
                                             )}
@@ -637,7 +637,7 @@ export default function PluginsPage() {
                                                     <Badge
                                                         key={tag}
                                                         variant='secondary'
-                                                        className='px-2 py-0 h-6 text-[10px] bg-muted/50 hover:bg-primary/10 hover:text-primary transition-all cursor-pointer rounded-lg border-transparent hover:border-primary/20'
+                                                        className='bg-muted/50 hover:bg-primary/10 hover:text-primary hover:border-primary/20 h-6 cursor-pointer rounded-lg border-transparent px-2 py-0 text-[10px] transition-all'
                                                         onClick={(e) => {
                                                             e.stopPropagation();
                                                             setSelectedTag(tag);
@@ -648,7 +648,7 @@ export default function PluginsPage() {
                                                     </Badge>
                                                 ))}
                                                 {addon.tags.length > 3 && (
-                                                    <span className='text-[10px] text-muted-foreground font-medium flex items-center h-6'>
+                                                    <span className='text-muted-foreground flex h-6 items-center text-[10px] font-medium'>
                                                         +{addon.tags.length - 3}
                                                     </span>
                                                 )}
@@ -666,9 +666,9 @@ export default function PluginsPage() {
                                                 variant='outline'
                                                 size='sm'
                                                 disabled
-                                                className='bg-amber-500/5 border-amber-500/20 text-amber-600'
+                                                className='border-amber-500/20 bg-amber-500/5 text-amber-600'
                                             >
-                                                <Lock className='h-4 w-4 mr-2' />
+                                                <Lock className='mr-2 h-4 w-4' />
                                                 {t('admin.marketplace.plugins.requires_cloud')}
                                             </Button>
                                         ) : (
@@ -681,17 +681,17 @@ export default function PluginsPage() {
                                             >
                                                 {isInstalled ? (
                                                     <>
-                                                        <BadgeCheck className='h-4 w-4 mr-2' />
+                                                        <BadgeCheck className='mr-2 h-4 w-4' />
                                                         {t('admin.marketplace.plugins.installed')}
                                                     </>
                                                 ) : isSelected ? (
                                                     <>
-                                                        <CheckIcon className='h-4 w-4 mr-2' />
+                                                        <CheckIcon className='mr-2 h-4 w-4' />
                                                         {t('admin.marketplace.plugins.queue.in_list')}
                                                     </>
                                                 ) : (
                                                     <>
-                                                        <CloudDownload className='h-4 w-4 mr-2' />
+                                                        <CloudDownload className='mr-2 h-4 w-4' />
                                                         {t('admin.marketplace.plugins.queue.add_to_list')}
                                                     </>
                                                 )}
@@ -708,31 +708,31 @@ export default function PluginsPage() {
             {renderPagination()}
 
             {selectedPluginIds.length > 0 && (
-                <div className='fixed bottom-4 right-4 z-40 w-full max-w-xs sm:max-w-sm'>
-                    <div className='rounded-2xl border border-primary/30 bg-background/95 shadow-xl p-4 space-y-3'>
+                <div className='fixed right-4 bottom-4 z-40 w-full max-w-xs sm:max-w-sm'>
+                    <div className='border-primary/30 bg-background/95 space-y-3 rounded-2xl border p-4 shadow-xl'>
                         <div className='flex items-start justify-between gap-2'>
                             <div>
-                                <p className='text-xs font-semibold text-primary uppercase tracking-wider'>
+                                <p className='text-primary text-xs font-semibold tracking-wider uppercase'>
                                     {t('admin.marketplace.plugins.queue.title')}
                                 </p>
-                                <p className='text-xs text-muted-foreground'>
+                                <p className='text-muted-foreground text-xs'>
                                     {t('admin.marketplace.plugins.queue.subtitle')}
                                 </p>
                             </div>
-                            <Badge className='text-[10px] px-2 py-1 rounded-full'>{selectedPluginIds.length}</Badge>
+                            <Badge className='rounded-full px-2 py-1 text-[10px]'>{selectedPluginIds.length}</Badge>
                         </div>
-                        <div className='max-h-40 overflow-y-auto space-y-1 text-xs'>
+                        <div className='max-h-40 space-y-1 overflow-y-auto text-xs'>
                             {Object.entries(queuedPlugins)
                                 .filter(([id]) => selectedPluginIds.includes(id))
                                 .map(([id, name]) => (
                                     <div
                                         key={id}
-                                        className='flex items-center justify-between gap-2 rounded-md bg-muted/60 px-2 py-1'
+                                        className='bg-muted/60 flex items-center justify-between gap-2 rounded-md px-2 py-1'
                                     >
                                         <span className='truncate'>{name}</span>
                                         <button
                                             type='button'
-                                            className='text-[10px] text-muted-foreground hover:text-destructive transition-colors'
+                                            className='text-muted-foreground hover:text-destructive text-[10px] transition-colors'
                                             onClick={() => toggleSelectPlugin(id)}
                                             disabled={bulkInstalling}
                                         >
@@ -753,12 +753,12 @@ export default function PluginsPage() {
                             <Button size='sm' onClick={handleBulkInstall} disabled={bulkInstalling} className='flex-1'>
                                 {bulkInstalling ? (
                                     <>
-                                        <RefreshCw className='h-4 w-4 animate-spin mr-2' />
+                                        <RefreshCw className='mr-2 h-4 w-4 animate-spin' />
                                         {t('admin.marketplace.plugins.queue.downloading')}
                                     </>
                                 ) : (
                                     <>
-                                        <CloudDownload className='h-4 w-4 mr-2' />
+                                        <CloudDownload className='mr-2 h-4 w-4' />
                                         {t('admin.marketplace.plugins.queue.download_now')}
                                     </>
                                 )}
@@ -770,26 +770,26 @@ export default function PluginsPage() {
 
             <PageCard title={t('admin.marketplace.plugins.repo.title')} icon={Globe}>
                 <div className='space-y-4'>
-                    <p className='text-sm text-muted-foreground leading-relaxed'>
+                    <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.marketplace.plugins.repo.description')}
                     </p>
-                    <div className='mt-2 rounded-2xl border border-border bg-muted/40 p-4 flex flex-col sm:flex-row sm:items-center gap-3'>
-                        <div className='flex-1 min-w-0'>
+                    <div className='border-border bg-muted/40 mt-2 flex flex-col gap-3 rounded-2xl border p-4 sm:flex-row sm:items-center'>
+                        <div className='min-w-0 flex-1'>
                             <div className='flex items-center gap-2'>
-                                <span className='text-sm font-semibold truncate'>
+                                <span className='truncate text-sm font-semibold'>
                                     {t('admin.marketplace.plugins.repo.official_name')}
                                 </span>
                                 <Badge
                                     variant='secondary'
-                                    className='px-2 py-0 h-6 text-[10px] uppercase tracking-wide bg-emerald-500/10 text-emerald-600 border-emerald-500/30'
+                                    className='h-6 border-emerald-500/30 bg-emerald-500/10 px-2 py-0 text-[10px] tracking-wide text-emerald-600 uppercase'
                                 >
-                                    <BadgeCheck className='h-3 w-3 mr-1' />
+                                    <BadgeCheck className='mr-1 h-3 w-3' />
                                     {t('admin.marketplace.plugins.repo.official_badge')}
                                 </Badge>
                             </div>
-                            <p className='text-xs text-muted-foreground mt-1 truncate'>repo.featherpanel.com</p>
+                            <p className='text-muted-foreground mt-1 truncate text-xs'>repo.featherpanel.com</p>
                         </div>
-                        <div className='flex items-center gap-2 text-xs text-muted-foreground'>
+                        <div className='text-muted-foreground flex items-center gap-2 text-xs'>
                             <Lock className='h-4 w-4' />
                             <span className='font-medium'>{t('admin.marketplace.plugins.repo.locked_notice')}</span>
                         </div>
@@ -797,35 +797,35 @@ export default function PluginsPage() {
                 </div>
             </PageCard>
 
-            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-10'>
+            <div className='grid grid-cols-1 gap-6 pt-10 md:grid-cols-2 lg:grid-cols-3'>
                 <PageCard title={t('admin.marketplace.spells.help.repo_title')} icon={Globe}>
-                    <p className='text-sm text-muted-foreground leading-relaxed'>
+                    <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.marketplace.spells.help.repo_desc')}
                     </p>
                 </PageCard>
                 <PageCard title={t('admin.marketplace.spells.help.install_title')} icon={CloudDownload}>
-                    <p className='text-sm text-muted-foreground leading-relaxed'>
+                    <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.marketplace.spells.help.install_desc')}
                     </p>
                 </PageCard>
                 <PageCard title={t('admin.marketplace.spells.help.security_title')} icon={AlertCircle} variant='danger'>
-                    <p className='text-sm text-muted-foreground leading-relaxed'>
+                    <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.marketplace.spells.help.security_desc')}
                     </p>
                 </PageCard>
             </div>
 
             <Sheet open={packageDetailsOpen} onOpenChange={setPackageDetailsOpen}>
-                <div className='h-full flex flex-col'>
+                <div className='flex h-full flex-col'>
                     <SheetHeader>
                         <SheetTitle>{t('admin.marketplace.plugins.details.title')}</SheetTitle>
                         <SheetDescription>{t('admin.marketplace.plugins.subtitle')}</SheetDescription>
                     </SheetHeader>
 
-                    <div className='flex-1 overflow-y-auto pr-2 -mr-2 space-y-8'>
+                    <div className='-mr-2 flex-1 space-y-8 overflow-y-auto pr-2'>
                         {packageDetailsLoading ? (
-                            <div className='flex flex-col items-center justify-center py-20 gap-4'>
-                                <RefreshCw className='h-10 w-10 text-primary animate-spin' />
+                            <div className='flex flex-col items-center justify-center gap-4 py-20'>
+                                <RefreshCw className='text-primary h-10 w-10 animate-spin' />
                                 <p className='text-muted-foreground'>
                                     {t('admin.marketplace.plugins.details.loading')}
                                 </p>
@@ -834,7 +834,7 @@ export default function PluginsPage() {
                             selectedPackage && (
                                 <div className='space-y-8 pb-4'>
                                     <div className='flex items-start gap-6'>
-                                        <div className='relative h-24 w-24 rounded-3xl bg-linear-to-br from-primary/10 to-primary/5 flex items-center justify-center border-2 border-primary/20 overflow-hidden'>
+                                        <div className='from-primary/10 to-primary/5 border-primary/20 relative flex h-24 w-24 items-center justify-center overflow-hidden rounded-3xl border-2 bg-linear-to-br'>
                                             {selectedPackage.icon ? (
                                                 <Image
                                                     src={selectedPackage.icon}
@@ -844,7 +844,7 @@ export default function PluginsPage() {
                                                     unoptimized
                                                 />
                                             ) : (
-                                                <Puzzle className='h-12 w-12 text-primary/60' />
+                                                <Puzzle className='text-primary/60 h-12 w-12' />
                                             )}
                                         </div>
                                         <div className='flex-1 space-y-2'>
@@ -854,13 +854,13 @@ export default function PluginsPage() {
                                             <div className='flex flex-wrap gap-2'>
                                                 <Badge
                                                     variant='outline'
-                                                    className='border-primary/20 bg-primary/5 text-primary text-xs px-3 py-1'
+                                                    className='border-primary/20 bg-primary/5 text-primary px-3 py-1 text-xs'
                                                 >
                                                     {selectedPackage.identifier}
                                                 </Badge>
                                                 {selectedPackage.verified && (
-                                                    <Badge className='bg-green-500/10 text-green-600 border-green-500/20 text-xs px-3 py-1'>
-                                                        <CheckIcon className='h-3 w-3 mr-1' />
+                                                    <Badge className='border-green-500/20 bg-green-500/10 px-3 py-1 text-xs text-green-600'>
+                                                        <CheckIcon className='mr-1 h-3 w-3' />
                                                         {t('admin.marketplace.plugins.verified')}
                                                     </Badge>
                                                 )}
@@ -869,19 +869,19 @@ export default function PluginsPage() {
                                     </div>
 
                                     <div className='space-y-4'>
-                                        <h4 className='text-lg font-bold flex items-center gap-2'>
-                                            <Info className='h-5 w-5 text-primary' />
+                                        <h4 className='flex items-center gap-2 text-lg font-bold'>
+                                            <Info className='text-primary h-5 w-5' />
                                             {t('admin.marketplace.plugins.details.title')}
                                         </h4>
-                                        <p className='text-muted-foreground leading-relaxed whitespace-pre-wrap rounded-2xl bg-muted/30 p-5 border border-border/50 text-sm'>
+                                        <p className='text-muted-foreground bg-muted/30 border-border/50 rounded-2xl border p-5 text-sm leading-relaxed whitespace-pre-wrap'>
                                             {selectedPackage.description ||
                                                 t('admin.marketplace.plugins.details.no_description')}
                                         </p>
                                     </div>
 
                                     <div className='grid grid-cols-2 gap-4'>
-                                        <div className='space-y-1 p-5 rounded-2xl bg-muted/30 border border-border/50'>
-                                            <p className='text-[10px] font-bold text-muted-foreground uppercase tracking-wider'>
+                                        <div className='bg-muted/30 border-border/50 space-y-1 rounded-2xl border p-5'>
+                                            <p className='text-muted-foreground text-[10px] font-bold tracking-wider uppercase'>
                                                 Version
                                             </p>
                                             <p className='font-semibold'>
@@ -889,16 +889,16 @@ export default function PluginsPage() {
                                             </p>
                                         </div>
 
-                                        <div className='space-y-1 p-5 rounded-2xl bg-muted/30 border border-border/50'>
-                                            <p className='text-[10px] font-bold text-muted-foreground uppercase tracking-wider'>
+                                        <div className='bg-muted/30 border-border/50 space-y-1 rounded-2xl border p-5'>
+                                            <p className='text-muted-foreground text-[10px] font-bold tracking-wider uppercase'>
                                                 {t('admin.marketplace.plugins.downloads')}
                                             </p>
                                             <p className='font-semibold'>
                                                 {selectedPackage.downloads.toLocaleString()}
                                             </p>
                                         </div>
-                                        <div className='space-y-1 p-5 rounded-2xl bg-muted/30 border border-border/50'>
-                                            <p className='text-[10px] font-bold text-muted-foreground uppercase tracking-wider'>
+                                        <div className='bg-muted/30 border-border/50 space-y-1 rounded-2xl border p-5'>
+                                            <p className='text-muted-foreground text-[10px] font-bold tracking-wider uppercase'>
                                                 Status
                                             </p>
                                             <p
@@ -921,7 +921,7 @@ export default function PluginsPage() {
                                             <h4 className='text-lg font-bold'>
                                                 {t('admin.marketplace.plugins.details.changelog')}
                                             </h4>
-                                            <div className='bg-muted/30 border border-border/50 rounded-2xl p-5 text-sm text-muted-foreground leading-relaxed'>
+                                            <div className='bg-muted/30 border-border/50 text-muted-foreground rounded-2xl border p-5 text-sm leading-relaxed'>
                                                 {selectedPackage.latest_version.changelog}
                                             </div>
                                         </div>
@@ -933,7 +933,7 @@ export default function PluginsPage() {
                                                 href={selectedPackage.website}
                                                 target='_blank'
                                                 rel='noopener noreferrer'
-                                                className='inline-flex items-center gap-2 text-sm font-bold text-primary hover:underline bg-primary/5 px-4 py-2 rounded-xl transition-colors'
+                                                className='text-primary bg-primary/5 inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition-colors hover:underline'
                                             >
                                                 <Globe className='h-4 w-4' />
                                                 {t('admin.marketplace.plugins.website')}
@@ -948,14 +948,14 @@ export default function PluginsPage() {
                     <SheetFooter className='mt-8'>
                         <Button
                             variant='outline'
-                            className='flex-1 rounded-xl h-14 text-sm font-bold'
+                            className='h-14 flex-1 rounded-xl text-sm font-bold'
                             onClick={() => setPackageDetailsOpen(false)}
                         >
                             {t('common.close')}
                         </Button>
                         {selectedPackage && (
                             <Button
-                                className='flex-2 rounded-xl h-14 text-sm font-bold '
+                                className='h-14 flex-2 rounded-xl text-sm font-bold'
                                 disabled={
                                     installingOnlineId === selectedPackage.identifier ||
                                     installedPluginIds.includes(selectedPackage.identifier)
@@ -964,17 +964,17 @@ export default function PluginsPage() {
                             >
                                 {installingOnlineId === selectedPackage.identifier ? (
                                     <>
-                                        <RefreshCw className='h-4 w-4 animate-spin mr-2' />
+                                        <RefreshCw className='mr-2 h-4 w-4 animate-spin' />
                                         {t('admin.marketplace.plugins.installing')}
                                     </>
                                 ) : installedPluginIds.includes(selectedPackage.identifier) ? (
                                     <>
-                                        <BadgeCheck className='h-4 w-4 mr-2' />
+                                        <BadgeCheck className='mr-2 h-4 w-4' />
                                         {t('admin.marketplace.plugins.installed')}
                                     </>
                                 ) : (
                                     <>
-                                        <CloudDownload className='h-4 w-4 mr-2' />
+                                        <CloudDownload className='mr-2 h-4 w-4' />
                                         {t('admin.marketplace.plugins.install')}
                                     </>
                                 )}

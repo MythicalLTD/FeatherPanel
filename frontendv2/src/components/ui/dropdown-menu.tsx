@@ -44,7 +44,7 @@ export function DropdownMenuContent({
             <MenuItems
                 anchor={align === 'end' ? 'bottom end' : 'bottom start'}
                 className={cn(
-                    'z-50 min-w-32 overflow-hidden rounded-xl border border-border/40 bg-card/90 backdrop-blur-xl p-1 shadow-2xl focus:outline-none',
+                    'border-border/40 bg-card/90 z-50 min-w-32 overflow-hidden rounded-xl border p-1 shadow-2xl backdrop-blur-xl focus:outline-none',
                     className,
                 )}
             >
@@ -74,7 +74,7 @@ export function DropdownMenuItem({
                     className={cn(
                         'group flex w-full items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors',
                         focus && 'bg-primary/10 text-primary',
-                        disabled && 'opacity-50 cursor-not-allowed',
+                        disabled && 'cursor-not-allowed opacity-50',
                         className,
                     )}
                 >
@@ -86,9 +86,9 @@ export function DropdownMenuItem({
 }
 
 export function DropdownMenuSeparator({ className }: { className?: string }) {
-    return <div className={cn('-mx-1 my-1 h-px bg-border/40', className)} />;
+    return <div className={cn('bg-border/40 -mx-1 my-1 h-px', className)} />;
 }
 
 export function DropdownMenuLabel({ children, className }: { children: React.ReactNode; className?: string }) {
-    return <div className={cn('px-3 py-2 text-xs font-semibold text-muted-foreground', className)}>{children}</div>;
+    return <div className={cn('text-muted-foreground px-3 py-2 text-xs font-semibold', className)}>{children}</div>;
 }

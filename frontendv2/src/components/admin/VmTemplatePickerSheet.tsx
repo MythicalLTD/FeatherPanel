@@ -173,7 +173,7 @@ export function VmTemplatePickerSheet({
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent className='sm:max-w-2xl overflow-y-auto'>
+            <SheetContent className='overflow-y-auto sm:max-w-2xl'>
                 <SheetHeader>
                     <SheetTitle>{t('admin.vmInstances.select_template') || 'Select template'}</SheetTitle>
                     <SheetDescription>
@@ -184,12 +184,12 @@ export function VmTemplatePickerSheet({
                     </SheetDescription>
                 </SheetHeader>
                 <div className='mt-6 space-y-4'>
-                    <div className='flex rounded-xl border border-border/60 p-1 bg-muted/30 gap-1'>
+                    <div className='border-border/60 bg-muted/30 flex gap-1 rounded-xl border p-1'>
                         <button
                             type='button'
                             onClick={() => setMode('browse')}
                             className={cn(
-                                'flex-1 inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                                'inline-flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
                                 mode === 'browse'
                                     ? 'bg-background text-foreground shadow-sm'
                                     : 'text-muted-foreground hover:text-foreground',
@@ -202,7 +202,7 @@ export function VmTemplatePickerSheet({
                             type='button'
                             onClick={() => setMode('create')}
                             className={cn(
-                                'flex-1 inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                                'inline-flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
                                 mode === 'create'
                                     ? 'bg-background text-foreground shadow-sm'
                                     : 'text-muted-foreground hover:text-foreground',
@@ -216,7 +216,7 @@ export function VmTemplatePickerSheet({
                     {mode === 'browse' ? (
                         <>
                             <div className='relative'>
-                                <SearchIcon className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground' />
+                                <SearchIcon className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
                                 <Input
                                     placeholder={t('common.search') || 'Search'}
                                     value={search}
@@ -224,9 +224,9 @@ export function VmTemplatePickerSheet({
                                     className='pl-10'
                                 />
                             </div>
-                            <div className='space-y-2 max-h-[60vh] overflow-y-auto'>
+                            <div className='max-h-[60vh] space-y-2 overflow-y-auto'>
                                 {filtered.length === 0 ? (
-                                    <p className='text-center py-6 text-muted-foreground'>{t('common.no_results')}</p>
+                                    <p className='text-muted-foreground py-6 text-center'>{t('common.no_results')}</p>
                                 ) : (
                                     filtered.map((tpl) => (
                                         <button
@@ -237,23 +237,23 @@ export function VmTemplatePickerSheet({
                                                 onOpenChange(false);
                                             }}
                                             className={cn(
-                                                'w-full p-3 rounded-xl border text-left transition-all',
+                                                'w-full rounded-xl border p-3 text-left transition-all',
                                                 selectedTemplateId === tpl.id
                                                     ? 'border-primary bg-primary/5'
                                                     : 'border-border/50 hover:border-primary hover:bg-primary/5',
                                             )}
                                         >
                                             <div className='flex items-start gap-3'>
-                                                <div className='p-2 bg-primary/10 rounded-lg mt-0.5'>
+                                                <div className='bg-primary/10 mt-0.5 rounded-lg p-2'>
                                                     {tpl.guest_type === 'lxc' ? (
-                                                        <Cpu className='h-4 w-4 text-primary' />
+                                                        <Cpu className='text-primary h-4 w-4' />
                                                     ) : (
-                                                        <Monitor className='h-4 w-4 text-primary' />
+                                                        <Monitor className='text-primary h-4 w-4' />
                                                     )}
                                                 </div>
                                                 <div>
                                                     <div className='font-semibold'>{tpl.name}</div>
-                                                    <div className='text-xs text-muted-foreground font-mono'>
+                                                    <div className='text-muted-foreground font-mono text-xs'>
                                                         VMID {tpl.template_file ?? '—'} ·{' '}
                                                         {tpl.guest_type === 'lxc' ? 'LXC' : 'QEMU/KVM'}
                                                     </div>
@@ -271,12 +271,12 @@ export function VmTemplatePickerSheet({
                                     {t('admin.vdsNodes.templates.field_select_vm') || 'Select VM from Proxmox'}
                                 </Label>
                                 {loadingProxmoxVms ? (
-                                    <p className='text-sm text-muted-foreground flex items-center gap-2 py-2'>
+                                    <p className='text-muted-foreground flex items-center gap-2 py-2 text-sm'>
                                         <Loader2 className='h-4 w-4 animate-spin' />
                                         {t('admin.vdsNodes.templates.loading_vms') || 'Loading VMs…'}
                                     </p>
                                 ) : proxmoxVmsError ? (
-                                    <p className='text-sm text-destructive'>{proxmoxVmsError}</p>
+                                    <p className='text-destructive text-sm'>{proxmoxVmsError}</p>
                                 ) : (
                                     <Select
                                         value={createForm.template_file || ''}
@@ -314,7 +314,7 @@ export function VmTemplatePickerSheet({
                                 </Select>
                             </div>
                             {createForm.guest_type === 'lxc' && (
-                                <Alert variant='warning' className='py-2 px-3'>
+                                <Alert variant='warning' className='px-3 py-2'>
                                     <ShieldAlert className='h-4 w-4' />
                                     <AlertTitle className='text-xs'>Security Recommendation</AlertTitle>
                                     <AlertDescription className='text-[10px] leading-tight'>
@@ -349,7 +349,7 @@ export function VmTemplatePickerSheet({
                                     {t('common.cancel')}
                                 </Button>
                                 <Button type='button' onClick={() => void handleCreate()} loading={creating}>
-                                    <Layers className='h-4 w-4 mr-2' />
+                                    <Layers className='mr-2 h-4 w-4' />
                                     {t('admin.vdsNodes.templates.add')}
                                 </Button>
                             </div>

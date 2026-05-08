@@ -234,7 +234,7 @@ export default function SpellsPage() {
         if (!onlinePagination || onlinePagination.total_pages <= 1) return null;
 
         return (
-            <div className='flex items-center justify-center gap-2 mt-8'>
+            <div className='mt-8 flex items-center justify-center gap-2'>
                 <Button
                     variant='outline'
                     size='icon'
@@ -270,7 +270,7 @@ export default function SpellsPage() {
                 icon={Sparkles}
                 actions={
                     <Button variant='outline' onClick={() => router.push('/admin/feathercloud/marketplace')}>
-                        <ArrowLeft className='h-4 w-4 mr-2' />
+                        <ArrowLeft className='mr-2 h-4 w-4' />
                         {t('admin.marketplace.plugins.back')}
                     </Button>
                 }
@@ -281,7 +281,7 @@ export default function SpellsPage() {
             <PageCard
                 title={t('admin.marketplace.spells.pterodactyl_banner.title')}
                 icon={Sparkles}
-                className='bg-linear-to-r from-indigo-600/10 via-purple-600/10 to-fuchsia-600/10 border-indigo-500/20'
+                className='border-indigo-500/20 bg-linear-to-r from-indigo-600/10 via-purple-600/10 to-fuchsia-600/10'
                 action={
                     <Button
                         variant='default'
@@ -289,15 +289,15 @@ export default function SpellsPage() {
                         onClick={() => window.open('https://eggs.pterodactyl.io/', '_blank')}
                     >
                         {t('admin.marketplace.spells.pterodactyl_banner.view_github')}
-                        <ArrowRight className='h-4 w-4 ml-2' />
+                        <ArrowRight className='ml-2 h-4 w-4' />
                     </Button>
                 }
             >
                 <div className='space-y-4'>
-                    <p className='text-muted-foreground text-sm max-w-2xl leading-relaxed'>
+                    <p className='text-muted-foreground max-w-2xl text-sm leading-relaxed'>
                         {t('admin.marketplace.spells.pterodactyl_banner.description')}
                     </p>
-                    <div className='text-xs text-primary font-bold tracking-wide uppercase'>
+                    <div className='text-primary text-xs font-bold tracking-wide uppercase'>
                         {t('admin.marketplace.spells.pterodactyl_banner.powered_by')}
                     </div>
                 </div>
@@ -305,12 +305,12 @@ export default function SpellsPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-feathercloud-spells', 'before-content')} />
 
-            <div className='flex flex-col sm:flex-row gap-4 items-center bg-card/50 backdrop-blur-md p-4 rounded-2xl border border-border shadow-sm'>
-                <div className='relative flex-1 group'>
-                    <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
+            <div className='bg-card/50 border-border flex flex-col items-center gap-4 rounded-2xl border p-4 shadow-sm backdrop-blur-md sm:flex-row'>
+                <div className='group relative flex-1'>
+                    <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
                     <Input
                         placeholder={t('admin.marketplace.spells.search_placeholder')}
-                        className='pl-10 h-11'
+                        className='h-11 pl-10'
                         value={onlineSearch}
                         onChange={(e) => setOnlineSearch(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && fetchOnlineSpells(1)}
@@ -331,7 +331,7 @@ export default function SpellsPage() {
                     icon={AlertCircle}
                     action={
                         <Button variant='outline' onClick={() => fetchOnlineSpells()}>
-                            <RefreshCw className='h-4 w-4 mr-2' />
+                            <RefreshCw className='mr-2 h-4 w-4' />
                             {t('admin.marketplace.plugins.try_again')}
                         </Button>
                     }
@@ -352,7 +352,7 @@ export default function SpellsPage() {
                                         src={spell.icon}
                                         alt={spell.name}
                                         fill
-                                        className='object-cover rounded-lg'
+                                        className='rounded-lg object-cover'
                                         unoptimized
                                     />
                                 </div>
@@ -394,16 +394,16 @@ export default function SpellsPage() {
                                 }
                                 description={
                                     <div className='space-y-4'>
-                                        <p className='text-sm text-muted-foreground line-clamp-3 leading-relaxed'>
+                                        <p className='text-muted-foreground line-clamp-3 text-sm leading-relaxed'>
                                             {spell.description || t('admin.marketplace.spells.grid.no_description')}
                                         </p>
                                         {!spell.verified && (
-                                            <div className='text-[10px] text-amber-700 bg-amber-500/10 border border-amber-500/20 rounded-lg p-2 flex items-center gap-2'>
+                                            <div className='flex items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/10 p-2 text-[10px] text-amber-700'>
                                                 <AlertCircle className='h-3 w-3 shrink-0' />
                                                 <span>{t('admin.marketplace.spells.grid.external_source')}</span>
                                             </div>
                                         )}
-                                        <div className='flex items-center justify-between text-xs text-muted-foreground font-medium pt-2'>
+                                        <div className='text-muted-foreground flex items-center justify-between pt-2 text-xs font-medium'>
                                             <div className='flex items-center gap-2'>
                                                 <CloudDownload className='h-3.5 w-3.5' />
                                                 <span>{spell.downloads.toLocaleString()}</span>
@@ -412,7 +412,7 @@ export default function SpellsPage() {
                                     </div>
                                 }
                                 actions={
-                                    <div className='flex items-center gap-2 w-full'>
+                                    <div className='flex w-full items-center gap-2'>
                                         <Button
                                             variant='default'
                                             className='flex-1'
@@ -420,9 +420,9 @@ export default function SpellsPage() {
                                             onClick={() => openInstallDialog(spell)}
                                         >
                                             {installingId === spell.identifier ? (
-                                                <RefreshCw className='h-4 w-4 animate-spin mr-2' />
+                                                <RefreshCw className='mr-2 h-4 w-4 animate-spin' />
                                             ) : (
-                                                <CloudDownload className='h-4 w-4 mr-2' />
+                                                <CloudDownload className='mr-2 h-4 w-4' />
                                             )}
                                             {t('admin.marketplace.spells.grid.install')}
                                         </Button>
@@ -445,14 +445,14 @@ export default function SpellsPage() {
 
             {renderPagination()}
 
-            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-10 pb-12'>
+            <div className='grid grid-cols-1 gap-6 pt-10 pb-12 md:grid-cols-2 lg:grid-cols-3'>
                 <PageCard title={t('admin.marketplace.spells.help.official_repo_title')} icon={Globe}>
-                    <p className='text-sm text-muted-foreground leading-relaxed'>
+                    <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.marketplace.spells.help.official_repo_desc')}
                     </p>
                 </PageCard>
                 <PageCard title={t('admin.marketplace.spells.help.easy_install_title')} icon={CloudDownload}>
-                    <p className='text-sm text-muted-foreground leading-relaxed'>
+                    <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.marketplace.spells.help.easy_install_desc')}
                     </p>
                 </PageCard>
@@ -461,14 +461,14 @@ export default function SpellsPage() {
                     icon={BadgeCheck}
                     variant='default'
                 >
-                    <p className='text-sm text-muted-foreground leading-relaxed'>
+                    <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.marketplace.spells.help.community_desc')}
                     </p>
                 </PageCard>
             </div>
 
             <Sheet open={confirmInstallOpen} onOpenChange={setConfirmInstallOpen}>
-                <div className='h-full flex flex-col'>
+                <div className='flex h-full flex-col'>
                     <SheetHeader>
                         <SheetTitle>{t('admin.marketplace.spells.dialog.title')}</SheetTitle>
                         <SheetDescription>
@@ -476,15 +476,15 @@ export default function SpellsPage() {
                         </SheetDescription>
                     </SheetHeader>
 
-                    <div className='flex-1 overflow-y-auto pr-2 -mr-2 space-y-6'>
+                    <div className='-mr-2 flex-1 space-y-6 overflow-y-auto pr-2'>
                         {selectedSpell && !selectedSpell.verified && (
-                            <div className='rounded-2xl border border-blue-500/30 bg-blue-500/5 p-5 flex items-start gap-4'>
-                                <Info className='h-5 w-5 text-blue-600 shrink-0 mt-0.5' />
+                            <div className='flex items-start gap-4 rounded-2xl border border-blue-500/30 bg-blue-500/5 p-5'>
+                                <Info className='mt-0.5 h-5 w-5 shrink-0 text-blue-600' />
                                 <div className='space-y-1'>
                                     <p className='text-sm font-bold text-blue-700'>
                                         {t('admin.marketplace.spells.dialog.community_egg_title')}
                                     </p>
-                                    <p className='text-xs text-blue-700/80 leading-relaxed font-medium'>
+                                    <p className='text-xs leading-relaxed font-medium text-blue-700/80'>
                                         {t('admin.marketplace.spells.dialog.community_egg_desc')}
                                     </p>
                                 </div>
@@ -492,13 +492,13 @@ export default function SpellsPage() {
                         )}
 
                         {installedSpellIds.includes(selectedSpell?.name || '') && (
-                            <div className='rounded-2xl border border-blue-500/30 bg-blue-500/5 p-5 flex items-start gap-4'>
-                                <Info className='h-5 w-5 text-blue-600 shrink-0 mt-0.5' />
+                            <div className='flex items-start gap-4 rounded-2xl border border-blue-500/30 bg-blue-500/5 p-5'>
+                                <Info className='mt-0.5 h-5 w-5 shrink-0 text-blue-600' />
                                 <div className='space-y-1'>
                                     <p className='text-sm font-bold text-blue-700'>
                                         {t('admin.marketplace.spells.dialog.already_installed_title')}
                                     </p>
-                                    <p className='text-xs text-blue-700/80 leading-relaxed font-medium'>
+                                    <p className='text-xs leading-relaxed font-medium text-blue-700/80'>
                                         {t('admin.marketplace.spells.dialog.already_installed_desc')}
                                     </p>
                                 </div>
@@ -507,22 +507,22 @@ export default function SpellsPage() {
 
                         <div className='space-y-6'>
                             <div className='space-y-2'>
-                                <label className='text-sm font-semibold text-foreground flex items-center gap-2'>
-                                    <Globe className='h-4 w-4 text-primary' />
+                                <label className='text-foreground flex items-center gap-2 text-sm font-semibold'>
+                                    <Globe className='text-primary h-4 w-4' />
                                     {t('admin.marketplace.spells.dialog.realm')}
                                 </label>
-                                <p className='text-xs text-muted-foreground'>
+                                <p className='text-muted-foreground text-xs'>
                                     {realmInstallMode === 'existing'
                                         ? t('admin.marketplace.spells.dialog.realm_help')
                                         : t('admin.marketplace.spells.dialog.new_realm_help')}
                                 </p>
                             </div>
 
-                            <div className='flex flex-col sm:flex-row gap-2'>
+                            <div className='flex flex-col gap-2 sm:flex-row'>
                                 <Button
                                     type='button'
                                     variant={realmInstallMode === 'existing' ? 'default' : 'outline'}
-                                    className='flex-1 h-11 rounded-xl font-semibold'
+                                    className='h-11 flex-1 rounded-xl font-semibold'
                                     onClick={() => {
                                         setRealmInstallMode('existing');
                                     }}
@@ -532,7 +532,7 @@ export default function SpellsPage() {
                                 <Button
                                     type='button'
                                     variant={realmInstallMode === 'new' ? 'default' : 'outline'}
-                                    className='flex-1 h-11 rounded-xl font-semibold'
+                                    className='h-11 flex-1 rounded-xl font-semibold'
                                     onClick={() => {
                                         setRealmInstallMode('new');
                                         setSelectedRealmId('');
@@ -546,7 +546,7 @@ export default function SpellsPage() {
                             {realmInstallMode === 'new' ? (
                                 <div className='space-y-4'>
                                     <div className='space-y-2'>
-                                        <label className='text-xs font-bold uppercase tracking-wide text-muted-foreground'>
+                                        <label className='text-muted-foreground text-xs font-bold tracking-wide uppercase'>
                                             {t('admin.marketplace.spells.dialog.new_realm_name')}
                                         </label>
                                         <Input
@@ -560,21 +560,21 @@ export default function SpellsPage() {
                                         />
                                     </div>
                                     <div className='space-y-2'>
-                                        <label className='text-xs font-bold uppercase tracking-wide text-muted-foreground'>
+                                        <label className='text-muted-foreground text-xs font-bold tracking-wide uppercase'>
                                             {t('admin.marketplace.spells.dialog.new_realm_description')}
                                         </label>
                                         <Textarea
                                             value={newRealmDescription}
                                             onChange={(e) => setNewRealmDescription(e.target.value)}
-                                            className='min-h-[88px] rounded-xl resize-y'
+                                            className='min-h-[88px] resize-y rounded-xl'
                                             maxLength={65535}
                                         />
                                     </div>
                                 </div>
                             ) : (
                                 <>
-                                    <div className='relative group'>
-                                        <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
+                                    <div className='group relative'>
+                                        <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
                                         <Input
                                             placeholder={t('common.search')}
                                             value={realmsSearch}
@@ -582,18 +582,18 @@ export default function SpellsPage() {
                                                 setRealmsSearch(e.target.value);
                                                 setRealmsPage(1);
                                             }}
-                                            className='pl-10 h-11'
+                                            className='h-11 pl-10'
                                         />
                                     </div>
 
                                     {realmsPagination && realmsPagination.total_pages > 1 && (
-                                        <div className='flex items-center justify-between gap-2 py-2 px-3 rounded-lg border border-border bg-muted/30'>
+                                        <div className='border-border bg-muted/30 flex items-center justify-between gap-2 rounded-lg border px-3 py-2'>
                                             <Button
                                                 variant='outline'
                                                 size='sm'
                                                 disabled={realmsPage === 1}
                                                 onClick={() => setRealmsPage((p) => p - 1)}
-                                                className='gap-1 h-8'
+                                                className='h-8 gap-1'
                                             >
                                                 <ChevronLeft className='h-3 w-3' />
                                                 {t('common.previous')}
@@ -606,7 +606,7 @@ export default function SpellsPage() {
                                                 size='sm'
                                                 disabled={realmsPage === realmsPagination.total_pages}
                                                 onClick={() => setRealmsPage((p) => p + 1)}
-                                                className='gap-1 h-8'
+                                                className='h-8 gap-1'
                                             >
                                                 {t('common.next')}
                                                 <ChevronRight className='h-3 w-3' />
@@ -614,13 +614,13 @@ export default function SpellsPage() {
                                         </div>
                                     )}
 
-                                    <div className='space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar'>
+                                    <div className='custom-scrollbar max-h-[300px] space-y-2 overflow-y-auto pr-2'>
                                         {realmsLoading ? (
                                             <div className='flex items-center justify-center py-10'>
-                                                <RefreshCw className='h-6 w-6 animate-spin text-primary' />
+                                                <RefreshCw className='text-primary h-6 w-6 animate-spin' />
                                             </div>
                                         ) : realms.length === 0 ? (
-                                            <div className='text-center py-10 text-muted-foreground text-sm space-y-3'>
+                                            <div className='text-muted-foreground space-y-3 py-10 text-center text-sm'>
                                                 <p>{t('common.no_results')}</p>
                                                 <Button
                                                     type='button'
@@ -642,15 +642,15 @@ export default function SpellsPage() {
                                                     key={realm.id}
                                                     onClick={() => setSelectedRealmId(String(realm.id))}
                                                     className={cn(
-                                                        'p-4 rounded-xl border transition-all cursor-pointer flex items-center justify-between group/realm',
+                                                        'group/realm flex cursor-pointer items-center justify-between rounded-xl border p-4 transition-all',
                                                         selectedRealmId === String(realm.id)
-                                                            ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                                                            ? 'border-primary bg-primary/5 ring-primary ring-1'
                                                             : 'border-border/50 hover:border-primary/50 bg-muted/30',
                                                     )}
                                                 >
-                                                    <span className='font-semibold text-sm'>{realm.name}</span>
+                                                    <span className='text-sm font-semibold'>{realm.name}</span>
                                                     {selectedRealmId === String(realm.id) && (
-                                                        <BadgeCheck className='h-4 w-4 text-primary animate-in zoom-in-50 duration-200' />
+                                                        <BadgeCheck className='text-primary animate-in zoom-in-50 h-4 w-4 duration-200' />
                                                     )}
                                                 </div>
                                             ))
@@ -659,7 +659,7 @@ export default function SpellsPage() {
 
                                     {realmsPagination && realmsPagination.total_pages > 1 && (
                                         <div className='flex items-center justify-between px-1'>
-                                            <span className='text-xs text-muted-foreground font-medium'>
+                                            <span className='text-muted-foreground text-xs font-medium'>
                                                 {t('common.pagination.page', {
                                                     current: String(realmsPage),
                                                     total: String(realmsPagination.total_pages),
@@ -695,13 +695,13 @@ export default function SpellsPage() {
                     <SheetFooter className='mt-8'>
                         <Button
                             variant='ghost'
-                            className='flex-1 rounded-xl h-14 font-bold'
+                            className='h-14 flex-1 rounded-xl font-bold'
                             onClick={() => setConfirmInstallOpen(false)}
                         >
                             {t('common.cancel')}
                         </Button>
                         <Button
-                            className='flex-2 rounded-xl h-14 font-bold '
+                            className='h-14 flex-2 rounded-xl font-bold'
                             disabled={
                                 installingId !== null ||
                                 (realmInstallMode === 'existing' && !selectedRealmId) ||
@@ -711,12 +711,12 @@ export default function SpellsPage() {
                         >
                             {installingId ? (
                                 <>
-                                    <RefreshCw className='h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2' />
+                                    <RefreshCw className='mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white' />
                                     {t('admin.marketplace.spells.dialog.installing')}
                                 </>
                             ) : (
                                 <>
-                                    <CloudDownload className='h-4 w-4 mr-2' />
+                                    <CloudDownload className='mr-2 h-4 w-4' />
                                     {t('admin.marketplace.spells.dialog.install')}
                                 </>
                             )}

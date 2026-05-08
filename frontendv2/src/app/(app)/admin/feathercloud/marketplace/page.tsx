@@ -36,7 +36,7 @@ export default function MarketplacePage() {
     }, [fetchWidgets]);
 
     return (
-        <div className='space-y-8 '>
+        <div className='space-y-8'>
             <WidgetRenderer widgets={getWidgets('admin-feathercloud-marketplace', 'top-of-page')} />
 
             <PageHeader
@@ -49,7 +49,7 @@ export default function MarketplacePage() {
 
             <WidgetRenderer widgets={getWidgets('admin-feathercloud-marketplace', 'before-content')} />
 
-            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+            <div className='grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3'>
                 <ResourceCard
                     title={t('admin.marketplace.index.plugins.title')}
                     description={t('admin.marketplace.index.plugins.description')}
@@ -104,7 +104,7 @@ export default function MarketplacePage() {
 
             <div className='pt-4'>
                 <PageCard title={t('admin.marketplace.index.about.title')} icon={Info}>
-                    <p className='text-base text-muted-foreground leading-relaxed'>
+                    <p className='text-muted-foreground text-base leading-relaxed'>
                         {t('admin.marketplace.index.about.description')}
                     </p>
                 </PageCard>

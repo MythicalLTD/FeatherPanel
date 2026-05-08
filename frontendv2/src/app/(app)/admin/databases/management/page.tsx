@@ -194,8 +194,8 @@ export default function DatabaseManagementPage() {
     }, [fetchStatus, checkPhpMyAdminStatus]);
 
     const StatItem = ({ label, value }: { label: string; value: string | number }) => (
-        <div className='flex justify-between items-center py-1'>
-            <span className='text-sm text-muted-foreground'>{label}</span>
+        <div className='flex items-center justify-between py-1'>
+            <span className='text-muted-foreground text-sm'>{label}</span>
             <span className='font-mono text-sm'>{value}</span>
         </div>
     );
@@ -249,7 +249,7 @@ export default function DatabaseManagementPage() {
             <WidgetRenderer widgets={getWidgets('admin-databases-management', 'after-header')} />
 
             {status && (
-                <div className='grid gap-6 sm:grid-cols-2 lg:grid-cols-4 animate-fade-in-up'>
+                <div className='animate-fade-in-up grid gap-6 sm:grid-cols-2 lg:grid-cols-4'>
                     <PageCard title={t('admin.database_management.stats.overview')} icon={Server}>
                         <div className='space-y-2'>
                             <StatItem label={t('admin.database_management.stats.engine')} value={status.engine} />
@@ -312,7 +312,7 @@ export default function DatabaseManagementPage() {
             )}
 
             {loading && !status && (
-                <div className='flex h-64 items-center justify-center rounded-xl border border-dashed text-muted-foreground'>
+                <div className='text-muted-foreground flex h-64 items-center justify-center rounded-xl border border-dashed'>
                     <RefreshCw className='mr-2 h-5 w-5 animate-spin' />
                     {t('admin.database_management.actions.loading_status')}
                 </div>
@@ -320,7 +320,7 @@ export default function DatabaseManagementPage() {
 
             <div className='space-y-4'>
                 <div className='flex items-center justify-between'>
-                    <h2 className='text-lg font-semibold flex items-center gap-2'>
+                    <h2 className='flex items-center gap-2 text-lg font-semibold'>
                         <Terminal className='h-5 w-5' />
                         {t('admin.database_management.migrations.title')}
                     </h2>
@@ -329,14 +329,14 @@ export default function DatabaseManagementPage() {
                             variant='ghost'
                             size='sm'
                             onClick={() => setMigOutput('')}
-                            className='text-xs text-muted-foreground hover:text-foreground'
+                            className='text-muted-foreground hover:text-foreground text-xs'
                         >
                             {t('admin.database_management.actions.clear_output')}
                         </Button>
                     )}
                 </div>
                 <div
-                    className={`rounded-xl border bg-black p-4 font-mono text-xs text-green-400 shadow-inner min-h-[150px] max-h-[400px] overflow-auto whitespace-pre-wrap transition-all ${migOutput ? 'opacity-100' : 'opacity-50'}`}
+                    className={`max-h-[400px] min-h-[150px] overflow-auto rounded-xl border bg-black p-4 font-mono text-xs whitespace-pre-wrap text-green-400 shadow-inner transition-all ${migOutput ? 'opacity-100' : 'opacity-50'}`}
                 >
                     {migOutput || (
                         <span className='text-muted-foreground/50 select-none'>
@@ -348,26 +348,26 @@ export default function DatabaseManagementPage() {
 
             <div className='grid gap-6 md:grid-cols-3'>
                 <PageCard title={t('admin.database_management.help.what_is.title')} icon={Info} className='h-full'>
-                    <p className='text-sm text-muted-foreground'>
+                    <p className='text-muted-foreground text-sm'>
                         {t('admin.database_management.help.what_is.description')}
                     </p>
                 </PageCard>
                 <PageCard title={t('admin.database_management.help.metrics.title')} icon={Activity} className='h-full'>
-                    <p className='text-sm text-muted-foreground'>
+                    <p className='text-muted-foreground text-sm'>
                         {t('admin.database_management.help.metrics.description')}
                     </p>
                 </PageCard>
                 <PageCard title={t('admin.database_management.help.migrations.title')} icon={Wrench} className='h-full'>
-                    <p className='text-sm text-muted-foreground'>
+                    <p className='text-muted-foreground text-sm'>
                         {t('admin.database_management.help.migrations.description')}
                     </p>
                 </PageCard>
             </div>
 
-            <div className='rounded-lg border border-amber-500/20 bg-amber-500/10 p-4 flex gap-4'>
-                <AlertTriangle className='h-5 w-5 text-amber-500 shrink-0' />
+            <div className='flex gap-4 rounded-lg border border-amber-500/20 bg-amber-500/10 p-4'>
+                <AlertTriangle className='h-5 w-5 shrink-0 text-amber-500' />
                 <div className='space-y-1'>
-                    <h3 className='font-semibold text-amber-500 text-sm'>
+                    <h3 className='text-sm font-semibold text-amber-500'>
                         {t('admin.database_management.help.safety.title')}
                     </h3>
                     <p className='text-sm text-amber-500/80'>

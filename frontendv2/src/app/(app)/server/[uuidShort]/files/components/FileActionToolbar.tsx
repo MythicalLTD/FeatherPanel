@@ -94,32 +94,32 @@ export function FileActionToolbar({
 
     return (
         <div className='sticky top-0 z-20 pb-4'>
-            <div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-xl border border-black/5 dark:border-white/10 bg-white/80 dark:bg-white/5 backdrop-blur-xl p-2 transition-all duration-300'>
+            <div className='flex flex-col gap-4 rounded-xl border border-black/5 bg-white/80 p-2 backdrop-blur-xl transition-all duration-300 sm:flex-row sm:items-center sm:justify-between dark:border-white/10 dark:bg-white/5'>
                 {hasSelection ? (
                     <>
                         <div className='flex items-center gap-3 px-2'>
-                            <div className='flex items-center justify-center h-8 w-8 rounded-lg bg-primary/10 text-primary animate-in zoom-in-50 duration-300'>
+                            <div className='bg-primary/10 text-primary animate-in zoom-in-50 flex h-8 w-8 items-center justify-center rounded-lg duration-300'>
                                 <span className='text-xs font-bold'>{selectedCount}</span>
                             </div>
-                            <span className='text-sm font-medium text-muted-foreground hidden xs:inline'>
+                            <span className='text-muted-foreground xs:inline hidden text-sm font-medium'>
                                 {t('files.toolbar.selected')}
                             </span>
-                            <div className='h-4 w-px bg-border mx-1 hidden xs:block' />
+                            <div className='bg-border xs:block mx-1 hidden h-4 w-px' />
                             <Button
                                 variant='ghost'
                                 size='sm'
                                 onClick={onClearSelection}
-                                className='h-8 px-3 text-xs uppercase tracking-wider font-bold text-muted-foreground hover:text-foreground'
+                                className='text-muted-foreground hover:text-foreground h-8 px-3 text-xs font-bold tracking-wider uppercase'
                             >
                                 {t('files.toolbar.cancel')}
                             </Button>
                         </div>
-                        <div className='flex items-center gap-1.5 overflow-x-auto no-scrollbar pl-2'>
+                        <div className='no-scrollbar flex items-center gap-1.5 overflow-x-auto pl-2'>
                             <Button
                                 variant='secondary'
                                 size='sm'
                                 onClick={onArchiveSelected}
-                                className='h-9 px-4 bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20'
+                                className='h-9 bg-black/5 px-4 hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/20'
                             >
                                 <Archive className='mr-2 h-4 w-4' />
                                 <span className='hidden sm:inline'>{t('files.toolbar.compress')}</span>
@@ -128,7 +128,7 @@ export function FileActionToolbar({
                                 variant='secondary'
                                 size='sm'
                                 onClick={onDeleteSelected}
-                                className='h-9 px-3 bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500/20'
+                                className='h-9 bg-red-500/10 px-3 text-red-600 hover:bg-red-500/20 dark:text-red-400'
                             >
                                 <Trash2 className='h-4 w-4' />
                             </Button>
@@ -159,19 +159,19 @@ export function FileActionToolbar({
                                 size='sm'
                                 onClick={onRefresh}
                                 disabled={loading}
-                                className='h-9 px-3 text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5'
+                                className='text-muted-foreground hover:text-foreground h-9 px-3 hover:bg-black/5 dark:hover:bg-white/5'
                             >
                                 <RefreshCw className={cn('mr-2 h-4 w-4', loading && 'animate-spin')} />
-                                <span className='hidden xs:inline'>{t('files.toolbar.refresh')}</span>
+                                <span className='xs:inline hidden'>{t('files.toolbar.refresh')}</span>
                             </Button>
                             {canCreate && (
                                 <>
-                                    <div className='h-4 w-px bg-border mx-1 hidden sm:block' />
+                                    <div className='bg-border mx-1 hidden h-4 w-px sm:block' />
                                     <Button
                                         variant='ghost'
                                         size='sm'
                                         onClick={onCreateFile}
-                                        className='h-9 px-3 text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5'
+                                        className='text-muted-foreground hover:text-foreground h-9 px-3 hover:bg-black/5 dark:hover:bg-white/5'
                                     >
                                         <FilePlus className='mr-2 h-4 w-4' />
                                         <span className='hidden lg:inline'>{t('files.toolbar.new_file')}</span>
@@ -180,7 +180,7 @@ export function FileActionToolbar({
                                         variant='ghost'
                                         size='sm'
                                         onClick={onCreateFolder}
-                                        className='h-9 px-3 text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5'
+                                        className='text-muted-foreground hover:text-foreground h-9 px-3 hover:bg-black/5 dark:hover:bg-white/5'
                                     >
                                         <FolderPlus className='mr-2 h-4 w-4' />
                                         <span className='hidden lg:inline'>{t('files.toolbar.new_folder')}</span>
@@ -194,10 +194,10 @@ export function FileActionToolbar({
                                 variant='ghost'
                                 size='sm'
                                 onClick={onPullFile}
-                                className='h-9 px-3 text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5'
+                                className='text-muted-foreground hover:text-foreground h-9 px-3 hover:bg-black/5 dark:hover:bg-white/5'
                             >
                                 <Download className='mr-2 h-4 w-4' />
-                                <span className='hidden xs:inline'>{t('files.toolbar.pull')}</span>
+                                <span className='xs:inline hidden'>{t('files.toolbar.pull')}</span>
                             </Button>
 
                             {canCreate &&
@@ -208,7 +208,7 @@ export function FileActionToolbar({
                                             as={Button}
                                             variant='default'
                                             size='sm'
-                                            className='h-9 px-6 shadow-sm font-semibold'
+                                            className='h-9 px-6 font-semibold shadow-sm'
                                         >
                                             <Upload className='mr-2 h-4 w-4' />
                                             {t('files.toolbar.upload')}
@@ -234,7 +234,7 @@ export function FileActionToolbar({
                                         variant='default'
                                         size='sm'
                                         onClick={onUpload}
-                                        className='h-9 px-6 shadow-sm font-semibold'
+                                        className='h-9 px-6 font-semibold shadow-sm'
                                     >
                                         <Upload className='mr-2 h-4 w-4' />
                                         {t('files.toolbar.upload')}
@@ -245,10 +245,10 @@ export function FileActionToolbar({
                                 variant='ghost'
                                 size='sm'
                                 onClick={onOpenInIDE}
-                                className='h-9 px-3 text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5'
+                                className='text-muted-foreground hover:text-foreground h-9 px-3 hover:bg-black/5 dark:hover:bg-white/5'
                             >
                                 <Boxes className='mr-2 h-4 w-4' />
-                                <span className='hidden xs:inline'>{t('files.toolbar.open_in_ide')}</span>
+                                <span className='xs:inline hidden'>{t('files.toolbar.open_in_ide')}</span>
                             </Button>
 
                             <DropdownMenu>
@@ -256,7 +256,7 @@ export function FileActionToolbar({
                                     as={Button}
                                     variant='ghost'
                                     size='icon'
-                                    className='h-9 w-9 text-muted-foreground'
+                                    className='text-muted-foreground h-9 w-9'
                                 >
                                     <Settings className='h-4 w-4' />
                                 </DropdownMenuTrigger>
@@ -268,7 +268,7 @@ export function FileActionToolbar({
                                     {canDelete && currentDirectory === '/' && (
                                         <DropdownMenuItem
                                             onClick={onWipeAll}
-                                            className='text-red-500 focus:text-red-500 focus:bg-red-500/10'
+                                            className='text-red-500 focus:bg-red-500/10 focus:text-red-500'
                                         >
                                             <Trash2 className='mr-2 h-4 w-4' /> {t('files.toolbar.wipe_all')}
                                         </DropdownMenuItem>

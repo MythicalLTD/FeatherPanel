@@ -91,10 +91,10 @@ export function DiagnosticsTab({ nodeId }: DiagnosticsTabProps) {
                 <div className='space-y-8'>
                     <div className='space-y-3'>
                         <Label className='text-sm font-semibold'>{t('admin.node.view.diagnostics.format_label')}</Label>
-                        <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
+                        <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
                             <button
                                 type='button'
-                                className={`relative flex items-center gap-4 p-4 rounded-2xl border-2 transition-all ${
+                                className={`relative flex items-center gap-4 rounded-2xl border-2 p-4 transition-all ${
                                     options.format === 'text'
                                         ? 'border-primary bg-primary/5'
                                         : 'border-border/50 hover:border-primary/50'
@@ -106,18 +106,18 @@ export function DiagnosticsTab({ nodeId }: DiagnosticsTabProps) {
                                         options.format === 'text' ? 'border-primary' : 'border-muted-foreground/30'
                                     }`}
                                 >
-                                    {options.format === 'text' && <div className='h-3 w-3 rounded-full bg-primary' />}
+                                    {options.format === 'text' && <div className='bg-primary h-3 w-3 rounded-full' />}
                                 </div>
                                 <div className='text-left'>
                                     <p className='text-sm font-bold'>{t('admin.node.view.diagnostics.raw_text')}</p>
-                                    <p className='text-xs text-muted-foreground'>
+                                    <p className='text-muted-foreground text-xs'>
                                         {t('admin.node.view.diagnostics.raw_text_help')}
                                     </p>
                                 </div>
                             </button>
                             <button
                                 type='button'
-                                className={`relative flex items-center gap-4 p-4 rounded-2xl border-2 transition-all ${
+                                className={`relative flex items-center gap-4 rounded-2xl border-2 p-4 transition-all ${
                                     options.format === 'url'
                                         ? 'border-primary bg-primary/5'
                                         : 'border-border/50 hover:border-primary/50'
@@ -129,11 +129,11 @@ export function DiagnosticsTab({ nodeId }: DiagnosticsTabProps) {
                                         options.format === 'url' ? 'border-primary' : 'border-muted-foreground/30'
                                     }`}
                                 >
-                                    {options.format === 'url' && <div className='h-3 w-3 rounded-full bg-primary' />}
+                                    {options.format === 'url' && <div className='bg-primary h-3 w-3 rounded-full' />}
                                 </div>
                                 <div className='text-left'>
                                     <p className='text-sm font-bold'>{t('admin.node.view.diagnostics.upload_url')}</p>
-                                    <p className='text-xs text-muted-foreground'>
+                                    <p className='text-muted-foreground text-xs'>
                                         {t('admin.node.view.diagnostics.upload_url_help')}
                                     </p>
                                 </div>
@@ -142,16 +142,16 @@ export function DiagnosticsTab({ nodeId }: DiagnosticsTabProps) {
                     </div>
 
                     <div className='space-y-4'>
-                        <div className='flex items-center gap-2 mb-2'>
-                            <Settings2 className='h-4 w-4 text-primary' />
+                        <div className='mb-2 flex items-center gap-2'>
+                            <Settings2 className='text-primary h-4 w-4' />
                             <Label className='text-sm font-semibold'>
                                 {t('admin.node.view.diagnostics.options_label')}
                             </Label>
                         </div>
 
-                        <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
+                        <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
                             <div
-                                className={`flex items-start gap-4 p-4 rounded-2xl border-2 transition-all cursor-pointer ${
+                                className={`flex cursor-pointer items-start gap-4 rounded-2xl border-2 p-4 transition-all ${
                                     options.includeEndpoints
                                         ? 'border-primary/50 bg-primary/5'
                                         : 'border-border/50 hover:border-primary/30'
@@ -171,14 +171,14 @@ export function DiagnosticsTab({ nodeId }: DiagnosticsTabProps) {
                                     <p className='text-sm font-bold'>
                                         {t('admin.node.view.diagnostics.include_endpoints')}
                                     </p>
-                                    <p className='text-xs text-muted-foreground'>
+                                    <p className='text-muted-foreground text-xs'>
                                         {t('admin.node.view.diagnostics.include_endpoints_help')}
                                     </p>
                                 </div>
                             </div>
 
                             <div
-                                className={`flex items-start gap-4 p-4 rounded-2xl border-2 transition-all cursor-pointer ${
+                                className={`flex cursor-pointer items-start gap-4 rounded-2xl border-2 p-4 transition-all ${
                                     options.includeLogs
                                         ? 'border-primary/50 bg-primary/5'
                                         : 'border-border/50 hover:border-primary/30'
@@ -194,7 +194,7 @@ export function DiagnosticsTab({ nodeId }: DiagnosticsTabProps) {
                                 </div>
                                 <div>
                                     <p className='text-sm font-bold'>{t('admin.node.view.diagnostics.include_logs')}</p>
-                                    <p className='text-xs text-muted-foreground'>
+                                    <p className='text-muted-foreground text-xs'>
                                         {t('admin.node.view.diagnostics.include_logs_help')}
                                     </p>
                                 </div>
@@ -202,9 +202,9 @@ export function DiagnosticsTab({ nodeId }: DiagnosticsTabProps) {
                         </div>
 
                         {options.includeLogs && (
-                            <div className='p-6 rounded-2xl bg-muted/30 border border-border/50 space-y-4 animate-in fade-in slide-in-from-top-1'>
+                            <div className='bg-muted/30 border-border/50 animate-in fade-in slide-in-from-top-1 space-y-4 rounded-2xl border p-6'>
                                 <div>
-                                    <Label className='text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 block'>
+                                    <Label className='text-muted-foreground mb-2 block text-xs font-bold tracking-wider uppercase'>
                                         {t('admin.node.view.diagnostics.log_lines')}
                                     </Label>
                                     <Input
@@ -213,9 +213,9 @@ export function DiagnosticsTab({ nodeId }: DiagnosticsTabProps) {
                                         max={500}
                                         value={options.logLines}
                                         onChange={(e) => setOptions({ ...options, logLines: parseInt(e.target.value) })}
-                                        className='max-w-[200px] h-10'
+                                        className='h-10 max-w-[200px]'
                                     />
-                                    <p className='text-[10px] text-muted-foreground mt-1.5 italic'>
+                                    <p className='text-muted-foreground mt-1.5 text-[10px] italic'>
                                         {t('admin.node.view.diagnostics.log_lines_help')}
                                     </p>
                                 </div>
@@ -223,9 +223,9 @@ export function DiagnosticsTab({ nodeId }: DiagnosticsTabProps) {
                         )}
 
                         {options.format === 'url' && (
-                            <div className='p-6 rounded-2xl bg-muted/30 border border-border/50 space-y-4 animate-in fade-in slide-in-from-top-1'>
+                            <div className='bg-muted/30 border-border/50 animate-in fade-in slide-in-from-top-1 space-y-4 rounded-2xl border p-6'>
                                 <div>
-                                    <Label className='text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 block'>
+                                    <Label className='text-muted-foreground mb-2 block text-xs font-bold tracking-wider uppercase'>
                                         {t('admin.node.view.diagnostics.custom_url')}
                                     </Label>
                                     <Input
@@ -235,7 +235,7 @@ export function DiagnosticsTab({ nodeId }: DiagnosticsTabProps) {
                                         placeholder='https://paste.mythical.systems'
                                         className='h-10 font-mono text-sm'
                                     />
-                                    <p className='text-[10px] text-muted-foreground mt-1.5 italic'>
+                                    <p className='text-muted-foreground mt-1.5 text-[10px] italic'>
                                         {t('admin.node.view.diagnostics.custom_url_help')}
                                     </p>
                                 </div>
@@ -243,9 +243,9 @@ export function DiagnosticsTab({ nodeId }: DiagnosticsTabProps) {
                         )}
                     </div>
 
-                    <div className='pt-6 border-t border-border/50'>
-                        <Button className='w-full h-12 text-sm font-bold' loading={loading} onClick={handleGenerate}>
-                            {!loading && <FileText className='h-4 w-4 mr-2' />}
+                    <div className='border-border/50 border-t pt-6'>
+                        <Button className='h-12 w-full text-sm font-bold' loading={loading} onClick={handleGenerate}>
+                            {!loading && <FileText className='mr-2 h-4 w-4' />}
                             {t('admin.node.view.diagnostics.generate')}
                         </Button>
                     </div>
@@ -265,14 +265,14 @@ export function DiagnosticsTab({ nodeId }: DiagnosticsTabProps) {
                     <div className='space-y-6'>
                         {result.format === 'url' && result.url ? (
                             <div className='space-y-4'>
-                                <div className='p-4 rounded-2xl bg-green-500/10 border border-green-500/20 flex items-center gap-3'>
+                                <div className='flex items-center gap-3 rounded-2xl border border-green-500/20 bg-green-500/10 p-4'>
                                     <CheckCircle2 className='h-5 w-5 text-green-500' />
                                     <p className='text-sm font-bold text-green-500'>
                                         {t('admin.node.view.diagnostics.upload_success')}
                                     </p>
                                 </div>
                                 <div className='flex gap-2'>
-                                    <Input value={result.url} readOnly className='font-mono h-11 text-xs' />
+                                    <Input value={result.url} readOnly className='h-11 font-mono text-xs' />
                                     <Button variant='outline' onClick={() => copyToClipboard(result.url!)}>
                                         <Clipboard className='h-4 w-4' />
                                     </Button>
@@ -285,16 +285,16 @@ export function DiagnosticsTab({ nodeId }: DiagnosticsTabProps) {
                             </div>
                         ) : result.format === 'text' && result.content ? (
                             <div className='space-y-3'>
-                                <div className='flex justify-between items-center'>
-                                    <Label className='text-xs font-bold uppercase tracking-wider text-muted-foreground'>
+                                <div className='flex items-center justify-between'>
+                                    <Label className='text-muted-foreground text-xs font-bold tracking-wider uppercase'>
                                         {t('admin.node.view.diagnostics.raw_data')}
                                     </Label>
                                     <Button variant='ghost' size='sm' onClick={() => copyToClipboard(result.content!)}>
-                                        <Clipboard className='h-4 w-4 mr-2' />
+                                        <Clipboard className='mr-2 h-4 w-4' />
                                         {t('common.copy')}
                                     </Button>
                                 </div>
-                                <pre className='p-6 rounded-2xl bg-muted/30 border border-border/50 font-mono text-[11px] overflow-auto max-h-[500px] leading-relaxed whitespace-pre-wrap'>
+                                <pre className='bg-muted/30 border-border/50 max-h-[500px] overflow-auto rounded-2xl border p-6 font-mono text-[11px] leading-relaxed whitespace-pre-wrap'>
                                     {result.content}
                                 </pre>
                             </div>
@@ -304,12 +304,12 @@ export function DiagnosticsTab({ nodeId }: DiagnosticsTabProps) {
             )}
 
             {error && (
-                <div className='p-6 rounded-2xl bg-destructive/10 border border-destructive/20 text-center animate-in fade-in zoom-in-95'>
-                    <AlertTriangle className='h-8 w-8 text-destructive mx-auto mb-4' />
-                    <h3 className='text-lg font-bold text-destructive mb-2'>
+                <div className='bg-destructive/10 border-destructive/20 animate-in fade-in zoom-in-95 rounded-2xl border p-6 text-center'>
+                    <AlertTriangle className='text-destructive mx-auto mb-4 h-8 w-8' />
+                    <h3 className='text-destructive mb-2 text-lg font-bold'>
                         {t('admin.node.view.diagnostics.generate_failed')}
                     </h3>
-                    <p className='text-sm text-muted-foreground'>{error}</p>
+                    <p className='text-muted-foreground text-sm'>{error}</p>
                 </div>
             )}
         </div>

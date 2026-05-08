@@ -53,9 +53,9 @@ export function NavbarHoverDock({ children }: { children: ReactNode }) {
                 className={cn(
                     'max-lg:relative lg:relative lg:z-20 lg:origin-top lg:transition-transform lg:duration-300 lg:ease-out',
                     open
-                        ? 'lg:translate-y-0 lg:pointer-events-auto'
-                        : 'lg:-translate-y-[calc(100%-12px)] lg:pointer-events-none',
-                    'lg:motion-reduce:translate-y-0 lg:motion-reduce:pointer-events-auto lg:motion-reduce:transition-none',
+                        ? 'lg:pointer-events-auto lg:translate-y-0'
+                        : 'lg:pointer-events-none lg:-translate-y-[calc(100%-12px)]',
+                    'lg:motion-reduce:pointer-events-auto lg:motion-reduce:translate-y-0 lg:motion-reduce:transition-none',
                 )}
             >
                 {children}

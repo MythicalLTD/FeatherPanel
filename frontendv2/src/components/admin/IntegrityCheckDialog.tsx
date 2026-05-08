@@ -136,11 +136,11 @@ export function IntegrityCheckDialog({ open, onOpenChange }: IntegrityCheckDialo
     return (
         <Dialog open={open} onOpenChange={onOpenChange} className='max-w-2xl'>
             <DialogContent className='flex max-h-[min(90dvh,40rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl'>
-                <DialogHeader className='border-b border-border/50 px-4 py-4 text-left sm:px-6'>
+                <DialogHeader className='border-border/50 border-b px-4 py-4 text-left sm:px-6'>
                     <div className='flex items-start gap-3'>
                         <div
                             className={cn(
-                                'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border/60',
+                                'border-border/60 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border',
                                 baselineOk ? 'bg-emerald-500/15 text-emerald-600' : 'bg-primary/10 text-primary',
                             )}
                         >
@@ -163,31 +163,31 @@ export function IntegrityCheckDialog({ open, onOpenChange }: IntegrityCheckDialo
 
                 <div className='min-h-0 flex-1 overflow-y-auto px-4 py-3 sm:px-6'>
                     {loading ? (
-                        <div className='flex flex-col items-center justify-center gap-3 py-12 text-muted-foreground'>
+                        <div className='text-muted-foreground flex flex-col items-center justify-center gap-3 py-12'>
                             <Loader2 className='h-8 w-8 animate-spin' />
                             <p className='text-sm'>{t('admin.version.integrity_scan_running')}</p>
                         </div>
                     ) : error ? (
-                        <p className='rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive'>
+                        <p className='border-destructive/30 bg-destructive/10 text-destructive rounded-lg border px-3 py-2 text-sm'>
                             {error}
                         </p>
                     ) : data ? (
                         <div className='space-y-4 text-sm'>
                             <div className='grid grid-cols-2 gap-2 sm:grid-cols-3'>
-                                <div className='rounded-lg border border-border/50 bg-muted/20 px-3 py-2'>
-                                    <p className='text-[10px] font-bold uppercase tracking-wider text-muted-foreground'>
+                                <div className='border-border/50 bg-muted/20 rounded-lg border px-3 py-2'>
+                                    <p className='text-muted-foreground text-[10px] font-bold tracking-wider uppercase'>
                                         {t('admin.version.integrity_files')}
                                     </p>
                                     <p className='text-lg font-semibold tabular-nums'>{data.files_scanned}</p>
                                 </div>
-                                <div className='rounded-lg border border-border/50 bg-muted/20 px-3 py-2'>
-                                    <p className='text-[10px] font-bold uppercase tracking-wider text-muted-foreground'>
+                                <div className='border-border/50 bg-muted/20 rounded-lg border px-3 py-2'>
+                                    <p className='text-muted-foreground text-[10px] font-bold tracking-wider uppercase'>
                                         {t('admin.version.integrity_duration')}
                                     </p>
                                     <p className='text-lg font-semibold tabular-nums'>{data.duration_ms} ms</p>
                                 </div>
-                                <div className='col-span-2 rounded-lg border border-border/50 bg-muted/20 px-3 py-2 sm:col-span-1'>
-                                    <p className='text-[10px] font-bold uppercase tracking-wider text-muted-foreground'>
+                                <div className='border-border/50 bg-muted/20 col-span-2 rounded-lg border px-3 py-2 sm:col-span-1'>
+                                    <p className='text-muted-foreground text-[10px] font-bold tracking-wider uppercase'>
                                         {t('admin.version.integrity_bytes')}
                                     </p>
                                     <p className='text-lg font-semibold tabular-nums'>
@@ -196,14 +196,14 @@ export function IntegrityCheckDialog({ open, onOpenChange }: IntegrityCheckDialo
                                 </div>
                             </div>
 
-                            <p className='text-xs text-muted-foreground'>{t('admin.version.integrity_scope')}</p>
+                            <p className='text-muted-foreground text-xs'>{t('admin.version.integrity_scope')}</p>
 
                             {data.baseline_present ? (
-                                <div className='rounded-lg border border-border/40 bg-card/50 px-3 py-2 text-xs'>
-                                    <p className='font-semibold text-foreground'>
+                                <div className='border-border/40 bg-card/50 rounded-lg border px-3 py-2 text-xs'>
+                                    <p className='text-foreground font-semibold'>
                                         {t('admin.version.integrity_baseline_title')}
                                     </p>
-                                    <p className='mt-1 text-muted-foreground'>
+                                    <p className='text-muted-foreground mt-1'>
                                         {data.baseline_created_at
                                             ? t('admin.version.integrity_baseline_saved_at', {
                                                   date: data.baseline_created_at,
@@ -222,25 +222,25 @@ export function IntegrityCheckDialog({ open, onOpenChange }: IntegrityCheckDialo
 
                             {data.comparison && (
                                 <div className='space-y-2'>
-                                    <p className='text-xs font-semibold uppercase tracking-wide text-muted-foreground'>
+                                    <p className='text-muted-foreground text-xs font-semibold tracking-wide uppercase'>
                                         {t('admin.version.integrity_drift_heading')}
                                     </p>
                                     <div className='grid grid-cols-3 gap-2 text-center text-xs'>
-                                        <div className='rounded-md border border-border/50 py-2'>
-                                            <p className='font-bold text-destructive'>
+                                        <div className='border-border/50 rounded-md border py-2'>
+                                            <p className='text-destructive font-bold'>
                                                 {data.comparison.modified.length}
                                             </p>
                                             <p className='text-muted-foreground'>
                                                 {t('admin.version.integrity_modified')}
                                             </p>
                                         </div>
-                                        <div className='rounded-md border border-border/50 py-2'>
+                                        <div className='border-border/50 rounded-md border py-2'>
                                             <p className='font-bold text-amber-600'>{data.comparison.missing.length}</p>
                                             <p className='text-muted-foreground'>
                                                 {t('admin.version.integrity_missing')}
                                             </p>
                                         </div>
-                                        <div className='rounded-md border border-border/50 py-2'>
+                                        <div className='border-border/50 rounded-md border py-2'>
                                             <p className='font-bold text-blue-600'>{data.comparison.extra.length}</p>
                                             <p className='text-muted-foreground'>
                                                 {t('admin.version.integrity_extra')}
@@ -248,11 +248,11 @@ export function IntegrityCheckDialog({ open, onOpenChange }: IntegrityCheckDialo
                                         </div>
                                     </div>
                                     {data.comparison.modified.length > 0 && (
-                                        <div className='max-h-32 overflow-y-auto rounded-md border border-border/40 bg-muted/10 p-2 font-mono text-[10px]'>
+                                        <div className='border-border/40 bg-muted/10 max-h-32 overflow-y-auto rounded-md border p-2 font-mono text-[10px]'>
                                             {data.comparison.modified.map((m) => (
                                                 <div
                                                     key={m.path}
-                                                    className='truncate border-b border-border/30 py-1 last:border-0'
+                                                    className='border-border/30 truncate border-b py-1 last:border-0'
                                                 >
                                                     {m.path}
                                                 </div>
@@ -263,7 +263,7 @@ export function IntegrityCheckDialog({ open, onOpenChange }: IntegrityCheckDialo
                             )}
 
                             {(data.read_errors.length > 0 || data.skipped_large_files.length > 0) && (
-                                <div className='rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2 text-xs'>
+                                <div className='border-destructive/20 bg-destructive/5 rounded-lg border px-3 py-2 text-xs'>
                                     {data.read_errors.length > 0 && (
                                         <p className='text-destructive'>
                                             {t('admin.version.integrity_read_errors', {
@@ -295,7 +295,7 @@ export function IntegrityCheckDialog({ open, onOpenChange }: IntegrityCheckDialo
                     ) : null}
                 </div>
 
-                <DialogFooter className='flex-col gap-2 border-t border-border/50 bg-muted/10 px-4 py-3 sm:flex-row sm:flex-wrap sm:justify-end sm:px-6'>
+                <DialogFooter className='border-border/50 bg-muted/10 flex-col gap-2 border-t px-4 py-3 sm:flex-row sm:flex-wrap sm:justify-end sm:px-6'>
                     {canSaveBaseline && !loading && data && (
                         <Button
                             type='button'

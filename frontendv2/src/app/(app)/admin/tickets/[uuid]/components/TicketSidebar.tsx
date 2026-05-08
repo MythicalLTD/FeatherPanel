@@ -64,39 +64,39 @@ export function TicketSidebar({
     if (loadingSidebar) {
         return (
             <div className='flex justify-center p-8'>
-                <RefreshCw className='h-8 w-8 animate-spin text-primary' />
+                <RefreshCw className='text-primary h-8 w-8 animate-spin' />
             </div>
         );
     }
 
     return (
-        <div className='space-y-6 h-full overflow-y-auto pr-1 pb-20'>
+        <div className='h-full space-y-6 overflow-y-auto pr-1 pb-20'>
             {userDetails ? (
                 <>
-                    <Card className='overflow-hidden bg-card/30 backdrop-blur-md border-border/10 shadow-sm'>
-                        <div className='p-6 bg-linear-to-br from-primary/10 via-primary/5 to-transparent border-b border-border/5 text-center relative overflow-hidden group/avatar'>
-                            <div className='absolute inset-0 bg-primary/5 blur-3xl rounded-full scale-150 animate-pulse group-hover/avatar:scale-110 transition-transform duration-1000' />
+                    <Card className='bg-card/30 border-border/10 overflow-hidden shadow-sm backdrop-blur-md'>
+                        <div className='from-primary/10 via-primary/5 border-border/5 group/avatar relative overflow-hidden border-b bg-linear-to-br to-transparent p-6 text-center'>
+                            <div className='bg-primary/5 absolute inset-0 scale-150 animate-pulse rounded-full blur-3xl transition-transform duration-1000 group-hover/avatar:scale-110' />
                             <div className='relative space-y-3'>
                                 <div className='relative inline-block'>
-                                    <Avatar className='h-20 w-20 mx-auto border-4 border-background transition-all duration-500 group-hover/avatar:scale-105'>
+                                    <Avatar className='border-background mx-auto h-20 w-20 border-4 transition-all duration-500 group-hover/avatar:scale-105'>
                                         <AvatarImage src={userDetails.avatar} />
                                     </Avatar>
-                                    <div className='absolute -bottom-1 -right-1 h-6 w-6 rounded-lg bg-background border border-border/50 flex items-center justify-center '>
-                                        <div className='h-2.5 w-2.5 rounded-full bg-green-500 animate-pulse' />
+                                    <div className='bg-background border-border/50 absolute -right-1 -bottom-1 flex h-6 w-6 items-center justify-center rounded-lg border'>
+                                        <div className='h-2.5 w-2.5 animate-pulse rounded-full bg-green-500' />
                                     </div>
                                 </div>
                                 <div className='space-y-0.5'>
-                                    <h3 className='text-lg font-black uppercase tracking-tighter text-foreground'>
+                                    <h3 className='text-foreground text-lg font-black tracking-tighter uppercase'>
                                         {userDetails.username}
                                     </h3>
-                                    <p className='text-[10px] text-muted-foreground font-black uppercase tracking-widest opacity-60'>
+                                    <p className='text-muted-foreground text-[10px] font-black tracking-widest uppercase opacity-60'>
                                         {userDetails.email}
                                     </p>
                                 </div>
                                 <div className='flex justify-center gap-2 pt-1'>
                                     {userDetails.role && (
                                         <Badge
-                                            className='font-black text-[9px] tracking-widest uppercase px-2 py-0.5 border-none shadow-sm'
+                                            className='border-none px-2 py-0.5 text-[9px] font-black tracking-widest uppercase shadow-sm'
                                             style={{
                                                 backgroundColor: userDetails.role.color || '#3b82f6',
                                                 color: 'white',
@@ -106,7 +106,7 @@ export function TicketSidebar({
                                         </Badge>
                                     )}
                                     {userDetails.banned === 'true' && (
-                                        <Badge variant='destructive' className='text-[9px] uppercase px-2 py-0.5'>
+                                        <Badge variant='destructive' className='px-2 py-0.5 text-[9px] uppercase'>
                                             {t('common.banned')}
                                         </Badge>
                                     )}
@@ -115,28 +115,28 @@ export function TicketSidebar({
                         </div>
 
                         <Tabs defaultValue='details' className='p-4'>
-                            <TabsList className='grid grid-cols-4 h-10 bg-accent/20 rounded-xl p-1 gap-1 border border-border/5'>
+                            <TabsList className='bg-accent/20 border-border/5 grid h-10 grid-cols-4 gap-1 rounded-xl border p-1'>
                                 <TabsTrigger
                                     value='details'
-                                    className='rounded-lg text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground'
+                                    className='data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-lg text-xs'
                                 >
                                     <User className='h-3.5 w-3.5' />
                                 </TabsTrigger>
                                 <TabsTrigger
                                     value='servers'
-                                    className='rounded-lg text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground'
+                                    className='data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-lg text-xs'
                                 >
                                     <Server className='h-3.5 w-3.5' />
                                 </TabsTrigger>
                                 <TabsTrigger
                                     value='tickets'
-                                    className='rounded-lg text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground'
+                                    className='data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-lg text-xs'
                                 >
                                     <TicketIcon className='h-3.5 w-3.5' />
                                 </TabsTrigger>
                                 <TabsTrigger
                                     value='emails'
-                                    className='rounded-lg text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground'
+                                    className='data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-lg text-xs'
                                 >
                                     <Mail className='h-3.5 w-3.5' />
                                 </TabsTrigger>
@@ -162,19 +162,19 @@ export function TicketSidebar({
                                     ].map((item, i) => (
                                         <div
                                             key={i}
-                                            className='flex items-center justify-between p-2 rounded-lg hover:bg-accent/50 transition-colors'
+                                            className='hover:bg-accent/50 flex items-center justify-between rounded-lg p-2 transition-colors'
                                         >
                                             <div className='flex items-center gap-2'>
-                                                <div className='h-6 w-6 rounded-md bg-primary/5 flex items-center justify-center text-primary'>
+                                                <div className='bg-primary/5 text-primary flex h-6 w-6 items-center justify-center rounded-md'>
                                                     <Info className='h-3 w-3' />
                                                 </div>
-                                                <span className='text-[10px] font-bold text-muted-foreground uppercase tracking-tight'>
+                                                <span className='text-muted-foreground text-[10px] font-bold tracking-tight uppercase'>
                                                     {item.label}
                                                 </span>
                                             </div>
                                             <span
                                                 className={cn(
-                                                    'text-xs font-bold truncate max-w-[100px]',
+                                                    'max-w-[100px] truncate text-xs font-bold',
                                                     item.color && 'text-current',
                                                 )}
                                                 style={{ color: item.color }}
@@ -183,16 +183,16 @@ export function TicketSidebar({
                                             </span>
                                         </div>
                                     ))}
-                                    <div className='bg-primary/5 rounded-lg p-3 space-y-2 border border-primary/10'>
-                                        <div className='flex justify-between items-center text-[10px] text-muted-foreground'>
+                                    <div className='bg-primary/5 border-primary/10 space-y-2 rounded-lg border p-3'>
+                                        <div className='text-muted-foreground flex items-center justify-between text-[10px]'>
                                             <span>{t('admin.tickets.sidebar.meta.created')}</span>
-                                            <span className='font-mono font-bold text-foreground'>
+                                            <span className='text-foreground font-mono font-bold'>
                                                 {formatDateSafe(ticket.created_at)}
                                             </span>
                                         </div>
-                                        <div className='flex justify-between items-center text-[10px] text-muted-foreground'>
+                                        <div className='text-muted-foreground flex items-center justify-between text-[10px]'>
                                             <span>{t('admin.tickets.sidebar.meta.updated')}</span>
-                                            <span className='font-mono font-bold text-foreground'>
+                                            <span className='text-foreground font-mono font-bold'>
                                                 {formatDateSafe(ticket.updated_at, formatDateSafe(ticket.created_at))}
                                             </span>
                                         </div>
@@ -225,19 +225,19 @@ export function TicketSidebar({
                                         .map((item, i) => (
                                             <div
                                                 key={i}
-                                                className='flex items-center justify-between p-2 rounded-lg hover:bg-accent/50 transition-colors'
+                                                className='hover:bg-accent/50 flex items-center justify-between rounded-lg p-2 transition-colors'
                                             >
                                                 <div className='flex items-center gap-2'>
-                                                    <div className='h-6 w-6 rounded-md bg-primary/5 flex items-center justify-center text-primary'>
+                                                    <div className='bg-primary/5 text-primary flex h-6 w-6 items-center justify-center rounded-md'>
                                                         <item.icon className='h-3 w-3' />
                                                     </div>
-                                                    <span className='text-[10px] font-bold text-muted-foreground uppercase tracking-tight'>
+                                                    <span className='text-muted-foreground text-[10px] font-bold tracking-tight uppercase'>
                                                         {item.label}
                                                     </span>
                                                 </div>
                                                 <span
                                                     className={cn(
-                                                        'text-xs font-bold truncate max-w-[100px]',
+                                                        'max-w-[100px] truncate text-xs font-bold',
                                                         item.mono && 'font-mono text-[10px]',
                                                     )}
                                                 >
@@ -250,18 +250,18 @@ export function TicketSidebar({
                                     <Button
                                         variant='outline'
                                         size='sm'
-                                        className='w-full h-9 rounded-xl text-xs font-bold uppercase tracking-wide'
+                                        className='h-9 w-full rounded-xl text-xs font-bold tracking-wide uppercase'
                                     >
-                                        <Eye className='h-3 w-3 mr-2' />
+                                        <Eye className='mr-2 h-3 w-3' />
                                         {t('admin.tickets.sidebar.labels.profile')}
                                     </Button>
                                 </Link>
                             </TabsContent>
 
                             <TabsContent value='servers' className='pt-3'>
-                                <div className='space-y-2 max-h-[200px] overflow-y-auto scrollbar-hide'>
+                                <div className='scrollbar-hide max-h-[200px] space-y-2 overflow-y-auto'>
                                     {userServers.length === 0 ? (
-                                        <p className='text-xs text-center text-muted-foreground italic py-4'>
+                                        <p className='text-muted-foreground py-4 text-center text-xs italic'>
                                             {t('admin.tickets.sidebar.empty.servers')}
                                         </p>
                                     ) : (
@@ -271,12 +271,12 @@ export function TicketSidebar({
                                                 key={s.uuid}
                                                 href={`/server/${s.uuid_short || s.uuidShort || s.identifier || s.uuid}`}
                                             >
-                                                <div className='p-2 rounded-lg bg-background/50 border border-border/5 hover:bg-accent/50 transition-colors'>
+                                                <div className='bg-background/50 border-border/5 hover:bg-accent/50 rounded-lg border p-2 transition-colors'>
                                                     <div className='flex items-center justify-between'>
-                                                        <span className='text-xs font-bold truncate pr-2'>
+                                                        <span className='truncate pr-2 text-xs font-bold'>
                                                             {s.name}
                                                         </span>
-                                                        <Badge variant='outline' className='text-[9px] h-4 px-1'>
+                                                        <Badge variant='outline' className='h-4 px-1 text-[9px]'>
                                                             {s.status}
                                                         </Badge>
                                                     </div>
@@ -288,9 +288,9 @@ export function TicketSidebar({
                             </TabsContent>
 
                             <TabsContent value='tickets' className='pt-3'>
-                                <div className='space-y-2 max-h-[200px] overflow-y-auto scrollbar-hide'>
+                                <div className='scrollbar-hide max-h-[200px] space-y-2 overflow-y-auto'>
                                     {userTickets.filter((t) => t.uuid !== ticket.uuid).length === 0 ? (
-                                        <p className='text-xs text-center text-muted-foreground italic py-4'>
+                                        <p className='text-muted-foreground py-4 text-center text-xs italic'>
                                             {t('admin.tickets.sidebar.empty.tickets')}
                                         </p>
                                     ) : (
@@ -298,12 +298,12 @@ export function TicketSidebar({
                                             .filter((t) => t.uuid !== ticket.uuid)
                                             .map((ut) => (
                                                 <Link key={ut.uuid} href={`/admin/tickets/${ut.uuid}`}>
-                                                    <div className='p-2 rounded-lg bg-background/50 border border-border/5 hover:bg-accent/50 transition-colors'>
+                                                    <div className='bg-background/50 border-border/5 hover:bg-accent/50 rounded-lg border p-2 transition-colors'>
                                                         <div className='flex items-center justify-between gap-2'>
-                                                            <span className='text-xs font-bold truncate'>
+                                                            <span className='truncate text-xs font-bold'>
                                                                 {ut.title}
                                                             </span>
-                                                            <Badge variant='outline' className='text-[9px] h-4 px-1'>
+                                                            <Badge variant='outline' className='h-4 px-1 text-[9px]'>
                                                                 {ut.status?.name}
                                                             </Badge>
                                                         </div>
@@ -315,23 +315,23 @@ export function TicketSidebar({
                             </TabsContent>
 
                             <TabsContent value='emails' className='pt-3'>
-                                <div className='space-y-2 max-h-[200px] overflow-y-auto scrollbar-hide'>
+                                <div className='scrollbar-hide max-h-[200px] space-y-2 overflow-y-auto'>
                                     {!userDetails.mails || userDetails.mails.length === 0 ? (
-                                        <p className='text-xs text-center text-muted-foreground italic py-4'>
+                                        <p className='text-muted-foreground py-4 text-center text-xs italic'>
                                             {t('admin.tickets.sidebar.empty.emails')}
                                         </p>
                                     ) : (
                                         userDetails.mails.map((email, idx: number) => (
                                             <div
                                                 key={idx}
-                                                className='p-2 rounded-lg bg-background/50 border border-border/5 cursor-pointer hover:bg-accent/50'
+                                                className='bg-background/50 border-border/5 hover:bg-accent/50 cursor-pointer rounded-lg border p-2'
                                                 onClick={() => onOpenMailPreview(email)}
                                             >
                                                 <div className='flex items-center justify-between'>
-                                                    <span className='text-xs font-bold truncate'>{email.subject}</span>
+                                                    <span className='truncate text-xs font-bold'>{email.subject}</span>
                                                     <Badge
                                                         variant={email.status === 'sent' ? 'secondary' : 'destructive'}
-                                                        className='text-[9px] h-4 px-1 uppercase'
+                                                        className='h-4 px-1 text-[9px] uppercase'
                                                     >
                                                         {email.status}
                                                     </Badge>
@@ -344,10 +344,10 @@ export function TicketSidebar({
                         </Tabs>
                     </Card>
 
-                    <Card className='p-5 space-y-3 bg-card/30 backdrop-blur-md border-border/10 shadow-sm'>
-                        <div className='flex items-center gap-2 pb-2 border-b border-border/5'>
-                            <Settings className='h-4 w-4 text-primary' />
-                            <h4 className='font-black uppercase tracking-widest text-[10px] text-foreground'>
+                    <Card className='bg-card/30 border-border/10 space-y-3 p-5 shadow-sm backdrop-blur-md'>
+                        <div className='border-border/5 flex items-center gap-2 border-b pb-2'>
+                            <Settings className='text-primary h-4 w-4' />
+                            <h4 className='text-foreground text-[10px] font-black tracking-widest uppercase'>
                                 {t('admin.tickets.sidebar.ticket_info')}
                             </h4>
                         </div>
@@ -356,9 +356,9 @@ export function TicketSidebar({
                                 <Button
                                     variant='outline'
                                     size='sm'
-                                    className='w-full h-8 justify-start text-xs font-bold'
+                                    className='h-8 w-full justify-start text-xs font-bold'
                                 >
-                                    <TicketIcon className='h-3 w-3 mr-2' />{' '}
+                                    <TicketIcon className='mr-2 h-3 w-3' />{' '}
                                     {t('admin.tickets.sidebar.actions.view_all_tickets')}
                                 </Button>
                             </Link>
@@ -366,32 +366,32 @@ export function TicketSidebar({
                                 <Button
                                     variant='outline'
                                     size='sm'
-                                    className='w-full h-8 justify-start text-xs font-bold'
+                                    className='h-8 w-full justify-start text-xs font-bold'
                                 >
-                                    <User className='h-3 w-3 mr-2' /> {t('admin.tickets.sidebar.actions.view_user')}
+                                    <User className='mr-2 h-3 w-3' /> {t('admin.tickets.sidebar.actions.view_user')}
                                 </Button>
                             </Link>
                         </div>
                     </Card>
                 </>
             ) : (
-                <Card className='p-8 text-center text-muted-foreground border-border/10 bg-card/30'>
-                    <User className='h-10 w-10 mx-auto mb-3 opacity-20' />
+                <Card className='text-muted-foreground border-border/10 bg-card/30 p-8 text-center'>
+                    <User className='mx-auto mb-3 h-10 w-10 opacity-20' />
                     <p className='text-sm'>User info unavailable</p>
                 </Card>
             )}
 
-            <Card className='p-4 space-y-3 bg-card/50 backdrop-blur-sm border-border/10 shadow-sm'>
-                <div className='flex items-center gap-2 pb-2 border-b border-border/5'>
-                    <Info className='h-3.5 w-3.5 text-primary' />
-                    <h4 className='font-black uppercase tracking-widest text-[10px] text-foreground'>Ticket Info</h4>
+            <Card className='bg-card/50 border-border/10 space-y-3 p-4 shadow-sm backdrop-blur-sm'>
+                <div className='border-border/5 flex items-center gap-2 border-b pb-2'>
+                    <Info className='text-primary h-3.5 w-3.5' />
+                    <h4 className='text-foreground text-[10px] font-black tracking-widest uppercase'>Ticket Info</h4>
                 </div>
                 <div className='space-y-3'>
                     <div className='flex items-center justify-between'>
-                        <span className='text-xs font-medium text-muted-foreground'>Status</span>
+                        <span className='text-muted-foreground text-xs font-medium'>Status</span>
                         <div className='flex items-center gap-2'>
                             <div
-                                className='h-2 w-2 rounded-full animate-pulse'
+                                className='h-2 w-2 animate-pulse rounded-full'
                                 style={{ backgroundColor: ticket.status?.color }}
                             />
                             <span className='text-xs font-bold' style={{ color: ticket.status?.color }}>
@@ -400,10 +400,10 @@ export function TicketSidebar({
                         </div>
                     </div>
                     <div className='flex items-center justify-between'>
-                        <span className='text-xs font-medium text-muted-foreground'>Priority</span>
+                        <span className='text-muted-foreground text-xs font-medium'>Priority</span>
                         <div className='flex items-center gap-2'>
                             <div
-                                className='h-2 w-2 rounded-full rotate-45'
+                                className='h-2 w-2 rotate-45 rounded-full'
                                 style={{ backgroundColor: ticket.priority?.color }}
                             />
                             <span className='text-xs font-bold' style={{ color: ticket.priority?.color }}>
@@ -412,11 +412,11 @@ export function TicketSidebar({
                         </div>
                     </div>
                     <div className='flex items-center justify-between'>
-                        <span className='text-xs font-medium text-muted-foreground'>Category</span>
+                        <span className='text-muted-foreground text-xs font-medium'>Category</span>
                         <span className='text-xs font-bold'>{ticket.category?.name}</span>
                     </div>
                     <div className='flex items-center justify-between'>
-                        <span className='text-xs font-medium text-muted-foreground'>Created</span>
+                        <span className='text-muted-foreground text-xs font-medium'>Created</span>
                         <span className='text-xs font-bold'>{new Date(ticket.created_at).toLocaleDateString()}</span>
                     </div>
                 </div>

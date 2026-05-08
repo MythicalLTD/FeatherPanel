@@ -144,13 +144,13 @@ function RowContextMenu({
         <div
             ref={menuRef}
             role='menu'
-            className='fixed z-1000 min-w-48 overflow-hidden rounded-xl border border-border/40 bg-card/95 backdrop-blur-xl p-1 shadow-2xl focus:outline-none animate-in fade-in zoom-in-95 duration-100'
+            className='border-border/40 bg-card/95 animate-in fade-in zoom-in-95 fixed z-1000 min-w-48 overflow-hidden rounded-xl border p-1 shadow-2xl backdrop-blur-xl duration-100 focus:outline-none'
             style={{ left: state.x, top: state.y }}
             onContextMenu={(e) => e.preventDefault()}
         >
             {actions.map((a, idx) => (
                 <React.Fragment key={a.key}>
-                    {a.separatorBefore && idx > 0 && <div className='-mx-1 my-1 h-px bg-border/40' />}
+                    {a.separatorBefore && idx > 0 && <div className='bg-border/40 -mx-1 my-1 h-px' />}
                     <button
                         type='button'
                         role='menuitem'
@@ -159,7 +159,7 @@ function RowContextMenu({
                             onAction(a.key);
                         }}
                         className={cn(
-                            'group flex w-full items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-primary/10 hover:text-primary focus:bg-primary/10 focus:text-primary focus:outline-none',
+                            'group hover:bg-primary/10 hover:text-primary focus:bg-primary/10 focus:text-primary flex w-full items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors focus:outline-none',
                             a.danger && 'text-red-500 hover:bg-red-500/10 hover:text-red-500 focus:bg-red-500/10',
                         )}
                     >
@@ -327,15 +327,15 @@ export function FileRow({
             onDrop={handleDrop}
             onContextMenu={handleContextMenu}
             className={cn(
-                'group flex items-center gap-3 border-b border-gray-200 dark:border-white/5 bg-transparent px-4 py-3 transition-all hover:bg-gray-50 dark:hover:bg-white/5 cursor-pointer active:scale-[0.995] select-none',
+                'group flex cursor-pointer items-center gap-3 border-b border-gray-200 bg-transparent px-4 py-3 transition-all select-none hover:bg-gray-50 active:scale-[0.995] dark:border-white/5 dark:hover:bg-white/5',
                 selected && 'bg-primary/5 dark:bg-primary/10',
-                isAnchor && 'ring-1 ring-inset ring-primary/40',
+                isAnchor && 'ring-primary/40 ring-1 ring-inset',
                 isDragging && 'opacity-40',
-                isDropTarget && !isDragging && 'bg-primary/15 dark:bg-primary/20 ring-2 ring-inset ring-primary/60',
+                isDropTarget && !isDragging && 'bg-primary/15 dark:bg-primary/20 ring-primary/60 ring-2 ring-inset',
             )}
             onClick={handleRowClick}
         >
-            <div className='flex items-center gap-3 flex-1 min-w-0 pointer-events-none'>
+            <div className='pointer-events-none flex min-w-0 flex-1 items-center gap-3'>
                 <div className='pointer-events-auto' onClick={(e) => e.stopPropagation()}>
                     <Checkbox
                         checked={selected}
@@ -348,7 +348,7 @@ export function FileRow({
                     className={cn(
                         'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/5 transition-all group-hover:scale-110',
                         file.isFile
-                            ? 'bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400'
+                            ? 'bg-gray-100 text-gray-500 dark:bg-white/5 dark:text-gray-400'
                             : 'bg-amber-500/10 text-amber-500',
                     )}
                 >
@@ -363,7 +363,7 @@ export function FileRow({
                     )}
                 </div>
 
-                <div className='flex-1 overflow-hidden pointer-events-auto'>
+                <div className='pointer-events-auto flex-1 overflow-hidden'>
                     {(() => {
                         const fullPath = currentDirectory.endsWith('/')
                             ? `${currentDirectory}${file.name}`
@@ -373,7 +373,7 @@ export function FileRow({
                             return (
                                 <Link
                                     href={`?path=${encodeURIComponent(fullPath)}`}
-                                    className='truncate text-sm font-semibold text-primary block'
+                                    className='text-primary block truncate text-sm font-semibold'
                                     onClick={(e) => {
                                         if (onRowClick?.(file, e)) {
                                             e.preventDefault();
@@ -390,7 +390,7 @@ export function FileRow({
                             return (
                                 <Link
                                     href={`/server/${serverUuid}/files/edit?file=${encodeURIComponent(file.name)}&directory=${encodeURIComponent(currentDirectory || '/')}`}
-                                    className='truncate text-sm font-semibold text-primary block'
+                                    className='text-primary block truncate text-sm font-semibold'
                                     onClick={(e) => {
                                         if (onRowClick?.(file, e)) {
                                             e.preventDefault();
@@ -413,7 +413,7 @@ export function FileRow({
                                         e.stopPropagation();
                                         onAction('preview', file);
                                     }}
-                                    className='truncate text-sm font-semibold text-primary block text-left w-full'
+                                    className='text-primary block w-full truncate text-left text-sm font-semibold'
                                 >
                                     {file.name}
                                 </button>
@@ -421,7 +421,7 @@ export function FileRow({
                         } else {
                             return (
                                 <span
-                                    className='truncate text-sm font-semibold text-primary cursor-default block opacity-90'
+                                    className='text-primary block cursor-default truncate text-sm font-semibold opacity-90'
                                     onClick={(e) => e.stopPropagation()}
                                     title={t('files.row.cant_preview')}
                                 >
@@ -430,7 +430,7 @@ export function FileRow({
                             );
                         }
                     })()}
-                    <div className='flex items-center gap-2 text-[10px] uppercase tracking-wider text-muted-foreground sm:hidden font-medium'>
+                    <div className='text-muted-foreground flex items-center gap-2 text-[10px] font-medium tracking-wider uppercase sm:hidden'>
                         <span>{file.isFile ? formatFileSize(file.size) : t('files.row.folder_label')}</span>
                         <span className='opacity-30'>•</span>
                         <span>{formatDate(file.modified_at)}</span>
@@ -439,26 +439,26 @@ export function FileRow({
             </div>
 
             <div
-                className='hidden sm:block w-32 px-4 text-xs font-semibold text-muted-foreground'
+                className='text-muted-foreground hidden w-32 px-4 text-xs font-semibold sm:block'
                 style={{ opacity: 0.8 }}
             >
                 {file.isFile ? formatFileSize(file.size) : '-'}
             </div>
 
             <div
-                className='hidden sm:block w-48 px-4 text-xs font-semibold text-muted-foreground'
+                className='text-muted-foreground hidden w-48 px-4 text-xs font-semibold sm:block'
                 style={{ opacity: 0.8 }}
             >
                 {formatDate(file.modified_at)}
             </div>
 
-            <div className='w-10 flex justify-end'>
+            <div className='flex w-10 justify-end'>
                 <DropdownMenu>
                     <DropdownMenuTrigger
                         as={Button}
                         variant='ghost'
                         size='icon'
-                        className='h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/10 transition-colors'
+                        className='text-muted-foreground hover:text-foreground h-8 w-8 transition-colors hover:bg-black/5 dark:hover:bg-white/10'
                         onClick={(e: React.MouseEvent) => {
                             e.stopPropagation();
                         }}

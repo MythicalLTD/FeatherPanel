@@ -253,28 +253,28 @@ export default function ServerSettingsPage() {
     if (loading && !server) {
         return (
             <div className='flex flex-col items-center justify-center py-24'>
-                <Loader2 className='h-12 w-12 animate-spin text-primary opacity-50' />
-                <p className='mt-4 text-muted-foreground font-medium'>{t('common.loading')}</p>
+                <Loader2 className='text-primary h-12 w-12 animate-spin opacity-50' />
+                <p className='text-muted-foreground mt-4 font-medium'>{t('common.loading')}</p>
             </div>
         );
     }
 
     if (!canRename && !canReinstall && !canViewSftp) {
         return (
-            <div className='flex flex-col items-center justify-center py-24 text-center space-y-8 bg-card/40 backdrop-blur-3xl rounded-[3rem] border border-border/5'>
+            <div className='bg-card/40 border-border/5 flex flex-col items-center justify-center space-y-8 rounded-[3rem] border py-24 text-center backdrop-blur-3xl'>
                 <div className='relative'>
-                    <div className='absolute inset-0 bg-red-500/20 blur-3xl rounded-full scale-150' />
-                    <div className='relative h-32 w-32 rounded-3xl bg-red-500/10 flex items-center justify-center border-2 border-red-500/20 rotate-3'>
+                    <div className='absolute inset-0 scale-150 rounded-full bg-red-500/20 blur-3xl' />
+                    <div className='relative flex h-32 w-32 rotate-3 items-center justify-center rounded-3xl border-2 border-red-500/20 bg-red-500/10'>
                         <Lock className='h-16 w-16 text-red-500' />
                     </div>
                 </div>
                 <div className='max-w-md space-y-3 px-4'>
-                    <h2 className='text-3xl font-black uppercase tracking-tight'>{t('serverSettings.accessDenied')}</h2>
+                    <h2 className='text-3xl font-black tracking-tight uppercase'>{t('serverSettings.accessDenied')}</h2>
                 </div>
                 <Button
                     variant='outline'
                     size='default'
-                    className='mt-8 rounded-2xl h-14 px-10'
+                    className='mt-8 h-14 rounded-2xl px-10'
                     onClick={() => router.push(`/server/${uuidShort}`)}
                 >
                     {t('common.goBack')}
@@ -284,13 +284,13 @@ export default function ServerSettingsPage() {
     }
 
     return (
-        <div key={pathname} className='max-w-6xl mx-auto space-y-8 pb-16 font-sans'>
+        <div key={pathname} className='mx-auto max-w-6xl space-y-8 pb-16 font-sans'>
             <WidgetRenderer widgets={getWidgets('server-settings', 'top-of-page')} />
             <PageHeader title={t('serverSettings.title')} description={t('serverSettings.description')} />
             <WidgetRenderer widgets={getWidgets('server-settings', 'after-header')} />
 
-            <div className='grid grid-cols-1 lg:grid-cols-12 gap-8'>
-                <div className='lg:col-span-8 space-y-8'>
+            <div className='grid grid-cols-1 gap-8 lg:grid-cols-12'>
+                <div className='space-y-8 lg:col-span-8'>
                     <PageCard
                         title={t('serverSettings.serverInformation')}
                         description={t('serverSettings.serverInformationDescription')}
@@ -298,25 +298,25 @@ export default function ServerSettingsPage() {
                     >
                         <div className='space-y-4'>
                             <div className='space-y-2'>
-                                <Label className='text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1'>
+                                <Label className='text-muted-foreground ml-1 text-xs font-bold tracking-wider uppercase'>
                                     {t('serverSettings.serverName')}
                                 </Label>
                                 <Input
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
                                     disabled={!canRename || saving}
-                                    className='h-12 bg-secondary/50 border-border/10 focus:border-primary/50 font-medium text-base rounded-xl'
+                                    className='bg-secondary/50 border-border/10 focus:border-primary/50 h-12 rounded-xl text-base font-medium'
                                 />
                             </div>
                             <div className='space-y-2'>
-                                <Label className='text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1'>
+                                <Label className='text-muted-foreground ml-1 text-xs font-bold tracking-wider uppercase'>
                                     {t('serverSettings.serverDescription')}
                                 </Label>
                                 <Input
                                     value={description}
                                     onChange={(e) => setDescription(e.target.value)}
                                     disabled={!canRename || saving}
-                                    className='h-12 bg-secondary/50 border-border/10 focus:border-primary/50 font-medium text-base rounded-xl'
+                                    className='bg-secondary/50 border-border/10 focus:border-primary/50 h-12 rounded-xl text-base font-medium'
                                 />
                             </div>
 
@@ -329,9 +329,9 @@ export default function ServerSettingsPage() {
                                         size='sm'
                                     >
                                         {saving ? (
-                                            <Loader2 className='h-4 w-4 animate-spin mr-2' />
+                                            <Loader2 className='mr-2 h-4 w-4 animate-spin' />
                                         ) : (
-                                            <Save className='h-4 w-4 mr-2' />
+                                            <Save className='mr-2 h-4 w-4' />
                                         )}
                                         {t('serverSettings.saveChanges')}
                                     </Button>
@@ -342,9 +342,9 @@ export default function ServerSettingsPage() {
                                             setDescription(server?.description || '');
                                         }}
                                         disabled={saving || !hasChanges}
-                                        className='h-10 px-4 rounded-xl border-white/10 bg-transparent hover:bg-white/5 text-muted-foreground hover:text-foreground transition-all'
+                                        className='text-muted-foreground hover:text-foreground h-10 rounded-xl border-white/10 bg-transparent px-4 transition-all hover:bg-white/5'
                                     >
-                                        <RotateCcw className='h-4 w-4 mr-2' />
+                                        <RotateCcw className='mr-2 h-4 w-4' />
                                         {t('serverSettings.reset')}
                                     </Button>
                                 </div>
@@ -358,24 +358,24 @@ export default function ServerSettingsPage() {
                             description={t('serverSettings.backupPolicyDescription')}
                             icon={Archive}
                         >
-                            <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+                            <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
                                 <div className='space-y-2'>
-                                    <Label className='text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1'>
+                                    <Label className='text-muted-foreground ml-1 text-xs font-bold tracking-wider uppercase'>
                                         {t('serverSettings.backupLimitReadOnlyLabel')}
                                     </Label>
-                                    <div className='h-12 px-4 flex items-center rounded-xl border border-border/10 bg-muted/40 text-sm font-medium'>
+                                    <div className='border-border/10 bg-muted/40 flex h-12 items-center rounded-xl border px-4 text-sm font-medium'>
                                         {server?.backup_limit === 0 ? '∞' : String(server?.backup_limit ?? '—')}
                                     </div>
-                                    <p className='text-xs text-muted-foreground ml-1'>
+                                    <p className='text-muted-foreground ml-1 text-xs'>
                                         {t('serverSettings.backupLimitReadOnlyHelp')}
                                     </p>
                                 </div>
                                 <div className='space-y-2'>
-                                    <Label className='text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1'>
+                                    <Label className='text-muted-foreground ml-1 text-xs font-bold tracking-wider uppercase'>
                                         {t('admin.servers.form.backup_retention_mode')}
                                     </Label>
                                     <select
-                                        className='w-full h-12 rounded-xl border border-border/10 bg-secondary/50 px-3 text-sm'
+                                        className='border-border/10 bg-secondary/50 h-12 w-full rounded-xl border px-3 text-sm'
                                         value={backupRetentionMode}
                                         onChange={(e) =>
                                             setBackupRetentionMode(
@@ -394,14 +394,14 @@ export default function ServerSettingsPage() {
                                             {t('admin.servers.form.backup_retention_fifo')}
                                         </option>
                                     </select>
-                                    <p className='text-xs text-muted-foreground ml-1'>
+                                    <p className='text-muted-foreground ml-1 text-xs'>
                                         {t('admin.servers.form.backup_retention_mode_help')}
                                     </p>
                                 </div>
                             </div>
                             {server?.fifo_rolling_enabled && server.backup_limit > 0 && (
-                                <p className='text-sm text-sky-600 dark:text-sky-400 mt-4 flex gap-2 items-start'>
-                                    <Info className='h-4 w-4 shrink-0 mt-0.5' />
+                                <p className='mt-4 flex items-start gap-2 text-sm text-sky-600 dark:text-sky-400'>
+                                    <Info className='mt-0.5 h-4 w-4 shrink-0' />
                                     <span>
                                         {t('serverBackups.fifoRollingDescription', {
                                             limit: String(server.backup_limit),
@@ -416,9 +416,9 @@ export default function ServerSettingsPage() {
                                     size='sm'
                                 >
                                     {savingBackupPolicy ? (
-                                        <Loader2 className='h-4 w-4 animate-spin mr-2' />
+                                        <Loader2 className='mr-2 h-4 w-4 animate-spin' />
                                     ) : (
-                                        <Save className='h-4 w-4 mr-2' />
+                                        <Save className='mr-2 h-4 w-4' />
                                     )}
                                     {t('serverSettings.backupPolicySave')}
                                 </Button>
@@ -433,20 +433,20 @@ export default function ServerSettingsPage() {
                         description={t('serverSettings.sftpDetailsDescription')}
                         icon={FolderOpen}
                     >
-                        <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+                        <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
                             <div className='space-y-2'>
-                                <Label className='flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1'>
+                                <Label className='text-muted-foreground ml-1 flex items-center gap-2 text-[10px] font-black tracking-widest uppercase'>
                                     <ServerIcon className='h-3 w-3' />
                                     {t('serverSettings.sftpHost')}
                                 </Label>
-                                <div className='flex items-center gap-2 p-1 pl-4 pr-1 bg-secondary/50 border border-border/10 rounded-xl hover:border-blue-500/30 transition-colors group/input'>
-                                    <code className='text-xs font-mono flex-1 truncate text-foreground/80'>
+                                <div className='bg-secondary/50 border-border/10 group/input flex items-center gap-2 rounded-xl border p-1 pr-1 pl-4 transition-colors hover:border-blue-500/30'>
+                                    <code className='text-foreground/80 flex-1 truncate font-mono text-xs'>
                                         {resolvedSftpHost ? `sftp://${resolvedSftpHost}` : t('common.nA')}
                                     </code>
                                     <Button
                                         variant='ghost'
                                         size='sm'
-                                        className='h-8 w-8 p-0 rounded-lg hover:bg-white/10 text-muted-foreground hover:text-blue-400'
+                                        className='text-muted-foreground h-8 w-8 rounded-lg p-0 hover:bg-white/10 hover:text-blue-400'
                                         onClick={() =>
                                             copyToClipboard(resolvedSftpHost ? `sftp://${resolvedSftpHost}` : '')
                                         }
@@ -457,18 +457,18 @@ export default function ServerSettingsPage() {
                             </div>
 
                             <div className='space-y-2'>
-                                <Label className='flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1'>
+                                <Label className='text-muted-foreground ml-1 flex items-center gap-2 text-[10px] font-black tracking-widest uppercase'>
                                     <Hash className='h-3 w-3' />
                                     {t('serverSettings.sftpPort')}
                                 </Label>
-                                <div className='flex items-center gap-2 p-1 pl-4 pr-1 bg-secondary/50 border border-border/10 rounded-xl hover:border-blue-500/30 transition-colors group/input'>
-                                    <code className='text-xs font-mono flex-1 truncate text-foreground/80'>
+                                <div className='bg-secondary/50 border-border/10 group/input flex items-center gap-2 rounded-xl border p-1 pr-1 pl-4 transition-colors hover:border-blue-500/30'>
+                                    <code className='text-foreground/80 flex-1 truncate font-mono text-xs'>
                                         {server?.sftp?.port || t('common.nA')}
                                     </code>
                                     <Button
                                         variant='ghost'
                                         size='sm'
-                                        className='h-8 w-8 p-0 rounded-lg hover:bg-white/10 text-muted-foreground hover:text-blue-400'
+                                        className='text-muted-foreground h-8 w-8 rounded-lg p-0 hover:bg-white/10 hover:text-blue-400'
                                         onClick={() => copyToClipboard(server?.sftp?.port?.toString() || '')}
                                     >
                                         <Copy className='h-3.5 w-3.5' />
@@ -477,18 +477,18 @@ export default function ServerSettingsPage() {
                             </div>
 
                             <div className='space-y-2'>
-                                <Label className='flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1'>
+                                <Label className='text-muted-foreground ml-1 flex items-center gap-2 text-[10px] font-black tracking-widest uppercase'>
                                     <User className='h-3 w-3' />
                                     {t('serverSettings.sftpUsername')}
                                 </Label>
-                                <div className='flex items-center gap-2 p-1 pl-4 pr-1 bg-secondary/50 border border-border/10 rounded-xl hover:border-blue-500/30 transition-colors group/input'>
-                                    <code className='text-xs font-mono flex-1 truncate text-foreground/80'>
+                                <div className='bg-secondary/50 border-border/10 group/input flex items-center gap-2 rounded-xl border p-1 pr-1 pl-4 transition-colors hover:border-blue-500/30'>
+                                    <code className='text-foreground/80 flex-1 truncate font-mono text-xs'>
                                         {server?.sftp?.username || t('common.nA')}
                                     </code>
                                     <Button
                                         variant='ghost'
                                         size='sm'
-                                        className='h-8 w-8 p-0 rounded-lg hover:bg-white/10 text-muted-foreground hover:text-blue-400'
+                                        className='text-muted-foreground h-8 w-8 rounded-lg p-0 hover:bg-white/10 hover:text-blue-400'
                                         onClick={() => copyToClipboard(server?.sftp?.username || '')}
                                     >
                                         <Copy className='h-3.5 w-3.5' />
@@ -497,12 +497,12 @@ export default function ServerSettingsPage() {
                             </div>
 
                             <div className='space-y-2'>
-                                <Label className='flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1'>
+                                <Label className='text-muted-foreground ml-1 flex items-center gap-2 text-[10px] font-black tracking-widest uppercase'>
                                     <KeyRound className='h-3 w-3' />
                                     {t('serverSettings.sftpPassword')}
                                 </Label>
-                                <div className='flex items-center gap-2 px-4 h-[42px] bg-secondary/50 border border-border/10 border-dashed rounded-xl'>
-                                    <span className='text-xs text-muted-foreground/60 italic'>
+                                <div className='bg-secondary/50 border-border/10 flex h-[42px] items-center gap-2 rounded-xl border border-dashed px-4'>
+                                    <span className='text-muted-foreground/60 text-xs italic'>
                                         {t('serverSettings.sftpPasswordPlaceholder')}
                                     </span>
                                 </div>
@@ -510,18 +510,18 @@ export default function ServerSettingsPage() {
                         </div>
 
                         <div className='space-y-2 pt-6'>
-                            <Label className='flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1'>
+                            <Label className='text-muted-foreground ml-1 flex items-center gap-2 text-[10px] font-black tracking-widest uppercase'>
                                 <LinkIcon className='h-3 w-3' />
                                 {t('serverSettings.sftpUrl')}
                             </Label>
-                            <div className='flex items-center gap-2 p-1 pl-4 pr-1 bg-white/5 border border-white/5 rounded-xl hover:border-blue-500/30 transition-colors group/input'>
-                                <code className='text-xs font-mono flex-1 truncate text-foreground/80'>
+                            <div className='group/input flex items-center gap-2 rounded-xl border border-white/5 bg-white/5 p-1 pr-1 pl-4 transition-colors hover:border-blue-500/30'>
+                                <code className='text-foreground/80 flex-1 truncate font-mono text-xs'>
                                     {resolvedSftpUrl || t('common.nA')}
                                 </code>
                                 <Button
                                     variant='ghost'
                                     size='sm'
-                                    className='h-8 w-8 p-0 rounded-lg hover:bg-white/10 text-muted-foreground hover:text-blue-400'
+                                    className='text-muted-foreground h-8 w-8 rounded-lg p-0 hover:bg-white/10 hover:text-blue-400'
                                     onClick={() => copyToClipboard(resolvedSftpUrl || '')}
                                 >
                                     <Copy className='h-3.5 w-3.5' />
@@ -529,7 +529,7 @@ export default function ServerSettingsPage() {
                                 <Button
                                     variant='ghost'
                                     size='sm'
-                                    className='h-8 w-8 p-0 rounded-lg hover:bg-white/10 text-muted-foreground hover:text-blue-400'
+                                    className='text-muted-foreground h-8 w-8 rounded-lg p-0 hover:bg-white/10 hover:text-blue-400'
                                     onClick={() => {
                                         if (resolvedSftpUrl) {
                                             window.open(resolvedSftpUrl, '_blank');
@@ -541,14 +541,14 @@ export default function ServerSettingsPage() {
                             </div>
                         </div>
 
-                        <div className='mt-6 p-4 bg-blue-500/5 border border-blue-500/10 rounded-2xl'>
+                        <div className='mt-6 rounded-2xl border border-blue-500/10 bg-blue-500/5 p-4'>
                             <div className='flex items-start gap-3'>
-                                <Info className='h-5 w-5 text-blue-500 mt-0.5 shrink-0' />
+                                <Info className='mt-0.5 h-5 w-5 shrink-0 text-blue-500' />
                                 <div className='space-y-2'>
-                                    <h4 className='text-sm font-bold text-blue-500 uppercase tracking-wide'>
+                                    <h4 className='text-sm font-bold tracking-wide text-blue-500 uppercase'>
                                         {t('serverSettings.sftpInfoTitle')}
                                     </h4>
-                                    <p className='text-xs text-muted-foreground leading-relaxed'>
+                                    <p className='text-muted-foreground text-xs leading-relaxed'>
                                         {t('serverSettings.sftpInfoDescription')}
                                     </p>
                                 </div>
@@ -558,17 +558,17 @@ export default function ServerSettingsPage() {
                     <WidgetRenderer widgets={getWidgets('server-settings', 'after-sftp-details')} />
                 </div>
 
-                <div className='lg:col-span-4 space-y-8'>
+                <div className='space-y-8 lg:col-span-4'>
                     {canReinstall && (
                         <>
                             <PageCard title={t('serverSettings.reinstallServer')} icon={Settings} variant='warning'>
-                                <p className='text-xs text-orange-200/60 font-medium leading-relaxed'>
+                                <p className='text-xs leading-relaxed font-medium text-orange-200/60'>
                                     {t('serverSettings.reinstallWarning')}
                                 </p>
 
                                 <Button
                                     variant='destructive'
-                                    className='w-full bg-orange-500/10 hover:bg-orange-500/20 text-orange-500 border border-orange-500/20 hover:border-orange-500/50 font-black uppercase tracking-widest mt-4 text-xs h-12 rounded-xl'
+                                    className='mt-4 h-12 w-full rounded-xl border border-orange-500/20 bg-orange-500/10 text-xs font-black tracking-widest text-orange-500 uppercase hover:border-orange-500/50 hover:bg-orange-500/20'
                                     onClick={() => setShowReinstallDialog(true)}
                                 >
                                     {t('serverSettings.reinstallServer')}
@@ -580,13 +580,13 @@ export default function ServerSettingsPage() {
 
                     {canDeleteServer && (
                         <PageCard title={t('serverSettings.deleteServer')} icon={AlertTriangle} variant='danger'>
-                            <p className='text-xs text-red-200/60 font-medium leading-relaxed'>
+                            <p className='text-xs leading-relaxed font-medium text-red-200/60'>
                                 {t('serverSettings.deleteServerDescription')}
                             </p>
 
                             <Button
                                 variant='destructive'
-                                className='w-full bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 hover:border-red-500/50 font-black uppercase tracking-widest mt-4 text-xs h-12 rounded-xl'
+                                className='mt-4 h-12 w-full rounded-xl border border-red-500/20 bg-red-500/10 text-xs font-black tracking-widest text-red-500 uppercase hover:border-red-500/50 hover:bg-red-500/20'
                                 onClick={() => {
                                     setShowDeleteDialog(true);
                                     setDeleteStep(1);
@@ -620,19 +620,19 @@ export default function ServerSettingsPage() {
                                 placeholder={t('serverSettings.confirmTextPlaceholder')}
                                 className='font-mono text-sm uppercase'
                             />
-                            <p className='text-xs text-muted-foreground'>
+                            <p className='text-muted-foreground text-xs'>
                                 {t('serverSettings.typeReinstallToConfirm')}
                             </p>
                         </div>
-                        <div className='flex items-center gap-2 p-4 border border-orange-500/20 bg-orange-500/5 rounded-xl'>
+                        <div className='flex items-center gap-2 rounded-xl border border-orange-500/20 bg-orange-500/5 p-4'>
                             <input
                                 type='checkbox'
                                 id='wipeFiles'
                                 checked={wipeFilesOnReinstall}
                                 onChange={(e) => setWipeFilesOnReinstall(e.target.checked)}
-                                className='w-4 h-4 rounded border-white/20 bg-white/5 checked:bg-orange-500'
+                                className='h-4 w-4 rounded border-white/20 bg-white/5 checked:bg-orange-500'
                             />
-                            <Label htmlFor='wipeFiles' className='cursor-pointer text-orange-200 text-sm'>
+                            <Label htmlFor='wipeFiles' className='cursor-pointer text-sm text-orange-200'>
                                 {t('serverSettings.wipeFiles')}
                             </Label>
                         </div>
@@ -646,7 +646,7 @@ export default function ServerSettingsPage() {
                             disabled={confirmReinstallText !== 'REINSTALL' || reinstalling}
                             onClick={handleReinstall}
                         >
-                            {reinstalling && <Loader2 className='h-4 w-4 mr-2 animate-spin' />}
+                            {reinstalling && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
                             {t('serverSettings.reinstallServer')}
                         </Button>
                     </DialogFooter>
@@ -656,7 +656,7 @@ export default function ServerSettingsPage() {
             <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
                 <DialogContent className='sm:max-w-md'>
                     <DialogHeader>
-                        <DialogTitle className='text-red-500 flex items-center gap-2'>
+                        <DialogTitle className='flex items-center gap-2 text-red-500'>
                             <AlertTriangle className='h-5 w-5' />
                             {t('serverSettings.deleteServer')} (Step {deleteStep}/4)
                         </DialogTitle>
@@ -665,7 +665,7 @@ export default function ServerSettingsPage() {
                     <div className='py-4'>
                         {deleteStep === 1 && (
                             <div className='space-y-4'>
-                                <div className='p-4 border border-red-500/20 bg-red-500/5 rounded-xl text-sm text-red-200 space-y-2'>
+                                <div className='space-y-2 rounded-xl border border-red-500/20 bg-red-500/5 p-4 text-sm text-red-200'>
                                     <p className='font-bold'>{t('serverSettings.deleteServerStep1Title')}</p>
                                     <p>{t('serverSettings.deleteServerStep1Description')}</p>
                                 </div>
@@ -674,7 +674,7 @@ export default function ServerSettingsPage() {
 
                         {deleteStep === 2 && (
                             <div className='space-y-4'>
-                                <p className='text-sm text-muted-foreground'>
+                                <p className='text-muted-foreground text-sm'>
                                     {t('serverSettings.deleteServerStep2Description')}
                                 </p>
                                 <div className='flex items-center gap-2'>
@@ -683,7 +683,7 @@ export default function ServerSettingsPage() {
                                         id='confirmIrreversible'
                                         checked={confirmIrreversible}
                                         onChange={(e) => setConfirmIrreversible(e.target.checked)}
-                                        className='w-4 h-4 rounded border-white/20 bg-white/5'
+                                        className='h-4 w-4 rounded border-white/20 bg-white/5'
                                     />
                                     <Label htmlFor='confirmIrreversible' className='cursor-pointer'>
                                         {t('serverSettings.deleteServerStep2Confirm')}
@@ -694,7 +694,7 @@ export default function ServerSettingsPage() {
 
                         {deleteStep === 3 && (
                             <div className='space-y-4'>
-                                <p className='text-sm text-muted-foreground'>
+                                <p className='text-muted-foreground text-sm'>
                                     {t('serverSettings.deleteServerStep3Description')}
                                 </p>
                                 <div className='space-y-2'>
@@ -716,11 +716,11 @@ export default function ServerSettingsPage() {
 
                         {deleteStep === 4 && (
                             <div className='space-y-4'>
-                                <p className='text-sm text-muted-foreground'>
+                                <p className='text-muted-foreground text-sm'>
                                     {t('serverSettings.deleteServerStep4Description')}
                                 </p>
                                 <div className='space-y-2'>
-                                    <p className='text-xs font-mono p-2 bg-white/5 rounded border border-white/10'>
+                                    <p className='rounded border border-white/10 bg-white/5 p-2 font-mono text-xs'>
                                         {server?.name}
                                     </p>
                                     <Input
@@ -758,7 +758,7 @@ export default function ServerSettingsPage() {
                                 onClick={handleDelete}
                                 disabled={!isServerNameCorrect || deleting}
                             >
-                                {deleting && <Loader2 className='h-4 w-4 mr-2 animate-spin' />}
+                                {deleting && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
                                 {t('serverSettings.deleteServerConfirm')}
                             </Button>
                         )}

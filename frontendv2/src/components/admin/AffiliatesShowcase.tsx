@@ -164,29 +164,29 @@ export function AffiliatesShowcase({ endpoint, className }: AffiliatesShowcasePr
             description={t('admin.affiliates.description')}
             icon={BadgeCheck}
         >
-            <div className='mb-4 rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent px-4 py-3'>
+            <div className='border-primary/20 from-primary/10 via-primary/5 mb-4 rounded-2xl border bg-gradient-to-r to-transparent px-4 py-3'>
                 <div className='flex items-start justify-between gap-3'>
                     <div className='space-y-1'>
                         <p className='text-sm font-semibold'>{t('admin.affiliates.banner_title')}</p>
-                        <p className='text-xs text-muted-foreground'>{t('admin.affiliates.banner_description')}</p>
+                        <p className='text-muted-foreground text-xs'>{t('admin.affiliates.banner_description')}</p>
                     </div>
                     <Button type='button' size='sm' variant='ghost' className='h-8 px-2' onClick={hidePanel}>
-                        <X className='h-4 w-4 mr-1' />
+                        <X className='mr-1 h-4 w-4' />
                         {t('admin.affiliates.hide_this')}
                     </Button>
                 </div>
             </div>
 
             {loading ? (
-                <div className='rounded-xl border border-border/50 bg-muted/20 p-4 text-sm text-muted-foreground'>
+                <div className='border-border/50 bg-muted/20 text-muted-foreground rounded-xl border p-4 text-sm'>
                     {t('common.loading')}
                 </div>
             ) : error ? (
-                <div className='rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive'>
+                <div className='border-destructive/30 bg-destructive/10 text-destructive rounded-xl border p-4 text-sm'>
                     {error}
                 </div>
             ) : !hasAffiliates ? (
-                <div className='rounded-xl border border-border/50 bg-muted/20 p-4 text-sm text-muted-foreground'>
+                <div className='border-border/50 bg-muted/20 text-muted-foreground rounded-xl border p-4 text-sm'>
                     {t('admin.affiliates.no_results')}
                 </div>
             ) : (
@@ -203,7 +203,7 @@ export function AffiliatesShowcase({ endpoint, className }: AffiliatesShowcasePr
                         return (
                             <div
                                 key={`${affiliate.name ?? 'affiliate'}-${index}`}
-                                className='rounded-2xl border border-border/50 bg-card/30 p-4 space-y-4 shadow-sm'
+                                className='border-border/50 bg-card/30 space-y-4 rounded-2xl border p-4 shadow-sm'
                             >
                                 <div className='flex flex-col gap-4 md:flex-row md:items-start md:justify-between'>
                                     <div className='space-y-2'>
@@ -211,10 +211,10 @@ export function AffiliatesShowcase({ endpoint, className }: AffiliatesShowcasePr
                                             {affiliate.name ?? t('common.unknown')}
                                         </h3>
                                         {affiliate.tagline && (
-                                            <p className='text-sm text-muted-foreground'>{affiliate.tagline}</p>
+                                            <p className='text-muted-foreground text-sm'>{affiliate.tagline}</p>
                                         )}
                                         {affiliate.rating && (
-                                            <div className='inline-flex items-center gap-2 rounded-full border border-border/60 px-3 py-1 text-xs font-medium'>
+                                            <div className='border-border/60 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium'>
                                                 <Star className='h-3.5 w-3.5 text-amber-500' />
                                                 <span>
                                                     {t('admin.affiliates.rating')}: {affiliate.rating.score ?? '-'}
@@ -237,7 +237,7 @@ export function AffiliatesShowcase({ endpoint, className }: AffiliatesShowcasePr
                                         {affiliate.url && (
                                             <a href={affiliate.url} target='_blank' rel='noreferrer noopener'>
                                                 <Button type='button' variant='outline' size='sm'>
-                                                    <ExternalLink className='h-4 w-4 mr-2' />
+                                                    <ExternalLink className='mr-2 h-4 w-4' />
                                                     {t('admin.affiliates.visit_partner')}
                                                 </Button>
                                             </a>
@@ -245,7 +245,7 @@ export function AffiliatesShowcase({ endpoint, className }: AffiliatesShowcasePr
                                         {primaryAsnBGP && (
                                             <a href={primaryAsnBGP} target='_blank' rel='noreferrer noopener'>
                                                 <Button type='button' variant='outline' size='sm'>
-                                                    <Network className='h-4 w-4 mr-2' />
+                                                    <Network className='mr-2 h-4 w-4' />
                                                     {t('admin.affiliates.bgp_tools')}
                                                 </Button>
                                             </a>
@@ -260,25 +260,25 @@ export function AffiliatesShowcase({ endpoint, className }: AffiliatesShowcasePr
                                         rel={affiliate.url ? 'noreferrer noopener' : undefined}
                                         className='block'
                                     >
-                                        <div className='rounded-xl border border-border/50 bg-background/40 p-3'>
+                                        <div className='border-border/50 bg-background/40 rounded-xl border p-3'>
                                             <Image
                                                 src={affiliate.image}
                                                 alt={affiliate.name ?? t('admin.affiliates.affiliate_alt')}
                                                 width={600}
                                                 height={150}
                                                 unoptimized
-                                                className='w-full max-h-24 object-contain'
+                                                className='max-h-24 w-full object-contain'
                                             />
                                         </div>
                                     </a>
                                 )}
 
-                                <div className='grid grid-cols-1 xl:grid-cols-3 gap-4'>
+                                <div className='grid grid-cols-1 gap-4 xl:grid-cols-3'>
                                     <div className='space-y-2'>
-                                        <p className='text-xs font-semibold uppercase tracking-wide text-muted-foreground'>
+                                        <p className='text-muted-foreground text-xs font-semibold tracking-wide uppercase'>
                                             {t('admin.affiliates.pricing_minimums')}
                                         </p>
-                                        <div className='text-sm space-y-1'>
+                                        <div className='space-y-1 text-sm'>
                                             {affiliate.pricing_minimums?.vps && (
                                                 <p>
                                                     <strong>{t('admin.affiliates.vps')}:</strong>{' '}
@@ -313,13 +313,13 @@ export function AffiliatesShowcase({ endpoint, className }: AffiliatesShowcasePr
                                     </div>
 
                                     <div className='space-y-2'>
-                                        <p className='text-xs font-semibold uppercase tracking-wide text-muted-foreground'>
+                                        <p className='text-muted-foreground text-xs font-semibold tracking-wide uppercase'>
                                             <span className='inline-flex items-center gap-1'>
                                                 <Network className='h-3.5 w-3.5' />
                                                 {t('admin.affiliates.network')}
                                             </span>
                                         </p>
-                                        <div className='text-sm space-y-2'>
+                                        <div className='space-y-2 text-sm'>
                                             {primaryAsn && (
                                                 <div>
                                                     <p>
@@ -331,7 +331,7 @@ export function AffiliatesShowcase({ endpoint, className }: AffiliatesShowcasePr
                                                             href={primaryAsnBGP}
                                                             target='_blank'
                                                             rel='noreferrer noopener'
-                                                            className='text-xs text-primary hover:underline'
+                                                            className='text-primary text-xs hover:underline'
                                                         >
                                                             {t('admin.affiliates.view_on_bgp_tools')}
                                                         </a>
@@ -350,13 +350,13 @@ export function AffiliatesShowcase({ endpoint, className }: AffiliatesShowcasePr
                                                         return (
                                                             <div
                                                                 key={`${upstream.asn ?? 'asn'}-${upstreamIndex}`}
-                                                                className='rounded-lg border border-border/40 px-2 py-1.5 text-xs'
+                                                                className='border-border/40 rounded-lg border px-2 py-1.5 text-xs'
                                                             >
                                                                 <div className='font-medium'>
                                                                     {upstream.name || t('common.unknown')}
                                                                 </div>
                                                                 {upstreamAsn && (
-                                                                    <div className='flex items-center justify-between gap-2 text-muted-foreground mt-0.5'>
+                                                                    <div className='text-muted-foreground mt-0.5 flex items-center justify-between gap-2'>
                                                                         <span>{upstreamAsn}</span>
                                                                         {upstreamBGP && (
                                                                             <a
@@ -379,20 +379,20 @@ export function AffiliatesShowcase({ endpoint, className }: AffiliatesShowcasePr
                                     </div>
 
                                     <div className='space-y-2'>
-                                        <p className='text-xs font-semibold uppercase tracking-wide text-muted-foreground'>
+                                        <p className='text-muted-foreground text-xs font-semibold tracking-wide uppercase'>
                                             {t('admin.affiliates.features')}
                                         </p>
                                         <div className='space-y-2'>
                                             {speeds.length > 0 && (
                                                 <div>
-                                                    <p className='text-[11px] font-semibold text-muted-foreground mb-1'>
+                                                    <p className='text-muted-foreground mb-1 text-[11px] font-semibold'>
                                                         {t('admin.affiliates.port_speeds')}
                                                     </p>
                                                     <div className='flex flex-wrap gap-2'>
                                                         {speeds.map((item) => (
                                                             <span
                                                                 key={item}
-                                                                className='rounded-full border border-border/50 px-2.5 py-1 text-xs'
+                                                                className='border-border/50 rounded-full border px-2.5 py-1 text-xs'
                                                             >
                                                                 {item}
                                                             </span>
@@ -403,7 +403,7 @@ export function AffiliatesShowcase({ endpoint, className }: AffiliatesShowcasePr
 
                                             {ddos.length > 0 && (
                                                 <div>
-                                                    <p className='text-[11px] font-semibold text-muted-foreground mb-1 inline-flex items-center gap-1'>
+                                                    <p className='text-muted-foreground mb-1 inline-flex items-center gap-1 text-[11px] font-semibold'>
                                                         <Shield className='h-3.5 w-3.5' />
                                                         {t('admin.affiliates.ddos_protection')}
                                                     </p>
@@ -411,7 +411,7 @@ export function AffiliatesShowcase({ endpoint, className }: AffiliatesShowcasePr
                                                         {ddos.map((item) => (
                                                             <span
                                                                 key={item}
-                                                                className='rounded-full border border-border/50 px-2.5 py-1 text-xs'
+                                                                className='border-border/50 rounded-full border px-2.5 py-1 text-xs'
                                                             >
                                                                 {item}
                                                             </span>
@@ -426,7 +426,7 @@ export function AffiliatesShowcase({ endpoint, className }: AffiliatesShowcasePr
                                                         <span
                                                             key={`sp-${point}`}
                                                             className={cn(
-                                                                'rounded-full px-2.5 py-1 text-xs border',
+                                                                'rounded-full border px-2.5 py-1 text-xs',
                                                                 'border-primary/30 bg-primary/10 text-primary',
                                                             )}
                                                         >
@@ -436,7 +436,7 @@ export function AffiliatesShowcase({ endpoint, className }: AffiliatesShowcasePr
                                                     {locations.map((loc) => (
                                                         <span
                                                             key={`loc-${loc}`}
-                                                            className='inline-flex items-center gap-1 rounded-full border border-border/60 px-2.5 py-1 text-xs'
+                                                            className='border-border/60 inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs'
                                                         >
                                                             <MapPin className='h-3 w-3' />
                                                             {loc.toUpperCase()}
@@ -453,22 +453,22 @@ export function AffiliatesShowcase({ endpoint, className }: AffiliatesShowcasePr
                 </div>
             )}
 
-            <div className='mt-6 rounded-2xl border border-border/50 bg-muted/20 p-4'>
+            <div className='border-border/50 bg-muted/20 mt-6 rounded-2xl border p-4'>
                 <div className='flex items-start gap-2'>
-                    <HeartHandshake className='h-4 w-4 mt-0.5 text-primary shrink-0' />
+                    <HeartHandshake className='text-primary mt-0.5 h-4 w-4 shrink-0' />
                     <div className='space-y-3'>
                         <p className='text-sm font-semibold'>{t('admin.affiliates.support_title')}</p>
-                        <p className='text-xs text-muted-foreground'>{t('admin.affiliates.support_description')}</p>
-                        <div className='grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2'>
+                        <p className='text-muted-foreground text-xs'>{t('admin.affiliates.support_description')}</p>
+                        <div className='grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4'>
                             <a href='https://cloud.mythical.systems/market' target='_blank' rel='noreferrer noopener'>
                                 <Button type='button' size='sm' variant='outline' className='w-full justify-start'>
-                                    <ExternalLink className='h-4 w-4 mr-2' />
+                                    <ExternalLink className='mr-2 h-4 w-4' />
                                     {t('admin.affiliates.support_cloud')}
                                 </Button>
                             </a>
                             <a href='https://github.com/sponsors/nayskutzu' target='_blank' rel='noreferrer noopener'>
                                 <Button type='button' size='sm' variant='outline' className='w-full justify-start'>
-                                    <ExternalLink className='h-4 w-4 mr-2' />
+                                    <ExternalLink className='mr-2 h-4 w-4' />
                                     {t('admin.affiliates.support_github')}
                                 </Button>
                             </a>
@@ -478,7 +478,7 @@ export function AffiliatesShowcase({ endpoint, className }: AffiliatesShowcasePr
                                 rel='noreferrer noopener'
                             >
                                 <Button type='button' size='sm' variant='outline' className='w-full justify-start'>
-                                    <ExternalLink className='h-4 w-4 mr-2' />
+                                    <ExternalLink className='mr-2 h-4 w-4' />
                                     {t('admin.affiliates.support_paypal')}
                                 </Button>
                             </a>
@@ -488,7 +488,7 @@ export function AffiliatesShowcase({ endpoint, className }: AffiliatesShowcasePr
                                 rel='noreferrer noopener'
                             >
                                 <Button type='button' size='sm' variant='outline' className='w-full justify-start'>
-                                    <ExternalLink className='h-4 w-4 mr-2' />
+                                    <ExternalLink className='mr-2 h-4 w-4' />
                                     {t('admin.affiliates.support_stripe')}
                                 </Button>
                             </a>

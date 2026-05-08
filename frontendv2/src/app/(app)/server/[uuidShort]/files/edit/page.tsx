@@ -362,27 +362,27 @@ export default function FileEditorPage({
 
     if (loading) {
         return (
-            <div className='flex flex-col gap-6 relative min-h-screen pb-20 overflow-hidden'>
+            <div className='relative flex min-h-screen flex-col gap-6 overflow-hidden pb-20'>
                 <div className='animate-pulse'>
-                    <div className='h-8 w-48 bg-white/5 rounded-lg mb-2' />
-                    <div className='h-4 w-96 bg-white/5 rounded-lg' />
+                    <div className='mb-2 h-8 w-48 rounded-lg bg-white/5' />
+                    <div className='h-4 w-96 rounded-lg bg-white/5' />
                 </div>
 
-                <div className='flex-1 rounded-4xl border border-border/50 bg-card/50 backdrop-blur-3xl p-1 flex items-center justify-center relative overflow-hidden min-h-[600px]'>
-                    <div className='absolute inset-0 bg-linear-to-br from-primary/5 via-transparent to-transparent opacity-30' />
-                    <div className='flex flex-col items-center gap-6 relative z-10'>
+                <div className='border-border/50 bg-card/50 relative flex min-h-[600px] flex-1 items-center justify-center overflow-hidden rounded-4xl border p-1 backdrop-blur-3xl'>
+                    <div className='from-primary/5 absolute inset-0 bg-linear-to-br via-transparent to-transparent opacity-30' />
+                    <div className='relative z-10 flex flex-col items-center gap-6'>
                         <div className='relative'>
-                            <div className='h-20 w-20 rounded-3xl bg-primary/10 flex items-center justify-center border border-primary/20 animate-pulse'>
-                                <Loader2 className='h-10 w-10 text-primary animate-spin' />
+                            <div className='bg-primary/10 border-primary/20 flex h-20 w-20 animate-pulse items-center justify-center rounded-3xl border'>
+                                <Loader2 className='text-primary h-10 w-10 animate-spin' />
                             </div>
-                            <div className='absolute -top-4 -right-4 h-12 w-12 rounded-full bg-primary/5 blur-xl animate-pulse' />
-                            <div className='absolute -bottom-4 -left-4 h-12 w-12 rounded-full bg-primary/5 blur-xl animate-pulse delay-700' />
+                            <div className='bg-primary/5 absolute -top-4 -right-4 h-12 w-12 animate-pulse rounded-full blur-xl' />
+                            <div className='bg-primary/5 absolute -bottom-4 -left-4 h-12 w-12 animate-pulse rounded-full blur-xl delay-700' />
                         </div>
-                        <div className='text-center space-y-2'>
-                            <h3 className='text-lg font-bold tracking-tight text-foreground'>
+                        <div className='space-y-2 text-center'>
+                            <h3 className='text-foreground text-lg font-bold tracking-tight'>
                                 {t('files.editor.loading_title')}
                             </h3>
-                            <p className='text-xs text-muted-foreground uppercase tracking-[0.3em] font-medium animate-pulse'>
+                            <p className='text-muted-foreground animate-pulse text-xs font-medium tracking-[0.3em] uppercase'>
                                 {t('files.editor.loading_description')}
                             </p>
                         </div>
@@ -393,7 +393,7 @@ export default function FileEditorPage({
     }
 
     return (
-        <div className='flex flex-col gap-6 relative h-[calc(100vh-6rem)] pb-4'>
+        <div className='relative flex h-[calc(100vh-6rem)] flex-col gap-6 pb-4'>
             <WidgetRenderer widgets={getWidgets('server-file-editor', 'top-of-page')} />
             <PageHeader
                 title={t('files.editor.title', { file: fileName })}
@@ -466,17 +466,17 @@ export default function FileEditorPage({
                     onSwitchToRaw={handleSwitchToRawEditor}
                 />
             ) : (
-                <div className='flex-1 rounded-4xl border border-border/50 bg-card/50 backdrop-blur-3xl overflow-hidden p-1 flex flex-col group transition-all hover:border-border/80 relative min-h-0'>
-                    <div className='flex items-center justify-between p-3 border-b border-border/10 bg-muted/30 shrink-0'>
+                <div className='border-border/50 bg-card/50 group hover:border-border/80 relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-4xl border p-1 backdrop-blur-3xl transition-all'>
+                    <div className='border-border/10 bg-muted/30 flex shrink-0 items-center justify-between border-b p-3'>
                         <div className='flex items-center gap-3'>
-                            <div className='flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 '>
+                            <div className='bg-primary/10 text-primary border-primary/20 flex h-9 w-9 items-center justify-center rounded-xl border'>
                                 <FileCode className='h-5 w-5' />
                             </div>
                             <div className='flex flex-col'>
-                                <span className='text-xs font-bold uppercase tracking-widest text-foreground/80'>
+                                <span className='text-foreground/80 text-xs font-bold tracking-widest uppercase'>
                                     {fileName}
                                 </span>
-                                <span className='text-[10px] text-muted-foreground font-medium uppercase tracking-tighter'>
+                                <span className='text-muted-foreground text-[10px] font-medium tracking-tighter uppercase'>
                                     Monaco Editor Engine v0.34.1
                                 </span>
                             </div>
@@ -494,7 +494,7 @@ export default function FileEditorPage({
                                 </Button>
                             )}
                             {!canEdit && (
-                                <div className='bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 px-3 py-1 rounded-lg border border-yellow-500/20 text-xs font-bold uppercase tracking-wider flex items-center gap-2'>
+                                <div className='flex items-center gap-2 rounded-lg border border-yellow-500/20 bg-yellow-500/10 px-3 py-1 text-xs font-bold tracking-wider text-yellow-600 uppercase dark:text-yellow-400'>
                                     <Lock className='h-3 w-3' />
                                     {t('files.editor.read_only')}
                                 </div>
@@ -510,7 +510,7 @@ export default function FileEditorPage({
                                         window.open(idePath, '_blank', 'noopener');
                                     }}
                                 >
-                                    <Boxes className='h-4 w-4 rounded-full size-6 mr-2' />
+                                    <Boxes className='mr-2 size-6 h-4 w-4 rounded-full' />
                                     {t('files.editor.open_in_ide')}
                                 </Button>
                             )}
@@ -523,7 +523,7 @@ export default function FileEditorPage({
                                 {t('files.editor.cancel')}
                             </Button>
                             <Button
-                                className='bg-primary hover:bg-primary/90 text-primary-foreground  active:scale-95 transition-all'
+                                className='bg-primary hover:bg-primary/90 text-primary-foreground transition-all active:scale-95'
                                 size='sm'
                                 onClick={() => handleSave()}
                                 disabled={saving || content === originalContent}
@@ -542,7 +542,7 @@ export default function FileEditorPage({
                             </Button>
                         </div>
                     </div>
-                    <div className='flex-1 relative w-full h-full min-h-0'>
+                    <div className='relative h-full min-h-0 w-full flex-1'>
                         <div className='absolute inset-0'>
                             <Editor
                                 height='100%'

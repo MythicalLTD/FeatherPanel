@@ -283,10 +283,10 @@ export default function ServerTasksPage() {
     if (!canRead) {
         return (
             <div className='flex flex-col items-center justify-center py-24 text-center'>
-                <div className='h-20 w-20 rounded-3xl bg-red-500/10 flex items-center justify-center mb-6'>
+                <div className='mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-red-500/10'>
                     <Lock className='h-10 w-10 text-red-500' />
                 </div>
-                <h1 className='text-2xl font-black uppercase tracking-tight'>{t('common.accessDenied')}</h1>
+                <h1 className='text-2xl font-black tracking-tight uppercase'>{t('common.accessDenied')}</h1>
                 <p className='text-muted-foreground mt-2'>{t('common.noPermission')}</p>
                 <Button variant='outline' className='mt-8' onClick={() => router.back()}>
                     {t('common.goBack')}
@@ -296,7 +296,7 @@ export default function ServerTasksPage() {
     }
 
     return (
-        <div className='space-y-6 '>
+        <div className='space-y-6'>
             <WidgetRenderer widgets={getWidgets('server-tasks', 'top-of-page')} />
 
             <PageHeader
@@ -316,7 +316,7 @@ export default function ServerTasksPage() {
                                     setIsCreateOpen(true);
                                 }}
                             >
-                                <Plus className='h-4 w-4 mr-2' />
+                                <Plus className='mr-2 h-4 w-4' />
                                 {t('serverTasks.createTask')}
                             </Button>
                         )}
@@ -326,9 +326,9 @@ export default function ServerTasksPage() {
             <WidgetRenderer widgets={getWidgets('server-tasks', 'after-header')} />
 
             {!schedulesEnabled && (
-                <div className='p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/20 flex items-center gap-3'>
+                <div className='flex items-center gap-3 rounded-xl border border-yellow-500/20 bg-yellow-500/10 p-4'>
                     <AlertTriangle className='h-5 w-5 text-yellow-500' />
-                    <p className='text-sm text-yellow-500 font-medium'>{t('serverSchedules.disabled')}</p>
+                    <p className='text-sm font-medium text-yellow-500'>{t('serverSchedules.disabled')}</p>
                 </div>
             )}
 
@@ -349,7 +349,7 @@ export default function ServerTasksPage() {
                                     setIsCreateOpen(true);
                                 }}
                             >
-                                <Plus className='h-6 w-6 mr-2' />
+                                <Plus className='mr-2 h-6 w-6' />
                                 {t('serverTasks.createTask')}
                             </Button>
                         ) : undefined
@@ -371,11 +371,11 @@ export default function ServerTasksPage() {
                             title={task.action}
                             description={
                                 <div className='flex flex-col gap-1'>
-                                    <span className='font-mono text-xs text-muted-foreground bg-black/20 px-2 py-1 rounded-md border border-white/5 w-fit'>
+                                    <span className='text-muted-foreground w-fit rounded-md border border-white/5 bg-black/20 px-2 py-1 font-mono text-xs'>
                                         {task.payload || t('serverTasks.noPayload')}
                                     </span>
                                     {(task.time_offset > 0 || task.continue_on_failure === 1) && (
-                                        <div className='flex items-center gap-3 text-[10px] text-muted-foreground/60 font-medium uppercase tracking-wider mt-1'>
+                                        <div className='text-muted-foreground/60 mt-1 flex items-center gap-3 text-[10px] font-medium tracking-wider uppercase'>
                                             {task.time_offset > 0 && (
                                                 <span>
                                                     {t('serverTasks.timeOffset')}: {task.time_offset}s
@@ -406,7 +406,7 @@ export default function ServerTasksPage() {
                                 <div className='flex items-center gap-2'>
                                     {canUpdate && (
                                         <>
-                                            <div className='flex flex-col gap-1 mr-2'>
+                                            <div className='mr-2 flex flex-col gap-1'>
                                                 <Button
                                                     size='sm'
                                                     variant='ghost'
@@ -488,7 +488,7 @@ export default function ServerTasksPage() {
                             ]}
                             placeholder={t('serverTasks.selectActionType')}
                         />
-                        <p className='text-xs text-muted-foreground'>{t('serverTasks.actionHelp')}</p>
+                        <p className='text-muted-foreground text-xs'>{t('serverTasks.actionHelp')}</p>
                     </div>
 
                     <div className='space-y-2'>
@@ -513,7 +513,7 @@ export default function ServerTasksPage() {
                                 required={createForm.action === 'command'}
                             />
                         )}
-                        <p className='text-xs text-muted-foreground'>{getPayloadHelp(createForm.action)}</p>
+                        <p className='text-muted-foreground text-xs'>{getPayloadHelp(createForm.action)}</p>
                     </div>
 
                     <div className='space-y-2'>
@@ -524,7 +524,7 @@ export default function ServerTasksPage() {
                             value={createForm.time_offset}
                             onChange={(e) => setCreateForm({ ...createForm, time_offset: Number(e.target.value) })}
                         />
-                        <p className='text-xs text-muted-foreground'>{t('serverTasks.timeOffsetHelp')}</p>
+                        <p className='text-muted-foreground text-xs'>{t('serverTasks.timeOffsetHelp')}</p>
                     </div>
 
                     <div className='space-y-2'>
@@ -537,7 +537,7 @@ export default function ServerTasksPage() {
                                 { id: '1', name: t('serverTasks.continueOnFailure') },
                             ]}
                         />
-                        <p className='text-xs text-muted-foreground'>{t('serverTasks.continueOnFailureHelp')}</p>
+                        <p className='text-muted-foreground text-xs'>{t('serverTasks.continueOnFailureHelp')}</p>
                     </div>
 
                     <div className='flex justify-end gap-2 pt-4'>
@@ -581,7 +581,7 @@ export default function ServerTasksPage() {
                             value={editForm.sequence_id}
                             onChange={(e) => setEditForm({ ...editForm, sequence_id: Number(e.target.value) })}
                         />
-                        <p className='text-xs text-muted-foreground'>{t('serverTasks.sequenceIdHelp')}</p>
+                        <p className='text-muted-foreground text-xs'>{t('serverTasks.sequenceIdHelp')}</p>
                     </div>
 
                     <div className='space-y-2'>

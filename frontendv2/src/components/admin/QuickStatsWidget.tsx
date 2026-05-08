@@ -86,16 +86,16 @@ export function QuickStatsWidget({ stats, loading }: QuickStatsWidgetProps) {
     ];
 
     return (
-        <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 md:gap-4 mb-6 md:mb-8'>
+        <div className='mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 md:mb-8 md:gap-4 lg:grid-cols-3 xl:grid-cols-6'>
             {items.map((item, index) => (
                 <div
                     key={index}
-                    className='group relative p-4 md:p-5 rounded-2xl md:rounded-3xl bg-card/20 border border-border/40 backdrop-blur-3xl hover:border-primary/30 transition-all duration-300'
+                    className='group bg-card/20 border-border/40 hover:border-primary/30 relative rounded-2xl border p-4 backdrop-blur-3xl transition-all duration-300 md:rounded-3xl md:p-5'
                 >
                     <div className='flex items-center gap-3 md:gap-4'>
                         <div
                             className={cn(
-                                'h-9 w-9 md:h-10 md:w-10 rounded-lg md:rounded-xl flex items-center justify-center border border-white/5 shrink-0',
+                                'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/5 md:h-10 md:w-10 md:rounded-xl',
                                 item.bg,
                                 item.color,
                             )}
@@ -103,12 +103,12 @@ export function QuickStatsWidget({ stats, loading }: QuickStatsWidgetProps) {
                             <item.icon className='h-4 w-4 md:h-5 md:w-5' />
                         </div>
                         <div className='min-w-0 flex-1'>
-                            <p className='text-[9px] md:text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60 truncate'>
+                            <p className='text-muted-foreground truncate text-[9px] font-black tracking-widest uppercase opacity-60 md:text-[10px]'>
                                 {item.name}
                             </p>
-                            <h3 className='text-lg md:text-xl font-black'>
+                            <h3 className='text-lg font-black md:text-xl'>
                                 {loading ? (
-                                    <div className='h-5 md:h-6 w-12 bg-muted animate-pulse rounded-md mt-1' />
+                                    <div className='bg-muted mt-1 h-5 w-12 animate-pulse rounded-md md:h-6' />
                                 ) : (
                                     item.value.toLocaleString()
                                 )}

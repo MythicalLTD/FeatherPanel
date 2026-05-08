@@ -37,11 +37,11 @@ export function StepIndicator({ steps, currentStep }: StepIndicatorProps) {
                     const isLast = index === steps.length - 1;
 
                     return (
-                        <div key={index} className='flex items-center flex-1'>
+                        <div key={index} className='flex flex-1 items-center'>
                             <div className='flex flex-col items-center'>
                                 <div
                                     className={cn(
-                                        'flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all',
+                                        'flex h-10 w-10 items-center justify-center rounded-full border-2 transition-all',
                                         isCompleted && 'border-primary bg-primary text-white',
                                         isActive && 'border-primary bg-background text-primary',
                                         !isActive && !isCompleted && 'border-border bg-muted text-muted-foreground',
@@ -54,7 +54,7 @@ export function StepIndicator({ steps, currentStep }: StepIndicatorProps) {
                                     )}
                                 </div>
 
-                                <div className='hidden lg:flex flex-col items-center mt-2 text-center max-w-[120px]'>
+                                <div className='mt-2 hidden max-w-[120px] flex-col items-center text-center lg:flex'>
                                     <span
                                         className={cn(
                                             'text-sm font-medium',
@@ -63,14 +63,14 @@ export function StepIndicator({ steps, currentStep }: StepIndicatorProps) {
                                     >
                                         {step.title}
                                     </span>
-                                    <span className='text-xs text-muted-foreground mt-0.5'>{step.subtitle}</span>
+                                    <span className='text-muted-foreground mt-0.5 text-xs'>{step.subtitle}</span>
                                 </div>
                             </div>
 
                             {!isLast && (
                                 <div
                                     className={cn(
-                                        'flex-1 h-0.5 mx-2 transition-all',
+                                        'mx-2 h-0.5 flex-1 transition-all',
                                         isCompleted ? 'bg-primary' : 'bg-border',
                                     )}
                                 />
@@ -80,9 +80,9 @@ export function StepIndicator({ steps, currentStep }: StepIndicatorProps) {
                 })}
             </div>
 
-            <div className='lg:hidden mt-4 text-center'>
-                <h3 className='text-base font-semibold text-primary'>{steps[currentStep - 1].title}</h3>
-                <p className='text-sm text-muted-foreground mt-1'>{steps[currentStep - 1].subtitle}</p>
+            <div className='mt-4 text-center lg:hidden'>
+                <h3 className='text-primary text-base font-semibold'>{steps[currentStep - 1].title}</h3>
+                <p className='text-muted-foreground mt-1 text-sm'>{steps[currentStep - 1].subtitle}</p>
             </div>
         </div>
     );

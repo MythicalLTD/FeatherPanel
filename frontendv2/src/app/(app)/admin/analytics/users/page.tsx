@@ -151,19 +151,19 @@ export default function UserAnalyticsPage() {
 
     if (loading) {
         return (
-            <div className='flex items-center justify-center min-h-[400px]'>
-                <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-primary'></div>
+            <div className='flex min-h-[400px] items-center justify-center'>
+                <div className='border-primary h-8 w-8 animate-spin rounded-full border-b-2'></div>
             </div>
         );
     }
 
     if (error) {
         return (
-            <div className='flex flex-col items-center justify-center min-h-[400px] text-center'>
-                <p className='text-red-500 mb-4'>{error}</p>
+            <div className='flex min-h-[400px] flex-col items-center justify-center text-center'>
+                <p className='mb-4 text-red-500'>{error}</p>
                 <button
                     onClick={fetchData}
-                    className='px-4 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-opacity'
+                    className='bg-primary text-primary-foreground rounded-md px-4 py-2 transition-opacity hover:opacity-90'
                 >
                     {t('admin.analytics.activity.retry')}
                 </button>
@@ -188,7 +188,7 @@ export default function UserAnalyticsPage() {
                             subtitle={t('admin.analytics.users.total')}
                             description={t('admin.analytics.users.active_users', { count: String(overview.active) })}
                             icon={Users}
-                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                            className='bg-card/50 shadow-none! backdrop-blur-sm'
                         />
                         <ResourceCard
                             title={overview.banned.toString()}
@@ -197,7 +197,7 @@ export default function UserAnalyticsPage() {
                                 percentage: String(overview.percentage_banned),
                             })}
                             icon={UserX}
-                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                            className='bg-card/50 shadow-none! backdrop-blur-sm'
                         />
                         <ResourceCard
                             title={overview.verified.toString()}
@@ -206,7 +206,7 @@ export default function UserAnalyticsPage() {
                                 percentage: String(overview.percentage_verified),
                             })}
                             icon={UserCheck}
-                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                            className='bg-card/50 shadow-none! backdrop-blur-sm'
                         />
                         <ResourceCard
                             title={overview.two_fa_enabled.toString()}
@@ -215,28 +215,28 @@ export default function UserAnalyticsPage() {
                                 percentage: String(overview.percentage_two_fa),
                             })}
                             icon={ShieldCheck}
-                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                            className='bg-card/50 shadow-none! backdrop-blur-sm'
                         />
                         <ResourceCard
                             title={overview.unverified.toString()}
                             subtitle='Unverified'
                             description='Users pending email verification'
                             icon={UserMinus}
-                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                            className='bg-card/50 shadow-none! backdrop-blur-sm'
                         />
                         <ResourceCard
                             title={(securityOverview?.not_secured ?? 0).toString()}
                             subtitle='Not secured'
                             description={`Fully secured: ${securityOverview?.fully_secured ?? 0}`}
                             icon={ShieldAlert}
-                            className='shadow-none! bg-card/50 backdrop-blur-sm'
+                            className='bg-card/50 shadow-none! backdrop-blur-sm'
                         />
                     </div>
                 )}
 
                 {growth && (
                     <div className='grid gap-4 md:grid-cols-2'>
-                        <Card className='border-border/50 shadow-sm bg-card/50 backdrop-blur-sm'>
+                        <Card className='border-border/50 bg-card/50 shadow-sm backdrop-blur-sm'>
                             <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
                                 <CardTitle className='text-sm font-medium'>
                                     {t('admin.analytics.users.growth_7d')}
@@ -250,7 +250,7 @@ export default function UserAnalyticsPage() {
                                     {growth.growth_rate_7d > 0 ? '+' : ''}
                                     {growth.growth_rate_7d}%
                                 </div>
-                                <p className='text-xs text-muted-foreground'>
+                                <p className='text-muted-foreground text-xs'>
                                     {t('admin.analytics.users.growth_comparison', {
                                         new: String(growth.last_7_days),
                                         previous: String(growth.previous_7_days),
@@ -258,7 +258,7 @@ export default function UserAnalyticsPage() {
                                 </p>
                             </CardContent>
                         </Card>
-                        <Card className='border-border/50 shadow-sm bg-card/50 backdrop-blur-sm'>
+                        <Card className='border-border/50 bg-card/50 shadow-sm backdrop-blur-sm'>
                             <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
                                 <CardTitle className='text-sm font-medium'>
                                     {t('admin.analytics.users.growth_30d')}
@@ -272,7 +272,7 @@ export default function UserAnalyticsPage() {
                                     {growth.growth_rate_30d > 0 ? '+' : ''}
                                     {growth.growth_rate_30d}%
                                 </div>
-                                <p className='text-xs text-muted-foreground'>
+                                <p className='text-muted-foreground text-xs'>
                                     {t('admin.analytics.users.growth_comparison', {
                                         new: String(growth.last_30_days),
                                         previous: String(growth.previous_30_days),
@@ -283,7 +283,7 @@ export default function UserAnalyticsPage() {
                     </div>
                 )}
 
-                <div className='grid gap-4 grid-cols-1 lg:grid-cols-3'>
+                <div className='grid grid-cols-1 gap-4 lg:grid-cols-3'>
                     <TrendChart
                         title={t('admin.analytics.users.reg_trend')}
                         description={t('admin.analytics.users.reg_trend_desc')}
@@ -305,7 +305,7 @@ export default function UserAnalyticsPage() {
                         />
                     </div>
 
-                    <Card className='col-span-1 lg:col-span-2 border-border/50 shadow-sm bg-card/50 backdrop-blur-sm'>
+                    <Card className='border-border/50 bg-card/50 col-span-1 shadow-sm backdrop-blur-sm lg:col-span-2'>
                         <CardHeader>
                             <CardTitle>{t('admin.analytics.users.top_users')}</CardTitle>
                             <CardDescription>{t('admin.analytics.users.top_users_desc')}</CardDescription>
@@ -316,15 +316,15 @@ export default function UserAnalyticsPage() {
                                     {topUsers.map((user, index) => (
                                         <div key={user.id} className='flex items-center justify-between'>
                                             <div className='flex items-center gap-3'>
-                                                <span className='text-sm font-bold text-muted-foreground w-4'>
+                                                <span className='text-muted-foreground w-4 text-sm font-bold'>
                                                     #{index + 1}
                                                 </span>
                                                 <div className='space-y-0.5'>
-                                                    <p className='text-sm font-medium leading-none'>{user.username}</p>
-                                                    <p className='text-xs text-muted-foreground'>{user.email}</p>
+                                                    <p className='text-sm leading-none font-medium'>{user.username}</p>
+                                                    <p className='text-muted-foreground text-xs'>{user.email}</p>
                                                 </div>
                                             </div>
-                                            <div className='text-sm font-medium bg-secondary px-2.5 py-0.5 rounded-full'>
+                                            <div className='bg-secondary rounded-full px-2.5 py-0.5 text-sm font-medium'>
                                                 {t('admin.analytics.users.servers_count', {
                                                     count: String(user.server_count),
                                                 })}
@@ -333,7 +333,7 @@ export default function UserAnalyticsPage() {
                                     ))}
                                 </div>
                             ) : (
-                                <div className='flex justify-center py-8 text-muted-foreground'>
+                                <div className='text-muted-foreground flex justify-center py-8'>
                                     {t('admin.analytics.activity.no_recent')}
                                 </div>
                             )}

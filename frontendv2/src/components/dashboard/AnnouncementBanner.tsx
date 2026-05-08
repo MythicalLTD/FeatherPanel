@@ -55,7 +55,7 @@ export function AnnouncementBanner() {
     };
 
     return (
-        <div className='space-y-4 mb-6'>
+        <div className='mb-6 space-y-4'>
             {notifications.map((notification) => {
                 const Icon = getTypeIcon(notification.type);
                 const styles = getTypeStyles(notification.type);
@@ -70,13 +70,13 @@ export function AnnouncementBanner() {
                     >
                         <div className='flex items-start justify-between gap-4'>
                             <div className='flex-1'>
-                                <div className='flex items-center gap-2 mb-1'>
+                                <div className='mb-1 flex items-center gap-2'>
                                     <Icon className='h-5 w-5 opacity-80' />
-                                    <h3 className='font-semibold text-sm uppercase tracking-wide opacity-90'>
+                                    <h3 className='text-sm font-semibold tracking-wide uppercase opacity-90'>
                                         {notification.title}
                                     </h3>
                                 </div>
-                                <div className='text-sm opacity-90 pl-7 prose prose-sm dark:prose-invert max-w-none prose-p:my-0 prose-headings:my-1 prose-a:text-inherit prose-a:underline'>
+                                <div className='prose prose-sm dark:prose-invert prose-p:my-0 prose-headings:my-1 prose-a:text-inherit prose-a:underline max-w-none pl-7 text-sm opacity-90'>
                                     <ReactMarkdown>{notification.message_markdown}</ReactMarkdown>
                                 </div>
                             </div>
@@ -84,7 +84,7 @@ export function AnnouncementBanner() {
                             {notification.is_dismissible && !notification.is_sticky && (
                                 <button
                                     onClick={() => dismissNotification(notification.id)}
-                                    className='rounded-lg p-1 hover:bg-black/5 dark:hover:bg-white/10 transition-colors shrink-0'
+                                    className='shrink-0 rounded-lg p-1 transition-colors hover:bg-black/5 dark:hover:bg-white/10'
                                     aria-label='Dismiss'
                                 >
                                     <X className='h-4 w-4 opacity-70' />

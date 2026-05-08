@@ -205,7 +205,7 @@ const ConfigTab = () => {
         return (
             <div className='flex items-center justify-center py-12'>
                 <div className='flex items-center gap-3'>
-                    <RefreshCw className='h-6 w-6 animate-spin text-primary' />
+                    <RefreshCw className='text-primary h-6 w-6 animate-spin' />
                     <span className='text-muted-foreground'>{t('admin.featherzerotrust.config.loading')}</span>
                 </div>
             </div>
@@ -214,10 +214,10 @@ const ConfigTab = () => {
 
     return (
         <div className='space-y-6'>
-            <Card className='border border-border/70 shadow-lg transition-all duration-300 hover:shadow-xl'>
+            <Card className='border-border/70 border shadow-lg transition-all duration-300 hover:shadow-xl'>
                 <CardHeader>
                     <div className='flex items-center gap-2'>
-                        <Settings className='h-5 w-5 text-primary' />
+                        <Settings className='text-primary h-5 w-5' />
                         <CardTitle>{t('admin.featherzerotrust.config.title')}</CardTitle>
                     </div>
                     <CardDescription>{t('admin.featherzerotrust.config.description')}</CardDescription>
@@ -225,7 +225,7 @@ const ConfigTab = () => {
                 <CardContent className='space-y-8'>
                     <div className='space-y-6'>
                         <div className='flex items-center justify-between'>
-                            <h3 className='text-lg font-semibold bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent'>
+                            <h3 className='from-foreground to-foreground/70 bg-linear-to-r bg-clip-text text-lg font-semibold text-transparent'>
                                 {t('admin.featherzerotrust.config.basicSettings')}
                             </h3>
                             <div className='flex gap-2'>
@@ -234,22 +234,22 @@ const ConfigTab = () => {
                                 </Button>
                                 <Button size='sm' onClick={saveConfig} disabled={saving}>
                                     {saving ? (
-                                        <RefreshCw className='h-4 w-4 animate-spin mr-2' />
+                                        <RefreshCw className='mr-2 h-4 w-4 animate-spin' />
                                     ) : (
-                                        <Save className='h-4 w-4 mr-2' />
+                                        <Save className='mr-2 h-4 w-4' />
                                     )}
                                     {t('admin.featherzerotrust.config.saveChanges')}
                                 </Button>
                             </div>
                         </div>
 
-                        <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-                            <div className='flex items-center justify-between p-4 bg-muted/30 border border-border/50 rounded-xl transition-all hover:bg-muted/50'>
+                        <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
+                            <div className='bg-muted/30 border-border/50 hover:bg-muted/50 flex items-center justify-between rounded-xl border p-4 transition-all'>
                                 <div className='space-y-0.5'>
                                     <Label className='text-sm font-medium'>
                                         {t('admin.featherzerotrust.config.systemEnabled')}
                                     </Label>
-                                    <p className='text-xs text-muted-foreground'>
+                                    <p className='text-muted-foreground text-xs'>
                                         {t('admin.featherzerotrust.config.systemEnabledDesc')}
                                     </p>
                                 </div>
@@ -259,12 +259,12 @@ const ConfigTab = () => {
                                 />
                             </div>
 
-                            <div className='flex items-center justify-between p-4 bg-muted/30 border border-border/50 rounded-xl transition-all hover:bg-muted/50'>
+                            <div className='bg-muted/30 border-border/50 hover:bg-muted/50 flex items-center justify-between rounded-xl border p-4 transition-all'>
                                 <div className='space-y-0.5'>
                                     <Label className='text-sm font-medium'>
                                         {t('admin.featherzerotrust.config.autoSuspend')}
                                     </Label>
-                                    <p className='text-xs text-muted-foreground'>
+                                    <p className='text-muted-foreground text-xs'>
                                         {t('admin.featherzerotrust.config.autoSuspendDesc')}
                                     </p>
                                 </div>
@@ -284,7 +284,7 @@ const ConfigTab = () => {
                                     }
                                     placeholder='15'
                                 />
-                                <p className='text-[10px] text-muted-foreground pl-1'>
+                                <p className='text-muted-foreground pl-1 text-[10px]'>
                                     {t('admin.featherzerotrust.config.scanIntervalDesc')}
                                 </p>
                             </div>
@@ -297,7 +297,7 @@ const ConfigTab = () => {
                                     onChange={(e) => setConfig({ ...config, max_depth: parseInt(e.target.value) || 0 })}
                                     placeholder='10'
                                 />
-                                <p className='text-[10px] text-muted-foreground pl-1'>
+                                <p className='text-muted-foreground pl-1 text-[10px]'>
                                     {t('admin.featherzerotrust.config.maxDepthDesc')}
                                 </p>
                             </div>
@@ -312,7 +312,7 @@ const ConfigTab = () => {
                                     }
                                     placeholder='0 for unlimited'
                                 />
-                                <p className='text-[10px] text-muted-foreground pl-1'>
+                                <p className='text-muted-foreground pl-1 text-[10px]'>
                                     {t('admin.featherzerotrust.config.maxFileSizeDesc')}
                                 </p>
                             </div>
@@ -327,24 +327,24 @@ const ConfigTab = () => {
                                     }
                                     placeholder='Small JARs are suspicious'
                                 />
-                                <p className='text-[10px] text-muted-foreground pl-1'>
+                                <p className='text-muted-foreground pl-1 text-[10px]'>
                                     {t('admin.featherzerotrust.config.maxJarSizeDesc')}
                                 </p>
                             </div>
                         </div>
                     </div>
 
-                    <div className='space-y-6 pt-6 border-t'>
-                        <h3 className='text-lg font-semibold bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent'>
+                    <div className='space-y-6 border-t pt-6'>
+                        <h3 className='from-foreground to-foreground/70 bg-linear-to-r bg-clip-text text-lg font-semibold text-transparent'>
                             {t('admin.featherzerotrust.config.notifications')}
                         </h3>
                         <div className='space-y-4'>
-                            <div className='flex items-center justify-between p-4 bg-muted/30 border border-border/50 rounded-xl transition-all hover:bg-muted/50'>
+                            <div className='bg-muted/30 border-border/50 hover:bg-muted/50 flex items-center justify-between rounded-xl border p-4 transition-all'>
                                 <div className='space-y-0.5'>
                                     <Label className='text-sm font-medium'>
                                         {t('admin.featherzerotrust.config.discordWebhook')}
                                     </Label>
-                                    <p className='text-xs text-muted-foreground'>
+                                    <p className='text-muted-foreground text-xs'>
                                         {t('admin.featherzerotrust.config.discordWebhookDesc')}
                                     </p>
                                 </div>
@@ -354,7 +354,7 @@ const ConfigTab = () => {
                                 />
                             </div>
                             {config.webhook_enabled && (
-                                <div className='space-y-2 animate-in fade-in slide-in-from-top-2 duration-300'>
+                                <div className='animate-in fade-in slide-in-from-top-2 space-y-2 duration-300'>
                                     <Label>{t('admin.featherzerotrust.config.webhookUrl')}</Label>
                                     <Input
                                         value={config.webhook_url || ''}
@@ -366,17 +366,17 @@ const ConfigTab = () => {
                         </div>
                     </div>
 
-                    <div className='space-y-6 pt-6 border-t'>
-                        <h3 className='text-lg font-semibold bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent'>
+                    <div className='space-y-6 border-t pt-6'>
+                        <h3 className='from-foreground to-foreground/70 bg-linear-to-r bg-clip-text text-lg font-semibold text-transparent'>
                             {t('admin.featherzerotrust.config.malwarebazaar.title')}
                         </h3>
                         <div className='space-y-4'>
-                            <div className='flex items-center justify-between p-4 bg-muted/30 border border-border/50 rounded-xl transition-all hover:bg-muted/50'>
+                            <div className='bg-muted/30 border-border/50 hover:bg-muted/50 flex items-center justify-between rounded-xl border p-4 transition-all'>
                                 <div className='space-y-0.5'>
                                     <Label className='text-sm font-medium'>
                                         {t('admin.featherzerotrust.config.malwarebazaar.enable')}
                                     </Label>
-                                    <p className='text-xs text-muted-foreground'>
+                                    <p className='text-muted-foreground text-xs'>
                                         {t('admin.featherzerotrust.config.malwarebazaar.enableDesc')}
                                     </p>
                                 </div>
@@ -387,7 +387,7 @@ const ConfigTab = () => {
                             </div>
 
                             {config.malwarebazaar_enabled && (
-                                <div className='grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2 duration-300'>
+                                <div className='animate-in fade-in slide-in-from-top-2 grid grid-cols-1 gap-4 duration-300 md:grid-cols-2'>
                                     <div className='space-y-2 md:col-span-2'>
                                         <Label>{t('admin.featherzerotrust.config.malwarebazaar.apiKey')}</Label>
                                         <Input
@@ -400,7 +400,7 @@ const ConfigTab = () => {
                                                 'admin.featherzerotrust.config.malwarebazaar.apiKeyPlaceholder',
                                             )}
                                         />
-                                        <p className='text-[10px] text-muted-foreground'>
+                                        <p className='text-muted-foreground text-[10px]'>
                                             {t('admin.featherzerotrust.config.malwarebazaar.apiKeyDesc')}
                                         </p>
                                     </div>
@@ -408,7 +408,7 @@ const ConfigTab = () => {
                                     <div className='space-y-2'>
                                         <Label>{t('admin.featherzerotrust.config.malwarebazaar.selector')}</Label>
                                         <select
-                                            className='w-full flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm'
+                                            className='border-input bg-background flex h-10 w-full rounded-md border px-3 py-2 text-sm'
                                             value={config.malwarebazaar_selector || '100'}
                                             onChange={(e) =>
                                                 setConfig({
@@ -428,7 +428,7 @@ const ConfigTab = () => {
                                                 )}
                                             </option>
                                         </select>
-                                        <p className='text-[10px] text-muted-foreground'>
+                                        <p className='text-muted-foreground text-[10px]'>
                                             {t('admin.featherzerotrust.config.malwarebazaar.selectorDesc')}
                                         </p>
                                     </div>
@@ -453,7 +453,7 @@ const ConfigTab = () => {
                                                 'admin.featherzerotrust.config.malwarebazaar.importLimitPlaceholder',
                                             )}
                                         />
-                                        <p className='text-[10px] text-muted-foreground'>
+                                        <p className='text-muted-foreground text-[10px]'>
                                             {t('admin.featherzerotrust.config.malwarebazaar.importLimitDesc')}
                                         </p>
                                     </div>
@@ -474,7 +474,7 @@ const ConfigTab = () => {
                                                 'admin.featherzerotrust.config.malwarebazaar.defaultDetectionTypePlaceholder',
                                             )}
                                         />
-                                        <p className='text-[10px] text-muted-foreground'>
+                                        <p className='text-muted-foreground text-[10px]'>
                                             {t('admin.featherzerotrust.config.malwarebazaar.defaultDetectionTypeDesc')}
                                         </p>
                                     </div>
@@ -498,7 +498,7 @@ const ConfigTab = () => {
                                                 'admin.featherzerotrust.config.malwarebazaar.maxAgeHoursPlaceholder',
                                             )}
                                         />
-                                        <p className='text-[10px] text-muted-foreground'>
+                                        <p className='text-muted-foreground text-[10px]'>
                                             {t('admin.featherzerotrust.config.malwarebazaar.maxAgeHoursDesc')}
                                         </p>
                                     </div>
@@ -513,9 +513,9 @@ const ConfigTab = () => {
                                             placeholder={t(
                                                 'admin.featherzerotrust.config.malwarebazaar.allowedFileTypesPlaceholder',
                                             )}
-                                            className='font-mono text-xs min-h-[80px]'
+                                            className='min-h-[80px] font-mono text-xs'
                                         />
-                                        <p className='text-[10px] text-muted-foreground'>
+                                        <p className='text-muted-foreground text-[10px]'>
                                             {t('admin.featherzerotrust.config.malwarebazaar.allowedFileTypesDesc')}
                                         </p>
                                     </div>
@@ -528,9 +528,9 @@ const ConfigTab = () => {
                                             placeholder={t(
                                                 'admin.featherzerotrust.config.malwarebazaar.blockedTagsPlaceholder',
                                             )}
-                                            className='font-mono text-xs min-h-[80px]'
+                                            className='min-h-[80px] font-mono text-xs'
                                         />
-                                        <p className='text-[10px] text-muted-foreground'>
+                                        <p className='text-muted-foreground text-[10px]'>
                                             {t('admin.featherzerotrust.config.malwarebazaar.blockedTagsDesc')}
                                         </p>
                                     </div>
@@ -538,13 +538,13 @@ const ConfigTab = () => {
                             )}
                         </div>
                         {config.malwarebazaar_enabled && (
-                            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-                                <div className='flex items-center justify-between p-4 bg-muted/30 border border-border/50 rounded-xl transition-all hover:bg-muted/50'>
+                            <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
+                                <div className='bg-muted/30 border-border/50 hover:bg-muted/50 flex items-center justify-between rounded-xl border p-4 transition-all'>
                                     <div className='space-y-0.5'>
                                         <Label className='text-sm font-medium'>
                                             {t('admin.featherzerotrust.config.malwarebazaar.autoConfirm')}
                                         </Label>
-                                        <p className='text-xs text-muted-foreground'>
+                                        <p className='text-muted-foreground text-xs'>
                                             {t('admin.featherzerotrust.config.malwarebazaar.autoConfirmDesc')}
                                         </p>
                                     </div>
@@ -556,12 +556,12 @@ const ConfigTab = () => {
                                     />
                                 </div>
 
-                                <div className='flex items-center justify-between p-4 bg-muted/30 border border-border/50 rounded-xl transition-all hover:bg-muted/50'>
+                                <div className='bg-muted/30 border-border/50 hover:bg-muted/50 flex items-center justify-between rounded-xl border p-4 transition-all'>
                                     <div className='space-y-0.5'>
                                         <Label className='text-sm font-medium'>
                                             {t('admin.featherzerotrust.config.malwarebazaar.requireSignature')}
                                         </Label>
-                                        <p className='text-xs text-muted-foreground'>
+                                        <p className='text-muted-foreground text-xs'>
                                             {t('admin.featherzerotrust.config.malwarebazaar.requireSignatureDesc')}
                                         </p>
                                     </div>
@@ -576,8 +576,8 @@ const ConfigTab = () => {
                         )}
                     </div>
 
-                    <div className='space-y-6 pt-6 border-t'>
-                        <h3 className='text-lg font-semibold bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent'>
+                    <div className='space-y-6 border-t pt-6'>
+                        <h3 className='from-foreground to-foreground/70 bg-linear-to-r bg-clip-text text-lg font-semibold text-transparent'>
                             {t('admin.featherzerotrust.config.exclusionRules')}
                         </h3>
                         <div className='grid grid-cols-1 gap-6'>
@@ -587,9 +587,9 @@ const ConfigTab = () => {
                                     value={ignoredExtensionsText}
                                     onChange={(e) => setIgnoredExtensionsText(e.target.value)}
                                     placeholder='.jar, .log, .txt'
-                                    className='font-mono text-xs min-h-[80px]'
+                                    className='min-h-[80px] font-mono text-xs'
                                 />
-                                <p className='text-[10px] text-muted-foreground'>
+                                <p className='text-muted-foreground text-[10px]'>
                                     {t('admin.featherzerotrust.config.ignoredExtensionsDesc')}
                                 </p>
                             </div>
@@ -599,7 +599,7 @@ const ConfigTab = () => {
                                     value={ignoredFilesText}
                                     onChange={(e) => setIgnoredFilesText(e.target.value)}
                                     placeholder='server.jar.old, latest.log'
-                                    className='font-mono text-xs min-h-[80px]'
+                                    className='min-h-[80px] font-mono text-xs'
                                 />
                             </div>
                             <div className='space-y-2'>
@@ -608,26 +608,26 @@ const ConfigTab = () => {
                                     value={ignoredPathsText}
                                     onChange={(e) => setIgnoredPathsText(e.target.value)}
                                     placeholder='logs/, cache/, world/playerdata/'
-                                    className='font-mono text-xs min-h-[80px]'
+                                    className='min-h-[80px] font-mono text-xs'
                                 />
                             </div>
                         </div>
                     </div>
 
-                    <div className='space-y-6 pt-6 border-t'>
-                        <h3 className='text-lg font-semibold bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent'>
+                    <div className='space-y-6 border-t pt-6'>
+                        <h3 className='from-foreground to-foreground/70 bg-linear-to-r bg-clip-text text-lg font-semibold text-transparent'>
                             {t('admin.featherzerotrust.config.threatIndicators')}
                         </h3>
-                        <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+                        <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
                             <div className='space-y-2'>
                                 <Label>{t('admin.featherzerotrust.config.suspiciousPatterns')}</Label>
                                 <Textarea
                                     value={suspiciousPatternsText}
                                     onChange={(e) => setSuspiciousPatternsText(e.target.value)}
                                     placeholder='stratum+tcp://&#10;pool.&#10;miningpool'
-                                    className='font-mono text-xs min-h-[120px]'
+                                    className='min-h-[120px] font-mono text-xs'
                                 />
-                                <p className='text-[10px] text-muted-foreground'>
+                                <p className='text-muted-foreground text-[10px]'>
                                     {t('admin.featherzerotrust.config.suspiciousPatternsDesc')}
                                 </p>
                             </div>
@@ -637,7 +637,7 @@ const ConfigTab = () => {
                                     value={maliciousProcessesText}
                                     onChange={(e) => setMaliciousProcessesText(e.target.value)}
                                     placeholder='xmrig, earnfm, mcstorm.jar'
-                                    className='font-mono text-xs min-h-[120px]'
+                                    className='min-h-[120px] font-mono text-xs'
                                 />
                             </div>
                             <div className='space-y-2'>
@@ -646,7 +646,7 @@ const ConfigTab = () => {
                                     value={minerIndicatorsText}
                                     onChange={(e) => setMinerIndicatorsText(e.target.value)}
                                     placeholder='xmrig, ethminer, stratum+tcp'
-                                    className='font-mono text-xs min-h-[100px]'
+                                    className='min-h-[100px] font-mono text-xs'
                                 />
                             </div>
                             <div className='space-y-2'>
@@ -655,17 +655,17 @@ const ConfigTab = () => {
                                     value={whatsappIndicatorsText}
                                     onChange={(e) => setWhatsappIndicatorsText(e.target.value)}
                                     placeholder='whatsapp-web.js, baileys, wa-automate'
-                                    className='font-mono text-xs min-h-[100px]'
+                                    className='min-h-[100px] font-mono text-xs'
                                 />
                             </div>
                         </div>
                     </div>
 
-                    <div className='space-y-6 pt-6 border-t'>
-                        <h3 className='text-lg font-semibold bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent'>
+                    <div className='space-y-6 border-t pt-6'>
+                        <h3 className='from-foreground to-foreground/70 bg-linear-to-r bg-clip-text text-lg font-semibold text-transparent'>
                             {t('admin.featherzerotrust.config.monitoringThresholds')}
                         </h3>
-                        <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
+                        <div className='grid grid-cols-1 gap-6 md:grid-cols-3'>
                             <div className='space-y-2'>
                                 <Label>{t('admin.featherzerotrust.config.highCpuThreshold')}</Label>
                                 <Input
@@ -701,12 +701,12 @@ const ConfigTab = () => {
                         </div>
                     </div>
 
-                    <div className='flex gap-4 pt-6 border-t'>
+                    <div className='flex gap-4 border-t pt-6'>
                         <Button className='flex-1 sm:flex-none' onClick={saveConfig} disabled={saving}>
                             {saving ? (
-                                <RefreshCw className='h-4 w-4 animate-spin mr-2' />
+                                <RefreshCw className='mr-2 h-4 w-4 animate-spin' />
                             ) : (
-                                <Save className='h-4 w-4 mr-2' />
+                                <Save className='mr-2 h-4 w-4' />
                             )}
                             {t('admin.featherzerotrust.config.saveChanges')}
                         </Button>

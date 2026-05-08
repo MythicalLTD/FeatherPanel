@@ -185,13 +185,13 @@ export default function ServerFastDlPage() {
             <div className='flex flex-col items-center justify-center py-24'>
                 <div className='relative'>
                     <div className='absolute inset-0 animate-ping opacity-20'>
-                        <div className='w-16 h-16 rounded-full bg-primary/20' />
+                        <div className='bg-primary/20 h-16 w-16 rounded-full' />
                     </div>
-                    <div className='relative p-4 rounded-full bg-primary/10'>
-                        <Loader2 className='h-8 w-8 animate-spin text-primary' />
+                    <div className='bg-primary/10 relative rounded-full p-4'>
+                        <Loader2 className='text-primary h-8 w-8 animate-spin' />
                     </div>
                 </div>
-                <span className='mt-4 text-muted-foreground animate-pulse'>{t('common.loading')}...</span>
+                <span className='text-muted-foreground mt-4 animate-pulse'>{t('common.loading')}...</span>
             </div>
         );
     }
@@ -233,13 +233,13 @@ export default function ServerFastDlPage() {
             <div className='flex flex-col items-center justify-center py-24'>
                 <div className='relative'>
                     <div className='absolute inset-0 animate-ping opacity-20'>
-                        <div className='w-16 h-16 rounded-full bg-primary/20' />
+                        <div className='bg-primary/20 h-16 w-16 rounded-full' />
                     </div>
-                    <div className='relative p-4 rounded-full bg-primary/10'>
-                        <Loader2 className='h-8 w-8 animate-spin text-primary' />
+                    <div className='bg-primary/10 relative rounded-full p-4'>
+                        <Loader2 className='text-primary h-8 w-8 animate-spin' />
                     </div>
                 </div>
-                <span className='mt-4 text-muted-foreground animate-pulse'>{t('common.loading')}...</span>
+                <span className='text-muted-foreground mt-4 animate-pulse'>{t('common.loading')}...</span>
             </div>
         );
     }
@@ -257,23 +257,23 @@ export default function ServerFastDlPage() {
             >
                 <div className='space-y-6'>
                     {error && (
-                        <div className='p-4 bg-destructive/10 border border-destructive/20 rounded-xl'>
+                        <div className='bg-destructive/10 border-destructive/20 rounded-xl border p-4'>
                             <div className='flex items-center gap-2'>
-                                <AlertCircle className='h-5 w-5 text-destructive' />
-                                <p className='text-sm text-destructive font-medium'>{error}</p>
+                                <AlertCircle className='text-destructive h-5 w-5' />
+                                <p className='text-destructive text-sm font-medium'>{error}</p>
                             </div>
                         </div>
                     )}
 
                     {/* Status Display */}
                     <div>
-                        <div className='flex items-center justify-between mb-4'>
-                            <span className='text-sm font-medium text-foreground'>{t('serverFastDl.status')}</span>
+                        <div className='mb-4 flex items-center justify-between'>
+                            <span className='text-foreground text-sm font-medium'>{t('serverFastDl.status')}</span>
                             <span
-                                className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                                className={`rounded-full px-3 py-1 text-xs font-semibold ${
                                     config?.enabled
-                                        ? 'bg-green-500/10 text-green-600 border border-green-500/20'
-                                        : 'bg-gray-500/10 text-gray-600 border border-gray-500/20'
+                                        ? 'border border-green-500/20 bg-green-500/10 text-green-600'
+                                        : 'border border-gray-500/20 bg-gray-500/10 text-gray-600'
                                 }`}
                             >
                                 {config?.enabled ? t('serverFastDl.enabled') : t('serverFastDl.disabled')}
@@ -283,20 +283,20 @@ export default function ServerFastDlPage() {
                         {config?.enabled && (
                             <div className='mt-6 space-y-4'>
                                 <div>
-                                    <Label className='text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 block'>
+                                    <Label className='text-muted-foreground mb-2 block text-xs font-bold tracking-wider uppercase'>
                                         {t('serverFastDl.directory')}
                                     </Label>
-                                    <div className='text-sm text-foreground bg-secondary/50 p-3 rounded-lg border border-border/50 font-mono'>
+                                    <div className='text-foreground bg-secondary/50 border-border/50 rounded-lg border p-3 font-mono text-sm'>
                                         /{config.directory}
                                     </div>
                                 </div>
 
                                 {config.url && (
                                     <div>
-                                        <Label className='text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 block'>
+                                        <Label className='text-muted-foreground mb-2 block text-xs font-bold tracking-wider uppercase'>
                                             {t('serverFastDl.fastDlUrl')}
                                         </Label>
-                                        <div className='text-sm text-foreground bg-secondary/50 p-3 rounded-lg border border-border/50 break-all'>
+                                        <div className='text-foreground bg-secondary/50 border-border/50 rounded-lg border p-3 text-sm break-all'>
                                             {config.url}
                                         </div>
                                     </div>
@@ -304,11 +304,11 @@ export default function ServerFastDlPage() {
 
                                 {config.command && (
                                     <div>
-                                        <Label className='text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 block'>
+                                        <Label className='text-muted-foreground mb-2 block text-xs font-bold tracking-wider uppercase'>
                                             {t('serverFastDl.gameServerCommand')}
                                         </Label>
                                         <div className='flex items-center gap-2'>
-                                            <code className='flex-1 text-sm bg-gray-900 text-green-400 p-3 rounded-lg font-mono break-all border border-border/50'>
+                                            <code className='border-border/50 flex-1 rounded-lg border bg-gray-900 p-3 font-mono text-sm break-all text-green-400'>
                                                 {config.command}
                                             </code>
                                             <Button
@@ -325,7 +325,7 @@ export default function ServerFastDlPage() {
                                                 )}
                                             </Button>
                                         </div>
-                                        <p className='mt-2 text-xs text-muted-foreground'>
+                                        <p className='text-muted-foreground mt-2 text-xs'>
                                             {t('serverFastDl.commandHelp')}
                                         </p>
                                     </div>
@@ -336,9 +336,9 @@ export default function ServerFastDlPage() {
 
                     {/* Controls */}
                     {!config?.enabled ? (
-                        <div className='space-y-4 pt-4 border-t border-border/50'>
+                        <div className='border-border/50 space-y-4 border-t pt-4'>
                             <div>
-                                <Label className='text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 block'>
+                                <Label className='text-muted-foreground mb-2 block text-xs font-bold tracking-wider uppercase'>
                                     {t('serverFastDl.directory')} ({t('common.optional')})
                                 </Label>
                                 <Input
@@ -347,35 +347,35 @@ export default function ServerFastDlPage() {
                                     onChange={(e) => setCustomDirectory(e.target.value)}
                                     placeholder='fastdl'
                                     disabled={saving}
-                                    className='h-12 bg-secondary/50 border-border/50 focus:border-primary/50 font-medium text-base rounded-xl'
+                                    className='bg-secondary/50 border-border/50 focus:border-primary/50 h-12 rounded-xl text-base font-medium'
                                 />
-                                <p className='mt-2 text-xs text-muted-foreground'>{t('serverFastDl.directoryHelp')}</p>
+                                <p className='text-muted-foreground mt-2 text-xs'>{t('serverFastDl.directoryHelp')}</p>
                             </div>
                             <Button onClick={handleEnable} disabled={saving} className='w-full' variant='default'>
                                 {saving ? (
                                     <>
-                                        <Loader2 className='h-4 w-4 animate-spin mr-2' />
+                                        <Loader2 className='mr-2 h-4 w-4 animate-spin' />
                                         {t('serverFastDl.enabling')}
                                     </>
                                 ) : (
                                     <>
-                                        <CheckCircle2 className='h-4 w-4 mr-2' />
+                                        <CheckCircle2 className='mr-2 h-4 w-4' />
                                         {t('serverFastDl.enableFastDl')}
                                     </>
                                 )}
                             </Button>
                         </div>
                     ) : (
-                        <div className='pt-4 border-t border-border/50'>
+                        <div className='border-border/50 border-t pt-4'>
                             <Button onClick={handleDisable} disabled={saving} className='w-full' variant='destructive'>
                                 {saving ? (
                                     <>
-                                        <Loader2 className='h-4 w-4 animate-spin mr-2' />
+                                        <Loader2 className='mr-2 h-4 w-4 animate-spin' />
                                         {t('serverFastDl.disabling')}
                                     </>
                                 ) : (
                                     <>
-                                        <AlertCircle className='h-4 w-4 mr-2' />
+                                        <AlertCircle className='mr-2 h-4 w-4' />
                                         {t('serverFastDl.disableFastDl')}
                                     </>
                                 )}
@@ -384,14 +384,14 @@ export default function ServerFastDlPage() {
                     )}
 
                     {/* Info Box */}
-                    <div className='mt-6 p-4 bg-blue-500/5 border border-blue-500/10 rounded-xl'>
+                    <div className='mt-6 rounded-xl border border-blue-500/10 bg-blue-500/5 p-4'>
                         <div className='flex items-start gap-3'>
-                            <Info className='h-5 w-5 text-blue-500 mt-0.5 shrink-0' />
+                            <Info className='mt-0.5 h-5 w-5 shrink-0 text-blue-500' />
                             <div className='space-y-2'>
-                                <h4 className='text-sm font-semibold text-blue-500 uppercase tracking-wide'>
+                                <h4 className='text-sm font-semibold tracking-wide text-blue-500 uppercase'>
                                     {t('serverFastDl.howItWorks')}
                                 </h4>
-                                <ul className='text-xs text-muted-foreground space-y-1 list-disc list-inside'>
+                                <ul className='text-muted-foreground list-inside list-disc space-y-1 text-xs'>
                                     <li>{t('serverFastDl.step1')}</li>
                                     <li>{t('serverFastDl.step2')}</li>
                                     <li>{t('serverFastDl.step3')}</li>

@@ -157,20 +157,20 @@ export default function TicketStatusesPage() {
                                 setCreateOpen(true);
                             }}
                         >
-                            <Plus className='h-4 w-4 mr-2' />
+                            <Plus className='mr-2 h-4 w-4' />
                             {t('admin.tickets.statuses.create')}
                         </Button>
                     }
                 />
 
-                <div className='flex flex-col sm:flex-row gap-4 items-center bg-card/40 backdrop-blur-md p-4 rounded-2xl shadow-sm'>
-                    <div className='relative flex-1 group w-full'>
-                        <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
+                <div className='bg-card/40 flex flex-col items-center gap-4 rounded-2xl p-4 shadow-sm backdrop-blur-md sm:flex-row'>
+                    <div className='group relative w-full flex-1'>
+                        <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
                         <Input
                             placeholder={t('admin.tickets.statuses.search_placeholder')}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className='pl-10 h-11 w-full'
+                            className='h-11 w-full pl-10'
                         />
                     </div>
                 </div>
@@ -248,7 +248,7 @@ export default function TicketStatusesPage() {
                                         id='create-color'
                                         value={form.color}
                                         onChange={(e) => setForm({ ...form, color: e.target.value })}
-                                        className='w-12 p-1 h-11'
+                                        className='h-11 w-12 p-1'
                                     />
                                     <Input
                                         value={form.color}
@@ -293,7 +293,7 @@ export default function TicketStatusesPage() {
                                             id='edit-color'
                                             value={form.color}
                                             onChange={(e) => setForm({ ...form, color: e.target.value })}
-                                            className='w-12 p-1 h-11'
+                                            className='h-11 w-12 p-1'
                                         />
                                         <Input
                                             value={form.color}
@@ -313,19 +313,19 @@ export default function TicketStatusesPage() {
                     </div>
                 </Sheet>
 
-                <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-10'>
+                <div className='grid grid-cols-1 gap-6 pt-10 md:grid-cols-2 lg:grid-cols-3'>
                     <PageCard title={t('admin.tickets.statuses.help.workflow.title')} icon={GitBranch}>
-                        <p className='text-sm text-muted-foreground leading-relaxed'>
+                        <p className='text-muted-foreground text-sm leading-relaxed'>
                             {t('admin.tickets.statuses.help.workflow.description')}
                         </p>
                     </PageCard>
                     <PageCard title={t('admin.tickets.statuses.help.tracking.title')} icon={Eye}>
-                        <p className='text-sm text-muted-foreground leading-relaxed'>
+                        <p className='text-muted-foreground text-sm leading-relaxed'>
                             {t('admin.tickets.statuses.help.tracking.description')}
                         </p>
                     </PageCard>
                     <PageCard title={t('admin.tickets.statuses.help.states.title')} icon={Settings2} variant='danger'>
-                        <p className='text-sm text-muted-foreground leading-relaxed'>
+                        <p className='text-muted-foreground text-sm leading-relaxed'>
                             {t('admin.tickets.statuses.help.states.description')}
                         </p>
                     </PageCard>

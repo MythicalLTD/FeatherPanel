@@ -112,7 +112,7 @@ export default function BackgroundCustomizer({ children, open, onOpenChange }: B
                     <button
                         type='button'
                         onClick={() => setDialogOpen(true)}
-                        className='flex h-10 w-10 items-center justify-center rounded-full border border-border/50 bg-background/90 backdrop-blur-md transition-all duration-200 hover:scale-110 hover:bg-background'
+                        className='border-border/50 bg-background/90 hover:bg-background flex h-10 w-10 items-center justify-center rounded-full border backdrop-blur-md transition-all duration-200 hover:scale-110'
                         title={t('appearance.background.customize')}
                     >
                         <ImageIcon className='h-4 w-4' aria-hidden='true' />
@@ -144,15 +144,15 @@ export default function BackgroundCustomizer({ children, open, onOpenChange }: B
                                 leaveFrom='opacity-100 scale-100'
                                 leaveTo='opacity-0 scale-95'
                             >
-                                <DialogPanel className='w-full max-w-lg transform overflow-hidden rounded-2xl bg-card border border-border/50 p-6 transition-all'>
-                                    <div className='flex items-center justify-between mb-6'>
-                                        <DialogTitle className='text-lg font-semibold text-foreground'>
+                                <DialogPanel className='bg-card border-border/50 w-full max-w-lg transform overflow-hidden rounded-2xl border p-6 transition-all'>
+                                    <div className='mb-6 flex items-center justify-between'>
+                                        <DialogTitle className='text-foreground text-lg font-semibold'>
                                             {t('appearance.background.title')}
                                         </DialogTitle>
                                         <button
                                             type='button'
                                             onClick={() => setDialogOpen(false)}
-                                            className='rounded-lg p-1 hover:bg-accent transition-colors'
+                                            className='hover:bg-accent rounded-lg p-1 transition-colors'
                                         >
                                             <XIcon className='h-5 w-5' />
                                         </button>
@@ -163,39 +163,36 @@ export default function BackgroundCustomizer({ children, open, onOpenChange }: B
                                             backgroundType === 'aurora' ? 0 : backgroundType === 'gradient' ? 1 : 2
                                         }
                                     >
-                                        <TabList className='flex space-x-1 rounded-xl bg-muted p-1 mb-6'>
+                                        <TabList className='bg-muted mb-6 flex space-x-1 rounded-xl p-1'>
                                             <Tab
                                                 className={({ selected }) =>
-                                                    `w-full rounded-lg py-2.5 text-sm font-medium transition-all
-                        ${
-                            selected
-                                ? 'bg-background text-foreground shadow'
-                                : 'text-muted-foreground hover:bg-background/50'
-                        }`
+                                                    `w-full rounded-lg py-2.5 text-sm font-medium transition-all ${
+                                                        selected
+                                                            ? 'bg-background text-foreground shadow'
+                                                            : 'text-muted-foreground hover:bg-background/50'
+                                                    }`
                                                 }
                                             >
                                                 {t('appearance.background.aurora')}
                                             </Tab>
                                             <Tab
                                                 className={({ selected }) =>
-                                                    `w-full rounded-lg py-2.5 text-sm font-medium transition-all
-                        ${
-                            selected
-                                ? 'bg-background text-foreground shadow'
-                                : 'text-muted-foreground hover:bg-background/50'
-                        }`
+                                                    `w-full rounded-lg py-2.5 text-sm font-medium transition-all ${
+                                                        selected
+                                                            ? 'bg-background text-foreground shadow'
+                                                            : 'text-muted-foreground hover:bg-background/50'
+                                                    }`
                                                 }
                                             >
                                                 {t('appearance.background.gradients')}
                                             </Tab>
                                             <Tab
                                                 className={({ selected }) =>
-                                                    `w-full rounded-lg py-2.5 text-sm font-medium transition-all
-                        ${
-                            selected
-                                ? 'bg-background text-foreground shadow'
-                                : 'text-muted-foreground hover:bg-background/50'
-                        }`
+                                                    `w-full rounded-lg py-2.5 text-sm font-medium transition-all ${
+                                                        selected
+                                                            ? 'bg-background text-foreground shadow'
+                                                            : 'text-muted-foreground hover:bg-background/50'
+                                                    }`
                                                 }
                                             >
                                                 {t('appearance.background.custom')}
@@ -204,10 +201,10 @@ export default function BackgroundCustomizer({ children, open, onOpenChange }: B
 
                                         <TabPanels>
                                             <TabPanel>
-                                                <p className='text-xs text-muted-foreground mb-3'>
+                                                <p className='text-muted-foreground mb-3 text-xs'>
                                                     {t('appearance.background.auroraDescription')}
                                                 </p>
-                                                <div className='grid grid-cols-2 sm:grid-cols-3 gap-3'>
+                                                <div className='grid grid-cols-2 gap-3 sm:grid-cols-3'>
                                                     {(
                                                         [
                                                             'aurora',
@@ -228,19 +225,19 @@ export default function BackgroundCustomizer({ children, open, onOpenChange }: B
                                                                     setBackgroundAnimatedVariant(variant);
                                                                     setDialogOpen(false);
                                                                 }}
-                                                                className={`relative p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${
+                                                                className={`relative flex flex-col items-center gap-2 rounded-xl border-2 p-4 transition-all ${
                                                                     isSelected
-                                                                        ? 'border-primary ring-2 ring-primary/20'
+                                                                        ? 'border-primary ring-primary/20 ring-2'
                                                                         : 'border-border hover:border-primary/50'
                                                                 }`}
                                                             >
                                                                 <div
-                                                                    className='h-14 w-full rounded-lg shrink-0 bg-linear-to-r from-primary/40 via-primary/20 to-primary/40'
+                                                                    className='from-primary/40 via-primary/20 to-primary/40 h-14 w-full shrink-0 rounded-lg bg-linear-to-r'
                                                                     style={{
                                                                         opacity: isSelected ? 1 : 0.8,
                                                                     }}
                                                                 />
-                                                                <p className='text-xs font-medium text-center'>
+                                                                <p className='text-center text-xs font-medium'>
                                                                     {t(`appearance.background.variants.${variant}`)}
                                                                 </p>
                                                             </button>
@@ -255,14 +252,14 @@ export default function BackgroundCustomizer({ children, open, onOpenChange }: B
                                                         setBackgroundType('gradient');
                                                         setDialogOpen(false);
                                                     }}
-                                                    className={`relative w-full p-4 rounded-xl border-2 transition-all flex items-center gap-4 ${
+                                                    className={`relative flex w-full items-center gap-4 rounded-xl border-2 p-4 transition-all ${
                                                         backgroundType === 'gradient'
-                                                            ? 'border-primary ring-2 ring-primary/20'
+                                                            ? 'border-primary ring-primary/20 ring-2'
                                                             : 'border-border hover:border-primary/50'
                                                     }`}
                                                 >
                                                     <div
-                                                        className='h-20 w-24 rounded-lg shrink-0'
+                                                        className='h-20 w-24 shrink-0 rounded-lg'
                                                         style={{
                                                             background:
                                                                 'linear-gradient(135deg, hsl(var(--primary) / 0.2) 0%, hsl(var(--primary) / 0.06) 50%, hsl(var(--primary) / 0.2) 100%)',
@@ -272,7 +269,7 @@ export default function BackgroundCustomizer({ children, open, onOpenChange }: B
                                                         <p className='text-sm font-medium'>
                                                             {t('appearance.background.themeGradient')}
                                                         </p>
-                                                        <p className='text-xs text-muted-foreground mt-0.5'>
+                                                        <p className='text-muted-foreground mt-0.5 text-xs'>
                                                             {t('appearance.background.themeGradientDescription')}
                                                         </p>
                                                     </div>
@@ -284,13 +281,13 @@ export default function BackgroundCustomizer({ children, open, onOpenChange }: B
                                                     <div className='grid grid-cols-3 gap-3'>
                                                         <button
                                                             onClick={() => setBackgroundType('solid')}
-                                                            className={`relative p-4 rounded-xl border-2 transition-all ${
+                                                            className={`relative rounded-xl border-2 p-4 transition-all ${
                                                                 backgroundType === 'solid'
-                                                                    ? 'border-primary ring-2 ring-primary/20'
+                                                                    ? 'border-primary ring-primary/20 ring-2'
                                                                     : 'border-border hover:border-primary/50'
                                                             }`}
                                                         >
-                                                            <div className='h-16 rounded-lg mb-2 bg-background' />
+                                                            <div className='bg-background mb-2 h-16 rounded-lg' />
                                                             <p className='text-xs font-medium'>
                                                                 {t('appearance.background.solidColor')}
                                                             </p>
@@ -300,14 +297,14 @@ export default function BackgroundCustomizer({ children, open, onOpenChange }: B
                                                                 setBackgroundType('pattern');
                                                                 setDialogOpen(false);
                                                             }}
-                                                            className={`relative p-4 rounded-xl border-2 transition-all ${
+                                                            className={`relative rounded-xl border-2 p-4 transition-all ${
                                                                 backgroundType === 'pattern'
-                                                                    ? 'border-primary ring-2 ring-primary/20'
+                                                                    ? 'border-primary ring-primary/20 ring-2'
                                                                     : 'border-border hover:border-primary/50'
                                                             }`}
                                                         >
                                                             <div
-                                                                className='h-16 rounded-lg mb-2 bg-background opacity-50'
+                                                                className='bg-background mb-2 h-16 rounded-lg opacity-50'
                                                                 style={{
                                                                     backgroundImage:
                                                                         'radial-gradient(circle, currentColor 1px, transparent 1px)',
@@ -320,14 +317,14 @@ export default function BackgroundCustomizer({ children, open, onOpenChange }: B
                                                         </button>
                                                         <button
                                                             onClick={() => setBackgroundType('image')}
-                                                            className={`relative p-4 rounded-xl border-2 transition-all ${
+                                                            className={`relative rounded-xl border-2 p-4 transition-all ${
                                                                 backgroundType === 'image'
-                                                                    ? 'border-primary ring-2 ring-primary/20'
+                                                                    ? 'border-primary ring-primary/20 ring-2'
                                                                     : 'border-border hover:border-primary/50'
                                                             }`}
                                                         >
-                                                            <div className='h-16 rounded-lg mb-2 bg-muted flex items-center justify-center'>
-                                                                <ImageIcon className='h-6 w-6 text-muted-foreground' />
+                                                            <div className='bg-muted mb-2 flex h-16 items-center justify-center rounded-lg'>
+                                                                <ImageIcon className='text-muted-foreground h-6 w-6' />
                                                             </div>
                                                             <p className='text-xs font-medium'>
                                                                 {t('appearance.background.customImage')}
@@ -339,7 +336,7 @@ export default function BackgroundCustomizer({ children, open, onOpenChange }: B
                                                         <>
                                                             {backgroundType === 'solid' && (
                                                                 <div>
-                                                                    <label className='block text-sm font-medium mb-2'>
+                                                                    <label className='mb-2 block text-sm font-medium'>
                                                                         {t('appearance.background.customColor')}
                                                                     </label>
                                                                     <div className='flex items-center gap-3'>
@@ -354,7 +351,7 @@ export default function BackgroundCustomizer({ children, open, onOpenChange }: B
                                                                                 setBackgroundImage(e.target.value);
                                                                                 setBackgroundType('solid');
                                                                             }}
-                                                                            className='h-10 w-14 rounded-lg border border-border cursor-pointer'
+                                                                            className='border-border h-10 w-14 cursor-pointer rounded-lg border'
                                                                         />
                                                                         <input
                                                                             type='text'
@@ -371,10 +368,10 @@ export default function BackgroundCustomizer({ children, open, onOpenChange }: B
                                                                                 }
                                                                             }}
                                                                             placeholder='#000000'
-                                                                            className='flex-1 px-3 py-2 rounded-lg border border-input bg-background text-foreground text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary'
+                                                                            className='border-input bg-background text-foreground focus:ring-primary flex-1 rounded-lg border px-3 py-2 font-mono text-sm focus:ring-2 focus:outline-none'
                                                                         />
                                                                     </div>
-                                                                    <p className='text-xs text-muted-foreground mt-1'>
+                                                                    <p className='text-muted-foreground mt-1 text-xs'>
                                                                         {t('appearance.background.customColorHelp')}
                                                                     </p>
                                                                 </div>
@@ -382,7 +379,7 @@ export default function BackgroundCustomizer({ children, open, onOpenChange }: B
                                                             {backgroundType === 'image' && (
                                                                 <div className='space-y-3'>
                                                                     <div>
-                                                                        <label className='block text-sm font-medium mb-2'>
+                                                                        <label className='mb-2 block text-sm font-medium'>
                                                                             {t('appearance.background.uploadLocal')}
                                                                         </label>
                                                                         <input
@@ -399,22 +396,22 @@ export default function BackgroundCustomizer({ children, open, onOpenChange }: B
                                                                             variant='outline'
                                                                             className='w-full'
                                                                         >
-                                                                            <ArrowUp className='h-4 w-4 mr-2' />
+                                                                            <ArrowUp className='mr-2 h-4 w-4' />
                                                                             {t('appearance.background.chooseFile')}
                                                                         </Button>
                                                                     </div>
                                                                     <div className='relative'>
                                                                         <div className='absolute inset-0 flex items-center'>
-                                                                            <div className='w-full border-t border-border' />
+                                                                            <div className='border-border w-full border-t' />
                                                                         </div>
                                                                         <div className='relative flex justify-center text-xs'>
-                                                                            <span className='bg-card px-2 text-muted-foreground'>
+                                                                            <span className='bg-card text-muted-foreground px-2'>
                                                                                 {t('appearance.background.or')}
                                                                             </span>
                                                                         </div>
                                                                     </div>
                                                                     <div>
-                                                                        <label className='block text-sm font-medium mb-2'>
+                                                                        <label className='mb-2 block text-sm font-medium'>
                                                                             {t('appearance.background.imageUrl')}
                                                                         </label>
                                                                         <input
@@ -424,11 +421,11 @@ export default function BackgroundCustomizer({ children, open, onOpenChange }: B
                                                                                 setImageUrl(e.target.value)
                                                                             }
                                                                             placeholder='https://example.com/image.jpg'
-                                                                            className='w-full px-3 py-2 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary'
+                                                                            className='border-input bg-background text-foreground focus:ring-primary w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:outline-none'
                                                                         />
                                                                         <Button
                                                                             onClick={handleSaveUrl}
-                                                                            className='w-full mt-2'
+                                                                            className='mt-2 w-full'
                                                                         >
                                                                             {t('appearance.background.applyImage')}
                                                                         </Button>
@@ -442,9 +439,9 @@ export default function BackgroundCustomizer({ children, open, onOpenChange }: B
                                         </TabPanels>
                                     </TabGroup>
 
-                                    <div className='mt-6 pt-6 border-t border-border/50 space-y-5'>
+                                    <div className='border-border/50 mt-6 space-y-5 border-t pt-6'>
                                         <div>
-                                            <label className='block text-sm font-medium text-foreground mb-2'>
+                                            <label className='text-foreground mb-2 block text-sm font-medium'>
                                                 {t('appearance.background.backdropBlur')}
                                             </label>
                                             <div className='flex flex-wrap gap-2'>
@@ -465,7 +462,7 @@ export default function BackgroundCustomizer({ children, open, onOpenChange }: B
                                             </div>
                                         </div>
                                         <div>
-                                            <label className='block text-sm font-medium text-foreground mb-2'>
+                                            <label className='text-foreground mb-2 block text-sm font-medium'>
                                                 {t('appearance.background.backdropDarken')} ({backdropDarken}%)
                                             </label>
                                             <input
@@ -474,12 +471,12 @@ export default function BackgroundCustomizer({ children, open, onOpenChange }: B
                                                 max={100}
                                                 value={backdropDarken}
                                                 onChange={(e) => setBackdropDarken(Number(e.target.value))}
-                                                className='w-full h-2 rounded-lg appearance-none bg-muted accent-primary'
+                                                className='bg-muted accent-primary h-2 w-full appearance-none rounded-lg'
                                             />
                                         </div>
                                         {backgroundType === 'image' && (
                                             <div>
-                                                <label className='block text-sm font-medium text-foreground mb-2'>
+                                                <label className='text-foreground mb-2 block text-sm font-medium'>
                                                     {t('appearance.background.imageFit.title')}
                                                 </label>
                                                 <div className='flex flex-wrap gap-2'>
@@ -503,7 +500,7 @@ export default function BackgroundCustomizer({ children, open, onOpenChange }: B
                                         {/* Motion level controls removed – motion is now always off ('none'). */}
 
                                         <div>
-                                            <label className='block text-sm font-medium text-foreground mb-2'>
+                                            <label className='text-foreground mb-2 block text-sm font-medium'>
                                                 Fonts
                                             </label>
                                             <div className='space-y-1'>

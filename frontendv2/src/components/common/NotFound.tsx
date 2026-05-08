@@ -73,7 +73,7 @@ export default function NotFound() {
     };
 
     return (
-        <div className='relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-background p-4'>
+        <div className='bg-background relative flex min-h-screen flex-col items-center justify-center overflow-hidden p-4'>
             {renderBackground()}
             {hasOverlay && (
                 <div className='pointer-events-none absolute inset-0 z-[1]' style={overlayStyle} aria-hidden />
@@ -84,50 +84,50 @@ export default function NotFound() {
             </div>
 
             <div className='relative z-10 w-full max-w-2xl'>
-                <div className='relative group'>
-                    <div className='absolute -inset-0.5 bg-linear-to-r from-primary/50 to-primary/30 rounded-3xl blur opacity-20 group-hover:opacity-30 transition duration-1000' />
+                <div className='group relative'>
+                    <div className='from-primary/50 to-primary/30 absolute -inset-0.5 rounded-3xl bg-linear-to-r opacity-20 blur transition duration-1000 group-hover:opacity-30' />
 
-                    <div className='relative rounded-3xl border border-border/50 bg-card/95 backdrop-blur-xl p-8 md:p-12 '>
-                        <div className='text-center space-y-6'>
+                    <div className='border-border/50 bg-card/95 relative rounded-3xl border p-8 backdrop-blur-xl md:p-12'>
+                        <div className='space-y-6 text-center'>
                             <div className='relative'>
-                                <h1 className='text-9xl md:text-[12rem] font-black bg-linear-to-br from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent leading-none'>
+                                <h1 className='from-primary via-primary/80 to-primary/60 bg-linear-to-br bg-clip-text text-9xl leading-none font-black text-transparent md:text-[12rem]'>
                                     404
                                 </h1>
                                 <div className='absolute inset-0 flex items-center justify-center'>
-                                    <div className='text-6xl md:text-7xl opacity-10'>🔍</div>
+                                    <div className='text-6xl opacity-10 md:text-7xl'>🔍</div>
                                 </div>
                             </div>
 
                             <div className='space-y-3'>
-                                <h2 className='text-2xl md:text-3xl font-bold tracking-tight'>
+                                <h2 className='text-2xl font-bold tracking-tight md:text-3xl'>
                                     {t('errors.404.title')}
                                 </h2>
-                                <p className='text-muted-foreground max-w-md mx-auto'>{t('errors.404.message')}</p>
+                                <p className='text-muted-foreground mx-auto max-w-md'>{t('errors.404.message')}</p>
                             </div>
 
-                            <div className='flex flex-col sm:flex-row gap-3 justify-center pt-4'>
+                            <div className='flex flex-col justify-center gap-3 pt-4 sm:flex-row'>
                                 <Button onClick={() => router.back()} variant='outline' className='group'>
-                                    <ArrowLeft className='h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform' />
+                                    <ArrowLeft className='mr-2 h-4 w-4 transition-transform group-hover:-translate-x-1' />
                                     {t('errors.404.go_back')}
                                 </Button>
                                 <Link href='/'>
-                                    <Button className='w-full sm:w-auto group'>
-                                        <Home className='h-4 w-4 mr-2' />
+                                    <Button className='group w-full sm:w-auto'>
+                                        <Home className='mr-2 h-4 w-4' />
                                         {t('errors.404.go_home')}
                                     </Button>
                                 </Link>
                             </div>
 
-                            <div className='pt-6 border-t border-border/50'>
-                                <p className='text-sm text-muted-foreground mb-3'>{t('errors.404.looking_for')}</p>
-                                <div className='flex flex-wrap gap-2 justify-center'>
+                            <div className='border-border/50 border-t pt-6'>
+                                <p className='text-muted-foreground mb-3 text-sm'>{t('errors.404.looking_for')}</p>
+                                <div className='flex flex-wrap justify-center gap-2'>
                                     <Link href='/auth/login'>
-                                        <button className='text-sm px-4 py-2 rounded-lg bg-muted hover:bg-muted/80 transition-colors'>
+                                        <button className='bg-muted hover:bg-muted/80 rounded-lg px-4 py-2 text-sm transition-colors'>
                                             {t('errors.404.login')}
                                         </button>
                                     </Link>
                                     <Link href='/dashboard'>
-                                        <button className='text-sm px-4 py-2 rounded-lg bg-muted hover:bg-muted/80 transition-colors'>
+                                        <button className='bg-muted hover:bg-muted/80 rounded-lg px-4 py-2 text-sm transition-colors'>
                                             {t('errors.404.dashboard')}
                                         </button>
                                     </Link>
@@ -138,7 +138,7 @@ export default function NotFound() {
                 </div>
             </div>
 
-            <div className='relative z-10 mt-8 text-center text-xs text-muted-foreground'>
+            <div className='text-muted-foreground relative z-10 mt-8 text-center text-xs'>
                 <p className='mb-2 font-medium'>
                     {t('branding.running_on', { name: 'FeatherPanel', version: core?.version || '' }).trim()}
                 </p>
@@ -146,7 +146,7 @@ export default function NotFound() {
                     href='https://featherpanel.com'
                     target='_blank'
                     rel='noopener noreferrer'
-                    className='inline-flex items-center gap-1.5 text-primary transition-all duration-200 hover:text-primary/80 hover:underline underline-offset-4 font-medium'
+                    className='text-primary hover:text-primary/80 inline-flex items-center gap-1.5 font-medium underline-offset-4 transition-all duration-200 hover:underline'
                 >
                     {t('branding.copyright', { company: 'MythicalSystems' })}
                     <svg className='h-3.5 w-3.5' fill='none' viewBox='0 0 24 24' stroke='currentColor'>

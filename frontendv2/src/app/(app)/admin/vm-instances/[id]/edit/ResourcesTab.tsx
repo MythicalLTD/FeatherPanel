@@ -89,7 +89,7 @@ export function ResourcesTab({
         <form onSubmit={onSave}>
             <PageCard title={t('admin.vmInstances.edit_tabs.resources') ?? 'Resources'} icon={Cpu}>
                 {config ? (
-                    <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
+                    <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
                         <div>
                             <Label>{t('admin.vmInstances.memory') ?? 'Memory (MB)'}</Label>
                             <Input
@@ -97,7 +97,7 @@ export function ResourcesTab({
                                 min={128}
                                 value={memory}
                                 onChange={(e) => setMemory(parseInt(e.target.value, 10) || 512)}
-                                className='mt-1 bg-muted/30 h-11 rounded-xl'
+                                className='bg-muted/30 mt-1 h-11 rounded-xl'
                             />
                         </div>
                         <div>
@@ -107,7 +107,7 @@ export function ResourcesTab({
                                 min={1}
                                 value={cpus}
                                 onChange={(e) => setCpus(parseInt(e.target.value, 10) || 1)}
-                                className='mt-1 bg-muted/30 h-11 rounded-xl'
+                                className='bg-muted/30 mt-1 h-11 rounded-xl'
                             />
                         </div>
                         <div>
@@ -117,7 +117,7 @@ export function ResourcesTab({
                                 min={1}
                                 value={cores}
                                 onChange={(e) => setCores(parseInt(e.target.value, 10) || 1)}
-                                className='mt-1 bg-muted/30 h-11 rounded-xl'
+                                className='bg-muted/30 mt-1 h-11 rounded-xl'
                             />
                         </div>
                         <div className='flex items-center gap-2 pt-8'>
@@ -136,7 +136,7 @@ export function ResourcesTab({
                                 <div className='space-y-2'>
                                     <Label>{t('admin.vmInstances.bios_mode') ?? 'BIOS / Firmware'}</Label>
                                     <select
-                                        className='mt-1 bg-muted/30 h-11 rounded-xl px-3 text-sm'
+                                        className='bg-muted/30 mt-1 h-11 rounded-xl px-3 text-sm'
                                         value={biosMode}
                                         onChange={(e) => setBiosMode(e.target.value)}
                                     >
@@ -160,7 +160,7 @@ export function ResourcesTab({
                                     </div>
                                     {efiEnabled && (
                                         <select
-                                            className='mt-1 bg-muted/30 h-11 rounded-xl px-3 text-sm'
+                                            className='bg-muted/30 mt-1 h-11 rounded-xl px-3 text-sm'
                                             value={nodeEfiStorageDefault}
                                             disabled
                                         >
@@ -191,7 +191,7 @@ export function ResourcesTab({
                                     </div>
                                     {tpmEnabled && (
                                         <select
-                                            className='mt-1 bg-muted/30 h-11 rounded-xl px-3 text-sm'
+                                            className='bg-muted/30 mt-1 h-11 rounded-xl px-3 text-sm'
                                             value={nodeTpmStorageDefault}
                                             disabled
                                         >
@@ -211,8 +211,8 @@ export function ResourcesTab({
 
                         {showBackup && (
                             <>
-                                <div className='sm:col-span-2 border-t border-border/40 pt-4 mt-2'>
-                                    <p className='text-sm font-medium mb-3'>
+                                <div className='border-border/40 mt-2 border-t pt-4 sm:col-span-2'>
+                                    <p className='mb-3 text-sm font-medium'>
                                         {t('admin.vmInstances.backups.policy_section') ?? 'Backup policy'}
                                     </p>
                                 </div>
@@ -230,7 +230,7 @@ export function ResourcesTab({
                                         }
                                         className='bg-muted/30 h-11 rounded-xl'
                                     />
-                                    <p className='text-xs text-muted-foreground'>
+                                    <p className='text-muted-foreground text-xs'>
                                         {t('admin.vmInstances.backups.limit_help')}
                                     </p>
                                 </div>
@@ -239,7 +239,7 @@ export function ResourcesTab({
                                         {t('admin.vmInstances.backups.retention_label_edit') ?? 'Retention override'}
                                     </Label>
                                     <select
-                                        className='w-full h-11 rounded-xl border border-input bg-muted/30 px-3 text-sm'
+                                        className='border-input bg-muted/30 h-11 w-full rounded-xl border px-3 text-sm'
                                         value={vmBackupRetention}
                                         onChange={(e) =>
                                             setVmBackupRetention(
@@ -257,7 +257,7 @@ export function ResourcesTab({
                                             {t('admin.servers.form.backup_retention_fifo')}
                                         </option>
                                     </select>
-                                    <p className='text-xs text-muted-foreground'>
+                                    <p className='text-muted-foreground text-xs'>
                                         {t('admin.vmInstances.backups.retention_help_edit')}
                                     </p>
                                 </div>
@@ -265,14 +265,14 @@ export function ResourcesTab({
                         )}
                     </div>
                 ) : (
-                    <p className='text-sm text-muted-foreground flex items-center gap-2'>
+                    <p className='text-muted-foreground flex items-center gap-2 text-sm'>
                         <Loader2 className='h-4 w-4 animate-spin' /> {t('common.loading')}
                     </p>
                 )}
             </PageCard>
-            <div className='flex justify-end mt-4'>
+            <div className='mt-4 flex justify-end'>
                 <Button type='submit' loading={saving} disabled={!config}>
-                    <Save className='h-4 w-4 mr-2' />
+                    <Save className='mr-2 h-4 w-4' />
                     {t('common.save_changes')}
                 </Button>
             </div>

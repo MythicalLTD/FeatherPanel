@@ -85,14 +85,14 @@ export function TicketList({ t }: TicketListProps) {
 
     if (loading) {
         return (
-            <div className='rounded-xl border border-border/50 bg-card/50 backdrop-blur-xl p-6 space-y-4'>
+            <div className='border-border/50 bg-card/50 space-y-4 rounded-xl border p-6 backdrop-blur-xl'>
                 <div className='flex items-center justify-between'>
-                    <div className='h-6 w-32 bg-muted animate-pulse rounded' />
-                    <div className='h-4 w-16 bg-muted animate-pulse rounded' />
+                    <div className='bg-muted h-6 w-32 animate-pulse rounded' />
+                    <div className='bg-muted h-4 w-16 animate-pulse rounded' />
                 </div>
                 <div className='space-y-3'>
                     {[1, 2, 3].map((i) => (
-                        <div key={i} className='h-16 bg-muted/50 animate-pulse rounded-lg' />
+                        <div key={i} className='bg-muted/50 h-16 animate-pulse rounded-lg' />
                     ))}
                 </div>
             </div>
@@ -104,36 +104,36 @@ export function TicketList({ t }: TicketListProps) {
     }
 
     return (
-        <div className='rounded-xl border border-border/50 bg-card/50 backdrop-blur-xl'>
-            <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-4 sm:p-6 border-b border-border min-w-0'>
-                <div className='flex items-center gap-2 min-w-0'>
-                    <Ticket className='h-5 w-5 text-muted-foreground' />
-                    <h2 className='text-base sm:text-lg font-bold truncate'>{t('dashboard.tickets.title')}</h2>
+        <div className='border-border/50 bg-card/50 rounded-xl border backdrop-blur-xl'>
+            <div className='border-border flex min-w-0 flex-col gap-2 border-b p-4 sm:flex-row sm:items-center sm:justify-between sm:p-6'>
+                <div className='flex min-w-0 items-center gap-2'>
+                    <Ticket className='text-muted-foreground h-5 w-5' />
+                    <h2 className='truncate text-base font-bold sm:text-lg'>{t('dashboard.tickets.title')}</h2>
                 </div>
                 <Link
                     href='/dashboard/tickets'
-                    className='text-xs sm:text-sm font-medium text-primary hover:text-primary/80 transition-colors self-start sm:self-auto whitespace-nowrap'
+                    className='text-primary hover:text-primary/80 self-start text-xs font-medium whitespace-nowrap transition-colors sm:self-auto sm:text-sm'
                 >
                     {t('dashboard.tickets.view_all')} &rarr;
                 </Link>
             </div>
 
-            <div className='divide-y divide-border'>
+            <div className='divide-border divide-y'>
                 {tickets.length > 0 ? (
                     tickets.map((ticket) => (
                         <Link
                             key={ticket.uuid}
                             href={`/dashboard/tickets/${ticket.uuid}`}
-                            className={`block p-4 hover:bg-muted/50 transition-colors group border-l-2 ${
+                            className={`hover:bg-muted/50 group block border-l-2 p-4 transition-colors ${
                                 ticket.has_unread_messages_since_last_reply
                                     ? 'border-l-red-500 bg-red-500/5'
                                     : 'border-l-transparent'
                             }`}
                         >
-                            <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 min-w-0'>
-                                <div className='flex items-start gap-3 sm:gap-4 min-w-0'>
+                            <div className='flex min-w-0 flex-col justify-between gap-3 sm:flex-row sm:items-center sm:gap-4'>
+                                <div className='flex min-w-0 items-start gap-3 sm:gap-4'>
                                     <div
-                                        className={`p-2 rounded-full shrink-0 mt-1 sm:mt-0 ${
+                                        className={`mt-1 shrink-0 rounded-full p-2 sm:mt-0 ${
                                             ticket.has_unread_messages_since_last_reply
                                                 ? 'bg-red-500/15 text-red-500'
                                                 : 'bg-primary/5 text-primary'
@@ -143,12 +143,12 @@ export function TicketList({ t }: TicketListProps) {
                                     </div>
                                     <div className='min-w-0'>
                                         <h4
-                                            className='font-medium text-foreground group-hover:text-primary transition-colors text-sm sm:text-base break-words line-clamp-2'
+                                            className='text-foreground group-hover:text-primary line-clamp-2 text-sm font-medium break-words transition-colors sm:text-base'
                                             title={ticket.title}
                                         >
                                             {ticket.title}
                                         </h4>
-                                        <div className='flex flex-wrap items-center gap-2 mt-1 text-xs text-muted-foreground'>
+                                        <div className='text-muted-foreground mt-1 flex flex-wrap items-center gap-2 text-xs'>
                                             <span className='font-mono'>#{ticket.id}</span>
                                             {ticket.has_unread_messages_since_last_reply && (
                                                 <>
@@ -170,11 +170,11 @@ export function TicketList({ t }: TicketListProps) {
                                     </div>
                                 </div>
 
-                                <div className='flex flex-wrap items-center gap-1.5 sm:gap-2 pl-10 sm:pl-0 min-w-0'>
+                                <div className='flex min-w-0 flex-wrap items-center gap-1.5 pl-10 sm:gap-2 sm:pl-0'>
                                     {ticket.has_unread_messages_since_last_reply && (
                                         <Badge
                                             variant='destructive'
-                                            className='text-[10px] px-1.5 py-0.5 max-w-[9rem] truncate'
+                                            className='max-w-[9rem] truncate px-1.5 py-0.5 text-[10px]'
                                         >
                                             NEW REPLY
                                         </Badge>
@@ -182,7 +182,7 @@ export function TicketList({ t }: TicketListProps) {
                                     {ticket.priority && (
                                         <Badge
                                             variant='secondary'
-                                            className='text-[10px] px-1.5 py-0.5 max-w-[9rem] truncate'
+                                            className='max-w-[9rem] truncate px-1.5 py-0.5 text-[10px]'
                                             style={
                                                 ticket.priority.color
                                                     ? { backgroundColor: ticket.priority.color, color: '#fff' }
@@ -195,7 +195,7 @@ export function TicketList({ t }: TicketListProps) {
                                     {ticket.status && (
                                         <Badge
                                             variant='outline'
-                                            className='text-[10px] px-1.5 py-0.5 max-w-[9rem] truncate'
+                                            className='max-w-[9rem] truncate px-1.5 py-0.5 text-[10px]'
                                             style={
                                                 ticket.status.color
                                                     ? { borderColor: ticket.status.color, color: ticket.status.color }
@@ -210,12 +210,12 @@ export function TicketList({ t }: TicketListProps) {
                         </Link>
                     ))
                 ) : (
-                    <div className='p-8 text-center text-muted-foreground'>
-                        <Ticket className='h-8 w-8 mx-auto mb-2 opacity-50' />
+                    <div className='text-muted-foreground p-8 text-center'>
+                        <Ticket className='mx-auto mb-2 h-8 w-8 opacity-50' />
                         <p>{t('dashboard.tickets.no_tickets')}</p>
                         <Link
                             href='/dashboard/tickets/create'
-                            className='mt-4 inline-flex items-center text-sm text-primary hover:underline'
+                            className='text-primary mt-4 inline-flex items-center text-sm hover:underline'
                         >
                             {t('dashboard.tickets.create_new')}
                         </Link>

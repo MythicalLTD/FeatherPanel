@@ -79,19 +79,19 @@ export function EulaWidget() {
     const { t } = useTranslation();
 
     return (
-        <div className='p-6 md:p-8 rounded-2xl md:rounded-[2.5rem] bg-card/50 border border-border/50 backdrop-blur-3xl relative group overflow-hidden'>
-            <div className='absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-3xl -mr-16 -mt-16 rounded-full group-hover:bg-primary/10 transition-all duration-700' />
+        <div className='bg-card/50 border-border/50 group relative overflow-hidden rounded-2xl border p-6 backdrop-blur-3xl md:rounded-[2.5rem] md:p-8'>
+            <div className='bg-primary/5 group-hover:bg-primary/10 absolute top-0 right-0 -mt-16 -mr-16 h-32 w-32 rounded-full blur-3xl transition-all duration-700' />
 
             <div className='relative z-10 space-y-6'>
                 <div className='flex items-center gap-4'>
-                    <div className='h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20'>
+                    <div className='bg-primary/10 text-primary border-primary/20 flex h-12 w-12 items-center justify-center rounded-2xl border'>
                         <FileText className='h-6 w-6' />
                     </div>
                     <div>
-                        <h2 className='text-2xl font-black uppercase tracking-tight'>
+                        <h2 className='text-2xl font-black tracking-tight uppercase'>
                             {t('admin.dashboard.eula.title') || 'End User License Agreement'}
                         </h2>
-                        <p className='text-sm text-muted-foreground font-bold'>
+                        <p className='text-muted-foreground text-sm font-bold'>
                             {t('admin.dashboard.eula.subtitle') || 'Terms and conditions for using FeatherPanel'}
                         </p>
                     </div>
@@ -101,17 +101,17 @@ export function EulaWidget() {
                     <ReactMarkdown
                         components={{
                             h1: ({ children }) => (
-                                <h1 className='text-xl font-black uppercase tracking-tight mb-4'>{children}</h1>
+                                <h1 className='mb-4 text-xl font-black tracking-tight uppercase'>{children}</h1>
                             ),
                             h2: ({ children }) => (
-                                <h2 className='text-lg font-black uppercase tracking-tight mt-6 mb-3'>{children}</h2>
+                                <h2 className='mt-6 mb-3 text-lg font-black tracking-tight uppercase'>{children}</h2>
                             ),
-                            p: ({ children }) => <p className='text-sm text-muted-foreground mb-3'>{children}</p>,
-                            ul: ({ children }) => <ul className='list-disc list-inside space-y-1 mb-3'>{children}</ul>,
-                            li: ({ children }) => <li className='text-sm text-muted-foreground'>{children}</li>,
-                            strong: ({ children }) => <strong className='font-bold text-foreground'>{children}</strong>,
-                            em: ({ children }) => <em className='italic text-muted-foreground/80'>{children}</em>,
-                            hr: () => <hr className='my-6 border-border/50' />,
+                            p: ({ children }) => <p className='text-muted-foreground mb-3 text-sm'>{children}</p>,
+                            ul: ({ children }) => <ul className='mb-3 list-inside list-disc space-y-1'>{children}</ul>,
+                            li: ({ children }) => <li className='text-muted-foreground text-sm'>{children}</li>,
+                            strong: ({ children }) => <strong className='text-foreground font-bold'>{children}</strong>,
+                            em: ({ children }) => <em className='text-muted-foreground/80 italic'>{children}</em>,
+                            hr: () => <hr className='border-border/50 my-6' />,
                         }}
                     >
                         {eulaContent}

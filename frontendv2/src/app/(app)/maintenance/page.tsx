@@ -22,13 +22,13 @@ import { useTranslation } from '@/contexts/TranslationContext';
 export default function MaintenancePage() {
     const { t } = useTranslation();
     return (
-        <div className='relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-background px-4 text-center selection:bg-primary/20'>
-            <div className='absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,var(--tw-gradient-stops))] from-primary/10 via-background to-background' />
-            <div className='absolute -top-40 -right-40 h-80 w-80 rounded-full bg-primary/20 blur-[100px]' />
-            <div className='absolute -bottom-40 -left-40 h-80 w-80 rounded-full bg-primary/10 blur-[100px]' />
+        <div className='bg-background selection:bg-primary/20 relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-4 text-center'>
+            <div className='from-primary/10 via-background to-background absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,var(--tw-gradient-stops))]' />
+            <div className='bg-primary/20 absolute -top-40 -right-40 h-80 w-80 rounded-full blur-[100px]' />
+            <div className='bg-primary/10 absolute -bottom-40 -left-40 h-80 w-80 rounded-full blur-[100px]' />
 
             <div className='relative z-10 mx-auto w-full max-w-lg space-y-8 p-6'>
-                <div className='relative mx-auto flex h-32 w-32 items-center justify-center rounded-3xl bg-primary/5  ring-1 ring-white/10 backdrop-blur-3xl'>
+                <div className='bg-primary/5 relative mx-auto flex h-32 w-32 items-center justify-center rounded-3xl ring-1 ring-white/10 backdrop-blur-3xl'>
                     <div className='absolute inset-0 rounded-3xl bg-linear-to-tr from-white/10 to-transparent' />
                     <svg
                         xmlns='http://www.w3.org/2000/svg'
@@ -38,27 +38,27 @@ export default function MaintenancePage() {
                         strokeWidth='1.5'
                         strokeLinecap='round'
                         strokeLinejoin='round'
-                        className='relative h-16 w-16 text-primary drop-shadow-[0_0_15px_rgba(var(--primary),0.5)] transition-all duration-500 hover:scale-110'
+                        className='text-primary relative h-16 w-16 drop-shadow-[0_0_15px_rgba(var(--primary),0.5)] transition-all duration-500 hover:scale-110'
                     >
                         <path d='M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z' />
                     </svg>
                 </div>
 
                 <div className='space-y-4'>
-                    <h1 className='bg-linear-to-br from-foreground to-foreground/60 bg-clip-text text-4xl font-bold tracking-tighter text-transparent sm:text-5xl md:text-6xl'>
+                    <h1 className='from-foreground to-foreground/60 bg-linear-to-br bg-clip-text text-4xl font-bold tracking-tighter text-transparent sm:text-5xl md:text-6xl'>
                         {t('maintenance.title')}
                     </h1>
-                    <p className='mx-auto max-w-[400px] text-lg text-muted-foreground/80 leading-relaxed font-medium'>
+                    <p className='text-muted-foreground/80 mx-auto max-w-[400px] text-lg leading-relaxed font-medium'>
                         {t('maintenance.message')}
                     </p>
                 </div>
 
-                <div className='inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 backdrop-blur-md'>
+                <div className='border-primary/20 bg-primary/5 inline-flex items-center gap-2 rounded-full border px-4 py-1.5 backdrop-blur-md'>
                     <span className='relative flex h-2.5 w-2.5'>
-                        <span className='absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75'></span>
-                        <span className='relative inline-flex h-2.5 w-2.5 rounded-full bg-primary'></span>
+                        <span className='bg-primary absolute inline-flex h-full w-full animate-ping rounded-full opacity-75'></span>
+                        <span className='bg-primary relative inline-flex h-2.5 w-2.5 rounded-full'></span>
                     </span>
-                    <span className='text-sm font-semibold text-primary'>{t('maintenance.status')}</span>
+                    <span className='text-primary text-sm font-semibold'>{t('maintenance.status')}</span>
                 </div>
 
                 <div className='pt-4'>
@@ -66,9 +66,9 @@ export default function MaintenancePage() {
                         variant='outline'
                         size='lg'
                         onClick={() => (window.location.href = '/')}
-                        className='group relative overflow-hidden transition-all hover:scale-105 hover:border-primary/50 hover:bg-primary/5 hover:text-primary '
+                        className='group hover:border-primary/50 hover:bg-primary/5 hover:text-primary relative overflow-hidden transition-all hover:scale-105'
                     >
-                        <div className='absolute inset-0 -translate-x-full group-hover:animate-[shimmer_2s_infinite] bg-linear-to-r from-transparent via-white/10 to-transparent' />
+                        <div className='absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-white/10 to-transparent group-hover:animate-[shimmer_2s_infinite]' />
                         <span className='relative flex items-center gap-2'>
                             <svg
                                 xmlns='http://www.w3.org/2000/svg'
@@ -93,8 +93,8 @@ export default function MaintenancePage() {
                 </div>
             </div>
 
-            <div className='absolute bottom-6 left-0 right-0 text-center'>
-                <p className='text-sm font-medium text-muted-foreground/50'>
+            <div className='absolute right-0 bottom-6 left-0 text-center'>
+                <p className='text-muted-foreground/50 text-sm font-medium'>
                     &copy; {new Date().getFullYear()} FeatherPanel
                 </p>
             </div>

@@ -190,7 +190,7 @@ export default function OidcProvidersPage() {
 
                 {callbackUrl && (
                     <PageCard title={t('admin.oidcProviders.callbackUrl')} icon={Link}>
-                        <p className='text-sm text-muted-foreground mb-3'>
+                        <p className='text-muted-foreground mb-3 text-sm'>
                             {t('admin.oidcProviders.callbackUrlDescription')}
                         </p>
                         <div className='flex items-center gap-2'>
@@ -212,9 +212,9 @@ export default function OidcProvidersPage() {
                     }
                 >
                     {loading ? (
-                        <div className='py-8 text-center text-muted-foreground'>{t('admin.oidcProviders.loading')}</div>
+                        <div className='text-muted-foreground py-8 text-center'>{t('admin.oidcProviders.loading')}</div>
                     ) : providers.length === 0 ? (
-                        <div className='py-8 text-center text-muted-foreground'>
+                        <div className='text-muted-foreground py-8 text-center'>
                             {t('admin.oidcProviders.noProviders')}
                         </div>
                     ) : (
@@ -224,21 +224,21 @@ export default function OidcProvidersPage() {
                                 return (
                                     <div
                                         key={provider.uuid}
-                                        className='flex items-center justify-between rounded-lg border border-border px-4 py-3'
+                                        className='border-border flex items-center justify-between rounded-lg border px-4 py-3'
                                     >
                                         <div>
-                                            <div className='font-medium flex items-center gap-2'>
-                                                <ShieldCheck className='h-4 w-4 text-primary' />
+                                            <div className='flex items-center gap-2 font-medium'>
+                                                <ShieldCheck className='text-primary h-4 w-4' />
                                                 <span>{provider.name}</span>
                                             </div>
-                                            <div className='text-xs text-muted-foreground'>{provider.issuer_url}</div>
+                                            <div className='text-muted-foreground text-xs'>{provider.issuer_url}</div>
                                             <div className='mt-1'>
                                                 <span
                                                     className={
                                                         'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ' +
                                                         (isEnabled
-                                                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/40'
-                                                            : 'bg-muted text-muted-foreground border border-border/60')
+                                                            ? 'border border-emerald-500/40 bg-emerald-500/10 text-emerald-400'
+                                                            : 'bg-muted text-muted-foreground border-border/60 border')
                                                     }
                                                 >
                                                     {isEnabled
@@ -313,9 +313,9 @@ export default function OidcProvidersPage() {
                             <div className='space-y-2'>
                                 <Label
                                     htmlFor='oidc-name'
-                                    className='flex items-center gap-2 text-foreground font-medium'
+                                    className='text-foreground flex items-center gap-2 font-medium'
                                 >
-                                    <User className='h-4 w-4 text-muted-foreground' />
+                                    <User className='text-muted-foreground h-4 w-4' />
                                     {t('admin.oidcProviders.form.name')}
                                 </Label>
                                 <Input
@@ -328,9 +328,9 @@ export default function OidcProvidersPage() {
                             <div className='space-y-2'>
                                 <Label
                                     htmlFor='oidc-issuer'
-                                    className='flex items-center gap-2 text-foreground font-medium'
+                                    className='text-foreground flex items-center gap-2 font-medium'
                                 >
-                                    <Link className='h-4 w-4 text-muted-foreground' />
+                                    <Link className='text-muted-foreground h-4 w-4' />
                                     {t('admin.oidcProviders.form.issuerUrl')}
                                 </Label>
                                 <Input
@@ -344,9 +344,9 @@ export default function OidcProvidersPage() {
                             <div className='space-y-2'>
                                 <Label
                                     htmlFor='oidc-client-id'
-                                    className='flex items-center gap-2 text-foreground font-medium'
+                                    className='text-foreground flex items-center gap-2 font-medium'
                                 >
-                                    <Key className='h-4 w-4 text-muted-foreground' />
+                                    <Key className='text-muted-foreground h-4 w-4' />
                                     {t('admin.oidcProviders.form.clientId')}
                                 </Label>
                                 <Input
@@ -359,9 +359,9 @@ export default function OidcProvidersPage() {
                             <div className='space-y-2'>
                                 <Label
                                     htmlFor='oidc-client-secret'
-                                    className='flex items-center gap-2 text-foreground font-medium'
+                                    className='text-foreground flex items-center gap-2 font-medium'
                                 >
-                                    <Lock className='h-4 w-4 text-muted-foreground' />
+                                    <Lock className='text-muted-foreground h-4 w-4' />
                                     {t('admin.oidcProviders.form.clientSecret')}
                                 </Label>
                                 <Input
@@ -378,9 +378,9 @@ export default function OidcProvidersPage() {
                             <div className='space-y-2'>
                                 <Label
                                     htmlFor='oidc-scopes'
-                                    className='flex items-center gap-2 text-foreground font-medium'
+                                    className='text-foreground flex items-center gap-2 font-medium'
                                 >
-                                    <Hash className='h-4 w-4 text-muted-foreground' />
+                                    <Hash className='text-muted-foreground h-4 w-4' />
                                     {t('admin.oidcProviders.form.scopes')}
                                 </Label>
                                 <Input
@@ -394,9 +394,9 @@ export default function OidcProvidersPage() {
                             <div className='space-y-2'>
                                 <Label
                                     htmlFor='oidc-email-claim'
-                                    className='flex items-center gap-2 text-foreground font-medium'
+                                    className='text-foreground flex items-center gap-2 font-medium'
                                 >
-                                    <Mail className='h-4 w-4 text-muted-foreground' />
+                                    <Mail className='text-muted-foreground h-4 w-4' />
                                     {t('admin.oidcProviders.form.emailClaim')}
                                 </Label>
                                 <Input
@@ -410,9 +410,9 @@ export default function OidcProvidersPage() {
                             <div className='space-y-2'>
                                 <Label
                                     htmlFor='oidc-subject-claim'
-                                    className='flex items-center gap-2 text-foreground font-medium'
+                                    className='text-foreground flex items-center gap-2 font-medium'
                                 >
-                                    <User className='h-4 w-4 text-muted-foreground' />
+                                    <User className='text-muted-foreground h-4 w-4' />
                                     {t('admin.oidcProviders.form.subjectClaim')}
                                 </Label>
                                 <Input
@@ -426,9 +426,9 @@ export default function OidcProvidersPage() {
                             <div className='space-y-2'>
                                 <Label
                                     htmlFor='oidc-group-claim'
-                                    className='flex items-center gap-2 text-foreground font-medium'
+                                    className='text-foreground flex items-center gap-2 font-medium'
                                 >
-                                    <Users className='h-4 w-4 text-muted-foreground' />
+                                    <Users className='text-muted-foreground h-4 w-4' />
                                     {t('admin.oidcProviders.form.groupClaim')}
                                 </Label>
                                 <Input
@@ -442,9 +442,9 @@ export default function OidcProvidersPage() {
                             <div className='space-y-2'>
                                 <Label
                                     htmlFor='oidc-group-value'
-                                    className='flex items-center gap-2 text-foreground font-medium'
+                                    className='text-foreground flex items-center gap-2 font-medium'
                                 >
-                                    <Users className='h-4 w-4 text-muted-foreground' />
+                                    <Users className='text-muted-foreground h-4 w-4' />
                                     {t('admin.oidcProviders.form.groupValue')}
                                 </Label>
                                 <Input
@@ -456,13 +456,13 @@ export default function OidcProvidersPage() {
                                 />
                             </div>
 
-                            <div className='flex flex-col gap-4 pt-2 border-t border-border'>
+                            <div className='border-border flex flex-col gap-4 border-t pt-2'>
                                 <div className='flex items-center justify-between gap-4'>
                                     <Label
                                         htmlFor='oidc-auto-provision'
-                                        className='flex items-center gap-2 text-foreground font-medium'
+                                        className='text-foreground flex items-center gap-2 font-medium'
                                     >
-                                        <Shield className='h-4 w-4 text-muted-foreground' />
+                                        <Shield className='text-muted-foreground h-4 w-4' />
                                         {t('admin.oidcProviders.form.autoProvision')}
                                     </Label>
                                     <Switch
@@ -476,9 +476,9 @@ export default function OidcProvidersPage() {
                                 <div className='flex items-center justify-between gap-4'>
                                     <Label
                                         htmlFor='oidc-require-email'
-                                        className='flex items-center gap-2 text-foreground font-medium'
+                                        className='text-foreground flex items-center gap-2 font-medium'
                                     >
-                                        <Mail className='h-4 w-4 text-muted-foreground' />
+                                        <Mail className='text-muted-foreground h-4 w-4' />
                                         {t('admin.oidcProviders.form.requireEmailVerified')}
                                     </Label>
                                     <Switch
@@ -495,9 +495,9 @@ export default function OidcProvidersPage() {
                                 <div className='flex items-center justify-between gap-4'>
                                     <Label
                                         htmlFor='oidc-enabled'
-                                        className='flex items-center gap-2 text-foreground font-medium'
+                                        className='text-foreground flex items-center gap-2 font-medium'
                                     >
-                                        <ShieldCheck className='h-4 w-4 text-muted-foreground' />
+                                        <ShieldCheck className='text-muted-foreground h-4 w-4' />
                                         {t('admin.oidcProviders.form.enabledLabel')}
                                     </Label>
                                     <Switch

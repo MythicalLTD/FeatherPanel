@@ -453,9 +453,9 @@ export default function ServerConsolePage() {
 
     if (permissionsLoading) {
         return (
-            <div className='flex items-center justify-center min-h-screen'>
+            <div className='flex min-h-screen items-center justify-center'>
                 <div className='flex flex-col items-center gap-4'>
-                    <Loader2 className='h-8 w-8 animate-spin text-primary' />
+                    <Loader2 className='text-primary h-8 w-8 animate-spin' />
                     <p className='text-muted-foreground'>{t('servers.console.loading')}</p>
                 </div>
             </div>
@@ -464,10 +464,10 @@ export default function ServerConsolePage() {
 
     if (!server) {
         return (
-            <div className='flex items-center justify-center min-h-screen'>
+            <div className='flex min-h-screen items-center justify-center'>
                 <div className='text-center'>
-                    <AlertTriangle className='h-12 w-12 text-destructive mx-auto mb-4' />
-                    <h2 className='text-2xl font-bold mb-2'>{t('servers.console.not_found.title')}</h2>
+                    <AlertTriangle className='text-destructive mx-auto mb-4 h-12 w-12' />
+                    <h2 className='mb-2 text-2xl font-bold'>{t('servers.console.not_found.title')}</h2>
                     <p className='text-muted-foreground'>{t('servers.console.not_found.message')}</p>
                 </div>
             </div>
@@ -478,8 +478,8 @@ export default function ServerConsolePage() {
 
     if (isPopout) {
         return (
-            <div className='min-h-screen bg-background p-4'>
-                <div className='max-w-6xl mx-auto h-full flex flex-col'>
+            <div className='bg-background min-h-screen p-4'>
+                <div className='mx-auto flex h-full max-w-6xl flex-col'>
                     {shouldConnectToWings ? (
                         <ServerTerminal
                             ref={terminalRef}
@@ -493,10 +493,10 @@ export default function ServerConsolePage() {
                             onUploadLogs={canConnect && hasPermission('activity.read') ? handleUploadLogs : undefined}
                         />
                     ) : (
-                        <Card className='border-2 border-yellow-500/20 bg-yellow-500/10 self-center mt-24 max-w-lg w-full'>
+                        <Card className='mt-24 w-full max-w-lg self-center border-2 border-yellow-500/20 bg-yellow-500/10'>
                             <CardContent className='p-4'>
                                 <div className='flex items-center gap-4'>
-                                    <div className='h-12 w-12 rounded-lg flex items-center justify-center bg-yellow-500/10 border-yellow-500/20'>
+                                    <div className='flex h-12 w-12 items-center justify-center rounded-lg border-yellow-500/20 bg-yellow-500/10'>
                                         <AlertTriangle className='h-6 w-6 text-yellow-500' />
                                     </div>
                                     <div className='flex-1'>
@@ -537,14 +537,14 @@ export default function ServerConsolePage() {
 
             <WidgetRenderer widgets={getWidgets('server-console', 'after-header')} />
 
-            <div className='grid grid-cols-1 xl:grid-cols-12 gap-6 items-start'>
-                <div className='xl:col-span-9 flex flex-col gap-6'>
+            <div className='grid grid-cols-1 items-start gap-6 xl:grid-cols-12'>
+                <div className='flex flex-col gap-6 xl:col-span-9'>
                     {shouldConnectToWings && connectionStatus !== 'connected' && (
                         <Card className={`border-2 ${connectionInfo.bgColor}`}>
                             <CardContent className='p-4'>
                                 <div className='flex items-center gap-4'>
                                     <div
-                                        className={`h-12 w-12 rounded-lg flex items-center justify-center ${connectionInfo.bgColor}`}
+                                        className={`flex h-12 w-12 items-center justify-center rounded-lg ${connectionInfo.bgColor}`}
                                     >
                                         <connectionInfo.icon
                                             className={`h-6 w-6 ${connectionInfo.color} ${connectionInfo.iconClass}`}
@@ -554,7 +554,7 @@ export default function ServerConsolePage() {
                                         <p className={`font-semibold ${connectionInfo.color}`}>
                                             {connectionInfo.message}
                                         </p>
-                                        <p className='text-sm text-muted-foreground'>
+                                        <p className='text-muted-foreground text-sm'>
                                             {t('servers.console.connection.info')}
                                         </p>
                                     </div>
@@ -569,7 +569,7 @@ export default function ServerConsolePage() {
                         <Card className='border-2 border-yellow-500/20 bg-yellow-500/10'>
                             <CardContent className='p-4'>
                                 <div className='flex items-center gap-4'>
-                                    <div className='h-12 w-12 rounded-lg flex items-center justify-center bg-yellow-500/10 border-yellow-500/20'>
+                                    <div className='flex h-12 w-12 items-center justify-center rounded-lg border-yellow-500/20 bg-yellow-500/10'>
                                         <AlertTriangle className='h-6 w-6 text-yellow-500' />
                                     </div>
                                     <div className='flex-1'>
@@ -588,12 +588,12 @@ export default function ServerConsolePage() {
                         <Card className='border-2 border-yellow-500/20 bg-yellow-500/10'>
                             <CardContent className='p-4'>
                                 <div className='flex items-center gap-4'>
-                                    <div className='h-12 w-12 rounded-lg flex items-center justify-center bg-yellow-500/10 border-yellow-500/20'>
+                                    <div className='flex h-12 w-12 items-center justify-center rounded-lg border-yellow-500/20 bg-yellow-500/10'>
                                         <AlertTriangle className='h-6 w-6 text-yellow-500' />
                                     </div>
                                     <div className='flex-1'>
                                         <p className='font-semibold text-yellow-500'>{t('servers.status.suspended')}</p>
-                                        <p className='text-sm text-muted-foreground'>
+                                        <p className='text-muted-foreground text-sm'>
                                             {t('servers.console.connection.disconnected')}
                                         </p>
                                     </div>
@@ -617,7 +617,7 @@ export default function ServerConsolePage() {
                     <WidgetRenderer widgets={getWidgets('server-console', 'after-terminal')} />
                 </div>
 
-                <div className='xl:col-span-3 space-y-6'>
+                <div className='space-y-6 xl:col-span-3'>
                     <PlayerStatusWidget uuidShort={serverUuid} />
 
                     {shouldConnectToWings && (

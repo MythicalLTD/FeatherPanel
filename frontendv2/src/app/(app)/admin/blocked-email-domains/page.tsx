@@ -364,7 +364,7 @@ export default function BlockedEmailDomainsPage() {
     const bottomWidgets = getWidgets(WIDGET_PAGE, 'bottom-of-page');
 
     const paginationBar = (
-        <div className='flex items-center justify-between gap-4 py-3 px-4 rounded-xl border border-border bg-card/50 shadow-sm'>
+        <div className='border-border bg-card/50 flex items-center justify-between gap-4 rounded-xl border px-4 py-3 shadow-sm'>
             <Button
                 variant='outline'
                 size='sm'
@@ -451,7 +451,7 @@ export default function BlockedEmailDomainsPage() {
                             <p className='text-muted-foreground text-sm'>
                                 {t('admin.blocked_email_domains.import_preset_body')}
                             </p>
-                            <p className='text-muted-foreground rounded-lg border border-border/60 bg-muted/20 px-3 py-2 text-xs font-mono'>
+                            <p className='text-muted-foreground border-border/60 bg-muted/20 rounded-lg border px-3 py-2 font-mono text-xs'>
                                 {presetFile || '—'}
                             </p>
                         </TabsContent>
@@ -574,7 +574,7 @@ export default function BlockedEmailDomainsPage() {
                 </div>
             </PageCard>
 
-            <div className='flex flex-col gap-4 rounded-2xl border border-border bg-card/50 p-4 shadow-sm backdrop-blur-md sm:flex-row sm:items-center'>
+            <div className='border-border bg-card/50 flex flex-col gap-4 rounded-2xl border p-4 shadow-sm backdrop-blur-md sm:flex-row sm:items-center'>
                 <div className='group relative flex-1'>
                     <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
                     <Input
@@ -700,7 +700,7 @@ export default function BlockedEmailDomainsPage() {
                                         <td className='text-muted-foreground px-4 py-3 align-middle text-xs'>
                                             {formatAddedAt(r.created_at)}
                                         </td>
-                                        <td className='px-4 py-3 align-middle text-right'>
+                                        <td className='px-4 py-3 text-right align-middle'>
                                             <Button
                                                 variant='ghost'
                                                 size='sm'

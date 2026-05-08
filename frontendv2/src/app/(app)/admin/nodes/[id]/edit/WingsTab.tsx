@@ -67,30 +67,30 @@ export function WingsTab({ nodeId, wingsConfigYaml, handleResetKey, resetting }:
             {/* Quick setup: fetch config from panel */}
             <PageCard title={t('admin.node.wings.setup_command_title')} icon={Terminal}>
                 <div className='space-y-4'>
-                    <p className='text-sm text-muted-foreground'>{t('admin.node.wings.setup_command_help')}</p>
+                    <p className='text-muted-foreground text-sm'>{t('admin.node.wings.setup_command_help')}</p>
                     {setupLoading ? (
-                        <div className='bg-zinc-950/50 p-4 rounded-xl border border-white/5 text-sm text-muted-foreground'>
+                        <div className='text-muted-foreground rounded-xl border border-white/5 bg-zinc-950/50 p-4 text-sm'>
                             {t('common.loading')}...
                         </div>
                     ) : setupData ? (
                         <>
                             {/* Step 1: Install FeatherWings */}
                             <div className='space-y-2'>
-                                <p className='text-xs font-semibold text-foreground'>
+                                <p className='text-foreground text-xs font-semibold'>
                                     {t('admin.node.wings.setup_step_1')}
                                 </p>
-                                <div className='relative group'>
-                                    <pre className='bg-zinc-950 p-4 rounded-xl overflow-x-auto text-xs font-mono text-zinc-300 border border-white/5 break-all whitespace-pre-wrap'>
+                                <div className='group relative'>
+                                    <pre className='overflow-x-auto rounded-xl border border-white/5 bg-zinc-950 p-4 font-mono text-xs break-all whitespace-pre-wrap text-zinc-300'>
                                         {setupData.install_command}
                                     </pre>
                                     <Button
                                         type='button'
                                         variant='outline'
                                         size='sm'
-                                        className='absolute top-2 right-2 bg-zinc-900/80 backdrop-blur-md border-white/10 hover:bg-zinc-800'
+                                        className='absolute top-2 right-2 border-white/10 bg-zinc-900/80 backdrop-blur-md hover:bg-zinc-800'
                                         onClick={() => copyToClipboard(setupData.install_command, t)}
                                     >
-                                        <Copy className='h-4 w-4 mr-2' />
+                                        <Copy className='mr-2 h-4 w-4' />
                                         {t('admin.node.wings.copy_setup_command')}
                                     </Button>
                                 </div>
@@ -98,30 +98,30 @@ export function WingsTab({ nodeId, wingsConfigYaml, handleResetKey, resetting }:
                             {/* Step 2: Fetch config and restart */}
                             {setupData.setup_command && (
                                 <div className='space-y-2'>
-                                    <p className='text-xs font-semibold text-foreground'>
+                                    <p className='text-foreground text-xs font-semibold'>
                                         {t('admin.node.wings.setup_step_2')}
                                     </p>
-                                    <div className='relative group'>
-                                        <pre className='bg-zinc-950 p-4 rounded-xl overflow-x-auto text-xs font-mono text-zinc-300 border border-white/5 break-all whitespace-pre-wrap'>
+                                    <div className='group relative'>
+                                        <pre className='overflow-x-auto rounded-xl border border-white/5 bg-zinc-950 p-4 font-mono text-xs break-all whitespace-pre-wrap text-zinc-300'>
                                             {setupData.setup_command}
                                         </pre>
                                         <Button
                                             type='button'
                                             variant='outline'
                                             size='sm'
-                                            className='absolute top-2 right-2 bg-zinc-900/80 backdrop-blur-md border-white/10 hover:bg-zinc-800'
+                                            className='absolute top-2 right-2 border-white/10 bg-zinc-900/80 backdrop-blur-md hover:bg-zinc-800'
                                             onClick={() => copyToClipboard(setupData.setup_command, t)}
                                         >
-                                            <Copy className='h-4 w-4 mr-2' />
+                                            <Copy className='mr-2 h-4 w-4' />
                                             {t('admin.node.wings.copy_setup_command')}
                                         </Button>
                                     </div>
                                 </div>
                             )}
-                            <p className='text-xs text-muted-foreground'>{t('admin.node.wings.setup_command_then')}</p>
+                            <p className='text-muted-foreground text-xs'>{t('admin.node.wings.setup_command_then')}</p>
                         </>
                     ) : (
-                        <p className='text-sm text-muted-foreground'>
+                        <p className='text-muted-foreground text-sm'>
                             {t('admin.node.wings.setup_command_unavailable')}
                         </p>
                     )}
@@ -130,28 +130,28 @@ export function WingsTab({ nodeId, wingsConfigYaml, handleResetKey, resetting }:
 
             <PageCard title={t('admin.node.wings.config_title')} icon={Shield}>
                 <div className='space-y-6'>
-                    <p className='text-sm text-muted-foreground'>{t('admin.node.wings.config_help')}</p>
-                    <div className='relative group'>
-                        <pre className='bg-zinc-950 p-6 rounded-2xl overflow-x-auto text-xs font-mono text-zinc-300 border border-white/5 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent'>
+                    <p className='text-muted-foreground text-sm'>{t('admin.node.wings.config_help')}</p>
+                    <div className='group relative'>
+                        <pre className='scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent overflow-x-auto rounded-2xl border border-white/5 bg-zinc-950 p-6 font-mono text-xs text-zinc-300'>
                             {wingsConfigYaml}
                         </pre>
                         <Button
                             type='button'
                             variant='outline'
                             size='sm'
-                            className='absolute top-3 right-3 bg-zinc-900/80 backdrop-blur-md border-white/10 hover:bg-zinc-800'
+                            className='absolute top-3 right-3 border-white/10 bg-zinc-900/80 backdrop-blur-md hover:bg-zinc-800'
                             onClick={() => copyToClipboard(wingsConfigYaml, t)}
                         >
-                            <Copy className='h-4 w-4 mr-2' />
+                            <Copy className='mr-2 h-4 w-4' />
                             {t('admin.node.wings.copy_config')}
                         </Button>
                     </div>
 
-                    <div className='pt-6 border-t border-white/5 space-y-4'>
+                    <div className='space-y-4 border-t border-white/5 pt-6'>
                         <div className='flex items-center justify-between'>
                             <div>
                                 <h4 className='text-sm font-bold text-white'>{t('admin.node.wings.reset_key')}</h4>
-                                <p className='text-xs text-muted-foreground mt-1'>
+                                <p className='text-muted-foreground mt-1 text-xs'>
                                     {t('admin.node.wings.reset_key_help')}
                                 </p>
                             </div>
@@ -160,9 +160,9 @@ export function WingsTab({ nodeId, wingsConfigYaml, handleResetKey, resetting }:
                                 variant='destructive'
                                 onClick={handleResetKey}
                                 loading={resetting}
-                                className='h-11 px-6 '
+                                className='h-11 px-6'
                             >
-                                <RefreshCw className='h-4 w-4 mr-2' />
+                                <RefreshCw className='mr-2 h-4 w-4' />
                                 {t('admin.node.wings.reset_key')}
                             </Button>
                         </div>

@@ -374,41 +374,41 @@ const HashesTab = () => {
 
     return (
         <div className='space-y-6'>
-            <div className='flex flex-col sm:flex-row items-center justify-between gap-4 bg-card/50 backdrop-blur-md p-4 rounded-2xl border border-border/50 shadow-lg'>
+            <div className='bg-card/50 border-border/50 flex flex-col items-center justify-between gap-4 rounded-2xl border p-4 shadow-lg backdrop-blur-md sm:flex-row'>
                 <div className='flex items-center gap-3'>
                     <Button onClick={() => setAddHashDialogOpen(true)}>
-                        <Plus className='h-4 w-4 mr-2' />
+                        <Plus className='mr-2 h-4 w-4' />
                         {t('admin.featherzerotrust.hashes.addHash')}
                     </Button>
                     <Button variant='outline' onClick={handleImportMalwareBazaar} disabled={importingMalwareBazaar}>
                         {importingMalwareBazaar ? (
-                            <RefreshCw className='h-4 w-4 mr-2 animate-spin' />
+                            <RefreshCw className='mr-2 h-4 w-4 animate-spin' />
                         ) : (
-                            <Download className='h-4 w-4 mr-2' />
+                            <Download className='mr-2 h-4 w-4' />
                         )}
                         {t('admin.featherzerotrust.hashes.importMalwareBazaar')}
                     </Button>
                     <Button variant='outline' onClick={() => setCheckHashesDialogOpen(true)}>
-                        <Search className='h-4 w-4 mr-2' />
+                        <Search className='mr-2 h-4 w-4' />
                         {t('admin.featherzerotrust.hashes.checkHashes')}
                     </Button>
                 </div>
 
                 <div className='flex items-center gap-4'>
-                    <div className='flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted/30 border border-border/30'>
+                    <div className='bg-muted/30 border-border/30 flex items-center gap-2 rounded-lg border px-3 py-1.5'>
                         <Switch checked={confirmedOnly} onCheckedChange={setConfirmedOnly} />
                         <Label className='text-xs font-medium'>
                             {t('admin.featherzerotrust.hashes.confirmedOnly')}
                         </Label>
                     </div>
                     <Button variant='ghost' size='sm' onClick={fetchHashes}>
-                        <RefreshCw className={cn('h-4 w-4 mr-2', loading && 'animate-spin')} />
+                        <RefreshCw className={cn('mr-2 h-4 w-4', loading && 'animate-spin')} />
                         {t('admin.featherzerotrust.hashes.refresh')}
                     </Button>
                 </div>
             </div>
 
-            <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4'>
+            <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4'>
                 {[
                     {
                         label: t('admin.featherzerotrust.hashes.stats.total'),
@@ -441,26 +441,26 @@ const HashesTab = () => {
                 ].map((stat, i) => (
                     <Card
                         key={i}
-                        className='relative overflow-hidden group hover:scale-[1.02] transition-all duration-300 border-border/50'
+                        className='group border-border/50 relative overflow-hidden transition-all duration-300 hover:scale-[1.02]'
                     >
                         <div className={cn('absolute inset-x-0 top-0 h-1', `bg-${stat.color}-500/50`)} />
                         <CardHeader className='pb-2'>
-                            <div className='flex items-center justify-between text-muted-foreground'>
-                                <span className='text-xs font-medium uppercase tracking-wider'>{stat.label}</span>
+                            <div className='text-muted-foreground flex items-center justify-between'>
+                                <span className='text-xs font-medium tracking-wider uppercase'>{stat.label}</span>
                                 <stat.icon className={cn('h-4 w-4', `text-${stat.color}-500/60`)} />
                             </div>
                         </CardHeader>
                         <CardContent>
                             <div className='text-2xl font-bold'>{stat.value.toLocaleString()}</div>
-                            <p className='text-[10px] text-muted-foreground mt-1'>{stat.desc}</p>
+                            <p className='text-muted-foreground mt-1 text-[10px]'>{stat.desc}</p>
                         </CardContent>
                     </Card>
                 ))}
             </div>
 
-            <div className='flex flex-col sm:flex-row gap-4 items-center'>
-                <div className='relative flex-1 group'>
-                    <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
+            <div className='flex flex-col items-center gap-4 sm:flex-row'>
+                <div className='group relative flex-1'>
+                    <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
                     <Input
                         placeholder={t('admin.featherzerotrust.hashes.searchPlaceholder')}
                         className='pl-10'
@@ -469,12 +469,12 @@ const HashesTab = () => {
                     />
                 </div>
                 {selectedHashes.size > 0 && (
-                    <div className='flex items-center gap-2 p-1.5 bg-primary/10 border border-primary/20 rounded-xl animate-in zoom-in duration-300'>
+                    <div className='bg-primary/10 border-primary/20 animate-in zoom-in flex items-center gap-2 rounded-xl border p-1.5 duration-300'>
                         <Button variant='outline' size='sm' onClick={handleBulkConfirm} disabled={bulkConfirming}>
                             {bulkConfirming ? (
                                 <RefreshCw className='h-4 w-4 animate-spin' />
                             ) : (
-                                <CheckSquare className='h-4 w-4 mr-2' />
+                                <CheckSquare className='mr-2 h-4 w-4' />
                             )}
                             {t('admin.featherzerotrust.hashes.bulkConfirm')} ({selectedHashes.size})
                         </Button>
@@ -482,7 +482,7 @@ const HashesTab = () => {
                             {bulkDeleting ? (
                                 <RefreshCw className='h-4 w-4 animate-spin' />
                             ) : (
-                                <Trash2 className='h-4 w-4 mr-2' />
+                                <Trash2 className='mr-2 h-4 w-4' />
                             )}
                             {t('admin.featherzerotrust.hashes.bulkDelete')}
                         </Button>
@@ -536,15 +536,15 @@ const HashesTab = () => {
                                 },
                             ]}
                             description={
-                                <div className='grid grid-cols-2 sm:grid-cols-4 gap-y-2 gap-x-4 mt-2'>
+                                <div className='mt-2 grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-4'>
                                     <div className='flex flex-col'>
-                                        <span className='text-[10px] text-muted-foreground uppercase tracking-tight'>
+                                        <span className='text-muted-foreground text-[10px] tracking-tight uppercase'>
                                             {t('admin.featherzerotrust.hashes.detections')}
                                         </span>
                                         <span className='text-xs font-semibold'>{h.times_detected}</span>
                                     </div>
                                     <div className='flex flex-col'>
-                                        <span className='text-[10px] text-muted-foreground uppercase tracking-tight'>
+                                        <span className='text-muted-foreground text-[10px] tracking-tight uppercase'>
                                             {t('admin.featherzerotrust.hashes.lastServer')}
                                         </span>
                                         <span className='text-xs'>
@@ -552,7 +552,7 @@ const HashesTab = () => {
                                         </span>
                                     </div>
                                     <div className='flex flex-col'>
-                                        <span className='text-[10px] text-muted-foreground uppercase tracking-tight'>
+                                        <span className='text-muted-foreground text-[10px] tracking-tight uppercase'>
                                             {t('admin.featherzerotrust.hashes.firstSeen')}
                                         </span>
                                         <span className='text-[10px] opacity-80'>
@@ -560,7 +560,7 @@ const HashesTab = () => {
                                         </span>
                                     </div>
                                     <div className='flex flex-col'>
-                                        <span className='text-[10px] text-muted-foreground uppercase tracking-tight'>
+                                        <span className='text-muted-foreground text-[10px] tracking-tight uppercase'>
                                             {t('admin.featherzerotrust.hashes.lastSeen')}
                                         </span>
                                         <span className='text-[10px] opacity-80'>
@@ -599,7 +599,7 @@ const HashesTab = () => {
                                         <Checkbox
                                             checked={selectedHashes.has(h.hash)}
                                             onCheckedChange={() => toggleSelection(h.hash)}
-                                            className='h-5 w-5 ml-2'
+                                            className='ml-2 h-5 w-5'
                                         />
                                     </div>
                                 </div>
@@ -637,7 +637,7 @@ const HashesTab = () => {
                             <div className='space-y-2'>
                                 <Label>{t('admin.featherzerotrust.hashes.detectionType')}</Label>
                                 <select
-                                    className='w-full flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm'
+                                    className='border-input bg-background flex h-10 w-full rounded-md border px-3 py-2 text-sm'
                                     value={newHash.detection_type}
                                     onChange={(e) => setNewHash({ ...newHash, detection_type: e.target.value })}
                                 >
@@ -662,12 +662,12 @@ const HashesTab = () => {
                                 />
                             </div>
                         </div>
-                        <div className='flex items-center gap-2 p-4 bg-muted/30 border border-border/50 rounded-lg translate-y-2'>
+                        <div className='bg-muted/30 border-border/50 flex translate-y-2 items-center gap-2 rounded-lg border p-4'>
                             <Switch
                                 checked={newHash.confirmed_malicious}
                                 onCheckedChange={(v) => setNewHash({ ...newHash, confirmed_malicious: v })}
                             />
-                            <Label className='text-sm cursor-pointer'>
+                            <Label className='cursor-pointer text-sm'>
                                 {t('admin.featherzerotrust.hashes.markConfirmed')}
                             </Label>
                         </div>
@@ -677,9 +677,9 @@ const HashesTab = () => {
                             </Button>
                             <Button className='flex-1' onClick={handleAddHash} disabled={addingHash}>
                                 {addingHash ? (
-                                    <RefreshCw className='h-4 w-4 animate-spin mr-2' />
+                                    <RefreshCw className='mr-2 h-4 w-4 animate-spin' />
                                 ) : (
-                                    <Plus className='h-4 w-4 mr-2' />
+                                    <Plus className='mr-2 h-4 w-4' />
                                 )}
                                 {t('admin.featherzerotrust.hashes.addHashButton')}
                             </Button>
@@ -700,30 +700,30 @@ const HashesTab = () => {
                             <textarea
                                 value={hashCheckInput}
                                 onChange={(e) => setHashCheckInput(e.target.value)}
-                                className='w-full min-h-[150px] p-3 rounded-lg border border-border bg-background font-mono text-xs focus:ring-2 focus:ring-primary outline-none transition-all'
+                                className='border-border bg-background focus:ring-primary min-h-[150px] w-full rounded-lg border p-3 font-mono text-xs transition-all outline-none focus:ring-2'
                                 placeholder='...'
                             />
                         </div>
                         <Button className='w-full' onClick={handleCheckHashes} disabled={checkingHashes}>
                             {checkingHashes ? (
-                                <RefreshCw className='h-4 w-4 animate-spin mr-2' />
+                                <RefreshCw className='mr-2 h-4 w-4 animate-spin' />
                             ) : (
-                                <Search className='h-4 w-4 mr-2' />
+                                <Search className='mr-2 h-4 w-4' />
                             )}
                             {t('admin.featherzerotrust.hashes.checkButton')}
                         </Button>
 
                         {hashCheckResults.length > 0 && (
-                            <div className='space-y-2 mt-4 max-h-[250px] overflow-y-auto pr-2 custom-scrollbar'>
+                            <div className='custom-scrollbar mt-4 max-h-[250px] space-y-2 overflow-y-auto pr-2'>
                                 {hashCheckResults.map((r, i) => (
                                     <div
                                         key={i}
                                         className={cn(
-                                            'p-3 rounded-lg border text-xs flex items-center justify-between',
+                                            'flex items-center justify-between rounded-lg border p-3 text-xs',
                                             r.found ? 'border-red-500/50 bg-red-500/5' : 'border-border/50 bg-muted/30',
                                         )}
                                     >
-                                        <code className='truncate max-w-[70%]'>{r.hash}</code>
+                                        <code className='max-w-[70%] truncate'>{r.hash}</code>
                                         <Badge variant={r.found ? 'destructive' : 'secondary'}>
                                             {r.found
                                                 ? t('admin.featherzerotrust.hashes.checkResults.threatFound')

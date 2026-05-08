@@ -272,7 +272,7 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
                 actions={
                     <div className='flex items-center gap-2'>
                         <Button variant='outline' onClick={() => router.push('/admin/knowledgebase/categories')}>
-                            <ChevronLeft className='h-4 w-4 mr-2' />
+                            <ChevronLeft className='mr-2 h-4 w-4' />
                             {t('admin.knowledgebase.articles.back_to_categories')}
                         </Button>
                         <Button
@@ -281,7 +281,7 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
                                 setCreateOpen(true);
                             }}
                         >
-                            <Plus className='h-4 w-4 mr-2' />
+                            <Plus className='mr-2 h-4 w-4' />
                             {t('admin.knowledgebase.articles.create')}
                         </Button>
                     </div>
@@ -290,12 +290,12 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
 
             <WidgetRenderer widgets={getWidgets('admin-knowledgebase-category-articles', 'after-header')} />
 
-            <div className='flex flex-col sm:flex-row gap-4 items-center bg-card/40 backdrop-blur-md p-4 rounded-2xl shadow-sm'>
-                <div className='relative flex-1 group w-full'>
-                    <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
+            <div className='bg-card/40 flex flex-col items-center gap-4 rounded-2xl p-4 shadow-sm backdrop-blur-md sm:flex-row'>
+                <div className='group relative w-full flex-1'>
+                    <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
                     <Input
                         placeholder={t('admin.knowledgebase.articles.search_placeholder')}
-                        className='pl-10 h-11'
+                        className='h-11 pl-10'
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
@@ -305,7 +305,7 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
             <WidgetRenderer widgets={getWidgets('admin-knowledgebase-category-articles', 'before-list')} />
 
             {pagination.totalPages > 1 && !loading && (
-                <div className='flex items-center justify-between gap-4 py-3 px-4 rounded-xl border border-border bg-card/50 mb-4'>
+                <div className='border-border bg-card/50 mb-4 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
                     <Button
                         variant='outline'
                         size='sm'
@@ -350,7 +350,7 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
                     {articles.map((article) => {
                         const IconComponent = ({ className }: { className?: string }) => (
                             <div
-                                className={`flex items-center justify-center rounded-xl bg-primary/10 overflow-hidden ${className}`}
+                                className={`bg-primary/10 flex items-center justify-center overflow-hidden rounded-xl ${className}`}
                             >
                                 {article.icon ? (
                                     <Image
@@ -362,7 +362,7 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
                                         unoptimized
                                     />
                                 ) : (
-                                    <FileText className='h-1/2 w-1/2 text-primary' />
+                                    <FileText className='text-primary h-1/2 w-1/2' />
                                 )}
                             </div>
                         );
@@ -434,7 +434,7 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
             )}
 
             {pagination.totalPages > 1 && (
-                <div className='flex items-center justify-center gap-2 mt-8'>
+                <div className='mt-8 flex items-center justify-center gap-2'>
                     <Button
                         variant='outline'
                         size='icon'
@@ -459,32 +459,32 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
                 </div>
             )}
 
-            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-10'>
+            <div className='grid grid-cols-1 gap-6 pt-10 md:grid-cols-2 lg:grid-cols-3'>
                 <PageCard title={t('admin.knowledgebase.help.managing.title')} icon={Layout}>
-                    <p className='text-sm text-muted-foreground leading-relaxed'>
+                    <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.knowledgebase.help.managing.description')}
                     </p>
                 </PageCard>
                 <PageCard title={t('admin.knowledgebase.help.content.title')} icon={Info}>
-                    <p className='text-sm text-muted-foreground leading-relaxed'>
+                    <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.knowledgebase.help.content.description')}
                     </p>
                 </PageCard>
                 <PageCard title={t('admin.knowledgebase.help.attachments.title')} icon={Shield} variant='danger'>
-                    <p className='text-sm text-muted-foreground leading-relaxed'>
+                    <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.knowledgebase.help.attachments.description')}
                     </p>
                 </PageCard>
             </div>
 
             <Sheet open={createOpen} onOpenChange={setCreateOpen}>
-                <div className='p-6 h-full flex flex-col'>
+                <div className='flex h-full flex-col p-6'>
                     <SheetHeader>
                         <SheetTitle>{t('admin.knowledgebase.articles.form.create_title')}</SheetTitle>
                         <SheetDescription>{t('admin.knowledgebase.articles.form.create_description')}</SheetDescription>
                     </SheetHeader>
 
-                    <form onSubmit={handleCreate} className='space-y-4 mt-6 flex-1'>
+                    <form onSubmit={handleCreate} className='mt-6 flex-1 space-y-4'>
                         <div className='space-y-2'>
                             <Label htmlFor='create-title'>{t('admin.knowledgebase.articles.form.title')}</Label>
                             <Input
@@ -498,7 +498,7 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
                         <div className='space-y-2'>
                             <Label htmlFor='create-icon'>{t('admin.knowledgebase.articles.form.icon')}</Label>
                             <div className='flex items-center gap-4'>
-                                <div className='h-16 w-16 rounded-xl bg-primary/10 flex items-center justify-center overflow-hidden border border-border/50'>
+                                <div className='bg-primary/10 border-border/50 flex h-16 w-16 items-center justify-center overflow-hidden rounded-xl border'>
                                     {iconPreview ? (
                                         <Image
                                             src={iconPreview}
@@ -509,7 +509,7 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
                                             unoptimized
                                         />
                                     ) : (
-                                        <ImageIcon className='h-6 w-6 text-muted-foreground' />
+                                        <ImageIcon className='text-muted-foreground h-6 w-6' />
                                     )}
                                 </div>
                                 <Button
@@ -545,7 +545,7 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
                             </Select>
                         </div>
 
-                        <div className='flex items-center gap-2 bg-muted/30 p-4 rounded-xl'>
+                        <div className='bg-muted/30 flex items-center gap-2 rounded-xl p-4'>
                             <Checkbox
                                 id='create-pinned'
                                 checked={form.pinned}
@@ -572,15 +572,15 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
             </Sheet>
 
             <Sheet open={viewOpen} onOpenChange={setViewOpen}>
-                <div className='p-6 h-full flex flex-col'>
+                <div className='flex h-full flex-col p-6'>
                     <SheetHeader>
                         <SheetTitle>{selectedArticle?.title}</SheetTitle>
                         <SheetDescription>{selectedArticle?.slug}</SheetDescription>
                     </SheetHeader>
 
-                    <div className='mt-8 space-y-6 flex-1'>
+                    <div className='mt-8 flex-1 space-y-6'>
                         <div className='flex justify-center'>
-                            <div className='h-32 w-32 rounded-3xl bg-primary/5 flex items-center justify-center overflow-hidden border border-border/50'>
+                            <div className='bg-primary/5 border-border/50 flex h-32 w-32 items-center justify-center overflow-hidden rounded-3xl border'>
                                 {selectedArticle?.icon ? (
                                     <Image
                                         src={selectedArticle?.icon}
@@ -591,14 +591,14 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
                                         unoptimized
                                     />
                                 ) : (
-                                    <FileText className='h-1/2 w-1/2 text-primary/40' />
+                                    <FileText className='text-primary/40 h-1/2 w-1/2' />
                                 )}
                             </div>
                         </div>
 
                         <div className='grid grid-cols-2 gap-4'>
-                            <div className='p-4 rounded-2xl bg-muted/50'>
-                                <p className='text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1'>
+                            <div className='bg-muted/50 rounded-2xl p-4'>
+                                <p className='text-muted-foreground mb-1 text-xs font-semibold tracking-wider uppercase'>
                                     {t('admin.knowledgebase.articles.form.status')}
                                 </p>
                                 <p className='text-sm font-bold'>
@@ -607,8 +607,8 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
                                         : '-'}
                                 </p>
                             </div>
-                            <div className='p-4 rounded-2xl bg-muted/50'>
-                                <p className='text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1'>
+                            <div className='bg-muted/50 rounded-2xl p-4'>
+                                <p className='text-muted-foreground mb-1 text-xs font-semibold tracking-wider uppercase'>
                                     {t('admin.roles.labels.created')}
                                 </p>
                                 <p className='text-sm font-medium'>
@@ -620,7 +620,7 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
                         </div>
 
                         <div className='space-y-2'>
-                            <p className='text-xs font-semibold text-muted-foreground uppercase tracking-wider'>
+                            <p className='text-muted-foreground text-xs font-semibold tracking-wider uppercase'>
                                 {t('admin.knowledgebase.articles.form.pinned')}
                             </p>
                             <p className='text-sm font-medium'>
