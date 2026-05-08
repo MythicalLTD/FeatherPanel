@@ -177,7 +177,7 @@ export default function NewLifecycleHookStepPage() {
                     title={t('lifecycleHooks.stepNew.title', { hookType: hookLabels[hookType] })}
                     description={t('lifecycleHooks.stepNew.description')}
                     actions={
-                        <Button variant='glass' size='sm' type='button' onClick={back}>
+                        <Button variant='glass' size='sm' type='button' onClick={back} className='w-full sm:w-auto'>
                             <ArrowLeft className='mr-2 h-4 w-4' />
                             {t('lifecycleHooks.backToHooks')}
                         </Button>
@@ -197,7 +197,7 @@ export default function NewLifecycleHookStepPage() {
                     title={t('lifecycleHooks.stepNew.title', { hookType: hookLabels[hookType] })}
                     description={t('lifecycleHooks.stepNew.description')}
                     actions={
-                        <Button variant='glass' size='sm' type='button' onClick={back}>
+                        <Button variant='glass' size='sm' type='button' onClick={back} className='w-full sm:w-auto'>
                             <ArrowLeft className='mr-2 h-4 w-4' />
                             {t('lifecycleHooks.backToHooks')}
                         </Button>
@@ -218,7 +218,7 @@ export default function NewLifecycleHookStepPage() {
                     title={t('lifecycleHooks.stepNew.title', { hookType: hookLabels[hookType] })}
                     description={t('lifecycleHooks.stepNew.description')}
                     actions={
-                        <Button variant='glass' size='sm' type='button' onClick={back}>
+                        <Button variant='glass' size='sm' type='button' onClick={back} className='w-full sm:w-auto'>
                             <ArrowLeft className='mr-2 h-4 w-4' />
                             {t('lifecycleHooks.backToHooks')}
                         </Button>

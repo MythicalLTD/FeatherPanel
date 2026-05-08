@@ -429,10 +429,18 @@ export default function VdsSettingsPage() {
                 title='VDS Settings'
                 description='Manage your VDS instance settings and reinstall options.'
                 actions={
-                    <Button variant='glass' size='sm' onClick={fetchTemplates} disabled={templatesLoading}>
-                        <RefreshCw className={cn('mr-1.5 h-4 w-4', templatesLoading && 'animate-spin')} />
-                        Refresh
-                    </Button>
+                    <div className='flex w-full sm:w-auto sm:justify-end'>
+                        <Button
+                            variant='glass'
+                            size='sm'
+                            onClick={fetchTemplates}
+                            disabled={templatesLoading}
+                            aria-label='Refresh'
+                        >
+                            <RefreshCw className={cn('h-4 w-4 sm:mr-1.5', templatesLoading && 'animate-spin')} />
+                            <span className='hidden sm:inline'>Refresh</span>
+                        </Button>
+                    </div>
                 }
             />
 

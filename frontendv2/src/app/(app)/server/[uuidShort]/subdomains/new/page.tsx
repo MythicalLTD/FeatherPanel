@@ -161,8 +161,14 @@ export default function CreateSubdomainPage() {
                 title={t('serverSubdomains.createButton')}
                 description={t('serverSubdomains.newSubdomainDescription')}
                 actions={
-                    <div className='flex items-center gap-3'>
-                        <Button variant='ghost' size='default' onClick={() => router.back()} disabled={saving}>
+                    <div className='flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-3'>
+                        <Button
+                            variant='ghost'
+                            size='default'
+                            onClick={() => router.back()}
+                            disabled={saving}
+                            className='order-2 sm:order-1'
+                        >
                             {t('common.cancel')}
                         </Button>
                         <Button
@@ -171,6 +177,7 @@ export default function CreateSubdomainPage() {
                             onClick={handleCreate}
                             disabled={saving || limitReached}
                             loading={saving}
+                            className='order-1 w-full sm:order-2 sm:w-auto'
                         >
                             {saving ? (
                                 t('common.saving')

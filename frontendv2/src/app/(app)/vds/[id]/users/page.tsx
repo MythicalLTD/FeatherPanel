@@ -248,24 +248,27 @@ export default function VdsSubusersPage() {
                     </div>
                 }
                 actions={
-                    <div className='flex items-center gap-3'>
+                    <div className='flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-3'>
+                        {subusers.length > 0 && (
+                            <Button
+                                size='default'
+                                onClick={() => setIsAddOpen(true)}
+                                className='order-1 w-full rounded-2xl shadow-lg shadow-primary/20 sm:order-2 sm:w-auto'
+                            >
+                                <Plus className='mr-2 h-4 w-4' />
+                                {t('vds.subusers.add')}
+                            </Button>
+                        )}
                         <Button
                             variant='glass'
                             size='default'
                             onClick={fetchSubusers}
                             disabled={loading}
-                            className='rounded-2xl'
+                            className='order-2 rounded-2xl sm:order-1'
+                            aria-label={t('common.refresh')}
                         >
-                            <RefreshCw className={cn('mr-2 h-4 w-4', loading && 'animate-spin')} />
-                            {t('common.refresh')}
-                        </Button>
-                        <Button
-                            size='default'
-                            onClick={() => setIsAddOpen(true)}
-                            className='shadow-primary/20 rounded-2xl shadow-lg'
-                        >
-                            <Plus className='mr-2 h-4 w-4' />
-                            {t('vds.subusers.add')}
+                            <RefreshCw className={cn('h-4 w-4 sm:mr-2', loading && 'animate-spin')} />
+                            <span className='hidden sm:inline'>{t('common.refresh')}</span>
                         </Button>
                     </div>
                 }

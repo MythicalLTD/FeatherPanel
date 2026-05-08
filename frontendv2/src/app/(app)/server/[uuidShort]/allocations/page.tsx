@@ -293,6 +293,7 @@ export default function ServerAllocationsPage() {
 
     const limitReached =
         server && server.allocation_limit !== 0 && (server.current_allocations || 0) >= server.allocation_limit;
+    const showHeaderCreateActions = canCreate && allocations.length > 0;
 
     return (
         <div key={pathname} className='space-y-8 pb-12'>
@@ -310,40 +311,45 @@ export default function ServerAllocationsPage() {
                     </div>
                 }
                 actions={
-                    <div className='flex items-center gap-3'>
-                        <Button variant='glass' size='default' onClick={() => fetchAllocations()} disabled={loading}>
-                            <RefreshCw className={cn('mr-2 h-5 w-5', loading && 'animate-spin')} />
-                            {t('serverAllocations.refresh')}
-                        </Button>
-
-                        {canCreate && (
-                            <>
-                                {isEnabled(settings?.server_allow_allocation_select) && (
-                                    <Button
-                                        variant='glass'
-                                        size='default'
-                                        onClick={handleOpenAssign}
-                                        disabled={limitReached || isAutoAllocating || loading || settingsLoading}
-                                    >
-                                        <Plus className='mr-2 h-5 w-5' />
-                                        {t('serverAllocations.assignAllocation')}
-                                    </Button>
-                                )}
-                                <Button
-                                    size='default'
-                                    onClick={handleAutoAllocate}
-                                    disabled={limitReached || isAutoAllocating || loading}
-                                    className='transition-all active:scale-95'
-                                >
-                                    {isAutoAllocating ? (
-                                        <Loader2 className='mr-2 h-5 w-5 animate-spin' />
-                                    ) : (
-                                        <RefreshCw className='mr-2 h-5 w-5' />
-                                    )}
-                                    {t('serverAllocations.autoAllocate')}
-                                </Button>
-                            </>
+                    <div className='flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-3'>
+                        {showHeaderCreateActions && isEnabled(settings?.server_allow_allocation_select) && (
+                            <Button
+                                variant='glass'
+                                size='default'
+                                onClick={handleOpenAssign}
+                                disabled={limitReached || isAutoAllocating || loading || settingsLoading}
+                                className='order-1 w-full sm:order-2 sm:w-auto'
+                            >
+                                <Plus className='mr-2 h-5 w-5' />
+                                {t('serverAllocations.assignAllocation')}
+                            </Button>
                         )}
+                        {showHeaderCreateActions && (
+                            <Button
+                                size='default'
+                                onClick={handleAutoAllocate}
+                                disabled={limitReached || isAutoAllocating || loading}
+                                className='order-1 w-full transition-all active:scale-95 sm:order-2 sm:w-auto'
+                            >
+                                {isAutoAllocating ? (
+                                    <Loader2 className='mr-2 h-5 w-5 animate-spin' />
+                                ) : (
+                                    <RefreshCw className='mr-2 h-5 w-5' />
+                                )}
+                                {t('serverAllocations.autoAllocate')}
+                            </Button>
+                        )}
+                        <Button
+                            variant='glass'
+                            size='default'
+                            onClick={() => fetchAllocations()}
+                            disabled={loading}
+                            className='order-2 sm:order-1'
+                            aria-label={t('serverAllocations.refresh')}
+                        >
+                            <RefreshCw className={cn('h-5 w-5 sm:mr-2', loading && 'animate-spin')} />
+                            <span className='hidden sm:inline'>{t('serverAllocations.refresh')}</span>
+                        </Button>
                     </div>
                 }
             />

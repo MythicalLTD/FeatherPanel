@@ -232,15 +232,16 @@ export default function ServerFirewallPage() {
     };
 
     const handleDelete = async () => {
-        if (!ruleToDelete) return;
+        if (!ruleToDelete || deleting) return;
 
         setDeleting(true);
+        const deletingRuleId = ruleToDelete.id;
         try {
-            const { data } = await axios.delete(`/api/user/servers/${uuidShort}/firewall/${ruleToDelete.id}`);
+            const { data } = await axios.delete(`/api/user/servers/${uuidShort}/firewall/${deletingRuleId}`);
 
             if (data.success) {
                 toast.success(t('serverFirewall.deleteSuccess'));
-                setRules((prev) => prev.filter((r) => r.id !== ruleToDelete.id));
+                setRules((prev) => prev.filter((r) => r.id !== deletingRuleId));
                 setDeleteDialogOpen(false);
                 setRuleToDelete(null);
             } else {
@@ -248,6 +249,35 @@ export default function ServerFirewallPage() {
             }
         } catch (error) {
             console.error('Failed to delete rule:', error);
+            const axiosError = error as {
+                response?: {
+                    data?: {
+                        message?: string;
+                        error_message?: string;
+                        error_code?: string;
+                        errors?: Array<{ detail?: string }>;
+                    };
+                };
+            };
+
+            const detailMessage =
+                axiosError.response?.data?.errors?.[0]?.detail ||
+                axiosError.response?.data?.error_message ||
+                axiosError.response?.data?.message ||
+                '';
+            const detailMessageLower = detailMessage.toLowerCase();
+            const isAlreadyDeleted = detailMessageLower.includes('not found');
+
+            // Wings can occasionally race and return "rule not found" for a rule
+            // that was already removed; treat that case as a successful delete.
+            if (isAlreadyDeleted) {
+                setRules((prev) => prev.filter((r) => r.id !== deletingRuleId));
+                setDeleteDialogOpen(false);
+                setRuleToDelete(null);
+                toast.success(t('serverFirewall.deleteSuccess'));
+                return;
+            }
+
             toast.error(t('serverFirewall.unknownError'));
         } finally {
             setDeleting(false);
@@ -320,6 +350,7 @@ export default function ServerFirewallPage() {
             </div>
         );
     }
+    const showHeaderCreateAction = canManage && firewallEnabled && rules.length > 0;
 
     return (
         <div key={pathname} className='space-y-8 pb-12'>
@@ -328,22 +359,29 @@ export default function ServerFirewallPage() {
                 title={t('serverFirewall.title')}
                 description={t('serverFirewall.description')}
                 actions={
-                    <div className='flex items-center gap-3'>
-                        <Button variant='glass' size='default' onClick={fetchRules} disabled={loading}>
-                            <RefreshCw className={cn('mr-2 h-5 w-5', loading && 'animate-spin')} />
-                            {t('serverFirewall.refresh')}
-                        </Button>
-
-                        {canManage && firewallEnabled && (
+                    <div className='flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-3'>
+                        {showHeaderCreateAction && (
                             <Button
                                 size='default'
                                 onClick={openCreateModal}
                                 disabled={loading || allocations.length === 0}
+                                className='order-1 w-full sm:order-2 sm:w-auto'
                             >
                                 <Plus className='mr-2 h-5 w-5' />
                                 {t('serverFirewall.createRule')}
                             </Button>
                         )}
+                        <Button
+                            variant='glass'
+                            size='default'
+                            onClick={fetchRules}
+                            disabled={loading}
+                            className='order-2 sm:order-1'
+                            aria-label={t('serverFirewall.refresh')}
+                        >
+                            <RefreshCw className={cn('h-5 w-5 sm:mr-2', loading && 'animate-spin')} />
+                            <span className='hidden sm:inline'>{t('serverFirewall.refresh')}</span>
+                        </Button>
                     </div>
                 }
             />

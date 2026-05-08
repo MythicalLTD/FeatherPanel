@@ -201,7 +201,7 @@ export default function EditLifecycleHookStepPage() {
                     title={t('lifecycleHooks.stepEdit.notFoundTitle')}
                     description={t('lifecycleHooks.stepEdit.notFoundDescription')}
                     actions={
-                        <Button variant='glass' size='sm' type='button' onClick={back}>
+                        <Button variant='glass' size='sm' type='button' onClick={back} className='w-full sm:w-auto'>
                             <ArrowLeft className='mr-2 h-4 w-4' />
                             {t('lifecycleHooks.backToHooks')}
                         </Button>
@@ -218,7 +218,7 @@ export default function EditLifecycleHookStepPage() {
                     title={t('lifecycleHooks.stepEdit.title', { hookType: hookLabels[hookType] })}
                     description={t('lifecycleHooks.stepEdit.description')}
                     actions={
-                        <Button variant='glass' size='sm' type='button' onClick={back}>
+                        <Button variant='glass' size='sm' type='button' onClick={back} className='w-full sm:w-auto'>
                             <ArrowLeft className='mr-2 h-4 w-4' />
                             {t('lifecycleHooks.backToHooks')}
                         </Button>
@@ -238,7 +238,7 @@ export default function EditLifecycleHookStepPage() {
                     title={t('lifecycleHooks.stepEdit.title', { hookType: hookLabels[hookType] })}
                     description={t('lifecycleHooks.stepEdit.description')}
                     actions={
-                        <Button variant='glass' size='sm' type='button' onClick={back}>
+                        <Button variant='glass' size='sm' type='button' onClick={back} className='w-full sm:w-auto'>
                             <ArrowLeft className='mr-2 h-4 w-4' />
                             {t('lifecycleHooks.backToHooks')}
                         </Button>
@@ -259,7 +259,7 @@ export default function EditLifecycleHookStepPage() {
                     title={t('lifecycleHooks.stepEdit.title', { hookType: hookLabels[hookType] })}
                     description={t('lifecycleHooks.stepEdit.description')}
                     actions={
-                        <Button variant='glass' size='sm' type='button' onClick={back}>
+                        <Button variant='glass' size='sm' type='button' onClick={back} className='w-full sm:w-auto'>
                             <ArrowLeft className='mr-2 h-4 w-4' />
                             {t('lifecycleHooks.backToHooks')}
                         </Button>

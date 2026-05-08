@@ -346,10 +346,16 @@ export default function VdsActivitiesPage() {
                     </div>
                 }
                 actions={
-                    <div className='flex items-center gap-3'>
-                        <Button variant='glass' size='default' onClick={() => fetchActivities()} disabled={loading}>
-                            <RefreshCw className={cn('mr-2 h-5 w-5', loading && 'animate-spin')} />
-                            {t('common.refresh')}
+                    <div className='flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-3'>
+                        <Button
+                            variant='glass'
+                            size='default'
+                            onClick={() => fetchActivities()}
+                            disabled={loading}
+                            aria-label={t('common.refresh')}
+                        >
+                            <RefreshCw className={cn('h-5 w-5 sm:mr-2', loading && 'animate-spin')} />
+                            <span className='hidden sm:inline'>{t('common.refresh')}</span>
                         </Button>
                     </div>
                 }

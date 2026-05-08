@@ -204,11 +204,16 @@ export default function CreateProxyPage() {
                 title={t('serverProxy.createProxy')}
                 description={t('serverProxy.createModalDescription')}
                 actions={
-                    <div className='flex items-center gap-3'>
+                    <div className='flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-3'>
                         <Button variant='glass' size='default' onClick={() => router.back()} disabled={saving}>
                             {t('common.cancel')}
                         </Button>
-                        <Button size='default' onClick={handleCreate} disabled={saving || !dnsVerified}>
+                        <Button
+                            size='default'
+                            onClick={handleCreate}
+                            disabled={saving || !dnsVerified}
+                            className='w-full sm:w-auto'
+                        >
                             {saving ? (
                                 <>
                                     <Loader2 className='mr-2 h-4 w-4 animate-spin' />

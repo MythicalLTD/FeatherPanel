@@ -21,7 +21,7 @@ import axios, { AxiosError } from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
-import { Zap, ChevronRight, RefreshCw, Save, Terminal, Container, Settings, Info, Loader2, Lock } from 'lucide-react';
+import { Zap, ChevronRight, RefreshCw, Save, Terminal, Container, Settings, Loader2, Lock } from 'lucide-react';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Textarea } from '@/components/featherui/Textarea';
@@ -378,16 +378,17 @@ export default function ServerStartupPage() {
                 title={t('serverStartup.title')}
                 description={t('serverStartup.description')}
                 actions={
-                    <div className='hidden items-center gap-3 md:flex'>
+                    <div className='flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-3'>
                         <Button
                             variant='plain'
                             size='default'
                             onClick={() => fetchData()}
                             disabled={loading || saving}
-                            className='border border-transparent bg-transparent text-[10px] hover:border-white/10 hover:bg-white/5'
+                            className='order-2 border border-transparent bg-transparent text-[10px] hover:border-white/10 hover:bg-white/5 sm:order-1'
+                            aria-label={t('common.refresh')}
                         >
-                            <RefreshCw className={cn('mr-2 h-3 w-3', loading && 'animate-spin')} />
-                            {t('common.refresh')}
+                            <RefreshCw className={cn('h-3 w-3 sm:mr-2', loading && 'animate-spin')} />
+                            <span className='hidden sm:inline'>{t('common.refresh')}</span>
                         </Button>
                         <Button
                             variant='default'
@@ -395,6 +396,7 @@ export default function ServerStartupPage() {
                             onClick={handleSave}
                             disabled={saving || !hasChanges() || Object.keys(variableErrors).length > 0}
                             loading={saving}
+                            className='order-1 w-full sm:order-2 sm:w-auto'
                         >
                             {saving ? (
                                 t('common.saving')
@@ -429,7 +431,7 @@ export default function ServerStartupPage() {
                                 value={form.startup}
                                 onChange={(e) => setForm((prev) => ({ ...prev, startup: e.target.value }))}
                                 disabled={!canUpdateStartup || saving}
-                                className='min-h-[140px]'
+                                className='min-h-35'
                             />
                         </div>
                     </PageCard>
@@ -537,7 +539,7 @@ export default function ServerStartupPage() {
                                 <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                     {t('serverStartup.availableImages')}
                                 </label>
-                                <div className='scrollbar-hide max-h-[200px] space-y-2 overflow-y-auto pr-2'>
+                                <div className='scrollbar-hide max-h-50 space-y-2 overflow-y-auto pr-2'>
                                     {availableDockerImages.map((image) => (
                                         <div
                                             key={image}
@@ -609,21 +611,6 @@ export default function ServerStartupPage() {
                         </div>
                     )}
                     <WidgetRenderer widgets={getWidgets('server-startup', 'after-spell-selection')} />
-
-                    <div className='group relative space-y-4 overflow-hidden rounded-3xl border border-blue-500/10 bg-blue-500/5 p-8 backdrop-blur-3xl'>
-                        <div className='pointer-events-none absolute -right-6 -bottom-6 h-24 w-24 bg-blue-500/10 blur-2xl transition-transform duration-1000 group-hover:scale-150' />
-                        <div className='relative z-10 flex h-10 w-10 items-center justify-center rounded-xl border border-blue-500/20 bg-blue-500/10'>
-                            <Info className='h-5 w-5 text-blue-500' />
-                        </div>
-                        <div className='relative z-10 space-y-2'>
-                            <h3 className='text-lg leading-none font-black tracking-tight text-blue-500 uppercase'>
-                                {t('serverStartup.startupSettings')}
-                            </h3>
-                            <p className='text-[11px] leading-relaxed font-bold text-blue-500/70'>
-                                {t('serverStartup.description')}
-                            </p>
-                        </div>
-                    </div>
                 </div>
             </div>
             <WidgetRenderer widgets={getWidgets('server-startup', 'bottom-of-page')} />

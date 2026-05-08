@@ -55,6 +55,7 @@ export default function ServerProxyPage() {
     const proxyEnabled = isEnabled(settings?.server_allow_user_made_proxy);
     const maxProxies = parseInt(settings?.server_proxy_max_per_server || '0', 10);
     const isMaxReached = proxies.length >= maxProxies && maxProxies > 0;
+    const showHeaderCreateAction = canManage && proxies.length > 0;
 
     const fetchData = React.useCallback(async () => {
         if (!uuidShort || !proxyEnabled) return;
@@ -162,21 +163,29 @@ export default function ServerProxyPage() {
                     </>
                 }
                 actions={
-                    <div className='flex items-center gap-3'>
-                        <Button variant='glass' size='default' onClick={fetchData} disabled={loading}>
-                            <RefreshCw className={cn('mr-2 h-5 w-5', loading && 'animate-spin')} />
-                            {t('serverProxy.refresh')}
-                        </Button>
-                        {canManage && (
+                    <div className='flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-3'>
+                        {showHeaderCreateAction && (
                             <Button
                                 size='default'
                                 onClick={() => router.push(`/server/${uuidShort}/proxy/new`)}
                                 disabled={isMaxReached || loading}
+                                className='order-1 w-full sm:order-2 sm:w-auto'
                             >
                                 <Plus className='mr-2 h-5 w-5' />
                                 {t('serverProxy.createProxy')}
                             </Button>
                         )}
+                        <Button
+                            variant='glass'
+                            size='default'
+                            onClick={fetchData}
+                            disabled={loading}
+                            className='order-2 sm:order-1'
+                            aria-label={t('serverProxy.refresh')}
+                        >
+                            <RefreshCw className={cn('h-5 w-5 sm:mr-2', loading && 'animate-spin')} />
+                            <span className='hidden sm:inline'>{t('serverProxy.refresh')}</span>
+                        </Button>
                     </div>
                 }
             />

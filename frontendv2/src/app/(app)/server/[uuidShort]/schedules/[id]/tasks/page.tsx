@@ -303,11 +303,8 @@ export default function ServerTasksPage() {
                 title={t('serverTasks.title')}
                 description={t('serverTasks.description', { scheduleName: schedule?.name || '' })}
                 actions={
-                    <div className='flex items-center gap-3'>
-                        <Button variant='glass' size='default' onClick={() => router.back()} disabled={loading}>
-                            {t('common.back')}
-                        </Button>
-                        {canUpdate && (
+                    <div className='flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-3'>
+                        {canUpdate && tasks.length > 0 && (
                             <Button
                                 size='default'
                                 variant='default'
@@ -315,11 +312,21 @@ export default function ServerTasksPage() {
                                     setCreateForm({ action: '', payload: '', time_offset: 0, continue_on_failure: 0 });
                                     setIsCreateOpen(true);
                                 }}
+                                className='order-1 w-full sm:order-2 sm:w-auto'
                             >
                                 <Plus className='mr-2 h-4 w-4' />
                                 {t('serverTasks.createTask')}
                             </Button>
                         )}
+                        <Button
+                            variant='glass'
+                            size='default'
+                            onClick={() => router.back()}
+                            disabled={loading}
+                            className='order-2 sm:order-1'
+                        >
+                            {t('common.back')}
+                        </Button>
                     </div>
                 }
             />

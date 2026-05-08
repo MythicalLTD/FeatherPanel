@@ -154,7 +154,7 @@ function SettingFieldRow({
                     value={currentSetting.value as string}
                     onChange={(e) => onSettingChange(settingKey, e.target.value)}
                     placeholder={currentSetting.placeholder}
-                    className='min-h-[120px]'
+                    className='min-h-30'
                 />
                 <p className='text-muted-foreground text-sm'>{currentSetting.description}</p>
             </div>

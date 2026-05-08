@@ -11,5 +11,6 @@
         "prettier-plugin-tailwindcss"
     ],
     "tailwindcssCanonicalStylesheet": "./src/app/globals.css",
-    "tailwindcssCanonicalRootFontSize": 16
+    "tailwindcssCanonicalRootFontSize": 16,
+    "tailwindcssSuggestCanonicalClasses": true
 }

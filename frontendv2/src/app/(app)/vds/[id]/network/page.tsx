@@ -152,10 +152,18 @@ export default function VdsNetworkingPage() {
                 title={t('vds.networking.title') ?? 'Networking'}
                 description={t('vds.networking.description') ?? 'View assigned IPs, interfaces, and DNS settings.'}
                 actions={
-                    <Button variant='glass' size='sm' onClick={fetchNetworking} disabled={loading}>
-                        <RefreshCw className={cn('mr-1.5 h-4 w-4', loading && 'animate-spin')} />
-                        {t('navigation.items.refresh') || 'Refresh'}
-                    </Button>
+                    <div className='flex w-full sm:w-auto sm:justify-end'>
+                        <Button
+                            variant='glass'
+                            size='sm'
+                            onClick={fetchNetworking}
+                            disabled={loading}
+                            aria-label={t('navigation.items.refresh') || 'Refresh'}
+                        >
+                            <RefreshCw className={cn('h-4 w-4 sm:mr-1.5', loading && 'animate-spin')} />
+                            <span className='hidden sm:inline'>{t('navigation.items.refresh') || 'Refresh'}</span>
+                        </Button>
+                    </div>
                 }
             />
 

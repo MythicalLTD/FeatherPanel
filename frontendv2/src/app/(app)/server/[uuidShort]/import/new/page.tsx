@@ -176,15 +176,16 @@ export default function CreateServerImportPage() {
                 title={t('serverImport.createImport')}
                 description={t('serverImport.drawerDescription')}
                 actions={
-                    <div className='flex items-center gap-3'>
+                    <div className='flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-3'>
                         <Button
                             variant='glass'
                             onClick={() => router.push(`/server/${uuidShort}/import`)}
                             disabled={saving}
+                            className='order-2 sm:order-1'
                         >
                             {t('common.cancel')}
                         </Button>
-                        <Button onClick={handleStartImport} disabled={saving}>
+                        <Button onClick={handleStartImport} disabled={saving} className='order-1 w-full sm:order-2 sm:w-auto'>
                             {saving ? (
                                 <>
                                     <Loader2 className='mr-2 h-4 w-4 animate-spin' />

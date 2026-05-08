@@ -261,6 +261,7 @@ export default function ServerSubusersPage() {
         const translated = t(translationPath);
         return translated !== translationPath ? translated : '';
     };
+    const showHeaderAddAction = canCreate && subusers.length > 0;
 
     if (permissionsLoading || settingsLoading) return null;
 
@@ -325,28 +326,31 @@ export default function ServerSubusersPage() {
                 title={t('serverSubusers.title')}
                 description={t('serverSubusers.description')}
                 actions={
-                    <>
-                        <Button
-                            variant='glass'
-                            size='default'
-                            onClick={() => fetchSubusers(pagination.current_page)}
-                            disabled={loading}
-                        >
-                            <RefreshCw className={cn('mr-2 h-5 w-5', loading && 'animate-spin')} />
-                            {t('common.refresh')}
-                        </Button>
-                        {canCreate && (
+                    <div className='flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-3'>
+                        {showHeaderAddAction && (
                             <Button
                                 size='default'
                                 variant='default'
                                 onClick={() => setIsAddOpen(true)}
                                 disabled={loading}
+                                className='order-1 w-full sm:order-2 sm:w-auto'
                             >
                                 <Plus className='mr-2 h-5 w-5' />
                                 {t('serverSubusers.addSubuser')}
                             </Button>
                         )}
-                    </>
+                        <Button
+                            variant='glass'
+                            size='default'
+                            onClick={() => fetchSubusers(pagination.current_page)}
+                            disabled={loading}
+                            className='order-2 sm:order-1'
+                            aria-label={t('common.refresh')}
+                        >
+                            <RefreshCw className={cn('h-5 w-5 sm:mr-2', loading && 'animate-spin')} />
+                            <span className='hidden sm:inline'>{t('common.refresh')}</span>
+                        </Button>
+                    </div>
                 }
             />
             <WidgetRenderer widgets={getWidgets('server-users', 'after-header')} />

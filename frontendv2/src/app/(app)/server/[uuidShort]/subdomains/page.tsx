@@ -127,6 +127,7 @@ export default function ServerSubdomainsPage() {
     }
 
     const limitReached = (overview?.current_total ?? 0) >= (overview?.max_allowed ?? 0);
+    const showHeaderCreateAction = !limitReached && subdomains.length > 0;
 
     return (
         <div key={pathname} className='space-y-8 pb-12'>
@@ -136,20 +137,29 @@ export default function ServerSubdomainsPage() {
                 title={t('serverSubdomains.title')}
                 description={t('serverSubdomains.description')}
                 actions={
-                    <div className='flex items-center gap-3'>
-                        <Button variant='glass' size='default' onClick={fetchData} disabled={loading}>
-                            <RefreshCw className={cn('mr-2 h-5 w-5', loading && 'animate-spin')} />
-                            {t('common.refresh')}
-                        </Button>
-
+                    <div className='flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-3'>
+                        {showHeaderCreateAction && (
+                            <Button
+                                size='default'
+                                variant='default'
+                                onClick={() => router.push(`/server/${uuidShort}/subdomains/new`)}
+                                disabled={loading}
+                                className='order-1 w-full sm:order-2 sm:w-auto'
+                            >
+                                <Plus className='mr-2 h-5 w-5' />
+                                {t('serverSubdomains.createButton')}
+                            </Button>
+                        )}
                         <Button
+                            variant='glass'
                             size='default'
-                            variant='default'
-                            onClick={() => router.push(`/server/${uuidShort}/subdomains/new`)}
-                            disabled={limitReached || loading}
+                            onClick={fetchData}
+                            disabled={loading}
+                            className='order-2 sm:order-1'
+                            aria-label={t('common.refresh')}
                         >
-                            <Plus className='mr-2 h-5 w-5' />
-                            {t('serverSubdomains.createButton')}
+                            <RefreshCw className={cn('h-5 w-5 sm:mr-2', loading && 'animate-spin')} />
+                            <span className='hidden sm:inline'>{t('common.refresh')}</span>
                         </Button>
                     </div>
                 }

@@ -109,6 +109,7 @@ export default function ServerImportPage() {
     };
 
     const isImportEnabled = isEnabled(settings?.server_allow_user_made_import);
+    const showHeaderCreateAction = isImportEnabled && canManage && imports.length > 0;
 
     if (permissionsLoading || settingsLoading) {
         return (
@@ -125,21 +126,29 @@ export default function ServerImportPage() {
                 title={t('serverImport.title')}
                 description={t('serverImport.description')}
                 actions={
-                    <div className='flex items-center gap-3'>
-                        <Button variant='glass' size='default' onClick={fetchImports} disabled={loading}>
-                            <RefreshCw className={cn('mr-2 h-5 w-5', loading && 'animate-spin')} />
-                            {t('common.refresh')}
-                        </Button>
-                        {isImportEnabled && canManage && (
+                    <div className='flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-3'>
+                        {showHeaderCreateAction && (
                             <Button
                                 size='default'
                                 variant='default'
                                 onClick={() => router.push(`/server/${uuidShort}/import/new`)}
+                                className='order-1 w-full sm:order-2 sm:w-auto'
                             >
                                 <Plus className='mr-2 h-5 w-5' />
                                 {t('serverImport.createImport')}
                             </Button>
                         )}
+                        <Button
+                            variant='glass'
+                            size='default'
+                            onClick={fetchImports}
+                            disabled={loading}
+                            className='order-2 sm:order-1'
+                            aria-label={t('common.refresh')}
+                        >
+                            <RefreshCw className={cn('h-5 w-5 sm:mr-2', loading && 'animate-spin')} />
+                            <span className='hidden sm:inline'>{t('common.refresh')}</span>
+                        </Button>
                     </div>
                 }
             />

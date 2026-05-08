@@ -501,7 +501,7 @@ export default function ServerSettingsPage() {
                                     <KeyRound className='h-3 w-3' />
                                     {t('serverSettings.sftpPassword')}
                                 </Label>
-                                <div className='bg-secondary/50 border-border/10 flex h-[42px] items-center gap-2 rounded-xl border border-dashed px-4'>
+                                <div className='bg-secondary/50 border-border/10 flex h-10.5 items-center gap-2 rounded-xl border border-dashed px-4'>
                                     <span className='text-muted-foreground/60 text-xs italic'>
                                         {t('serverSettings.sftpPasswordPlaceholder')}
                                     </span>

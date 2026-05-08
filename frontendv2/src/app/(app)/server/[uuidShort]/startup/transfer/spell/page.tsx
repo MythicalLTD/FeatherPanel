@@ -459,13 +459,13 @@ export default function ServerTransferSpellPage() {
                 title={t('navigation.items.transferSpell')}
                 description={t('serverStartup.spellSelectionHelp')}
                 actions={
-                    <div className='flex items-center gap-3'>
+                    <div className='flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-3'>
                         <Button
                             variant='plain'
                             size='default'
                             onClick={() => handleBackToStep(1)}
                             disabled={currentStep === 1 || saving}
-                            className='border border-transparent bg-transparent text-[10px] hover:border-white/10 hover:bg-white/5'
+                            className='order-2 border border-transparent bg-transparent text-[10px] hover:border-white/10 hover:bg-white/5 sm:order-1'
                         >
                             {t('common.cancel')}
                         </Button>
@@ -475,6 +475,7 @@ export default function ServerTransferSpellPage() {
                             onClick={handleSave}
                             disabled={currentStep !== 3 || saving || Object.keys(variableErrors).length > 0}
                             loading={saving}
+                            className='order-1 w-full sm:order-2 sm:w-auto'
                         >
                             {saving ? (
                                 t('common.saving')

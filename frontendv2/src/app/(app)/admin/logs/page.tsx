@@ -804,7 +804,7 @@ export default function AdminLogsPage() {
                                     <ChevronDown className='h-3 w-3' />
                                 </button>
                                 {panelLineDropdownOpen && (
-                                    <div className='bg-popover border-border absolute top-full left-0 z-50 mt-1 min-w-[90px] overflow-hidden rounded-xl border shadow-xl'>
+                                    <div className='bg-popover border-border absolute top-full left-0 z-50 mt-1 min-w-22.5 overflow-hidden rounded-xl border shadow-xl'>
                                         {LINE_OPTIONS.map((n) => (
                                             <button
                                                 key={n}
@@ -971,7 +971,7 @@ export default function AdminLogsPage() {
                                 <button
                                     onClick={() => setWingsNodeDropdownOpen((v) => !v)}
                                     disabled={nodesLoading}
-                                    className='border-border/50 bg-background/60 text-muted-foreground hover:text-foreground hover:border-border flex h-8 max-w-[220px] items-center gap-2 rounded-lg border px-3 text-xs font-semibold transition-all disabled:opacity-50'
+                                    className='border-border/50 bg-background/60 text-muted-foreground hover:text-foreground hover:border-border flex h-8 max-w-55 items-center gap-2 rounded-lg border px-3 text-xs font-semibold transition-all disabled:opacity-50'
                                 >
                                     <Server className='h-3.5 w-3.5 shrink-0 text-amber-400' />
                                     <span className='truncate'>
@@ -982,7 +982,7 @@ export default function AdminLogsPage() {
                                     <ChevronDown className='h-3 w-3 shrink-0' />
                                 </button>
                                 {wingsNodeDropdownOpen && nodes.length > 0 && (
-                                    <div className='bg-popover border-border absolute top-full left-0 z-50 mt-1 max-h-60 min-w-[200px] overflow-hidden overflow-y-auto rounded-xl border shadow-xl'>
+                                    <div className='bg-popover border-border absolute top-full left-0 z-50 mt-1 max-h-60 min-w-50 overflow-hidden overflow-y-auto rounded-xl border shadow-xl'>
                                         {nodes.map((node) => (
                                             <button
                                                 key={node.id}
@@ -1016,7 +1016,7 @@ export default function AdminLogsPage() {
                                     </div>
                                 )}
                                 {wingsNodeDropdownOpen && !nodesLoading && nodes.length === 0 && (
-                                    <div className='bg-popover border-border text-muted-foreground absolute top-full left-0 z-50 mt-1 min-w-[180px] rounded-xl border p-3 text-xs shadow-xl'>
+                                    <div className='bg-popover border-border text-muted-foreground absolute top-full left-0 z-50 mt-1 min-w-45 rounded-xl border p-3 text-xs shadow-xl'>
                                         {t('admin.logs.wings_no_nodes')}
                                     </div>
                                 )}
@@ -1032,7 +1032,7 @@ export default function AdminLogsPage() {
                                     <ChevronDown className='h-3 w-3' />
                                 </button>
                                 {wingsLineDropdownOpen && (
-                                    <div className='bg-popover border-border absolute top-full left-0 z-50 mt-1 min-w-[90px] overflow-hidden rounded-xl border shadow-xl'>
+                                    <div className='bg-popover border-border absolute top-full left-0 z-50 mt-1 min-w-22.5 overflow-hidden rounded-xl border shadow-xl'>
                                         {LINE_OPTIONS.map((n) => (
                                             <button
                                                 key={n}

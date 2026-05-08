@@ -298,19 +298,28 @@ export default function VdsBackupsPage() {
                     </div>
                 }
                 actions={
-                    <div className='flex items-center gap-3'>
-                        <Button variant='glass' size='default' onClick={fetchBackups} disabled={loading}>
-                            <RefreshCw className={cn('mr-2 h-5 w-5', loading && 'animate-spin')} />
-                            {t('serverBackups.refresh') || 'Refresh'}
-                        </Button>
+                    <div className='flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-3'>
+                        {backups.length > 0 && (
+                            <Button
+                                size='default'
+                                disabled={limitReached || loading}
+                                onClick={() => setConfirmCreateOpen(true)}
+                                className='order-1 w-full transition-all active:scale-95 sm:order-2 sm:w-auto'
+                            >
+                                <Plus className='mr-2 h-5 w-5' />
+                                {t('serverBackups.createBackup') || 'Create backup'}
+                            </Button>
+                        )}
                         <Button
+                            variant='glass'
                             size='default'
-                            disabled={limitReached || loading}
-                            onClick={() => setConfirmCreateOpen(true)}
-                            className='transition-all active:scale-95'
+                            onClick={fetchBackups}
+                            disabled={loading}
+                            className='order-2 sm:order-1'
+                            aria-label={t('serverBackups.refresh') || 'Refresh'}
                         >
-                            <Plus className='mr-2 h-5 w-5' />
-                            {t('serverBackups.createBackup') || 'Create backup'}
+                            <RefreshCw className={cn('h-5 w-5 sm:mr-2', loading && 'animate-spin')} />
+                            <span className='hidden sm:inline'>{t('serverBackups.refresh') || 'Refresh'}</span>
                         </Button>
                     </div>
                 }

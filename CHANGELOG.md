@@ -38,6 +38,7 @@
 - The admin area button now intelligently adapts its destination: on a server page, it directs you to the relevant server or VDS edit page; on the dashboard, it takes you to the main admin area. Additionally, while in the admin section, the admin area button is hidden for a cleaner interface. by @nayskutzu
 - Brand new log file rotation and cleanup system that ensures log files are rotated and old logs are cleaned up automatically, freeing up disk space and keeping logs organized. by @nayskutzu
 - Resolved various issues with the translations import system, ensuring a smoother and more reliable experience. by @nayskutzu
+- Improved the servers mobile responsiveness and layout for a better user experience on smaller screens. by @nayskutzu
 
 ## v1.3.6 STABLE
 

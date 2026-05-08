@@ -154,8 +154,14 @@ export default function EditSchedulePage() {
                 title={t('serverSchedules.editSchedule')}
                 description={t('serverSchedules.editScheduleDescription')}
                 actions={
-                    <div className='flex items-center gap-3'>
-                        <Button variant='glass' size='default' onClick={() => router.back()} disabled={saving}>
+                    <div className='flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-3'>
+                        <Button
+                            variant='glass'
+                            size='default'
+                            onClick={() => router.back()}
+                            disabled={saving}
+                            className='order-2 sm:order-1'
+                        >
                             {t('common.cancel')}
                         </Button>
                         <Button
@@ -164,6 +170,7 @@ export default function EditSchedulePage() {
                             onClick={handleUpdate}
                             disabled={saving}
                             loading={saving}
+                            className='order-1 w-full sm:order-2 sm:w-auto'
                         >
                             <Save className='mr-2 h-4 w-4' />
                             {t('serverSchedules.update')}
