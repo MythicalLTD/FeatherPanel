@@ -1,7 +1,7 @@
 /*
 This file is part of FeatherPanel.
 
-Copyright (C) 2025 MythicalSystems Studios
+Copyright (C) 2025 MythicalSystems Studio
 Copyright (C) 2025 FeatherPanel Contributors
 Copyright (C) 2025 Cassian Gherman (aka NaysKutzu)
 
@@ -16,24 +16,17 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { RefreshCw, LayoutGrid, List, TriangleAlert } from 'lucide-react';
+import { RefreshCw, LayoutGrid, List, TriangleAlert, Server, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useVmsState } from '@/hooks/useVmsState';
 import { vmsApi, VmInstance, VmPagination } from '@/lib/vms-api';
 import { VmCard } from '@/components/vms/VmCard';
 import { cn } from '@/lib/utils';
 import { Listbox } from '@headlessui/react';
-import { RadioGroup } from '@headlessui/react';
 
 interface SortOption {
     id: 'name' | 'status' | 'created' | 'updated';
     name: string;
-}
-
-interface LayoutOption {
-    id: 'grid' | 'list';
-    name: string;
-    icon: React.ComponentType<{ className?: string }>;
 }
 
 export default function VmsPage() {
@@ -52,8 +45,6 @@ export default function VmsPage() {
         total_pages: 1,
         has_next: false,
         has_prev: false,
-        from: 0,
-        to: 0,
     });
 
     const sortOptions: SortOption[] = [
@@ -61,11 +52,6 @@ export default function VmsPage() {
         { id: 'status', name: t('servers.sort.status') },
         { id: 'created', name: t('vms.sort.dateCreated') },
         { id: 'updated', name: t('vms.sort.lastUpdated') },
-    ];
-
-    const layoutOptions: LayoutOption[] = [
-        { id: 'grid', name: t('servers.layout.grid'), icon: LayoutGrid },
-        { id: 'list', name: t('servers.layout.list'), icon: List },
     ];
 
     const fetchVms = useCallback(
@@ -79,7 +65,6 @@ export default function VmsPage() {
                 if (response.data) {
                     let vmList = response.data.instances;
 
-                    // Apply sorting
                     if (selectedSort === 'name') {
                         vmList = vmList.sort((a, b) => a.hostname.localeCompare(b.hostname));
                     } else if (selectedSort === 'status') {
@@ -112,38 +97,43 @@ export default function VmsPage() {
     }, [searchQuery, selectedSort, fetchVms]);
 
     const selectedSortOption = sortOptions.find((o) => o.id === selectedSort) || sortOptions[0];
-    const selectedLayoutOption = layoutOptions.find((o) => o.id === selectedLayout) || layoutOptions[0];
 
-    // Filter by status
+    // Filter by status client-side
     const filteredVms = showOnlyRunning ? vms.filter((vm) => vm.status === 'running') : vms;
 
+    // Compute from/to locally since the backend doesn't return them
+    const paginationFrom = pagination.total_records === 0 ? 0 : (pagination.current_page - 1) * pagination.per_page + 1;
+    const paginationTo = Math.min(pagination.current_page * pagination.per_page, pagination.total_records);
+
     return (
-        <div className='space-y-10 pb-12'>
-            <div className='flex items-start justify-between'>
-                <div>
-                    <h1 className='text-2xl font-bold tracking-tight sm:text-4xl'>{t('vms.title')}</h1>
-                    <p className='text-muted-foreground mt-2 text-sm sm:text-lg'>{t('vms.description')}</p>
-                </div>
+        <div className='space-y-6 pb-12'>
+            {/* Page header */}
+            <div>
+                <h1 className='text-2xl font-bold tracking-tight sm:text-3xl'>{t('vms.title')}</h1>
+                <p className='text-muted-foreground mt-1 text-sm'>{t('vms.description')}</p>
             </div>
 
-            {/* Controls */}
-            <div className='bg-card/50 border-border/50 flex flex-col gap-3 rounded-2xl border p-3 backdrop-blur-xl'>
-                <div className='flex items-center gap-2'>
-                    <input
-                        type='text'
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder={t('vms.searchPlaceholder')}
-                        className='bg-background border-border focus:ring-primary min-w-0 flex-1 rounded-xl border px-4 py-2 text-sm transition-all focus:ring-2 focus:outline-none'
-                    />
+            {/* Controls — two rows on mobile, one row on desktop */}
+            <div className='border-border/50 bg-card/50 space-y-2 rounded-2xl border p-3 backdrop-blur-xl'>
+                {/* Row 1: search */}
+                <input
+                    type='text'
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder={t('vms.searchPlaceholder')}
+                    className='bg-background border-border focus:ring-primary w-full rounded-xl border px-4 py-2 text-sm transition-all focus:ring-2 focus:outline-none'
+                />
 
+                {/* Row 2: sort / layout / running / refresh */}
+                <div className='flex flex-wrap items-center gap-2'>
+                    {/* Sort */}
                     <Listbox value={selectedSortOption} onChange={(option) => setSelectedSort(option.id)}>
                         <div className='relative'>
                             <Listbox.Button className='bg-background border-border hover:bg-muted flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors'>
                                 {selectedSortOption.name}
                                 <span className='text-xs opacity-50'>▼</span>
                             </Listbox.Button>
-                            <Listbox.Options className='bg-card border-border absolute right-0 z-50 mt-1 w-48 rounded-lg border py-1 shadow-lg'>
+                            <Listbox.Options className='bg-card border-border absolute left-0 z-50 mt-1 w-44 rounded-lg border py-1 shadow-lg'>
                                 {sortOptions.map((option) => (
                                     <Listbox.Option
                                         key={option.id}
@@ -157,45 +147,52 @@ export default function VmsPage() {
                         </div>
                     </Listbox>
 
-                    <RadioGroup value={selectedLayoutOption} onChange={(option) => setSelectedLayout(option.id)}>
-                        <div className='flex shrink-0 items-center gap-2'>
-                            {layoutOptions.map((option) => (
-                                <RadioGroup.Option key={option.id} value={option}>
-                                    {({ checked }) => (
-                                        <button
-                                            className={cn(
-                                                'rounded-lg border p-2 transition-all',
-                                                checked
-                                                    ? 'bg-primary text-primary-foreground border-primary'
-                                                    : 'bg-background border-border hover:bg-muted',
-                                            )}
-                                            title={option.name}
-                                        >
-                                            <option.icon className='h-4 w-4' />
-                                        </button>
-                                    )}
-                                </RadioGroup.Option>
-                            ))}
-                        </div>
-                    </RadioGroup>
+                    {/* Layout toggle */}
+                    <div className='border-border flex items-center overflow-hidden rounded-xl border'>
+                        <button
+                            onClick={() => setSelectedLayout('grid')}
+                            className={cn(
+                                'p-2 transition-all',
+                                selectedLayout === 'grid'
+                                    ? 'bg-primary text-primary-foreground'
+                                    : 'bg-background hover:bg-muted text-muted-foreground',
+                            )}
+                            title={t('servers.layout.grid')}
+                        >
+                            <LayoutGrid className='h-4 w-4' />
+                        </button>
+                        <button
+                            onClick={() => setSelectedLayout('list')}
+                            className={cn(
+                                'p-2 transition-all',
+                                selectedLayout === 'list'
+                                    ? 'bg-primary text-primary-foreground'
+                                    : 'bg-background hover:bg-muted text-muted-foreground',
+                            )}
+                            title={t('servers.layout.list')}
+                        >
+                            <List className='h-4 w-4' />
+                        </button>
+                    </div>
 
+                    {/* Running only toggle */}
                     <button
                         onClick={() => setShowOnlyRunning(!showOnlyRunning)}
                         className={cn(
-                            'shrink-0 rounded-lg px-3 py-2 text-sm font-medium transition-all',
+                            'rounded-xl border px-3 py-2 text-sm font-medium transition-all',
                             showOnlyRunning
-                                ? 'border border-green-500/30 bg-green-500/20 text-green-500'
-                                : 'bg-background border-border hover:bg-muted border',
+                                ? 'border-green-500/40 bg-green-500/15 text-green-400'
+                                : 'bg-background border-border hover:bg-muted text-muted-foreground',
                         )}
-                        title={t('vms.runningOnly')}
                     >
                         {t('vms.runningOnly')}
                     </button>
 
+                    {/* Refresh */}
                     <button
                         onClick={() => fetchVms(pagination.current_page)}
                         disabled={loading}
-                        className='bg-background border-border hover:bg-muted shrink-0 rounded-xl border p-2 transition-colors disabled:opacity-50'
+                        className='bg-background border-border hover:bg-muted ml-auto rounded-xl border p-2 transition-colors disabled:opacity-50'
                         title={t('vms.refresh')}
                     >
                         <RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} />
@@ -203,30 +200,26 @@ export default function VmsPage() {
                 </div>
             </div>
 
-            {/* Loading State */}
+            {/* Loading */}
             {loading && (
-                <div className='flex items-center justify-center py-24'>
-                    <div className='flex flex-col items-center gap-4'>
-                        <RefreshCw className='text-primary h-12 w-12 animate-spin' />
-                        <p className='text-muted-foreground'>{t('vms.loading')}</p>
-                    </div>
+                <div className='flex flex-col items-center justify-center gap-4 py-24'>
+                    <RefreshCw className='text-primary h-10 w-10 animate-spin' />
+                    <p className='text-muted-foreground text-sm'>{t('vms.loading')}</p>
                 </div>
             )}
 
-            {/* Error State */}
+            {/* Error */}
             {error && !loading && (
-                <div className='flex items-center justify-center py-24'>
-                    <div className='max-w-md text-center'>
-                        <TriangleAlert className='text-destructive mx-auto mb-4 h-16 w-16' />
-                        <h3 className='mb-2 text-xl font-semibold'>{t('vms.errorTitle')}</h3>
-                        <p className='text-muted-foreground mb-6'>{error}</p>
-                        <button
-                            onClick={() => fetchVms(1)}
-                            className='bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl px-6 py-3 font-semibold transition-colors'
-                        >
-                            {t('vms.retry')}
-                        </button>
-                    </div>
+                <div className='flex flex-col items-center justify-center gap-4 py-24 text-center'>
+                    <TriangleAlert className='text-destructive h-14 w-14' />
+                    <h3 className='text-lg font-semibold'>{t('vms.errorTitle')}</h3>
+                    <p className='text-muted-foreground text-sm'>{error}</p>
+                    <button
+                        onClick={() => fetchVms(1)}
+                        className='bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl px-6 py-2.5 text-sm font-semibold transition-colors'
+                    >
+                        {t('vms.retry')}
+                    </button>
                 </div>
             )}
 
@@ -234,66 +227,69 @@ export default function VmsPage() {
             {!loading && !error && (
                 <>
                     {filteredVms.length === 0 ? (
-                        <div className='border-border/50 bg-card/50 rounded-xl border p-12 text-center backdrop-blur-xl'>
-                            <p className='text-muted-foreground font-medium'>
-                                {searchQuery ? t('vms.noVmsFound') : t('vms.noVms')}
-                            </p>
-                            <p className='text-muted-foreground/70 mt-1 text-sm'>
-                                {searchQuery ? t('vms.adjustFilters') : t('vms.getStarted')}
-                            </p>
+                        <div className='border-border/50 bg-card/50 flex flex-col items-center justify-center gap-4 rounded-2xl border py-16 text-center'>
+                            <div className='bg-muted/40 flex h-16 w-16 items-center justify-center rounded-2xl'>
+                                <Server className='text-muted-foreground h-8 w-8' />
+                            </div>
+                            <div>
+                                <p className='font-semibold'>{searchQuery ? t('vms.noVmsFound') : t('vms.noVms')}</p>
+                                <p className='text-muted-foreground mt-1 text-sm'>
+                                    {searchQuery ? t('vms.adjustFilters') : t('vms.getStarted')}
+                                </p>
+                            </div>
                         </div>
                     ) : (
-                        <>
+                        <div className='space-y-4'>
+                            {/* Count + pagination header */}
                             <div className='flex items-center justify-between gap-2'>
                                 <p className='text-muted-foreground text-sm'>
                                     {t('vms.pagination.showing', {
-                                        from: String(pagination.from),
-                                        to: String(pagination.to),
+                                        from: String(paginationFrom),
+                                        to: String(paginationTo),
                                         total: String(pagination.total_records),
                                     })}
                                 </p>
+
                                 {pagination.total_pages > 1 && (
-                                    <div className='flex items-center gap-2'>
+                                    <div className='flex items-center gap-1'>
                                         <button
                                             onClick={() => fetchVms(Math.max(1, pagination.current_page - 1))}
                                             disabled={!pagination.has_prev || loading}
-                                            className='bg-background border-border hover:bg-muted rounded-lg border px-3 py-1 text-sm font-medium disabled:opacity-50'
+                                            className='bg-background border-border hover:bg-muted rounded-lg border p-1.5 disabled:opacity-40'
                                         >
-                                            {t('vms.pagination.previous')}
+                                            <ChevronLeft className='h-4 w-4' />
                                         </button>
-                                        <span className='text-muted-foreground text-sm'>
-                                            {t('vms.pagination.page', {
-                                                current: String(pagination.current_page),
-                                                total: String(pagination.total_pages),
-                                            })}
+                                        <span className='text-muted-foreground min-w-16 text-center text-sm'>
+                                            {pagination.current_page} / {pagination.total_pages}
                                         </span>
                                         <button
                                             onClick={() =>
                                                 fetchVms(Math.min(pagination.total_pages, pagination.current_page + 1))
                                             }
                                             disabled={!pagination.has_next || loading}
-                                            className='bg-background border-border hover:bg-muted rounded-lg border px-3 py-1 text-sm font-medium disabled:opacity-50'
+                                            className='bg-background border-border hover:bg-muted rounded-lg border p-1.5 disabled:opacity-40'
                                         >
-                                            {t('vms.pagination.next')}
+                                            <ChevronRight className='h-4 w-4' />
                                         </button>
                                     </div>
                                 )}
                             </div>
 
+                            {/* Cards */}
                             {selectedLayout === 'grid' ? (
-                                <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3'>
+                                <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3'>
                                     {filteredVms.map((vm) => (
                                         <VmCard key={vm.id} vm={vm} layout='grid' />
                                     ))}
                                 </div>
                             ) : (
-                                <div className='space-y-3'>
+                                <div className='space-y-2'>
                                     {filteredVms.map((vm) => (
                                         <VmCard key={vm.id} vm={vm} layout='list' />
                                     ))}
                                 </div>
                             )}
-                        </>
+                        </div>
                     )}
                 </>
             )}

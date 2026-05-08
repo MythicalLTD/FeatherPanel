@@ -404,9 +404,24 @@ export default function VdsConsolePage() {
     const liveStatus = vmStatus?.status ?? instance.status;
     const cpuPercent = vmStatus?.cpu != null ? (vmStatus.cpu * 100).toFixed(1) : null;
     const memUsed = vmStatus?.mem ?? null;
-    const memMax = vmStatus?.maxmem ?? (instance.plan_memory ? instance.plan_memory * 1024 * 1024 : null);
-    const diskUsed = vmStatus?.disk ?? null;
-    const diskMax = vmStatus?.maxdisk ?? (instance.plan_disk ? instance.plan_disk * 1024 * 1024 * 1024 : null);
+    const memMax =
+        vmStatus?.maxmem ||
+        (instance.plan_memory
+            ? instance.plan_memory * 1024 * 1024
+            : instance.memory
+              ? instance.memory * 1024 * 1024
+              : null);
+    // Proxmox returns disk=0 for QEMU VMs when the guest agent isn't reporting
+    // filesystem usage — treat 0 as "no data" (null) rather than "0 bytes used".
+    const diskUsed = vmStatus?.disk ? vmStatus.disk : null;
+    // Same for maxdisk: fall back to the DB-stored disk_gb when Proxmox returns 0.
+    const diskMax =
+        vmStatus?.maxdisk ||
+        (instance.plan_disk
+            ? instance.plan_disk * 1024 * 1024 * 1024
+            : instance.disk_gb
+              ? instance.disk_gb * 1024 * 1024 * 1024
+              : null);
     const uptime = vmStatus?.uptime ?? null;
     const canViewAccessPassword = Boolean(instance.is_owner && instance.access_password);
 
@@ -521,8 +536,14 @@ export default function VdsConsolePage() {
                 memoryData={memoryData}
                 networkRxData={networkRxData}
                 networkTxData={networkTxData}
-                cpuLimit={instance.plan_cpus ?? 0}
-                memoryLimit={instance.plan_memory ? instance.plan_memory * 1024 * 1024 : 0}
+                cpuLimit={instance.plan_cpus ?? instance.cpus ?? 0}
+                memoryLimit={
+                    instance.plan_memory
+                        ? instance.plan_memory * 1024 * 1024
+                        : instance.memory
+                          ? instance.memory * 1024 * 1024
+                          : 0
+                }
             />
 
             <div className='grid grid-cols-2 gap-6 lg:grid-cols-3 xl:grid-cols-6'>
@@ -530,7 +551,7 @@ export default function VdsConsolePage() {
                     icon={Zap}
                     label={t('vds.console.performance.cpu')}
                     value={cpuPercent != null ? `${cpuPercent}%` : '—'}
-                    sub={`${instance.plan_cpus ?? '?'} × ${instance.plan_cores ?? 1} vCPU`}
+                    sub={`${instance.plan_cpus ?? instance.cpus ?? '?'} × ${instance.plan_cores ?? instance.cores ?? 1} vCPU`}
                 />
                 <StatCard
                     icon={Database}
@@ -542,7 +563,11 @@ export default function VdsConsolePage() {
                     icon={HardDrive}
                     label={t('vds.console.performance.disk') || 'Disk'}
                     value={diskUsed != null ? formatMemory(diskUsed) : '—'}
-                    sub={diskMax != null ? `/ ${formatMemory(diskMax)}` : `${instance.plan_disk ?? '?'} GB plan`}
+                    sub={
+                        diskMax != null
+                            ? `/ ${formatMemory(diskMax)}`
+                            : `${instance.plan_disk ?? instance.disk_gb ?? '?'} GB plan`
+                    }
                 />
                 <StatCard
                     icon={Globe}

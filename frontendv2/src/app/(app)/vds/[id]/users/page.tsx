@@ -253,7 +253,7 @@ export default function VdsSubusersPage() {
                             <Button
                                 size='default'
                                 onClick={() => setIsAddOpen(true)}
-                                className='order-1 w-full rounded-2xl shadow-lg shadow-primary/20 sm:order-2 sm:w-auto'
+                                className='shadow-primary/20 order-1 w-full rounded-2xl shadow-lg sm:order-2 sm:w-auto'
                             >
                                 <Plus className='mr-2 h-4 w-4' />
                                 {t('vds.subusers.add')}

@@ -185,7 +185,11 @@ export default function CreateServerImportPage() {
                         >
                             {t('common.cancel')}
                         </Button>
-                        <Button onClick={handleStartImport} disabled={saving} className='order-1 w-full sm:order-2 sm:w-auto'>
+                        <Button
+                            onClick={handleStartImport}
+                            disabled={saving}
+                            className='order-1 w-full sm:order-2 sm:w-auto'
+                        >
                             {saving ? (
                                 <>
                                     <Loader2 className='mr-2 h-4 w-4 animate-spin' />

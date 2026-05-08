@@ -39,6 +39,7 @@
 - Brand new log file rotation and cleanup system that ensures log files are rotated and old logs are cleaned up automatically, freeing up disk space and keeping logs organized. by @nayskutzu
 - Resolved various issues with the translations import system, ensuring a smoother and more reliable experience. by @nayskutzu
 - Improved the servers mobile responsiveness and layout for a better user experience on smaller screens. by @nayskutzu
+- VDS Console & VDS list pages were improved for better usability and responsiveness. by @nayskutzu
 
 ## v1.3.6 STABLE
 

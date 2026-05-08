@@ -35,6 +35,11 @@ export interface VmInstance {
     plan_cpus?: number | null;
     plan_cores?: number | null;
     plan_disk?: number | null;
+    // Raw DB columns (always populated by the backend via i.*)
+    memory?: number | null;
+    cpus?: number | null;
+    cores?: number | null;
+    disk_gb?: number | null;
     node_name?: string | null;
     node_fqdn?: string | null;
     created_at?: string;

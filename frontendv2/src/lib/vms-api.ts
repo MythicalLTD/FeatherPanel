@@ -24,14 +24,21 @@ export interface VmInstance {
     description?: string;
     vm_type: 'qemu' | 'lxc';
     pve_node: string;
-    pve_node_ip?: string;
-    storage: string;
+    node_name?: string;
+    node_fqdn?: string;
     status?: string;
     suspended?: number;
-    cpu_cores?: number;
-    memory_mb?: number;
-    disk_gb?: number;
+    // Actual DB columns returned by the API
+    cpus?: number; // CPU sockets
+    cores?: number; // Cores per socket
+    memory?: number; // Memory in MiB
+    disk_gb?: number; // Disk in GB
     ip_address?: string;
+    ip6_prefix?: string | null;
+    gateway?: string | null;
+    expires_at?: string | null;
+    is_owner?: boolean;
+    is_subuser?: boolean;
     access_password?: string | null;
     created_at?: string;
     updated_at?: string;
@@ -44,8 +51,9 @@ export interface VmPagination {
     total_pages: number;
     has_next: boolean;
     has_prev: boolean;
-    from: number;
-    to: number;
+    // `from` and `to` are not returned by the backend — compute them locally
+    from?: number;
+    to?: number;
 }
 
 export interface VmListResponse {
