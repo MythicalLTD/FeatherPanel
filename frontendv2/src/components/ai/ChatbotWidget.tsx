@@ -24,10 +24,7 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useVmInstance } from '@/contexts/VmInstanceContext';
 
-// ---------------------------------------------------------------------------
-// VdsChatbotWidget — rendered only when inside a VmInstanceProvider (VDS routes)
-// Calls useVmInstance() safely here since it is always inside the provider.
-// ---------------------------------------------------------------------------
+
 function VdsChatbotWidget() {
     const [isOpen, setIsOpen] = useState(false);
     const { t } = useTranslation();
@@ -69,19 +66,12 @@ function VdsChatbotWidget() {
                 </div>
             )}
 
-            <ChatbotContainer
-                open={isOpen}
-                onClose={() => setIsOpen(false)}
-                mode='vds'
-                vdsInstance={instance}
-            />
+            <ChatbotContainer open={isOpen} onClose={() => setIsOpen(false)} mode='vds' vdsInstance={instance} />
         </>
     );
 }
 
-// ---------------------------------------------------------------------------
-// ChatbotWidget — main export; renders server or VDS widget based on route
-// ---------------------------------------------------------------------------
+
 export default function ChatbotWidget() {
     const [isOpen, setIsOpen] = useState(false);
     const pathname = usePathname();

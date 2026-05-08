@@ -3,7 +3,7 @@
 /*
  * This file is part of FeatherPanel.
  *
- * Copyright (C) 2025 MythicalSystems Studio
+ * Copyright (C) 2025 MythicalSystems Studios
  * Copyright (C) 2025 FeatherPanel Contributors
  * Copyright (C) 2025 Cassian Gherman (aka NaysKutzu)
  *
@@ -21,12 +21,12 @@ use App\App;
 use App\Chat\VmNode;
 use App\Chat\VmTask;
 use App\Chat\VmInstance;
-use App\Chat\VmInstanceActivity;
-use App\Chat\VmInstanceBackup;
 use App\Helpers\VmGateway;
+use App\Chat\VmInstanceBackup;
+use App\Chat\VmInstanceActivity;
+use App\Services\Vm\VmInstanceUtil;
 use App\Plugins\Events\Events\VdsEvent;
 use App\Services\Backup\BackupFifoEviction;
-use App\Services\Vm\VmInstanceUtil;
 use App\Services\Chatbot\Tools\ToolInterface;
 
 /**

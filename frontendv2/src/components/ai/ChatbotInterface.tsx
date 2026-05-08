@@ -54,7 +54,6 @@ import {
 import { ServerContext } from '@/contexts/ServerContext';
 import { useSession } from '@/contexts/SessionContext';
 import { type VmInstance } from '@/contexts/VmInstanceContext';
-import axios from 'axios';
 
 interface Message {
     id: string;
@@ -85,7 +84,13 @@ interface ChatbotInterfaceProps {
     vdsInstance?: VmInstance | null;
 }
 
-export default function ChatbotInterface({ open, onOpenChange, isDialog = false, mode = 'server', vdsInstance }: ChatbotInterfaceProps) {
+export default function ChatbotInterface({
+    open,
+    onOpenChange,
+    isDialog = false,
+    mode = 'server',
+    vdsInstance,
+}: ChatbotInterfaceProps) {
     const { t } = useTranslation();
     const [messages, setMessages] = useState<Message[]>([]);
     const [inputMessage, setInputMessage] = useState('');
@@ -328,9 +333,7 @@ export default function ChatbotInterface({ open, onOpenChange, isDialog = false,
                 const vdsNavInstanceId = vdsNavMatch[1]!;
                 const vdsPageName = vdsNavMatch[2]!.toLowerCase();
                 const pageSegment = vdsPageMap[vdsPageName] ?? vdsPageName;
-                const navUrl = pageSegment
-                    ? `/vds/${vdsNavInstanceId}/${pageSegment}`
-                    : `/vds/${vdsNavInstanceId}`;
+                const navUrl = pageSegment ? `/vds/${vdsNavInstanceId}/${pageSegment}` : `/vds/${vdsNavInstanceId}`;
                 router.push(navUrl);
                 showActionNotification(t('chatbot.navigatingToServerPage'), 'success');
             }
@@ -363,7 +366,9 @@ export default function ChatbotInterface({ open, onOpenChange, isDialog = false,
                                 action: command.action,
                                 server: serverName || serverUuid,
                             }),
-                            t('chatbot.actionServer', { action: command.action.charAt(0).toUpperCase() + command.action.slice(1) }),
+                            t('chatbot.actionServer', {
+                                action: command.action.charAt(0).toUpperCase() + command.action.slice(1),
+                            }),
                             'destructive',
                             async () => {
                                 try {
@@ -399,13 +404,15 @@ export default function ChatbotInterface({ open, onOpenChange, isDialog = false,
                                 showActionNotification(result.message, 'error');
                             }
                         } catch (error) {
-                                    console.error('Failed to execute action:', error);
-                                    showActionNotification(t('chatbot.failedToExecuteAction'), 'error');
+                            console.error('Failed to execute action:', error);
+                            showActionNotification(t('chatbot.failedToExecuteAction'), 'error');
                         }
                     }
                 } else {
                     showActionNotification(
-                        t('chatbot.couldNotFindServer', { server: command.serverName || command.serverUuid || 'unknown' }),
+                        t('chatbot.couldNotFindServer', {
+                            server: command.serverName || command.serverUuid || 'unknown',
+                        }),
                         'error',
                     );
                 }
@@ -458,7 +465,9 @@ export default function ChatbotInterface({ open, onOpenChange, isDialog = false,
                     );
                 } else {
                     showActionNotification(
-                        t('chatbot.couldNotFindServer', { server: command.serverName || command.serverUuid || 'unknown' }),
+                        t('chatbot.couldNotFindServer', {
+                            server: command.serverName || command.serverUuid || 'unknown',
+                        }),
                         'error',
                     );
                 }
@@ -580,10 +589,13 @@ export default function ChatbotInterface({ open, onOpenChange, isDialog = false,
                     if (toolExec.success) {
                         showActionNotification(
                             toolExec.message || t('chatbot.toolActionSuccess', { action: toolExec.action_type }),
-                                'success',
-                            );
-                        } else {
-                            showActionNotification(toolExec.error || t('chatbot.toolActionFailed', { action: toolExec.action_type }), 'error');
+                            'success',
+                        );
+                    } else {
+                        showActionNotification(
+                            toolExec.error || t('chatbot.toolActionFailed', { action: toolExec.action_type }),
+                            'error',
+                        );
                     }
                 }
             }
@@ -770,8 +782,8 @@ export default function ChatbotInterface({ open, onOpenChange, isDialog = false,
                                                 onClick={(e) => handleDeleteConversation(conv.id, e)}
                                             >
                                                 <Trash2 className='h-3.5 w-3.5' />
-                                                </Button>
-                                            </div>
+                                            </Button>
+                                        </div>
                                     ))}
                                 </div>
                             )}

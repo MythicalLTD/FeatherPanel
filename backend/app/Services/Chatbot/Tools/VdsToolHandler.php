@@ -3,7 +3,7 @@
 /*
  * This file is part of FeatherPanel.
  *
- * Copyright (C) 2025 MythicalSystems Studio
+ * Copyright (C) 2025 MythicalSystems Studios
  * Copyright (C) 2025 FeatherPanel Contributors
  * Copyright (C) 2025 Cassian Gherman (aka NaysKutzu)
  *
@@ -18,16 +18,16 @@
 namespace App\Services\Chatbot\Tools;
 
 use App\App;
-use App\Services\Chatbot\Tools\Vds\GetVdsDetailsTool;
 use App\Services\Chatbot\Tools\Vds\GetVdsStatusTool;
-use App\Services\Chatbot\Tools\Vds\VdsPowerActionTool;
 use App\Services\Chatbot\Tools\Vds\GetVdsBackupsTool;
-use App\Services\Chatbot\Tools\Vds\GetVdsActivitiesTool;
+use App\Services\Chatbot\Tools\Vds\GetVdsDetailsTool;
+use App\Services\Chatbot\Tools\Vds\GetVdsSubusersTool;
+use App\Services\Chatbot\Tools\Vds\VdsPowerActionTool;
 use App\Services\Chatbot\Tools\Vds\CreateVdsBackupTool;
 use App\Services\Chatbot\Tools\Vds\DeleteVdsBackupTool;
-use App\Services\Chatbot\Tools\Vds\RestoreVdsBackupTool;
+use App\Services\Chatbot\Tools\Vds\GetVdsActivitiesTool;
 use App\Services\Chatbot\Tools\Vds\GetVdsNetworkingTool;
-use App\Services\Chatbot\Tools\Vds\GetVdsSubusersTool;
+use App\Services\Chatbot\Tools\Vds\RestoreVdsBackupTool;
 
 /**
  * VDS Tool Handler - registers and dispatches VDS-specific chatbot tools.

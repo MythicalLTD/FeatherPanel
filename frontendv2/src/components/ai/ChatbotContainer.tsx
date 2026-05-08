@@ -46,7 +46,6 @@ import {
 import { ServerContext } from '@/contexts/ServerContext';
 import { useSession } from '@/contexts/SessionContext';
 import { type VmInstance } from '@/contexts/VmInstanceContext';
-import axios from 'axios';
 
 interface Message {
     id: string;
@@ -319,9 +318,7 @@ export default function ChatbotContainer({ open, onClose, mode = 'server', vdsIn
                 const vdsNavInstanceId = vdsNavMatch[1]!;
                 const vdsPageName = vdsNavMatch[2]!.toLowerCase();
                 const pageSegment = vdsPageMap[vdsPageName] ?? vdsPageName;
-                const navUrl = pageSegment
-                    ? `/vds/${vdsNavInstanceId}/${pageSegment}`
-                    : `/vds/${vdsNavInstanceId}`;
+                const navUrl = pageSegment ? `/vds/${vdsNavInstanceId}/${pageSegment}` : `/vds/${vdsNavInstanceId}`;
                 router.push(navUrl);
                 showActionNotification(t('chatbot.navigatingToServerPage'), 'success');
             }
@@ -580,7 +577,10 @@ export default function ChatbotContainer({ open, onClose, mode = 'server', vdsIn
                             'success',
                         );
                     } else {
-                        showActionNotification(toolExec.error || t('chatbot.toolActionFailed', { action: toolExec.action_type }), 'error');
+                        showActionNotification(
+                            toolExec.error || t('chatbot.toolActionFailed', { action: toolExec.action_type }),
+                            'error',
+                        );
                     }
                 }
             }
@@ -817,7 +817,8 @@ export default function ChatbotContainer({ open, onClose, mode = 'server', vdsIn
                                                                                     loadConversation(conv.id)
                                                                                 }
                                                                                 onKeyDown={(e) =>
-                                                                                    e.key === 'Enter' && loadConversation(conv.id)
+                                                                                    e.key === 'Enter' &&
+                                                                                    loadConversation(conv.id)
                                                                                 }
                                                                             >
                                                                                 <MessageSquare className='h-4 w-4 shrink-0' />

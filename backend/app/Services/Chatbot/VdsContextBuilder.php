@@ -3,7 +3,7 @@
 /*
  * This file is part of FeatherPanel.
  *
- * Copyright (C) 2025 MythicalSystems Studio
+ * Copyright (C) 2025 MythicalSystems Studios
  * Copyright (C) 2025 FeatherPanel Contributors
  * Copyright (C) 2025 Cassian Gherman (aka NaysKutzu)
  *
@@ -18,11 +18,10 @@
 namespace App\Services\Chatbot;
 
 use App\App;
-use App\Chat\VmSubuser;
+use App\Permissions;
 use App\Chat\VmInstance;
 use App\Helpers\VmGateway;
 use App\Helpers\PermissionHelper;
-use App\Permissions;
 
 class VdsContextBuilder
 {
@@ -150,10 +149,10 @@ class VdsContextBuilder
                 if ($hasAccess) {
                     $context[] = '';
                     $context[] = '### Currently Viewing VDS Instance';
-                    $context[] = "Hostname: " . ($vdsInstance['hostname'] ?? "Instance #{$instanceId}");
+                    $context[] = 'Hostname: ' . ($vdsInstance['hostname'] ?? "Instance #{$instanceId}");
                     $context[] = "Instance ID: {$instanceId}";
-                    $context[] = "Status: " . ($vdsInstance['status'] ?? 'unknown');
-                    $context[] = "Type: " . ($vdsInstance['vm_type'] ?? 'unknown');
+                    $context[] = 'Status: ' . ($vdsInstance['status'] ?? 'unknown');
+                    $context[] = 'Type: ' . ($vdsInstance['vm_type'] ?? 'unknown');
 
                     if (!empty($vdsInstance['ip_address'])) {
                         $context[] = "IP Address: {$vdsInstance['ip_address']}";

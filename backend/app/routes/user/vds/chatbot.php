@@ -3,7 +3,7 @@
 /*
  * This file is part of FeatherPanel.
  *
- * Copyright (C) 2025 MythicalSystems Studio
+ * Copyright (C) 2025 MythicalSystems Studios
  * Copyright (C) 2025 FeatherPanel Contributors
  * Copyright (C) 2025 Cassian Gherman (aka NaysKutzu)
  *
@@ -18,8 +18,8 @@
 use App\App;
 use RateLimit\Rate;
 use App\Helpers\ApiResponse;
-use App\Controllers\User\VdsChatbotController;
 use Symfony\Component\HttpFoundation\Request;
+use App\Controllers\User\VdsChatbotController;
 use Symfony\Component\Routing\RouteCollection;
 
 return function (RouteCollection $routes): void {

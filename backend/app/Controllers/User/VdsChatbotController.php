@@ -3,7 +3,7 @@
 /*
  * This file is part of FeatherPanel.
  *
- * Copyright (C) 2025 MythicalSystems Studio
+ * Copyright (C) 2025 MythicalSystems Studios
  * Copyright (C) 2025 FeatherPanel Contributors
  * Copyright (C) 2025 Cassian Gherman (aka NaysKutzu)
  *
@@ -22,8 +22,8 @@ use App\Chat\ChatMessage;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Chat\ChatConversation;
-use App\Services\Chatbot\VdsChatbotService;
 use App\Plugins\Events\Events\ChatbotEvent;
+use App\Services\Chatbot\VdsChatbotService;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
