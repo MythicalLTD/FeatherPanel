@@ -18,6 +18,7 @@
 - Significantly streamlined and enhanced the vds creation workflow for a faster, smoother, and more intuitive experience. by @nayskutzu
 - Added a Redis notification system to reload settings across all services when settings are updated. by @nayskutzu
 - Addon installations are now preserved during FeatherPanel updates, ensuring your enhancements remain intact after every upgrade. by @nayskutzu
+- The chatbot can now and will now work with the VDS pages by @nayskutzu
 
 ### Fixed
 

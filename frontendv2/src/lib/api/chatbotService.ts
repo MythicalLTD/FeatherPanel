@@ -32,6 +32,17 @@ export interface PageContext {
         node?: { name?: string };
         spell?: { name?: string };
     };
+    vdsInstance?: {
+        id: number;
+        hostname: string | null;
+        status: string;
+        vm_type: string;
+        ip_address: string | null;
+        memory?: number | null;
+        cpus?: number | null;
+        disk_gb?: number | null;
+        node_name?: string | null;
+    };
     contextItems?: Array<{
         type: 'server' | 'page' | 'file';
         id: string;
@@ -175,6 +186,112 @@ export async function deleteConversation(conversationId: number): Promise<void> 
         if (axios.isAxiosError(error)) {
             const errorMessage =
                 error.response?.data?.error_message || error.message || 'Failed to delete conversation';
+            throw new Error(errorMessage);
+        }
+        throw error;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// VDS Chatbot API functions
+// ---------------------------------------------------------------------------
+
+/**
+ * Send a chat message to the VDS AI assistant
+ */
+export async function sendVdsChatMessage(
+    message: string,
+    history: ChatMessage[] = [],
+    pageContext?: PageContext,
+    conversationId?: number,
+): Promise<{ response: string; model?: string; conversationId?: number; toolExecutions?: ToolExecution[] }> {
+    try {
+        const response = await axios.post<ChatResponse>('/api/user/vds-chatbot/chat', {
+            message,
+            history: history.map((msg) => ({
+                role: msg.role,
+                content: msg.content,
+            })),
+            pageContext: pageContext || undefined,
+            conversation_id: conversationId || undefined,
+        });
+
+        if (response.data && response.data.success && response.data.data) {
+            return {
+                response: response.data.data.response,
+                model: response.data.data.model,
+                conversationId: response.data.data.conversation_id,
+                toolExecutions: response.data.data.tool_executions,
+            };
+        }
+
+        throw new Error(response.data.error_message || 'Failed to get response from VDS AI');
+    } catch (error) {
+        if (axios.isAxiosError(error)) {
+            const errorMessage = error.response?.data?.error_message || error.message || 'Failed to send message';
+            throw new Error(errorMessage);
+        }
+        throw error;
+    }
+}
+
+/**
+ * Get all VDS conversations for the current user
+ */
+export async function getVdsConversations(): Promise<Conversation[]> {
+    try {
+        const response = await axios.get<{ success: boolean; data: { conversations: Conversation[] } }>(
+            '/api/user/vds-chatbot/conversations',
+        );
+
+        if (response.data && response.data.success && response.data.data) {
+            return response.data.data.conversations;
+        }
+
+        return [];
+    } catch (error) {
+        console.error('Failed to get VDS conversations:', error);
+        return [];
+    }
+}
+
+/**
+ * Get VDS conversation messages
+ */
+export async function getVdsConversationMessages(conversationId: number): Promise<{
+    conversation: Conversation;
+    messages: ConversationMessage[];
+}> {
+    try {
+        const response = await axios.get<{
+            success: boolean;
+            data: { conversation: Conversation; messages: ConversationMessage[] };
+        }>(`/api/user/vds-chatbot/conversations/${conversationId}`);
+
+        if (response.data && response.data.success && response.data.data) {
+            return response.data.data;
+        }
+
+        throw new Error('Failed to get VDS conversation messages');
+    } catch (error) {
+        if (axios.isAxiosError(error)) {
+            const errorMessage = error.response?.data?.error_message || error.message || 'Failed to get messages';
+            throw new Error(errorMessage);
+        }
+        throw error;
+    }
+}
+
+/**
+ * Delete a VDS conversation
+ */
+export async function deleteVdsConversation(conversationId: number): Promise<void> {
+    try {
+        await axios.delete(`/api/user/vds-chatbot/conversations/${conversationId}`);
+    } catch (error) {
+        if (axios.isAxiosError(error)) {
+            const errorMessage =
+                error.response?.data?.error_message || error.message || 'Failed to delete VDS conversation';
             throw new Error(errorMessage);
         }
         throw error;

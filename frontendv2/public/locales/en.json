@@ -8089,6 +8089,10 @@
         "pressEnterToSend": "Press Enter to send, Shift+Enter for new line",
         "conversations": "Conversations",
         "closeChat": "Close chat",
+        "welcomeVds": "Hi {name}! 👋 I'm your FeatherPanel VDS AI. I can help you manage your virtual servers — check status, control power, manage backups, and more!",
+        "you": "You",
+        "toolActionSuccess": "Action '{action}' completed successfully",
+        "toolActionFailed": "Action '{action}' failed",
         "toggleSidebar": "Toggle sidebar"
     }
 }

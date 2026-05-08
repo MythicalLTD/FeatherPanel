@@ -15,7 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { Fragment, useState, useEffect, useRef } from 'react';
+import { Fragment, useState, useEffect, useRef, useContext } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';
@@ -26,9 +26,13 @@ import ReactMarkdown from 'react-markdown';
 import { useTranslation } from '@/contexts/TranslationContext';
 import {
     sendChatMessage,
+    sendVdsChatMessage,
     getConversations,
     getConversationMessages,
     deleteConversation,
+    getVdsConversations,
+    getVdsConversationMessages,
+    deleteVdsConversation,
     type Conversation,
     type PageContext,
 } from '@/lib/api/chatbotService';
@@ -39,8 +43,10 @@ import {
     findServerUuidByName,
     findServerNameByUuid,
 } from '@/lib/api/chatbotActions';
-import { useServer } from '@/contexts/ServerContext';
+import { ServerContext } from '@/contexts/ServerContext';
 import { useSession } from '@/contexts/SessionContext';
+import { type VmInstance } from '@/contexts/VmInstanceContext';
+import axios from 'axios';
 
 interface Message {
     id: string;
@@ -67,9 +73,11 @@ interface ConfirmDialogState {
 interface ChatbotContainerProps {
     open: boolean;
     onClose: () => void;
+    mode?: 'server' | 'vds';
+    vdsInstance?: VmInstance | null;
 }
 
-export default function ChatbotContainer({ open, onClose }: ChatbotContainerProps) {
+export default function ChatbotContainer({ open, onClose, mode = 'server', vdsInstance }: ChatbotContainerProps) {
     const { t } = useTranslation();
     const [messages, setMessages] = useState<Message[]>([]);
     const [inputMessage, setInputMessage] = useState('');
@@ -94,7 +102,8 @@ export default function ChatbotContainer({ open, onClose }: ChatbotContainerProp
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const pathname = usePathname();
     const router = useRouter();
-    const { server } = useServer();
+    const serverCtx = useContext(ServerContext);
+    const server = serverCtx?.server ?? null;
     const { user } = useSession();
 
     const scrollToBottom = () => {
@@ -107,6 +116,16 @@ export default function ChatbotContainer({ open, onClose }: ChatbotContainerProp
         scrollToBottom();
     }, [messages]);
 
+    const getWelcomeMessage = (userName: string) => {
+        if (mode === 'vds') {
+            return (
+                t('chatbot.welcomeVds', { name: userName }) ||
+                `Hi ${userName}! I'm FeatherPanel VDS AI. I can help you manage your virtual servers - check status, manage backups, control power, and more!`
+            );
+        }
+        return t('chatbot.welcome', { name: userName });
+    };
+
     useEffect(() => {
         if (open) {
             loadConversationsList();
@@ -116,7 +135,7 @@ export default function ChatbotContainer({ open, onClose }: ChatbotContainerProp
                     {
                         id: 'welcome',
                         role: 'assistant',
-                        content: t('chatbot.welcome', { name: userName }),
+                        content: getWelcomeMessage(userName),
                         timestamp: new Date(),
                     },
                 ]);
@@ -131,7 +150,7 @@ export default function ChatbotContainer({ open, onClose }: ChatbotContainerProp
     const loadConversationsList = async () => {
         setLoadingConversations(true);
         try {
-            const convs = await getConversations();
+            const convs = mode === 'vds' ? await getVdsConversations() : await getConversations();
             setConversations(convs);
         } catch (error) {
             console.error('Failed to load conversations:', error);
@@ -148,7 +167,7 @@ export default function ChatbotContainer({ open, onClose }: ChatbotContainerProp
             {
                 id: 'welcome',
                 role: 'assistant',
-                content: t('chatbot.welcome', { name: userName }),
+                content: getWelcomeMessage(userName),
                 timestamp: new Date(),
             },
         ]);
@@ -161,7 +180,10 @@ export default function ChatbotContainer({ open, onClose }: ChatbotContainerProp
 
     const loadConversation = async (conversationId: number) => {
         try {
-            const data = await getConversationMessages(conversationId);
+            const data =
+                mode === 'vds'
+                    ? await getVdsConversationMessages(conversationId)
+                    : await getConversationMessages(conversationId);
             setCurrentConversationId(conversationId);
             setMessages(
                 data.messages.map((msg) => ({
@@ -190,7 +212,11 @@ export default function ChatbotContainer({ open, onClose }: ChatbotContainerProp
     const handleDeleteConversation = async (conversationId: number, event: React.MouseEvent) => {
         event.stopPropagation();
         try {
-            await deleteConversation(conversationId);
+            if (mode === 'vds') {
+                await deleteVdsConversation(conversationId);
+            } else {
+                await deleteConversation(conversationId);
+            }
             if (currentConversationId === conversationId) {
                 createNewConversation();
             }
@@ -270,6 +296,36 @@ export default function ChatbotContainer({ open, onClose }: ChatbotContainerProp
 
     const executeAIActions = async (responseText: string) => {
         const commands = parseActionCommands(responseText);
+
+        // --- VDS-specific action patterns ---
+        // VDS power and backup actions are handled entirely by backend tools (TOOL_CALL).
+        // The frontend only handles navigation ACTION commands for VDS.
+        // ACTION: navigate vds [instance_id] to [page_name]
+        const vdsNavigatePattern = /ACTION:\s*navigate\s+vds\s+(\d+)\s+to\s+(\w+)/gi;
+
+        const vdsPageMap: Record<string, string> = {
+            console: '',
+            activities: 'activities',
+            backups: 'backups',
+            network: 'network',
+            settings: 'settings',
+            users: 'users',
+        };
+
+        if (mode === 'vds') {
+            let vdsNavMatch: RegExpExecArray | null;
+            vdsNavigatePattern.lastIndex = 0;
+            while ((vdsNavMatch = vdsNavigatePattern.exec(responseText)) !== null) {
+                const vdsNavInstanceId = vdsNavMatch[1]!;
+                const vdsPageName = vdsNavMatch[2]!.toLowerCase();
+                const pageSegment = vdsPageMap[vdsPageName] ?? vdsPageName;
+                const navUrl = pageSegment
+                    ? `/vds/${vdsNavInstanceId}/${pageSegment}`
+                    : `/vds/${vdsNavInstanceId}`;
+                router.push(navUrl);
+                showActionNotification(t('chatbot.navigatingToServerPage'), 'success');
+            }
+        }
 
         for (const command of commands) {
             if (command.type === 'server_power' && command.action) {
@@ -478,12 +534,34 @@ export default function ChatbotContainer({ open, onClose }: ChatbotContainerProp
                 };
             }
 
-            const result = await sendChatMessage(
-                messageText,
-                messages.slice(0, -1),
-                pageContext,
-                currentConversationId || undefined,
-            );
+            if (mode === 'vds' && vdsInstance && pathname?.startsWith('/vds/')) {
+                pageContext.vdsInstance = {
+                    id: vdsInstance.id,
+                    hostname: vdsInstance.hostname,
+                    status: vdsInstance.status,
+                    vm_type: vdsInstance.vm_type,
+                    ip_address: vdsInstance.ip_address,
+                    memory: vdsInstance.memory,
+                    cpus: vdsInstance.cpus,
+                    disk_gb: vdsInstance.disk_gb,
+                    node_name: vdsInstance.node_name,
+                };
+            }
+
+            const result =
+                mode === 'vds'
+                    ? await sendVdsChatMessage(
+                          messageText,
+                          messages.slice(0, -1),
+                          pageContext,
+                          currentConversationId || undefined,
+                      )
+                    : await sendChatMessage(
+                          messageText,
+                          messages.slice(0, -1),
+                          pageContext,
+                          currentConversationId || undefined,
+                      );
 
             if (result.model) {
                 setChatModelName(result.model);
@@ -498,11 +576,11 @@ export default function ChatbotContainer({ open, onClose }: ChatbotContainerProp
                 for (const toolExec of result.toolExecutions) {
                     if (toolExec.success) {
                         showActionNotification(
-                            toolExec.message || `Action '${toolExec.action_type}' completed successfully`,
+                            toolExec.message || t('chatbot.toolActionSuccess', { action: toolExec.action_type }),
                             'success',
                         );
                     } else {
-                        showActionNotification(toolExec.error || `Action '${toolExec.action_type}' failed`, 'error');
+                        showActionNotification(toolExec.error || t('chatbot.toolActionFailed', { action: toolExec.action_type }), 'error');
                     }
                 }
             }
@@ -591,6 +669,7 @@ export default function ChatbotContainer({ open, onClose }: ChatbotContainerProp
                     alt={user.username}
                     width={size === 'sm' ? 32 : 36}
                     height={size === 'sm' ? 32 : 36}
+                    unoptimized
                     className={`${sizeClasses[size]} rounded-full object-cover`}
                 />
             );
@@ -725,15 +804,20 @@ export default function ChatbotContainer({ open, onClose }: ChatbotContainerProp
                                                                 ) : (
                                                                     <div className='space-y-1'>
                                                                         {conversations.map((conv) => (
-                                                                            <button
+                                                                            <div
                                                                                 key={conv.id}
-                                                                                className={`group relative flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm transition-colors ${
+                                                                                role='button'
+                                                                                tabIndex={0}
+                                                                                className={`group relative flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm transition-colors ${
                                                                                     currentConversationId === conv.id
                                                                                         ? 'bg-primary/10 text-primary'
                                                                                         : 'hover:bg-muted text-foreground'
                                                                                 }`}
                                                                                 onClick={() =>
                                                                                     loadConversation(conv.id)
+                                                                                }
+                                                                                onKeyDown={(e) =>
+                                                                                    e.key === 'Enter' && loadConversation(conv.id)
                                                                                 }
                                                                             >
                                                                                 <MessageSquare className='h-4 w-4 shrink-0' />
@@ -772,7 +856,7 @@ export default function ChatbotContainer({ open, onClose }: ChatbotContainerProp
                                                                                 >
                                                                                     <Trash2 className='h-3.5 w-3.5' />
                                                                                 </Button>
-                                                                            </button>
+                                                                            </div>
                                                                         ))}
                                                                     </div>
                                                                 )}
@@ -855,7 +939,7 @@ export default function ChatbotContainer({ open, onClose }: ChatbotContainerProp
                                                                                         ? t('chatbot.title')
                                                                                         : user?.first_name ||
                                                                                           user?.username ||
-                                                                                          'You'}
+                                                                                          t('chatbot.you')}
                                                                                 </span>
                                                                             </div>
                                                                             <div

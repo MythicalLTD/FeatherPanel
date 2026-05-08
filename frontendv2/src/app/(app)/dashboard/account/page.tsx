@@ -94,6 +94,7 @@ export default function AccountPage() {
                             alt={user.username || 'User avatar'}
                             width={96}
                             height={96}
+                            unoptimized
                             className='border-primary/20 h-20 w-20 rounded-full border-2 object-cover sm:h-24 sm:w-24'
                         />
                     ) : (
