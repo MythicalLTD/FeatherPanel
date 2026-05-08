@@ -15,7 +15,34 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { NextRequest, NextResponse } from 'next/server';
 
-export function proxy(request: NextRequest) {
+async function applyStatusPageIframeHeaders(request: NextRequest, response: NextResponse): Promise<NextResponse> {
+    try {
+        const origin = request.nextUrl.origin;
+        const settingsRes = await fetch(`${origin}/api/settings/public`, {
+            headers: { 'Content-Type': 'application/json' },
+            cache: 'no-store',
+        });
+
+        if (settingsRes.ok) {
+            const settingsData = await settingsRes.json();
+            const allowIframe = settingsData?.data?.settings?.status_page_allow_iframe === 'true';
+
+            if (allowIframe) {
+                response.headers.delete('X-Frame-Options');
+                response.headers.set('Content-Security-Policy', 'frame-ancestors *');
+            } else {
+                response.headers.set('X-Frame-Options', 'SAMEORIGIN');
+            }
+        }
+    } catch {
+        // On error, keep default SAMEORIGIN behavior
+        response.headers.set('X-Frame-Options', 'SAMEORIGIN');
+    }
+
+    return response;
+}
+
+export async function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
     const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
@@ -40,7 +67,17 @@ export function proxy(request: NextRequest) {
     const isPublicRoute = publicRoutes.some((route) => pathname === route || pathname.startsWith(route + '/'));
 
     /* If the requested route is a public route (non-authenticated route) then we can pass the request onto further logic. */
-    if (isPublicRoute) return NextResponse.next();
+    if (isPublicRoute) {
+        const response = NextResponse.next();
+
+        // For the public status page, conditionally control X-Frame-Options
+        // to support iframe embedding when the admin has enabled it.
+        if (pathname === '/status' || pathname.startsWith('/status/')) {
+            return applyStatusPageIframeHeaders(request, response);
+        }
+
+        return response;
+    }
 
     const token = request.cookies.get('remember_token')?.value;
 

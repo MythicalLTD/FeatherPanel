@@ -114,7 +114,7 @@ export function IgnoredContentDialog({ open, onOpenChange, uuid, onSuccess }: Ig
                         </Button>
                     </div>
 
-                    <div className='custom-scrollbar flex max-h-[200px] flex-wrap gap-2 overflow-y-auto pr-2'>
+                    <div className='custom-scrollbar flex max-h-50 flex-wrap gap-2 overflow-y-auto pr-2'>
                         {patterns.length === 0 ? (
                             <p className='text-muted-foreground w-full rounded-xl border border-dashed border-white/10 bg-white/5 py-8 text-center text-xs italic'>
                                 {t('files.dialogs.ignored.empty')}

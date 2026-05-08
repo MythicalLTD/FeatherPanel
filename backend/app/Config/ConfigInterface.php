@@ -230,6 +230,9 @@ interface ConfigInterface
     public const STATUS_PAGE_SHOW_LOAD_USAGE = 'status_page_show_load_usage';
     public const STATUS_PAGE_SHOW_TOTAL_SERVERS = 'status_page_show_total_servers';
     public const STATUS_PAGE_SHOW_INDIVIDUAL_NODES = 'status_page_show_individual_nodes';
+    public const STATUS_PAGE_ALLOW_IFRAME = 'status_page_allow_iframe';
+    public const STATUS_PAGE_SHOW_RAW_VALUES = 'status_page_show_raw_values';
+    public const STATUS_PAGE_SHOW_PLAYER_COUNT = 'status_page_show_player_count';
 
     /**
      * Knowledgebase Settings.

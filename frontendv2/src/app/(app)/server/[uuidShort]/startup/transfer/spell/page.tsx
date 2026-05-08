@@ -547,7 +547,7 @@ export default function ServerTransferSpellPage() {
                 ))}
             </div>
 
-            <div className='relative min-h-[400px]'>
+            <div className='relative min-h-100'>
                 {currentStep === 1 && (
                     <div className='grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3'>
                         {loadingRealms ? (
@@ -577,7 +577,7 @@ export default function ServerTransferSpellPage() {
                                                 {realm.description || t('serverStartup.discoverRealmsHelp')}
                                             </p>
                                         </div>
-                                        <div className='text-primary flex translate-x-[-10px] items-center pt-2 text-[10px] font-black tracking-widest uppercase opacity-0 transition-all group-hover:translate-x-0 group-hover:opacity-100'>
+                                        <div className='text-primary flex translate-x-2.5 items-center pt-2 text-[10px] font-black tracking-widest uppercase opacity-0 transition-all group-hover:translate-x-0 group-hover:opacity-100'>
                                             {t('serverStartup.viewSpells')} <ChevronRight className='ml-1 h-3 w-3' />
                                         </div>
                                     </div>

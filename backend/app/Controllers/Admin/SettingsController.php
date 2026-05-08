@@ -239,6 +239,9 @@ class SettingsController
                 ConfigInterface::STATUS_PAGE_SHOW_LOAD_USAGE,
                 ConfigInterface::STATUS_PAGE_SHOW_TOTAL_SERVERS,
                 ConfigInterface::STATUS_PAGE_SHOW_INDIVIDUAL_NODES,
+                ConfigInterface::STATUS_PAGE_ALLOW_IFRAME,
+                ConfigInterface::STATUS_PAGE_SHOW_RAW_VALUES,
+                ConfigInterface::STATUS_PAGE_SHOW_PLAYER_COUNT,
             ],
         ],
         'knowledgebase' => [
@@ -2016,6 +2019,54 @@ class SettingsController
                         'false',
                     ),
                 'description' => 'Show individual node details on status page',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'false',
+                'validation' => 'required|string|max:255',
+                'options' => ['true', 'false'],
+                'category' => 'status_page',
+            ],
+            ConfigInterface::STATUS_PAGE_ALLOW_IFRAME => [
+                'name' => ConfigInterface::STATUS_PAGE_ALLOW_IFRAME,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::STATUS_PAGE_ALLOW_IFRAME,
+                        'false',
+                    ),
+                'description' => 'Allow the status page to be embedded in an iframe (disables X-Frame-Options: SAMEORIGIN)',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'false',
+                'validation' => 'required|string|max:255',
+                'options' => ['true', 'false'],
+                'category' => 'status_page',
+            ],
+            ConfigInterface::STATUS_PAGE_SHOW_RAW_VALUES => [
+                'name' => ConfigInterface::STATUS_PAGE_SHOW_RAW_VALUES,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::STATUS_PAGE_SHOW_RAW_VALUES,
+                        'false',
+                    ),
+                'description' => 'Show raw resource values (CPU core count, RAM in GB, disk in GB) alongside percentage values on the status page',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'false',
+                'validation' => 'required|string|max:255',
+                'options' => ['true', 'false'],
+                'category' => 'status_page',
+            ],
+            ConfigInterface::STATUS_PAGE_SHOW_PLAYER_COUNT => [
+                'name' => ConfigInterface::STATUS_PAGE_SHOW_PLAYER_COUNT,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::STATUS_PAGE_SHOW_PLAYER_COUNT,
+                        'false',
+                    ),
+                'description' => 'Show total online player count per node (sum of all players on all servers of that node)',
                 'type' => 'select',
                 'required' => true,
                 'placeholder' => 'false',

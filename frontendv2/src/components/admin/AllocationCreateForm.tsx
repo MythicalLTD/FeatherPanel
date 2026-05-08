@@ -286,7 +286,7 @@ export function AllocationCreateForm({ nodeId, onCreated, onCancel, showFooter =
                 <Textarea
                     placeholder='Notes...'
                     value={createForm.notes}
-                    className='min-h-[100px]'
+                    className='min-h-25'
                     onChange={(e) => setCreateForm((prev) => ({ ...prev, notes: e.target.value }))}
                 />
             </div>

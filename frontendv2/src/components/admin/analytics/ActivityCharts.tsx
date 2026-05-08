@@ -49,7 +49,7 @@ export function ActivityTrendChart({ data }: ActivityTrendChartProps) {
                 <CardTitle>{t('admin.analytics.activity.trend_title')}</CardTitle>
                 <CardDescription>{t('admin.analytics.activity.trend_desc')}</CardDescription>
             </CardHeader>
-            <CardContent className='h-[300px]'>
+            <CardContent className='h-75'>
                 <ResponsiveContainer width='100%' height='100%'>
                     <LineChart data={data || []}>
                         <CartesianGrid strokeDasharray='3 3' className='stroke-muted' />
@@ -80,7 +80,7 @@ export function ActivityBreakdownChart({ data }: ActivityBreakdownChartProps) {
                 <CardTitle>{t('admin.analytics.activity.breakdown_title')}</CardTitle>
                 <CardDescription>{t('admin.analytics.activity.breakdown_desc')}</CardDescription>
             </CardHeader>
-            <CardContent className='h-[300px]'>
+            <CardContent className='h-75'>
                 <ResponsiveContainer width='100%' height='100%'>
                     <PieChart>
                         <Pie
@@ -138,7 +138,7 @@ export function HourlyActivityChart({ data }: HourlyActivityChartProps) {
                 <CardTitle>{t('admin.analytics.activity.hourly_title')}</CardTitle>
                 <CardDescription>{t('admin.analytics.activity.hourly_desc')}</CardDescription>
             </CardHeader>
-            <CardContent className='h-[300px]'>
+            <CardContent className='h-75'>
                 <ResponsiveContainer width='100%' height='100%'>
                     <BarChart data={data || []}>
                         <CartesianGrid strokeDasharray='3 3' className='stroke-muted' />

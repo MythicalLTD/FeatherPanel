@@ -561,7 +561,7 @@ export default function FeatherAiAgentPage() {
                                     <Textarea
                                         readOnly
                                         disabled
-                                        className='bg-muted/50 min-h-[200px] resize-none font-mono text-xs'
+                                        className='bg-muted/50 min-h-50 resize-none font-mono text-xs'
                                         value={systemPrompt}
                                     />
                                 </div>

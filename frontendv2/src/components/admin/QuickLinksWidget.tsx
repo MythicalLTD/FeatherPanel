@@ -69,7 +69,7 @@ export function QuickLinksWidget({ onClearCache, isClearingCache }: QuickLinksWi
                         href={link.href}
                         target={link.external ? '_blank' : undefined}
                         rel={link.external ? 'noopener noreferrer' : undefined}
-                        className='bg-muted/10 border-border/50 hover:bg-muted/20 group relative flex min-w-[200px] flex-1 items-center gap-3 rounded-xl border p-3 transition-all hover:scale-[1.02] active:scale-[0.98] sm:min-w-[240px] md:gap-4 md:rounded-2xl md:p-4 lg:flex-1 lg:flex-initial xl:flex-initial'
+                        className='bg-muted/10 border-border/50 hover:bg-muted/20 group relative flex min-w-60 flex-1 items-center gap-3 rounded-xl border p-3 transition-all hover:scale-[1.02] active:scale-[0.98] sm:min-w-[240px] md:gap-4 md:rounded-2xl md:p-4 lg:flex-1 lg:flex-initial xl:flex-initial'
                     >
                         <div
                             className={cn(
@@ -82,7 +82,7 @@ export function QuickLinksWidget({ onClearCache, isClearingCache }: QuickLinksWi
                             <link.icon className='h-4 w-4 md:h-5 md:w-5' />
                         </div>
                         <div className='min-w-0 flex-1'>
-                            <p className='text-[10px] leading-tight font-black tracking-widest break-words whitespace-normal uppercase md:text-xs'>
+                            <p className='text-[10px] leading-tight font-black tracking-widest wrap-break-words whitespace-normal uppercase md:text-xs'>
                                 {link.name}
                             </p>
                             {link.external && (
@@ -95,7 +95,7 @@ export function QuickLinksWidget({ onClearCache, isClearingCache }: QuickLinksWi
                 <button
                     onClick={onClearCache}
                     disabled={isClearingCache}
-                    className='group relative flex min-w-[200px] flex-1 items-center gap-3 rounded-xl border border-red-500/10 bg-red-500/5 p-3 text-start transition-all hover:scale-[1.02] hover:bg-red-500/10 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 sm:min-w-[240px] md:gap-4 md:rounded-2xl md:p-4 lg:flex-1 lg:flex-initial xl:flex-initial'
+                    className='group relative flex min-w-50 flex-1 items-center gap-3 rounded-xl border border-red-500/10 bg-red-500/5 p-3 text-start transition-all hover:scale-[1.02] hover:bg-red-500/10 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 sm:min-w-[240px] md:gap-4 md:rounded-2xl md:p-4 lg:flex-1 lg:flex-initial xl:flex-initial'
                 >
                     <div
                         className={cn(
@@ -106,7 +106,7 @@ export function QuickLinksWidget({ onClearCache, isClearingCache }: QuickLinksWi
                         <Trash2 className={cn('h-4 w-4 md:h-5 md:w-5', isClearingCache && 'animate-spin')} />
                     </div>
                     <div className='min-w-0 flex-1'>
-                        <p className='text-[10px] leading-tight font-black tracking-widest break-words whitespace-normal text-red-500 uppercase md:text-xs'>
+                        <p className='text-[10px] leading-tight font-black tracking-widest wrap-break-words whitespace-normal text-red-500 uppercase md:text-xs'>
                             {t('admin.quick_links.clear_system_cache')}
                         </p>
                     </div>

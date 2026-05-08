@@ -66,7 +66,7 @@ export function ChangelogSection({ title, items, color, icon }: ChangelogSection
                                 dotClasses[color],
                             )}
                         />
-                        <span className='text-xs leading-relaxed break-words md:text-sm'>{item}</span>
+                        <span className='text-xs leading-relaxed wrap-break-words md:text-sm'>{item}</span>
                     </li>
                 ))}
             </ul>

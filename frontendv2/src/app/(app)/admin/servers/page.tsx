@@ -581,7 +581,7 @@ export default function ServersPage() {
                                 setSortBy(field);
                                 setSortOrder(order);
                             }}
-                            className='bg-background/50 border-border/50 h-11 w-[220px] rounded-xl text-sm'
+                            className='bg-background/50 border-border/50 h-11 w-55 rounded-xl text-sm'
                         >
                             <option value='id-DESC'>{t('admin.servers.sort.newest')}</option>
                             <option value='id-ASC'>{t('admin.servers.sort.oldest')}</option>
@@ -1131,7 +1131,7 @@ export default function ServersPage() {
                 open={confirmDeleteId !== null}
                 onOpenChange={(open) => !open && !deleting && setConfirmDeleteId(null)}
             >
-                <AlertDialogContent className='sm:max-w-[500px]'>
+                <AlertDialogContent className='sm:max-w-125'>
                     <AlertDialogHeader>
                         <AlertDialogTitle className='text-destructive flex items-center gap-2'>
                             <AlertTriangle className='h-6 w-6' />
@@ -1208,7 +1208,7 @@ export default function ServersPage() {
                             className='h-11 pl-10'
                         />
                     </div>
-                    <div className='custom-scrollbar max-h-[350px] space-y-2 overflow-y-auto pr-1'>
+                    <div className='custom-scrollbar max-h-87.5 space-y-2 overflow-y-auto pr-1'>
                         {ownerFilterLoading ? (
                             <div className='flex items-center justify-center py-10'>
                                 <Loader2 className='text-primary h-6 w-6 animate-spin' />
@@ -1281,7 +1281,7 @@ export default function ServersPage() {
                             className='h-11 pl-10'
                         />
                     </div>
-                    <div className='custom-scrollbar max-h-[350px] space-y-2 overflow-y-auto pr-1'>
+                    <div className='custom-scrollbar max-h-87.5 space-y-2 overflow-y-auto pr-1'>
                         {loadingNodes ? (
                             <div className='flex items-center justify-center py-10'>
                                 <Loader2 className='text-primary h-6 w-6 animate-spin' />
@@ -1360,7 +1360,7 @@ export default function ServersPage() {
                             className='h-11 pl-10'
                         />
                     </div>
-                    <div className='custom-scrollbar max-h-[350px] space-y-2 overflow-y-auto pr-1'>
+                    <div className='custom-scrollbar max-h-87.5 space-y-2 overflow-y-auto pr-1'>
                         {realmsList.length === 0 ? (
                             <div className='text-muted-foreground py-10 text-center text-sm'>
                                 {t('admin.servers.filters.realm_no_results')}
@@ -1446,7 +1446,7 @@ export default function ServersPage() {
                             className='h-11 pl-10'
                         />
                     </div>
-                    <div className='custom-scrollbar max-h-[350px] space-y-2 overflow-y-auto pr-1'>
+                    <div className='custom-scrollbar max-h-87.5 space-y-2 overflow-y-auto pr-1'>
                         {spellsList.length === 0 ? (
                             <div className='text-muted-foreground py-10 text-center text-sm'>
                                 {t('admin.servers.filters.spell_no_results')}
@@ -1532,7 +1532,7 @@ export default function ServersPage() {
                             className='h-11 pl-10'
                         />
                     </div>
-                    <div className='custom-scrollbar max-h-[350px] space-y-2 overflow-y-auto pr-1'>
+                    <div className='custom-scrollbar max-h-87.5 space-y-2 overflow-y-auto pr-1'>
                         {locationsList.length === 0 ? (
                             <div className='text-muted-foreground py-10 text-center text-sm'>
                                 {t('admin.servers.filters.location_no_results')}
@@ -1743,7 +1743,7 @@ export default function ServersPage() {
                             className='h-11 pl-10'
                         />
                     </div>
-                    <div className='custom-scrollbar max-h-[350px] space-y-2 overflow-y-auto pr-1'>
+                    <div className='custom-scrollbar max-h-87.5 space-y-2 overflow-y-auto pr-1'>
                         {loadingNodes ? (
                             <div className='flex items-center justify-center py-10'>
                                 <Loader2 className='text-primary h-6 w-6 animate-spin' />
@@ -1795,7 +1795,7 @@ export default function ServersPage() {
                             className='h-11 pl-10'
                         />
                     </div>
-                    <div className='custom-scrollbar max-h-[350px] space-y-2 overflow-y-auto pr-1'>
+                    <div className='custom-scrollbar max-h-87.5 space-y-2 overflow-y-auto pr-1'>
                         {loadingAllocations ? (
                             <div className='flex items-center justify-center py-10'>
                                 <Loader2 className='text-primary h-6 w-6 animate-spin' />

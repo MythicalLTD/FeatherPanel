@@ -28,11 +28,11 @@ export function FirewallTab() {
                     icon={Shield}
                     title={t('admin.vdsNodes.firewall_tab.blank_title')}
                     description={t('admin.vdsNodes.firewall_tab.blank_description')}
-                    className='border-red-500/25 bg-gradient-to-br from-red-500/10 to-transparent'
+                    className='border-red-500/25 bg-linear-to-b from-red-500/10 to-transparent'
                 />
 
                 <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
-                    <div className='border-border/20 from-card/30 space-y-3 rounded-xl border bg-gradient-to-br to-transparent p-4'>
+                    <div className='border-border/20 from-card/30 space-y-3 rounded-xl border bg-linear-to-b to-transparent p-4'>
                         <div className='flex items-start gap-3'>
                             <div className='mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-red-500/20 bg-red-500/10'>
                                 <Shield className='h-4 w-4 text-red-600' />
@@ -48,7 +48,7 @@ export function FirewallTab() {
                         </div>
                     </div>
 
-                    <div className='border-border/20 from-card/30 space-y-3 rounded-xl border bg-gradient-to-br to-transparent p-4'>
+                    <div className='border-border/20 from-card/30 space-y-3 rounded-xl border bg-linear-to-b to-transparent p-4'>
                         <div className='flex items-start gap-3'>
                             <div className='mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-orange-500/20 bg-orange-500/10'>
                                 <Lock className='h-4 w-4 text-orange-600' />
@@ -64,7 +64,7 @@ export function FirewallTab() {
                         </div>
                     </div>
 
-                    <div className='border-border/20 from-card/30 space-y-3 rounded-xl border bg-gradient-to-br to-transparent p-4 md:col-span-2'>
+                    <div className='border-border/20 from-card/30 space-y-3 rounded-xl border bg-linear-to-b to-transparent p-4 md:col-span-2'>
                         <div className='flex items-start gap-3'>
                             <div className='mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-yellow-500/20 bg-yellow-500/10'>
                                 <Zap className='h-4 w-4 text-yellow-600' />
@@ -81,7 +81,7 @@ export function FirewallTab() {
                     </div>
                 </div>
 
-                <div className='border-border/20 from-card/20 rounded-xl border bg-gradient-to-br to-transparent p-4'>
+                <div className='border-border/20 from-card/20 rounded-xl border bg-linear-to-b to-transparent p-4'>
                     <p className='text-muted-foreground/70 text-sm leading-relaxed'>
                         {t('admin.vdsNodes.firewall_tab.footer_description')}
                     </p>

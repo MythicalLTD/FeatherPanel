@@ -28,11 +28,11 @@ export function DhcpAgentTab() {
                     icon={Zap}
                     title={t('admin.vdsNodes.dhcp.blank_title')}
                     description={t('admin.vdsNodes.dhcp.blank_description')}
-                    className='border-amber-500/25 bg-gradient-to-br from-amber-500/10 to-transparent'
+                    className='border-amber-500/25 bg-linear-to-b from-amber-500/10 to-transparent'
                 />
 
                 <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
-                    <div className='border-border/20 from-card/30 space-y-3 rounded-xl border bg-gradient-to-br to-transparent p-4'>
+                    <div className='border-border/20 from-card/30 space-y-3 rounded-xl border bg-linear-to-b to-transparent p-4'>
                         <div className='flex items-start gap-3'>
                             <div className='mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-amber-500/20 bg-amber-500/10'>
                                 <Zap className='h-4 w-4 text-amber-600' />
@@ -48,7 +48,7 @@ export function DhcpAgentTab() {
                         </div>
                     </div>
 
-                    <div className='border-border/20 from-card/30 space-y-3 rounded-xl border bg-gradient-to-br to-transparent p-4'>
+                    <div className='border-border/20 from-card/30 space-y-3 rounded-xl border bg-linear-to-b to-transparent p-4'>
                         <div className='flex items-start gap-3'>
                             <div className='mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-blue-500/20 bg-blue-500/10'>
                                 <ArrowRight className='h-4 w-4 text-blue-600' />
@@ -64,7 +64,7 @@ export function DhcpAgentTab() {
                         </div>
                     </div>
 
-                    <div className='border-border/20 from-card/30 space-y-3 rounded-xl border bg-gradient-to-br to-transparent p-4 md:col-span-2'>
+                    <div className='border-border/20 from-card/30 space-y-3 rounded-xl border bg-linear-to-b to-transparent p-4 md:col-span-2'>
                         <div className='flex items-start gap-3'>
                             <div className='mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-purple-500/20 bg-purple-500/10'>
                                 <Zap className='h-4 w-4 text-purple-600' />
@@ -81,7 +81,7 @@ export function DhcpAgentTab() {
                     </div>
                 </div>
 
-                <div className='border-border/20 from-card/20 rounded-xl border bg-gradient-to-br to-transparent p-4'>
+                <div className='border-border/20 from-card/20 rounded-xl border bg-linear-to-b to-transparent p-4'>
                     <p className='text-muted-foreground/70 text-sm leading-relaxed'>
                         {t('admin.vdsNodes.dhcp.footer_description')}
                     </p>

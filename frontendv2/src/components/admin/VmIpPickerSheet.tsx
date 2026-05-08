@@ -318,7 +318,7 @@ export function VmIpPickerSheet({
                                     <Textarea
                                         placeholder={'10.0.0.10\n10.0.0.11\n10.0.0.12'}
                                         value={bulkIpsInput}
-                                        className='min-h-[120px] font-mono'
+                                        className='min-h-30 font-mono'
                                         onChange={(e) => setBulkIpsInput(e.target.value)}
                                     />
                                     <p className='text-muted-foreground text-xs'>
@@ -382,7 +382,7 @@ export function VmIpPickerSheet({
                                 <Textarea
                                     placeholder={t('admin.vdsNodes.ips.notes_placeholder')}
                                     value={createForm.notes}
-                                    className='min-h-[100px]'
+                                    className='min-h-25'
                                     onChange={(e) => setCreateForm((p) => ({ ...p, notes: e.target.value }))}
                                 />
                             </div>

@@ -259,7 +259,7 @@ export function TicketSidebar({
                             </TabsContent>
 
                             <TabsContent value='servers' className='pt-3'>
-                                <div className='scrollbar-hide max-h-[200px] space-y-2 overflow-y-auto'>
+                                <div className='scrollbar-hide max-h-50 space-y-2 overflow-y-auto'>
                                     {userServers.length === 0 ? (
                                         <p className='text-muted-foreground py-4 text-center text-xs italic'>
                                             {t('admin.tickets.sidebar.empty.servers')}
@@ -288,7 +288,7 @@ export function TicketSidebar({
                             </TabsContent>
 
                             <TabsContent value='tickets' className='pt-3'>
-                                <div className='scrollbar-hide max-h-[200px] space-y-2 overflow-y-auto'>
+                                <div className='scrollbar-hide max-h-50 space-y-2 overflow-y-auto'>
                                     {userTickets.filter((t) => t.uuid !== ticket.uuid).length === 0 ? (
                                         <p className='text-muted-foreground py-4 text-center text-xs italic'>
                                             {t('admin.tickets.sidebar.empty.tickets')}
@@ -315,7 +315,7 @@ export function TicketSidebar({
                             </TabsContent>
 
                             <TabsContent value='emails' className='pt-3'>
-                                <div className='scrollbar-hide max-h-[200px] space-y-2 overflow-y-auto'>
+                                <div className='scrollbar-hide max-h-50 space-y-2 overflow-y-auto'>
                                     {!userDetails.mails || userDetails.mails.length === 0 ? (
                                         <p className='text-muted-foreground py-4 text-center text-xs italic'>
                                             {t('admin.tickets.sidebar.empty.emails')}

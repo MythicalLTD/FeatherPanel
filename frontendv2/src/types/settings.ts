@@ -34,6 +34,9 @@ export interface AppSettings {
     smtp_enabled: string;
     status_page_enabled: string;
     status_page_public_enabled: string;
+    status_page_allow_iframe?: string;
+    status_page_show_raw_values?: string;
+    status_page_show_player_count?: string;
     ticket_system_enabled: string;
     turnstile_enabled: string;
     turnstile_key_pub: string;

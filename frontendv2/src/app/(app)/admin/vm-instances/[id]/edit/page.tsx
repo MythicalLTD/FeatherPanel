@@ -596,7 +596,7 @@ export default function VmInstanceEditPage() {
 
     if (loading || !instance) {
         return (
-            <div className='flex min-h-[200px] items-center justify-center'>
+            <div className='flex min-h-50 items-center justify-center'>
                 <Loader2 className='text-muted-foreground h-8 w-8 animate-spin' />
             </div>
         );

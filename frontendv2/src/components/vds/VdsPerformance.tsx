@@ -127,7 +127,7 @@ export default function VdsPerformance({
                                 </span>
                             </div>
 
-                            <div className='mt-4 h-[200px] min-h-[200px] w-full min-w-0'>
+                            <div className='mt-4 h-50 min-h-50 w-full min-w-0'>
                                 {chart.data.length > 0 ? (
                                     <ResponsiveContainer width='100%' height='100%' minWidth={0} minHeight={200}>
                                         <LineChart data={chart.data}>

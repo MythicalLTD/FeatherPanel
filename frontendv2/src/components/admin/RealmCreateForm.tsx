@@ -91,7 +91,7 @@ export function RealmCreateForm({ onCreated, onCancel, showFooter = true }: Real
                 <Textarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    className='min-h-[88px] resize-y rounded-xl'
+                    className='min-h-22 resize-y rounded-xl'
                     maxLength={65535}
                     placeholder={t('admin.realms.form.description')}
                 />

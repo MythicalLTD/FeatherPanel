@@ -24,6 +24,7 @@ use App\Helpers\ApiResponse;
 use App\Services\Wings\Wings;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
+use App\Helpers\PlayerStatusService;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -71,9 +72,15 @@ class NodeStatusController
         $showLoadUsage = $config->getSetting(ConfigInterface::STATUS_PAGE_SHOW_LOAD_USAGE, 'true') === 'true';
         $showTotalServers = $config->getSetting(ConfigInterface::STATUS_PAGE_SHOW_TOTAL_SERVERS, 'true') === 'true';
         $showIndividualNodes = $config->getSetting(ConfigInterface::STATUS_PAGE_SHOW_INDIVIDUAL_NODES, 'false') === 'true';
+        $allowIframe = $config->getSetting(ConfigInterface::STATUS_PAGE_ALLOW_IFRAME, 'false') === 'true';
+        $showRawValues = $config->getSetting(ConfigInterface::STATUS_PAGE_SHOW_RAW_VALUES, 'false') === 'true';
+        $showPlayerCount = $config->getSetting(ConfigInterface::STATUS_PAGE_SHOW_PLAYER_COUNT, 'false') === 'true';
 
         $responseData = [
             'enabled' => true,
+            'allow_iframe' => $allowIframe,
+            'show_raw_values' => $showRawValues,
+            'show_player_count' => $showPlayerCount,
         ];
 
         // Get node status if enabled
@@ -109,6 +116,21 @@ class NodeStatusController
                     $nodeData['fqdn'] = $node['fqdn'];
                     // Get server count for this node
                     $nodeData['server_count'] = Server::getCount(nodeId: $node['id']);
+                    if ($showPlayerCount) {
+                        // Sum up cached player counts for all servers on this node
+                        $nodeServers = Server::getServersByNodeId($node['id']);
+                        $totalPlayers = 0;
+                        foreach ($nodeServers as $srv) {
+                            $uuidShort = $srv['uuidShort'] ?? '';
+                            if ($uuidShort !== '') {
+                                $playerStatus = PlayerStatusService::getPlayerStatus($uuidShort);
+                                if ($playerStatus !== null) {
+                                    $totalPlayers += (int) ($playerStatus['player_count'] ?? 0);
+                                }
+                            }
+                        }
+                        $nodeData['total_players'] = $totalPlayers;
+                    }
                 }
 
                 if ($showLoadUsage || $showIndividualNodes) {
@@ -133,6 +155,16 @@ class NodeStatusController
 
                         if ($showLoadUsage || $showIndividualNodes) {
                             $nodeData['utilization'] = $utilization;
+
+                            if ($showRawValues) {
+                                // Add CPU core count from Wings system info
+                                try {
+                                    $cpuCount = $wings->getSystem()->getCpuCount();
+                                    $nodeData['cpu_count'] = $cpuCount;
+                                } catch (\Exception $e) {
+                                    $nodeData['cpu_count'] = null;
+                                }
+                            }
 
                             // Aggregate stats for global view
                             if ($showLoadUsage) {

@@ -180,7 +180,7 @@ export function Step3Application({
                                     <Label className='text-muted-foreground text-xs font-medium tracking-wider uppercase'>
                                         {t('admin.servers.form.available_docker_images')}
                                     </Label>
-                                    <div className='custom-scrollbar max-h-[200px] space-y-2 overflow-y-auto pr-2'>
+                                    <div className='custom-scrollbar max-h-50 space-y-2 overflow-y-auto pr-2'>
                                         {dockerImages.map((img) => (
                                             <div
                                                 key={img.value}

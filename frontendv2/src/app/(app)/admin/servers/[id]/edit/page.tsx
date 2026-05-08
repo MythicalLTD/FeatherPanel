@@ -1509,7 +1509,7 @@ function SelectionModal<T extends { id: number | string }>({
                     />
                 </div>
 
-                <div className='custom-scrollbar max-h-[400px] space-y-2 overflow-y-auto pr-1'>
+                <div className='custom-scrollbar max-h-100 space-y-2 overflow-y-auto pr-1'>
                     {items.length === 0 ? (
                         <div className='text-muted-foreground py-8 text-center'>{t('common.no_results')}</div>
                     ) : (

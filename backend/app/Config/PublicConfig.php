@@ -168,6 +168,9 @@ class PublicConfig extends ConfigFactory
             // Status page settings
             ConfigInterface::STATUS_PAGE_ENABLED => 'false',
             ConfigInterface::STATUS_PAGE_PUBLIC_ENABLED => 'true',
+            ConfigInterface::STATUS_PAGE_ALLOW_IFRAME => 'false',
+            ConfigInterface::STATUS_PAGE_SHOW_RAW_VALUES => 'false',
+            ConfigInterface::STATUS_PAGE_SHOW_PLAYER_COUNT => 'false',
 
             // Knowledgebase settings
             ConfigInterface::KNOWLEDGEBASE_ENABLED => 'true',

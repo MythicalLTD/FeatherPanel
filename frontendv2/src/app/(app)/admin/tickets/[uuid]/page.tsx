@@ -699,7 +699,7 @@ export default function TicketViewPage() {
                                             }
                                         }}
                                         placeholder={t('admin.tickets.view.reply_placeholder')}
-                                        className='placeholder:text-muted-foreground/50 max-h-[200px] min-h-[50px] resize-none border-0 bg-transparent p-3.5 text-base focus-visible:ring-0 md:text-sm'
+                                        className='placeholder:text-muted-foreground/50 max-h-50 min-h-[50px] resize-none border-0 bg-transparent p-3.5 text-base focus-visible:ring-0 md:text-sm'
                                         rows={1}
                                         onInput={(e) => {
                                             const target = e.target as HTMLTextAreaElement;

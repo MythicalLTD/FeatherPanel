@@ -93,7 +93,7 @@ export default function KnowledgeBasePage() {
             <div
                 className={cn(
                     isPublicKnowledgebasePage &&
-                        'border-border/60 from-card via-card/95 to-primary/5 rounded-2xl border bg-gradient-to-br p-5 shadow-[0_20px_60px_-30px_rgba(0,0,0,0.65)] md:p-7',
+                        'border-border/60 from-card via-card/95 to-primary/5 rounded-2xl border bg-linear-to-b p-5 shadow-[0_20px_60px_-30px_rgba(0,0,0,0.65)] md:p-7',
                 )}
             >
                 {isPublicKnowledgebasePage && (

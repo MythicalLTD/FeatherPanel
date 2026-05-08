@@ -48,7 +48,7 @@ export function SimplePieChart({ title, description, data }: SimplePieChartProps
                 <CardTitle>{title}</CardTitle>
                 <CardDescription>{description}</CardDescription>
             </CardHeader>
-            <CardContent className='h-[350px]'>
+            <CardContent className='h-87.5'>
                 <ResponsiveContainer width='100%' height='100%'>
                     <PieChart>
                         <Pie
@@ -102,7 +102,7 @@ export function NodeResourceChart({ title, description, data }: NodeResourceChar
                 <CardTitle>{title}</CardTitle>
                 <CardDescription>{description}</CardDescription>
             </CardHeader>
-            <CardContent className='h-[350px]'>
+            <CardContent className='h-87.5'>
                 <ResponsiveContainer width='100%' height='100%'>
                     <BarChart data={data}>
                         <CartesianGrid strokeDasharray='3 3' className='stroke-muted/20' />
@@ -158,7 +158,7 @@ export function SimpleBarChart({ title, description, data, color = '#3b82f6' }: 
                 <CardTitle>{title}</CardTitle>
                 <CardDescription>{description}</CardDescription>
             </CardHeader>
-            <CardContent className='h-[350px]'>
+            <CardContent className='h-87.5'>
                 <ResponsiveContainer width='100%' height='100%'>
                     <BarChart data={data}>
                         <CartesianGrid strokeDasharray='3 3' className='stroke-muted' />

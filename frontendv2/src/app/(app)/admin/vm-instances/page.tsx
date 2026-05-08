@@ -394,7 +394,7 @@ export default function VmInstancesPage() {
                                 setSortBy(field);
                                 setSortOrder(order);
                             }}
-                            className='bg-background/50 border-border/50 h-11 w-[220px] rounded-xl text-sm'
+                            className='bg-background/50 border-border/50 h-11 w-55 rounded-xl text-sm'
                         >
                             <option value='id-DESC'>{t('admin.vmInstances.sort.newest')}</option>
                             <option value='id-ASC'>{t('admin.vmInstances.sort.oldest')}</option>
@@ -640,7 +640,7 @@ export default function VmInstancesPage() {
                         }}
                         className='mb-4'
                     />
-                    <div className='max-h-[400px] space-y-2 overflow-y-auto'>
+                    <div className='max-h-100 space-y-2 overflow-y-auto'>
                         {ownerFilterLoading ? (
                             <div className='py-4 text-center'>
                                 <Loader2 className='mx-auto h-6 w-6 animate-spin' />
@@ -677,7 +677,7 @@ export default function VmInstancesPage() {
                 title={t('admin.vmInstances.filters.select_node')}
             >
                 <div className='p-6'>
-                    <div className='max-h-[400px] space-y-2 overflow-y-auto'>
+                    <div className='max-h-100 space-y-2 overflow-y-auto'>
                         {loadingNodes ? (
                             <div className='py-4 text-center'>
                                 <Loader2 className='mx-auto h-6 w-6 animate-spin' />

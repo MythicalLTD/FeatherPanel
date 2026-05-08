@@ -103,7 +103,7 @@ export function JavaVersionDialog({ isOpen, onClose, server, detectedIssue, onUp
                     {availableDockerImages.length > 0 && (
                         <div className='space-y-2'>
                             <Label>{t('serverStartup.availableImages')}</Label>
-                            <div className='grid max-h-[200px] gap-2 overflow-y-auto'>
+                            <div className='grid max-h-50 gap-2 overflow-y-auto'>
                                 {availableDockerImages.map((img) => (
                                     <Button
                                         key={img.label}

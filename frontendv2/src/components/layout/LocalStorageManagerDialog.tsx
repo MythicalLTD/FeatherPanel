@@ -132,7 +132,7 @@ export function LocalStorageManagerDialog({
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
                             placeholder={tx('navbar.localStorageSearch')}
-                            className='border-border/60 bg-background/50 sm:max-w-[220px]'
+                            className='border-border/60 bg-background/50 sm:max-w-55'
                         />
                         <div className='flex flex-wrap items-center gap-2 sm:justify-end'>
                             <span className='border-border/50 bg-muted/20 text-muted-foreground inline-flex items-center rounded-md border px-2 py-1 text-[11px] tabular-nums'>

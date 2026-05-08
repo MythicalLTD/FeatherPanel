@@ -445,7 +445,7 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
                                 }}
                                 placeholder={t('account.apiKeys.allowedIpsPlaceholder')}
                                 rows={5}
-                                className='mt-2 min-h-[100px] font-mono text-sm font-normal'
+                                className='mt-2 min-h-25 font-mono text-sm font-normal'
                             />
                         </div>
 

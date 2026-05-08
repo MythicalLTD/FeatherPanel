@@ -626,7 +626,7 @@ export default function ServerSchedulesPage() {
                         <div className='h-px flex-1 bg-white/10' />
                     </div>
                     <textarea
-                        className='text-foreground placeholder:text-muted-foreground focus:ring-primary min-h-[160px] w-full resize-none rounded-xl border border-white/10 bg-white/5 p-3 font-mono text-xs focus:ring-1 focus:outline-none'
+                        className='text-foreground placeholder:text-muted-foreground focus:ring-primary min-h-40 w-full resize-none rounded-xl border border-white/10 bg-white/5 p-3 font-mono text-xs focus:ring-1 focus:outline-none'
                         placeholder='{"name": "My Schedule", "cron_minute": "0", ...}'
                         value={importJson}
                         onChange={(e) => setImportJson(e.target.value)}

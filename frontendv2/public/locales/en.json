@@ -287,7 +287,17 @@
             "statusPageDisabled": "Status Page Disabled",
             "statusPageDisabledDescription": "The public infrastructure status page has been disabled by the administrator.",
             "searchPlaceholder": "Search nodes...",
-            "noNodesFound": "No nodes found"
+            "noNodesFound": "No nodes found",
+            "core": "core",
+            "cores": "cores",
+            "playersOnline": "Players Online",
+            "viewInAdmin": "View in Admin",
+            "cpuShort": "CPU",
+            "ramShort": "RAM",
+            "diskShort": "DISK",
+            "unhealthyNodes": "Unhealthy Nodes",
+            "clickToExpand": "Click to expand",
+            "nodeDetails": "Node Details"
         },
         "stats": {},
         "recent_servers": {

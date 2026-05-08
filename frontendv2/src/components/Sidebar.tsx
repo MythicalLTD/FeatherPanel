@@ -422,7 +422,7 @@ function SidebarContent({
                                     'space-y-1 overflow-hidden transition-all duration-200',
                                     isCollapsed && (!collapsed || mobile)
                                         ? 'max-h-0 opacity-0'
-                                        : 'max-h-[2000px] opacity-100',
+                                        : 'max-h-500 opacity-100',
                                 )}
                             >
                                 {groupedItems[group].map((item) => {
@@ -471,7 +471,7 @@ function SidebarContent({
                                                             : 'border-border/30 ml-3 space-y-0.5 overflow-hidden border-l pl-2 transition-all duration-200',
                                                         isSubmenuCollapsed || (collapsed && !mobile)
                                                             ? 'max-h-0 opacity-0'
-                                                            : 'mt-1 max-h-[500px] opacity-100',
+                                                            : 'mt-1 max-h-125 opacity-100',
                                                     )}
                                                 >
                                                     {item.children?.map((child) => {

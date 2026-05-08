@@ -239,7 +239,7 @@ export function NavbarClassicChrome(props: NavbarChromeProps) {
                                                     <p
                                                         className={cn(
                                                             'text-muted-foreground min-w-0 flex-1 truncate text-xs transition-[filter] duration-150',
-                                                            !emailRevealed && 'blur-[4px] select-none',
+                                                            !emailRevealed && 'blur-xs select-none',
                                                         )}
                                                         title={emailRevealed ? user.email : undefined}
                                                     >
@@ -396,7 +396,7 @@ export function NavbarModernChrome(props: NavbarChromeProps) {
                 desktopHoverDock && 'lg:static lg:top-auto',
             )}
         >
-            <div className='border-border/20 bg-card/80 dark:bg-card/70 mx-auto flex h-12 max-w-[1800px] items-center gap-x-2 rounded-2xl border px-2.5 shadow-sm backdrop-blur-xl sm:h-13 sm:gap-x-3 sm:px-3.5'>
+            <div className='border-border/20 bg-card/80 dark:bg-card/70 mx-auto flex h-12 max-w-450 items-center gap-x-2 rounded-2xl border px-2.5 shadow-sm backdrop-blur-xl sm:h-13 sm:gap-x-3 sm:px-3.5'>
                 <button
                     type='button'
                     className='text-muted-foreground hover:bg-muted/50 hover:text-foreground focus-visible:ring-ring focus-visible:ring-offset-background flex shrink-0 touch-manipulation items-center justify-center rounded-xl border border-transparent p-2 transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none active:scale-95 lg:hidden'
