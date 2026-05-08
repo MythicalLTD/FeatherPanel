@@ -23,10 +23,71 @@ interface ApiResponse<T> {
     error?: boolean;
 }
 
+export interface FileHashesResponse {
+    md5: string;
+    sha1: string;
+    sha256: string;
+    size: number;
+    path: string;
+}
+
 const normalizePath = (path: string): string => {
     const withLeading = path.startsWith('/') ? path : `/${path}`;
     const collapsed = withLeading.replace(/\/+/g, '/');
     return collapsed.length > 1 ? collapsed.replace(/\/+$/, '') : collapsed;
+};
+
+const splitNameAndExtension = (name: string): { base: string; extension: string } => {
+    const tarCompound = ['.tar.gz', '.tar.bz2', '.tar.xz'];
+    const lower = name.toLowerCase();
+    const compound = tarCompound.find((ext) => lower.endsWith(ext));
+    if (compound) {
+        return { base: name.slice(0, name.length - compound.length), extension: name.slice(name.length - compound.length) };
+    }
+    const lastDot = name.lastIndexOf('.');
+    if (lastDot <= 0) {
+        return { base: name, extension: '' };
+    }
+    return { base: name.slice(0, lastDot), extension: name.slice(lastDot) };
+};
+
+const inferNextCopyName = (sourceName: string, existingNames: Set<string>): string => {
+    const { base, extension } = splitNameAndExtension(sourceName);
+    for (let i = 1; i <= 50; i++) {
+        let suffix = '';
+        if (i === 1) {
+            suffix = ' - copy';
+        } else if (i === 50) {
+            suffix = ` - copy.${new Date().toISOString()}`;
+        } else {
+            suffix = ` - copy ${i}`;
+        }
+        const candidate = `${base}${suffix}${extension}`;
+        if (!existingNames.has(candidate)) {
+            return candidate;
+        }
+    }
+    return `${base} - copy${extension}`;
+};
+
+const dirnameOf = (absolutePath: string): string => {
+    const normalized = normalizePath(absolutePath);
+    if (normalized === '/') return '/';
+    const idx = normalized.lastIndexOf('/');
+    if (idx <= 0) return '/';
+    return normalized.slice(0, idx);
+};
+
+const basenameOf = (absolutePath: string): string => {
+    const normalized = normalizePath(absolutePath);
+    if (normalized === '/') return '';
+    const idx = normalized.lastIndexOf('/');
+    return idx === -1 ? normalized : normalized.slice(idx + 1);
+};
+
+const toAbsolutePath = (root: string, path: string): string => {
+    if (path.startsWith('/')) return normalizePath(path);
+    return normalizePath(`${root || '/'}${root.endsWith('/') ? '' : '/'}${path}`);
 };
 
 export const filesApi = {
@@ -57,6 +118,13 @@ export const filesApi = {
         return response.data;
     },
 
+    getFileHashes: async (uuid: string, path: string): Promise<FileHashesResponse> => {
+        const response = await api.get<ApiResponse<FileHashesResponse>>(`/user/servers/${uuid}/file-hash`, {
+            params: { path },
+        });
+        return response.data.data;
+    },
+
     saveFileContent: async (uuid: string, path: string, content: string): Promise<void> => {
         await api.post(`/user/servers/${uuid}/write-file`, content, {
             params: { path },
@@ -80,18 +148,71 @@ export const filesApi = {
         });
     },
 
-    copyFile: async (uuid: string, root: string, file: string, destination: string): Promise<void> => {
+    copyFile: async (uuid: string, root: string, file: string, newName?: string): Promise<void> => {
         const sourcePath = normalizePath(`${root || '/'}/${file}`);
+        const targetName = (newName || '').trim();
+        let expectedCopiedName: string | null = null;
+
+        if (targetName) {
+            const siblings = await filesApi.getFiles(uuid, root || '/');
+            expectedCopiedName = inferNextCopyName(file, new Set(siblings.map((entry) => entry.name)));
+        }
+
         await api.post(`/user/servers/${uuid}/copy-files`, {
-            location: normalizePath(destination || '/'),
+            location: sourcePath,
             files: [sourcePath],
         });
+
+        if (targetName && expectedCopiedName && expectedCopiedName !== targetName) {
+            await api.put(`/user/servers/${uuid}/rename`, {
+                root: normalizePath(root || '/'),
+                files: [{ from: expectedCopiedName, to: targetName }],
+            });
+        }
     },
 
     moveFile: async (uuid: string, root: string, files: { from: string; to: string }[]): Promise<void> => {
+        if (files.length === 0) return;
+
+        const sourceRoot = normalizePath(root || '/');
+        const absoluteUpdates = files
+            .map((entry) => ({
+                from: toAbsolutePath(sourceRoot, entry.from),
+                to: toAbsolutePath(sourceRoot, entry.to),
+            }))
+            .filter((entry) => entry.from !== entry.to);
+
+        if (absoluteUpdates.length === 0) return;
+
+        const destinationDirectories = Array.from(new Set(absoluteUpdates.map((entry) => dirnameOf(entry.to))));
+        const existingByDirectory = new Map<string, Set<string>>();
+        for (const directory of destinationDirectories) {
+            const siblings = await filesApi.getFiles(uuid, directory);
+            existingByDirectory.set(directory, new Set(siblings.map((item) => item.name)));
+        }
+
+        const normalizedUpdates = absoluteUpdates.map((entry) => {
+            const destinationDir = dirnameOf(entry.to);
+            const currentName = basenameOf(entry.to);
+            const sourceName = basenameOf(entry.from);
+            const existing = existingByDirectory.get(destinationDir) ?? new Set<string>();
+
+            let finalName = currentName;
+            const sameNameMove = basenameOf(entry.from) === currentName && dirnameOf(entry.from) === destinationDir;
+            if (!sameNameMove && existing.has(currentName)) {
+                finalName = inferNextCopyName(currentName || sourceName, existing);
+            }
+
+            existing.add(finalName);
+            return {
+                from: entry.from,
+                to: destinationDir === '/' ? `/${finalName}` : `${destinationDir}/${finalName}`,
+            };
+        });
+
         await api.put(`/user/servers/${uuid}/rename`, {
-            root,
-            files,
+            root: '/',
+            files: normalizedUpdates,
         });
     },
 

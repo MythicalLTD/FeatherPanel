@@ -309,6 +309,87 @@ class ServerFilesController
         }
     }
 
+    #[OA\Get(
+        path: '/api/user/servers/{uuidShort}/file-hash',
+        summary: 'Get file hashes',
+        description: 'Calculate and return hashes for a file on the server.',
+        tags: ['User - Server Files'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'path',
+                in: 'query',
+                description: 'File path to hash',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'File hashes calculated successfully'),
+            new OA\Response(response: 400, description: 'Bad request - Missing file path'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server, node, or file not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to hash file'),
+        ]
+    )]
+    public function getFileHashes(Request $request, string $serverUuid): Response
+    {
+        try {
+            $user = $this->validateUser($request);
+            $server = $this->validateServer($serverUuid);
+            $node = $this->validateNode($server['node_id']);
+
+            // Check file.read-content permission (hashing requires reading file bytes)
+            $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::FILE_READ_CONTENT);
+            if ($permissionCheck !== null) {
+                return $permissionCheck;
+            }
+
+            $path = $this->getPathFromQuery('');
+            if ($path === '') {
+                return ApiResponse::error('File path is required', 'MISSING_PATH', 400);
+            }
+
+            $wings = $this->createWingsConnection($node);
+            $response = $wings->getServer()->getFileContentsRaw($server['uuid'], $path, false);
+
+            if (!$response->isSuccessful()) {
+                $error = $response->getError();
+
+                return ApiResponse::error('Failed to hash file: ' . $error, 'WINGS_ERROR', $response->getStatusCode());
+            }
+
+            $fileContent = $response->getRawBody();
+            if ($fileContent === null) {
+                $fileContent = '';
+            }
+
+            $hashes = [
+                'md5' => hash('md5', $fileContent),
+                'sha1' => hash('sha1', $fileContent),
+                'sha256' => hash('sha256', $fileContent),
+                'size' => strlen($fileContent),
+                'path' => $path,
+            ];
+
+            $this->logActivity($server, $node, 'file_hashed', [
+                'path' => $path,
+                'size' => $hashes['size'],
+            ], $user);
+
+            return ApiResponse::success($hashes, 'File hashes calculated successfully');
+        } catch (\Exception $e) {
+            return $this->handleWingsError($e, 'hash file');
+        }
+    }
+
     #[OA\Post(
         path: '/api/user/servers/{uuidShort}/write-file',
         summary: 'Write file content',
@@ -754,22 +835,42 @@ class ServerFilesController
             }
 
             $data = $this->validateJsonBody($request, ['files', 'location']);
+            if (!is_array($data['files']) || empty($data['files'])) {
+                return ApiResponse::error('At least one file or directory must be provided', 'INVALID_COPY_REQUEST', 400);
+            }
 
             $wings = $this->createWingsConnection($node);
-            $response = $wings->getServer()->copyFiles($server['uuid'], $data['location'], $data['files']);
+            $destinationRoot = $this->normalizeDirectoryPath((string) $data['location']);
+            $copiedFiles = [];
 
-            if (!$response->isSuccessful()) {
-                $error = $response->getError();
+            foreach ($data['files'] as $sourcePath) {
+                if (!is_string($sourcePath) || trim($sourcePath) === '') {
+                    continue;
+                }
 
-                return ApiResponse::error('Failed to copy files: ' . $error, 'WINGS_ERROR', $response->getStatusCode());
+                $normalizedSourcePath = $this->normalizeAbsolutePath($sourcePath);
+                $copyResponse = $wings->getServer()->copyFiles($server['uuid'], $normalizedSourcePath, []);
+                if (!$copyResponse->isSuccessful()) {
+                    return ApiResponse::error(
+                        'Failed to copy files: ' . $copyResponse->getError(),
+                        'WINGS_ERROR',
+                        $copyResponse->getStatusCode()
+                    );
+                }
+
+                $copiedFiles[] = $normalizedSourcePath;
+            }
+
+            if (empty($copiedFiles)) {
+                return ApiResponse::error('No valid files were provided to copy', 'INVALID_COPY_REQUEST', 400);
             }
 
             // Log activity
             $this->logActivity($server, $node, 'files_copied', [
-                'location' => $data['location'],
-                'files' => $data['files'],
+                'location' => $destinationRoot,
+                'files' => $copiedFiles,
 
-                'file_count' => count($data['files']),
+                'file_count' => count($copiedFiles),
             ], $user);
 
             // Emit event
@@ -780,12 +881,16 @@ class ServerFilesController
                     [
                         'user_uuid' => $user['uuid'],
                         'server_uuid' => $server['uuid'],
-                        'file_paths' => $data['files'],
+                        'file_paths' => $copiedFiles,
                     ]
                 );
             }
 
-            return ApiResponse::success($response->getData(), 'Files copied successfully');
+            return ApiResponse::success([
+                'location' => $destinationRoot,
+                'files' => $copiedFiles,
+                'copied_count' => count($copiedFiles),
+            ], 'Files copied successfully');
         } catch (\Exception $e) {
             return $this->handleWingsError($e, 'copy files');
         }
@@ -1849,6 +1954,35 @@ class ServerFilesController
         } catch (\Exception $e) {
             return $this->handleWingsError($e, $operationName);
         }
+    }
+
+    /**
+     * Normalize a filesystem path to an absolute path.
+     */
+    private function normalizeAbsolutePath(string $path): string
+    {
+        $path = preg_replace('#/+#', '/', trim($path));
+        if ($path === '' || $path === null) {
+            return '/';
+        }
+        if ($path[0] !== '/') {
+            $path = '/' . $path;
+        }
+
+        return $path;
+    }
+
+    /**
+     * Normalize directory path and drop trailing slash except for root.
+     */
+    private function normalizeDirectoryPath(string $path): string
+    {
+        $normalized = $this->normalizeAbsolutePath($path);
+        if ($normalized === '/') {
+            return '/';
+        }
+
+        return rtrim($normalized, '/');
     }
 
     /**

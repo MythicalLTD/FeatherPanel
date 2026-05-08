@@ -44,11 +44,53 @@ interface MoveCopyDialogProps {
 export function MoveCopyDialog({ open, onOpenChange, uuid, root, files, action, onSuccess }: MoveCopyDialogProps) {
     const { t } = useTranslation();
     const [destination, setDestination] = useState(root);
+    const [newName, setNewName] = useState('');
+    const [showAdvancedPath, setShowAdvancedPath] = useState(false);
     const [loading, setLoading] = useState(false);
+    const singleFile = files.length === 1 ? files[0] : '';
+
+    const normalizePath = (value: string): string => {
+        const withLeading = value.startsWith('/') ? value : `/${value}`;
+        const collapsed = withLeading.replace(/\/+/g, '/');
+        return collapsed.length > 1 ? collapsed.replace(/\/+$/, '') : collapsed;
+    };
+
+    const joinPath = (base: string, name: string): string => {
+        const cleanBase = normalizePath(base || '/');
+        const cleanName = (name || '').replace(/^\/+/, '');
+        return cleanBase === '/' ? `/${cleanName}` : `${cleanBase}/${cleanName}`;
+    };
+
+    const getParentPath = (path: string): string => {
+        const normalized = normalizePath(path || '/');
+        if (normalized === '/') return '/';
+        const idx = normalized.lastIndexOf('/');
+        if (idx <= 0) return '/';
+        return normalized.slice(0, idx);
+    };
+
+    const pathSegments = (path: string): string[] => {
+        const normalized = normalizePath(path || '/');
+        if (normalized === '/') return ['/'];
+        const parts = normalized.split('/').filter(Boolean);
+        const segments = ['/'];
+        let current = '';
+        for (const part of parts) {
+            current += `/${part}`;
+            segments.push(current);
+        }
+        return segments;
+    };
+
+    const currentPath = normalizePath(root || '/');
+    const parentPath = getParentPath(currentPath);
+    const destinationOptions = ['/', parentPath, currentPath].filter((path, index, all) => all.indexOf(path) === index);
 
     useEffect(() => {
         if (open) {
             setDestination(root || '/');
+            setNewName('');
+            setShowAdvancedPath(false);
         }
     }, [open, root]);
 
@@ -60,15 +102,19 @@ export function MoveCopyDialog({ open, onOpenChange, uuid, root, files, action, 
         );
         try {
             if (action === 'copy') {
-                for (const file of files) {
-                    await filesApi.copyFile(uuid, root, file, normalizedDestination);
+                if (files.length === 1) {
+                    await filesApi.copyFile(uuid, root, files[0], newName.trim() || undefined);
+                } else {
+                    for (const file of files) {
+                        await filesApi.copyFile(uuid, root, file);
+                    }
                 }
             } else {
                 const updates = files.map((f) => ({
-                    from: f,
-                    to: `${normalizedDestination}/${f}`.replace(/\/\//g, '/'),
+                    from: joinPath(root || '/', f),
+                    to: joinPath(normalizedDestination, f),
                 }));
-                await filesApi.moveFile(uuid, root, updates);
+                await filesApi.moveFile(uuid, '/', updates);
             }
             toast.success(
                 action === 'move'
@@ -112,17 +158,93 @@ export function MoveCopyDialog({ open, onOpenChange, uuid, root, files, action, 
                 </DialogHeader>
 
                 <div className='flex flex-col gap-4 py-4'>
-                    <div className='space-y-2'>
-                        <label className='text-muted-foreground ml-1 text-xs font-semibold tracking-wider uppercase'>
-                            {t('files.dialogs.move_copy.destination_label')}
-                        </label>
-                        <Input
-                            placeholder='/'
-                            value={destination}
-                            onChange={(e) => setDestination(e.target.value)}
-                            className='border-white/10 bg-white/5'
-                        />
-                    </div>
+                    {action === 'move' ? (
+                        <div className='space-y-3'>
+                            <label className='text-muted-foreground ml-1 text-xs font-semibold tracking-wider uppercase'>
+                                {t('files.dialogs.move_copy.destination_label')}
+                            </label>
+                            <div className='flex flex-wrap gap-2'>
+                                {destinationOptions.map((path) => (
+                                    <Button
+                                        key={path}
+                                        type='button'
+                                        variant={destination === path ? 'default' : 'ghost'}
+                                        onClick={() => setDestination(path)}
+                                        className='animate-in fade-in zoom-in-95 duration-200'
+                                    >
+                                        {path === currentPath
+                                            ? t('files.dialogs.move_copy.destination_current')
+                                            : path === parentPath
+                                              ? t('files.dialogs.move_copy.destination_parent')
+                                              : t('files.dialogs.move_copy.destination_root')}
+                                    </Button>
+                                ))}
+                                <Button
+                                    type='button'
+                                    variant='ghost'
+                                    onClick={() => setShowAdvancedPath((prev) => !prev)}
+                                >
+                                    {showAdvancedPath
+                                        ? t('files.dialogs.move_copy.hide_advanced')
+                                        : t('files.dialogs.move_copy.show_advanced')}
+                                </Button>
+                            </div>
+                            <p className='text-muted-foreground text-xs'>
+                                {t('files.dialogs.move_copy.destination_selected', { path: destination })}
+                            </p>
+                            <div className='bg-muted/30 animate-in fade-in slide-in-from-top-1 rounded-lg border border-white/10 p-2 duration-200'>
+                                <p className='text-muted-foreground mb-2 text-[11px] font-semibold tracking-wider uppercase'>
+                                    {t('files.dialogs.move_copy.path_quick_pick')}
+                                </p>
+                                <div className='flex flex-wrap gap-2'>
+                                    {pathSegments(destination).map((segment) => (
+                                        <button
+                                            key={segment}
+                                            type='button'
+                                            onClick={() => setDestination(segment)}
+                                            className={`rounded-md border px-2 py-1 text-xs transition-all ${
+                                                destination === segment
+                                                    ? 'bg-primary/20 text-primary border-primary/30'
+                                                    : 'bg-white/5 hover:bg-white/10 border-white/10'
+                                            }`}
+                                        >
+                                            {segment}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                            {showAdvancedPath && (
+                                <div className='animate-in fade-in slide-in-from-top-1 duration-200'>
+                                    <Input
+                                        placeholder='/'
+                                        value={destination}
+                                        onChange={(e) => setDestination(e.target.value)}
+                                        className='border-white/10 bg-white/5'
+                                    />
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        <div className='space-y-2'>
+                            <label className='text-muted-foreground ml-1 text-xs font-semibold tracking-wider uppercase'>
+                                {t('files.dialogs.move_copy.new_name_label')}
+                            </label>
+                            {files.length === 1 ? (
+                                <Input
+                                    placeholder={t('files.dialogs.move_copy.new_name_placeholder', {
+                                        name: `${singleFile} - copy`,
+                                    })}
+                                    value={newName}
+                                    onChange={(e) => setNewName(e.target.value)}
+                                    className='border-white/10 bg-white/5'
+                                />
+                            ) : (
+                                <p className='text-muted-foreground rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm'>
+                                    {t('files.dialogs.move_copy.new_name_multi_hint')}
+                                </p>
+                            )}
+                        </div>
+                    )}
                 </div>
 
                 <DialogFooter>
@@ -132,7 +254,7 @@ export function MoveCopyDialog({ open, onOpenChange, uuid, root, files, action, 
                     <Button
                         variant='default'
                         onClick={handleAction}
-                        disabled={loading || !destination}
+                        disabled={loading || (action === 'move' && !destination)}
                         className='h-10 px-6 capitalize'
                     >
                         {action === 'move' ? t('files.dialogs.move_copy.move') : t('files.dialogs.move_copy.copy')}

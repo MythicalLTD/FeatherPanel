@@ -333,11 +333,9 @@ class ServerService
     public function copyFiles(string $serverUuid, string $location, array $files): WingsResponse
     {
         try {
-            $data = [
+            $response = $this->connection->post("/api/servers/{$serverUuid}/files/copy", [
                 'location' => $location,
-                'files' => $files,
-            ];
-            $response = $this->connection->post("/api/servers/{$serverUuid}/files/copy", $data);
+            ]);
 
             return new WingsResponse($response, 204);
         } catch (\Exception $e) {

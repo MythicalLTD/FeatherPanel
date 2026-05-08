@@ -37,6 +37,7 @@ import {
     WipeAllDialog,
     IgnoredContentDialog,
     CompressDialog,
+    FileHashDialog,
 } from './components/dialogs';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { toast } from 'sonner';
@@ -178,6 +179,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
     const [moveCopyOpen, setMoveCopyOpen] = useState(false);
     const [permissionsOpen, setPermissionsOpen] = useState(false);
     const [compressOpen, setCompressOpen] = useState(false);
+    const [fileHashOpen, setFileHashOpen] = useState(false);
     const [filesToCompress, setFilesToCompress] = useState<string[]>([]);
     const [moveCopyAction, setMoveCopyAction] = useState<'move' | 'copy'>('move');
     const [uploadQueue, setUploadQueue] = useState<UploadQueueItem[]>([]);
@@ -293,12 +295,12 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
             }
 
             const updates = fileNames.map((name) => ({
-                from: name,
+                from: joinPath(src, name),
                 to: joinPath(dest, name),
             }));
             const toastId = toast.loading(t('files.messages.moving', { count: String(fileNames.length) }));
             try {
-                await filesApi.moveFile(uuidShort, src, updates);
+                await filesApi.moveFile(uuidShort, '/', updates);
                 toast.success(t('files.messages.moved', { count: String(fileNames.length) }), { id: toastId });
                 setSelectedFiles([]);
                 refresh();
@@ -350,7 +352,21 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
     );
 
     const handleAction = (action: string, file: FileObject) => {
-        setActionFile(file);
+        const usesSelection =
+            selectedFiles.length > 1 &&
+            selectedFiles.includes(file.name) &&
+            ['delete', 'copy', 'move', 'permissions', 'compress'].includes(action);
+
+        if (usesSelection) {
+            setActionFile(null);
+        } else {
+            setActionFile(file);
+            if (!selectedFiles.includes(file.name)) {
+                setSelectedFiles([file.name]);
+                setAnchorName(file.name);
+            }
+        }
+
         switch (action) {
             case 'edit':
                 {
@@ -374,7 +390,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 handleDownload(file.name);
                 break;
             case 'compress':
-                handleCompress([file.name]);
+                handleCompress(usesSelection ? selectedFiles : [file.name]);
                 break;
             case 'decompress':
                 handleDecompress(file.name);
@@ -389,6 +405,9 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 break;
             case 'permissions':
                 setPermissionsOpen(true);
+                break;
+            case 'hash':
+                setFileHashOpen(true);
                 break;
         }
     };
@@ -1339,6 +1358,12 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                     refresh();
                     setSelectedFiles([]);
                 }}
+            />
+            <FileHashDialog
+                open={fileHashOpen}
+                onOpenChange={setFileHashOpen}
+                uuid={uuidShort}
+                path={actionFile ? joinPath(currentDirectory || '/', actionFile.name) : ''}
             />
             <WidgetRenderer widgets={getWidgets('server-files', 'bottom-of-page')} />
         </div>

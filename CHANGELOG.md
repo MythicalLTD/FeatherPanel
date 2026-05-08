@@ -19,6 +19,7 @@
 - Added a Redis notification system to reload settings across all services when settings are updated. by @nayskutzu
 - Addon installations are now preserved during FeatherPanel updates, ensuring your enhancements remain intact after every upgrade. by @nayskutzu
 - The chatbot can now and will now work with the VDS pages by @nayskutzu
+- Added support to get the file hash of a file in the file manager. by @nayskutzu
 
 ### Fixed
 
@@ -27,6 +28,7 @@
 - Fixed Proxmox node selection displaying in inconsistent order when creating VDS instances—nodes are now sorted alphabetically for predictable selection.
 - Fixed inconsistency where /admin/api/users returned userId instead of UUID, which caused issues when interacting with endpoints such as user retrieval and SSO token creation that require UUID. by @nayskutzu
 - Resolved an issue where email subjects were previously hardcoded and could not be customized—subjects are now fully editable. by @nayskutzu
+- The copy and the move files operations now work correctly and display progress indicators to the user. by @nayskutzu
 
 ### Improved
 
@@ -42,6 +44,7 @@
 - Improved the servers mobile responsiveness and layout for a better user experience on smaller screens. by @nayskutzu
 - VDS Console & VDS list pages were improved for better usability and responsiveness. by @nayskutzu
 - Improved the status page to display node health and resource usage more clearly. by @nayskutzu
+- Improved the file manager to display file and directory listings more clearly and efficiently. by @nayskutzu
 
 ## v1.3.6 STABLE
 

@@ -24,3 +24,4 @@ export * from './PullFileDialog';
 export * from './WipeAllDialog';
 export * from './IgnoredContentDialog';
 export * from './CompressDialog';
+export * from './FileHashDialog';

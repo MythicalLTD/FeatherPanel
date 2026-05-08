@@ -28,6 +28,7 @@ import {
     Trash2,
     Settings,
     File as FileIcon,
+    Fingerprint,
     type LucideIcon,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -221,6 +222,9 @@ export function FileRow({
         if (canEdit) {
             items.push({ key: 'copy', label: t('files.row.copy'), Icon: Copy });
             items.push({ key: 'move', label: t('files.row.move'), Icon: FileIcon });
+        }
+        if (file.isFile && canDownload) {
+            items.push({ key: 'hash', label: t('files.row.hash'), Icon: Fingerprint });
         }
         if (file.isFile && isDecompressibleArchiveFileName(file.name) && canEdit) {
             items.push({ key: 'decompress', label: t('files.row.extract'), Icon: Archive });
