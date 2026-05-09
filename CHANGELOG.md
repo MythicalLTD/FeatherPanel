@@ -21,6 +21,7 @@
 - The chatbot can now and will now work with the VDS pages by @nayskutzu
 - Added support to get the file hash of a file in the file manager. by @nayskutzu
 - Added BIG query support to the file manager. So you can search for files by name or content. by @nayskutzu
+- Added an update tab to the admin area so you can update plugins, the app itself and even the nodes. by @nayskutzu
 
 ### Fixed
 
@@ -30,6 +31,7 @@
 - Fixed inconsistency where /admin/api/users returned userId instead of UUID, which caused issues when interacting with endpoints such as user retrieval and SSO token creation that require UUID. by @nayskutzu
 - Resolved an issue where email subjects were previously hardcoded and could not be customized—subjects are now fully editable. by @nayskutzu
 - The copy and the move files operations now work correctly and display progress indicators to the user. by @nayskutzu
+- Fixed an issue where in the sidebar you would see the node be active when you were on the status page. by @nayskutzu
 
 ### Improved
 
