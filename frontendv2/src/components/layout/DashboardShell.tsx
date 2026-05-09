@@ -74,6 +74,11 @@ export default function DashboardShell({ children }: { children: React.ReactNode
     });
 
     const isFullWidthMode = isActualPluginPage;
+
+    const pathSegments = (pathname || '').split('/').filter(Boolean);
+    const isServerConsoleHome =
+        pathSegments.length === 2 && pathSegments[0] === 'server' && Boolean(pathSegments[1]);
+
     const { navbarHoverReveal } = useNavbarHoverReveal();
     const { chromeLayout } = useChromeLayout();
     const navbarHoverDockActive = navbarHoverReveal && chromeLayout === 'modern';
@@ -164,7 +169,15 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                             isFullWidthMode ? 'overflow-hidden p-0' : 'px-3 py-5 sm:px-6 sm:py-6 lg:px-8',
                         )}
                     >
-                        <div className={cn(isFullWidthMode && 'h-full', !isFullWidthMode && 'mx-auto max-w-7xl')}>
+                        <div
+                            className={cn(
+                                isFullWidthMode && 'h-full',
+                                !isFullWidthMode &&
+                                    (isServerConsoleHome
+                                        ? 'mx-auto w-full max-w-[min(100rem,calc(100vw-1.5rem))] sm:max-w-[min(100rem,calc(100vw-2rem))]'
+                                        : 'mx-auto max-w-7xl'),
+                            )}
+                        >
                             {children}
                         </div>
                     </main>

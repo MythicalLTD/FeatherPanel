@@ -15,11 +15,10 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
-import { WebglAddon } from '@xterm/addon-webgl';
 import { ClipboardAddon } from '@xterm/addon-clipboard';
 import '@xterm/xterm/css/xterm.css';
 import {
@@ -32,10 +31,36 @@ import {
     Settings2,
     ExternalLink,
     UploadCloud,
+    Sparkles,
+    Copy,
+    AlertCircle,
+    MoreHorizontal,
 } from 'lucide-react';
 import { Menu, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
+import { toast } from 'sonner';
 import { useTranslation } from '@/contexts/TranslationContext';
+import {
+    CONSOLE_PRESET_TEMPLATES,
+    type ConsolePresetMenuGroup,
+    type ConsolePresetTemplate,
+} from '@/components/server/consolePresetRules';
+import { Button } from '@/components/featherui/Button';
+import { Input } from '@/components/featherui/Input';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
+
+const PRESET_MENU_SECTIONS: { group: ConsolePresetMenuGroup; presets: ConsolePresetTemplate[] }[] = [
+    { group: 'redact', presets: CONSOLE_PRESET_TEMPLATES.filter((p) => p.menuGroup === 'redact') },
+    { group: 'highlight', presets: CONSOLE_PRESET_TEMPLATES.filter((p) => p.menuGroup === 'highlight') },
+];
 
 export interface ServerTerminalRef {
     write: (data: string) => void;
@@ -45,6 +70,8 @@ export interface ServerTerminalRef {
 
 export interface ConsoleFilterRule {
     id: string;
+    /** When set, this rule came from a built-in preset (shown with a friendly label). */
+    presetId?: string;
     pattern: string;
     flags?: string;
     type: 'replace' | 'hide' | 'color';
@@ -91,6 +118,47 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
         const [commandHistory, setCommandHistory] = useState<string[]>([]);
         const [historyIndex, setHistoryIndex] = useState(-1);
         const [showSettings, setShowSettings] = useState(false);
+
+        const hslFromVar = useCallback((name: string, fallback: string) => {
+            if (typeof window === 'undefined') return fallback;
+            const raw = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+            return raw ? `hsl(${raw})` : fallback;
+        }, []);
+
+        const hslaFromVar = useCallback((name: string, alpha: number, fallback: string) => {
+            if (typeof window === 'undefined') return fallback;
+            const raw = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+            return raw ? `hsl(${raw} / ${alpha})` : fallback;
+        }, []);
+
+        /**
+         * Slightly lifted vs `--card` (dark: card 9% vs secondary 15%) so logs are not pure black
+         * while staying in the same design tokens as the rest of FeatherPanel.
+         */
+        const terminalBufferBackground = useCallback(() => {
+            return hslFromVar('--secondary', 'hsl(0 0% 15%)');
+        }, [hslFromVar]);
+
+        const applyTerminalTheme = useCallback(
+            (terminal: Terminal) => {
+                const monoRaw = getComputedStyle(document.documentElement).getPropertyValue('--font-geist-mono').trim();
+                const fontStack = monoRaw
+                    ? `${monoRaw}, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace`
+                    : 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace';
+
+                const bufBg = terminalBufferBackground();
+                terminal.options.fontFamily = fontStack;
+                terminal.options.theme = {
+                    background: bufBg,
+                    foreground: hslFromVar('--foreground', '#f4f4f5'),
+                    cursor: hslFromVar('--primary', '#a78bfa'),
+                    selectionBackground: hslaFromVar('--primary', 0.2, 'rgba(167, 139, 250, 0.2)'),
+                    selectionForeground: hslFromVar('--foreground', '#f4f4f5'),
+                };
+                terminal.refresh(0, terminal.rows - 1);
+            },
+            [hslFromVar, hslaFromVar, terminalBufferBackground],
+        );
 
         useEffect(() => {
             const savedHistory = localStorage.getItem('featherpanel_terminal_history');
@@ -144,19 +212,23 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
         useEffect(() => {
             if (!terminalRef.current) return;
 
+            const secRaw = getComputedStyle(document.documentElement).getPropertyValue('--secondary').trim();
+            const initialBg = secRaw ? `hsl(${secRaw})` : 'hsl(0 0% 15%)';
+
             const terminal = new Terminal({
                 cursorBlink: false,
-                fontSize: 14,
-                fontFamily: 'Menlo, Monaco, "Courier New", monospace',
+                fontSize: 13,
+                lineHeight: 1.35,
+                fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
                 theme: {
-                    background: '#00000000',
-                    foreground: '#ffffff',
-                    cursor: '#ffffff',
-                    selectionBackground: 'rgba(255, 255, 255, 0.3)',
+                    background: initialBg,
+                    foreground: '#e4e4e7',
+                    cursor: '#a78bfa',
+                    selectionBackground: 'rgba(167, 139, 250, 0.2)',
                 },
                 scrollback: 10000,
                 allowProposedApi: true,
-                allowTransparency: true,
+                allowTransparency: false,
                 disableStdin: true,
             });
 
@@ -168,18 +240,20 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
             terminal.loadAddon(webLinksAddon);
             terminal.loadAddon(clipboardAddon);
 
-            try {
-                const webglAddon = new WebglAddon();
-                terminal.loadAddon(webglAddon);
-            } catch {
-                console.warn('WebGL addon failed to load, using canvas renderer');
-            }
-
             terminal.open(terminalRef.current);
             fitAddon.fit();
+            applyTerminalTheme(terminal);
 
             terminalInstanceRef.current = terminal;
             fitAddonRef.current = fitAddon;
+
+            const themeObserver = new MutationObserver(() => {
+                applyTerminalTheme(terminal);
+            });
+            themeObserver.observe(document.documentElement, {
+                attributes: true,
+                attributeFilter: ['class'],
+            });
 
             terminal.attachCustomKeyEventHandler((e) => {
                 if (e.ctrlKey && e.code === 'KeyC' && terminal.hasSelection()) {
@@ -199,10 +273,11 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
             window.addEventListener('resize', handleResize);
 
             return () => {
+                themeObserver.disconnect();
                 window.removeEventListener('resize', handleResize);
                 terminal.dispose();
             };
-        }, []);
+        }, [applyTerminalTheme]);
 
         const sendCommand = () => {
             if (!commandInput.trim() || !onSendCommand) return;
@@ -268,6 +343,40 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
             onFiltersChange(filters.filter((rule) => rule.id !== id));
         };
 
+        const handleAddPreset = (presetId: string) => {
+            if (!onFiltersChange) return;
+            const def = CONSOLE_PRESET_TEMPLATES.find((p) => p.presetId === presetId);
+            if (!def) return;
+            if (filters.some((r) => r.presetId === presetId)) {
+                toast.message(t('servers.console.terminal.preset_duplicate'));
+                return;
+            }
+            const newRule: ConsoleFilterRule = {
+                id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+                presetId: def.presetId,
+                pattern: def.pattern,
+                flags: def.flags,
+                type: def.type,
+                replacement: def.replacement,
+                color: def.color,
+                enabled: true,
+            };
+            onFiltersChange([newRule, ...filters]);
+            setShowSettings(true);
+        };
+
+        const copyTerminalSelection = () => {
+            const term = terminalInstanceRef.current;
+            if (!term) return;
+            const text = term.getSelection();
+            if (!text?.trim()) {
+                toast.message(t('servers.console.terminal.nothing_to_copy'));
+                return;
+            }
+            void navigator.clipboard.writeText(text);
+            toast.success(t('servers.console.terminal.copied_selection'));
+        };
+
         const handlePopoutWindow = () => {
             if (typeof window === 'undefined') return;
             const url = new URL(window.location.href);
@@ -277,52 +386,66 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
 
         const canSend = canSendCommands && (serverStatus === 'running' || serverStatus === 'starting');
 
+        const prevCanSendRef = useRef(false);
+        useEffect(() => {
+            if (prevCanSendRef.current && !canSend) {
+                setCommandInput('');
+                setHistoryIndex(-1);
+            }
+            prevCanSendRef.current = canSend;
+        }, [canSend]);
+
         return (
-            <div className='border-border/50 bg-card/50 overflow-hidden rounded-xl border backdrop-blur-xl'>
-                <div className='border-border border-b p-4 sm:p-6'>
-                    <div className='flex items-center justify-between'>
-                        <div className='flex items-center gap-3'>
-                            <div className='bg-primary/10 flex h-10 w-10 items-center justify-center rounded-lg'>
-                                <TerminalIcon className='text-primary h-5 w-5' />
-                            </div>
-                            <h2 className='text-lg font-bold'>{t('servers.console.terminal.title')}</h2>
-                        </div>
-                        <div className='flex items-center gap-2'>
-                            <label className='group hover:bg-muted/50 flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 transition-colors'>
-                                <input
-                                    type='checkbox'
-                                    checked={autoScroll}
-                                    onChange={(e) => setAutoScroll(e.target.checked)}
-                                    className='border-input bg-background text-primary focus:ring-primary h-4 w-4 cursor-pointer rounded border-2 transition-all duration-200 focus:ring-2 focus:ring-offset-0'
-                                />
-                                <span className='text-muted-foreground group-hover:text-foreground text-xs transition-colors select-none sm:text-sm'>
-                                    {t('servers.console.terminal.auto_scroll')}
-                                </span>
-                            </label>
-                            <button
-                                onClick={() => setShowSettings((prev) => !prev)}
-                                className='border-border bg-background hover:bg-muted text-muted-foreground hover:text-foreground flex h-9 w-9 items-center justify-center rounded-lg border transition-colors'
-                                aria-label={t('servers.console.terminal.customize')}
-                                type='button'
-                            >
-                                <Settings2 className='h-4 w-4' />
-                            </button>
-                            {showPopoutButton && (
-                                <button
-                                    onClick={handlePopoutWindow}
-                                    className='border-border bg-background hover:bg-muted text-muted-foreground hover:text-foreground flex h-9 w-9 items-center justify-center rounded-lg border transition-colors'
-                                    aria-label={t('servers.console.terminal.popout')}
-                                    type='button'
-                                >
-                                    <ExternalLink className='h-4 w-4' />
-                                </button>
+            <Card className='border-border/50 bg-card/50 w-full min-w-0 overflow-hidden shadow-sm backdrop-blur-xl'>
+                <CardHeader className='border-border/50 space-y-3 border-b p-3 sm:p-4'>
+                    <div className='flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between'>
+                    <div className='min-w-0'>
+                        <h3 className='text-muted-foreground flex items-center gap-2 text-sm font-medium'>
+                            <TerminalIcon className='h-4 w-4 shrink-0' aria-hidden />
+                            {t('servers.console.terminal.title')}
+                        </h3>
+                        <p className='text-muted-foreground mt-1 max-w-2xl text-xs leading-relaxed'>
+                            {t('servers.console.terminal.subtitle')}
+                        </p>
+                    </div>
+                    <div className='border-border/50 bg-muted/25 flex w-full flex-wrap items-center gap-1 rounded-lg border p-1 sm:w-auto lg:justify-end'>
+                        <label
+                            className={cn(
+                                'border-border/50 text-muted-foreground hover:bg-muted/50 flex cursor-pointer items-center gap-1.5 rounded-md border border-transparent px-2 py-1.5 text-[11px] font-semibold transition-colors',
+                                autoScroll && 'border-border bg-muted/60 text-foreground',
                             )}
+                        >
+                            <input
+                                type='checkbox'
+                                checked={autoScroll}
+                                onChange={(e) => setAutoScroll(e.target.checked)}
+                                className='border-input bg-background text-primary focus:ring-primary h-3.5 w-3.5 cursor-pointer rounded border focus:ring-2 focus:ring-offset-0'
+                            />
+                            <span className='select-none'>{t('servers.console.terminal.auto_scroll')}</span>
+                        </label>
+                        <span className='bg-border/60 mx-0.5 hidden h-6 w-px sm:block' aria-hidden />
+                        <Button
+                            type='button'
+                            variant={showSettings ? 'secondary' : 'ghost'}
+                            size='icon'
+                            className='h-8 w-8 shrink-0 rounded-lg'
+                            onClick={() => setShowSettings((prev) => !prev)}
+                            aria-label={t('servers.console.terminal.customize')}
+                            aria-pressed={showSettings}
+                        >
+                            <Settings2 className='h-3.5 w-3.5' />
+                        </Button>
+                        {onFiltersChange && (
                             <Menu as='div' className='relative'>
                                 <Menu.Button
-                                    className='border-border bg-background hover:bg-muted text-muted-foreground hover:text-foreground flex h-9 w-9 items-center justify-center rounded-lg border transition-colors'
-                                    aria-label={t('servers.console.terminal.history_title')}
+                                    as={Button}
+                                    variant='outline'
+                                    size='sm'
+                                    className='h-8 gap-1.5 rounded-lg px-2.5 text-[11px]'
+                                    aria-label={t('servers.console.terminal.quick_rules')}
                                 >
-                                    <History className='h-4 w-4' />
+                                    <Sparkles className='text-primary h-3.5 w-3.5 shrink-0' />
+                                    <span className='hidden sm:inline'>{t('servers.console.terminal.quick_rules')}</span>
                                 </Menu.Button>
                                 <Transition
                                     as={Fragment}
@@ -333,84 +456,223 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                                     leaveFrom='transform opacity-100 scale-100'
                                     leaveTo='transform opacity-0 scale-95'
                                 >
-                                    <Menu.Items className='bg-popover border-border/50 absolute right-0 z-20 mt-2 w-64 origin-top-right overflow-hidden rounded-xl border focus:outline-none'>
-                                        <div className='border-border/50 bg-muted/30 border-b p-2'>
-                                            <p className='text-muted-foreground px-2 text-xs font-medium'>
-                                                {t('servers.console.terminal.history_title')}
+                                    <Menu.Items className='bg-popover border-border/50 absolute right-0 z-30 mt-2 w-[min(22rem,calc(100vw-2rem))] origin-top-right overflow-hidden rounded-xl border shadow-lg focus:outline-none'>
+                                        <div className='border-border/50 bg-muted/30 border-b px-3 py-2'>
+                                            <p className='text-foreground text-xs font-semibold'>
+                                                {t('servers.console.terminal.quick_rules')}
+                                            </p>
+                                            <p className='text-muted-foreground mt-0.5 text-[11px] leading-snug'>
+                                                {t('servers.console.terminal.quick_rules_help')}
                                             </p>
                                         </div>
-                                        <div className='custom-scrollbar max-h-60 overflow-y-auto p-1'>
-                                            {commandHistory.length === 0 ? (
-                                                <div className='text-muted-foreground px-3 py-4 text-center text-xs'>
-                                                    {t('servers.console.terminal.no_history')}
+                                        <div className='custom-scrollbar max-h-72 overflow-y-auto p-1.5'>
+                                            {PRESET_MENU_SECTIONS.map(({ group, presets }, sectionIdx) => (
+                                                <div key={group}>
+                                                    {sectionIdx > 0 && <div className='bg-border/60 my-1 h-px' role='separator' />}
+                                                    <p className='text-muted-foreground px-2 py-1 text-[10px] font-bold tracking-wide uppercase'>
+                                                        {t(`servers.console.terminal.preset_group_${group}`)}
+                                                    </p>
+                                                    {presets.map((preset) => {
+                                                        const taken = filters.some((r) => r.presetId === preset.presetId);
+                                                        return (
+                                                            <Menu.Item key={preset.presetId}>
+                                                                {({ active, close }) => (
+                                                                    <button
+                                                                        type='button'
+                                                                        disabled={taken}
+                                                                        title={t(
+                                                                            `servers.console.terminal.presets.${preset.presetId}.desc`,
+                                                                        )}
+                                                                        onClick={() => {
+                                                                            if (!taken) {
+                                                                                handleAddPreset(preset.presetId);
+                                                                                close();
+                                                                            }
+                                                                        }}
+                                                                        className={cn(
+                                                                            'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors',
+                                                                            active && !taken && 'bg-primary/10',
+                                                                            taken
+                                                                                ? 'text-muted-foreground cursor-not-allowed opacity-60'
+                                                                                : 'text-foreground hover:bg-muted/80',
+                                                                        )}
+                                                                    >
+                                                                        <span className='min-w-0 flex-1 truncate font-medium'>
+                                                                            {t(
+                                                                                `servers.console.terminal.presets.${preset.presetId}.title`,
+                                                                            )}
+                                                                        </span>
+                                                                        {taken && (
+                                                                            <span className='text-primary shrink-0 text-[10px] font-bold uppercase'>
+                                                                                {t('servers.console.terminal.preset_active')}
+                                                                            </span>
+                                                                        )}
+                                                                    </button>
+                                                                )}
+                                                            </Menu.Item>
+                                                        );
+                                                    })}
                                                 </div>
-                                            ) : (
-                                                commandHistory.map((cmd, idx) => (
-                                                    <Menu.Item key={idx}>
-                                                        {({ active }) => (
-                                                            <button
-                                                                onClick={() => loadHistoryCommand(cmd)}
-                                                                className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors ${active ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-muted'} `}
-                                                            >
-                                                                <Clock className='h-3 w-3 opacity-50' />
-                                                                <span className='truncate font-mono text-xs'>
-                                                                    {cmd}
-                                                                </span>
-                                                            </button>
-                                                        )}
-                                                    </Menu.Item>
-                                                ))
-                                            )}
+                                            ))}
                                         </div>
                                     </Menu.Items>
                                 </Transition>
                             </Menu>
-                            {onUploadLogs && (
-                                <button
-                                    onClick={onUploadLogs}
-                                    className='border-border bg-background hover:bg-muted text-muted-foreground hover:text-foreground flex h-9 w-9 items-center justify-center rounded-lg border transition-colors'
-                                    aria-label={t('servers.console.upload_logs')}
-                                    type='button'
-                                >
-                                    <UploadCloud className='h-4 w-4' />
-                                </button>
-                            )}
-                            <button
-                                onClick={clearTerminal}
-                                className='border-border bg-background hover:bg-muted text-muted-foreground hover:text-foreground flex h-9 w-9 items-center justify-center rounded-lg border transition-colors'
-                                aria-label={t('servers.console.terminal.clear')}
+                        )}
+                        <Menu as='div' className='relative'>
+                            <Menu.Button
+                                as={Button}
+                                variant='outline'
+                                size='icon'
+                                className='h-8 w-8 shrink-0 rounded-lg'
+                                aria-label={t('servers.console.terminal.history_title')}
                             >
-                                <Trash2 className='h-4 w-4' />
-                            </button>
-                        </div>
+                                <History className='h-3.5 w-3.5' />
+                            </Menu.Button>
+                            <Transition
+                                as={Fragment}
+                                enter='transition ease-out duration-100'
+                                enterFrom='transform opacity-0 scale-95'
+                                enterTo='transform opacity-100 scale-100'
+                                leave='transition ease-in duration-75'
+                                leaveFrom='transform opacity-100 scale-100'
+                                leaveTo='transform opacity-0 scale-95'
+                            >
+                                <Menu.Items className='bg-popover border-border/50 absolute right-0 z-20 mt-2 w-64 origin-top-right overflow-hidden rounded-xl border shadow-lg focus:outline-none'>
+                                    <div className='border-border/50 bg-muted/30 border-b p-2'>
+                                        <p className='text-muted-foreground px-2 text-xs font-medium'>
+                                            {t('servers.console.terminal.history_title')}
+                                        </p>
+                                    </div>
+                                    <div className='custom-scrollbar max-h-60 overflow-y-auto p-1'>
+                                        {commandHistory.length === 0 ? (
+                                            <div className='text-muted-foreground px-3 py-4 text-center text-xs'>
+                                                {t('servers.console.terminal.no_history')}
+                                            </div>
+                                        ) : (
+                                            commandHistory.map((cmd, idx) => (
+                                                <Menu.Item key={idx}>
+                                                    {({ active }) => (
+                                                        <button
+                                                            type='button'
+                                                            onClick={() => loadHistoryCommand(cmd)}
+                                                            className={cn(
+                                                                'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors',
+                                                                active ? 'bg-primary/10 text-primary' : 'hover:bg-muted/80',
+                                                            )}
+                                                        >
+                                                            <Clock className='h-3 w-3 opacity-50' />
+                                                            <span className='truncate font-mono text-xs'>{cmd}</span>
+                                                        </button>
+                                                    )}
+                                                </Menu.Item>
+                                            ))
+                                        )}
+                                    </div>
+                                </Menu.Items>
+                            </Transition>
+                        </Menu>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger
+                                as={Button}
+                                variant='outline'
+                                size='icon'
+                                className='h-8 w-8 shrink-0 rounded-lg'
+                                aria-label={t('servers.console.terminal.more_menu')}
+                            >
+                                <MoreHorizontal className='h-3.5 w-3.5' />
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align='end' className='w-52'>
+                                <DropdownMenuItem
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        copyTerminalSelection();
+                                    }}
+                                >
+                                    <Copy className='text-muted-foreground mr-2 h-4 w-4' />
+                                    {t('servers.console.terminal.copy_selection')}
+                                </DropdownMenuItem>
+                                {showPopoutButton && (
+                                    <DropdownMenuItem
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            handlePopoutWindow();
+                                        }}
+                                    >
+                                        <ExternalLink className='text-muted-foreground mr-2 h-4 w-4' />
+                                        {t('servers.console.terminal.popout')}
+                                    </DropdownMenuItem>
+                                )}
+                                {onUploadLogs && (
+                                    <DropdownMenuItem
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            onUploadLogs();
+                                        }}
+                                    >
+                                        <UploadCloud className='text-muted-foreground mr-2 h-4 w-4' />
+                                        {t('servers.console.upload_logs')}
+                                    </DropdownMenuItem>
+                                )}
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        clearTerminal();
+                                    }}
+                                    className='text-destructive focus:text-destructive'
+                                >
+                                    <Trash2 className='mr-2 h-4 w-4' />
+                                    {t('servers.console.terminal.clear')}
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                     </div>
                 </div>
+                </CardHeader>
                 {showSettings && (
-                    <div className='border-border bg-muted/30 border-b px-4 py-3 sm:px-6'>
-                        <div className='mb-3 flex items-center justify-between'>
-                            <p className='text-muted-foreground text-xs font-semibold'>
-                                {t('servers.console.terminal.customize')}
-                            </p>
-                            <button
-                                onClick={handleAddFilter}
+                    <div className='border-border/50 bg-muted/20 border-b px-4 py-4 sm:px-5 sm:py-5'>
+                        <div className='mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between'>
+                            <div>
+                                <p className='text-foreground text-xs font-semibold'>
+                                    {t('servers.console.terminal.customize')}
+                                </p>
+                                <p className='text-muted-foreground mt-1 max-w-2xl text-[11px] leading-relaxed'>
+                                    {t('servers.console.terminal.rules_intro')}
+                                </p>
+                            </div>
+                            <Button
                                 type='button'
-                                className='bg-primary/10 text-primary hover:bg-primary/20 rounded-md px-2 py-1 text-xs transition-colors'
+                                variant='outline'
+                                size='sm'
+                                className='shrink-0 rounded-xl font-bold'
+                                onClick={handleAddFilter}
                                 disabled={!onFiltersChange}
                             >
                                 {t('servers.console.terminal.add_rule')}
-                            </button>
+                            </Button>
                         </div>
                         {filters.length === 0 ? (
                             <p className='text-muted-foreground text-xs'>{t('servers.console.terminal.no_rules')}</p>
                         ) : (
-                            <div className='custom-scrollbar max-h-64 space-y-3 overflow-y-auto pr-1'>
+                            <div className='custom-scrollbar max-h-72 space-y-3 overflow-y-auto pr-1'>
                                 {filters.map((rule) => (
                                     <div
                                         key={rule.id}
-                                        className='border-border/60 bg-background/60 space-y-2 rounded-lg border px-3 py-2'
+                                        className='border-border/50 bg-card/50 space-y-2.5 rounded-xl border p-4 backdrop-blur-sm'
                                     >
+                                        {rule.presetId && (
+                                            <div className='flex flex-wrap items-center gap-2'>
+                                                <span className='bg-primary/12 text-primary inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase'>
+                                                    {t('servers.console.terminal.preset_badge')}
+                                                </span>
+                                                <span className='text-foreground text-xs font-medium'>
+                                                    {t(`servers.console.terminal.presets.${rule.presetId}.title`)}
+                                                </span>
+                                            </div>
+                                        )}
                                         <div className='flex items-center justify-between gap-2'>
-                                            <div className='flex items-center gap-2'>
+                                            <div className='flex flex-wrap items-center gap-2'>
                                                 <input
                                                     type='checkbox'
                                                     checked={rule.enabled}
@@ -427,6 +689,7 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                                                     onChange={(e) =>
                                                         handleUpdateFilter(rule.id, {
                                                             type: e.target.value as ConsoleFilterRule['type'],
+                                                            presetId: undefined,
                                                         })
                                                     }
                                                     className='border-border bg-background rounded-md border px-2 py-1 text-xs'
@@ -463,6 +726,7 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                                                     onChange={(e) =>
                                                         handleUpdateFilter(rule.id, {
                                                             pattern: e.target.value,
+                                                            presetId: undefined,
                                                         })
                                                     }
                                                     className='border-border bg-background w-full rounded-md border px-2 py-1 font-mono text-xs'
@@ -480,6 +744,7 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                                                     onChange={(e) =>
                                                         handleUpdateFilter(rule.id, {
                                                             flags: e.target.value,
+                                                            presetId: undefined,
                                                         })
                                                     }
                                                     className='border-border bg-background w-full rounded-md border px-2 py-1 text-xs'
@@ -499,6 +764,7 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                                                     onChange={(e) =>
                                                         handleUpdateFilter(rule.id, {
                                                             replacement: e.target.value,
+                                                            presetId: undefined,
                                                         })
                                                     }
                                                     className='border-border bg-background w-full rounded-md border px-2 py-1 text-xs'
@@ -517,6 +783,7 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                                                     onChange={(e) =>
                                                         handleUpdateFilter(rule.id, {
                                                             color: e.target.value as ConsoleFilterRule['color'],
+                                                            presetId: undefined,
                                                         })
                                                     }
                                                     className='border-border bg-background rounded-md border px-2 py-1 text-xs'
@@ -552,92 +819,100 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                         )}
                     </div>
                 )}
-                <div className='relative p-0.5'>
-                    <div
-                        ref={terminalRef}
-                        className={
-                            fullHeight
-                                ? 'h-[calc(100vh-160px)] w-full sm:h-[calc(100vh-160px)]'
-                                : 'h-[500px] w-full sm:h-[600px]'
-                        }
-                    />
+                <CardContent className='p-0'>
+                    <div className='relative'>
+                        <div
+                            ref={terminalRef}
+                            className={
+                                fullHeight
+                                    ? 'h-[calc(100vh-132px)] w-full sm:h-[calc(100vh-132px)]'
+                                    : 'h-[min(40rem,calc(100vh-10rem))] w-full sm:h-[min(48rem,68vh)] 2xl:h-[min(58rem,72vh)]'
+                            }
+                        />
+                        {showScrollButton && (
+                            <Button
+                                type='button'
+                                variant='outline'
+                                size='sm'
+                                onClick={scrollToBottom}
+                                className='absolute top-3 right-3 z-10 gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold'
+                            >
+                                <ChevronDown className='h-4 w-4' />
+                                <span className='hidden sm:inline'>{t('servers.console.terminal.scroll_bottom')}</span>
+                            </Button>
+                        )}
+                    </div>
+                </CardContent>
+                {onSendCommand && (
+                    <CardFooter className='border-border/50 bg-muted/10 flex w-full min-w-0 flex-col items-stretch gap-2 border-t px-3 py-2 sm:px-4 sm:py-2.5'>
+                        <div className='flex w-full min-w-0 items-center gap-2'>
+                            <Input
+                                value={commandInput}
+                                onChange={(e) => setCommandInput(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') sendCommand();
+                                    if (e.key === 'ArrowUp') {
+                                        e.preventDefault();
+                                        navigateHistory('up');
+                                    }
+                                    if (e.key === 'ArrowDown') {
+                                        e.preventDefault();
+                                        navigateHistory('down');
+                                    }
+                                    if (e.ctrlKey && e.code === 'KeyC') {
+                                        const termHasSelection = terminalInstanceRef.current?.hasSelection();
+                                        const target = e.target as HTMLInputElement;
+                                        const inputHasSelection = target.selectionStart !== target.selectionEnd;
 
-                    {showScrollButton && (
-                        <button
-                            onClick={scrollToBottom}
-                            className='bg-background/95 hover:bg-background border-border absolute top-4 right-4 z-10 flex items-center gap-2 rounded-lg border px-3 py-2 backdrop-blur-sm transition-colors'
-                        >
-                            <ChevronDown className='h-4 w-4' />
-                            <span className='hidden text-sm sm:inline'>
-                                {t('servers.console.terminal.scroll_bottom')}
-                            </span>
-                        </button>
-                    )}
-
-                    {onSendCommand && (
-                        <div className='border-border bg-muted/30 border-t p-3'>
-                            <div className='flex gap-2'>
-                                <input
-                                    value={commandInput}
-                                    onChange={(e) => setCommandInput(e.target.value)}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter') sendCommand();
-                                        if (e.key === 'ArrowUp') {
-                                            e.preventDefault();
-                                            navigateHistory('up');
-                                        }
-                                        if (e.key === 'ArrowDown') {
-                                            e.preventDefault();
-                                            navigateHistory('down');
-                                        }
-                                        if (e.ctrlKey && e.code === 'KeyC') {
-                                            const termHasSelection = terminalInstanceRef.current?.hasSelection();
-                                            const target = e.target as HTMLInputElement;
-                                            const inputHasSelection = target.selectionStart !== target.selectionEnd;
-
-                                            if (termHasSelection && !inputHasSelection) {
-                                                const selection = terminalInstanceRef.current?.getSelection();
-                                                if (selection) {
-                                                    navigator.clipboard.writeText(selection);
-                                                }
-                                                e.preventDefault();
-                                                e.stopPropagation();
-                                            } else if (!termHasSelection && !inputHasSelection && onSendCommand) {
-                                                e.preventDefault();
-                                                e.stopPropagation();
-                                                onSendCommand('\x03');
-                                                setCommandInput('');
+                                        if (termHasSelection && !inputHasSelection) {
+                                            const selection = terminalInstanceRef.current?.getSelection();
+                                            if (selection) {
+                                                navigator.clipboard.writeText(selection);
                                             }
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                        } else if (!termHasSelection && !inputHasSelection && onSendCommand) {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            onSendCommand('\x03');
+                                            setCommandInput('');
                                         }
-                                    }}
-                                    type='text'
-                                    className='border-border bg-background focus:ring-primary flex-1 rounded-lg border px-3 py-2 font-mono text-sm focus:ring-2 focus:outline-none'
-                                    placeholder={t('servers.console.terminal.placeholder')}
-                                    disabled={!canSend}
-                                />
-                                <button
-                                    onClick={sendCommand}
-                                    disabled={!canSend || !commandInput.trim()}
-                                    className='bg-primary text-primary-foreground hover:bg-primary/90 flex h-9 w-9 items-center justify-center rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-50'
-                                >
-                                    <Send className='h-4 w-4' />
-                                </button>
-                            </div>
-                            {!canSendCommands && (
-                                <p className='mt-2 flex items-center gap-1.5 text-xs text-red-600 dark:text-red-400'>
-                                    <span>🚫</span>
-                                    <span>{t('servers.console.noConsolePermissionSend')}</span>
-                                </p>
-                            )}
-                            {canSendCommands && !canSend && (
-                                <p className='mt-2 flex items-center gap-1.5 text-xs text-yellow-600 dark:text-yellow-400'>
-                                    <span>⚠️</span>
-                                    <span>{t('servers.console.terminal.server_running_required')}</span>
-                                </p>
-                            )}
+                                    }
+                                }}
+                                type='text'
+                                className='focus:ring-primary/15 min-w-0 flex-1 rounded-lg border px-3 py-2 font-mono text-xs font-semibold shadow-none focus:ring-2 h-9'
+                                placeholder={t('servers.console.terminal.placeholder')}
+                                title={t('servers.console.terminal.input_hint')}
+                                disabled={!canSend}
+                            />
+                            <Button
+                                type='button'
+                                variant='outline'
+                                size='icon'
+                                className='text-primary hover:bg-primary/10 hover:text-primary h-9 w-9 shrink-0 rounded-lg border-primary/35 focus:ring-2 focus:ring-primary/15'
+                                onClick={sendCommand}
+                                disabled={!canSend || !commandInput.trim()}
+                                aria-label={t('servers.console.terminal.send')}
+                            >
+                                <Send className='h-4 w-4' />
+                            </Button>
                         </div>
-                    )}
-                </div>
+                        {!canSendCommands && (
+                            <div className='text-destructive border-destructive/20 bg-destructive/5 flex w-full min-w-0 items-start gap-2 rounded-lg border px-2.5 py-1.5 text-xs font-medium'>
+                                <AlertCircle className='mt-0.5 h-3.5 w-3.5 shrink-0' aria-hidden />
+                                <span className='min-w-0 leading-snug'>{t('servers.console.noConsolePermissionSend')}</span>
+                            </div>
+                        )}
+                        {canSendCommands && !canSend && (
+                            <div className='flex w-full min-w-0 items-start gap-2 rounded-lg border border-orange-500/20 bg-orange-500/10 px-2.5 py-1.5 text-xs font-medium text-orange-600 dark:text-orange-400'>
+                                <AlertCircle className='mt-0.5 h-3.5 w-3.5 shrink-0' aria-hidden />
+                                <span className='min-w-0 leading-snug'>
+                                    {t('servers.console.terminal.server_running_required')}
+                                </span>
+                            </div>
+                        )}
+                    </CardFooter>
+                )}
                 <style jsx global>{`
                     .xterm-viewport::-webkit-scrollbar {
                         width: 8px;
@@ -658,7 +933,7 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                         scrollbar-color: hsl(var(--muted-foreground) / 0.3) transparent;
                     }
                 `}</style>
-            </div>
+            </Card>
         );
     },
 );

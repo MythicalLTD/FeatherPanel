@@ -30,6 +30,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { AlertTriangle, Wifi, WifiOff, Loader2, Copy } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { useSettings } from '@/contexts/SettingsContext';
 import { useFeatureDetector } from '@/hooks/useFeatureDetector';
 import { EulaDialog } from '@/components/server/features/EulaDialog';
 import { JavaVersionDialog } from '@/components/server/features/JavaVersionDialog';
@@ -71,8 +72,17 @@ const formatUptime = (uptimeMs: number): string => {
     return parts.join(' ');
 };
 
+/** Swap upstream panel name in daemon/egg log lines for the configured panel display name. */
+function replaceLegacyPanelNameInConsoleOutput(text: string, appDisplayName: string): string {
+    const name = appDisplayName.trim();
+    if (!name) return text;
+    return text.replace(/Pterodactyl/gi, name);
+}
+
 export default function ServerConsolePage() {
     const { t } = useTranslation();
+    const { settings } = useSettings();
+    const consoleAppDisplayName = settings?.app_name?.trim() || 'FeatherPanel';
     const params = useParams();
     const searchParams = useSearchParams();
     const serverUuid = params.uuidShort as string;
@@ -219,7 +229,8 @@ export default function ServerConsolePage() {
                     .join('\n');
             };
 
-            const filtered = applyFilters(output);
+            const rebranded = replaceLegacyPanelNameInConsoleOutput(output, consoleAppDisplayName);
+            const filtered = applyFilters(rebranded);
             if (!filtered) {
                 return;
             }
@@ -229,7 +240,7 @@ export default function ServerConsolePage() {
                 terminalRef.current.writeln(filtered);
             }
         },
-        [processLog, consoleFilters],
+        [processLog, consoleFilters, consoleAppDisplayName],
     );
 
     const handleStatusUpdate = useCallback((status: string) => {
@@ -304,11 +315,13 @@ export default function ServerConsolePage() {
         }
     }, []);
 
-    const handleInstallOutput = useCallback((output: string) => {
-        if (terminalRef.current) {
-            terminalRef.current.writeln(output);
-        }
-    }, []);
+    const handleInstallOutput = useCallback(
+        (output: string) => {
+            if (!terminalRef.current) return;
+            terminalRef.current.writeln(replaceLegacyPanelNameInConsoleOutput(output, consoleAppDisplayName));
+        },
+        [consoleAppDisplayName],
+    );
 
     const handleInstallStarted = useCallback(() => {
         if (terminalRef.current) {
@@ -542,8 +555,8 @@ export default function ServerConsolePage() {
 
             <WidgetRenderer widgets={getWidgets('server-console', 'after-header')} />
 
-            <div className='grid grid-cols-1 items-start gap-6 xl:grid-cols-12'>
-                <div className='flex flex-col gap-6 xl:col-span-9'>
+            <div className='grid grid-cols-1 items-start gap-4 xl:grid-cols-12 xl:gap-5 2xl:gap-6'>
+                <div className='flex min-w-0 flex-col gap-5 xl:col-span-9'>
                     {shouldConnectToWings && connectionStatus !== 'connected' && (
                         <Card className={`border-2 ${connectionInfo.bgColor}`}>
                             <CardContent className='p-4'>
@@ -622,7 +635,7 @@ export default function ServerConsolePage() {
                     <WidgetRenderer widgets={getWidgets('server-console', 'after-terminal')} />
                 </div>
 
-                <div className='space-y-6 xl:col-span-3'>
+                <div className='min-w-0 space-y-5 xl:col-span-3'>
                     <PlayerStatusWidget uuidShort={serverUuid} />
 
                     {shouldConnectToWings && (

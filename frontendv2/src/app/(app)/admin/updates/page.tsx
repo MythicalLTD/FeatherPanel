@@ -197,7 +197,7 @@ export default function AdminUpdatesPage() {
                 }));
             }
         } catch (error) {
-              console.error(error);
+            console.error(error);
             setPluginUpdates((prev) => ({
                 ...prev,
                 [identifier]: { ...prev[identifier], loading: false },
@@ -354,9 +354,13 @@ export default function AdminUpdatesPage() {
                             </div>
                             <div className='text-primary-foreground'>
                                 <p className='text-sm font-black tracking-tight'>
-                                    {t('admin_updates.bulk.items_selected', { count: String(selectedNodes.size + selectedPlugins.size) })}
+                                    {t('admin_updates.bulk.items_selected', {
+                                        count: String(selectedNodes.size + selectedPlugins.size),
+                                    })}
                                 </p>
-                                <p className='text-[10px] font-bold uppercase opacity-70'>{t('admin_updates.bulk.ready')}</p>
+                                <p className='text-[10px] font-bold uppercase opacity-70'>
+                                    {t('admin_updates.bulk.ready')}
+                                </p>
                             </div>
                         </div>
                         <div className='bg-primary-foreground/10 h-8 w-px' />
@@ -451,7 +455,9 @@ export default function AdminUpdatesPage() {
                             ) : (
                                 <div className='flex items-center gap-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-emerald-500'>
                                     <CheckCircle2 className='h-5 w-5' />
-                                    <p className='text-xs font-bold tracking-widest uppercase'>{t('admin_updates.panel.running_latest')}</p>
+                                    <p className='text-xs font-bold tracking-widest uppercase'>
+                                        {t('admin_updates.panel.running_latest')}
+                                    </p>
                                 </div>
                             )}
 
@@ -474,7 +480,9 @@ export default function AdminUpdatesPage() {
                                             {t('admin_updates.panel.integrity_label')}
                                         </span>
                                     </div>
-                                    <p className='text-xs font-bold text-emerald-500'>{t('admin_updates.panel.integrity_verified')}</p>
+                                    <p className='text-xs font-bold text-emerald-500'>
+                                        {t('admin_updates.panel.integrity_verified')}
+                                    </p>
                                 </div>
                             </div>
                         </div>
