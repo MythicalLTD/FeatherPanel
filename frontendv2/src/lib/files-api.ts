@@ -56,7 +56,10 @@ const splitNameAndExtension = (name: string): { base: string; extension: string 
     const lower = name.toLowerCase();
     const compound = tarCompound.find((ext) => lower.endsWith(ext));
     if (compound) {
-        return { base: name.slice(0, name.length - compound.length), extension: name.slice(name.length - compound.length) };
+        return {
+            base: name.slice(0, name.length - compound.length),
+            extension: name.slice(name.length - compound.length),
+        };
     }
     const lastDot = name.lastIndexOf('.');
     if (lastDot <= 0) {

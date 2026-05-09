@@ -90,8 +90,8 @@ importers:
         specifier: ^3.8.3
         version: 3.8.3
       prettier-plugin-tailwindcss-canonical-classes:
-        specifier: ^0.1.4
-        version: 0.1.4(prettier@3.8.3)(tailwindcss@4.2.4)
+        specifier: ^0.1.5
+        version: 0.1.5(prettier@3.8.3)(tailwindcss@4.2.4)
       react:
         specifier: 19.2.6
         version: 19.2.6
@@ -2874,8 +2874,8 @@ packages:
     resolution: {integrity: sha512-vkcDPrRZo1QZLbn5RLGPpg/WmIQ65qoWWhcGKf/b5eplkkarX0m9z8ppCat4mlOqUsWpyNuYgO3VRyrYHSzX5g==}
     engines: {node: '>= 0.8.0'}
 
-  prettier-plugin-tailwindcss-canonical-classes@0.1.4:
-    resolution: {integrity: sha512-jlNx0B7BlIAWjArIsbn03SqSfLDHhcZNDAfIZrLh2V7/2PmbqGZh97S46FjbpVfp8Edt7Felj07ec6EhbmR7EQ==}
+  prettier-plugin-tailwindcss-canonical-classes@0.1.5:
+    resolution: {integrity: sha512-qXl329VHfNv+hUMYQ/B8eNWiKnYvoY48IXVyhwNH5lGs2Go7nMmWAnLuJRefegmjl+PZOcFxDobYLrgVMVYHmg==}
     engines: {node: '>=18'}
     peerDependencies:
       prettier: ^3.0.0
@@ -6549,7 +6549,7 @@ snapshots:
 
   prelude-ls@1.2.1: {}
 
-  prettier-plugin-tailwindcss-canonical-classes@0.1.4(prettier@3.8.3)(tailwindcss@4.2.4):
+  prettier-plugin-tailwindcss-canonical-classes@0.1.5(prettier@3.8.3)(tailwindcss@4.2.4):
     dependencies:
       '@laststance/tailwindcss-canonical-classes-core': 0.1.0(tailwindcss@4.2.4)
       prettier: 3.8.3

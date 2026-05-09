@@ -127,6 +127,7 @@ use App\Controllers\User\Server\CheckSubuserPermissionsTrait;
 class ServerFilesController
 {
     use CheckSubuserPermissionsTrait;
+
     private const MAX_LIST_ITEMS = 250;
 
     #[OA\Get(
@@ -261,7 +262,7 @@ class ServerFilesController
             }
 
             $filters = [
-                'directory' => $_GET['directory'] ?? ($this->getPathFromQuery('/')),
+                'directory' => $_GET['directory'] ?? $this->getPathFromQuery('/'),
                 'pattern' => $_GET['pattern'] ?? '',
                 'include' => $_GET['include'] ?? '',
                 'exclude' => $_GET['exclude'] ?? '',

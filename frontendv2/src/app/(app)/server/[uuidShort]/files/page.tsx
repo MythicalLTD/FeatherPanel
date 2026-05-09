@@ -1057,7 +1057,9 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                     <div className='border-destructive/30 bg-destructive/10 rounded-2xl border p-6'>
                         <div className='mb-2 flex items-center gap-2'>
                             <AlertCircle className='text-destructive h-5 w-5' />
-                            <h3 className='text-base font-semibold'>{t('files.messages.wings_connection_unavailable')}</h3>
+                            <h3 className='text-base font-semibold'>
+                                {t('files.messages.wings_connection_unavailable')}
+                            </h3>
                         </div>
                         <p className='text-muted-foreground mb-4 text-sm'>{error}</p>
                         <div className='flex items-center gap-2'>
@@ -1070,7 +1072,9 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 ) : (
                     <>
                         <FileActionToolbar
-                            loading={loading || uploadQueue.some((u) => u.status === 'uploading' || u.status === 'pending')}
+                            loading={
+                                loading || uploadQueue.some((u) => u.status === 'uploading' || u.status === 'pending')
+                            }
                             selectedCount={selectedFiles.length}
                             onRefresh={refresh}
                             onCreateFile={() => setCreateFileOpen(true)}
@@ -1112,231 +1116,239 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                         />
 
                         {uploadQueue.length > 0 && (
-                    <div className='animate-in slide-in-from-top-4 mb-6 grid grid-cols-1 gap-4 duration-500 md:grid-cols-2 lg:grid-cols-3'>
-                        <div className='flex items-center justify-between md:col-span-2 lg:col-span-3'>
-                            <span className='text-primary/80 text-xs font-bold tracking-widest uppercase'>
-                                {uploadQueue.length === 1
-                                    ? t('files.toolbar.upload')
-                                    : t('files.messages.uploading_files_progress', {
-                                          current: String(uploadQueue.length),
-                                          total: String(uploadQueue.length),
-                                      })}
-                            </span>
-                            {uploadQueue.some((u) => u.status === 'done' || u.status === 'error') && (
-                                <Button
-                                    variant='ghost'
-                                    size='sm'
-                                    onClick={clearCompletedUploads}
-                                    className='text-muted-foreground hover:text-foreground text-xs'
-                                >
-                                    {t('files.toolbar.clear_completed')}
-                                </Button>
-                            )}
-                        </div>
-                        {uploadBatches.map(({ batchKey, batchId, items }) => {
-                            const isBatch = items.length > 1;
-                            const doneCount = items.filter((u) => u.status === 'done').length;
-                            const uploadingItem = items.find((u) => u.status === 'uploading');
-                            const hasError = items.some((u) => u.status === 'error');
-                            const allDone = doneCount === items.length;
-                            const batchProgress =
-                                items.length > 1
-                                    ? Math.round(
-                                          (doneCount * 100 + (uploadingItem ? uploadingItem.progress : 0)) /
-                                              items.length,
-                                      )
-                                    : (uploadingItem?.progress ?? items[0]?.progress ?? 0);
-                            const currentLabel = items.length > 1 ? doneCount + (uploadingItem ? 1 : 0) : 1;
+                            <div className='animate-in slide-in-from-top-4 mb-6 grid grid-cols-1 gap-4 duration-500 md:grid-cols-2 lg:grid-cols-3'>
+                                <div className='flex items-center justify-between md:col-span-2 lg:col-span-3'>
+                                    <span className='text-primary/80 text-xs font-bold tracking-widest uppercase'>
+                                        {uploadQueue.length === 1
+                                            ? t('files.toolbar.upload')
+                                            : t('files.messages.uploading_files_progress', {
+                                                  current: String(uploadQueue.length),
+                                                  total: String(uploadQueue.length),
+                                              })}
+                                    </span>
+                                    {uploadQueue.some((u) => u.status === 'done' || u.status === 'error') && (
+                                        <Button
+                                            variant='ghost'
+                                            size='sm'
+                                            onClick={clearCompletedUploads}
+                                            className='text-muted-foreground hover:text-foreground text-xs'
+                                        >
+                                            {t('files.toolbar.clear_completed')}
+                                        </Button>
+                                    )}
+                                </div>
+                                {uploadBatches.map(({ batchKey, batchId, items }) => {
+                                    const isBatch = items.length > 1;
+                                    const doneCount = items.filter((u) => u.status === 'done').length;
+                                    const uploadingItem = items.find((u) => u.status === 'uploading');
+                                    const hasError = items.some((u) => u.status === 'error');
+                                    const allDone = doneCount === items.length;
+                                    const batchProgress =
+                                        items.length > 1
+                                            ? Math.round(
+                                                  (doneCount * 100 + (uploadingItem ? uploadingItem.progress : 0)) /
+                                                      items.length,
+                                              )
+                                            : (uploadingItem?.progress ?? items[0]?.progress ?? 0);
+                                    const currentLabel = items.length > 1 ? doneCount + (uploadingItem ? 1 : 0) : 1;
 
-                            if (isBatch) {
-                                return (
+                                    if (isBatch) {
+                                        return (
+                                            <div
+                                                key={batchKey}
+                                                className='group border-primary/20 bg-primary/5 hover:border-primary/40 relative overflow-hidden rounded-2xl border p-4 text-left backdrop-blur-xl transition-all'
+                                            >
+                                                <div className='from-primary/10 absolute inset-0 bg-linear-to-br via-transparent to-transparent opacity-0 transition-opacity group-hover:opacity-100' />
+                                                <div className='relative flex flex-col gap-3 text-left'>
+                                                    <div className='flex items-center justify-between'>
+                                                        <div className='flex min-w-0 items-center gap-2'>
+                                                            <div className='bg-primary/20 text-primary flex h-8 w-8 shrink-0 items-center justify-center rounded-lg'>
+                                                                {allDone && (
+                                                                    <CheckCircle2 className='h-4 w-4 text-green-500' />
+                                                                )}
+                                                                {hasError && !allDone && (
+                                                                    <AlertCircle className='text-destructive h-4 w-4' />
+                                                                )}
+                                                                {!allDone && !hasError && (
+                                                                    <Upload className='h-4 w-4 animate-pulse' />
+                                                                )}
+                                                            </div>
+                                                            <span className='truncate text-sm font-medium'>
+                                                                {allDone
+                                                                    ? t('files.messages.upload_folder_complete', {
+                                                                          count: String(items.length),
+                                                                      })
+                                                                    : hasError
+                                                                      ? t('files.messages.upload_folder_error')
+                                                                      : t('files.messages.uploading_folder')}
+                                                            </span>
+                                                        </div>
+                                                        {batchId && (
+                                                            <Button
+                                                                variant='ghost'
+                                                                size='icon'
+                                                                onClick={() => removeUploadBatch(batchId)}
+                                                                className='text-muted-foreground h-7 w-7 shrink-0 hover:text-red-500'
+                                                            >
+                                                                <X className='h-4 w-4' />
+                                                            </Button>
+                                                        )}
+                                                    </div>
+                                                    {!allDone && !hasError && (
+                                                        <div className='space-y-1.5'>
+                                                            <div className='flex justify-between text-[10px] font-bold tracking-tighter text-white/40 uppercase'>
+                                                                <span>
+                                                                    {t('files.messages.uploading_folder_progress', {
+                                                                        current: String(currentLabel),
+                                                                        total: String(items.length),
+                                                                    })}
+                                                                </span>
+                                                                <span className='text-primary'>{batchProgress}%</span>
+                                                            </div>
+                                                            <div className='h-1.5 w-full overflow-hidden rounded-full border border-white/5 bg-white/5'>
+                                                                <div
+                                                                    className='from-primary to-primary-foreground h-full bg-linear-to-r transition-all duration-300'
+                                                                    style={{ width: `${batchProgress}%` }}
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                    {hasError && !allDone && (
+                                                        <p className='text-destructive text-xs'>
+                                                            {t('files.messages.upload_folder_error')}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    }
+
+                                    const item = items[0]!;
+                                    return (
+                                        <div
+                                            key={item.id}
+                                            className='group border-primary/20 bg-primary/5 hover:border-primary/40 relative overflow-hidden rounded-2xl border p-4 text-left backdrop-blur-xl transition-all'
+                                        >
+                                            <div className='from-primary/10 absolute inset-0 bg-linear-to-br via-transparent to-transparent opacity-0 transition-opacity group-hover:opacity-100' />
+                                            <div className='relative flex flex-col gap-3 text-left'>
+                                                <div className='flex items-center justify-between'>
+                                                    <div className='flex min-w-0 items-center gap-2'>
+                                                        <div className='bg-primary/20 text-primary flex h-8 w-8 shrink-0 items-center justify-center rounded-lg'>
+                                                            {item.status === 'uploading' && (
+                                                                <Upload className='h-4 w-4 animate-pulse' />
+                                                            )}
+                                                            {item.status === 'done' && (
+                                                                <CheckCircle2 className='h-4 w-4 text-green-500' />
+                                                            )}
+                                                            {item.status === 'error' && (
+                                                                <AlertCircle className='text-destructive h-4 w-4' />
+                                                            )}
+                                                            {item.status === 'pending' && (
+                                                                <Upload className='text-muted-foreground h-4 w-4' />
+                                                            )}
+                                                        </div>
+                                                        <span
+                                                            className='truncate text-sm font-medium'
+                                                            title={item.file.name}
+                                                        >
+                                                            {item.file.name}
+                                                        </span>
+                                                    </div>
+                                                    <Button
+                                                        variant='ghost'
+                                                        size='icon'
+                                                        onClick={() => removeUploadFromQueue(item.id)}
+                                                        className='text-muted-foreground h-7 w-7 shrink-0 hover:text-red-500'
+                                                    >
+                                                        <X className='h-4 w-4' />
+                                                    </Button>
+                                                </div>
+                                                {(item.status === 'uploading' || item.status === 'pending') && (
+                                                    <div className='space-y-1.5'>
+                                                        <div className='flex justify-between text-[10px] font-bold tracking-tighter text-white/40 uppercase'>
+                                                            <span>
+                                                                {item.status === 'uploading'
+                                                                    ? t('files.messages.uploading', { file: '' })
+                                                                    : t('files.toolbar.upload')}
+                                                            </span>
+                                                            <span className='text-primary'>{item.progress}%</span>
+                                                        </div>
+                                                        <div className='h-1.5 w-full overflow-hidden rounded-full border border-white/5 bg-white/5'>
+                                                            <div
+                                                                className='from-primary to-primary-foreground h-full bg-linear-to-r transition-all duration-300'
+                                                                style={{ width: `${item.progress}%` }}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                )}
+                                                {item.status === 'done' && (
+                                                    <p className='text-xs text-green-600 dark:text-green-400'>
+                                                        {t('files.messages.upload_complete')}
+                                                    </p>
+                                                )}
+                                                {item.status === 'error' && (
+                                                    <p className='text-destructive truncate text-xs' title={item.error}>
+                                                        {item.error}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+
+                        {activePulls.length > 0 && (
+                            <div className='animate-in slide-in-from-top-4 mb-6 grid grid-cols-1 gap-4 duration-500 md:grid-cols-2 lg:grid-cols-3'>
+                                {activePulls.map((pull) => (
                                     <div
-                                        key={batchKey}
+                                        key={pull.Identifier}
                                         className='group border-primary/20 bg-primary/5 hover:border-primary/40 relative overflow-hidden rounded-2xl border p-4 text-left backdrop-blur-xl transition-all'
                                     >
                                         <div className='from-primary/10 absolute inset-0 bg-linear-to-br via-transparent to-transparent opacity-0 transition-opacity group-hover:opacity-100' />
                                         <div className='relative flex flex-col gap-3 text-left'>
                                             <div className='flex items-center justify-between'>
-                                                <div className='flex min-w-0 items-center gap-2'>
-                                                    <div className='bg-primary/20 text-primary flex h-8 w-8 shrink-0 items-center justify-center rounded-lg'>
-                                                        {allDone && <CheckCircle2 className='h-4 w-4 text-green-500' />}
-                                                        {hasError && !allDone && (
-                                                            <AlertCircle className='text-destructive h-4 w-4' />
-                                                        )}
-                                                        {!allDone && !hasError && (
-                                                            <Upload className='h-4 w-4 animate-pulse' />
-                                                        )}
+                                                <div className='flex items-center gap-2'>
+                                                    <div className='bg-primary/20 text-primary flex h-8 w-8 items-center justify-center rounded-lg'>
+                                                        <Download className='h-4 w-4 animate-bounce' />
                                                     </div>
-                                                    <span className='truncate text-sm font-medium'>
-                                                        {allDone
-                                                            ? t('files.messages.upload_folder_complete', {
-                                                                  count: String(items.length),
-                                                              })
-                                                            : hasError
-                                                              ? t('files.messages.upload_folder_error')
-                                                              : t('files.messages.uploading_folder')}
+                                                    <span className='text-primary/80 text-xs font-bold tracking-widest uppercase'>
+                                                        {t('files.messages.active_pull')}
                                                     </span>
                                                 </div>
-                                                {batchId && (
-                                                    <Button
-                                                        variant='ghost'
-                                                        size='icon'
-                                                        onClick={() => removeUploadBatch(batchId)}
-                                                        className='text-muted-foreground h-7 w-7 shrink-0 hover:text-red-500'
-                                                    >
-                                                        <X className='h-4 w-4' />
-                                                    </Button>
-                                                )}
+                                                <Button
+                                                    variant='ghost'
+                                                    size='icon'
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        cancelPull(pull.Identifier);
+                                                    }}
+                                                    className='text-muted-foreground h-7 w-7 hover:text-red-500'
+                                                >
+                                                    <X className='h-4 w-4' />
+                                                </Button>
                                             </div>
-                                            {!allDone && !hasError && (
-                                                <div className='space-y-1.5'>
-                                                    <div className='flex justify-between text-[10px] font-bold tracking-tighter text-white/40 uppercase'>
-                                                        <span>
-                                                            {t('files.messages.uploading_folder_progress', {
-                                                                current: String(currentLabel),
-                                                                total: String(items.length),
-                                                            })}
-                                                        </span>
-                                                        <span className='text-primary'>{batchProgress}%</span>
-                                                    </div>
-                                                    <div className='h-1.5 w-full overflow-hidden rounded-full border border-white/5 bg-white/5'>
-                                                        <div
-                                                            className='from-primary to-primary-foreground h-full bg-linear-to-r transition-all duration-300'
-                                                            style={{ width: `${batchProgress}%` }}
-                                                        />
-                                                    </div>
-                                                </div>
-                                            )}
-                                            {hasError && !allDone && (
-                                                <p className='text-destructive text-xs'>
-                                                    {t('files.messages.upload_folder_error')}
-                                                </p>
-                                            )}
-                                        </div>
-                                    </div>
-                                );
-                            }
-
-                            const item = items[0]!;
-                            return (
-                                <div
-                                    key={item.id}
-                                    className='group border-primary/20 bg-primary/5 hover:border-primary/40 relative overflow-hidden rounded-2xl border p-4 text-left backdrop-blur-xl transition-all'
-                                >
-                                    <div className='from-primary/10 absolute inset-0 bg-linear-to-br via-transparent to-transparent opacity-0 transition-opacity group-hover:opacity-100' />
-                                    <div className='relative flex flex-col gap-3 text-left'>
-                                        <div className='flex items-center justify-between'>
-                                            <div className='flex min-w-0 items-center gap-2'>
-                                                <div className='bg-primary/20 text-primary flex h-8 w-8 shrink-0 items-center justify-center rounded-lg'>
-                                                    {item.status === 'uploading' && (
-                                                        <Upload className='h-4 w-4 animate-pulse' />
-                                                    )}
-                                                    {item.status === 'done' && (
-                                                        <CheckCircle2 className='h-4 w-4 text-green-500' />
-                                                    )}
-                                                    {item.status === 'error' && (
-                                                        <AlertCircle className='text-destructive h-4 w-4' />
-                                                    )}
-                                                    {item.status === 'pending' && (
-                                                        <Upload className='text-muted-foreground h-4 w-4' />
-                                                    )}
-                                                </div>
-                                                <span className='truncate text-sm font-medium' title={item.file.name}>
-                                                    {item.file.name}
-                                                </span>
-                                            </div>
-                                            <Button
-                                                variant='ghost'
-                                                size='icon'
-                                                onClick={() => removeUploadFromQueue(item.id)}
-                                                className='text-muted-foreground h-7 w-7 shrink-0 hover:text-red-500'
-                                            >
-                                                <X className='h-4 w-4' />
-                                            </Button>
-                                        </div>
-                                        {(item.status === 'uploading' || item.status === 'pending') && (
                                             <div className='space-y-1.5'>
                                                 <div className='flex justify-between text-[10px] font-bold tracking-tighter text-white/40 uppercase'>
                                                     <span>
-                                                        {item.status === 'uploading'
-                                                            ? t('files.messages.uploading', { file: '' })
-                                                            : t('files.toolbar.upload')}
+                                                        {t('files.messages.task_id', {
+                                                            id: pull.Identifier.slice(0, 8),
+                                                        })}
+                                                        ...
                                                     </span>
-                                                    <span className='text-primary'>{item.progress}%</span>
+                                                    <span className='text-primary'>{pull.Progress}%</span>
                                                 </div>
                                                 <div className='h-1.5 w-full overflow-hidden rounded-full border border-white/5 bg-white/5'>
                                                     <div
-                                                        className='from-primary to-primary-foreground h-full bg-linear-to-r transition-all duration-300'
-                                                        style={{ width: `${item.progress}%` }}
+                                                        className='from-primary to-primary-foreground h-full bg-linear-to-r transition-all duration-500'
+                                                        style={{ width: `${pull.Progress}%` }}
                                                     />
                                                 </div>
                                             </div>
-                                        )}
-                                        {item.status === 'done' && (
-                                            <p className='text-xs text-green-600 dark:text-green-400'>
-                                                {t('files.messages.upload_complete')}
-                                            </p>
-                                        )}
-                                        {item.status === 'error' && (
-                                            <p className='text-destructive truncate text-xs' title={item.error}>
-                                                {item.error}
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                        )}
-
-                        {activePulls.length > 0 && (
-                    <div className='animate-in slide-in-from-top-4 mb-6 grid grid-cols-1 gap-4 duration-500 md:grid-cols-2 lg:grid-cols-3'>
-                        {activePulls.map((pull) => (
-                            <div
-                                key={pull.Identifier}
-                                className='group border-primary/20 bg-primary/5 hover:border-primary/40 relative overflow-hidden rounded-2xl border p-4 text-left backdrop-blur-xl transition-all'
-                            >
-                                <div className='from-primary/10 absolute inset-0 bg-linear-to-br via-transparent to-transparent opacity-0 transition-opacity group-hover:opacity-100' />
-                                <div className='relative flex flex-col gap-3 text-left'>
-                                    <div className='flex items-center justify-between'>
-                                        <div className='flex items-center gap-2'>
-                                            <div className='bg-primary/20 text-primary flex h-8 w-8 items-center justify-center rounded-lg'>
-                                                <Download className='h-4 w-4 animate-bounce' />
-                                            </div>
-                                            <span className='text-primary/80 text-xs font-bold tracking-widest uppercase'>
-                                                {t('files.messages.active_pull')}
-                                            </span>
-                                        </div>
-                                        <Button
-                                            variant='ghost'
-                                            size='icon'
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                cancelPull(pull.Identifier);
-                                            }}
-                                            className='text-muted-foreground h-7 w-7 hover:text-red-500'
-                                        >
-                                            <X className='h-4 w-4' />
-                                        </Button>
-                                    </div>
-                                    <div className='space-y-1.5'>
-                                        <div className='flex justify-between text-[10px] font-bold tracking-tighter text-white/40 uppercase'>
-                                            <span>
-                                                {t('files.messages.task_id', { id: pull.Identifier.slice(0, 8) })}...
-                                            </span>
-                                            <span className='text-primary'>{pull.Progress}%</span>
-                                        </div>
-                                        <div className='h-1.5 w-full overflow-hidden rounded-full border border-white/5 bg-white/5'>
-                                            <div
-                                                className='from-primary to-primary-foreground h-full bg-linear-to-r transition-all duration-500'
-                                                style={{ width: `${pull.Progress}%` }}
-                                            />
                                         </div>
                                     </div>
-                                </div>
+                                ))}
                             </div>
-                        ))}
-                    </div>
                         )}
 
                         <WidgetRenderer widgets={getWidgets('server-files', 'before-files-list')} />
@@ -1513,17 +1525,23 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                             <p className='text-muted-foreground text-xs'>{t('files.search.advanced.exclude_help')}</p>
                         </div>
                         <div className='space-y-1 md:col-span-2'>
-                            <label className='text-sm font-semibold'>{t('files.search.advanced.search_text_label')}</label>
+                            <label className='text-sm font-semibold'>
+                                {t('files.search.advanced.search_text_label')}
+                            </label>
                             <input
                                 className='w-full rounded-md border border-white/10 bg-black/10 px-3 py-2 text-sm'
                                 placeholder={t('files.search.advanced.search_text_placeholder')}
                                 value={contentQuery}
                                 onChange={(e) => setContentQuery(e.target.value)}
                             />
-                            <p className='text-muted-foreground text-xs'>{t('files.search.advanced.search_text_help')}</p>
+                            <p className='text-muted-foreground text-xs'>
+                                {t('files.search.advanced.search_text_help')}
+                            </p>
                         </div>
                         <div className='space-y-1'>
-                            <label className='text-sm font-semibold'>{t('files.search.advanced.max_file_size_label')}</label>
+                            <label className='text-sm font-semibold'>
+                                {t('files.search.advanced.max_file_size_label')}
+                            </label>
                             <input
                                 className='w-full rounded-md border border-white/10 bg-black/10 px-3 py-2 text-sm'
                                 type='number'
@@ -1532,10 +1550,14 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                                 value={maxFileSizeMiB}
                                 onChange={(e) => setMaxFileSizeMiB(Number(e.target.value || 0))}
                             />
-                            <p className='text-muted-foreground text-xs'>{t('files.search.advanced.max_file_size_help')}</p>
+                            <p className='text-muted-foreground text-xs'>
+                                {t('files.search.advanced.max_file_size_help')}
+                            </p>
                         </div>
                         <div className='space-y-1'>
-                            <label className='text-sm font-semibold'>{t('files.search.advanced.file_size_label')}</label>
+                            <label className='text-sm font-semibold'>
+                                {t('files.search.advanced.file_size_label')}
+                            </label>
                             <div className='grid grid-cols-2 gap-2'>
                                 <input
                                     className='w-full rounded-md border border-white/10 bg-black/10 px-3 py-2 text-sm'

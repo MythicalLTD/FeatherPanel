@@ -16,7 +16,14 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { filesApi, FileHashesResponse } from '@/lib/files-api';
@@ -94,11 +101,16 @@ export function FileHashDialog({ open, onOpenChange, uuid, path }: FileHashDialo
                             <div key={item.key} className='space-y-1'>
                                 <label className='text-muted-foreground text-xs font-semibold'>{item.label}</label>
                                 <div className='flex gap-2'>
-                                    <Input value={(hashes?.[item.key as keyof FileHashesResponse] as string) || ''} readOnly />
+                                    <Input
+                                        value={(hashes?.[item.key as keyof FileHashesResponse] as string) || ''}
+                                        readOnly
+                                    />
                                     <Button
                                         type='button'
                                         variant='ghost'
-                                        onClick={() => copyValue((hashes?.[item.key as keyof FileHashesResponse] as string) || '')}
+                                        onClick={() =>
+                                            copyValue((hashes?.[item.key as keyof FileHashesResponse] as string) || '')
+                                        }
                                         disabled={!hashes}
                                     >
                                         {t('files.dialogs.hash.copy')}

@@ -1141,10 +1141,19 @@
             "update_now": "Update Panel Now",
             "updating": "Updating...",
             "last_checked": "Last checked: {date}",
-            "docker_only": "Panel updates are only available for Docker installations via the UI."
+            "docker_only": "Panel updates are only available for Docker installations via the UI.",
+            "version_label": "Version",
+            "runtime_label": "Runtime",
+            "integrity_label": "Integrity",
+            "integrity_verified": "Verified",
+            "release_stable": "Stable",
+            "system_update_available": "System Update Available",
+            "update_panel_now": "Update panel now",
+            "running_latest": "Running Latest Build"
         },
         "wings": {
             "title": "Wings Nodes",
+            "description": "Monitor and update Wings daemon across your infrastructure.",
             "node": "Node",
             "version": "Version",
             "status": "Status",
@@ -1155,7 +1164,8 @@
             "update_node": "Update Node",
             "checking": "Checking...",
             "failed": "Failed to check",
-            "no_nodes": "No nodes found."
+            "no_nodes": "No nodes found.",
+            "no_nodes_search": "No nodes matching your search"
         },
         "plugins": {
             "title": "Plugins",
@@ -1164,7 +1174,19 @@
             "latest": "Latest",
             "update": "Update",
             "up_to_date": "All plugins are up to date",
-            "no_plugins": "No plugins installed."
+            "no_plugins": "No plugins installed.",
+            "update_available_badge": "Update available"
+        },
+        "bulk": {
+            "items_selected": "{count} items selected",
+            "ready": "Bulk update ready",
+            "update_selected": "Update selected"
+        },
+        "integrity": {
+            "title": "System Integrity & Infrastructure Health",
+            "description": "Regularly updating your infrastructure ensures security, performance, and stability. FeatherPanel automates version checking for all your Wings nodes and marketplace plugins.",
+            "note": "Updates are non-destructive and preserve all your configurations.",
+            "view_docs": "View Documentation"
         },
         "messages": {
             "update_started": "Update process started successfully.",

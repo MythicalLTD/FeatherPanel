@@ -112,25 +112,30 @@ export default function ServerConsolePage() {
     const [currentNetworkTx, setCurrentNetworkTx] = useState(0);
 
     const [consoleFilters, setConsoleFilters] = useState<ConsoleFilterRule[]>([]);
+    const hasLoadedFilters = useRef(false);
 
     const isPopout = searchParams?.get('consolePopout') === '1';
 
     useEffect(() => {
         if (!serverUuid) return;
+        hasLoadedFilters.current = false;
         try {
             const stored = localStorage.getItem(`featherpanel_console_filters_${serverUuid}`);
             if (stored) {
                 const parsed = JSON.parse(stored) as ConsoleFilterRule[];
-
-                setTimeout(() => {
-                    setConsoleFilters(parsed);
-                }, 0);
+                setConsoleFilters(parsed);
+            } else {
+                setConsoleFilters([]);
             }
-        } catch {}
+        } catch {
+            setConsoleFilters([]);
+        } finally {
+            hasLoadedFilters.current = true;
+        }
     }, [serverUuid]);
 
     useEffect(() => {
-        if (!serverUuid) return;
+        if (!serverUuid || !hasLoadedFilters.current) return;
         try {
             localStorage.setItem(`featherpanel_console_filters_${serverUuid}`, JSON.stringify(consoleFilters));
         } catch {}

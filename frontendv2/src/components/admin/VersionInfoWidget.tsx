@@ -219,9 +219,9 @@ export function VersionInfoWidget({ version }: VersionInfoWidgetProps) {
                                 <CheckCircle2 className='h-5 w-5' />
                                 <p className='text-sm font-bold'>{t('admin.version.up_to_date')}</p>
                             </div>
-                            <Link 
-                                href="/admin/updates"
-                                className="bg-emerald-500/10 hover:bg-emerald-500/20 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest transition-colors"
+                            <Link
+                                href='/admin/updates'
+                                className='rounded-lg bg-emerald-500/10 px-3 py-1 text-[10px] font-black tracking-widest uppercase transition-colors hover:bg-emerald-500/20'
                             >
                                 {t('common.view')}
                             </Link>
@@ -243,9 +243,9 @@ export function VersionInfoWidget({ version }: VersionInfoWidgetProps) {
                                         </p>
                                     </div>
                                 </div>
-                                <Link 
-                                    href="/admin/updates"
-                                    className="bg-amber-500 text-amber-950 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-amber-400 transition-colors"
+                                <Link
+                                    href='/admin/updates'
+                                    className='rounded-lg bg-amber-500 px-3 py-1 text-[10px] font-black tracking-widest text-amber-950 uppercase transition-colors hover:bg-amber-400'
                                 >
                                     {t('admin_updates.title')}
                                 </Link>
@@ -253,7 +253,7 @@ export function VersionInfoWidget({ version }: VersionInfoWidgetProps) {
                             <button
                                 onClick={() => setShowUpdateModal(true)}
                                 disabled={isUpdatingDocker || updateInProgress}
-                                className='w-full rounded-xl bg-amber-500/10 border border-amber-500/20 py-3 text-[10px] font-black tracking-widest text-amber-500 uppercase transition-colors hover:bg-amber-500/20 disabled:cursor-not-allowed disabled:opacity-60'
+                                className='w-full rounded-xl border border-amber-500/20 bg-amber-500/10 py-3 text-[10px] font-black tracking-widest text-amber-500 uppercase transition-colors hover:bg-amber-500/20 disabled:cursor-not-allowed disabled:opacity-60'
                             >
                                 {isUpdatingDocker
                                     ? t('admin.settings.docker_update.updating')
@@ -344,7 +344,7 @@ export function VersionInfoWidget({ version }: VersionInfoWidgetProps) {
                             href='/admin/updates'
                             className='bg-muted/20 border-border/50 hover:bg-muted/30 group flex items-center justify-center gap-2 rounded-xl border p-2.5 text-[9px] font-black tracking-widest uppercase transition-all md:p-3 md:text-[10px]'
                         >
-                            <RefreshCcw className='text-primary h-3.5 w-3.5 shrink-0 transition-transform group-hover:rotate-180 duration-500 md:h-4 md:w-4' />
+                            <RefreshCcw className='text-primary h-3.5 w-3.5 shrink-0 transition-transform duration-500 group-hover:rotate-180 md:h-4 md:w-4' />
                             <span className='truncate'>{t('admin_updates.title')}</span>
                         </Link>
                         <button

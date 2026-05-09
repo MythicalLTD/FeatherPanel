@@ -24,7 +24,6 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useVmInstance } from '@/contexts/VmInstanceContext';
 
-
 function VdsChatbotWidget() {
     const [isOpen, setIsOpen] = useState(false);
     const { t } = useTranslation();
@@ -70,7 +69,6 @@ function VdsChatbotWidget() {
         </>
     );
 }
-
 
 export default function ChatbotWidget() {
     const [isOpen, setIsOpen] = useState(false);

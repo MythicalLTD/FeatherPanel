@@ -205,7 +205,7 @@ export function MoveCopyDialog({ open, onOpenChange, uuid, root, files, action, 
                                             className={`rounded-md border px-2 py-1 text-xs transition-all ${
                                                 destination === segment
                                                     ? 'bg-primary/20 text-primary border-primary/30'
-                                                    : 'bg-white/5 hover:bg-white/10 border-white/10'
+                                                    : 'border-white/10 bg-white/5 hover:bg-white/10'
                                             }`}
                                         >
                                             {segment}
