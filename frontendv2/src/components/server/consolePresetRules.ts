@@ -13,10 +13,13 @@ by the Free Software Foundation, either version 3 of the License, or
 See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
-/** Preset filter templates; `presetId` maps to i18n keys under `servers.console.terminal.preset.*` */
+/** Preset filter templates; `presetId` maps to i18n keys under `servers.console.terminal.presets.*` */
+
+export type ConsolePresetMenuGroup = 'redact' | 'highlight';
 
 export interface ConsolePresetTemplate {
     presetId: string;
+    menuGroup: ConsolePresetMenuGroup;
     pattern: string;
     flags?: string;
     type: 'replace' | 'hide' | 'color';
@@ -27,6 +30,7 @@ export interface ConsolePresetTemplate {
 export const CONSOLE_PRESET_TEMPLATES: ConsolePresetTemplate[] = [
     {
         presetId: 'hide_ipv4',
+        menuGroup: 'redact',
         type: 'replace',
         pattern: String.raw`\b(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)(?::\d{1,5})?\b`,
         flags: 'g',
@@ -34,6 +38,7 @@ export const CONSOLE_PRESET_TEMPLATES: ConsolePresetTemplate[] = [
     },
     {
         presetId: 'hide_email',
+        menuGroup: 'redact',
         type: 'replace',
         pattern: String.raw`\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b`,
         flags: 'gi',
@@ -41,6 +46,7 @@ export const CONSOLE_PRESET_TEMPLATES: ConsolePresetTemplate[] = [
     },
     {
         presetId: 'hide_steam_id',
+        menuGroup: 'redact',
         type: 'replace',
         pattern: String.raw`\b(?:steam:\d{17}|7656119\d{10})\b`,
         flags: 'gi',
@@ -48,6 +54,7 @@ export const CONSOLE_PRESET_TEMPLATES: ConsolePresetTemplate[] = [
     },
     {
         presetId: 'redact_jwt',
+        menuGroup: 'redact',
         type: 'replace',
         pattern: String.raw`eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+`,
         flags: 'g',
@@ -55,6 +62,7 @@ export const CONSOLE_PRESET_TEMPLATES: ConsolePresetTemplate[] = [
     },
     {
         presetId: 'hide_bearer',
+        menuGroup: 'redact',
         type: 'replace',
         pattern: String.raw`Bearer\s+[A-Za-z0-9._~+/=-]+`,
         flags: 'gi',
@@ -62,6 +70,7 @@ export const CONSOLE_PRESET_TEMPLATES: ConsolePresetTemplate[] = [
     },
     {
         presetId: 'hide_discord_webhook',
+        menuGroup: 'redact',
         type: 'replace',
         pattern: String.raw`https://discord(?:app)?\.com/api/webhooks/\d+/[A-Za-z0-9_-]+`,
         flags: 'gi',
@@ -69,6 +78,7 @@ export const CONSOLE_PRESET_TEMPLATES: ConsolePresetTemplate[] = [
     },
     {
         presetId: 'highlight_errors',
+        menuGroup: 'highlight',
         type: 'color',
         pattern: String.raw`\b(ERROR|FATAL|CRITICAL|Exception|Traceback|panic:|fatal error)\b`,
         flags: 'gi',
@@ -76,6 +86,7 @@ export const CONSOLE_PRESET_TEMPLATES: ConsolePresetTemplate[] = [
     },
     {
         presetId: 'highlight_warnings',
+        menuGroup: 'highlight',
         type: 'color',
         pattern: String.raw`\b(WARN|WARNING|deprecated)\b`,
         flags: 'gi',
@@ -83,6 +94,7 @@ export const CONSOLE_PRESET_TEMPLATES: ConsolePresetTemplate[] = [
     },
     {
         presetId: 'dim_debug',
+        menuGroup: 'highlight',
         type: 'color',
         pattern: String.raw`\b(DEBUG|TRACE)\b`,
         flags: 'gi',

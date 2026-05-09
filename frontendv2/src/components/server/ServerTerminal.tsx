@@ -399,53 +399,143 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
             <Card className='border-border/50 bg-card/50 w-full min-w-0 overflow-hidden shadow-sm backdrop-blur-xl'>
                 <CardHeader className='border-border/50 space-y-3 border-b p-3 sm:p-4'>
                     <div className='flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between'>
-                    <div className='min-w-0'>
-                        <h3 className='text-muted-foreground flex items-center gap-2 text-sm font-medium'>
-                            <TerminalIcon className='h-4 w-4 shrink-0' aria-hidden />
-                            {t('servers.console.terminal.title')}
-                        </h3>
-                        <p className='text-muted-foreground mt-1 max-w-2xl text-xs leading-relaxed'>
-                            {t('servers.console.terminal.subtitle')}
-                        </p>
-                    </div>
-                    <div className='border-border/50 bg-muted/25 flex w-full flex-wrap items-center gap-1 rounded-lg border p-1 sm:w-auto lg:justify-end'>
-                        <label
-                            className={cn(
-                                'border-border/50 text-muted-foreground hover:bg-muted/50 flex cursor-pointer items-center gap-1.5 rounded-md border border-transparent px-2 py-1.5 text-[11px] font-semibold transition-colors',
-                                autoScroll && 'border-border bg-muted/60 text-foreground',
+                        <div className='min-w-0'>
+                            <h3 className='text-muted-foreground flex items-center gap-2 text-sm font-medium'>
+                                <TerminalIcon className='h-4 w-4 shrink-0' aria-hidden />
+                                {t('servers.console.terminal.title')}
+                            </h3>
+                            <p className='text-muted-foreground mt-1 max-w-2xl text-xs leading-relaxed'>
+                                {t('servers.console.terminal.subtitle')}
+                            </p>
+                        </div>
+                        <div className='border-border/50 bg-muted/25 flex w-full flex-wrap items-center gap-1 rounded-lg border p-1 sm:w-auto lg:justify-end'>
+                            <label
+                                className={cn(
+                                    'border-border/50 text-muted-foreground hover:bg-muted/50 flex cursor-pointer items-center gap-1.5 rounded-md border border-transparent px-2 py-1.5 text-[11px] font-semibold transition-colors',
+                                    autoScroll && 'border-border bg-muted/60 text-foreground',
+                                )}
+                            >
+                                <input
+                                    type='checkbox'
+                                    checked={autoScroll}
+                                    onChange={(e) => setAutoScroll(e.target.checked)}
+                                    className='border-input bg-background text-primary focus:ring-primary h-3.5 w-3.5 cursor-pointer rounded border focus:ring-2 focus:ring-offset-0'
+                                />
+                                <span className='select-none'>{t('servers.console.terminal.auto_scroll')}</span>
+                            </label>
+                            <span className='bg-border/60 mx-0.5 hidden h-6 w-px sm:block' aria-hidden />
+                            <Button
+                                type='button'
+                                variant={showSettings ? 'secondary' : 'ghost'}
+                                size='icon'
+                                className='h-8 w-8 shrink-0 rounded-lg'
+                                onClick={() => setShowSettings((prev) => !prev)}
+                                aria-label={t('servers.console.terminal.customize')}
+                                aria-pressed={showSettings}
+                            >
+                                <Settings2 className='h-3.5 w-3.5' />
+                            </Button>
+                            {onFiltersChange && (
+                                <Menu as='div' className='relative'>
+                                    <Menu.Button
+                                        as={Button}
+                                        variant='outline'
+                                        size='sm'
+                                        className='h-8 gap-1.5 rounded-lg px-2.5 text-[11px]'
+                                        aria-label={t('servers.console.terminal.quick_rules')}
+                                    >
+                                        <Sparkles className='text-primary h-3.5 w-3.5 shrink-0' />
+                                        <span className='hidden sm:inline'>
+                                            {t('servers.console.terminal.quick_rules')}
+                                        </span>
+                                    </Menu.Button>
+                                    <Transition
+                                        as={Fragment}
+                                        enter='transition ease-out duration-100'
+                                        enterFrom='transform opacity-0 scale-95'
+                                        enterTo='transform opacity-100 scale-100'
+                                        leave='transition ease-in duration-75'
+                                        leaveFrom='transform opacity-100 scale-100'
+                                        leaveTo='transform opacity-0 scale-95'
+                                    >
+                                        <Menu.Items className='bg-popover border-border/50 absolute right-0 z-30 mt-2 w-[min(22rem,calc(100vw-2rem))] origin-top-right overflow-hidden rounded-xl border shadow-lg focus:outline-none'>
+                                            <div className='border-border/50 bg-muted/30 border-b px-3 py-2'>
+                                                <p className='text-foreground text-xs font-semibold'>
+                                                    {t('servers.console.terminal.quick_rules')}
+                                                </p>
+                                                <p className='text-muted-foreground mt-0.5 text-[11px] leading-snug'>
+                                                    {t('servers.console.terminal.quick_rules_help')}
+                                                </p>
+                                            </div>
+                                            <div className='custom-scrollbar max-h-72 overflow-y-auto p-1.5'>
+                                                {PRESET_MENU_SECTIONS.map(({ group, presets }, sectionIdx) => (
+                                                    <div key={group}>
+                                                        {sectionIdx > 0 && (
+                                                            <div className='bg-border/60 my-1 h-px' role='separator' />
+                                                        )}
+                                                        <p className='text-muted-foreground px-2 py-1 text-[10px] font-bold tracking-wide uppercase'>
+                                                            {t(`servers.console.terminal.preset_group_${group}`)}
+                                                        </p>
+                                                        {presets.map((preset) => {
+                                                            const taken = filters.some(
+                                                                (r) => r.presetId === preset.presetId,
+                                                            );
+                                                            return (
+                                                                <Menu.Item key={preset.presetId}>
+                                                                    {({ active, close }) => (
+                                                                        <button
+                                                                            type='button'
+                                                                            disabled={taken}
+                                                                            title={t(
+                                                                                `servers.console.terminal.presets.${preset.presetId}.desc`,
+                                                                            )}
+                                                                            onClick={() => {
+                                                                                if (!taken) {
+                                                                                    handleAddPreset(preset.presetId);
+                                                                                    close();
+                                                                                }
+                                                                            }}
+                                                                            className={cn(
+                                                                                'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors',
+                                                                                active && !taken && 'bg-primary/10',
+                                                                                taken
+                                                                                    ? 'text-muted-foreground cursor-not-allowed opacity-60'
+                                                                                    : 'text-foreground hover:bg-muted/80',
+                                                                            )}
+                                                                        >
+                                                                            <span className='min-w-0 flex-1 truncate font-medium'>
+                                                                                {t(
+                                                                                    `servers.console.terminal.presets.${preset.presetId}.title`,
+                                                                                )}
+                                                                            </span>
+                                                                            {taken && (
+                                                                                <span className='text-primary shrink-0 text-[10px] font-bold uppercase'>
+                                                                                    {t(
+                                                                                        'servers.console.terminal.preset_active',
+                                                                                    )}
+                                                                                </span>
+                                                                            )}
+                                                                        </button>
+                                                                    )}
+                                                                </Menu.Item>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </Menu.Items>
+                                    </Transition>
+                                </Menu>
                             )}
-                        >
-                            <input
-                                type='checkbox'
-                                checked={autoScroll}
-                                onChange={(e) => setAutoScroll(e.target.checked)}
-                                className='border-input bg-background text-primary focus:ring-primary h-3.5 w-3.5 cursor-pointer rounded border focus:ring-2 focus:ring-offset-0'
-                            />
-                            <span className='select-none'>{t('servers.console.terminal.auto_scroll')}</span>
-                        </label>
-                        <span className='bg-border/60 mx-0.5 hidden h-6 w-px sm:block' aria-hidden />
-                        <Button
-                            type='button'
-                            variant={showSettings ? 'secondary' : 'ghost'}
-                            size='icon'
-                            className='h-8 w-8 shrink-0 rounded-lg'
-                            onClick={() => setShowSettings((prev) => !prev)}
-                            aria-label={t('servers.console.terminal.customize')}
-                            aria-pressed={showSettings}
-                        >
-                            <Settings2 className='h-3.5 w-3.5' />
-                        </Button>
-                        {onFiltersChange && (
                             <Menu as='div' className='relative'>
                                 <Menu.Button
                                     as={Button}
                                     variant='outline'
-                                    size='sm'
-                                    className='h-8 gap-1.5 rounded-lg px-2.5 text-[11px]'
-                                    aria-label={t('servers.console.terminal.quick_rules')}
+                                    size='icon'
+                                    className='h-8 w-8 shrink-0 rounded-lg'
+                                    aria-label={t('servers.console.terminal.history_title')}
                                 >
-                                    <Sparkles className='text-primary h-3.5 w-3.5 shrink-0' />
-                                    <span className='hidden sm:inline'>{t('servers.console.terminal.quick_rules')}</span>
+                                    <History className='h-3.5 w-3.5' />
                                 </Menu.Button>
                                 <Transition
                                     as={Fragment}
@@ -456,179 +546,101 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                                     leaveFrom='transform opacity-100 scale-100'
                                     leaveTo='transform opacity-0 scale-95'
                                 >
-                                    <Menu.Items className='bg-popover border-border/50 absolute right-0 z-30 mt-2 w-[min(22rem,calc(100vw-2rem))] origin-top-right overflow-hidden rounded-xl border shadow-lg focus:outline-none'>
-                                        <div className='border-border/50 bg-muted/30 border-b px-3 py-2'>
-                                            <p className='text-foreground text-xs font-semibold'>
-                                                {t('servers.console.terminal.quick_rules')}
-                                            </p>
-                                            <p className='text-muted-foreground mt-0.5 text-[11px] leading-snug'>
-                                                {t('servers.console.terminal.quick_rules_help')}
+                                    <Menu.Items className='bg-popover border-border/50 absolute right-0 z-20 mt-2 w-64 origin-top-right overflow-hidden rounded-xl border shadow-lg focus:outline-none'>
+                                        <div className='border-border/50 bg-muted/30 border-b p-2'>
+                                            <p className='text-muted-foreground px-2 text-xs font-medium'>
+                                                {t('servers.console.terminal.history_title')}
                                             </p>
                                         </div>
-                                        <div className='custom-scrollbar max-h-72 overflow-y-auto p-1.5'>
-                                            {PRESET_MENU_SECTIONS.map(({ group, presets }, sectionIdx) => (
-                                                <div key={group}>
-                                                    {sectionIdx > 0 && <div className='bg-border/60 my-1 h-px' role='separator' />}
-                                                    <p className='text-muted-foreground px-2 py-1 text-[10px] font-bold tracking-wide uppercase'>
-                                                        {t(`servers.console.terminal.preset_group_${group}`)}
-                                                    </p>
-                                                    {presets.map((preset) => {
-                                                        const taken = filters.some((r) => r.presetId === preset.presetId);
-                                                        return (
-                                                            <Menu.Item key={preset.presetId}>
-                                                                {({ active, close }) => (
-                                                                    <button
-                                                                        type='button'
-                                                                        disabled={taken}
-                                                                        title={t(
-                                                                            `servers.console.terminal.presets.${preset.presetId}.desc`,
-                                                                        )}
-                                                                        onClick={() => {
-                                                                            if (!taken) {
-                                                                                handleAddPreset(preset.presetId);
-                                                                                close();
-                                                                            }
-                                                                        }}
-                                                                        className={cn(
-                                                                            'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors',
-                                                                            active && !taken && 'bg-primary/10',
-                                                                            taken
-                                                                                ? 'text-muted-foreground cursor-not-allowed opacity-60'
-                                                                                : 'text-foreground hover:bg-muted/80',
-                                                                        )}
-                                                                    >
-                                                                        <span className='min-w-0 flex-1 truncate font-medium'>
-                                                                            {t(
-                                                                                `servers.console.terminal.presets.${preset.presetId}.title`,
-                                                                            )}
-                                                                        </span>
-                                                                        {taken && (
-                                                                            <span className='text-primary shrink-0 text-[10px] font-bold uppercase'>
-                                                                                {t('servers.console.terminal.preset_active')}
-                                                                            </span>
-                                                                        )}
-                                                                    </button>
-                                                                )}
-                                                            </Menu.Item>
-                                                        );
-                                                    })}
+                                        <div className='custom-scrollbar max-h-60 overflow-y-auto p-1'>
+                                            {commandHistory.length === 0 ? (
+                                                <div className='text-muted-foreground px-3 py-4 text-center text-xs'>
+                                                    {t('servers.console.terminal.no_history')}
                                                 </div>
-                                            ))}
+                                            ) : (
+                                                commandHistory.map((cmd, idx) => (
+                                                    <Menu.Item key={idx}>
+                                                        {({ active }) => (
+                                                            <button
+                                                                type='button'
+                                                                onClick={() => loadHistoryCommand(cmd)}
+                                                                className={cn(
+                                                                    'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors',
+                                                                    active
+                                                                        ? 'bg-primary/10 text-primary'
+                                                                        : 'hover:bg-muted/80',
+                                                                )}
+                                                            >
+                                                                <Clock className='h-3 w-3 opacity-50' />
+                                                                <span className='truncate font-mono text-xs'>
+                                                                    {cmd}
+                                                                </span>
+                                                            </button>
+                                                        )}
+                                                    </Menu.Item>
+                                                ))
+                                            )}
                                         </div>
                                     </Menu.Items>
                                 </Transition>
                             </Menu>
-                        )}
-                        <Menu as='div' className='relative'>
-                            <Menu.Button
-                                as={Button}
-                                variant='outline'
-                                size='icon'
-                                className='h-8 w-8 shrink-0 rounded-lg'
-                                aria-label={t('servers.console.terminal.history_title')}
-                            >
-                                <History className='h-3.5 w-3.5' />
-                            </Menu.Button>
-                            <Transition
-                                as={Fragment}
-                                enter='transition ease-out duration-100'
-                                enterFrom='transform opacity-0 scale-95'
-                                enterTo='transform opacity-100 scale-100'
-                                leave='transition ease-in duration-75'
-                                leaveFrom='transform opacity-100 scale-100'
-                                leaveTo='transform opacity-0 scale-95'
-                            >
-                                <Menu.Items className='bg-popover border-border/50 absolute right-0 z-20 mt-2 w-64 origin-top-right overflow-hidden rounded-xl border shadow-lg focus:outline-none'>
-                                    <div className='border-border/50 bg-muted/30 border-b p-2'>
-                                        <p className='text-muted-foreground px-2 text-xs font-medium'>
-                                            {t('servers.console.terminal.history_title')}
-                                        </p>
-                                    </div>
-                                    <div className='custom-scrollbar max-h-60 overflow-y-auto p-1'>
-                                        {commandHistory.length === 0 ? (
-                                            <div className='text-muted-foreground px-3 py-4 text-center text-xs'>
-                                                {t('servers.console.terminal.no_history')}
-                                            </div>
-                                        ) : (
-                                            commandHistory.map((cmd, idx) => (
-                                                <Menu.Item key={idx}>
-                                                    {({ active }) => (
-                                                        <button
-                                                            type='button'
-                                                            onClick={() => loadHistoryCommand(cmd)}
-                                                            className={cn(
-                                                                'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors',
-                                                                active ? 'bg-primary/10 text-primary' : 'hover:bg-muted/80',
-                                                            )}
-                                                        >
-                                                            <Clock className='h-3 w-3 opacity-50' />
-                                                            <span className='truncate font-mono text-xs'>{cmd}</span>
-                                                        </button>
-                                                    )}
-                                                </Menu.Item>
-                                            ))
-                                        )}
-                                    </div>
-                                </Menu.Items>
-                            </Transition>
-                        </Menu>
-                        <DropdownMenu>
-                            <DropdownMenuTrigger
-                                as={Button}
-                                variant='outline'
-                                size='icon'
-                                className='h-8 w-8 shrink-0 rounded-lg'
-                                aria-label={t('servers.console.terminal.more_menu')}
-                            >
-                                <MoreHorizontal className='h-3.5 w-3.5' />
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align='end' className='w-52'>
-                                <DropdownMenuItem
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        copyTerminalSelection();
-                                    }}
+                            <DropdownMenu>
+                                <DropdownMenuTrigger
+                                    as={Button}
+                                    variant='outline'
+                                    size='icon'
+                                    className='h-8 w-8 shrink-0 rounded-lg'
+                                    aria-label={t('servers.console.terminal.more_menu')}
                                 >
-                                    <Copy className='text-muted-foreground mr-2 h-4 w-4' />
-                                    {t('servers.console.terminal.copy_selection')}
-                                </DropdownMenuItem>
-                                {showPopoutButton && (
+                                    <MoreHorizontal className='h-3.5 w-3.5' />
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align='end' className='w-52'>
                                     <DropdownMenuItem
                                         onClick={(e) => {
                                             e.preventDefault();
-                                            handlePopoutWindow();
+                                            copyTerminalSelection();
                                         }}
                                     >
-                                        <ExternalLink className='text-muted-foreground mr-2 h-4 w-4' />
-                                        {t('servers.console.terminal.popout')}
+                                        <Copy className='text-muted-foreground mr-2 h-4 w-4' />
+                                        {t('servers.console.terminal.copy_selection')}
                                     </DropdownMenuItem>
-                                )}
-                                {onUploadLogs && (
+                                    {showPopoutButton && (
+                                        <DropdownMenuItem
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                handlePopoutWindow();
+                                            }}
+                                        >
+                                            <ExternalLink className='text-muted-foreground mr-2 h-4 w-4' />
+                                            {t('servers.console.terminal.popout')}
+                                        </DropdownMenuItem>
+                                    )}
+                                    {onUploadLogs && (
+                                        <DropdownMenuItem
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                onUploadLogs();
+                                            }}
+                                        >
+                                            <UploadCloud className='text-muted-foreground mr-2 h-4 w-4' />
+                                            {t('servers.console.upload_logs')}
+                                        </DropdownMenuItem>
+                                    )}
+                                    <DropdownMenuSeparator />
                                     <DropdownMenuItem
                                         onClick={(e) => {
                                             e.preventDefault();
-                                            onUploadLogs();
+                                            clearTerminal();
                                         }}
+                                        className='text-destructive focus:text-destructive'
                                     >
-                                        <UploadCloud className='text-muted-foreground mr-2 h-4 w-4' />
-                                        {t('servers.console.upload_logs')}
+                                        <Trash2 className='mr-2 h-4 w-4' />
+                                        {t('servers.console.terminal.clear')}
                                     </DropdownMenuItem>
-                                )}
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        clearTerminal();
-                                    }}
-                                    className='text-destructive focus:text-destructive'
-                                >
-                                    <Trash2 className='mr-2 h-4 w-4' />
-                                    {t('servers.console.terminal.clear')}
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
                     </div>
-                </div>
                 </CardHeader>
                 {showSettings && (
                     <div className='border-border/50 bg-muted/20 border-b px-4 py-4 sm:px-5 sm:py-5'>
@@ -880,7 +892,7 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                                     }
                                 }}
                                 type='text'
-                                className='focus:ring-primary/15 min-w-0 flex-1 rounded-lg border px-3 py-2 font-mono text-xs font-semibold shadow-none focus:ring-2 h-9'
+                                className='focus:ring-primary/15 h-9 min-w-0 flex-1 rounded-lg border px-3 py-2 font-mono text-xs font-semibold shadow-none focus:ring-2'
                                 placeholder={t('servers.console.terminal.placeholder')}
                                 title={t('servers.console.terminal.input_hint')}
                                 disabled={!canSend}
@@ -889,7 +901,7 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                                 type='button'
                                 variant='outline'
                                 size='icon'
-                                className='text-primary hover:bg-primary/10 hover:text-primary h-9 w-9 shrink-0 rounded-lg border-primary/35 focus:ring-2 focus:ring-primary/15'
+                                className='text-primary hover:bg-primary/10 hover:text-primary border-primary/35 focus:ring-primary/15 h-9 w-9 shrink-0 rounded-lg focus:ring-2'
                                 onClick={sendCommand}
                                 disabled={!canSend || !commandInput.trim()}
                                 aria-label={t('servers.console.terminal.send')}
@@ -900,7 +912,9 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                         {!canSendCommands && (
                             <div className='text-destructive border-destructive/20 bg-destructive/5 flex w-full min-w-0 items-start gap-2 rounded-lg border px-2.5 py-1.5 text-xs font-medium'>
                                 <AlertCircle className='mt-0.5 h-3.5 w-3.5 shrink-0' aria-hidden />
-                                <span className='min-w-0 leading-snug'>{t('servers.console.noConsolePermissionSend')}</span>
+                                <span className='min-w-0 leading-snug'>
+                                    {t('servers.console.noConsolePermissionSend')}
+                                </span>
                             </div>
                         )}
                         {canSendCommands && !canSend && (

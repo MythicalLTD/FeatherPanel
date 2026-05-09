@@ -76,8 +76,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
     const isFullWidthMode = isActualPluginPage;
 
     const pathSegments = (pathname || '').split('/').filter(Boolean);
-    const isServerConsoleHome =
-        pathSegments.length === 2 && pathSegments[0] === 'server' && Boolean(pathSegments[1]);
+    const isServerConsoleHome = pathSegments.length === 2 && pathSegments[0] === 'server' && Boolean(pathSegments[1]);
 
     const { navbarHoverReveal } = useNavbarHoverReveal();
     const { chromeLayout } = useChromeLayout();
