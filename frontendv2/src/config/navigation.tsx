@@ -56,6 +56,7 @@ import {
     Code,
     Workflow,
     Ban,
+    RefreshCcw,
 } from 'lucide-react';
 import { isEnabled } from '@/lib/utils';
 
@@ -463,6 +464,17 @@ export const getAdminNavigationItems = (
             isActive: false,
             category: 'admin',
             permission: Permissions.ADMIN_PLUGINS_VIEW,
+            group: 'system',
+        },
+        {
+            id: 'admin-updates',
+            name: t('navigation.items.updates'),
+            title: t('navigation.items.updates'),
+            url: '/admin/updates',
+            icon: RefreshCcw,
+            isActive: false,
+            category: 'admin',
+            permission: Permissions.ADMIN_ROOT,
             group: 'system',
         },
         {

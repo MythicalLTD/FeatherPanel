@@ -1125,7 +1125,51 @@
             "account": "Account",
             "status": "Status",
             "admin": "Admin",
+            "updates": "System Updates",
             "ticketConfigs": "Ticket Configs"
+        }
+    },
+    "admin_updates": {
+        "title": "System Updates",
+        "description": "Manage and apply updates for your panel, wings nodes, and plugins.",
+        "panel": {
+            "title": "FeatherPanel",
+            "current": "Current Version",
+            "latest": "Latest Version",
+            "up_to_date": "Panel is up to date",
+            "update_available": "Update Available",
+            "update_now": "Update Panel Now",
+            "updating": "Updating...",
+            "last_checked": "Last checked: {date}",
+            "docker_only": "Panel updates are only available for Docker installations via the UI."
+        },
+        "wings": {
+            "title": "Wings Nodes",
+            "node": "Node",
+            "version": "Version",
+            "status": "Status",
+            "action": "Action",
+            "up_to_date": "Up to date",
+            "update_available": "Update available",
+            "update_all": "Update All Nodes",
+            "update_node": "Update Node",
+            "checking": "Checking...",
+            "failed": "Failed to check",
+            "no_nodes": "No nodes found."
+        },
+        "plugins": {
+            "title": "Plugins",
+            "plugin": "Plugin",
+            "current": "Installed",
+            "latest": "Latest",
+            "update": "Update",
+            "up_to_date": "All plugins are up to date",
+            "no_plugins": "No plugins installed."
+        },
+        "messages": {
+            "update_started": "Update process started successfully.",
+            "update_failed": "Failed to start update.",
+            "checking_updates": "Checking for updates..."
         }
     },
     "navbar": {

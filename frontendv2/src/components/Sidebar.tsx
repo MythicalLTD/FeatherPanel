@@ -169,6 +169,7 @@ function SidebarContent({
         if (href === '/dashboard') return false;
         if (href === '/admin') return false;
         if (href === '/admin/tickets') return false;
+        if (href === '/admin/nodes') return false;
 
         const serverRootRegex = /^\/server\/[^/]+$/;
         if (serverRootRegex.test(href)) {

@@ -27,9 +27,11 @@ import {
     Cpu,
     X,
     AlertTriangle,
+    RefreshCcw,
 } from 'lucide-react';
 import { PageCard } from '@/components/featherui/PageCard';
 import ReactMarkdown from 'react-markdown';
+import Link from 'next/link';
 import { ChangelogSection } from './ChangelogSection';
 import { IntegrityCheckDialog } from './IntegrityCheckDialog';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -212,45 +214,50 @@ export function VersionInfoWidget({ version }: VersionInfoWidgetProps) {
 
                 <div className='flex flex-col gap-3'>
                     {!showUpdateSection ? (
-                        <div className='flex items-center gap-3 rounded-2xl border border-emerald-500/10 bg-emerald-500/5 p-4 text-emerald-500'>
-                            <CheckCircle2 className='h-5 w-5' />
-                            <p className='text-sm font-bold'>{t('admin.version.up_to_date')}</p>
+                        <div className='flex items-center justify-between gap-3 rounded-2xl border border-emerald-500/10 bg-emerald-500/5 p-4 text-emerald-500'>
+                            <div className='flex items-center gap-3'>
+                                <CheckCircle2 className='h-5 w-5' />
+                                <p className='text-sm font-bold'>{t('admin.version.up_to_date')}</p>
+                            </div>
+                            <Link 
+                                href="/admin/updates"
+                                className="bg-emerald-500/10 hover:bg-emerald-500/20 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest transition-colors"
+                            >
+                                {t('common.view')}
+                            </Link>
                         </div>
                     ) : (
                         <div className='flex flex-col gap-4 rounded-3xl border border-amber-500/20 bg-amber-500/5 p-5 text-amber-500'>
-                            <div className='flex items-center gap-3'>
-                                <Download className='h-5 w-5 animate-bounce' />
-                                <div className='space-y-0.5'>
-                                    <p className='text-sm font-black tracking-tight uppercase'>
-                                        {useManualPullMessaging
-                                            ? t('admin.version.docker_pull_offer_title')
-                                            : isCurrentVersionUnknown
-                                              ? t('admin.version.current_version_unknown')
-                                              : t('admin.version.update_available', {
-                                                    version: latest?.version || 'Unknown',
-                                                })}
-                                    </p>
-                                    <p className='text-[10px] font-bold uppercase opacity-70'>
-                                        {useManualPullMessaging
-                                            ? t('admin.version.docker_pull_offer_hint')
-                                            : isCurrentVersionUnknown
-                                              ? t('admin.version.update_to_latest_hint')
-                                              : t('admin.version.update_description')}
-                                    </p>
+                            <div className='flex items-center justify-between gap-3'>
+                                <div className='flex items-center gap-3'>
+                                    <Download className='h-5 w-5 animate-bounce' />
+                                    <div className='space-y-0.5'>
+                                        <p className='text-sm font-black tracking-tight uppercase'>
+                                            {useManualPullMessaging
+                                                ? t('admin.version.docker_pull_offer_title')
+                                                : isCurrentVersionUnknown
+                                                  ? t('admin.version.current_version_unknown')
+                                                  : t('admin.version.update_available', {
+                                                        version: latest?.version || 'Unknown',
+                                                    })}
+                                        </p>
+                                    </div>
                                 </div>
+                                <Link 
+                                    href="/admin/updates"
+                                    className="bg-amber-500 text-amber-950 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-amber-400 transition-colors"
+                                >
+                                    {t('admin_updates.title')}
+                                </Link>
                             </div>
                             <button
                                 onClick={() => setShowUpdateModal(true)}
                                 disabled={isUpdatingDocker || updateInProgress}
-                                className='w-full rounded-xl bg-amber-500 py-3 text-[10px] font-black tracking-widest text-amber-950 uppercase transition-colors hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-60'
+                                className='w-full rounded-xl bg-amber-500/10 border border-amber-500/20 py-3 text-[10px] font-black tracking-widest text-amber-500 uppercase transition-colors hover:bg-amber-500/20 disabled:cursor-not-allowed disabled:opacity-60'
                             >
                                 {isUpdatingDocker
                                     ? t('admin.settings.docker_update.updating')
-                                    : updateInProgress
-                                      ? t('admin.settings.docker_update.in_progress_button')
-                                      : useManualPullMessaging || isCurrentVersionUnknown
-                                        ? t('admin.settings.docker_update.confirm_modal.confirm')
-                                        : t('admin.version.update_now')}
+                                    : t('admin.version.update_now')}
                             </button>
                         </div>
                     )}
@@ -333,6 +340,13 @@ export function VersionInfoWidget({ version }: VersionInfoWidgetProps) {
                         </div>
                     )}
                     <div className='mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2 md:gap-3'>
+                        <Link
+                            href='/admin/updates'
+                            className='bg-muted/20 border-border/50 hover:bg-muted/30 group flex items-center justify-center gap-2 rounded-xl border p-2.5 text-[9px] font-black tracking-widest uppercase transition-all md:p-3 md:text-[10px]'
+                        >
+                            <RefreshCcw className='text-primary h-3.5 w-3.5 shrink-0 transition-transform group-hover:rotate-180 duration-500 md:h-4 md:w-4' />
+                            <span className='truncate'>{t('admin_updates.title')}</span>
+                        </Link>
                         <button
                             type='button'
                             onClick={() => setIntegrityOpen(true)}
