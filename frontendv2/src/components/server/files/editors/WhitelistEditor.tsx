@@ -101,7 +101,7 @@ export function WhitelistEditor({
                     </div>
                 </div>
             </CardHeader>
-            <div className='flex-1 overflow-y-auto space-y-6 p-6'>
+            <div className='flex-1 space-y-6 overflow-y-auto p-6'>
                 <section className='space-y-3'>
                     <div className='border-primary/20 bg-primary/5 text-muted-foreground rounded-lg border p-4 text-sm'>
                         {t('files.editors.whitelistConfig.notice')}

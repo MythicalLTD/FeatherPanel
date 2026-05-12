@@ -83,7 +83,7 @@ export function WidgetRenderer({ widgets, height = '400px', context }: WidgetRen
             newSrcs[widget.id] = buildWidgetSrc(widget);
         });
         setWidgetSrcs(newSrcs);
-    }, [theme, widgets, pathname, context]);
+    }, [theme, widgets, pathname, context, buildWidgetSrc]);
 
     // Send theme to all ready widget iframes when theme changes and inject styles
     useEffect(() => {
@@ -253,7 +253,7 @@ export function WidgetRenderer({ widgets, height = '400px', context }: WidgetRen
     };
 
     const shouldRenderAsCard = (widget: PluginWidget) => {
-        if (widget.useRawRendering) return false;
+        if (widget.useRawRendering || widget.borderless) return false;
         if (widget.card === null) return true;
         if (typeof widget.card?.enabled === 'boolean') return widget.card.enabled;
         return true;

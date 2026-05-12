@@ -121,7 +121,7 @@ export function OpsEditor({ content, readonly = false, saving = false, onSave, o
                     </div>
                 </div>
             </CardHeader>
-            <div className='flex-1 overflow-y-auto space-y-8 p-8'>
+            <div className='flex-1 space-y-8 overflow-y-auto p-8'>
                 <section className='space-y-6'>
                     <div className='border-primary/20 bg-primary/5 text-muted-foreground rounded-xl border p-4 text-sm'>
                         {t('files.editors.opsConfig.notice') ||

@@ -29,16 +29,19 @@ class EmailLoginCode
     public static function getTemplate(array $data): string
     {
         if (
-            isset($data['app_name'])
-            && isset($data['app_url'])
-            && isset($data['first_name'])
-            && isset($data['last_name'])
-            && isset($data['email'])
-            && isset($data['username'])
-            && isset($data['app_support_url'])
-            && isset($data['login_code'])
+            array_key_exists('app_name', $data)
+            && array_key_exists('app_url', $data)
+            && array_key_exists('first_name', $data)
+            && array_key_exists('last_name', $data)
+            && array_key_exists('email', $data)
+            && array_key_exists('username', $data)
+            && array_key_exists('app_support_url', $data)
+            && array_key_exists('login_code', $data)
         ) {
-            return self::parseTemplate(MailTemplate::getByName('email_login_code')['body'] ?? '', [
+            $row = MailTemplate::getByName('email_login_code');
+            $bodyTemplate = ($row !== null && isset($row['body'])) ? (string) $row['body'] : '';
+
+            return self::parseTemplate($bodyTemplate, [
                 'app_name' => $data['app_name'],
                 'app_url' => $data['app_url'],
                 'first_name' => $data['first_name'],
@@ -79,24 +82,29 @@ class EmailLoginCode
      */
     public static function send(array $data): void
     {
-        if (
-            !isset($data['uuid'])
-            || !isset($data['enabled'])
-            || !isset($data['first_name'])
-            || !isset($data['last_name'])
-            || !isset($data['app_name'])
-            || !isset($data['app_url'])
-            || !isset($data['email'])
-            || !isset($data['username'])
-            || !isset($data['app_support_url'])
-            || !isset($data['login_code'])
-        ) {
-            return;
+        $requiredKeys = [
+            'uuid',
+            'enabled',
+            'app_name',
+            'app_url',
+            'email',
+            'username',
+            'login_code',
+        ];
+        foreach ($requiredKeys as $key) {
+            if (!array_key_exists($key, $data)) {
+                return;
+            }
         }
 
         if ($data['enabled'] === 'false') {
             return;
         }
+
+        // DB columns like first_name/last_name may be NULL; isset() would skip queuing mail silently.
+        $data['first_name'] = (string) ($data['first_name'] ?? '');
+        $data['last_name'] = (string) ($data['last_name'] ?? '');
+        $data['app_support_url'] = (string) ($data['app_support_url'] ?? '');
 
         $subject = self::getSubject($data);
         $body = self::getTemplate($data);
@@ -122,7 +130,7 @@ class EmailLoginCode
     private static function getSubject(array $data): string
     {
         $row = MailTemplate::getByName('email_login_code');
-        $subjectTemplate = $row['subject'] ?? '';
+        $subjectTemplate = ($row !== null && isset($row['subject'])) ? (string) $row['subject'] : '';
         if ($subjectTemplate === '') {
             return 'Your login code for ' . $data['app_name'];
         }

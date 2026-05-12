@@ -194,6 +194,7 @@ class PublicConfig extends ConfigFactory
 
             // Demo mode settings
             ConfigInterface::APP_DEMO_YES => 'false',
+            ConfigInterface::EMAIL_LOGIN_ENABLED => 'false',
         ];
     }
 }

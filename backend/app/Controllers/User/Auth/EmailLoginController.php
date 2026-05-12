@@ -19,15 +19,13 @@ namespace App\Controllers\User\Auth;
 
 use App\App;
 use App\Chat\User;
-use App\Chat\Activity;
-use App\Chat\UserPreference;
-use App\Config\ConfigInterface;
 use App\Helpers\ApiResponse;
+use OpenApi\Attributes as OA;
+use App\Config\ConfigInterface;
 use App\CloudFlare\CloudFlareRealIP;
+use App\Mail\templates\EmailLoginCode;
 use App\CloudFlare\CloudFlareTurnstile;
 use App\Plugins\Events\Events\AuthEvent;
-use App\Mail\templates\EmailLoginCode;
-use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -178,11 +176,19 @@ class EmailLoginController
         $code = str_pad((string) random_int(100000, 999999), 6, '0', STR_PAD_LEFT);
         $expiresAt = date('Y-m-d H:i:s', strtotime('+10 minutes'));
 
-        // Store code in database
-        User::updateUser($userInfo['uuid'], [
-            'email_login_code' => $code,
-            'email_login_expires' => $expiresAt,
-        ]);
+        // Store code in database (requires featherpanel_users.email_login_* columns from migrations)
+        if (
+            !User::updateUser($userInfo['uuid'], [
+                'email_login_code' => $code,
+                'email_login_expires' => $expiresAt,
+            ])
+        ) {
+            return ApiResponse::error(
+                'Email login is temporarily unavailable. Ask an administrator to run database migrations.',
+                'EMAIL_LOGIN_STORE_FAILED',
+                503,
+            );
+        }
 
         // Send email
         $appName = $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel');
@@ -265,6 +271,7 @@ class EmailLoginController
             if (!isset($data['code'])) {
                 $missingFields[] = 'code';
             }
+
             return ApiResponse::error('Missing required fields: ' . implode(', ', $missingFields), 'MISSING_REQUIRED_FIELDS');
         }
 
@@ -348,6 +355,7 @@ class EmailLoginController
 
         // Complete login using the LoginController's method
         $loginController = new LoginController();
+
         return $loginController->completeLogin($userInfo);
     }
 }

@@ -131,7 +131,7 @@ export function BannedIpsEditor({
                     </div>
                 </div>
             </CardHeader>
-            <div className='flex-1 overflow-y-auto space-y-8 p-8'>
+            <div className='flex-1 space-y-8 overflow-y-auto p-8'>
                 <section className='space-y-6'>
                     <div className='border-destructive/20 bg-destructive/5 text-muted-foreground rounded-xl border p-4 text-sm'>
                         {t('files.editors.bannedIpsConfig.notice') ||

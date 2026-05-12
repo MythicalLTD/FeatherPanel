@@ -181,7 +181,9 @@ export default function ThemeCustomizer() {
                                                 }
                                                 className={cn(
                                                     'border-border/60 bg-muted/25 flex h-12 w-full items-center justify-center gap-2 rounded-xl border px-3 text-sm font-medium transition-colors sm:h-10 sm:text-xs',
-                                                    isThemeLocked ? 'opacity-50 cursor-not-allowed' : 'hover:bg-accent/50'
+                                                    isThemeLocked
+                                                        ? 'cursor-not-allowed opacity-50'
+                                                        : 'hover:bg-accent/50',
                                                 )}
                                             >
                                                 {theme === 'dark' ? (
@@ -194,12 +196,18 @@ export default function ThemeCustomizer() {
                                                         ? t('appearance.theme.light')
                                                         : t('appearance.theme.dark')}
                                                 </span>
-                                                {isThemeLocked && <span className='text-xs text-muted-foreground'>(Locked)</span>}
+                                                {isThemeLocked && (
+                                                    <span className='text-muted-foreground text-xs'>(Locked)</span>
+                                                )}
                                             </button>
 
                                             <button
                                                 type='button'
-                                                title={isBackgroundDisabled ? t('appearance.background.disabledInLightMode') : t('appearance.background.customize')}
+                                                title={
+                                                    isBackgroundDisabled
+                                                        ? t('appearance.background.disabledInLightMode')
+                                                        : t('appearance.background.customize')
+                                                }
                                                 onClick={() => {
                                                     if (isBackgroundDisabled) return;
                                                     setCustomizerOpen(false);
@@ -209,12 +217,16 @@ export default function ThemeCustomizer() {
                                                 className={cn(
                                                     'border-border/60 bg-muted/25 flex h-12 w-full items-center justify-center gap-2 rounded-xl border px-3 text-sm font-medium transition-colors sm:h-10 sm:text-xs',
                                                     isBackgroundDisabled
-                                                        ? 'opacity-50 cursor-not-allowed'
-                                                        : 'hover:bg-accent/50'
+                                                        ? 'cursor-not-allowed opacity-50'
+                                                        : 'hover:bg-accent/50',
                                                 )}
                                             >
                                                 <ImageIcon className='text-muted-foreground h-4 w-4' aria-hidden />
-                                                <span>{theme === 'light' ? t('appearance.background.notAvailableInLight') : t('appearance.background.change')}</span>
+                                                <span>
+                                                    {theme === 'light'
+                                                        ? t('appearance.background.notAvailableInLight')
+                                                        : t('appearance.background.change')}
+                                                </span>
                                             </button>
                                         </div>
 
@@ -226,16 +238,22 @@ export default function ThemeCustomizer() {
                                                         <button
                                                             key={option.value}
                                                             type='button'
-                                                            title={isAccentColorLocked ? `${option.name} (Locked)` : option.name}
-                                                            onClick={() => !isAccentColorLocked && setAccentColor(option.value)}
+                                                            title={
+                                                                isAccentColorLocked
+                                                                    ? `${option.name} (Locked)`
+                                                                    : option.name
+                                                            }
+                                                            onClick={() =>
+                                                                !isAccentColorLocked && setAccentColor(option.value)
+                                                            }
                                                             disabled={isAccentColorLocked}
                                                             className={cn(
                                                                 'ring-border/60 relative mx-auto flex h-10 w-10 items-center justify-center rounded-full ring-1 transition-transform sm:h-8 sm:w-8',
                                                                 accentColor === option.value &&
                                                                     'ring-primary ring-offset-card ring-2 ring-offset-1',
                                                                 isAccentColorLocked
-                                                                    ? 'opacity-50 cursor-not-allowed'
-                                                                    : 'hover:scale-105'
+                                                                    ? 'cursor-not-allowed opacity-50'
+                                                                    : 'hover:scale-105',
                                                             )}
                                                             style={{ backgroundColor: option.color }}
                                                         >

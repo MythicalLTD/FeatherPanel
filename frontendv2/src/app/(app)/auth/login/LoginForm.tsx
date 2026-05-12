@@ -64,6 +64,11 @@ export default function LoginForm() {
     const [success, setSuccess] = useState('');
     const [turnstileKey, setTurnstileKey] = useState(0);
 
+    // Multi-step login state (when email login is enabled)
+    const [loginStep, setLoginStep] = useState<'identifier' | 'method'>('identifier');
+    const [identifierValue, setIdentifierValue] = useState('');
+    const [isEmail, setIsEmail] = useState(false);
+
     // Email login state
     const [showEmailLogin, setShowEmailLogin] = useState(false);
     const [emailLoginStep, setEmailLoginStep] = useState<'email' | 'code'>('email');
@@ -469,6 +474,110 @@ export default function LoginForm() {
         return emailRegex.test(email);
     };
 
+    // Handle identifier submission (Step 1 -> Step 2)
+    const handleIdentifierSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError('');
+
+        if (!identifierValue) {
+            setError(t('validation.fill_all_fields'));
+            return;
+        }
+
+        // Check if it's an email
+        const emailCheck = isValidEmail(identifierValue);
+        setIsEmail(emailCheck);
+
+        // Update form with the identifier
+        setForm({ ...form, username_or_email: identifierValue });
+
+        // Move to method selection step
+        setLoginStep('method');
+    };
+
+    // Go back to identifier step
+    const handleBackToIdentifier = () => {
+        setLoginStep('identifier');
+        setError('');
+        setShowEmailLogin(false);
+    };
+
+    // Handle password login from method step
+    const handlePasswordLoginFromMethod = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError('');
+        setSuccess('');
+
+        if (!form.password) {
+            setError(t('validation.fill_all_fields'));
+            return;
+        }
+
+        if (form.password.length < 8) {
+            setError(t('validation.min_length', { min: '8' }));
+            return;
+        }
+
+        if (turnstileEnabled && !form.turnstile_token) {
+            setError(t('validation.captcha_required'));
+            return;
+        }
+
+        setLoading(true);
+
+        try {
+            const response = await authApi.login({
+                username_or_email: identifierValue,
+                password: form.password,
+                turnstile_token: form.turnstile_token,
+            });
+
+            if (response.success) {
+                if (response.data?.requires_2fa) {
+                    router.push(`/auth/verify-2fa?username_or_email=${encodeURIComponent(identifierValue)}`);
+                    return;
+                }
+
+                setSuccess(t('common.success'));
+                await fetchSession(true);
+
+                setTimeout(() => {
+                    const redirect = searchParams.get('redirect');
+                    if (redirect && redirect.startsWith('/')) {
+                        router.push(redirect);
+                    } else {
+                        router.push('/dashboard');
+                    }
+                }, 1000);
+            } else {
+                setError(response.message || t('common.error'));
+                if (showTurnstile) {
+                    setForm((prev) => ({ ...prev, turnstile_token: '' }));
+                    setTurnstileKey((prev) => prev + 1);
+                }
+            }
+        } catch (err: unknown) {
+            const error = err as {
+                response?: { data?: { message?: string; error_code?: string; data?: { email?: string } } };
+            };
+
+            if (error.response?.data?.error_code === 'TWO_FACTOR_REQUIRED') {
+                const email = error.response.data.data?.email || identifierValue;
+                router.push(`/auth/verify-2fa?username_or_email=${encodeURIComponent(email)}`);
+                return;
+            }
+
+            setError(error.response?.data?.message || t('common.error'));
+
+            if (showTurnstile) {
+                setForm((prev) => ({ ...prev, turnstile_token: '' }));
+                setTurnstileKey((prev) => prev + 1);
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const [oidcProviders, setOidcProviders] = useState<{ uuid: string; name: string }[]>([]);
     const [ldapProviders, setLdapProviders] = useState<{ uuid: string; name: string }[]>([]);
     const [selectedLdapProvider, setSelectedLdapProvider] = useState<string>('');
@@ -517,6 +626,12 @@ export default function LoginForm() {
     const showTurnstile = turnstileEnabled && turnstileSiteKey;
     const showLocalLogin = !showLdapLogin && !showEmailLogin;
 
+    const isMultiStepEmailLoginFlow = emailLoginEnabled && !showLdapLogin;
+    const isLoginMethodStep = isMultiStepEmailLoginFlow && loginStep === 'method';
+    const isLoginMethodPasswordStep = isLoginMethodStep && !showEmailLogin;
+    const isEmailLoginVerifyStep = showEmailLogin && emailLoginStep === 'code';
+    const emailForLoginCodeSubtitle = emailLoginForm.email || identifierValue;
+
     return (
         <div className='space-y-6'>
             <WidgetRenderer widgets={getWidgets('auth-login', 'auth-login-top')} />
@@ -524,10 +639,24 @@ export default function LoginForm() {
             {!isSsoLogin && !isDiscordLogin && (
                 <div className='space-y-2 text-center'>
                     <h2 className='from-foreground via-foreground to-primary bg-linear-to-r bg-clip-text text-2xl font-bold tracking-tight text-transparent'>
-                        {discordLinkToken ? t('auth.discordLinking.title') : t('auth.login.title')}
+                        {discordLinkToken
+                            ? t('auth.discordLinking.title')
+                            : isLoginMethodPasswordStep
+                              ? t('auth.login.welcome_back')
+                              : isEmailLoginVerifyStep
+                                ? t('auth.emailLogin.enterCode')
+                                : t('auth.login.title')}
                     </h2>
                     <p className='text-muted-foreground text-sm'>
-                        {discordLinkToken ? t('auth.discordLinking.subtitle') : t('auth.login.subtitle')}
+                        {discordLinkToken
+                            ? t('auth.discordLinking.subtitle')
+                            : isLoginMethodPasswordStep
+                              ? isEmail
+                                  ? identifierValue
+                                  : t('auth.login.continue_with_password')
+                              : isEmailLoginVerifyStep
+                                ? t('auth.emailLogin.codeSentTo', { email: emailForLoginCodeSubtitle })
+                                : t('auth.login.subtitle')}
                     </p>
                 </div>
             )}
@@ -620,49 +749,301 @@ export default function LoginForm() {
                 <>
                     <WidgetRenderer widgets={getWidgets('auth-login', 'auth-login-before-form')} />
 
-                    {(ldapEnabled || emailLoginEnabled) && (
-                        <div className='mb-4 flex flex-wrap gap-2'>
-                            <Button
-                                type='button'
-                                variant={!showLdapLogin && !showEmailLogin ? 'default' : 'outline'}
-                                className='flex-1'
-                                onClick={() => {
-                                    setShowLdapLogin(false);
-                                    setShowEmailLogin(false);
-                                }}
-                            >
-                                {t('auth.login.passwordLogin')}
-                            </Button>
-                            {emailLoginEnabled && (
-                                <Button
-                                    type='button'
-                                    variant={showEmailLogin ? 'default' : 'outline'}
-                                    className='flex-1'
-                                    onClick={() => {
-                                        setShowLdapLogin(false);
-                                        setShowEmailLogin(true);
-                                    }}
-                                >
-                                    {t('auth.login.emailLogin')}
-                                </Button>
-                            )}
-                            {ldapEnabled && (
-                                <Button
-                                    type='button'
-                                    variant={showLdapLogin ? 'default' : 'outline'}
-                                    className='flex-1'
-                                    onClick={() => {
-                                        setShowLdapLogin(true);
-                                        setShowEmailLogin(false);
-                                    }}
-                                >
-                                    LDAP Login
-                                </Button>
-                            )}
-                        </div>
-                    )}
+                    {/* Multi-step login flow when email login is enabled */}
+                    {emailLoginEnabled && !showLdapLogin ? (
+                        loginStep === 'identifier' ? (
+                            // Step 1: Enter email/username
+                            <form onSubmit={handleIdentifierSubmit} className='space-y-4'>
+                                <Input
+                                    label={t('auth.login.username')}
+                                    type='text'
+                                    value={identifierValue}
+                                    onChange={(e) => setIdentifierValue(e.target.value)}
+                                    required
+                                    autoComplete='username email'
+                                    autoFocus
+                                    icon={<Mail className='h-5 w-5' />}
+                                    placeholder={t('auth.login.username')}
+                                />
 
-                    {showLdapLogin && ldapEnabled ? (
+                                {showTurnstile && (
+                                    <div className='flex justify-center pt-2'>
+                                        <Turnstile
+                                            key={`identifier-${turnstileKey}`}
+                                            sitekey={turnstileSiteKey}
+                                            theme={theme === 'dark' ? 'dark' : 'light'}
+                                            size='normal'
+                                            refreshExpired='auto'
+                                            onVerify={(token) => setForm({ ...form, turnstile_token: token })}
+                                            onError={() => {
+                                                setForm((prev) => ({ ...prev, turnstile_token: '' }));
+                                            }}
+                                            onExpire={() => {
+                                                setForm((prev) => ({ ...prev, turnstile_token: '' }));
+                                            }}
+                                        />
+                                    </div>
+                                )}
+
+                                <Button type='submit' className='group w-full' loading={loading}>
+                                    {!loading && (
+                                        <>
+                                            {t('common.next')}
+                                            <ArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
+                                        </>
+                                    )}
+                                </Button>
+
+                                {error && (
+                                    <div className='bg-destructive/10 border-destructive/20 text-destructive animate-fade-in rounded-xl border p-3 text-sm'>
+                                        {error}
+                                    </div>
+                                )}
+
+                                {ldapEnabled && (
+                                    <Button
+                                        type='button'
+                                        variant='ghost'
+                                        className='text-muted-foreground w-full text-sm'
+                                        onClick={() => setShowLdapLogin(true)}
+                                    >
+                                        LDAP Login
+                                    </Button>
+                                )}
+                            </form>
+                        ) : showEmailLogin ? (
+                            // Email code login flow (when user clicked "Request Login Code")
+                            emailLoginStep === 'email' ? (
+                                <form onSubmit={handleEmailLoginRequest} className='space-y-5'>
+                                    <div className='mb-4 space-y-2 text-center'>
+                                        <h3 className='text-lg font-semibold'>{t('auth.emailLogin.title')}</h3>
+                                        <p className='text-muted-foreground text-sm'>
+                                            {t('auth.emailLogin.codeSentTo', { email: identifierValue })}
+                                        </p>
+                                    </div>
+
+                                    {showTurnstile && (
+                                        <div className='flex justify-center'>
+                                            <Turnstile
+                                                key={`email-${turnstileKey}`}
+                                                sitekey={turnstileSiteKey}
+                                                theme={theme === 'dark' ? 'dark' : 'light'}
+                                                size='normal'
+                                                refreshExpired='auto'
+                                                onVerify={(token) =>
+                                                    setEmailLoginForm({ ...emailLoginForm, turnstile_token: token })
+                                                }
+                                                onError={() => {
+                                                    setEmailLoginForm((prev) => ({ ...prev, turnstile_token: '' }));
+                                                }}
+                                                onExpire={() => {
+                                                    setEmailLoginForm((prev) => ({ ...prev, turnstile_token: '' }));
+                                                }}
+                                            />
+                                        </div>
+                                    )}
+
+                                    <Button type='submit' className='group w-full' loading={loading}>
+                                        {!loading && (
+                                            <>
+                                                {t('auth.emailLogin.sendCode')}
+                                                <ArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
+                                            </>
+                                        )}
+                                    </Button>
+
+                                    <Button
+                                        type='button'
+                                        variant='outline'
+                                        className='w-full'
+                                        onClick={() => setShowEmailLogin(false)}
+                                    >
+                                        <ArrowLeft className='mr-2 h-4 w-4' />
+                                        {t('auth.login.usePasswordInstead')}
+                                    </Button>
+
+                                    {error && (
+                                        <div className='bg-destructive/10 border-destructive/20 text-destructive animate-fade-in rounded-xl border p-4 text-sm'>
+                                            {error}
+                                        </div>
+                                    )}
+                                    {success && (
+                                        <div className='animate-fade-in rounded-xl border border-green-500/20 bg-green-500/10 p-4 text-sm text-green-600 dark:text-green-400'>
+                                            {success}
+                                        </div>
+                                    )}
+                                </form>
+                            ) : (
+                                // Enter 6-digit code
+                                <form onSubmit={handleEmailLoginVerify} className='space-y-5'>
+                                    <Input
+                                        label={t('auth.emailLogin.code')}
+                                        type='text'
+                                        value={emailLoginForm.code}
+                                        onChange={(e) => {
+                                            const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+                                            setEmailLoginForm({ ...emailLoginForm, code: value });
+                                        }}
+                                        required
+                                        autoComplete='one-time-code'
+                                        inputMode='numeric'
+                                        pattern='[0-9]{6}'
+                                        maxLength={6}
+                                        icon={<KeyRound className='h-5 w-5' />}
+                                        placeholder='000000'
+                                        className='text-center text-2xl tracking-[0.5em]'
+                                        autoFocus
+                                    />
+
+                                    <Button type='submit' className='group w-full' loading={loading}>
+                                        {!loading && (
+                                            <>
+                                                {t('auth.login.submit')}
+                                                <ArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
+                                            </>
+                                        )}
+                                    </Button>
+
+                                    <div className='flex gap-2'>
+                                        <Button
+                                            type='button'
+                                            variant='outline'
+                                            className='flex-1'
+                                            onClick={() => setShowEmailLogin(false)}
+                                        >
+                                            <ArrowLeft className='mr-2 h-4 w-4' />
+                                            {t('common.back')}
+                                        </Button>
+                                        <Button
+                                            type='button'
+                                            variant='outline'
+                                            className='flex-1'
+                                            onClick={() =>
+                                                handleEmailLoginRequest({ preventDefault: () => {} } as React.FormEvent)
+                                            }
+                                            disabled={loading}
+                                        >
+                                            {t('auth.emailLogin.resend')}
+                                        </Button>
+                                    </div>
+
+                                    {error && (
+                                        <div className='bg-destructive/10 border-destructive/20 text-destructive animate-fade-in rounded-xl border p-4 text-sm'>
+                                            {error}
+                                        </div>
+                                    )}
+                                    {success && (
+                                        <div className='animate-fade-in rounded-xl border border-green-500/20 bg-green-500/10 p-4 text-sm text-green-600 dark:text-green-400'>
+                                            {success}
+                                        </div>
+                                    )}
+                                </form>
+                            )
+                        ) : (
+                            // Step 2: Choose login method (Password OR Email Code)
+                            <form onSubmit={handlePasswordLoginFromMethod} className='space-y-5'>
+                                <Input
+                                    label={t('auth.login.password')}
+                                    type='password'
+                                    value={form.password}
+                                    onChange={(e) => setForm({ ...form, password: e.target.value })}
+                                    required
+                                    autoComplete='current-password'
+                                    autoFocus
+                                    icon={<Lock className='h-5 w-5' />}
+                                    placeholder={t('auth.login.password')}
+                                />
+
+                                {showTurnstile && !form.turnstile_token && (
+                                    <div className='flex justify-center'>
+                                        <Turnstile
+                                            key={`password-${turnstileKey}`}
+                                            sitekey={turnstileSiteKey}
+                                            theme={theme === 'dark' ? 'dark' : 'light'}
+                                            size='normal'
+                                            refreshExpired='auto'
+                                            onVerify={(token) => setForm({ ...form, turnstile_token: token })}
+                                            onError={() => {
+                                                setForm((prev) => ({ ...prev, turnstile_token: '' }));
+                                            }}
+                                            onExpire={() => {
+                                                setForm((prev) => ({ ...prev, turnstile_token: '' }));
+                                            }}
+                                        />
+                                    </div>
+                                )}
+
+                                <div className='flex items-center justify-end'>
+                                    <Link
+                                        href='/auth/forgot-password'
+                                        className='text-primary hover:text-primary/80 text-sm font-medium transition-colors'
+                                    >
+                                        {t('auth.login.forgot_password')}
+                                    </Link>
+                                </div>
+
+                                <Button type='submit' className='group w-full' loading={loading}>
+                                    {!loading && (
+                                        <>
+                                            {t('auth.login.submit')}
+                                            <ArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
+                                        </>
+                                    )}
+                                </Button>
+
+                                {/* Email Code Login Option (only if identifier is an email) */}
+                                {isEmail && (
+                                    <div className='relative py-2'>
+                                        <div className='absolute inset-0 flex items-center'>
+                                            <div className='border-border w-full border-t' />
+                                        </div>
+                                        <div className='relative flex justify-center text-xs uppercase'>
+                                            <span className='bg-card text-muted-foreground px-2'>
+                                                {t('auth.login.or')}
+                                            </span>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {isEmail && (
+                                    <Button
+                                        type='button'
+                                        variant='outline'
+                                        className='w-full'
+                                        onClick={() => {
+                                            setEmailLoginForm({ ...emailLoginForm, email: identifierValue });
+                                            setShowEmailLogin(true);
+                                        }}
+                                    >
+                                        <KeyRound className='mr-2 h-4 w-4' />
+                                        {t('auth.login.requestLoginCode')}
+                                    </Button>
+                                )}
+
+                                <Button
+                                    type='button'
+                                    variant='ghost'
+                                    size='sm'
+                                    className='text-muted-foreground w-full'
+                                    onClick={handleBackToIdentifier}
+                                >
+                                    <ArrowLeft className='mr-1 h-4 w-4' />
+                                    {t('common.back')}
+                                </Button>
+
+                                {error && (
+                                    <div className='bg-destructive/10 border-destructive/20 text-destructive animate-fade-in rounded-xl border p-4 text-sm'>
+                                        {error}
+                                    </div>
+                                )}
+                                {success && (
+                                    <div className='animate-fade-in rounded-xl border border-green-500/20 bg-green-500/10 p-4 text-sm text-green-600 dark:text-green-400'>
+                                        {success}
+                                    </div>
+                                )}
+                            </form>
+                        )
+                    ) : showLdapLogin && ldapEnabled ? (
                         <form onSubmit={handleLdapLogin} className='space-y-5'>
                             <Select
                                 label='LDAP Provider'
@@ -808,13 +1189,6 @@ export default function LoginForm() {
                             </form>
                         ) : (
                             <form onSubmit={handleEmailLoginVerify} className='space-y-5'>
-                                <div className='space-y-2 text-center'>
-                                    <h3 className='text-lg font-semibold'>{t('auth.emailLogin.enterCode')}</h3>
-                                    <p className='text-muted-foreground text-sm'>
-                                        {t('auth.emailLogin.codeSentTo', { email: emailLoginForm.email })}
-                                    </p>
-                                </div>
-
                                 <Input
                                     label={t('auth.emailLogin.code')}
                                     type='text'
@@ -856,7 +1230,9 @@ export default function LoginForm() {
                                         type='button'
                                         variant='outline'
                                         className='flex-1'
-                                        onClick={() => handleEmailLoginRequest({ preventDefault: () => {} } as React.FormEvent)}
+                                        onClick={() =>
+                                            handleEmailLoginRequest({ preventDefault: () => {} } as React.FormEvent)
+                                        }
                                         disabled={loading}
                                     >
                                         {t('auth.emailLogin.resend')}
@@ -951,7 +1327,7 @@ export default function LoginForm() {
 
                     <WidgetRenderer widgets={getWidgets('auth-login', 'auth-login-after-form')} />
 
-                    {(discordEnabled || oidcEnabled) && (
+                    {(discordEnabled || oidcEnabled) && !isLoginMethodStep && (
                         <>
                             <div className='relative'>
                                 <div className='absolute inset-0 flex items-center'>
@@ -995,15 +1371,17 @@ export default function LoginForm() {
                         </>
                     )}
 
-                    <div className='text-muted-foreground text-center text-sm'>
-                        {t('auth.login.no_account')}{' '}
-                        <Link
-                            href='/auth/register'
-                            className='text-primary hover:text-primary/80 font-semibold transition-colors'
-                        >
-                            {t('auth.login.create_account')}
-                        </Link>
-                    </div>
+                    {!isLoginMethodStep && (
+                        <div className='text-muted-foreground text-center text-sm'>
+                            {t('auth.login.no_account')}{' '}
+                            <Link
+                                href='/auth/register'
+                                className='text-primary hover:text-primary/80 font-semibold transition-colors'
+                            >
+                                {t('auth.login.create_account')}
+                            </Link>
+                        </div>
+                    )}
                 </>
             )}
         </div>

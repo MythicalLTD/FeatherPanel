@@ -25,8 +25,8 @@ use App\Controllers\User\Auth\DiscordController;
 use App\Controllers\User\Auth\RegisterController;
 use App\Controllers\User\Auth\TwoFactorController;
 use App\Controllers\User\Auth\AuthLogoutController;
-use App\Controllers\User\Auth\VerifyEmailController;
 use App\Controllers\User\Auth\EmailLoginController;
+use App\Controllers\User\Auth\VerifyEmailController;
 use App\Controllers\User\Auth\ResetPasswordController;
 use App\Controllers\User\Auth\ForgotPasswordController;
 

@@ -28,8 +28,8 @@ class MailQueue
     {
         $app = \App\App::getInstance(false, true);
         $config = new \App\Config\ConfigFactory($app->getDatabase()->getPdo());
-        if ($config->getSetting(\App\Config\ConfigInterface::SMTP_ENABLED, 'false') === 'false') {
-            return true;
+        if ($config->getSetting(\App\Config\ConfigInterface::SMTP_ENABLED, 'false') !== 'true') {
+            return false;
         }
 
         $required = ['user_uuid', 'subject', 'body'];

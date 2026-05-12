@@ -276,8 +276,6 @@ export default function SettingsPage() {
         window.localStorage.removeItem(UPDATE_PROGRESS_STORAGE_KEY);
     }, []);
 
-   
-
     const handleCategoryChange = useCallback(
         (newTab: string) => {
             router.push(`${pathname}?category=${encodeURIComponent(newTab)}`);

@@ -218,7 +218,7 @@ export function CommandsEditor({
                     </div>
                 </div>
             </CardHeader>
-            <div className='flex-1 overflow-y-auto space-y-10 p-8'>
+            <div className='flex-1 space-y-10 overflow-y-auto p-8'>
                 <section className='space-y-6'>
                     <div className='border-border/10 flex items-center gap-4 border-b pb-6'>
                         <div className='bg-primary/10 border-primary/20 flex h-10 w-10 items-center justify-center rounded-xl border'>

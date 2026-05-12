@@ -24,7 +24,7 @@
     <a href="/icanhasfeatherpanel/events/index.html" class="back-link">&larr; Back to all event categories</a>
     <header>
       <h1>Auth</h1>
-      <p class="muted">17 events in this category.</p>
+      <p class="muted">18 events in this category.</p>
     </header>
 
 <article class="card">
@@ -210,6 +210,32 @@ public static function processEvents(PluginEvents $evt): void
 </article>
 
 <article class="card">
+  <h2><code>featherpanel:auth:email:login:code:requested</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onAuthEmailLoginCodeRequested</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array user info, string ip_address.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> ip_address, user</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/User/Auth/EmailLoginController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\AuthEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(AuthEvent::onAuthEmailLoginCodeRequested(), function ($ipAddress, $user) {
+        // Handle featherpanel:auth:email:login:code:requested
+        // Data keys: ip_address, user
+    });
+}</code></pre>
+</article>
+
+<article class="card">
   <h2><code>featherpanel:auth:forgot:password</code></h2>
   <p class="muted"><strong>Method:</strong> <code>onAuthForgotPassword</code></p>
   <p class="muted"><strong>Callback parameters:</strong> array user info, string reset_url, string reset_token.</p>
@@ -267,10 +293,11 @@ public static function processEvents(PluginEvents $evt): void
   <p class="muted"><strong>Callback parameters:</strong> array user info.</p>
 
   <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> error, ip_address, provider, reason, user, username, username_or_email</p>
+  <p class="muted"><strong>Data keys:</strong> email, error, ip_address, provider, reason, user, username, username_or_email</p>
 
   <h3>Emitted From</h3>
   <ul>
+<li><code>backend/app/Controllers/User/Auth/EmailLoginController.php</code></li>
 <li><code>backend/app/Controllers/User/Auth/LdapController.php</code></li>
 <li><code>backend/app/Controllers/User/Auth/LoginController.php</code></li>
   </ul>
@@ -281,9 +308,9 @@ use App\Plugins\Events\Events\AuthEvent;
 
 public static function processEvents(PluginEvents $evt): void
 {
-    $evt->on(AuthEvent::onAuthLoginFailed(), function ($error, $ipAddress, $provider, $reason, $user, $username, $usernameOrEmail) {
+    $evt->on(AuthEvent::onAuthLoginFailed(), function ($email, $error, $ipAddress, $provider, $reason, $user, $username, $usernameOrEmail) {
         // Handle featherpanel:auth:login:failed
-        // Data keys: error, ip_address, provider, reason, user, username, username_or_email
+        // Data keys: email, error, ip_address, provider, reason, user, username, username_or_email
     });
 }</code></pre>
 </article>
