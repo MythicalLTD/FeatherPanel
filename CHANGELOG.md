@@ -13,6 +13,10 @@
 - Added the ability to easily reorder articles by dragging and changing their positions within the list. by @nayskutzu
 - Introduced passwordless authentication via secure email code logins, allowing users to sign in using a 6-digit code delivered directly to their inbox. by @nayskutzu
 
+### Fixed
+
+- Fixed an issue where certain pages displayed unnecessary blank spaces when opened. by @nayskutzu
+
 ## v1.3.7 STABLE
 
 ### Added
@@ -87,7 +91,6 @@
 ### Added
 
 - Added support for both soft deleting and permanently deleting servers directly from the server actions page, giving you more control and flexibility. by @nayskutzu
-
 
 ## v1.3.4 STABLE
 

@@ -512,7 +512,7 @@ export default function SettingsPage() {
                 ) : null}
             </div>
 
-            <div className='block'>
+            <div className='block overflow-visible'>
                 <Tabs
                     value={activeTab || categoryKeys[0]}
                     onValueChange={handleCategoryChange}
@@ -520,7 +520,7 @@ export default function SettingsPage() {
                     className='flex w-full flex-col gap-6 lg:flex-row lg:gap-8'
                 >
                     <aside className='flex min-h-0 w-full shrink-0 flex-col gap-3 lg:w-72'>
-                        <TabsList className='bg-card/30 border-border/50 custom-scrollbar flex h-auto w-full max-w-full flex-row gap-1 overflow-x-auto rounded-2xl border p-2 lg:max-h-[calc(100vh-12rem)] lg:flex-col lg:overflow-x-visible lg:overflow-y-auto'>
+                        <TabsList className='bg-card/30 border-border/50 flex h-auto w-full max-w-full flex-row gap-1 overflow-x-auto rounded-2xl border p-2 lg:max-h-[calc(100vh-12rem)] lg:flex-col lg:overflow-x-visible lg:overflow-y-auto'>
                             {Object.entries(organizedSettings).map(([key, data]) => {
                                 const Icon = getIconForCategory(key);
                                 const matchCount = categoryMatchCounts[key] ?? 0;

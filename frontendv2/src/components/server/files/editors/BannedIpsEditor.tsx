@@ -108,8 +108,8 @@ export function BannedIpsEditor({
     };
 
     return (
-        <Card className='bg-card/50 border-border/50 rounded-3xl border shadow-sm backdrop-blur-3xl'>
-            <CardHeader className='border-border/10 border-b pb-6'>
+        <Card className='bg-card/50 border-border/50 flex max-h-[calc(100vh-10rem)] flex-col overflow-hidden rounded-3xl border shadow-sm backdrop-blur-3xl'>
+            <CardHeader className='border-border/10 flex-shrink-0 border-b pb-6'>
                 <div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
                     <div className='space-y-2'>
                         <CardTitle className='text-2xl font-bold'>{t('files.editors.bannedIpsConfig.title')}</CardTitle>
@@ -131,7 +131,7 @@ export function BannedIpsEditor({
                     </div>
                 </div>
             </CardHeader>
-            <div className='space-y-8 p-8'>
+            <div className='flex-1 overflow-y-auto space-y-8 p-8'>
                 <section className='space-y-6'>
                     <div className='border-destructive/20 bg-destructive/5 text-muted-foreground rounded-xl border p-4 text-sm'>
                         {t('files.editors.bannedIpsConfig.notice') ||

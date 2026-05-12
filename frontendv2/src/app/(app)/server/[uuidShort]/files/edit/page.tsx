@@ -393,7 +393,7 @@ export default function FileEditorPage({
     }
 
     return (
-        <div className='relative flex h-[calc(100vh-6rem)] flex-col gap-6 pb-4'>
+        <div className='relative flex h-[calc(100vh-6rem)] flex-col gap-6 overflow-y-auto pb-4'>
             <WidgetRenderer widgets={getWidgets('server-file-editor', 'top-of-page')} />
             <PageHeader
                 title={t('files.editor.title', { file: fileName })}
@@ -466,7 +466,7 @@ export default function FileEditorPage({
                     onSwitchToRaw={handleSwitchToRawEditor}
                 />
             ) : (
-                <div className='border-border/50 bg-card/50 group hover:border-border/80 relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-4xl border p-1 backdrop-blur-3xl transition-all'>
+                <div className='border-border/50 bg-card/50 group hover:border-border/80 relative flex min-h-0 flex-1 flex-col overflow-visible rounded-4xl border p-1 backdrop-blur-3xl transition-all'>
                     <div className='border-border/10 bg-muted/30 flex shrink-0 items-center justify-between border-b p-3'>
                         <div className='flex items-center gap-3'>
                             <div className='bg-primary/10 text-primary border-primary/20 flex h-9 w-9 items-center justify-center rounded-xl border'>
