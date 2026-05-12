@@ -93,6 +93,12 @@ interface ConfigInterface
     /** When true, reject registration/email changes whose domain matches featherpanel_blocked_email_domains (admin-managed). */
     public const EMAIL_DOMAIN_BLOCKING_ENABLED = 'email_domain_blocking_enabled';
     public const REQUIRE_TWO_FA_ADMINS = 'require_two_fa_admins';
+
+    /**
+     * Email Login (Passwordless authentication with 6-digit OTP).
+     */
+    public const EMAIL_LOGIN_ENABLED = 'email_login_enabled';
+
     /**
      * Telemetry.
      */

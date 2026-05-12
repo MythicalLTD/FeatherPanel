@@ -26,6 +26,7 @@ use App\Controllers\User\Auth\RegisterController;
 use App\Controllers\User\Auth\TwoFactorController;
 use App\Controllers\User\Auth\AuthLogoutController;
 use App\Controllers\User\Auth\VerifyEmailController;
+use App\Controllers\User\Auth\EmailLoginController;
 use App\Controllers\User\Auth\ResetPasswordController;
 use App\Controllers\User\Auth\ForgotPasswordController;
 
@@ -226,5 +227,30 @@ return function (RouteCollection $routes): void {
         ['GET'],
         Rate::perMinute(10), // Default: Admin can override in ratelimit.json
         'user-auth-oidc'
+    );
+
+    // Email Login (OTP) routes
+    App::getInstance(true)->registerApiRoute(
+        $routes,
+        'email-login-request',
+        '/api/user/auth/email-login/request',
+        function (Request $request) {
+            return (new EmailLoginController())->requestCode($request);
+        },
+        ['POST'],
+        Rate::perMinute(3), // Limit to 3 requests per minute to prevent abuse
+        'user-auth-email'
+    );
+
+    App::getInstance(true)->registerApiRoute(
+        $routes,
+        'email-login-verify',
+        '/api/user/auth/email-login/verify',
+        function (Request $request) {
+            return (new EmailLoginController())->verifyCode($request);
+        },
+        ['POST'],
+        Rate::perMinute(10), // Allow more attempts for code verification
+        'user-auth-email'
     );
 };

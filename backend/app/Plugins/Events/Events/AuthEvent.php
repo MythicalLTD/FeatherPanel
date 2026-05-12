@@ -156,4 +156,12 @@ class AuthEvent implements PluginEvent
     {
         return 'featherpanel:auth:forgot:password:failed';
     }
+
+    /**
+     * Callback: array user info, string ip_address.
+     */
+    public static function onAuthEmailLoginCodeRequested(): string
+    {
+        return 'featherpanel:auth:email:login:code:requested';
+    }
 }

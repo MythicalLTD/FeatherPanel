@@ -127,6 +127,8 @@ export interface AppSettings {
     /** When 'true', force the configured background image fit for all users. */
     app_background_image_fit_lock?: string;
     server_allow_user_backup_policy_edit: string;
+    /** When 'true', enable passwordless email login with 6-digit OTP codes. */
+    email_login_enabled?: string;
 }
 
 export interface CoreInfo {

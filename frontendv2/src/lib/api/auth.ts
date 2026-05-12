@@ -77,4 +77,14 @@ export const authApi = {
         const response = await api.post('/user/auth/enable-2fa', { code });
         return response.data;
     },
+
+    requestEmailLoginCode: async (data: { email: string; turnstile_token?: string }) => {
+        const response = await api.post('/user/auth/email-login/request', data);
+        return response.data;
+    },
+
+    verifyEmailLoginCode: async (data: { email: string; code: string }) => {
+        const response = await api.post('/user/auth/email-login/verify', data);
+        return response.data;
+    },
 };

@@ -198,6 +198,7 @@ class SettingsController
             'description' => 'Security and authentication settings',
             'icon' => 'shield',
             'settings' => [
+                ConfigInterface::EMAIL_LOGIN_ENABLED,
                 ConfigInterface::TURNSTILE_ENABLED,
                 ConfigInterface::TURNSTILE_KEY_PUB,
                 ConfigInterface::TURNSTILE_KEY_PRIV,
@@ -964,6 +965,19 @@ class SettingsController
                 'options' => [],
                 'category' => 'security',
                 'sensitive' => true,
+            ],
+            ConfigInterface::EMAIL_LOGIN_ENABLED => [
+                'name' => ConfigInterface::EMAIL_LOGIN_ENABLED,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::EMAIL_LOGIN_ENABLED, 'false'),
+                'description' => 'Enable passwordless email login with 6-digit OTP codes sent to user email addresses (requires SMTP to be configured)',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'false',
+                'validation' => 'required|string|max:255',
+                'options' => ['true', 'false'],
+                'category' => 'security',
             ],
             ConfigInterface::LEGAL_TOS => [
                 'name' => ConfigInterface::LEGAL_TOS,

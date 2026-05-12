@@ -25,7 +25,7 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useSession } from '@/contexts/SessionContext';
-import { Mail, Lock, ArrowRight } from 'lucide-react';
+import { Mail, Lock, ArrowRight, KeyRound, ArrowLeft } from 'lucide-react';
 import Turnstile from 'react-turnstile';
 import { authApi } from '@/lib/api/auth';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
@@ -63,6 +63,15 @@ export default function LoginForm() {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const [turnstileKey, setTurnstileKey] = useState(0);
+
+    // Email login state
+    const [showEmailLogin, setShowEmailLogin] = useState(false);
+    const [emailLoginStep, setEmailLoginStep] = useState<'email' | 'code'>('email');
+    const [emailLoginForm, setEmailLoginForm] = useState({
+        email: '',
+        code: '',
+        turnstile_token: '',
+    });
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -345,6 +354,121 @@ export default function LoginForm() {
         setForm({ ...form, turnstile_token: token });
     };
 
+    const handleEmailLoginTurnstileSuccess = (token: string) => {
+        setEmailLoginForm({ ...emailLoginForm, turnstile_token: token });
+    };
+
+    const handleEmailLoginRequest = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError('');
+        setSuccess('');
+
+        if (!emailLoginForm.email) {
+            setError(t('validation.fill_all_fields'));
+            return;
+        }
+
+        if (!isValidEmail(emailLoginForm.email)) {
+            setError(t('validation.invalid_email'));
+            return;
+        }
+
+        if (turnstileEnabled && !emailLoginForm.turnstile_token) {
+            setError(t('validation.captcha_required'));
+            return;
+        }
+
+        setLoading(true);
+
+        try {
+            const response = await authApi.requestEmailLoginCode({
+                email: emailLoginForm.email,
+                turnstile_token: emailLoginForm.turnstile_token,
+            });
+
+            if (response.success) {
+                setSuccess(t('auth.emailLogin.codeSent'));
+                setEmailLoginStep('code');
+            } else {
+                setError(response.message || t('common.error'));
+                if (showTurnstile) {
+                    setEmailLoginForm((prev) => ({ ...prev, turnstile_token: '' }));
+                    setTurnstileKey((prev) => prev + 1);
+                }
+            }
+        } catch (err: unknown) {
+            const error = err as { response?: { data?: { message?: string } } };
+            setError(error.response?.data?.message || t('common.error'));
+            if (showTurnstile) {
+                setEmailLoginForm((prev) => ({ ...prev, turnstile_token: '' }));
+                setTurnstileKey((prev) => prev + 1);
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleEmailLoginVerify = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError('');
+        setSuccess('');
+
+        if (!emailLoginForm.email || !emailLoginForm.code) {
+            setError(t('validation.fill_all_fields'));
+            return;
+        }
+
+        if (!/^\d{6}$/.test(emailLoginForm.code)) {
+            setError(t('auth.emailLogin.invalidCode'));
+            return;
+        }
+
+        setLoading(true);
+
+        try {
+            const response = await authApi.verifyEmailLoginCode({
+                email: emailLoginForm.email,
+                code: emailLoginForm.code,
+            });
+
+            if (response.success) {
+                setSuccess(t('auth.login.success'));
+                await fetchSession(true);
+
+                setTimeout(() => {
+                    const redirect = searchParams.get('redirect');
+                    if (redirect && redirect.startsWith('/')) {
+                        router.push(redirect);
+                    } else {
+                        router.push('/dashboard');
+                    }
+                }, 1000);
+            } else {
+                setError(response.message || t('common.error'));
+            }
+        } catch (err: unknown) {
+            const error = err as {
+                response?: { data?: { message?: string; error_code?: string; data?: { email?: string } } };
+            };
+
+            if (error.response?.data?.error_code === 'TWO_FACTOR_REQUIRED') {
+                const email = error.response.data.data?.email || emailLoginForm.email;
+                router.push(`/auth/verify-2fa?username_or_email=${encodeURIComponent(email)}`);
+                return;
+            }
+
+            setError(error.response?.data?.message || t('common.error'));
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Simple email validation helper
+    const isValidEmail = (email: string): boolean => {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
+    };
+
     const [oidcProviders, setOidcProviders] = useState<{ uuid: string; name: string }[]>([]);
     const [ldapProviders, setLdapProviders] = useState<{ uuid: string; name: string }[]>([]);
     const [selectedLdapProvider, setSelectedLdapProvider] = useState<string>('');
@@ -387,10 +511,11 @@ export default function LoginForm() {
     const turnstileEnabled = settings?.turnstile_enabled === 'true';
     const turnstileSiteKey = settings?.turnstile_key_pub || '';
     const discordEnabled = settings?.discord_oauth_enabled === 'true';
+    const emailLoginEnabled = settings?.email_login_enabled === 'true';
     const oidcEnabled = oidcProviders.length > 0;
     const ldapEnabled = ldapProviders.length > 0;
     const showTurnstile = turnstileEnabled && turnstileSiteKey;
-    const showLocalLogin = !showLdapLogin;
+    const showLocalLogin = !showLdapLogin && !showEmailLogin;
 
     return (
         <div className='space-y-6'>
@@ -398,7 +523,7 @@ export default function LoginForm() {
 
             {!isSsoLogin && !isDiscordLogin && (
                 <div className='space-y-2 text-center'>
-                    <h2 className='from-foreground via-foreground to-primary bg-gradient-to-r bg-clip-text text-2xl font-bold tracking-tight text-transparent'>
+                    <h2 className='from-foreground via-foreground to-primary bg-linear-to-r bg-clip-text text-2xl font-bold tracking-tight text-transparent'>
                         {discordLinkToken ? t('auth.discordLinking.title') : t('auth.login.title')}
                     </h2>
                     <p className='text-muted-foreground text-sm'>
@@ -495,24 +620,45 @@ export default function LoginForm() {
                 <>
                     <WidgetRenderer widgets={getWidgets('auth-login', 'auth-login-before-form')} />
 
-                    {ldapEnabled && (
-                        <div className='mb-4 flex gap-2'>
+                    {(ldapEnabled || emailLoginEnabled) && (
+                        <div className='mb-4 flex flex-wrap gap-2'>
                             <Button
                                 type='button'
-                                variant={!showLdapLogin ? 'default' : 'outline'}
+                                variant={!showLdapLogin && !showEmailLogin ? 'default' : 'outline'}
                                 className='flex-1'
-                                onClick={() => setShowLdapLogin(false)}
+                                onClick={() => {
+                                    setShowLdapLogin(false);
+                                    setShowEmailLogin(false);
+                                }}
                             >
-                                Local Login
+                                {t('auth.login.passwordLogin')}
                             </Button>
-                            <Button
-                                type='button'
-                                variant={showLdapLogin ? 'default' : 'outline'}
-                                className='flex-1'
-                                onClick={() => setShowLdapLogin(true)}
-                            >
-                                LDAP Login
-                            </Button>
+                            {emailLoginEnabled && (
+                                <Button
+                                    type='button'
+                                    variant={showEmailLogin ? 'default' : 'outline'}
+                                    className='flex-1'
+                                    onClick={() => {
+                                        setShowLdapLogin(false);
+                                        setShowEmailLogin(true);
+                                    }}
+                                >
+                                    {t('auth.login.emailLogin')}
+                                </Button>
+                            )}
+                            {ldapEnabled && (
+                                <Button
+                                    type='button'
+                                    variant={showLdapLogin ? 'default' : 'outline'}
+                                    className='flex-1'
+                                    onClick={() => {
+                                        setShowLdapLogin(true);
+                                        setShowEmailLogin(false);
+                                    }}
+                                >
+                                    LDAP Login
+                                </Button>
+                            )}
                         </div>
                     )}
 
@@ -592,6 +738,143 @@ export default function LoginForm() {
                                 </div>
                             )}
                         </form>
+                    ) : showEmailLogin ? (
+                        emailLoginStep === 'email' ? (
+                            <form onSubmit={handleEmailLoginRequest} className='space-y-5'>
+                                <div className='space-y-2 text-center'>
+                                    <h3 className='text-lg font-semibold'>{t('auth.emailLogin.title')}</h3>
+                                    <p className='text-muted-foreground text-sm'>{t('auth.emailLogin.subtitle')}</p>
+                                </div>
+
+                                <Input
+                                    label={t('auth.login.email')}
+                                    type='email'
+                                    value={emailLoginForm.email}
+                                    onChange={(e) => setEmailLoginForm({ ...emailLoginForm, email: e.target.value })}
+                                    required
+                                    autoComplete='email'
+                                    icon={<Mail className='h-5 w-5' />}
+                                    placeholder={t('auth.login.email')}
+                                />
+
+                                {showTurnstile && (
+                                    <div className='flex justify-center'>
+                                        <Turnstile
+                                            key={`email-${turnstileKey}`}
+                                            sitekey={turnstileSiteKey}
+                                            theme={theme === 'dark' ? 'dark' : 'light'}
+                                            size='normal'
+                                            refreshExpired='auto'
+                                            onVerify={handleEmailLoginTurnstileSuccess}
+                                            onError={() => {
+                                                setEmailLoginForm((prev) => ({ ...prev, turnstile_token: '' }));
+                                            }}
+                                            onExpire={() => {
+                                                setEmailLoginForm((prev) => ({ ...prev, turnstile_token: '' }));
+                                            }}
+                                        />
+                                    </div>
+                                )}
+
+                                <Button type='submit' className='group w-full' loading={loading}>
+                                    {!loading && (
+                                        <>
+                                            {t('auth.emailLogin.sendCode')}
+                                            <ArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
+                                        </>
+                                    )}
+                                </Button>
+
+                                <Button
+                                    type='button'
+                                    variant='outline'
+                                    className='w-full'
+                                    onClick={() => setShowEmailLogin(false)}
+                                >
+                                    <ArrowLeft className='mr-2 h-4 w-4' />
+                                    {t('common.back')}
+                                </Button>
+
+                                {error && (
+                                    <div className='bg-destructive/10 border-destructive/20 text-destructive animate-fade-in rounded-xl border p-4 text-sm'>
+                                        {error}
+                                    </div>
+                                )}
+                                {success && (
+                                    <div className='animate-fade-in rounded-xl border border-green-500/20 bg-green-500/10 p-4 text-sm text-green-600 dark:text-green-400'>
+                                        {success}
+                                    </div>
+                                )}
+                            </form>
+                        ) : (
+                            <form onSubmit={handleEmailLoginVerify} className='space-y-5'>
+                                <div className='space-y-2 text-center'>
+                                    <h3 className='text-lg font-semibold'>{t('auth.emailLogin.enterCode')}</h3>
+                                    <p className='text-muted-foreground text-sm'>
+                                        {t('auth.emailLogin.codeSentTo', { email: emailLoginForm.email })}
+                                    </p>
+                                </div>
+
+                                <Input
+                                    label={t('auth.emailLogin.code')}
+                                    type='text'
+                                    value={emailLoginForm.code}
+                                    onChange={(e) => {
+                                        const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+                                        setEmailLoginForm({ ...emailLoginForm, code: value });
+                                    }}
+                                    required
+                                    autoComplete='one-time-code'
+                                    inputMode='numeric'
+                                    pattern='[0-9]{6}'
+                                    maxLength={6}
+                                    icon={<KeyRound className='h-5 w-5' />}
+                                    placeholder='000000'
+                                    className='text-center text-2xl tracking-[0.5em]'
+                                />
+
+                                <Button type='submit' className='group w-full' loading={loading}>
+                                    {!loading && (
+                                        <>
+                                            {t('auth.login.submit')}
+                                            <ArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
+                                        </>
+                                    )}
+                                </Button>
+
+                                <div className='flex gap-2'>
+                                    <Button
+                                        type='button'
+                                        variant='outline'
+                                        className='flex-1'
+                                        onClick={() => setEmailLoginStep('email')}
+                                    >
+                                        <ArrowLeft className='mr-2 h-4 w-4' />
+                                        {t('common.back')}
+                                    </Button>
+                                    <Button
+                                        type='button'
+                                        variant='outline'
+                                        className='flex-1'
+                                        onClick={() => handleEmailLoginRequest({ preventDefault: () => {} } as React.FormEvent)}
+                                        disabled={loading}
+                                    >
+                                        {t('auth.emailLogin.resend')}
+                                    </Button>
+                                </div>
+
+                                {error && (
+                                    <div className='bg-destructive/10 border-destructive/20 text-destructive animate-fade-in rounded-xl border p-4 text-sm'>
+                                        {error}
+                                    </div>
+                                )}
+                                {success && (
+                                    <div className='animate-fade-in rounded-xl border border-green-500/20 bg-green-500/10 p-4 text-sm text-green-600 dark:text-green-400'>
+                                        {success}
+                                    </div>
+                                )}
+                            </form>
+                        )
                     ) : showLocalLogin ? (
                         <form onSubmit={handleSubmit} className='space-y-5'>
                             <Input

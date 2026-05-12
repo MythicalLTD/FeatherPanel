@@ -11,7 +11,22 @@
 			"create_account": "Create account",
 			"discord": "Discord",
 			"or_continue": "Or continue with",
-			"sso": "Single Sign-On"
+			"sso": "Single Sign-On",
+			"passwordLogin": "Password",
+			"emailLogin": "Email Code",
+			"email": "Email Address",
+			"success": "Login successful"
+		},
+		"emailLogin": {
+			"title": "Email Login",
+			"subtitle": "Enter your email to receive a 6-digit login code",
+			"sendCode": "Send Login Code",
+			"enterCode": "Enter Login Code",
+			"codeSentTo": "A 6-digit code has been sent to {{email}}",
+			"code": "6-Digit Code",
+			"codeSent": "If this email exists, a login code has been sent.",
+			"resend": "Resend Code",
+			"invalidCode": "Please enter a valid 6-digit code"
 		},
 		"register": {
 			"title": "Create an account",
@@ -172,6 +187,7 @@
 		"warning": "Warning",
 		"saving": "Saving...",
 		"show": "Show",
+		"back": "Back",
 		"optional": "Optional",
 		"goBack": "Go Back",
 		"success": "Success",
@@ -248,6 +264,7 @@
 	"validation": {
 		"required": "This field is required",
 		"email": "Please enter a valid email address",
+		"invalid_email": "Please enter a valid email address",
 		"min_length": "Must be at least {min} characters",
 		"password_mismatch": "Passwords do not match",
 		"invalid_username": "Username can only contain letters, numbers, and underscores",
