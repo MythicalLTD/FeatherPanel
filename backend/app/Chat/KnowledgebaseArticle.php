@@ -72,7 +72,7 @@ class KnowledgebaseArticle
             $params['pinned'] = $pinned ? 'true' : 'false';
         }
 
-        $sql .= ' ORDER BY pinned DESC, published_at DESC, created_at DESC LIMIT :limit OFFSET :offset';
+        $sql .= ' ORDER BY pinned DESC, sort_order ASC, published_at DESC, created_at DESC LIMIT :limit OFFSET :offset';
         $stmt = $pdo->prepare($sql);
 
         foreach ($params as $key => $value) {
@@ -141,7 +141,7 @@ class KnowledgebaseArticle
 
         $pdo = Database::getPdoConnection();
         $stmt = $pdo->prepare(
-            'SELECT * FROM ' . self::$table . ' WHERE category_id = :category_id ORDER BY pinned DESC, published_at DESC, created_at DESC LIMIT :limit'
+            'SELECT * FROM ' . self::$table . ' WHERE category_id = :category_id ORDER BY pinned DESC, sort_order ASC, published_at DESC, created_at DESC LIMIT :limit'
         );
         $stmt->bindValue('category_id', $categoryId, \PDO::PARAM_INT);
         $stmt->bindValue('limit', $limit, \PDO::PARAM_INT);
@@ -257,7 +257,7 @@ class KnowledgebaseArticle
             return false;
         }
 
-        $fields = ['category_id', 'title', 'slug', 'icon', 'content', 'author_id', 'status', 'pinned', 'published_at'];
+        $fields = ['category_id', 'title', 'slug', 'icon', 'content', 'author_id', 'status', 'pinned', 'sort_order', 'published_at'];
         $insert = [];
         foreach ($fields as $field) {
             if ($field === 'status') {
@@ -266,6 +266,8 @@ class KnowledgebaseArticle
                     : 'draft';
             } elseif ($field === 'pinned') {
                 $insert[$field] = isset($data[$field]) && $data[$field] === true ? 'true' : 'false';
+            } elseif ($field === 'sort_order') {
+                $insert[$field] = isset($data[$field]) && is_numeric($data[$field]) ? (int) $data[$field] : 0;
             } elseif ($field === 'published_at') {
                 $insert[$field] = $data[$field] ?? null;
             } elseif ($field === 'category_id' || $field === 'author_id') {
@@ -320,7 +322,7 @@ class KnowledgebaseArticle
             return false;
         }
 
-        $fields = ['category_id', 'title', 'slug', 'icon', 'content', 'author_id', 'status', 'pinned', 'published_at'];
+        $fields = ['category_id', 'title', 'slug', 'icon', 'content', 'author_id', 'status', 'pinned', 'sort_order', 'published_at'];
         $set = [];
         $params = ['id' => $id];
 
@@ -334,7 +336,7 @@ class KnowledgebaseArticle
                 } elseif ($field === 'pinned') {
                     $params[$field] = $data[$field] === true ? 'true' : 'false';
                     $set[] = "`$field` = :$field";
-                } elseif ($field === 'category_id' || $field === 'author_id') {
+                } elseif ($field === 'category_id' || $field === 'author_id' || $field === 'sort_order') {
                     if (is_numeric($data[$field])) {
                         $params[$field] = (int) $data[$field];
                         $set[] = "`$field` = :$field";
@@ -355,6 +357,55 @@ class KnowledgebaseArticle
         $stmt = $pdo->prepare($sql);
 
         return $stmt->execute($params);
+    }
+
+    /**
+     * Update sort order for multiple articles (batch reorder).
+     *
+     * @param array $articles Array of ['id' => int, 'sort_order' => int]
+     *
+     * @return bool True on success, false on failure
+     */
+    public static function updateSortOrders(array $articles): bool
+    {
+        if (empty($articles)) {
+            return false;
+        }
+
+        $pdo = Database::getPdoConnection();
+
+        try {
+            $pdo->beginTransaction();
+
+            $stmt = $pdo->prepare('UPDATE ' . self::$table . ' SET sort_order = :sort_order WHERE id = :id');
+
+            foreach ($articles as $article) {
+                if (!isset($article['id']) || !isset($article['sort_order'])) {
+                    continue;
+                }
+
+                $id = (int) $article['id'];
+                $sortOrder = (int) $article['sort_order'];
+
+                if ($id <= 0) {
+                    continue;
+                }
+
+                $stmt->execute([
+                    'id' => $id,
+                    'sort_order' => $sortOrder,
+                ]);
+            }
+
+            $pdo->commit();
+
+            return true;
+        } catch (\PDOException $e) {
+            $pdo->rollBack();
+            App::getInstance(true)->getLogger()->error('Failed to update article sort orders: ' . $e->getMessage());
+
+            return false;
+        }
     }
 
     /**

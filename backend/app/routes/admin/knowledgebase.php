@@ -173,6 +173,18 @@ return function (RouteCollection $routes): void {
         ['DELETE']
     );
 
+    // REORDER - POST /api/admin/knowledgebase/articles/reorder
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-knowledgebase-articles-reorder',
+        '/api/admin/knowledgebase/articles/reorder',
+        function (Request $request) {
+            return (new KnowledgebaseController())->articlesReorder($request);
+        },
+        Permissions::ADMIN_KNOWLEDGEBASE_ARTICLES_EDIT,
+        ['POST']
+    );
+
     // ==================== FILE UPLOADS ====================
 
     // UPLOAD ICON - POST /api/admin/knowledgebase/upload-icon

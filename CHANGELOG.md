@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.3.7.1 STABLE
+
+### Improved
+
+- Introduced a unified themes context for plugins, enabling seamless support for both dark and light modes. by @nayskutzu
+
+### Added
+
+- Introduced comprehensive language analytics, allowing you to see which languages your users prefer and how they're distributed. by @nayskutzu
+- Added the ability to easily reorder articles by dragging and changing their positions within the list. by @nayskutzu
+
 ## v1.3.7 STABLE
 
 ### Added

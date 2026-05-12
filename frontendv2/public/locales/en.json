@@ -159,6 +159,7 @@
 		"total": "Total",
 		"status": "Status",
 		"deleting": "Deleting...",
+		"current": "Current",
 		"enable": "Enable",
 		"copiedToClipboard": "Copied to clipboard",
 		"copied_to_clipboard": "Copied to clipboard",
@@ -1159,6 +1160,11 @@
 			"marketplace": "Marketplace",
 			"cloudManagement": "Cloud Management",
 			"knowledgebase": "Knowledge Base",
+			"knowledgebase_categories": "Categories",
+			"knowledgebase_articles": "Articles",
+			"knowledgebase_order": "Reorder Articles",
+			"analytics_overview": "Overview",
+			"language_analytics": "Languages",
 			"tickets": "Support Tickets",
 			"ticketCategories": "Ticket Categories",
 			"ticketPriorities": "Ticket Priorities",
@@ -5687,6 +5693,21 @@
 				"disk_usage": "Disk Usage",
 				"memory_usage": "Memory Usage"
 			},
+			"languages": {
+				"title": "Language Analytics",
+				"subtitle": "Breakdown of user language preferences and locale distribution",
+				"messages": {
+					"fetch_failed": "Failed to load language analytics"
+				},
+				"total_users": "Total Users",
+				"total_languages": "Languages",
+				"top_language": "Top Language",
+				"distribution": "Language Distribution",
+				"breakdown": "Top Languages",
+				"all_languages": "All Languages",
+				"other": "Other",
+				"trends": "12-Month Trends"
+			},
 			"content": {
 				"title": "Content Analytics",
 				"subtitle": "Realms, eggs, nests, redirect links, mail templates, and content management insights",
@@ -6526,7 +6547,21 @@
 				"save": "Save Changes"
 			},
 			"messages": {
-				"updated": "Knowledgebase updated successfully"
+				"updated": "Knowledgebase updated successfully",
+				"fetch_failed": "Failed to fetch knowledgebase data"
+			},
+			"order": {
+				"title": "Reorder Articles",
+				"subtitle": "Drag and drop articles to change their display order",
+				"filter_by_category": "Filter by Category",
+				"all_categories": "All Categories",
+				"no_articles": "No articles found",
+				"order": "Order",
+				"unsaved_changes": "You have unsaved changes",
+				"messages": {
+					"saved": "Article order saved successfully",
+					"save_failed": "Failed to save article order"
+				}
 			}
 		},
 		"settings": {

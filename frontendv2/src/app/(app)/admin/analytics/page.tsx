@@ -29,6 +29,7 @@ import {
     Ticket,
     Puzzle,
     BookOpen,
+    Globe,
 } from 'lucide-react';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
@@ -50,6 +51,15 @@ export default function AnalyticsDashboardPage() {
             color: 'text-blue-500',
             bgColor: 'bg-blue-500/10',
             borderColor: 'border-blue-500/20',
+        },
+        {
+            title: t('admin.analytics.languages.title'),
+            description: t('admin.analytics.languages.subtitle'),
+            icon: Globe,
+            href: '/admin/analytics/languages',
+            color: 'text-pink-500',
+            bgColor: 'bg-pink-500/10',
+            borderColor: 'border-pink-500/20',
         },
         {
             title: t('admin.analytics.activity.title'),

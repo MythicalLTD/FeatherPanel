@@ -105,6 +105,14 @@ class KnowledgebaseEvent implements PluginEvent
         return 'featherpanel:admin:knowledgebase:article:deleted';
     }
 
+    /**
+     * Callback: array articles, array reordered_by.
+     */
+    public static function onKnowledgebaseArticlesReordered(): string
+    {
+        return 'featherpanel:admin:knowledgebase:articles:reordered';
+    }
+
     // ==================== ADMIN - FILES & ATTACHMENTS ====================
 
     /**

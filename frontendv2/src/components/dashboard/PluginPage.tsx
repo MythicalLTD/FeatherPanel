@@ -20,6 +20,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSettings } from '@/contexts/SettingsContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { RefreshCw, AlertTriangle, ArrowLeft, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn, isEnabled } from '@/lib/utils';
@@ -37,13 +38,38 @@ interface PluginPageProps {
 export default function PluginPage({ context, serverUuid, vdsId }: PluginPageProps) {
     const { t } = useTranslation();
     const { settings } = useSettings();
+    const { theme } = useTheme();
     const pathname = usePathname();
     const router = useRouter();
     const iframeRef = useRef<HTMLIFrameElement>(null);
     const challengeRetryCountRef = useRef(0);
     const challengeRetryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const iframeReadyRef = useRef(false);
 
     const pluginData = usePluginRoutes();
+
+    // Send theme to iframe when it changes
+    useEffect(() => {
+        if (!iframeRef.current?.contentWindow || !iframeReadyRef.current) return;
+
+        iframeRef.current.contentWindow.postMessage({ type: 'featherpanel-theme', theme }, '*');
+    }, [theme]);
+
+    // Also listen for plugin ready signal
+    useEffect(() => {
+        const handleMessage = (event: MessageEvent) => {
+            if (event.data?.type === 'featherpanel-ready') {
+                iframeReadyRef.current = true;
+                // Send current theme when plugin signals it's ready
+                if (iframeRef.current?.contentWindow) {
+                    iframeRef.current.contentWindow.postMessage({ type: 'featherpanel-theme', theme }, '*');
+                }
+            }
+        };
+
+        window.addEventListener('message', handleMessage);
+        return () => window.removeEventListener('message', handleMessage);
+    }, [theme]);
 
     const { server } = useServerPermissions(serverUuid || '');
     const serverSpellId = server?.spell_id || null;
@@ -172,7 +198,10 @@ export default function PluginPage({ context, serverUuid, vdsId }: PluginPagePro
                         }
                     }
 
-                    setIframeSrc(componentUrl);
+                    // Add theme as URL parameter for immediate access on load
+                    const themeSeparator = componentUrl.includes('?') ? '&' : '?';
+                    const urlWithTheme = `${componentUrl}${themeSeparator}__theme=${theme}`;
+                    setIframeSrc(urlWithTheme);
                 } else {
                     setError(t('errors.plugin.not_found'));
                 }
@@ -185,7 +214,7 @@ export default function PluginPage({ context, serverUuid, vdsId }: PluginPagePro
         };
 
         processPluginData();
-    }, [pathname, context, serverUuid, vdsId, t, pluginData, serverSpellId]);
+    }, [pathname, context, serverUuid, vdsId, t, pluginData, serverSpellId, theme]);
 
     const injectScrollbarStyles = () => {
         if (!iframeRef.current) return;
@@ -256,6 +285,13 @@ export default function PluginPage({ context, serverUuid, vdsId }: PluginPagePro
         challengeRetryCountRef.current = 0;
         setIframeError(null);
         setIframeLoading(false);
+        iframeReadyRef.current = true;
+
+        // Send current theme to iframe on load
+        if (iframeRef.current?.contentWindow) {
+            iframeRef.current.contentWindow.postMessage({ type: 'featherpanel-theme', theme }, '*');
+        }
+
         setTimeout(injectScrollbarStyles, 100);
     };
 
