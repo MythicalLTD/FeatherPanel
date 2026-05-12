@@ -15,9 +15,10 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { RotateCcw, AlertTriangle } from 'lucide-react';
@@ -33,16 +34,18 @@ interface WidgetRendererProps {
 
 export function WidgetRenderer({ widgets, height = '400px', context }: WidgetRendererProps) {
     const { t } = useTranslation();
+    const { theme } = useTheme();
     const pathname = usePathname();
     const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({});
     const [errorStates, setErrorStates] = useState<Record<string, string | null>>({});
     const [challengeRetries, setChallengeRetries] = useState<Record<string, number>>({});
+    const [widgetSrcs, setWidgetSrcs] = useState<Record<string, string>>({});
+    const iframeReadyRef = useRef<Record<string, boolean>>({});
 
     const MAX_CHALLENGE_RETRIES = 4;
 
-    if (!widgets || widgets.length === 0) return null;
-
-    const getWidgetSrc = (widget: PluginWidget): string => {
+    // Build widget src URLs with current theme
+    const buildWidgetSrc = (widget: PluginWidget): string => {
         const raw = widget.component;
         const pluginBase = `/components/${widget.plugin}/`;
         let pathWithFile: string;
@@ -59,6 +62,7 @@ export function WidgetRenderer({ widgets, height = '400px', context }: WidgetRen
 
         const baseUrl = `${pluginBase}${pathWithFile}`;
         merged.set('route', pathname || '');
+        merged.set('__theme', theme);
 
         if (context) {
             Object.entries(context).forEach(([key, value]) => {
@@ -70,6 +74,92 @@ export function WidgetRenderer({ widgets, height = '400px', context }: WidgetRen
 
         const qs = merged.toString();
         return qs ? `${baseUrl}?${qs}` : baseUrl;
+    };
+
+    // Update widget srcs when theme or widgets change
+    useEffect(() => {
+        const newSrcs: Record<string, string> = {};
+        widgets.forEach((widget) => {
+            newSrcs[widget.id] = buildWidgetSrc(widget);
+        });
+        setWidgetSrcs(newSrcs);
+    }, [theme, widgets, pathname, context]);
+
+    // Send theme to all ready widget iframes when theme changes and inject styles
+    useEffect(() => {
+        widgets.forEach((widget) => {
+            const iframe = document.querySelector(`iframe[data-widget-id="${widget.id}"]`) as HTMLIFrameElement;
+            if (iframe?.contentWindow && iframeReadyRef.current[widget.id]) {
+                iframe.contentWindow.postMessage({ type: 'featherpanel-theme', theme }, '*');
+                injectThemeStyles(iframe);
+            }
+        });
+    }, [theme, widgets]);
+
+    // Listen for widget ready signals and send theme + inject styles
+    useEffect(() => {
+        const handleMessage = (event: MessageEvent) => {
+            if (event.data?.type === 'featherpanel-ready' && event.data?.widgetId) {
+                const widgetId = event.data.widgetId;
+                iframeReadyRef.current[widgetId] = true;
+                const iframe = document.querySelector(`iframe[data-widget-id="${widgetId}"]`) as HTMLIFrameElement;
+                if (iframe?.contentWindow) {
+                    iframe.contentWindow.postMessage({ type: 'featherpanel-theme', theme }, '*');
+                    setTimeout(() => injectThemeStyles(iframe), 100);
+                }
+            }
+        };
+
+        window.addEventListener('message', handleMessage);
+        return () => window.removeEventListener('message', handleMessage);
+    }, [theme]);
+
+    if (!widgets || widgets.length === 0) return null;
+
+    const injectThemeStyles = (iframe: HTMLIFrameElement) => {
+        try {
+            const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+            if (!iframeDoc) return;
+
+            // Remove existing theme styles
+            const existingStyle = iframeDoc.getElementById('featherpanel-theme-override');
+            if (existingStyle) {
+                existingStyle.remove();
+            }
+
+            // Add theme class to html element
+            iframeDoc.documentElement.setAttribute('data-fp-theme', theme);
+            iframeDoc.documentElement.classList.remove('light', 'dark');
+            iframeDoc.documentElement.classList.add(theme);
+
+            // Inject CSS variables for theming
+            const style = iframeDoc.createElement('style');
+            style.id = 'featherpanel-theme-override';
+            style.textContent = `
+                :root {
+                    color-scheme: ${theme};
+                }
+                [data-fp-theme="light"] {
+                    --fp-bg: #ffffff;
+                    --fp-fg: #0a0a0a;
+                    --fp-card: #ffffff;
+                    --fp-card-fg: #0a0a0a;
+                    --fp-muted: #f5f5f5;
+                }
+                [data-fp-theme="dark"] {
+                    --fp-bg: #0a0a0a;
+                    --fp-fg: #fafafa;
+                    --fp-card: #171717;
+                    --fp-card-fg: #fafafa;
+                    --fp-muted: #262626;
+                }
+            `;
+            if (iframeDoc.head) {
+                iframeDoc.head.appendChild(style);
+            }
+        } catch (err) {
+            // Ignore cross-origin access errors
+        }
     };
 
     const handleIframeLoad = (widgetId: string, iframe: HTMLIFrameElement) => {
@@ -104,6 +194,13 @@ export function WidgetRenderer({ widgets, height = '400px', context }: WidgetRen
         setChallengeRetries((prev) => ({ ...prev, [widgetId]: 0 }));
         setLoadingStates((prev) => ({ ...prev, [widgetId]: false }));
         setErrorStates((prev) => ({ ...prev, [widgetId]: null }));
+
+        // Inject theme styles and send postMessage
+        iframeReadyRef.current[widgetId] = true;
+        if (iframe.contentWindow) {
+            iframe.contentWindow.postMessage({ type: 'featherpanel-theme', theme }, '*');
+        }
+        setTimeout(() => injectThemeStyles(iframe), 100);
     };
 
     const handleIframeError = (widgetId: string) => {
@@ -264,10 +361,11 @@ export function WidgetRenderer({ widgets, height = '400px', context }: WidgetRen
                                         </div>
                                     )}
 
-                                    {!errorStates[widget.id] && (
+                                    {!errorStates[widget.id] && widgetSrcs[widget.id] && (
                                         <iframe
+                                            key={`${widget.id}-${theme}-${widgetSrcs[widget.id]}`}
                                             data-widget-id={widget.id}
-                                            src={getWidgetSrc(widget)}
+                                            src={widgetSrcs[widget.id]}
                                             className={cn(
                                                 'h-full w-full border-0 transition-opacity duration-300',
                                                 loadingStates[widget.id] ? 'opacity-0' : 'opacity-100',
@@ -301,10 +399,11 @@ export function WidgetRenderer({ widgets, height = '400px', context }: WidgetRen
                                 className='relative h-full w-full'
                                 style={{ minHeight: widget.iframe?.minHeight || height }}
                             >
-                                {!errorStates[widget.id] && (
+                                {!errorStates[widget.id] && widgetSrcs[widget.id] && (
                                     <iframe
+                                        key={`${widget.id}-${theme}-${widgetSrcs[widget.id]}`}
                                         data-widget-id={widget.id}
-                                        src={getWidgetSrc(widget)}
+                                        src={widgetSrcs[widget.id]}
                                         className={cn(
                                             'h-full w-full border-0 transition-opacity duration-300',
                                             loadingStates[widget.id] ? 'opacity-0' : 'opacity-100',

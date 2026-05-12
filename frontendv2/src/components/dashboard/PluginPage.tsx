@@ -48,11 +48,62 @@ export default function PluginPage({ context, serverUuid, vdsId }: PluginPagePro
 
     const pluginData = usePluginRoutes();
 
-    // Send theme to iframe when it changes
-    useEffect(() => {
-        if (!iframeRef.current?.contentWindow || !iframeReadyRef.current) return;
+    const injectThemeStyles = () => {
+        if (!iframeRef.current) return;
 
-        iframeRef.current.contentWindow.postMessage({ type: 'featherpanel-theme', theme }, '*');
+        try {
+            const iframe = iframeRef.current;
+            const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+
+            if (!iframeDoc) return;
+
+            // Remove existing theme styles
+            const existingStyle = iframeDoc.getElementById('featherpanel-theme-override');
+            if (existingStyle) {
+                existingStyle.remove();
+            }
+
+            // Add theme class to html element
+            iframeDoc.documentElement.setAttribute('data-fp-theme', theme);
+            iframeDoc.documentElement.classList.remove('light', 'dark');
+            iframeDoc.documentElement.classList.add(theme);
+
+            // Inject CSS variables for theming
+            const style = iframeDoc.createElement('style');
+            style.id = 'featherpanel-theme-override';
+            style.textContent = `
+                :root {
+                    color-scheme: ${theme};
+                }
+                [data-fp-theme="light"] {
+                    --fp-bg: #ffffff;
+                    --fp-fg: #0a0a0a;
+                    --fp-card: #ffffff;
+                    --fp-card-fg: #0a0a0a;
+                    --fp-muted: #f5f5f5;
+                }
+                [data-fp-theme="dark"] {
+                    --fp-bg: #0a0a0a;
+                    --fp-fg: #fafafa;
+                    --fp-card: #171717;
+                    --fp-card-fg: #fafafa;
+                    --fp-muted: #262626;
+                }
+            `;
+            if (iframeDoc.head) {
+                iframeDoc.head.appendChild(style);
+            }
+        } catch (err) {
+            console.debug('Could not inject theme into iframe (cross-origin limitation):', err);
+        }
+    };
+
+    // Send theme to iframe via postMessage when it changes and inject styles
+    useEffect(() => {
+        if (iframeRef.current?.contentWindow && iframeReadyRef.current) {
+            iframeRef.current.contentWindow.postMessage({ type: 'featherpanel-theme', theme }, '*');
+            injectThemeStyles();
+        }
     }, [theme]);
 
     // Also listen for plugin ready signal
@@ -292,7 +343,11 @@ export default function PluginPage({ context, serverUuid, vdsId }: PluginPagePro
             iframeRef.current.contentWindow.postMessage({ type: 'featherpanel-theme', theme }, '*');
         }
 
-        setTimeout(injectScrollbarStyles, 100);
+        // Inject theme styles directly
+        setTimeout(() => {
+            injectScrollbarStyles();
+            injectThemeStyles();
+        }, 100);
     };
 
     const onIframeError = () => {
@@ -421,6 +476,7 @@ export default function PluginPage({ context, serverUuid, vdsId }: PluginPagePro
 
             {iframeSrc && (
                 <iframe
+                    key={`${iframeSrc}-${theme}`}
                     ref={iframeRef}
                     src={iframeSrc}
                     className={cn(
