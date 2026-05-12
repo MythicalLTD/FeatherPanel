@@ -393,7 +393,7 @@ export default function FileEditorPage({
     }
 
     return (
-        <div className='relative flex h-[calc(100vh-6rem)] flex-col gap-6 overflow-y-auto pb-4'>
+        <div className='relative flex h-full min-h-0 flex-col gap-6 overflow-y-auto pb-4'>
             <WidgetRenderer widgets={getWidgets('server-file-editor', 'top-of-page')} />
             <PageHeader
                 title={t('files.editor.title', { file: fileName })}

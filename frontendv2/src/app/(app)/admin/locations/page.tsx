@@ -204,7 +204,7 @@ function TypeSelector({
             </div>
             {readOnly && (
                 <p className='text-muted-foreground flex items-center gap-1.5 text-[11px]'>
-                    <Info className='h-3 w-3 flex-shrink-0' />
+                    <Info className='h-3 w-3 shrink-0' />
                     {t('admin.locations.form.type_immutable_notice')}
                 </p>
             )}

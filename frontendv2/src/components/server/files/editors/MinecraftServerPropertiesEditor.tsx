@@ -323,8 +323,8 @@ export function MinecraftServerPropertiesEditor({
     };
 
     return (
-        <Card className='bg-card/50 border-border/50 flex max-h-[calc(100vh-10rem)] flex-col overflow-hidden rounded-3xl border shadow-sm backdrop-blur-3xl'>
-            <CardHeader className='border-border/10 flex-shrink-0 border-b pb-6'>
+        <Card className='bg-card/50 border-border/50 flex flex-col overflow-hidden rounded-3xl border shadow-sm backdrop-blur-3xl'>
+            <CardHeader className='border-border/10 shrink-0 border-b pb-6'>
                 <div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
                     <div className='space-y-2'>
                         <CardTitle className='text-2xl font-bold'>

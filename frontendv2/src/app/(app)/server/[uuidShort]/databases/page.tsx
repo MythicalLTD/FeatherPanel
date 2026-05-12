@@ -1166,9 +1166,9 @@ export default function ServerDatabasesPage() {
                                 className={`flex items-start gap-4 rounded-2xl border p-5 ${importResult.success ? 'border-emerald-500/20 bg-emerald-500/10' : 'border-amber-500/20 bg-amber-500/10'}`}
                             >
                                 {importResult.success ? (
-                                    <CheckCircle2 className='mt-0.5 h-6 w-6 flex-shrink-0 text-emerald-500' />
+                                    <CheckCircle2 className='mt-0.5 h-6 w-6 shrink-0 text-emerald-500' />
                                 ) : (
-                                    <XCircle className='mt-0.5 h-6 w-6 flex-shrink-0 text-amber-500' />
+                                    <XCircle className='mt-0.5 h-6 w-6 shrink-0 text-amber-500' />
                                 )}
                                 <div>
                                     <p className='text-sm font-bold'>
@@ -1344,7 +1344,7 @@ export default function ServerDatabasesPage() {
 
                     {queryError && (
                         <div className='border-destructive/20 bg-destructive/5 flex items-start gap-3 rounded-xl border p-4'>
-                            <XCircle className='text-destructive mt-0.5 h-5 w-5 flex-shrink-0' />
+                            <XCircle className='text-destructive mt-0.5 h-5 w-5 shrink-0' />
                             <p className='text-destructive/90 font-mono text-sm'>{queryError}</p>
                         </div>
                     )}
