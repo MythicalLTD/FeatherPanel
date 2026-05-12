@@ -5,6 +5,7 @@
 ### Improved
 
 - Introduced a unified themes context for plugins, enabling seamless support for both dark and light modes. by @nayskutzu
+- Improved enforcement and consistency of theming options throughout FeatherPanel, resulting in a much more polished appearance. by @nayskutzu
 
 ### Added
 

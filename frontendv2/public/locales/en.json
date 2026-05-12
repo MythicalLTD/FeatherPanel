@@ -1037,12 +1037,15 @@
 			"light": "Light Mode",
 			"dark": "Dark Mode",
 			"switchToLight": "Switch to light mode",
-			"switchToDark": "Switch to dark mode"
+			"switchToDark": "Switch to dark mode",
+			"lockedByAdmin": "Theme is locked by administrator"
 		},
 		"background": {
 			"title": "Background Settings",
 			"customize": "Customize background",
 			"change": "Change Background",
+			"disabledInLightMode": "Background customization is disabled in light mode",
+			"notAvailableInLight": "Not available in light mode",
 			"aurora": "Aurora",
 			"auroraDescription": "Animated backgrounds that match your theme colors",
 			"variants": {
@@ -1095,7 +1098,7 @@
 			"pink": "Pink",
 			"teal": "Teal",
 			"yellow": "Yellow",
-			"white": "White",
+			"indigo": "Indigo",
 			"violet": "Violet",
 			"cyan": "Cyan",
 			"lime": "Lime",

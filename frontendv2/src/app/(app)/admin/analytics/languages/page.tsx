@@ -241,7 +241,7 @@ export default function LanguageAnalyticsPage() {
                     {languages.map((language, index) => (
                         <div key={language.locale} className='bg-muted/50 flex items-center gap-4 rounded-lg p-3'>
                             <div
-                                className='h-4 w-4 flex-shrink-0 rounded-full'
+                                className='h-4 w-4 shrink-0 rounded-full'
                                 style={{ backgroundColor: COLORS[index % COLORS.length] }}
                             />
                             <div className='min-w-0 flex-1'>

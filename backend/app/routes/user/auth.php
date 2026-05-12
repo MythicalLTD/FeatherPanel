@@ -139,7 +139,7 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new AuthLogoutController())->get($request);
         },
-        ['GET'],
+        ['GET', 'DELETE'],
         Rate::perMinute(30), // Default: Admin can override in ratelimit.json
         'user-auth'
     );

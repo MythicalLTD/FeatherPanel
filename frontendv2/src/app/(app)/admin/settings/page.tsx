@@ -47,10 +47,8 @@ import {
     Search,
     X,
     Send,
-    RefreshCw,
 } from 'lucide-react';
 import { copyToClipboard, cn } from '@/lib/utils';
-import { isDockerUpdateTriggerLikelyStartedError } from '@/lib/is-docker-update-connection-loss';
 
 interface LogData {
     success: boolean;
@@ -212,10 +210,6 @@ export default function SettingsPage() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [sendingTestEmail, setSendingTestEmail] = useState(false);
-    const [updatingDocker, setUpdatingDocker] = useState(false);
-    const [updateInProgress, setUpdateInProgress] = useState(false);
-    const [showUpdateProgressModal, setShowUpdateProgressModal] = useState(false);
-    const [showDockerConfirmModal, setShowDockerConfirmModal] = useState(false);
     const [organizedSettings, setOrganizedSettings] = useState<OrganizedSettings | null>(null);
     const [settings, setSettings] = useState<Record<string, Setting>>({});
     const [initialSettings, setInitialSettings] = useState<Record<string, Setting>>({});
@@ -277,28 +271,12 @@ export default function SettingsPage() {
         if (!raw) return;
         const startedAt = Number(raw);
         if (Number.isFinite(startedAt) && Date.now() - startedAt <= UPDATE_PROGRESS_TTL_MS) {
-            setUpdateInProgress(true);
-            setShowUpdateProgressModal(true);
             return;
         }
         window.localStorage.removeItem(UPDATE_PROGRESS_STORAGE_KEY);
     }, []);
 
-    useEffect(() => {
-        if (!updateInProgress || typeof window === 'undefined') return;
-        const interval = window.setInterval(() => {
-            window.location.reload();
-        }, 10000);
-        return () => window.clearInterval(interval);
-    }, [updateInProgress]);
-
-    useEffect(() => {
-        if (typeof window === 'undefined') return;
-        if (loading || !organizedSettings) return;
-        window.localStorage.removeItem(UPDATE_PROGRESS_STORAGE_KEY);
-        setUpdateInProgress(false);
-        setShowUpdateProgressModal(false);
-    }, [loading, organizedSettings]);
+   
 
     const handleCategoryChange = useCallback(
         (newTab: string) => {
@@ -448,38 +426,6 @@ export default function SettingsPage() {
         }
     };
 
-    const handleDockerUpdate = async () => {
-        if (updatingDocker || updateInProgress) return;
-        setUpdatingDocker(true);
-        try {
-            const response = await adminSettingsApi.triggerDockerUpdate();
-            if (response.success) {
-                if (typeof window !== 'undefined') {
-                    window.localStorage.setItem(UPDATE_PROGRESS_STORAGE_KEY, String(Date.now()));
-                }
-                setUpdateInProgress(true);
-                setShowUpdateProgressModal(true);
-                setShowDockerConfirmModal(false);
-                toast.success(response.message || t('admin.settings.docker_update.success'));
-            } else {
-                toast.error(response.message || t('admin.settings.docker_update.failed'));
-            }
-        } catch (error: unknown) {
-            if (isDockerUpdateTriggerLikelyStartedError(error)) {
-                if (typeof window !== 'undefined') {
-                    window.localStorage.setItem(UPDATE_PROGRESS_STORAGE_KEY, String(Date.now()));
-                }
-                setUpdateInProgress(true);
-                setShowUpdateProgressModal(true);
-                setShowDockerConfirmModal(false);
-                return;
-            }
-            toast.error(t('admin.settings.docker_update.failed'));
-        } finally {
-            setUpdatingDocker(false);
-        }
-    };
-
     const getIconForCategory = (category: string) => {
         switch (category.toLowerCase()) {
             case 'general':
@@ -526,23 +472,6 @@ export default function SettingsPage() {
                         <Button variant='outline' onClick={handleUploadLogs} className='shrink-0'>
                             <UploadCloud className='mr-2 h-4 w-4' />
                             {t('admin.settings.actions.upload_logs')}
-                        </Button>
-                        <Button
-                            variant='outline'
-                            onClick={() => setShowDockerConfirmModal(true)}
-                            disabled={updatingDocker || updateInProgress}
-                            className='shrink-0'
-                        >
-                            {updatingDocker ? (
-                                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-                            ) : (
-                                <RefreshCw className='mr-2 h-4 w-4' />
-                            )}
-                            {updatingDocker
-                                ? t('admin.settings.docker_update.updating')
-                                : updateInProgress
-                                  ? t('admin.settings.docker_update.in_progress_button')
-                                  : t('admin.settings.docker_update.button')}
                         </Button>
                         <Button onClick={handleSave} disabled={saving} className='shrink-0'>
                             {saving ? (
@@ -854,48 +783,6 @@ export default function SettingsPage() {
                             )}
                         </div>
                     )}
-                </DialogContent>
-            </Dialog>
-
-            <Dialog
-                open={showUpdateProgressModal}
-                onOpenChange={(open) => {
-                    if (updateInProgress) return;
-                    setShowUpdateProgressModal(open);
-                }}
-            >
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>{t('admin.settings.docker_update.progress_modal.title')}</DialogTitle>
-                        <DialogDescription>
-                            {t('admin.settings.docker_update.progress_modal.description')}
-                        </DialogDescription>
-                    </DialogHeader>
-                </DialogContent>
-            </Dialog>
-
-            <Dialog open={showDockerConfirmModal} onOpenChange={setShowDockerConfirmModal}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>{t('admin.settings.docker_update.confirm_modal.title')}</DialogTitle>
-                        <DialogDescription>
-                            {t('admin.settings.docker_update.confirm_modal.description')}
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className='flex justify-end gap-2 pt-2'>
-                        <Button
-                            variant='outline'
-                            onClick={() => setShowDockerConfirmModal(false)}
-                            disabled={updatingDocker}
-                        >
-                            {t('admin.settings.docker_update.confirm_modal.cancel')}
-                        </Button>
-                        <Button onClick={handleDockerUpdate} disabled={updatingDocker}>
-                            {updatingDocker
-                                ? t('admin.settings.docker_update.updating')
-                                : t('admin.settings.docker_update.confirm_modal.confirm')}
-                        </Button>
-                    </div>
                 </DialogContent>
             </Dialog>
 

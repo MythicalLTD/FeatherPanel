@@ -501,11 +501,19 @@ class SessionController
             @chmod($filePath, 0644);
 
             // Generate URL for the avatar
-            $appUrl = App::getInstance(true)->getConfig()->getSetting(ConfigInterface::APP_URL, App::getInstance(true)->getBaseUrl());
-            if ($appUrl == null || $appUrl == '') {
+            $appUrl = App::getInstance(true)->getConfig()->getSetting(ConfigInterface::APP_URL, '');
+            $baseUrl = App::getInstance(true)->getBaseUrl();
+
+            // Use base URL for localhost/detection, or APP_URL if it's valid and not default
+            if (empty($appUrl) || strpos($appUrl, 'featherpanel.mythical.systems') !== false) {
+                $appUrl = $baseUrl;
+            }
+
+            if (empty($appUrl)) {
                 $appUrl = 'https://featherpanel.mythical.systems';
             }
-            $avatarUrl = $appUrl . '/attachments/avatars/' . $filename;
+
+            $avatarUrl = rtrim($appUrl, '/') . '/attachments/avatars/' . $filename;
 
             return ApiResponse::success([
                 'avatar_url' => $avatarUrl,

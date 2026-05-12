@@ -79,7 +79,7 @@ const ACCENT_COLORS = {
     pink: '330 81% 60%',
     teal: '173 80% 40%',
     yellow: '48 96% 53%',
-    white: '210 20% 92%',
+    indigo: '245 58% 51%',
     violet: '270 75% 55%',
     cyan: '188 78% 41%',
     lime: '84 69% 35%',
@@ -120,6 +120,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+        // Load initial values from localStorage (will be overridden by admin settings if locked)
         setThemeState(saved || (prefersDark ? 'dark' : 'light'));
         setAccentColorState(savedAccent && savedAccent in ACCENT_COLORS ? savedAccent : 'purple');
         setBackgroundTypeState(
@@ -160,6 +161,65 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         setFontFamilyState(initialFont);
         localStorage.setItem('fontFamily', initialFont);
     }, []);
+
+    // Enforce admin settings on load and when settings change
+    useEffect(() => {
+        if (!mounted || !settings) return;
+
+        const forcedTheme = settings.app_theme_default as Theme;
+        const forcedAccent = settings.app_accent_color_default;
+        const forcedBgType = settings.app_background_type_default as BackgroundType;
+        const forcedBlur = parseInt(settings.app_backdrop_blur_default || '0', 10);
+        const forcedDarken = parseInt(settings.app_backdrop_darken_default || '0', 10);
+
+        // Enforce theme lock - use admin's default theme
+        if (settings.app_theme_lock === 'true' && forcedTheme && theme !== forcedTheme) {
+            setThemeState(forcedTheme);
+            localStorage.setItem('theme', forcedTheme);
+        }
+
+        // Enforce accent color lock - use admin's default accent color
+        if (settings.app_accent_color_lock === 'true' && forcedAccent && forcedAccent in ACCENT_COLORS) {
+            if (accentColor !== forcedAccent) {
+                setAccentColorState(forcedAccent);
+                localStorage.setItem('accentColor', forcedAccent);
+            }
+        }
+
+        // Enforce background type lock - reset to admin's default in light mode or when locked
+        const validBgTypes: BackgroundType[] = ['aurora', 'gradient', 'solid', 'image', 'pattern'];
+        if (theme === 'light') {
+            // In light mode, only allow pattern or solid (for readability)
+            if (backgroundType !== 'pattern' && backgroundType !== 'solid') {
+                setBackgroundTypeState('pattern');
+                localStorage.setItem('backgroundType', 'pattern');
+            }
+        } else if (settings.app_background_type_lock === 'true') {
+            // When locked, enforce admin's default background type
+            if (forcedBgType && validBgTypes.includes(forcedBgType) && backgroundType !== forcedBgType) {
+                setBackgroundTypeState(forcedBgType);
+                localStorage.setItem('backgroundType', forcedBgType);
+            }
+        }
+
+        // Enforce background image lock - clear custom images when locked
+        if (settings.app_background_lock === 'true' && backgroundImage) {
+            setBackgroundImageState('');
+            localStorage.setItem('backgroundImage', '');
+        }
+
+        // Enforce blur lock - use admin's default blur
+        if (settings.app_backdrop_blur_lock === 'true' && backdropBlur !== forcedBlur) {
+            setBackdropBlurState(forcedBlur);
+            localStorage.setItem('backdropBlur', String(forcedBlur));
+        }
+
+        // Enforce darken lock - use admin's default darken
+        if (settings.app_backdrop_darken_lock === 'true' && backdropDarken !== forcedDarken) {
+            setBackdropDarkenState(forcedDarken);
+            localStorage.setItem('backdropDarken', String(forcedDarken));
+        }
+    }, [settings, mounted, theme, accentColor, backgroundType, backgroundImage, backdropBlur, backdropDarken]);
 
     useEffect(() => {
         if (!mounted) return;
