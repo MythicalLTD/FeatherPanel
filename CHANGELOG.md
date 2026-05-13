@@ -22,6 +22,7 @@
 - Introduced a configurable captcha provider (Cloudflare Turnstile, hCaptcha, Google reCAPTCHA including v3, Friendly Captcha, and reForge Captcha) with a shared `CaptchaHelper` on the backend and a unified `Captcha` widget on authentication-sensitive forms. by @nayskutzu
 - Extended admin security settings with provider-specific keys, reCAPTCHA version and v3 options, Friendly Captcha fields, and reForge Captcha site key, secret, widget type (checkbox or image), theme, size, language, and minimum verify score. by @nayskutzu
 - Captcha provider select options in the admin settings UI now show human-readable labels (including reForge Captcha for the reforge provider value). by @nayskutzu
+- FeatherPanel now prompts users without an existing Discord account to easily create one, streamlining the integration process. by @nayskutzu
 
 ### Fixed
 

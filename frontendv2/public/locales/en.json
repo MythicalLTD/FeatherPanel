@@ -158,6 +158,12 @@
 			"submit": "Link Account",
 			"success": "Discord account linked successfully! Redirecting...",
 			"cancel": "Cancel"
+		},
+		"discordRegistration": {
+			"title": "Register with Discord",
+			"question": "Would you like to create a new FeatherPanel account using your Discord account?",
+			"submit": "Yes, Create Account",
+			"cancel": "No, Cancel"
 		}
 	},
 	"public_portal": {

@@ -192,6 +192,18 @@ return function (RouteCollection $routes): void {
         'user-auth-discord'
     );
 
+    App::getInstance(true)->registerApiRoute(
+        $routes,
+        'discord-register',
+        '/api/user/auth/discord/register',
+        function (Request $request) {
+            return (new DiscordController())->register($request);
+        },
+        ['PUT'],
+        Rate::perMinute(5),
+        'user-auth-discord'
+    );
+
     App::getInstance(true)->registerAuthRoute(
         $routes,
         'discord-unlink',

@@ -62,6 +62,10 @@ export const authApi = {
         const response = await api.put('/user/auth/discord/link', data);
         return response.data;
     },
+    discordRegister: async (data: { token: string }) => {
+        const response = await api.put('/user/auth/discord/register', data);
+        return response.data;
+    },
 
     verify2FA: async (data: { username_or_email: string; code: string }) => {
         const response = await api.post('/user/auth/verify-2fa', data);

@@ -189,17 +189,19 @@ export default function LoginForm() {
     const [ssoStatus, setSsoStatus] = useState('');
     const [discordLinkToken, setDiscordLinkToken] = useState<string | null>(null);
     const [isDiscordLogin, setIsDiscordLogin] = useState(false);
+    const authProcessed = useRef(false);
 
-    useState(() => {
+    useEffect(() => {
+        if (authProcessed.current) return;
+
         const ssoToken = searchParams.get('sso_token');
         if (ssoToken) {
             handleSsoLogin(ssoToken);
         }
-    });
 
-    useEffect(() => {
         const discordToken = searchParams.get('discord_token');
         if (discordToken) {
+            authProcessed.current = true;
             setIsDiscordLogin(true);
             setLoading(true);
             authApi
@@ -213,11 +215,13 @@ export default function LoginForm() {
                     } else {
                         setIsDiscordLogin(false);
                         setError(response.message || t('common.error'));
+                        authProcessed.current = false;
                     }
                 })
                 .catch((err: { response?: { data?: { message?: string } } }) => {
                     setIsDiscordLogin(false);
                     setError(err.response?.data?.message || t('common.error'));
+                    authProcessed.current = false;
                 })
                 .finally(() => setLoading(false));
         }
@@ -230,8 +234,9 @@ export default function LoginForm() {
     }, []);
 
     async function handleSsoLogin(token: string) {
-        if (isSsoLogin) return;
+        if (isSsoLogin || authProcessed.current) return;
 
+        authProcessed.current = true;
         setIsSsoLogin(true);
         setSsoStatus(t('auth.ssoLoggingIn'));
         setLoading(true);
@@ -248,12 +253,9 @@ export default function LoginForm() {
                 await fetchSession(true);
 
                 const redirect = searchParams.get('redirect');
-                if (redirect && redirect.startsWith('/')) {
-                    location.href = redirect;
-                } else {
-                    location.href = '/dashboard';
-                }
+                location.href = redirect && redirect.startsWith('/') ? redirect : '/dashboard';
             } else {
+                setError(response.message || t('common.error'));
                 setIsSsoLogin(false);
                 setError(response.message || t('common.error'));
             }
