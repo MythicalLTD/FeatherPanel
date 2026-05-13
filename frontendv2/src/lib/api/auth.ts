@@ -87,4 +87,27 @@ export const authApi = {
         const response = await api.post('/user/auth/email-login/verify', data);
         return response.data;
     },
+
+    passkeyStatus: async (data: { username_or_email: string; turnstile_token?: string }) => {
+        const response = await api.post('/user/auth/passkeys/status', data);
+        return response.data;
+    },
+
+    passkeyAuthenticationOptions: async (data: {
+        username_or_email?: string;
+        turnstile_token?: string;
+        mediation?: string;
+    }) => {
+        const response = await api.post('/user/auth/passkeys/authentication/options', data);
+        return response.data;
+    },
+
+    passkeyAuthenticationVerify: async (data: {
+        challenge_token: string;
+        credential: unknown;
+        turnstile_token?: string;
+    }) => {
+        const response = await api.post('/user/auth/passkeys/authentication/verify', data);
+        return response.data;
+    },
 };

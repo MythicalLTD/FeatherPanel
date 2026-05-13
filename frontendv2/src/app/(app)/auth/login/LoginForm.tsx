@@ -15,7 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -25,8 +25,9 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useSession } from '@/contexts/SessionContext';
-import { Mail, Lock, ArrowRight, KeyRound, ArrowLeft } from 'lucide-react';
+import { Mail, Lock, ArrowRight, KeyRound, ArrowLeft, Fingerprint } from 'lucide-react';
 import Turnstile from 'react-turnstile';
+import { startAuthentication } from '@simplewebauthn/browser';
 import { authApi } from '@/lib/api/auth';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
@@ -68,6 +69,7 @@ export default function LoginForm() {
     const [loginStep, setLoginStep] = useState<'identifier' | 'method'>('identifier');
     const [identifierValue, setIdentifierValue] = useState('');
     const [isEmail, setIsEmail] = useState(false);
+    const [hasPasskeys, setHasPasskeys] = useState(false);
 
     // Email login state
     const [showEmailLogin, setShowEmailLogin] = useState(false);
@@ -484,22 +486,127 @@ export default function LoginForm() {
             return;
         }
 
-        // Check if it's an email
-        const emailCheck = isValidEmail(identifierValue);
-        setIsEmail(emailCheck);
+        if (turnstileEnabled && !form.turnstile_token) {
+            setError(t('validation.captcha_required'));
+            return;
+        }
 
-        // Update form with the identifier
-        setForm({ ...form, username_or_email: identifierValue });
+        setLoading(true);
+        try {
+            const emailCheck = isValidEmail(identifierValue);
+            setIsEmail(emailCheck);
+            setForm({ ...form, username_or_email: identifierValue });
 
-        // Move to method selection step
-        setLoginStep('method');
+            let passkeyAvailable = false;
+            try {
+                const pr = await authApi.passkeyStatus({
+                    username_or_email: identifierValue,
+                    turnstile_token: turnstileEnabled ? form.turnstile_token : undefined,
+                });
+                passkeyAvailable = Boolean(pr.success && pr.data?.has_passkeys);
+            } catch {
+                passkeyAvailable = false;
+            }
+            setHasPasskeys(passkeyAvailable);
+            setLoginStep('method');
+        } finally {
+            setLoading(false);
+        }
     };
 
     // Go back to identifier step
     const handleBackToIdentifier = () => {
         setLoginStep('identifier');
+        setHasPasskeys(false);
         setError('');
         setShowEmailLogin(false);
+    };
+
+    const runPasskeyAuthentication = async (usernameOrEmailHint?: string, options?: { silent?: boolean }) => {
+        const silent = options?.silent === true;
+        if (!silent) {
+            setError('');
+            setSuccess('');
+        }
+        if (turnstileEnabled && !form.turnstile_token) {
+            if (!silent) {
+                setError(t('validation.captcha_required'));
+            }
+            return;
+        }
+        if (!silent) {
+            setLoading(true);
+        }
+        try {
+            const opt = await authApi.passkeyAuthenticationOptions({
+                username_or_email: (usernameOrEmailHint ?? '').trim(),
+                turnstile_token: turnstileEnabled ? form.turnstile_token : undefined,
+            });
+            if (!opt.success || !opt.data?.options || !opt.data?.challenge_token) {
+                if (silent) {
+                    return;
+                }
+                if ((usernameOrEmailHint ?? '').trim() !== '' && opt.data?.has_passkeys === false) {
+                    setError(t('auth.passkey.noneForAccount'));
+                } else {
+                    setError(opt.message || t('auth.passkey.unavailable'));
+                }
+                return;
+            }
+            if ((usernameOrEmailHint ?? '').trim() !== '' && opt.data.has_passkeys === false) {
+                if (!silent) {
+                    setError(t('auth.passkey.noneForAccount'));
+                }
+                return;
+            }
+            const credential = await startAuthentication({
+                optionsJSON: opt.data.options as never,
+            });
+            const vr = await authApi.passkeyAuthenticationVerify({
+                challenge_token: String(opt.data.challenge_token),
+                credential,
+                turnstile_token: turnstileEnabled ? form.turnstile_token : undefined,
+            });
+            if (vr.success) {
+                setSuccess(t('common.success'));
+                await fetchSession(true);
+                setTimeout(() => {
+                    const redirect = searchParams.get('redirect');
+                    if (redirect && redirect.startsWith('/')) {
+                        router.push(redirect);
+                    } else {
+                        router.push('/dashboard');
+                    }
+                }, 800);
+            } else if (!silent) {
+                setError(vr.message || t('common.error'));
+            }
+        } catch (err: unknown) {
+            const ax = err as {
+                name?: string;
+                response?: { data?: { error_code?: string; message?: string; data?: { email?: string } } };
+            };
+            if (ax.response?.data?.error_code === 'TWO_FACTOR_REQUIRED') {
+                const email =
+                    ax.response.data.data?.email || usernameOrEmailHint || identifierValue || form.username_or_email;
+                router.push(`/auth/verify-2fa?username_or_email=${encodeURIComponent(String(email))}`);
+                return;
+            }
+            const domName = ax.name;
+            const isUserCancelled =
+                domName === 'NotAllowedError' ||
+                domName === 'AbortError' ||
+                domName === 'SecurityError' ||
+                domName === 'InvalidStateError';
+            if (silent && (isUserCancelled || !ax.response)) {
+                return;
+            }
+            setError(ax.response?.data?.message || t('auth.passkey.failed'));
+        } finally {
+            if (!silent) {
+                setLoading(false);
+            }
+        }
     };
 
     // Handle password login from method step
@@ -582,6 +689,7 @@ export default function LoginForm() {
     const [ldapProviders, setLdapProviders] = useState<{ uuid: string; name: string }[]>([]);
     const [selectedLdapProvider, setSelectedLdapProvider] = useState<string>('');
     const [showLdapLogin, setShowLdapLogin] = useState(false);
+    const autoPasskeyTriggeredRef = useRef(false);
 
     useEffect(() => {
         const fetchOidcProviders = async () => {
@@ -631,6 +739,28 @@ export default function LoginForm() {
     const isLoginMethodPasswordStep = isLoginMethodStep && !showEmailLogin;
     const isEmailLoginVerifyStep = showEmailLogin && emailLoginStep === 'code';
     const emailForLoginCodeSubtitle = emailLoginForm.email || identifierValue;
+
+    const canAutoPromptPasskey =
+        !isSsoLogin &&
+        !isDiscordLogin &&
+        !discordLinkToken &&
+        !showLdapLogin &&
+        !showEmailLogin &&
+        ((!emailLoginEnabled && showLocalLogin) || (emailLoginEnabled && loginStep === 'identifier'));
+    const turnstileOkForPasskey = !turnstileEnabled || Boolean(form.turnstile_token);
+
+    useEffect(() => {
+        if (!canAutoPromptPasskey || !turnstileOkForPasskey || autoPasskeyTriggeredRef.current) {
+            return;
+        }
+        const timer = window.setTimeout(() => {
+            autoPasskeyTriggeredRef.current = true;
+            void runPasskeyAuthentication(undefined, { silent: true });
+        }, 0);
+        return () => window.clearTimeout(timer);
+        // Intentionally one-shot when gates become true; stale runPasskeyAuthentication is acceptable (same render as deps).
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [canAutoPromptPasskey, turnstileOkForPasskey]);
 
     return (
         <div className='space-y-6'>
@@ -760,7 +890,7 @@ export default function LoginForm() {
                                     value={identifierValue}
                                     onChange={(e) => setIdentifierValue(e.target.value)}
                                     required
-                                    autoComplete='username email'
+                                    autoComplete='username webauthn'
                                     autoFocus
                                     icon={<Mail className='h-5 w-5' />}
                                     placeholder={t('auth.login.username')}
@@ -990,6 +1120,31 @@ export default function LoginForm() {
                                         </>
                                     )}
                                 </Button>
+
+                                {hasPasskeys && (
+                                    <>
+                                        <div className='relative py-2'>
+                                            <div className='absolute inset-0 flex items-center'>
+                                                <div className='border-border w-full border-t' />
+                                            </div>
+                                            <div className='relative flex justify-center text-xs uppercase'>
+                                                <span className='bg-card text-muted-foreground px-2'>
+                                                    {t('auth.login.or')}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <Button
+                                            type='button'
+                                            variant='outline'
+                                            className='w-full'
+                                            disabled={loading}
+                                            onClick={() => void runPasskeyAuthentication(identifierValue)}
+                                        >
+                                            <Fingerprint className='mr-2 h-4 w-4' />
+                                            {t('auth.passkey.signIn')}
+                                        </Button>
+                                    </>
+                                )}
 
                                 {/* Email Code Login Option (only if identifier is an email) */}
                                 {isEmail && (
@@ -1259,7 +1414,7 @@ export default function LoginForm() {
                                 value={form.username_or_email || ''}
                                 onChange={(e) => setForm({ ...form, username_or_email: e.target.value })}
                                 required
-                                autoComplete='username'
+                                autoComplete='username webauthn'
                                 icon={<Mail className='h-5 w-5' />}
                                 placeholder={t('auth.login.username')}
                             />
@@ -1310,6 +1465,28 @@ export default function LoginForm() {
                                         <ArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
                                     </>
                                 )}
+                            </Button>
+
+                            <div className='relative py-2'>
+                                <div className='absolute inset-0 flex items-center'>
+                                    <div className='border-border w-full border-t' />
+                                </div>
+                                <div className='relative flex justify-center text-xs uppercase'>
+                                    <span className='bg-card text-muted-foreground px-2'>{t('auth.login.or')}</span>
+                                </div>
+                            </div>
+                            <Button
+                                type='button'
+                                variant='outline'
+                                className='w-full'
+                                disabled={loading}
+                                onClick={() => {
+                                    const u = (form.username_or_email || '').trim();
+                                    void runPasskeyAuthentication(u || undefined);
+                                }}
+                            >
+                                <Fingerprint className='mr-2 h-4 w-4' />
+                                {t('auth.passkey.signIn')}
                             </Button>
 
                             {error && (

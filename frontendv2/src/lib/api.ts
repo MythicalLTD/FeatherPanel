@@ -78,7 +78,7 @@ const attachCommonResponseInterceptor = (client: AxiosInstance) => {
             const shouldForceLogout =
                 errorCode === 'INVALID_ACCOUNT_TOKEN' ||
                 errorCode === 'USER_BANNED' ||
-                (status === 401 && (isSessionEndpoint || isAuthEndpoint));
+                (status === 401 && (isSessionEndpoint || isAuthEndpoint) && errorCode !== 'TWO_FACTOR_REQUIRED');
 
             if (shouldForceLogout) {
                 handleAuthStateFailure();

@@ -36,6 +36,8 @@ import { type ChromeLayout, useChromeLayout } from '@/hooks/useChromeLayout';
 interface SidebarProps {
     mobileOpen: boolean;
     setMobileOpen: (open: boolean) => void;
+    /** Full-bleed plugin route: reduce glass/backdrop stacking against the iframe canvas */
+    pluginFullBleed?: boolean;
 }
 
 function renderIcon(item: NavigationItem, className: string, sizeClass: string) {
@@ -632,7 +634,7 @@ function SidebarContent({
 
 const SIDEBAR_COLLAPSED_KEY = 'featherpanel_sidebar_collapsed';
 
-export default function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
+export default function Sidebar({ mobileOpen, setMobileOpen, pluginFullBleed = false }: SidebarProps) {
     const pathname = usePathname();
     const router = useRouter();
     const { settings } = useSettings();
@@ -706,7 +708,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
                                     'relative mr-16 flex w-full max-w-xs flex-1',
                                     chromeLayout === 'classic'
                                         ? 'overflow-hidden'
-                                        : 'border-border/50 bg-card/50 dark:bg-card/45 overflow-hidden rounded-r-2xl border border-l-0 shadow-sm backdrop-blur-2xl',
+                                        : 'border-border/50 bg-card/45 overflow-hidden rounded-r-2xl border border-l-0 shadow-sm backdrop-blur-2xl',
                                 )}
                             >
                                 <Transition.Child
@@ -759,7 +761,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
                     'hidden lg:fixed lg:inset-y-0 lg:z-40 lg:flex lg:flex-col',
                     chromeLayout === 'classic'
                         ? ''
-                        : 'lg:border-border/50 lg:bg-card/50 dark:lg:bg-card/45 lg:overflow-hidden lg:rounded-r-2xl lg:border lg:border-l-0 lg:shadow-sm lg:backdrop-blur-2xl',
+                        : 'lg:border-border/50 lg:bg-card/45 lg:overflow-hidden lg:rounded-r-2xl lg:border lg:border-l-0 lg:shadow-sm lg:backdrop-blur-2xl',
                 )}
             >
                 <div
@@ -774,6 +776,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
                               ? 'w-14'
                               : 'w-56',
                     )}
+                    data-fp-plugin-sidebar-dock={pluginFullBleed ? '' : undefined}
                 >
                     <SidebarContent
                         collapsed={collapsed}

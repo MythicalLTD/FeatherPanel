@@ -15,6 +15,7 @@
 - Added the ability to easily reorder articles by dragging and changing their positions within the list. by @nayskutzu
 - Introduced passwordless authentication via secure email code logins, allowing users to sign in using a 6-digit code delivered directly to their inbox. by @nayskutzu
 - The category sidebar is now hidden for users who do not have access to any servers or VDS instances, either as an owner or subuser, resulting in a cleaner and more relevant navigation experience. by @nayskutzu
+- Added passkey authentication to FeatherPanel for a faster, more seamless login experience. by @nayskutzu
 
 ### Fixed
 
