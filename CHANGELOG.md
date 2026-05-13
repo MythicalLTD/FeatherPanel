@@ -8,6 +8,9 @@
 - Improved enforcement and consistency of theming options throughout FeatherPanel, resulting in a much more polished appearance. by @nayskutzu
 - Enhanced the user interface on light mode devices, ensuring optimal readability and eliminating issues like white text appearing on white backgrounds. by @nayskutzu
 - Refined navigation bar for a smoother, more polished experience. by @nayskutzu
+- Standardized captcha-related API error codes and messages (e.g. captcha token required / validation failed) across login, registration, password reset, email login, LDAP, and session update flows. by @nayskutzu
+- Removed support for reForge Captcha invisible and managed widget modes; the panel only supports checkbox and image, with legacy invisible/managed settings coerced to checkbox in the UI. by @nayskutzu
+- Admin-facing copy for reForge Captcha now consistently uses the product name reForge Captcha (labels, descriptions, and provider dropdown text). by @nayskutzu
 
 ### Added
 
@@ -16,11 +19,17 @@
 - Introduced passwordless authentication via secure email code logins, allowing users to sign in using a 6-digit code delivered directly to their inbox. by @nayskutzu
 - The category sidebar is now hidden for users who do not have access to any servers or VDS instances, either as an owner or subuser, resulting in a cleaner and more relevant navigation experience. by @nayskutzu
 - Added passkey authentication to FeatherPanel for a faster, more seamless login experience. by @nayskutzu
+- Introduced a configurable captcha provider (Cloudflare Turnstile, hCaptcha, Google reCAPTCHA including v3, Friendly Captcha, and reForge Captcha) with a shared `CaptchaHelper` on the backend and a unified `Captcha` widget on authentication-sensitive forms. by @nayskutzu
+- Extended admin security settings with provider-specific keys, reCAPTCHA version and v3 options, Friendly Captcha fields, and reForge Captcha site key, secret, widget type (checkbox or image), theme, size, language, and minimum verify score. by @nayskutzu
+- Captcha provider select options in the admin settings UI now show human-readable labels (including reForge Captcha for the reforge provider value). by @nayskutzu
 
 ### Fixed
 
 - Fixed an issue where certain pages displayed unnecessary blank spaces when opened. by @nayskutzu
 - Fixed an issue where deleting users with assigned VDS servers would leave those servers unassigned. by @nayskutzu
+- Fixed panel logins failing with `INVALID_ACCOUNT_TOKEN` when a user row had a missing or empty `remember_token` by generating and persisting a token during login completion (and the same for two-factor completion). by @nayskutzu
+- Fixed session refresh after login by loading `/user/session` through the credentialed API client, enabling global `axios` credentials for cookie-based auth, and blocking native HTML form navigation on the login page so third-party captcha scripts cannot trigger a GET navigation that drops the session cookie. by @nayskutzu
+- Fixed TypeScript checking for captcha script loaders by accounting for the non-standard `complete` property on `HTMLScriptElement` in Chromium-based browsers. by @nayskutzu
 
 ## v1.3.7 STABLE
 

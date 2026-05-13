@@ -16,8 +16,9 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
-import axios, { AxiosError } from 'axios';
+import type { AxiosError } from 'axios';
 import { useRouter } from 'next/navigation';
+import api from '@/lib/api';
 import PermissionsClass from '@/lib/permissions';
 
 export interface UserInfo {
@@ -89,7 +90,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
             }
 
             try {
-                const res = await axios.get('/api/user/session');
+                const res = await api.get('/user/session');
 
                 if (
                     res.data &&
@@ -157,7 +158,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     const logout = async () => {
         try {
             try {
-                await axios.delete('/api/user/auth/logout');
+                await api.delete('/user/auth/logout');
             } catch (error) {
                 console.error('Error calling logout endpoint:', error);
             }

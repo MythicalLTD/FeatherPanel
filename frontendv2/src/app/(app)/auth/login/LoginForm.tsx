@@ -23,10 +23,10 @@ import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select-native';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSettings } from '@/contexts/SettingsContext';
-import { useTheme } from '@/contexts/ThemeContext';
 import { useSession } from '@/contexts/SessionContext';
 import { Mail, Lock, ArrowRight, KeyRound, ArrowLeft, Fingerprint } from 'lucide-react';
-import Turnstile from 'react-turnstile';
+import { Captcha } from '@/components/Captcha';
+import { isCaptchaConfigured, isRecaptchaV3Configured, obtainCaptchaResponseToken } from '@/lib/captchaGate';
 import { startAuthentication } from '@simplewebauthn/browser';
 import { authApi } from '@/lib/api/auth';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
@@ -37,13 +37,38 @@ export default function LoginForm() {
     const searchParams = useSearchParams();
     const { t } = useTranslation();
     const { settings } = useSettings();
-    const { theme } = useTheme();
+    const showCaptcha = isCaptchaConfigured(settings);
     const { fetchSession } = useSession();
     const { getWidgets, fetchWidgets } = usePluginWidgets('auth-login');
+    const loginFormsRootRef = useRef<HTMLDivElement | null>(null);
 
     useEffect(() => {
         fetchWidgets();
     }, [fetchWidgets]);
+
+    /** reForge (and similar) may trigger a real browser form submit; default method is GET and leaks the token in the URL while bypassing the React login XHR, so Set-Cookie never sticks. Block native navigation in capture; React onSubmit still runs. */
+    useEffect(() => {
+        const root = loginFormsRootRef.current;
+        if (!root) return;
+        const blockNativeFormNavigation = (ev: Event) => {
+            const target = ev.target;
+            if (!(target instanceof HTMLFormElement)) return;
+            if (!root.contains(target)) return;
+            ev.preventDefault();
+        };
+        root.addEventListener('submit', blockNativeFormNavigation, true);
+        return () => root.removeEventListener('submit', blockNativeFormNavigation, true);
+    }, []);
+
+    /** Remove captcha token from the address bar (GET submit / widget) so we do not leak it via referrers or confuse the SPA. */
+    useEffect(() => {
+        const fromUrl = searchParams.get('reforge-captcha-token');
+        if (!fromUrl) return;
+        const params = new URLSearchParams(searchParams.toString());
+        params.delete('reforge-captcha-token');
+        const qs = params.toString();
+        router.replace(qs ? `/auth/login?${qs}` : '/auth/login');
+    }, [router, searchParams]);
 
     useEffect(() => {
         const token = searchParams.get('token');
@@ -77,7 +102,6 @@ export default function LoginForm() {
     const [emailLoginForm, setEmailLoginForm] = useState({
         email: '',
         code: '',
-        turnstile_token: '',
     });
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -95,9 +119,13 @@ export default function LoginForm() {
             return;
         }
 
-        if (turnstileEnabled && !form.turnstile_token) {
-            setError(t('validation.captcha_required'));
-            return;
+        let captchaToken = '';
+        if (showCaptcha) {
+            captchaToken = await obtainCaptchaResponseToken(settings ?? null, form.turnstile_token);
+            if (!captchaToken) {
+                setError(t('validation.captcha_required'));
+                return;
+            }
         }
 
         setLoading(true);
@@ -106,7 +134,7 @@ export default function LoginForm() {
             const response = await authApi.login({
                 username_or_email: form.username_or_email,
                 password: form.password,
-                turnstile_token: form.turnstile_token,
+                turnstile_token: captchaToken,
             });
 
             if (response.success) {
@@ -130,7 +158,7 @@ export default function LoginForm() {
             } else {
                 setError(response.message || t('common.error'));
 
-                if (showTurnstile) {
+                if (showCaptcha) {
                     setForm((prev) => ({ ...prev, turnstile_token: '' }));
                     setTurnstileKey((prev) => prev + 1);
                 }
@@ -148,7 +176,7 @@ export default function LoginForm() {
 
             setError(error.response?.data?.message || t('common.error'));
 
-            if (showTurnstile) {
+            if (showCaptcha) {
                 setForm((prev) => ({ ...prev, turnstile_token: '' }));
                 setTurnstileKey((prev) => prev + 1);
             }
@@ -301,9 +329,13 @@ export default function LoginForm() {
             return;
         }
 
-        if (turnstileEnabled && !form.turnstile_token) {
-            setError(t('validation.captcha_required'));
-            return;
+        let captchaToken = '';
+        if (showCaptcha) {
+            captchaToken = await obtainCaptchaResponseToken(settings ?? null, form.turnstile_token);
+            if (!captchaToken) {
+                setError(t('validation.captcha_required'));
+                return;
+            }
         }
 
         setLoading(true);
@@ -318,7 +350,7 @@ export default function LoginForm() {
                     provider_uuid: selectedLdapProvider,
                     username: form.username_or_email,
                     password: form.password,
-                    turnstile_token: form.turnstile_token,
+                    turnstile_token: captchaToken,
                 }),
             });
 
@@ -339,7 +371,7 @@ export default function LoginForm() {
             } else {
                 setError(json.message || t('common.error'));
 
-                if (showTurnstile) {
+                if (showCaptcha) {
                     setForm((prev) => ({ ...prev, turnstile_token: '' }));
                     setTurnstileKey((prev) => prev + 1);
                 }
@@ -348,7 +380,7 @@ export default function LoginForm() {
             const error = err as { response?: { data?: { message?: string } } };
             setError(error.response?.data?.message || t('common.error'));
 
-            if (showTurnstile) {
+            if (showCaptcha) {
                 setForm((prev) => ({ ...prev, turnstile_token: '' }));
                 setTurnstileKey((prev) => prev + 1);
             }
@@ -358,11 +390,7 @@ export default function LoginForm() {
     };
 
     const handleTurnstileSuccess = (token: string) => {
-        setForm({ ...form, turnstile_token: token });
-    };
-
-    const handleEmailLoginTurnstileSuccess = (token: string) => {
-        setEmailLoginForm({ ...emailLoginForm, turnstile_token: token });
+        setForm((prev) => ({ ...prev, turnstile_token: token }));
     };
 
     const handleEmailLoginRequest = async (e: React.FormEvent) => {
@@ -380,9 +408,13 @@ export default function LoginForm() {
             return;
         }
 
-        if (turnstileEnabled && !emailLoginForm.turnstile_token) {
-            setError(t('validation.captcha_required'));
-            return;
+        let captchaToken = '';
+        if (showCaptcha) {
+            captchaToken = await obtainCaptchaResponseToken(settings ?? null, form.turnstile_token);
+            if (!captchaToken) {
+                setError(t('validation.captcha_required'));
+                return;
+            }
         }
 
         setLoading(true);
@@ -390,7 +422,7 @@ export default function LoginForm() {
         try {
             const response = await authApi.requestEmailLoginCode({
                 email: emailLoginForm.email,
-                turnstile_token: emailLoginForm.turnstile_token,
+                turnstile_token: captchaToken,
             });
 
             if (response.success) {
@@ -398,16 +430,16 @@ export default function LoginForm() {
                 setEmailLoginStep('code');
             } else {
                 setError(response.message || t('common.error'));
-                if (showTurnstile) {
-                    setEmailLoginForm((prev) => ({ ...prev, turnstile_token: '' }));
+                if (showCaptcha) {
+                    setForm((prev) => ({ ...prev, turnstile_token: '' }));
                     setTurnstileKey((prev) => prev + 1);
                 }
             }
         } catch (err: unknown) {
             const error = err as { response?: { data?: { message?: string } } };
             setError(error.response?.data?.message || t('common.error'));
-            if (showTurnstile) {
-                setEmailLoginForm((prev) => ({ ...prev, turnstile_token: '' }));
+            if (showCaptcha) {
+                setForm((prev) => ({ ...prev, turnstile_token: '' }));
                 setTurnstileKey((prev) => prev + 1);
             }
         } finally {
@@ -486,11 +518,6 @@ export default function LoginForm() {
             return;
         }
 
-        if (turnstileEnabled && !form.turnstile_token) {
-            setError(t('validation.captcha_required'));
-            return;
-        }
-
         setLoading(true);
         try {
             const emailCheck = isValidEmail(identifierValue);
@@ -501,7 +528,6 @@ export default function LoginForm() {
             try {
                 const pr = await authApi.passkeyStatus({
                     username_or_email: identifierValue,
-                    turnstile_token: turnstileEnabled ? form.turnstile_token : undefined,
                 });
                 passkeyAvailable = Boolean(pr.success && pr.data?.has_passkeys);
             } catch {
@@ -520,6 +546,8 @@ export default function LoginForm() {
         setHasPasskeys(false);
         setError('');
         setShowEmailLogin(false);
+        setForm((prev) => ({ ...prev, turnstile_token: '' }));
+        setTurnstileKey((k) => k + 1);
     };
 
     const runPasskeyAuthentication = async (usernameOrEmailHint?: string, options?: { silent?: boolean }) => {
@@ -528,19 +556,12 @@ export default function LoginForm() {
             setError('');
             setSuccess('');
         }
-        if (turnstileEnabled && !form.turnstile_token) {
-            if (!silent) {
-                setError(t('validation.captcha_required'));
-            }
-            return;
-        }
         if (!silent) {
             setLoading(true);
         }
         try {
             const opt = await authApi.passkeyAuthenticationOptions({
                 username_or_email: (usernameOrEmailHint ?? '').trim(),
-                turnstile_token: turnstileEnabled ? form.turnstile_token : undefined,
             });
             if (!opt.success || !opt.data?.options || !opt.data?.challenge_token) {
                 if (silent) {
@@ -565,7 +586,6 @@ export default function LoginForm() {
             const vr = await authApi.passkeyAuthenticationVerify({
                 challenge_token: String(opt.data.challenge_token),
                 credential,
-                turnstile_token: turnstileEnabled ? form.turnstile_token : undefined,
             });
             if (vr.success) {
                 setSuccess(t('common.success'));
@@ -625,9 +645,13 @@ export default function LoginForm() {
             return;
         }
 
-        if (turnstileEnabled && !form.turnstile_token) {
-            setError(t('validation.captcha_required'));
-            return;
+        let captchaToken = '';
+        if (showCaptcha) {
+            captchaToken = await obtainCaptchaResponseToken(settings ?? null, form.turnstile_token);
+            if (!captchaToken) {
+                setError(t('validation.captcha_required'));
+                return;
+            }
         }
 
         setLoading(true);
@@ -636,7 +660,7 @@ export default function LoginForm() {
             const response = await authApi.login({
                 username_or_email: identifierValue,
                 password: form.password,
-                turnstile_token: form.turnstile_token,
+                turnstile_token: captchaToken,
             });
 
             if (response.success) {
@@ -658,7 +682,7 @@ export default function LoginForm() {
                 }, 1000);
             } else {
                 setError(response.message || t('common.error'));
-                if (showTurnstile) {
+                if (showCaptcha) {
                     setForm((prev) => ({ ...prev, turnstile_token: '' }));
                     setTurnstileKey((prev) => prev + 1);
                 }
@@ -676,7 +700,7 @@ export default function LoginForm() {
 
             setError(error.response?.data?.message || t('common.error'));
 
-            if (showTurnstile) {
+            if (showCaptcha) {
                 setForm((prev) => ({ ...prev, turnstile_token: '' }));
                 setTurnstileKey((prev) => prev + 1);
             }
@@ -689,7 +713,6 @@ export default function LoginForm() {
     const [ldapProviders, setLdapProviders] = useState<{ uuid: string; name: string }[]>([]);
     const [selectedLdapProvider, setSelectedLdapProvider] = useState<string>('');
     const [showLdapLogin, setShowLdapLogin] = useState(false);
-    const autoPasskeyTriggeredRef = useRef(false);
 
     useEffect(() => {
         const fetchOidcProviders = async () => {
@@ -725,13 +748,10 @@ export default function LoginForm() {
         fetchLdapProviders();
     }, []);
 
-    const turnstileEnabled = settings?.turnstile_enabled === 'true';
-    const turnstileSiteKey = settings?.turnstile_key_pub || '';
     const discordEnabled = settings?.discord_oauth_enabled === 'true';
     const emailLoginEnabled = settings?.email_login_enabled === 'true';
     const oidcEnabled = oidcProviders.length > 0;
     const ldapEnabled = ldapProviders.length > 0;
-    const showTurnstile = turnstileEnabled && turnstileSiteKey;
     const showLocalLogin = !showLdapLogin && !showEmailLogin;
 
     const isMultiStepEmailLoginFlow = emailLoginEnabled && !showLdapLogin;
@@ -740,30 +760,8 @@ export default function LoginForm() {
     const isEmailLoginVerifyStep = showEmailLogin && emailLoginStep === 'code';
     const emailForLoginCodeSubtitle = emailLoginForm.email || identifierValue;
 
-    const canAutoPromptPasskey =
-        !isSsoLogin &&
-        !isDiscordLogin &&
-        !discordLinkToken &&
-        !showLdapLogin &&
-        !showEmailLogin &&
-        ((!emailLoginEnabled && showLocalLogin) || (emailLoginEnabled && loginStep === 'identifier'));
-    const turnstileOkForPasskey = !turnstileEnabled || Boolean(form.turnstile_token);
-
-    useEffect(() => {
-        if (!canAutoPromptPasskey || !turnstileOkForPasskey || autoPasskeyTriggeredRef.current) {
-            return;
-        }
-        const timer = window.setTimeout(() => {
-            autoPasskeyTriggeredRef.current = true;
-            void runPasskeyAuthentication(undefined, { silent: true });
-        }, 0);
-        return () => window.clearTimeout(timer);
-        // Intentionally one-shot when gates become true; stale runPasskeyAuthentication is acceptable (same render as deps).
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [canAutoPromptPasskey, turnstileOkForPasskey]);
-
     return (
-        <div className='space-y-6'>
+        <div ref={loginFormsRootRef} className='space-y-6'>
             <WidgetRenderer widgets={getWidgets('auth-login', 'auth-login-top')} />
 
             {!isSsoLogin && !isDiscordLogin && (
@@ -896,25 +894,6 @@ export default function LoginForm() {
                                     placeholder={t('auth.login.username')}
                                 />
 
-                                {showTurnstile && (
-                                    <div className='flex justify-center pt-2'>
-                                        <Turnstile
-                                            key={`identifier-${turnstileKey}`}
-                                            sitekey={turnstileSiteKey}
-                                            theme={theme === 'dark' ? 'dark' : 'light'}
-                                            size='normal'
-                                            refreshExpired='auto'
-                                            onVerify={(token) => setForm({ ...form, turnstile_token: token })}
-                                            onError={() => {
-                                                setForm((prev) => ({ ...prev, turnstile_token: '' }));
-                                            }}
-                                            onExpire={() => {
-                                                setForm((prev) => ({ ...prev, turnstile_token: '' }));
-                                            }}
-                                        />
-                                    </div>
-                                )}
-
                                 <Button type='submit' className='group w-full' loading={loading}>
                                     {!loading && (
                                         <>
@@ -951,27 +930,6 @@ export default function LoginForm() {
                                             {t('auth.emailLogin.codeSentTo', { email: identifierValue })}
                                         </p>
                                     </div>
-
-                                    {showTurnstile && (
-                                        <div className='flex justify-center'>
-                                            <Turnstile
-                                                key={`email-${turnstileKey}`}
-                                                sitekey={turnstileSiteKey}
-                                                theme={theme === 'dark' ? 'dark' : 'light'}
-                                                size='normal'
-                                                refreshExpired='auto'
-                                                onVerify={(token) =>
-                                                    setEmailLoginForm({ ...emailLoginForm, turnstile_token: token })
-                                                }
-                                                onError={() => {
-                                                    setEmailLoginForm((prev) => ({ ...prev, turnstile_token: '' }));
-                                                }}
-                                                onExpire={() => {
-                                                    setEmailLoginForm((prev) => ({ ...prev, turnstile_token: '' }));
-                                                }}
-                                            />
-                                        </div>
-                                    )}
 
                                     <Button type='submit' className='group w-full' loading={loading}>
                                         {!loading && (
@@ -1070,8 +1028,25 @@ export default function LoginForm() {
                                 </form>
                             )
                         ) : (
-                            // Step 2: Choose login method (Password OR Email Code)
-                            <form onSubmit={handlePasswordLoginFromMethod} className='space-y-5'>
+                            // Step 2: Password (+ captcha) then sign-in, passkey, or email code
+                            <form onSubmit={handlePasswordLoginFromMethod} className='space-y-4'>
+                                {showCaptcha && (
+                                    <div className='flex justify-center'>
+                                        <Captcha
+                                            refreshKey={turnstileKey}
+                                            onVerify={(token) =>
+                                                setForm((prev) => ({ ...prev, turnstile_token: token }))
+                                            }
+                                            onError={() => {
+                                                setForm((prev) => ({ ...prev, turnstile_token: '' }));
+                                            }}
+                                            onExpire={() => {
+                                                setForm((prev) => ({ ...prev, turnstile_token: '' }));
+                                            }}
+                                        />
+                                    </div>
+                                )}
+
                                 <Input
                                     label={t('auth.login.password')}
                                     type='password'
@@ -1083,25 +1058,6 @@ export default function LoginForm() {
                                     icon={<Lock className='h-5 w-5' />}
                                     placeholder={t('auth.login.password')}
                                 />
-
-                                {showTurnstile && !form.turnstile_token && (
-                                    <div className='flex justify-center'>
-                                        <Turnstile
-                                            key={`password-${turnstileKey}`}
-                                            sitekey={turnstileSiteKey}
-                                            theme={theme === 'dark' ? 'dark' : 'light'}
-                                            size='normal'
-                                            refreshExpired='auto'
-                                            onVerify={(token) => setForm({ ...form, turnstile_token: token })}
-                                            onError={() => {
-                                                setForm((prev) => ({ ...prev, turnstile_token: '' }));
-                                            }}
-                                            onExpire={() => {
-                                                setForm((prev) => ({ ...prev, turnstile_token: '' }));
-                                            }}
-                                        />
-                                    </div>
-                                )}
 
                                 <div className='flex items-center justify-end'>
                                     <Link
@@ -1121,68 +1077,64 @@ export default function LoginForm() {
                                     )}
                                 </Button>
 
-                                {hasPasskeys && (
-                                    <>
-                                        <div className='relative py-2'>
-                                            <div className='absolute inset-0 flex items-center'>
-                                                <div className='border-border w-full border-t' />
-                                            </div>
-                                            <div className='relative flex justify-center text-xs uppercase'>
-                                                <span className='bg-card text-muted-foreground px-2'>
-                                                    {t('auth.login.or')}
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <Button
-                                            type='button'
-                                            variant='outline'
-                                            className='w-full'
-                                            disabled={loading}
-                                            onClick={() => void runPasskeyAuthentication(identifierValue)}
-                                        >
-                                            <Fingerprint className='mr-2 h-4 w-4' />
-                                            {t('auth.passkey.signIn')}
-                                        </Button>
-                                    </>
-                                )}
-
-                                {/* Email Code Login Option (only if identifier is an email) */}
-                                {isEmail && (
-                                    <div className='relative py-2'>
-                                        <div className='absolute inset-0 flex items-center'>
-                                            <div className='border-border w-full border-t' />
-                                        </div>
-                                        <div className='relative flex justify-center text-xs uppercase'>
-                                            <span className='bg-card text-muted-foreground px-2'>
-                                                {t('auth.login.or')}
-                                            </span>
+                                {(hasPasskeys || isEmail) && (
+                                    <div className='border-border/70 flex flex-col gap-2 border-t pt-3'>
+                                        <p className='text-muted-foreground text-center text-[11px] font-medium tracking-wide'>
+                                            {t('auth.login.or')}
+                                        </p>
+                                        <div className='flex flex-wrap justify-center gap-2'>
+                                            {hasPasskeys && (
+                                                <Button
+                                                    type='button'
+                                                    variant='outline'
+                                                    size='sm'
+                                                    className='min-w-[9rem]'
+                                                    disabled={loading}
+                                                    onClick={() => void runPasskeyAuthentication(identifierValue)}
+                                                >
+                                                    <Fingerprint className='mr-2 h-4 w-4' />
+                                                    {t('auth.passkey.signIn')}
+                                                </Button>
+                                            )}
+                                            {isEmail && (
+                                                <Button
+                                                    type='button'
+                                                    variant='outline'
+                                                    size='sm'
+                                                    className='min-w-[9rem]'
+                                                    disabled={loading}
+                                                    onClick={() => {
+                                                        if (
+                                                            showCaptcha &&
+                                                            !isRecaptchaV3Configured(settings) &&
+                                                            !form.turnstile_token.trim()
+                                                        ) {
+                                                            setError(t('validation.captcha_required'));
+                                                            return;
+                                                        }
+                                                        setEmailLoginForm((prev) => ({
+                                                            ...prev,
+                                                            email: identifierValue,
+                                                        }));
+                                                        setShowEmailLogin(true);
+                                                    }}
+                                                >
+                                                    <KeyRound className='mr-2 h-4 w-4' />
+                                                    {t('auth.login.requestLoginCode')}
+                                                </Button>
+                                            )}
                                         </div>
                                     </div>
-                                )}
-
-                                {isEmail && (
-                                    <Button
-                                        type='button'
-                                        variant='outline'
-                                        className='w-full'
-                                        onClick={() => {
-                                            setEmailLoginForm({ ...emailLoginForm, email: identifierValue });
-                                            setShowEmailLogin(true);
-                                        }}
-                                    >
-                                        <KeyRound className='mr-2 h-4 w-4' />
-                                        {t('auth.login.requestLoginCode')}
-                                    </Button>
                                 )}
 
                                 <Button
                                     type='button'
                                     variant='ghost'
                                     size='sm'
-                                    className='text-muted-foreground w-full'
+                                    className='text-muted-foreground hover:text-foreground h-8 w-full text-xs'
                                     onClick={handleBackToIdentifier}
                                 >
-                                    <ArrowLeft className='mr-1 h-4 w-4' />
+                                    <ArrowLeft className='mr-1 h-3.5 w-3.5' />
                                     {t('common.back')}
                                 </Button>
 
@@ -1224,25 +1176,10 @@ export default function LoginForm() {
                                 placeholder='Enter your LDAP username'
                             />
 
-                            <Input
-                                label={t('auth.login.password')}
-                                type='password'
-                                value={form.password}
-                                onChange={(e) => setForm({ ...form, password: e.target.value })}
-                                required
-                                autoComplete='current-password'
-                                icon={<Lock className='h-5 w-5' />}
-                                placeholder={t('auth.login.password')}
-                            />
-
-                            {showTurnstile && (
+                            {showCaptcha && (
                                 <div className='flex justify-center'>
-                                    <Turnstile
-                                        key={turnstileKey}
-                                        sitekey={turnstileSiteKey}
-                                        theme={theme === 'dark' ? 'dark' : 'light'}
-                                        size='normal'
-                                        refreshExpired='auto'
+                                    <Captcha
+                                        refreshKey={turnstileKey}
                                         onVerify={handleTurnstileSuccess}
                                         onError={() => {
                                             setForm((prev) => ({ ...prev, turnstile_token: '' }));
@@ -1253,6 +1190,17 @@ export default function LoginForm() {
                                     />
                                 </div>
                             )}
+
+                            <Input
+                                label={t('auth.login.password')}
+                                type='password'
+                                value={form.password}
+                                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                                required
+                                autoComplete='current-password'
+                                icon={<Lock className='h-5 w-5' />}
+                                placeholder={t('auth.login.password')}
+                            />
 
                             <Button type='submit' className='group w-full' loading={loading}>
                                 {!loading && (
@@ -1282,6 +1230,23 @@ export default function LoginForm() {
                                     <p className='text-muted-foreground text-sm'>{t('auth.emailLogin.subtitle')}</p>
                                 </div>
 
+                                {showCaptcha && (
+                                    <div className='flex justify-center'>
+                                        <Captcha
+                                            refreshKey={turnstileKey}
+                                            onVerify={(token) =>
+                                                setForm((prev) => ({ ...prev, turnstile_token: token }))
+                                            }
+                                            onError={() => {
+                                                setForm((prev) => ({ ...prev, turnstile_token: '' }));
+                                            }}
+                                            onExpire={() => {
+                                                setForm((prev) => ({ ...prev, turnstile_token: '' }));
+                                            }}
+                                        />
+                                    </div>
+                                )}
+
                                 <Input
                                     label={t('auth.login.email')}
                                     type='email'
@@ -1292,25 +1257,6 @@ export default function LoginForm() {
                                     icon={<Mail className='h-5 w-5' />}
                                     placeholder={t('auth.login.email')}
                                 />
-
-                                {showTurnstile && (
-                                    <div className='flex justify-center'>
-                                        <Turnstile
-                                            key={`email-${turnstileKey}`}
-                                            sitekey={turnstileSiteKey}
-                                            theme={theme === 'dark' ? 'dark' : 'light'}
-                                            size='normal'
-                                            refreshExpired='auto'
-                                            onVerify={handleEmailLoginTurnstileSuccess}
-                                            onError={() => {
-                                                setEmailLoginForm((prev) => ({ ...prev, turnstile_token: '' }));
-                                            }}
-                                            onExpire={() => {
-                                                setEmailLoginForm((prev) => ({ ...prev, turnstile_token: '' }));
-                                            }}
-                                        />
-                                    </div>
-                                )}
 
                                 <Button type='submit' className='group w-full' loading={loading}>
                                     {!loading && (
@@ -1407,7 +1353,7 @@ export default function LoginForm() {
                             </form>
                         )
                     ) : showLocalLogin ? (
-                        <form onSubmit={handleSubmit} className='space-y-5'>
+                        <form onSubmit={handleSubmit} className='space-y-4'>
                             <Input
                                 label={t('auth.login.username')}
                                 type='text'
@@ -1418,6 +1364,21 @@ export default function LoginForm() {
                                 icon={<Mail className='h-5 w-5' />}
                                 placeholder={t('auth.login.username')}
                             />
+
+                            {showCaptcha && (
+                                <div className='flex justify-center'>
+                                    <Captcha
+                                        refreshKey={turnstileKey}
+                                        onVerify={handleTurnstileSuccess}
+                                        onError={() => {
+                                            setForm((prev) => ({ ...prev, turnstile_token: '' }));
+                                        }}
+                                        onExpire={() => {
+                                            setForm((prev) => ({ ...prev, turnstile_token: '' }));
+                                        }}
+                                    />
+                                </div>
+                            )}
 
                             <Input
                                 label={t('auth.login.password')}
@@ -1439,25 +1400,6 @@ export default function LoginForm() {
                                 </Link>
                             </div>
 
-                            {showTurnstile && (
-                                <div className='flex justify-center'>
-                                    <Turnstile
-                                        key={turnstileKey}
-                                        sitekey={turnstileSiteKey}
-                                        theme={theme === 'dark' ? 'dark' : 'light'}
-                                        size='normal'
-                                        refreshExpired='auto'
-                                        onVerify={handleTurnstileSuccess}
-                                        onError={() => {
-                                            setForm((prev) => ({ ...prev, turnstile_token: '' }));
-                                        }}
-                                        onExpire={() => {
-                                            setForm((prev) => ({ ...prev, turnstile_token: '' }));
-                                        }}
-                                    />
-                                </div>
-                            )}
-
                             <Button type='submit' className='group w-full' loading={loading}>
                                 {!loading && (
                                     <>
@@ -1467,27 +1409,27 @@ export default function LoginForm() {
                                 )}
                             </Button>
 
-                            <div className='relative py-2'>
-                                <div className='absolute inset-0 flex items-center'>
-                                    <div className='border-border w-full border-t' />
-                                </div>
-                                <div className='relative flex justify-center text-xs uppercase'>
-                                    <span className='bg-card text-muted-foreground px-2'>{t('auth.login.or')}</span>
+                            <div className='border-border/70 flex flex-col gap-2 border-t pt-3'>
+                                <p className='text-muted-foreground text-center text-[11px] font-medium tracking-wide'>
+                                    {t('auth.login.or')}
+                                </p>
+                                <div className='flex flex-wrap justify-center gap-2'>
+                                    <Button
+                                        type='button'
+                                        variant='outline'
+                                        size='sm'
+                                        className='min-w-[9rem]'
+                                        disabled={loading}
+                                        onClick={() => {
+                                            const u = (form.username_or_email || '').trim();
+                                            void runPasskeyAuthentication(u || undefined);
+                                        }}
+                                    >
+                                        <Fingerprint className='mr-2 h-4 w-4' />
+                                        {t('auth.passkey.signIn')}
+                                    </Button>
                                 </div>
                             </div>
-                            <Button
-                                type='button'
-                                variant='outline'
-                                className='w-full'
-                                disabled={loading}
-                                onClick={() => {
-                                    const u = (form.username_or_email || '').trim();
-                                    void runPasskeyAuthentication(u || undefined);
-                                }}
-                            >
-                                <Fingerprint className='mr-2 h-4 w-4' />
-                                {t('auth.passkey.signIn')}
-                            </Button>
 
                             {error && (
                                 <div className='bg-destructive/10 border-destructive/20 text-destructive animate-fade-in rounded-xl border p-4 text-sm'>

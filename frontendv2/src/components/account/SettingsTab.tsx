@@ -24,7 +24,7 @@ import { Button } from '@/components/ui/button';
 import { ShieldCheck, Check, Fingerprint, Pencil } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'sonner';
-import Turnstile from 'react-turnstile';
+import { Captcha } from '@/components/Captcha';
 import { isEnabled } from '@/lib/utils';
 import { startRegistration } from '@simplewebauthn/browser';
 import { passkeysApi } from '@/lib/api/passkeys';
@@ -313,13 +313,12 @@ export default function SettingsTab() {
                                     </Button>
                                 ) : (
                                     <div className='flex flex-col items-end gap-2'>
-                                        {isEnabled(settings?.turnstile_enabled) && settings?.turnstile_key_pub && (
-                                            <Turnstile
-                                                key={turnstileKey}
-                                                sitekey={settings.turnstile_key_pub}
-                                                onSuccess={(token) => setTurnstileToken(token)}
-                                            />
-                                        )}
+                                        <Captcha
+                                            refreshKey={turnstileKey}
+                                            onVerify={(token) => setTurnstileToken(token)}
+                                            onExpire={() => setTurnstileToken('')}
+                                            onError={() => setTurnstileToken('')}
+                                        />
                                         <Button
                                             variant='destructive'
                                             size='sm'

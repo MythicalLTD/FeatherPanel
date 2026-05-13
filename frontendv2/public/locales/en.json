@@ -6681,6 +6681,147 @@
 					"title": "System update ongoing",
 					"description": "Please wait for FeatherPanel to update. Do not close this tab. Containers are restarting, so your browser may show a connection error—that usually means the update has started. This page will refresh periodically until the panel responds again."
 				}
+			},
+			"fields": {
+				"captcha_provider": {
+					"label": "Captcha Provider",
+					"description": "Choose which captcha service to use: Cloudflare Turnstile, hCaptcha, Google reCAPTCHA, Friendly Captcha, or reForge Captcha.",
+					"options": {
+						"turnstile": "Cloudflare Turnstile",
+						"hcaptcha": "hCaptcha",
+						"recaptcha": "Google reCAPTCHA",
+						"friendlycaptcha": "Friendly Captcha",
+						"reforge": "reForge Captcha"
+					}
+				},
+				"turnstile_enabled": {
+					"label": "Captcha Enabled",
+					"description": "Enable or disable global captcha protection for authentication and sensitive forms."
+				},
+				"turnstile_key_pub": {
+					"label": "Cloudflare Turnstile Site Key",
+					"description": "The public site key provided by Cloudflare Turnstile."
+				},
+				"turnstile_key_priv": {
+					"label": "Cloudflare Turnstile Secret Key",
+					"description": "The private secret key provided by Cloudflare Turnstile."
+				},
+				"hcaptcha_site_key": {
+					"label": "hCaptcha Site Key",
+					"description": "The public site key provided by hCaptcha."
+				},
+				"hcaptcha_secret_key": {
+					"label": "hCaptcha Secret Key",
+					"description": "The private secret key provided by hCaptcha."
+				},
+				"recaptcha_site_key": {
+					"label": "Google reCAPTCHA Site Key",
+					"description": "The public site key provided by Google reCAPTCHA."
+				},
+				"recaptcha_secret_key": {
+					"label": "Google reCAPTCHA Secret Key",
+					"description": "The private secret key provided by Google reCAPTCHA."
+				},
+				"recaptcha_version": {
+					"label": "Google reCAPTCHA version",
+					"description": "v2 shows a checkbox challenge. v3 runs invisibly and uses a risk score. Create the matching key type in Google reCAPTCHA Admin."
+				},
+				"recaptcha_v3_min_score": {
+					"label": "reCAPTCHA v3 minimum score",
+					"description": "Scores range from 0.0 (likely bot) to 1.0 (likely human). Requests below this value are rejected. Only used when version is v3."
+				},
+				"recaptcha_v3_action": {
+					"label": "reCAPTCHA v3 action name",
+					"description": "Short label for this check (e.g. submit, login). Must match what the panel sends and must use only letters, numbers, underscores, and slashes."
+				},
+				"friendly_captcha_site_key": {
+					"label": "Friendly Captcha Site Key",
+					"description": "The public site key provided by Friendly Captcha."
+				},
+				"friendly_captcha_secret_key": {
+					"label": "Friendly Captcha Secret Key",
+					"description": "The private secret key provided by Friendly Captcha."
+				},
+				"reforge_captcha_site_key": {
+					"label": "reForge Captcha site key",
+					"description": "Public site key from the reForge Captcha dashboard (Sites → your site)."
+				},
+				"reforge_captcha_secret_key": {
+					"label": "reForge Captcha secret key",
+					"description": "Private secret key from the reForge Captcha dashboard. Used only on the server for POST /api/verify — never expose it in the browser."
+				},
+				"reforge_captcha_widget_type": {
+					"label": "reForge Captcha widget type",
+					"description": "checkbox: classic challenge; image: grid challenge. (Invisible and managed modes are not supported.)"
+				},
+				"reforge_captcha_theme": {
+					"label": "reForge Captcha widget theme",
+					"description": "reForge Captcha widget colours: auto follows the visitor OS, or force dark / light."
+				},
+				"reforge_captcha_size": {
+					"label": "reForge Captcha widget size",
+					"description": "normal or compact layout for the reForge Captcha widget."
+				},
+				"reforge_captcha_lang": {
+					"label": "reForge Captcha widget language",
+					"description": "Optional reForge Captcha UI language code (e.g. en, nl, de). Leave empty for the widget default."
+				},
+				"reforge_captcha_min_score": {
+					"label": "reForge Captcha minimum verify score",
+					"description": "After a successful reForge Captcha verify, reject if the returned score is below this (0.0–1.0). Stricter when higher."
+				},
+				"altcha_hmac_key": {
+					"label": "Altcha HMAC Key",
+					"description": "The HMAC key used to sign and verify Altcha payloads."
+				},
+				"email_login_enabled": {
+					"label": "Email Login Enabled",
+					"description": "Allow users to log in using a code sent to their email instead of a password."
+				},
+				"registration_enabled": {
+					"label": "Registration Enabled",
+					"description": "Allow new users to create accounts on the panel."
+				},
+				"registration_require_email_verification": {
+					"label": "Require Email Verification",
+					"description": "Force new users to verify their email address before they can use the panel."
+				},
+				"email_domain_blocking_enabled": {
+					"label": "Email Domain Blocking",
+					"description": "Block registration from specific email domains (configured in Blocked Email Domains)."
+				},
+				"telemetry": {
+					"label": "Send Telemetry",
+					"description": "Help us improve FeatherPanel by sending anonymous usage data."
+				},
+				"require_two_fa_admins": {
+					"label": "Require 2FA for Admins",
+					"description": "Force all administrators to enable Two-Factor Authentication."
+				},
+				"user_allow_avatar_change": {
+					"label": "Allow Avatar Change",
+					"description": "Allow users to upload and change their own profile avatars."
+				},
+				"user_allow_username_change": {
+					"label": "Allow Username Change",
+					"description": "Allow users to change their account username."
+				},
+				"user_allow_email_change": {
+					"label": "Allow Email Change",
+					"description": "Allow users to change their account email address."
+				},
+				"user_allow_first_name_change": {
+					"label": "Allow First Name Change",
+					"description": "Allow users to change their first name."
+				},
+				"user_allow_last_name_change": {
+					"label": "Allow Last Name Change",
+					"description": "Allow users to change their last name."
+				},
+				"user_allow_api_keys_create": {
+					"label": "Allow API Key Creation",
+					"description": "Allow non-admin users to create their own API keys."
+				}
 			}
 		},
 		"rate_limits": {

@@ -110,14 +110,24 @@ function matchesSettingsQuery(
 function SettingFieldRow({
     settingKey,
     currentSetting,
-    formattedName,
     onSettingChange,
+    t,
 }: {
     settingKey: string;
     currentSetting: Setting;
-    formattedName: string;
     onSettingChange: (key: string, value: string | number | boolean) => void;
+    t: (key: string) => string;
 }) {
+    const labelKey = `admin.settings.fields.${settingKey}.label`;
+    const descriptionKey = `admin.settings.fields.${settingKey}.description`;
+
+    const translatedLabel = t(labelKey);
+    const translatedDescription = t(descriptionKey);
+
+    const formattedName =
+        translatedLabel !== labelKey ? translatedLabel : formatSettingName(currentSetting.name, settingKey);
+    const description = translatedDescription !== descriptionKey ? translatedDescription : currentSetting.description;
+
     if (currentSetting.type === 'toggle' || (currentSetting.type as string) === 'boolean') {
         return (
             <div className='border-border/50 bg-card/30 hover:bg-card/50 flex flex-row items-center justify-between gap-4 rounded-2xl border p-4 transition-colors'>
@@ -125,9 +135,7 @@ function SettingFieldRow({
                     <Label htmlFor={settingKey} className='text-base font-medium'>
                         {formattedName}
                     </Label>
-                    <p className='text-muted-foreground max-w-[min(100%,42rem)] text-sm'>
-                        {currentSetting.description}
-                    </p>
+                    <p className='text-muted-foreground max-w-[min(100%,42rem)] text-sm'>{description}</p>
                 </div>
                 <Switch
                     id={settingKey}
@@ -154,7 +162,7 @@ function SettingFieldRow({
                     placeholder={currentSetting.placeholder}
                     className='min-h-30'
                 />
-                <p className='text-muted-foreground text-sm'>{currentSetting.description}</p>
+                <p className='text-muted-foreground text-sm'>{description}</p>
             </div>
         );
     }
@@ -172,6 +180,13 @@ function SettingFieldRow({
                 >
                     {currentSetting.options.map((opt) => {
                         let label = opt;
+                        if (settingKey === 'captcha_provider') {
+                            const optKey = `admin.settings.fields.captcha_provider.options.${opt}`;
+                            const optLabel = t(optKey);
+                            if (optLabel !== optKey) {
+                                label = optLabel;
+                            }
+                        }
                         if (opt === 'true') label = 'Enabled';
                         if (opt === 'false') label = 'Disabled';
                         if (opt === 'hard_limit') label = 'Hard limit (block at max)';
@@ -183,7 +198,7 @@ function SettingFieldRow({
                         );
                     })}
                 </Select>
-                <p className='text-muted-foreground text-sm'>{currentSetting.description}</p>
+                <p className='text-muted-foreground text-sm'>{description}</p>
             </div>
         );
     }
@@ -200,7 +215,7 @@ function SettingFieldRow({
                 onChange={(e) => onSettingChange(settingKey, e.target.value)}
                 placeholder={currentSetting.placeholder}
             />
-            <p className='text-muted-foreground text-sm'>{currentSetting.description}</p>
+            <p className='text-muted-foreground text-sm'>{description}</p>
         </div>
     );
 }
@@ -675,17 +690,13 @@ export default function SettingsPage() {
                                                 )}
                                                 {filteredEntries.map(([settingKey, setting]) => {
                                                     const currentSetting = settings[settingKey] || setting;
-                                                    const formattedName = formatSettingName(
-                                                        currentSetting.name,
-                                                        settingKey,
-                                                    );
                                                     return (
                                                         <SettingFieldRow
                                                             key={settingKey}
                                                             settingKey={settingKey}
                                                             currentSetting={currentSetting}
-                                                            formattedName={formattedName}
                                                             onSettingChange={handleSettingChange}
+                                                            t={t}
                                                         />
                                                     );
                                                 })}

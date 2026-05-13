@@ -26,7 +26,6 @@ use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
 use App\CloudFlare\CloudFlareRealIP;
-use App\CloudFlare\CloudFlareTurnstile;
 use App\Plugins\Events\Events\AuthEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -126,16 +125,11 @@ class LoginController
         }
 
         if ($config->getSetting(ConfigInterface::TURNSTILE_ENABLED, 'false') == 'true') {
-            $turnstileKeyPublic = $config->getSetting(ConfigInterface::TURNSTILE_KEY_PUB, 'NULL');
-            $turnstileKeySecret = $config->getSetting(ConfigInterface::TURNSTILE_KEY_PRIV, 'NULL');
-            if ($turnstileKeyPublic == 'NULL' || $turnstileKeySecret == 'NULL') {
-                return ApiResponse::error('Turnstile keys are not set', 'TURNSTILE_KEYS_NOT_SET');
-            }
             if (!isset($data['turnstile_token']) || trim($data['turnstile_token']) === '') {
-                return ApiResponse::error('Turnstile token is required', 'TURNSTILE_TOKEN_REQUIRED');
+                return ApiResponse::error('Captcha token is required', 'CAPTCHA_TOKEN_REQUIRED');
             }
-            if (!CloudFlareTurnstile::validate($data['turnstile_token'], CloudFlareRealIP::getRealIP(), $turnstileKeySecret)) {
-                return ApiResponse::error('Turnstile validation failed', 'TURNSTILE_VALIDATION_FAILED');
+            if (!\App\Helpers\CaptchaHelper::validate($data['turnstile_token'], CloudFlareRealIP::getRealIP())) {
+                return ApiResponse::error('Captcha validation failed', 'CAPTCHA_VALIDATION_FAILED');
             }
         }
 
@@ -278,51 +272,51 @@ class LoginController
     public function completeLogin(array $userInfo, ?string $redirectTo = null): Response
     {
         $app = App::getInstance(true);
-        // Set session/cookie and log in
-        if (isset($userInfo['remember_token'])) {
-            $token = $userInfo['remember_token'];
-            setcookie('remember_token', $token, time() + 60 * 60 * 24 * 30, '/');
-            User::updateUser($userInfo['uuid'], ['last_ip' => CloudFlareRealIP::getRealIP()]);
+        // Session cookie requires a non-empty remember_token; older rows may have NULL/empty.
+        $token = User::ensureRememberToken($userInfo['uuid'], $userInfo['remember_token'] ?? null);
+        if ($token === false) {
+            return ApiResponse::error('Remember token not set', 'REMEMBER_TOKEN_NOT_SET');
+        }
+        $userInfo['remember_token'] = $token;
+        setcookie('remember_token', $token, time() + 60 * 60 * 24 * 30, '/');
+        User::updateUser($userInfo['uuid'], ['last_ip' => CloudFlareRealIP::getRealIP()]);
 
-            Activity::createActivity([
-                'user_uuid' => $userInfo['uuid'],
-                'name' => 'login',
-                'context' => 'User logged in',
-                'ip_address' => CloudFlareRealIP::getRealIP(),
-            ]);
+        Activity::createActivity([
+            'user_uuid' => $userInfo['uuid'],
+            'name' => 'login',
+            'context' => 'User logged in',
+            'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
 
-            // Emit event
-            global $eventManager;
-            if (isset($eventManager) && $eventManager !== null) {
-                $eventManager->emit(
-                    AuthEvent::onAuthLoginSuccess(),
-                    [
-                        'user' => $userInfo,
-                    ]
-                );
-            }
-
-            // Unset stuff thats dangerous
-            unset($userInfo['password']);
-
-            if ($app->isDemoMode()) {
-                $userInfo['first_ip'] = $app->getIPIntoFBIFormat();
-                $userInfo['last_ip'] = $app->getIPIntoFBIFormat();
-            }
-
-            // Load user preferences
-            $preferences = UserPreference::getPreferences($userInfo['uuid']);
-
-            if (is_string($redirectTo) && $redirectTo !== '') {
-                return new RedirectResponse($redirectTo);
-            }
-
-            return ApiResponse::success([
-                'user' => $userInfo,
-                'preferences' => $preferences,
-            ], 'User logged in successfully', 200);
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                AuthEvent::onAuthLoginSuccess(),
+                [
+                    'user' => $userInfo,
+                ]
+            );
         }
 
-        return ApiResponse::error('Remember token not set', 'REMEMBER_TOKEN_NOT_SET');
+        // Unset stuff thats dangerous
+        unset($userInfo['password']);
+
+        if ($app->isDemoMode()) {
+            $userInfo['first_ip'] = $app->getIPIntoFBIFormat();
+            $userInfo['last_ip'] = $app->getIPIntoFBIFormat();
+        }
+
+        // Load user preferences
+        $preferences = UserPreference::getPreferences($userInfo['uuid']);
+
+        if (is_string($redirectTo) && $redirectTo !== '') {
+            return new RedirectResponse($redirectTo);
+        }
+
+        return ApiResponse::success([
+            'user' => $userInfo,
+            'preferences' => $preferences,
+        ], 'User logged in successfully', 200);
     }
 }

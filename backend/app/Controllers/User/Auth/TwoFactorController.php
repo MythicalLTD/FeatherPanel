@@ -25,7 +25,6 @@ use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
 use PragmaRX\Google2FA\Google2FA;
 use App\CloudFlare\CloudFlareRealIP;
-use App\CloudFlare\CloudFlareTurnstile;
 use App\Plugins\Events\Events\AuthEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -106,16 +105,11 @@ class TwoFactorController
         }
         global $eventManager;
         if ($config->getSetting(ConfigInterface::TURNSTILE_ENABLED, 'false') == 'true') {
-            $turnstileKeyPublic = $config->getSetting(ConfigInterface::TURNSTILE_KEY_PUB, 'NULL');
-            $turnstileKeySecret = $config->getSetting(ConfigInterface::TURNSTILE_KEY_PRIV, 'NULL');
-            if ($turnstileKeyPublic == 'NULL' || $turnstileKeySecret == 'NULL') {
-                return ApiResponse::error('Turnstile keys are not set', 'TURNSTILE_KEYS_NOT_SET');
-            }
             if (!isset($data['turnstile_token']) || trim($data['turnstile_token']) === '') {
-                return ApiResponse::error('Turnstile token is required', 'TURNSTILE_TOKEN_REQUIRED');
+                return ApiResponse::error('Captcha token is required', 'CAPTCHA_TOKEN_REQUIRED');
             }
-            if (!CloudFlareTurnstile::validate($data['turnstile_token'], CloudFlareRealIP::getRealIP(), $turnstileKeySecret)) {
-                return ApiResponse::error('Turnstile validation failed', 'TURNSTILE_VALIDATION_FAILED');
+            if (!\App\Helpers\CaptchaHelper::validate($data['turnstile_token'], CloudFlareRealIP::getRealIP())) {
+                return ApiResponse::error('Captcha validation failed', 'CAPTCHA_VALIDATION_FAILED');
             }
         }
 
@@ -289,7 +283,11 @@ class TwoFactorController
             return ApiResponse::error('Invalid 2FA code', 'INVALID_CODE');
         }
         // Set session/cookie and allow login
-        $token = $userInfo['remember_token'];
+        $token = User::ensureRememberToken($userInfo['uuid'], $userInfo['remember_token'] ?? null);
+        if ($token === false) {
+            return ApiResponse::error('Remember token not set', 'REMEMBER_TOKEN_NOT_SET');
+        }
+        $userInfo['remember_token'] = $token;
         setcookie('remember_token', $token, time() + 60 * 60 * 24 * 30, '/');
         User::updateUser($userInfo['uuid'], ['last_ip' => CloudFlareRealIP::getRealIP()]);
 

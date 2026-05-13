@@ -302,9 +302,6 @@ export function useNavigation() {
         vdsId,
         hasVdsPermission,
         mainNavResourceCounts,
-        user,
-        isLoading,
-        isSessionChecked,
     ]);
 
     return { navigationItems };

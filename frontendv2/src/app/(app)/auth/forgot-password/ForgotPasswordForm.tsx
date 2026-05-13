@@ -24,9 +24,9 @@ import { Dialog, DialogHeader, DialogTitleCustom, DialogDescription, DialogFoote
 import { CheckCircle, Mail, ArrowRight } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSettings } from '@/contexts/SettingsContext';
-import { useTheme } from '@/contexts/ThemeContext';
-import Turnstile from 'react-turnstile';
+import { Captcha } from '@/components/Captcha';
 import { authApi } from '@/lib/api/auth';
+import { isCaptchaConfigured, obtainCaptchaResponseToken } from '@/lib/captchaGate';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { useEffect } from 'react';
@@ -35,7 +35,6 @@ export default function ForgotPasswordForm() {
     const router = useRouter();
     const { t } = useTranslation();
     const { settings } = useSettings();
-    const { theme } = useTheme();
     const { getWidgets, fetchWidgets } = usePluginWidgets('auth-forgot-password');
 
     useEffect(() => {
@@ -51,9 +50,7 @@ export default function ForgotPasswordForm() {
     const [showSuccessDialog, setShowSuccessDialog] = useState(false);
     const [turnstileKey, setTurnstileKey] = useState(0);
 
-    const turnstileEnabled = settings?.turnstile_enabled === 'true';
-    const turnstileSiteKey = settings?.turnstile_key_pub || '';
-    const showTurnstile = turnstileEnabled && turnstileSiteKey;
+    const showCaptcha = isCaptchaConfigured(settings);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -74,22 +71,26 @@ export default function ForgotPasswordForm() {
             return;
         }
 
-        if (turnstileEnabled && !form.turnstile_token) {
-            setError(t('validation.captcha_required'));
-            return;
+        let captchaToken = '';
+        if (showCaptcha) {
+            captchaToken = await obtainCaptchaResponseToken(settings ?? null, form.turnstile_token);
+            if (!captchaToken) {
+                setError(t('validation.captcha_required'));
+                return;
+            }
         }
 
         setLoading(true);
 
         try {
-            const response = await authApi.forgotPassword(form.email, form.turnstile_token);
+            const response = await authApi.forgotPassword(form.email, captchaToken);
 
             if (response.success) {
                 setShowSuccessDialog(true);
             } else {
                 setError(response.message || t('common.error'));
 
-                if (showTurnstile) {
+                if (showCaptcha) {
                     setForm((prev) => ({ ...prev, turnstile_token: '' }));
                     setTurnstileKey((prev) => prev + 1);
                 }
@@ -98,7 +99,7 @@ export default function ForgotPasswordForm() {
             const error = err as { response?: { data?: { message?: string } } };
             setError(error.response?.data?.message || t('common.error'));
 
-            if (showTurnstile) {
+            if (showCaptcha) {
                 setForm((prev) => ({ ...prev, turnstile_token: '' }));
                 setTurnstileKey((prev) => prev + 1);
             }
@@ -139,24 +140,16 @@ export default function ForgotPasswordForm() {
                         placeholder={t('auth.register.email_placeholder')}
                     />
 
-                    {showTurnstile && (
-                        <div className='flex justify-center'>
-                            <Turnstile
-                                key={turnstileKey}
-                                sitekey={turnstileSiteKey}
-                                theme={theme === 'dark' ? 'dark' : 'light'}
-                                size='normal'
-                                refreshExpired='auto'
-                                onVerify={handleTurnstileSuccess}
-                                onError={() => {
-                                    setForm((prev) => ({ ...prev, turnstile_token: '' }));
-                                }}
-                                onExpire={() => {
-                                    setForm((prev) => ({ ...prev, turnstile_token: '' }));
-                                }}
-                            />
-                        </div>
-                    )}
+                    <Captcha
+                        refreshKey={turnstileKey}
+                        onVerify={handleTurnstileSuccess}
+                        onError={() => {
+                            setForm((prev) => ({ ...prev, turnstile_token: '' }));
+                        }}
+                        onExpire={() => {
+                            setForm((prev) => ({ ...prev, turnstile_token: '' }));
+                        }}
+                    />
 
                     <Button type='submit' className='group w-full' loading={loading}>
                         {!loading && (

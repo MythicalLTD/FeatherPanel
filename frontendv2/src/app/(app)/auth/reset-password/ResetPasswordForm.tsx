@@ -23,9 +23,9 @@ import { Input } from '@/components/ui/input';
 import { Lock, ArrowRight } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSettings } from '@/contexts/SettingsContext';
-import { useTheme } from '@/contexts/ThemeContext';
-import Turnstile from 'react-turnstile';
+import { Captcha } from '@/components/Captcha';
 import axios from 'axios';
+import { isCaptchaConfigured, obtainCaptchaResponseToken } from '@/lib/captchaGate';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
@@ -34,7 +34,6 @@ export default function ResetPasswordForm() {
     const searchParams = useSearchParams();
     const { t } = useTranslation();
     const { settings } = useSettings();
-    const { theme } = useTheme();
     const token = searchParams.get('token');
     const { getWidgets, fetchWidgets } = usePluginWidgets('auth-reset-password');
 
@@ -54,9 +53,7 @@ export default function ResetPasswordForm() {
     const [tokenValid, setTokenValid] = useState(false);
     const [turnstileKey, setTurnstileKey] = useState(0);
 
-    const turnstileEnabled = settings?.turnstile_enabled === 'true';
-    const turnstileSiteKey = settings?.turnstile_key_pub || '';
-    const showTurnstile = turnstileEnabled && turnstileSiteKey;
+    const showCaptcha = isCaptchaConfigured(settings);
 
     useEffect(() => {
         const validateToken = async () => {
@@ -107,9 +104,13 @@ export default function ResetPasswordForm() {
             return;
         }
 
-        if (turnstileEnabled && !form.turnstile_token) {
-            setError(t('validation.captcha_required'));
-            return;
+        let captchaToken = '';
+        if (showCaptcha) {
+            captchaToken = await obtainCaptchaResponseToken(settings ?? null, form.turnstile_token);
+            if (!captchaToken) {
+                setError(t('validation.captcha_required'));
+                return;
+            }
         }
 
         setSubmitting(true);
@@ -124,8 +125,8 @@ export default function ResetPasswordForm() {
                 password: form.password,
             };
 
-            if (turnstileEnabled) {
-                payload.turnstile_token = form.turnstile_token;
+            if (showCaptcha) {
+                payload.turnstile_token = captchaToken;
             }
 
             const response = await axios.put('/api/user/auth/reset-password', payload, {
@@ -140,7 +141,7 @@ export default function ResetPasswordForm() {
             } else {
                 setError(response.data?.message || t('common.error'));
 
-                if (showTurnstile) {
+                if (showCaptcha) {
                     setForm((prev) => ({ ...prev, turnstile_token: '' }));
                     setTurnstileKey((prev) => prev + 1);
                 }
@@ -149,7 +150,7 @@ export default function ResetPasswordForm() {
             const error = err as { response?: { data?: { message?: string } } };
             setError(error.response?.data?.message || t('common.error'));
 
-            if (showTurnstile) {
+            if (showCaptcha) {
                 setForm((prev) => ({ ...prev, turnstile_token: '' }));
                 setTurnstileKey((prev) => prev + 1);
             }
@@ -220,24 +221,16 @@ export default function ResetPasswordForm() {
                     placeholder={t('auth.register.password_placeholder')}
                 />
 
-                {showTurnstile && (
-                    <div className='flex justify-center'>
-                        <Turnstile
-                            key={turnstileKey}
-                            sitekey={turnstileSiteKey}
-                            theme={theme === 'dark' ? 'dark' : 'light'}
-                            size='normal'
-                            refreshExpired='auto'
-                            onVerify={handleTurnstileSuccess}
-                            onError={() => {
-                                setForm((prev) => ({ ...prev, turnstile_token: '' }));
-                            }}
-                            onExpire={() => {
-                                setForm((prev) => ({ ...prev, turnstile_token: '' }));
-                            }}
-                        />
-                    </div>
-                )}
+                <Captcha
+                    refreshKey={turnstileKey}
+                    onVerify={handleTurnstileSuccess}
+                    onError={() => {
+                        setForm((prev) => ({ ...prev, turnstile_token: '' }));
+                    }}
+                    onExpire={() => {
+                        setForm((prev) => ({ ...prev, turnstile_token: '' }));
+                    }}
+                />
 
                 <Button type='submit' className='group w-full' loading={submitting}>
                     {!submitting && (

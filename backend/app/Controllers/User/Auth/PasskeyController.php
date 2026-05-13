@@ -28,8 +28,6 @@ use App\Config\ConfigInterface;
 use App\Helpers\WebAuthnHelper;
 use App\Helpers\PermissionHelper;
 use Webauthn\PublicKeyCredential;
-use App\CloudFlare\CloudFlareRealIP;
-use App\CloudFlare\CloudFlareTurnstile;
 use Webauthn\PublicKeyCredentialDescriptor;
 use Webauthn\PublicKeyCredentialParameters;
 use Webauthn\PublicKeyCredentialUserEntity;
@@ -48,10 +46,6 @@ class PasskeyController
 
     public function postStatus(Request $request): Response
     {
-        $err = $this->validateTurnstileIfEnabled(json_decode($request->getContent(), true));
-        if ($err instanceof Response) {
-            return $err;
-        }
         $data = json_decode($request->getContent(), true);
         $id = is_array($data) ? ($data['username_or_email'] ?? null) : null;
         if (!is_string($id) || trim($id) === '') {
@@ -70,10 +64,6 @@ class PasskeyController
     public function postAuthenticationOptions(Request $request): Response
     {
         $data = json_decode($request->getContent(), true);
-        $err = $this->validateTurnstileIfEnabled(is_array($data) ? $data : null);
-        if ($err instanceof Response) {
-            return $err;
-        }
         if (!is_array($data)) {
             return ApiResponse::error('Invalid JSON body', 'INVALID_JSON', 400);
         }
@@ -159,10 +149,6 @@ class PasskeyController
     public function postAuthenticationVerify(Request $request): Response
     {
         $data = json_decode($request->getContent(), true);
-        $err = $this->validateTurnstileIfEnabled(is_array($data) ? $data : null);
-        if ($err instanceof Response) {
-            return $err;
-        }
         if (!is_array($data) || !isset($data['challenge_token'], $data['credential'])) {
             return ApiResponse::error('Missing challenge_token or credential', 'MISSING_REQUIRED_FIELDS', 400);
         }
@@ -502,29 +488,6 @@ class PasskeyController
         }
 
         return ApiResponse::success([], 'Passkey updated', 200);
-    }
-
-    private function validateTurnstileIfEnabled(?array $data): ?Response
-    {
-        $app = App::getInstance(true);
-        $config = $app->getConfig();
-        if ($config->getSetting(ConfigInterface::TURNSTILE_ENABLED, 'false') !== 'true') {
-            return null;
-        }
-        $pub = $config->getSetting(ConfigInterface::TURNSTILE_KEY_PUB, 'NULL');
-        $priv = $config->getSetting(ConfigInterface::TURNSTILE_KEY_PRIV, 'NULL');
-        if ($pub === 'NULL' || $priv === 'NULL') {
-            return ApiResponse::error('Turnstile keys are not set', 'TURNSTILE_KEYS_NOT_SET');
-        }
-        $token = is_array($data) ? ($data['turnstile_token'] ?? null) : null;
-        if (!is_string($token) || trim($token) === '') {
-            return ApiResponse::error('Turnstile token is required', 'TURNSTILE_TOKEN_REQUIRED');
-        }
-        if (!CloudFlareTurnstile::validate($token, CloudFlareRealIP::getRealIP(), $priv)) {
-            return ApiResponse::error('Turnstile validation failed', 'TURNSTILE_VALIDATION_FAILED');
-        }
-
-        return null;
     }
 
     /**

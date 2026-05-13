@@ -22,9 +22,9 @@ import { Button } from '@/components/ui/button';
 import { Mail, Lock, User, ArrowRight } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useTranslation } from '@/contexts/TranslationContext';
-import { useTheme } from '@/contexts/ThemeContext';
-import Turnstile from 'react-turnstile';
+import { Captcha } from '@/components/Captcha';
 import { authApi } from '@/lib/api/auth';
+import { isCaptchaConfigured, obtainCaptchaResponseToken } from '@/lib/captchaGate';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { useEffect } from 'react';
@@ -32,7 +32,6 @@ import { useEffect } from 'react';
 export default function RegisterForm() {
     const { settings } = useSettings();
     const { t } = useTranslation();
-    const { theme } = useTheme();
     const { getWidgets, fetchWidgets } = usePluginWidgets('auth-register');
 
     useEffect(() => {
@@ -53,9 +52,7 @@ export default function RegisterForm() {
     const [turnstileKey, setTurnstileKey] = useState(0);
 
     const registrationEnabled = settings?.registration_enabled === 'true';
-    const turnstileEnabled = settings?.turnstile_enabled === 'true';
-    const turnstileSiteKey = settings?.turnstile_key_pub || '';
-    const showTurnstile = turnstileEnabled && turnstileSiteKey;
+    const showCaptcha = isCaptchaConfigured(settings);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -102,9 +99,13 @@ export default function RegisterForm() {
             return;
         }
 
-        if (turnstileEnabled && !form.turnstile_token) {
-            setError(t('validation.captcha_required'));
-            return;
+        let captchaToken = '';
+        if (showCaptcha) {
+            captchaToken = await obtainCaptchaResponseToken(settings ?? null, form.turnstile_token);
+            if (!captchaToken) {
+                setError(t('validation.captcha_required'));
+                return;
+            }
         }
 
         setLoading(true);
@@ -116,7 +117,7 @@ export default function RegisterForm() {
                 email: form.email.trim(),
                 username: form.username.trim(),
                 password: form.password,
-                turnstile_token: form.turnstile_token,
+                turnstile_token: captchaToken,
             });
 
             if (response.success) {
@@ -142,7 +143,7 @@ export default function RegisterForm() {
             } else {
                 setError(response.message || t('common.error'));
 
-                if (showTurnstile) {
+                if (showCaptcha) {
                     setForm((prev) => ({ ...prev, turnstile_token: '' }));
                     setTurnstileKey((prev) => prev + 1);
                 }
@@ -151,7 +152,7 @@ export default function RegisterForm() {
             const error = err as { response?: { data?: { message?: string } } };
             setError(error.response?.data?.message || t('common.error'));
 
-            if (showTurnstile) {
+            if (showCaptcha) {
                 setForm((prev) => ({ ...prev, turnstile_token: '' }));
                 setTurnstileKey((prev) => prev + 1);
             }
@@ -257,24 +258,16 @@ export default function RegisterForm() {
                     placeholder={t('auth.register.password_placeholder')}
                 />
 
-                {showTurnstile && (
-                    <div className='flex justify-center'>
-                        <Turnstile
-                            key={turnstileKey}
-                            sitekey={turnstileSiteKey}
-                            theme={theme === 'dark' ? 'dark' : 'light'}
-                            size='normal'
-                            refreshExpired='auto'
-                            onVerify={handleTurnstileSuccess}
-                            onError={() => {
-                                setForm((prev) => ({ ...prev, turnstile_token: '' }));
-                            }}
-                            onExpire={() => {
-                                setForm((prev) => ({ ...prev, turnstile_token: '' }));
-                            }}
-                        />
-                    </div>
-                )}
+                <Captcha
+                    refreshKey={turnstileKey}
+                    onVerify={handleTurnstileSuccess}
+                    onError={() => {
+                        setForm((prev) => ({ ...prev, turnstile_token: '' }));
+                    }}
+                    onExpire={() => {
+                        setForm((prev) => ({ ...prev, turnstile_token: '' }));
+                    }}
+                />
 
                 <Button type='submit' className='group w-full' loading={loading}>
                     {!loading && (
