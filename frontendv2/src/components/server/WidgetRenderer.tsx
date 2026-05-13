@@ -169,12 +169,17 @@ export function WidgetRenderer({ widgets, height = '400px', context }: WidgetRen
                 existingStyle.remove();
             }
 
-            // Expose theme as a data attribute so plugins can opt-in. Do NOT add
-            // `light`/`dark` classes here: in v1.3.7 we didn't, and adding them
-            // activates every Tailwind `.dark:*` rule inside the plugin's own
-            // bundle (most plugins are built against the panel's design system)
-            // which paints a solid bg slab over the panel's custom backdrop.
-            iframeDoc.documentElement.setAttribute('data-fp-theme', theme);
+            // Same strategy as PluginPage: light → html.light; dark → html.dark
+            // plus injected shell transparency so the panel backdrop shows through.
+            const root = iframeDoc.documentElement;
+            root.setAttribute('data-fp-theme', theme);
+            if (theme === 'light') {
+                root.classList.add('light');
+                root.classList.remove('dark');
+            } else {
+                root.classList.add('dark');
+                root.classList.remove('light');
+            }
 
             const style = iframeDoc.createElement('style');
             style.id = 'featherpanel-theme-override';

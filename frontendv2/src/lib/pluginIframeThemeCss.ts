@@ -14,14 +14,37 @@
  */
 
 /** CSS injected into same-origin plugin iframes so panel theme matches the shell. */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- kept for API stability; theme is exposed via data-fp-theme on <html>
-export function getPluginIframeThemeOverrideCss(_theme: 'light' | 'dark'): string {
-    // NOTE: We deliberately do NOT emit `color-scheme: dark` here.
-    // Setting `color-scheme: dark` makes the browser paint a dark default for
-    // any element that doesn't specify its own background, which combined with
-    // the plugin's Tailwind output produced the dark slab over the panel's
-    // custom backdrop. v1.3.7 didn't set it; we mirror that behavior.
+export function getPluginIframeThemeOverrideCss(theme: 'light' | 'dark'): string {
+    // Light: `color-scheme: light` + `html.light` (set by host) so Tailwind/shadcn
+    // light tokens and UA defaults match the panel.
+    // Dark: host sets `html.dark` for correct semantic colors; we still avoid
+    // `color-scheme: dark` on :root (extra UA canvas behind transparent pixels).
+    const colorSchemeBlock =
+        theme === 'light'
+            ? `
+                :root {
+                    color-scheme: light;
+                }
+            `
+            : '';
+
+    // Dark: strip only the outer shell (direct children of body). Inner routes
+    // and cards keep `bg-card` / etc. so typography matches dark theme without
+    // a second opaque slab hiding the panel's custom backdrop.
+    const darkShellTransparency =
+        theme === 'dark'
+            ? `
+                html.dark > body > * {
+                    background: transparent !important;
+                    background-color: transparent !important;
+                    background-image: none !important;
+                }
+            `
+            : '';
+
     return `
+                ${colorSchemeBlock}
+                ${darkShellTransparency}
                 [data-fp-theme="light"] {
                     --fp-bg: #ffffff;
                     --fp-fg: #0a0a0a;
