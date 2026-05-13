@@ -1090,7 +1090,7 @@ export default function LoginForm() {
                                                     type='button'
                                                     variant='outline'
                                                     size='sm'
-                                                    className='min-w-[9rem]'
+                                                    className='min-w-36'
                                                     disabled={loading}
                                                     onClick={() => void runPasskeyAuthentication(identifierValue)}
                                                 >
@@ -1103,7 +1103,7 @@ export default function LoginForm() {
                                                     type='button'
                                                     variant='outline'
                                                     size='sm'
-                                                    className='min-w-[9rem]'
+                                                    className='min-w-36'
                                                     disabled={loading}
                                                     onClick={() => {
                                                         if (
@@ -1420,7 +1420,7 @@ export default function LoginForm() {
                                         type='button'
                                         variant='outline'
                                         size='sm'
-                                        className='min-w-[9rem]'
+                                        className='min-w-36'
                                         disabled={loading}
                                         onClick={() => {
                                             const u = (form.username_or_email || '').trim();
