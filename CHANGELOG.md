@@ -16,6 +16,7 @@
 ### Fixed
 
 - Fixed an issue where certain pages displayed unnecessary blank spaces when opened. by @nayskutzu
+- Fixed an issue where deleting users with assigned VDS servers would leave those servers unassigned. by @nayskutzu
 
 ## v1.3.7 STABLE
 
