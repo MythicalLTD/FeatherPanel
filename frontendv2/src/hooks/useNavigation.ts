@@ -29,10 +29,11 @@ import { usePluginRoutes } from '@/hooks/usePluginRoutes';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { useVdsPermissions } from '@/hooks/useVdsPermissions';
 import { useDeveloperMode } from '@/hooks/useDeveloperMode';
+import { useMainNavResourceCounts } from '@/hooks/useMainNavResourceCounts';
 
 export function useNavigation() {
     const pathname = usePathname();
-    const { hasPermission } = useSession();
+    const { hasPermission, user, isLoading, isSessionChecked } = useSession();
     const { settings } = useSettings();
     const { t } = useTranslation();
     const { isDeveloperModeEnabled } = useDeveloperMode();
@@ -49,6 +50,16 @@ export function useNavigation() {
     // Call hook at top level - valid usage
     const { hasPermission: hasServerPermission, server } = useServerPermissions(serverUuid || '');
     const { hasPermission: hasVdsPermission } = useVdsPermissions();
+
+    const mainNavResourceCountsEnabled =
+        isSessionChecked &&
+        !isLoading &&
+        !!user &&
+        !pathname.startsWith('/admin') &&
+        !pathname.startsWith('/server/') &&
+        !pathname.startsWith('/vds/');
+
+    const mainNavResourceCounts = useMainNavResourceCounts(mainNavResourceCountsEnabled, user?.uuid);
 
     // Get server's spell_id for filtering plugin sidebar items
     const serverSpellId = server?.spell_id || null;
@@ -261,7 +272,7 @@ export function useNavigation() {
         }
 
         // MAIN NAVIGATION
-        let items = getMainNavigationItems(t, settings, hasPermission);
+        let items = getMainNavigationItems(t, settings, hasPermission, mainNavResourceCounts);
 
         items = items.map((item) => ({
             ...item,
@@ -290,6 +301,10 @@ export function useNavigation() {
         isVds,
         vdsId,
         hasVdsPermission,
+        mainNavResourceCounts,
+        user,
+        isLoading,
+        isSessionChecked,
     ]);
 
     return { navigationItems };

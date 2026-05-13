@@ -99,7 +99,7 @@ export default function ThemeCustomizer() {
     if (!mounted) {
         return (
             <div className='flex items-center'>
-                <div className='border-border/50 bg-muted/20 h-9 w-9 rounded-xl border sm:h-10 sm:w-10' />
+                <div className='bg-muted/25 size-9 animate-pulse rounded-lg sm:rounded-xl' />
             </div>
         );
     }
@@ -110,11 +110,11 @@ export default function ThemeCustomizer() {
                 type='button'
                 title={t('appearance.settingsMenuTitle')}
                 onClick={() => setCustomizerOpen(true)}
-                className='border-border bg-card text-muted-foreground hover:border-border hover:bg-muted/40 hover:text-foreground relative flex h-11 w-11 items-center justify-center rounded-xl border shadow-sm transition-colors'
+                className='text-muted-foreground hover:bg-muted/45 hover:text-foreground active:bg-muted/55 relative flex size-9 items-center justify-center rounded-lg border-0 transition-colors sm:rounded-xl'
             >
-                <Palette className='h-5.5 w-5.5' aria-hidden />
+                <Palette className='h-[1.15rem] w-[1.15rem] shrink-0' aria-hidden />
                 <span
-                    className='ring-card pointer-events-none absolute right-0.5 bottom-0.5 h-2 w-2 rounded-full ring-2'
+                    className='border-background pointer-events-none absolute right-0.5 bottom-0.5 box-content h-1.5 w-1.5 rounded-full border-2 shadow-sm'
                     style={{ backgroundColor: currentAccent }}
                     aria-hidden
                 />

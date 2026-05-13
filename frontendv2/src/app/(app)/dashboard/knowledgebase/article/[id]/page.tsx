@@ -22,6 +22,7 @@ import axios from 'axios';
 import { FileText, ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { cn } from '@/lib/utils';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -67,7 +68,8 @@ export default function ArticlePage({ params }: { params: Promise<{ id: string }
     const { id } = use(params);
     const { t } = useTranslation();
     const pathname = usePathname();
-    const knowledgebaseBasePath = pathname.startsWith('/knowledgebase') ? '/knowledgebase' : '/dashboard/knowledgebase';
+    const isPublicKnowledgebasePage = pathname.startsWith('/knowledgebase');
+    const knowledgebaseBasePath = isPublicKnowledgebasePage ? '/knowledgebase' : '/dashboard/knowledgebase';
     const [article, setArticle] = useState<Article | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -114,39 +116,96 @@ export default function ArticlePage({ params }: { params: Promise<{ id: string }
     if (!article) return null;
 
     return (
-        <div className='mx-auto flex max-w-4xl flex-col space-y-6 pt-2 pb-12'>
+        <div
+            className={cn(
+                'mx-auto flex max-w-4xl flex-col space-y-6 pt-2 pb-12',
+                isPublicKnowledgebasePage && 'max-w-7xl px-4 md:px-8',
+            )}
+        >
             <WidgetRenderer widgets={getWidgets('dashboard-knowledgebase-article', 'top-of-page')} />
 
-            <div className='flex items-center gap-4 px-1'>
-                <Link href={`${knowledgebaseBasePath}/category/${article.category_id}`}>
-                    <Button
-                        variant='ghost'
-                        size='icon'
-                        className='border-border/50 hover:bg-card h-10 w-10 rounded-full border'
-                    >
-                        <ChevronLeft className='h-5 w-5' />
-                    </Button>
-                </Link>
-                <div>
-                    <h1 className='text-foreground text-3xl font-bold tracking-tight'>{article.title}</h1>
-                    <div className='text-muted-foreground mt-1 flex items-center gap-2 text-sm'>
-                        <span>{article.category?.name}</span>
-                        <span>•</span>
-                        <span>{new Date(article.updated_at).toLocaleDateString()}</span>
+            <div
+                className={cn(
+                    'border-border/50 bg-card/60 flex flex-wrap items-center gap-3 rounded-2xl border p-3 shadow-[0_10px_30px_-24px_rgba(0,0,0,0.7)] backdrop-blur-xl sm:gap-4 sm:p-4',
+                    isPublicKnowledgebasePage &&
+                        'border-border/60 from-card via-card/90 to-primary/5 bg-linear-to-b shadow-[0_20px_60px_-30px_rgba(0,0,0,0.65)]',
+                )}
+            >
+                <div className='flex min-w-0 flex-1 items-center gap-3'>
+                    <Link href={`${knowledgebaseBasePath}/category/${article.category_id}`}>
+                        <Button variant='ghost' size='icon' className='h-9 w-9 shrink-0 rounded-full'>
+                            <ChevronLeft className='h-4 w-4' />
+                        </Button>
+                    </Link>
+                    <div className='min-w-0'>
+                        <h1 className='line-clamp-2 text-lg font-bold tracking-tight sm:text-2xl md:text-3xl'>
+                            {article.title}
+                        </h1>
+                        <div className='text-muted-foreground mt-1 flex flex-wrap items-center gap-2 text-xs sm:text-sm'>
+                            <span>{article.category?.name}</span>
+                            <span className='hidden sm:inline'>•</span>
+                            <span>{new Date(article.updated_at).toLocaleDateString()}</span>
+                        </div>
                     </div>
                 </div>
-                <WidgetRenderer widgets={getWidgets('dashboard-knowledgebase-article', 'after-header')} />
             </div>
+            <WidgetRenderer widgets={getWidgets('dashboard-knowledgebase-article', 'after-header')} />
 
             <WidgetRenderer widgets={getWidgets('dashboard-knowledgebase-article', 'before-article-content')} />
-            <div className='bg-card border-border/50 overflow-hidden rounded-xl border shadow-sm'>
-                <div className='p-8'>
-                    <div className='prose prose-blue dark:prose-invert max-w-none'>
+            <div className='bg-card/50 text-card-foreground border-border/50 overflow-hidden rounded-xl border backdrop-blur-xl'>
+                <div className='p-6 sm:p-8'>
+                    {/* Use semantic colors only — prose-blue + dark:prose-invert can yield light headings on light cards */}
+                    <div
+                        className={cn(
+                            'prose prose-sm max-w-none',
+                            'prose-headings:text-foreground prose-p:text-muted-foreground',
+                            'prose-li:text-muted-foreground prose-li:marker:text-primary',
+                            'prose-hr:border-border',
+                        )}
+                    >
                         <ReactMarkdown
                             remarkPlugins={[remarkGfm]}
                             components={{
+                                h1: ({ children }) => (
+                                    <h1 className='text-foreground mt-8 mb-4 text-3xl font-bold tracking-tight first:mt-0'>
+                                        {children}
+                                    </h1>
+                                ),
+                                h2: ({ children }) => (
+                                    <h2 className='text-foreground border-border/60 mt-10 mb-3 scroll-mt-20 border-b pb-2 text-2xl font-semibold tracking-tight first:mt-0'>
+                                        {children}
+                                    </h2>
+                                ),
+                                h3: ({ children }) => (
+                                    <h3 className='text-foreground mt-8 mb-2 text-xl font-semibold tracking-tight'>
+                                        {children}
+                                    </h3>
+                                ),
+                                h4: ({ children }) => (
+                                    <h4 className='text-foreground mt-6 mb-2 text-lg font-semibold'>{children}</h4>
+                                ),
+                                h5: ({ children }) => (
+                                    <h5 className='text-foreground mt-5 mb-1.5 text-base font-semibold'>{children}</h5>
+                                ),
+                                h6: ({ children }) => (
+                                    <h6 className='text-muted-foreground mt-4 mb-1 text-sm font-semibold tracking-wide uppercase'>
+                                        {children}
+                                    </h6>
+                                ),
+                                ul: ({ children }) => (
+                                    <ul className='text-muted-foreground marker:text-primary my-4 list-disc space-y-1.5 pl-6'>
+                                        {children}
+                                    </ul>
+                                ),
+                                ol: ({ children }) => (
+                                    <ol className='text-muted-foreground marker:text-primary my-4 list-decimal space-y-1.5 pl-6 marker:font-semibold'>
+                                        {children}
+                                    </ol>
+                                ),
+                                li: ({ children }) => <li className='leading-relaxed'>{children}</li>,
+                                hr: () => <hr className='border-border my-8' />,
                                 p: ({ children }) => (
-                                    <p className='text-muted-foreground/90 mb-4 leading-relaxed'>{children}</p>
+                                    <p className='text-muted-foreground mb-4 leading-relaxed last:mb-0'>{children}</p>
                                 ),
                                 code: ({ inline, children, ...props }: MarkdownCodeProps) => {
                                     if (inline) {
@@ -157,13 +216,13 @@ export default function ArticlePage({ params }: { params: Promise<{ id: string }
                                         );
                                     }
                                     return (
-                                        <code className='font-mono text-sm' {...props}>
+                                        <code className='text-foreground font-mono text-sm' {...props}>
                                             {children}
                                         </code>
                                     );
                                 },
                                 pre: ({ children }) => (
-                                    <pre className='bg-muted/50 border-border/50 my-6 overflow-x-auto rounded-xl border p-4'>
+                                    <pre className='bg-muted/60 text-foreground border-border/50 my-6 overflow-x-auto rounded-xl border p-4'>
                                         {children}
                                     </pre>
                                 ),
@@ -190,7 +249,11 @@ export default function ArticlePage({ params }: { params: Promise<{ id: string }
                                         );
                                     }
                                     return (
-                                        <a {...props} href={href} className='text-primary font-medium hover:underline'>
+                                        <a
+                                            {...props}
+                                            href={href}
+                                            className='text-primary font-medium underline-offset-2 hover:underline'
+                                        >
                                             {children}
                                         </a>
                                     );
@@ -255,7 +318,7 @@ export default function ArticlePage({ params }: { params: Promise<{ id: string }
                                 <a
                                     key={attachment.id}
                                     href={attachment.url}
-                                    className='border-border/50 bg-card hover:border-primary/30 group flex items-center justify-between rounded-xl border p-4 shadow-sm transition-all hover:bg-white/5'
+                                    className='border-border/50 bg-card/50 hover:border-primary/30 group flex items-center justify-between rounded-xl border p-4 backdrop-blur-xl transition-all hover:bg-white/2'
                                 >
                                     <div className='flex min-w-0 items-center gap-4'>
                                         <div className='bg-primary/5 text-primary rounded-lg p-3 transition-transform group-hover:scale-110'>

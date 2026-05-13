@@ -6,12 +6,15 @@
 
 - Introduced a unified themes context for plugins, enabling seamless support for both dark and light modes. by @nayskutzu
 - Improved enforcement and consistency of theming options throughout FeatherPanel, resulting in a much more polished appearance. by @nayskutzu
+- Enhanced the user interface on light mode devices, ensuring optimal readability and eliminating issues like white text appearing on white backgrounds. by @nayskutzu
+- Refined navigation bar for a smoother, more polished experience. by @nayskutzu
 
 ### Added
 
 - Introduced comprehensive language analytics, allowing you to see which languages your users prefer and how they're distributed. by @nayskutzu
 - Added the ability to easily reorder articles by dragging and changing their positions within the list. by @nayskutzu
 - Introduced passwordless authentication via secure email code logins, allowing users to sign in using a 6-digit code delivered directly to their inbox. by @nayskutzu
+- The category sidebar is now hidden for users who do not have access to any servers or VDS instances, either as an owner or subuser, resulting in a cleaner and more relevant navigation experience. by @nayskutzu
 
 ### Fixed
 

@@ -85,104 +85,95 @@ export default function KnowledgeBasePage() {
         <div
             className={cn(
                 'space-y-6',
-                isPublicKnowledgebasePage && 'mx-auto w-full max-w-6xl px-4 pt-8 pb-12 md:px-8 md:pt-10',
+                isPublicKnowledgebasePage && 'mx-auto w-full max-w-7xl px-4 pt-8 pb-12 md:px-8 md:pt-10',
             )}
         >
             <WidgetRenderer widgets={getWidgets('dashboard-knowledgebase', 'top-of-page')} />
 
             <div
                 className={cn(
+                    'flex flex-col justify-between gap-4 sm:flex-row sm:items-center',
                     isPublicKnowledgebasePage &&
-                        'border-border/60 from-card via-card/95 to-primary/5 rounded-2xl border bg-linear-to-b p-5 shadow-[0_20px_60px_-30px_rgba(0,0,0,0.65)] md:p-7',
+                        'border-border/60 from-card via-card/90 to-primary/5 rounded-2xl border bg-linear-to-b p-5 shadow-[0_20px_60px_-30px_rgba(0,0,0,0.65)] md:p-7',
                 )}
             >
-                {isPublicKnowledgebasePage && (
-                    <div className='mb-3 flex items-center gap-2'>
-                        <Badge className='bg-primary/15 text-primary border-primary/20 border text-[10px] font-bold tracking-wide uppercase'>
-                            {t('public_portal.badges.public')}
-                        </Badge>
-                        <Badge className='border border-amber-500/20 bg-amber-500/15 text-[10px] font-bold tracking-wide text-amber-500 uppercase'>
-                            {t('public_portal.badges.docs')}
-                        </Badge>
-                    </div>
-                )}
-                <h1 className='mb-2 text-3xl font-bold tracking-tight'>{t('dashboard.knowledgebase.title')}</h1>
-                <p className='text-muted-foreground'>{t('dashboard.knowledgebase.browseByCategory')}</p>
+                <div>
+                    {isPublicKnowledgebasePage && (
+                        <div className='mb-3 flex flex-wrap items-center gap-2'>
+                            <Badge className='bg-primary/15 text-primary border-primary/20 border text-[10px] font-bold tracking-wide uppercase'>
+                                {t('public_portal.badges.public')}
+                            </Badge>
+                            <Badge className='border border-amber-500/20 bg-amber-500/15 text-[10px] font-bold tracking-wide text-amber-500 uppercase'>
+                                {t('public_portal.badges.docs')}
+                            </Badge>
+                        </div>
+                    )}
+                    <h1 className='text-2xl font-bold tracking-tight md:text-3xl'>
+                        {t('dashboard.knowledgebase.title')}
+                    </h1>
+                    <p className='text-muted-foreground mt-1 text-sm'>
+                        {t('dashboard.knowledgebase.browseByCategory')}
+                    </p>
+                </div>
             </div>
             <WidgetRenderer widgets={getWidgets('dashboard-knowledgebase', 'after-header')} />
 
-            {loading ? (
-                <div className='space-y-4'>
-                    {[1, 2, 3].map((i) => (
-                        <div key={i} className='bg-card/20 border-border/50 h-24 animate-pulse rounded-xl border' />
-                    ))}
+            <WidgetRenderer widgets={getWidgets('dashboard-knowledgebase', 'before-categories-list')} />
+            {categories.length === 0 ? (
+                <div className='border-border/50 bg-card/10 rounded-xl border border-dashed py-24 text-center'>
+                    <div className='bg-primary/10 mb-6 inline-flex h-16 w-16 items-center justify-center rounded-full'>
+                        <BookOpen className='text-primary h-8 w-8' />
+                    </div>
+                    <h3 className='mb-2 text-xl font-medium'>{t('dashboard.knowledgebase.noCategories')}</h3>
+                    <p className='text-muted-foreground mx-auto max-w-sm'>
+                        {t('dashboard.knowledgebase.no_categories_desc')}
+                    </p>
                 </div>
             ) : (
-                <>
-                    <WidgetRenderer widgets={getWidgets('dashboard-knowledgebase', 'before-categories-list')} />
-                    <div className='bg-card border-border/50 overflow-hidden rounded-xl border shadow-sm'>
-                        {categories.length === 0 ? (
-                            <div className='py-24 text-center'>
-                                <div className='bg-primary/10 text-primary mb-6 inline-flex h-16 w-16 items-center justify-center rounded-full font-bold'>
-                                    <BookOpen className='h-8 w-8' />
-                                </div>
-                                <h3 className='mb-2 text-xl font-medium'>
-                                    {t('dashboard.knowledgebase.noCategories')}
-                                </h3>
-                                <p className='text-muted-foreground'>
-                                    {t('dashboard.knowledgebase.no_categories_desc')}
-                                </p>
-                            </div>
-                        ) : (
-                            <div className='divide-border/50 divide-y'>
-                                {categories.map((cat) => (
-                                    <Link
-                                        key={cat.id}
-                                        href={`${knowledgebaseBasePath}/category/${cat.id}`}
-                                        className='block'
-                                    >
-                                        <div className='group hover:border-l-primary flex cursor-pointer flex-col justify-between gap-4 border-l-2 border-l-transparent p-5 transition-all duration-200 hover:bg-white/5 sm:flex-row sm:items-center'>
-                                            <div className='flex flex-1 items-center gap-4'>
-                                                <div className='bg-primary/5 text-primary flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-transform duration-300 group-hover:scale-110'>
-                                                    {cat.icon ? (
-                                                        <div className='relative h-5 w-5 overflow-hidden rounded-sm'>
-                                                            <Image
-                                                                src={cat.icon}
-                                                                fill
-                                                                unoptimized
-                                                                alt={cat.name}
-                                                                className='object-cover'
-                                                            />
-                                                        </div>
-                                                    ) : (
-                                                        <BookOpen className='h-5 w-5' />
-                                                    )}
+                <div className='bg-card/50 border-border/50 overflow-hidden rounded-xl border backdrop-blur-xl'>
+                    <div className='divide-border/50 divide-y'>
+                        {categories.map((cat) => (
+                            <Link key={cat.id} href={`${knowledgebaseBasePath}/category/${cat.id}`} className='block'>
+                                <div className='group hover:border-l-primary flex cursor-pointer flex-col justify-between gap-4 border-l-2 border-l-transparent p-5 transition-all duration-200 hover:bg-white/2 sm:flex-row sm:items-center'>
+                                    <div className='flex flex-1 items-center gap-4'>
+                                        <div className='bg-primary/5 text-primary flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-transform duration-300 group-hover:scale-110'>
+                                            {cat.icon ? (
+                                                <div className='relative h-5 w-5 overflow-hidden rounded-sm'>
+                                                    <Image
+                                                        src={cat.icon}
+                                                        fill
+                                                        unoptimized
+                                                        alt={cat.name}
+                                                        className='object-cover'
+                                                    />
                                                 </div>
-                                                <div className='min-w-0'>
-                                                    <h3 className='text-foreground group-hover:text-primary truncate text-lg font-semibold transition-colors'>
-                                                        {cat.name}
-                                                    </h3>
-                                                    {cat.description && (
-                                                        <p className='text-muted-foreground mt-0.5 line-clamp-1 text-sm'>
-                                                            {cat.description}
-                                                        </p>
-                                                    )}
-                                                </div>
-                                            </div>
-                                            <div className='flex translate-x-2 transform items-center gap-2 opacity-0 transition-all group-hover:translate-x-0 group-hover:opacity-100'>
-                                                <div className='border-border/50 border-l pl-4'>
-                                                    <ChevronRight className='text-primary h-5 w-5' />
-                                                </div>
-                                            </div>
+                                            ) : (
+                                                <BookOpen className='h-5 w-5' />
+                                            )}
                                         </div>
-                                    </Link>
-                                ))}
-                            </div>
-                        )}
+                                        <div className='min-w-0'>
+                                            <h3 className='text-foreground group-hover:text-primary truncate text-lg font-semibold transition-colors'>
+                                                {cat.name}
+                                            </h3>
+                                            {cat.description && (
+                                                <p className='text-muted-foreground mt-0.5 line-clamp-1 text-sm'>
+                                                    {cat.description}
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className='flex translate-x-2 transform items-center gap-2 opacity-0 transition-all group-hover:translate-x-0 group-hover:opacity-100'>
+                                        <div className='border-border/50 border-l pl-4'>
+                                            <ChevronRight className='text-primary h-5 w-5' />
+                                        </div>
+                                    </div>
+                                </div>
+                            </Link>
+                        ))}
                     </div>
-                    <WidgetRenderer widgets={getWidgets('dashboard-knowledgebase', 'after-categories-list')} />
-                </>
+                </div>
             )}
+            <WidgetRenderer widgets={getWidgets('dashboard-knowledgebase', 'after-categories-list')} />
             <WidgetRenderer widgets={getWidgets('dashboard-knowledgebase', 'bottom-of-page')} />
         </div>
     );

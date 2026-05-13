@@ -13,34 +13,23 @@ by the Free Software Foundation, either version 3 of the License, or
 See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
-import { useState, useEffect } from 'react';
-import { adminSettingsApi } from '@/lib/admin-settings-api';
+import { useMemo } from 'react';
+import { useSettings } from '@/contexts/SettingsContext';
 import { isEnabled } from '@/lib/utils';
 
+/**
+ * Developer mode is exposed on the public settings payload (`/api/system/settings`)
+ * as `app_developer_mode`. Reading it from SettingsContext avoids calling
+ * `/api/admin/settings` for every user (403 for roles without admin.settings.view).
+ */
 export function useDeveloperMode() {
-    const [isDeveloperModeEnabled, setIsDeveloperModeEnabled] = useState<boolean | null>(null);
-    const [loading, setLoading] = useState(true);
+    const { settings, loading: settingsLoading } = useSettings();
 
-    useEffect(() => {
-        const checkDeveloperMode = async () => {
-            try {
-                const response = await adminSettingsApi.fetchSettings();
-                if (response.success && response.data?.settings) {
-                    const developerModeSetting = response.data.settings['app_developer_mode'];
-                    setIsDeveloperModeEnabled(isEnabled(developerModeSetting?.value));
-                } else {
-                    setIsDeveloperModeEnabled(false);
-                }
-            } catch (error) {
-                console.error('Error checking developer mode:', error);
-                setIsDeveloperModeEnabled(false);
-            } finally {
-                setLoading(false);
-            }
-        };
+    const isDeveloperModeEnabled = useMemo(() => {
+        if (settingsLoading) return null;
+        if (!settings) return false;
+        return isEnabled(settings.app_developer_mode);
+    }, [settingsLoading, settings]);
 
-        checkDeveloperMode();
-    }, []);
-
-    return { isDeveloperModeEnabled, loading };
+    return { isDeveloperModeEnabled, loading: settingsLoading };
 }

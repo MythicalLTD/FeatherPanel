@@ -123,14 +123,12 @@ export function NavbarClassicChrome(props: NavbarChromeProps) {
 
                     <ThemeCustomizer />
 
-                    <div className='lg:bg-border hidden lg:block lg:h-6 lg:w-px' aria-hidden='true' />
-
                     <Menu as='div' className='relative shrink-0'>
                         <Menu.Button
                             className={cn(
                                 'group text-muted-foreground focus-visible:ring-ring focus-visible:ring-offset-background flex items-center text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
-                                'border-border/50 bg-background/90 hover:bg-background hover:text-foreground data-[headlessui-state=open]:bg-background data-[headlessui-state=open]:text-foreground h-10 w-10 shrink-0 justify-center rounded-full border p-0.5 backdrop-blur-md',
-                                'lg:hover:bg-accent/80 lg:data-[headlessui-state=open]:bg-accent/80 lg:h-auto lg:w-auto lg:justify-start lg:gap-x-2 lg:rounded-xl lg:border-transparent lg:bg-transparent lg:p-0 lg:px-3 lg:py-2 lg:backdrop-blur-none',
+                                'h-10 w-10 shrink-0 justify-center rounded-full bg-muted/15 p-0.5 hover:bg-muted/35 hover:text-foreground data-[headlessui-state=open]:bg-muted/40 data-[headlessui-state=open]:text-foreground',
+                                'lg:hover:bg-accent/80 lg:data-[headlessui-state=open]:bg-accent/80 lg:h-auto lg:w-auto lg:justify-start lg:gap-x-2 lg:rounded-xl lg:bg-transparent lg:p-0 lg:px-3 lg:py-2',
                             )}
                         >
                             <span className='sr-only'>{t('navbar.openUserMenu')}</span>
@@ -142,10 +140,10 @@ export function NavbarClassicChrome(props: NavbarChromeProps) {
                                         width={36}
                                         height={36}
                                         unoptimized
-                                        className='border-border/50 h-full w-full rounded-full border object-cover'
+                                        className='h-full w-full rounded-full object-cover'
                                     />
                                 ) : (
-                                    <div className='bg-muted/50 ring-border/50 flex h-full w-full items-center justify-center rounded-full ring-1'>
+                                    <div className='bg-muted/40 flex h-full w-full items-center justify-center rounded-full'>
                                         <span className='text-primary text-sm font-semibold'>{getUserInitials()}</span>
                                     </div>
                                 )}
@@ -396,7 +394,7 @@ export function NavbarModernChrome(props: NavbarChromeProps) {
                 desktopHoverDock && 'lg:static lg:top-auto',
             )}
         >
-            <div className='border-border/20 bg-card/80 dark:bg-card/70 mx-auto flex h-12 max-w-450 items-center gap-x-2 rounded-2xl border px-2.5 shadow-sm backdrop-blur-xl sm:h-13 sm:gap-x-3 sm:px-3.5'>
+            <div className='border-border/15 bg-card/80 dark:bg-card/70 mx-auto flex h-12 max-w-450 items-center gap-x-2 rounded-2xl border px-2.5 shadow-sm backdrop-blur-xl sm:h-13 sm:gap-x-3 sm:px-3.5'>
                 <button
                     type='button'
                     className='text-muted-foreground hover:bg-muted/50 hover:text-foreground focus-visible:ring-ring focus-visible:ring-offset-background flex shrink-0 touch-manipulation items-center justify-center rounded-xl border border-transparent p-2 transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none active:scale-95 lg:hidden'
@@ -423,7 +421,7 @@ export function NavbarModernChrome(props: NavbarChromeProps) {
                     </div>
 
                     <div className='flex shrink-0 items-center gap-1 sm:gap-2'>
-                        <div className='border-border/30 bg-muted/10 flex items-center gap-0.5 rounded-xl border p-0.5 sm:p-1'>
+                        <div className='bg-muted/15 flex items-center gap-0.5 rounded-xl p-0.5 sm:bg-muted/20 sm:p-1'>
                             {showAdminAreaButton && (
                                 <button
                                     type='button'
@@ -443,17 +441,12 @@ export function NavbarModernChrome(props: NavbarChromeProps) {
                             </div>
                         </div>
 
-                        <div
-                            className='via-border/80 mx-0.5 hidden h-6 w-px bg-linear-to-b from-transparent to-transparent lg:block'
-                            aria-hidden='true'
-                        />
-
                         <Menu as='div' className='relative shrink-0'>
                             <Menu.Button
                                 className={cn(
-                                    'group text-muted-foreground focus-visible:ring-ring/40 focus-visible:ring-offset-background flex items-center text-sm font-medium transition-[background-color,border-color,box-shadow,color] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
-                                    'border-border/45 bg-muted/15 hover:bg-muted/40 hover:text-foreground hover:border-border/60 data-[headlessui-state=open]:border-border/70 data-[headlessui-state=open]:bg-muted/35 data-[headlessui-state=open]:text-foreground h-9 w-9 shrink-0 justify-center rounded-xl border p-0.5 shadow-sm data-[headlessui-state=open]:shadow-sm',
-                                    'lg:border-border/45 lg:bg-muted/15 lg:hover:bg-muted/35 lg:data-[headlessui-state=open]:bg-muted/35 lg:h-auto lg:w-auto lg:justify-start lg:gap-x-2 lg:rounded-xl lg:px-2.5 lg:py-1.5',
+                                    'group text-muted-foreground focus-visible:ring-ring/40 focus-visible:ring-offset-background flex items-center text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
+                                    'h-9 w-9 shrink-0 justify-center rounded-xl bg-muted/15 p-0.5 hover:bg-muted/35 hover:text-foreground data-[headlessui-state=open]:bg-muted/40 data-[headlessui-state=open]:text-foreground',
+                                    'lg:h-auto lg:w-auto lg:justify-start lg:gap-x-2 lg:rounded-xl lg:px-2.5 lg:py-1.5 lg:hover:bg-muted/30 lg:data-[headlessui-state=open]:bg-muted/35',
                                 )}
                             >
                                 <span className='sr-only'>{t('navbar.openUserMenu')}</span>
@@ -465,10 +458,10 @@ export function NavbarModernChrome(props: NavbarChromeProps) {
                                             width={36}
                                             height={36}
                                             unoptimized
-                                            className='border-border/50 h-full w-full rounded-full border object-cover'
+                                            className='h-full w-full rounded-full object-cover'
                                         />
                                     ) : (
-                                        <div className='bg-muted/50 ring-border/50 flex h-full w-full items-center justify-center rounded-full ring-1'>
+                                        <div className='bg-muted/40 flex h-full w-full items-center justify-center rounded-full'>
                                             <span className='text-primary text-sm font-semibold'>
                                                 {getUserInitials()}
                                             </span>
@@ -480,7 +473,7 @@ export function NavbarModernChrome(props: NavbarChromeProps) {
                                         {getUsername()}
                                     </span>
                                     {user?.role ? (
-                                        <span className='border-primary/20 bg-primary/10 text-primary mt-0.5 inline-flex max-w-full items-center truncate rounded-md border px-1.5 py-px text-[11px] leading-tight font-medium'>
+                                        <span className='bg-primary/12 text-primary mt-0.5 inline-flex max-w-full items-center truncate rounded-md px-1.5 py-px text-[11px] leading-tight font-medium'>
                                             {user.role.display_name}
                                         </span>
                                     ) : (
