@@ -28,6 +28,7 @@ import type { PluginSidebarItem } from '@/types/navigation';
 import { usePluginRoutes } from '@/hooks/usePluginRoutes';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { isCloudflareChallengeDocument, withCacheBuster } from '@/lib/cloudflare-challenge';
+import { getPluginIframeThemeOverrideCss } from '@/lib/pluginIframeThemeCss';
 
 interface PluginPageProps {
     context: 'admin' | 'client' | 'server' | 'vds';
@@ -63,33 +64,16 @@ export default function PluginPage({ context, serverUuid, vdsId }: PluginPagePro
                 existingStyle.remove();
             }
 
-            // Add theme class to html element
+            // Expose theme as a data attribute so plugins can opt-in. Do NOT add
+            // `light`/`dark` classes here: in v1.3.7 we didn't, and adding them
+            // activates every Tailwind `.dark:*` rule inside the plugin's own
+            // bundle (most plugins are built against the panel's design system)
+            // which paints a solid bg slab over the panel's custom backdrop.
             iframeDoc.documentElement.setAttribute('data-fp-theme', theme);
-            iframeDoc.documentElement.classList.remove('light', 'dark');
-            iframeDoc.documentElement.classList.add(theme);
 
-            // Inject CSS variables for theming
             const style = iframeDoc.createElement('style');
             style.id = 'featherpanel-theme-override';
-            style.textContent = `
-                :root {
-                    color-scheme: ${theme};
-                }
-                [data-fp-theme="light"] {
-                    --fp-bg: #ffffff;
-                    --fp-fg: #0a0a0a;
-                    --fp-card: #ffffff;
-                    --fp-card-fg: #0a0a0a;
-                    --fp-muted: #f5f5f5;
-                }
-                [data-fp-theme="dark"] {
-                    --fp-bg: #0a0a0a;
-                    --fp-fg: #fafafa;
-                    --fp-card: #171717;
-                    --fp-card-fg: #fafafa;
-                    --fp-muted: #262626;
-                }
-            `;
+            style.textContent = getPluginIframeThemeOverrideCss(theme);
             if (iframeDoc.head) {
                 iframeDoc.head.appendChild(style);
             }
@@ -484,8 +468,10 @@ export default function PluginPage({ context, serverUuid, vdsId }: PluginPagePro
                         'h-full w-full border-0 transition-all duration-500',
                         iframeLoading ? 'scale-95 opacity-0' : 'scale-100 opacity-100',
                     )}
+                    style={{ background: 'transparent' }}
                     onLoad={onIframeLoad}
                     onError={onIframeError}
+                    {...{ allowtransparency: 'true' }}
                 />
             )}
         </div>

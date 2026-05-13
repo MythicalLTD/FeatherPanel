@@ -25,6 +25,7 @@ import { RotateCcw, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PluginWidget } from '@/types/plugin-widgets';
 import { isCloudflareChallengeDocument, withCacheBuster } from '@/lib/cloudflare-challenge';
+import { getPluginIframeThemeOverrideCss } from '@/lib/pluginIframeThemeCss';
 
 interface WidgetRendererProps {
     widgets: PluginWidget[];
@@ -168,33 +169,16 @@ export function WidgetRenderer({ widgets, height = '400px', context }: WidgetRen
                 existingStyle.remove();
             }
 
-            // Add theme class to html element
+            // Expose theme as a data attribute so plugins can opt-in. Do NOT add
+            // `light`/`dark` classes here: in v1.3.7 we didn't, and adding them
+            // activates every Tailwind `.dark:*` rule inside the plugin's own
+            // bundle (most plugins are built against the panel's design system)
+            // which paints a solid bg slab over the panel's custom backdrop.
             iframeDoc.documentElement.setAttribute('data-fp-theme', theme);
-            iframeDoc.documentElement.classList.remove('light', 'dark');
-            iframeDoc.documentElement.classList.add(theme);
 
-            // Inject CSS variables for theming
             const style = iframeDoc.createElement('style');
             style.id = 'featherpanel-theme-override';
-            style.textContent = `
-                :root {
-                    color-scheme: ${theme};
-                }
-                [data-fp-theme="light"] {
-                    --fp-bg: #ffffff;
-                    --fp-fg: #0a0a0a;
-                    --fp-card: #ffffff;
-                    --fp-card-fg: #0a0a0a;
-                    --fp-muted: #f5f5f5;
-                }
-                [data-fp-theme="dark"] {
-                    --fp-bg: #0a0a0a;
-                    --fp-fg: #fafafa;
-                    --fp-card: #171717;
-                    --fp-card-fg: #fafafa;
-                    --fp-muted: #262626;
-                }
-            `;
+            style.textContent = getPluginIframeThemeOverrideCss(theme);
             if (iframeDoc.head) {
                 iframeDoc.head.appendChild(style);
             }
