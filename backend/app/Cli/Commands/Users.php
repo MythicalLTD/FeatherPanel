@@ -26,6 +26,7 @@ use App\Chat\Activity;
 use App\Chat\MailList;
 use App\Chat\ApiClient;
 use App\Chat\MailQueue;
+use App\Chat\VmInstance;
 use App\Helpers\UUIDUtils;
 use App\Cli\CommandBuilder;
 use App\Config\ConfigInterface;
@@ -517,6 +518,16 @@ class Users extends App implements CommandBuilder
             self::clearScreen();
             self::$cliApp->send('&c✗ Cannot delete user with active servers!');
             self::$cliApp->send('&7Please transfer or delete all servers first.');
+            self::$cliApp->send('&7Press any key to continue...');
+            self::waitForInput();
+
+            return false;
+        }
+
+        if (VmInstance::countByUserUuid((string) $user['uuid']) > 0) {
+            self::clearScreen();
+            self::$cliApp->send('&c✗ Cannot delete user with VDS instances assigned!');
+            self::$cliApp->send('&7Reassign or delete those instances in Admin → VDS Instances first.');
             self::$cliApp->send('&7Press any key to continue...');
             self::waitForInput();
 

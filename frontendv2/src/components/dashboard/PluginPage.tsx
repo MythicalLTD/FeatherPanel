@@ -104,6 +104,7 @@ export default function PluginPage({ context, serverUuid, vdsId }: PluginPagePro
             iframeRef.current.contentWindow.postMessage({ type: 'featherpanel-theme', theme }, '*');
             injectThemeStyles();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [theme]);
 
     // Also listen for plugin ready signal

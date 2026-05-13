@@ -44,6 +44,28 @@ export function WidgetRenderer({ widgets, height = '400px', context }: WidgetRen
 
     const MAX_CHALLENGE_RETRIES = 4;
 
+    // Stable fingerprints so useEffect does not re-fire every render when parents pass
+    // a new `widgets` array (e.g. getWidgets()) or a new `context` object with the same values.
+    const widgetsKey = JSON.stringify(
+        widgets.map((w) => ({
+            id: w.id,
+            plugin: w.plugin,
+            component: w.component,
+            enabled: w.enabled !== false,
+        })),
+    );
+    const contextKey =
+        context == null
+            ? ''
+            : JSON.stringify(
+                  Object.fromEntries(
+                      Object.entries(context)
+                          .filter(([, v]) => v !== null && v !== undefined)
+                          .sort(([a], [b]) => a.localeCompare(b))
+                          .map(([k, v]) => [k, String(v)] as [string, string]),
+                  ),
+              );
+
     // Build widget src URLs with current theme
     const buildWidgetSrc = (widget: PluginWidget): string => {
         const raw = widget.component;
@@ -72,18 +94,35 @@ export function WidgetRenderer({ widgets, height = '400px', context }: WidgetRen
             });
         }
 
+        // Bust browser / CDN caches for plugin widget documents (HTML entry + hashed assets).
+        merged.set('_fp_wcb', String(Date.now()));
+
         const qs = merged.toString();
         return qs ? `${baseUrl}?${qs}` : baseUrl;
     };
 
-    // Update widget srcs when theme or widgets change
+    // Update widget srcs when theme, route, widget set, or context values change.
+    // Uses widgetsKey/contextKey so a fresh array/object reference does not retrigger the effect.
     useEffect(() => {
         const newSrcs: Record<string, string> = {};
         widgets.forEach((widget) => {
             newSrcs[widget.id] = buildWidgetSrc(widget);
         });
-        setWidgetSrcs(newSrcs);
-    }, [theme, widgets, pathname, context, buildWidgetSrc]);
+        setWidgetSrcs((prev) => {
+            const prevKeys = Object.keys(prev);
+            const newKeys = Object.keys(newSrcs);
+            if (prevKeys.length !== newKeys.length) {
+                return newSrcs;
+            }
+            for (const id of newKeys) {
+                if (prev[id] !== newSrcs[id]) {
+                    return newSrcs;
+                }
+            }
+            return prev;
+        });
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- widgets/buildWidgetSrc omitted; widgetsKey/contextKey capture meaningful changes
+    }, [theme, pathname, widgetsKey, contextKey]);
 
     // Send theme to all ready widget iframes when theme changes and inject styles
     useEffect(() => {
@@ -94,7 +133,8 @@ export function WidgetRenderer({ widgets, height = '400px', context }: WidgetRen
                 injectThemeStyles(iframe);
             }
         });
-    }, [theme, widgets]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- injectThemeStyles below; widgets omitted (use widgetsKey)
+    }, [theme, widgetsKey]);
 
     // Listen for widget ready signals and send theme + inject styles
     useEffect(() => {
@@ -112,6 +152,7 @@ export function WidgetRenderer({ widgets, height = '400px', context }: WidgetRen
 
         window.addEventListener('message', handleMessage);
         return () => window.removeEventListener('message', handleMessage);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [theme]);
 
     if (!widgets || widgets.length === 0) return null;
@@ -157,7 +198,7 @@ export function WidgetRenderer({ widgets, height = '400px', context }: WidgetRen
             if (iframeDoc.head) {
                 iframeDoc.head.appendChild(style);
             }
-        } catch (err) {
+        } catch {
             // Ignore cross-origin access errors
         }
     };
@@ -415,7 +456,7 @@ export function WidgetRenderer({ widgets, height = '400px', context }: WidgetRen
                                         }}
                                         onLoad={(event) => handleIframeLoad(widget.id, event.currentTarget)}
                                         onError={() => handleIframeError(widget.id)}
-                                        {...{ allowtransparency: true }}
+                                        {...{ allowtransparency: 'true' }}
                                     />
                                 )}
                             </div>

@@ -21,6 +21,7 @@ use App\App;
 use App\Chat\VmIp;
 use App\Chat\VmNode;
 use App\Chat\VmTask;
+use App\Permissions;
 use App\Chat\Database;
 use App\Chat\VmSubuser;
 use App\Chat\VmInstance;
@@ -30,6 +31,7 @@ use App\Helpers\VmGateway;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Chat\VmInstanceActivity;
+use App\Helpers\PermissionHelper;
 use App\Services\Vm\VmInstanceUtil;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Plugins\Events\Events\VdsEvent;
@@ -170,16 +172,34 @@ class VmUserInstanceController
             return ApiResponse::error('VM instance not found', 'VM_INSTANCE_NOT_FOUND', 404);
         }
 
-        // Add subuser flag if applicable
-        $vmInstance['is_owner'] = isset($vmInstance['user_uuid']) && $vmInstance['user_uuid'] === $user['uuid'];
-        $vmInstance['is_subuser'] = !$vmInstance['is_owner'];
+        $ownerUuid = isset($vmInstance['user_uuid']) && is_string($vmInstance['user_uuid'])
+            ? trim($vmInstance['user_uuid'])
+            : '';
+        $hasDbOwner = $ownerUuid !== '';
 
-        if ($vmInstance['is_subuser']) {
+        $vmInstance['is_owner'] = $hasDbOwner && $ownerUuid === $user['uuid'];
+
+        $subuser = null;
+        if (!$vmInstance['is_owner']) {
             $subuser = VmSubuser::getSubuserByUserAndVmInstance((int) $user['id'], (int) $vmInstance['id']);
-            $vmInstance['permissions'] = $subuser ? json_decode($subuser['permissions'] ?? '[]', true) : [];
+        }
+        $vmInstance['is_subuser'] = $subuser !== null;
+
+        $fullPerms = ['power', 'console', 'backup', 'activity.read', 'reinstall', 'settings'];
+        $isPanelVmAdmin = PermissionHelper::hasPermission($user['uuid'], Permissions::ADMIN_VM_INSTANCES_VIEW)
+            || PermissionHelper::hasPermission($user['uuid'], Permissions::ADMIN_VM_INSTANCES_EDIT)
+            || PermissionHelper::hasPermission($user['uuid'], Permissions::ADMIN_VM_INSTANCES_DELETE);
+
+        if ($vmInstance['is_owner']) {
+            $vmInstance['permissions'] = $fullPerms;
+        } elseif ($vmInstance['is_subuser']) {
+            $decoded = $subuser ? json_decode($subuser['permissions'] ?? '[]', true) : [];
+            $vmInstance['permissions'] = is_array($decoded) ? $decoded : [];
+        } elseif ($isPanelVmAdmin) {
+            // Staff accessing /vds/:id (e.g. orphaned instance with no owner) — match VmGateway API access.
+            $vmInstance['permissions'] = $fullPerms;
         } else {
-            // Owner has all permissions
-            $vmInstance['permissions'] = ['power', 'console', 'backup', 'activity.read', 'reinstall', 'settings'];
+            $vmInstance['permissions'] = [];
         }
 
         $vmInstance['access_password'] = $vmInstance['is_owner']

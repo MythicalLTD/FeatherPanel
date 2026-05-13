@@ -15,7 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter, useParams, usePathname, useSearchParams } from 'next/navigation';
 import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -593,6 +593,19 @@ export default function VmInstanceEditPage() {
         },
         [pathname, router, searchParams],
     );
+
+    const assignParamOpened = useRef(false);
+    useEffect(() => {
+        if (assignParamOpened.current) return;
+        if (searchParams.get('assign') !== '1') return;
+        assignParamOpened.current = true;
+        setActiveTab('details');
+        setOwnerModalOpen(true);
+        const params = new URLSearchParams(searchParams.toString());
+        params.delete('assign');
+        const query = params.toString();
+        router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+    }, [searchParams, pathname, router]);
 
     if (loading || !instance) {
         return (

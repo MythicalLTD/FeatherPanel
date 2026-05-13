@@ -4430,6 +4430,7 @@
 			"no_results": "No VDS instances found",
 			"unknown_node": "Unknown Node",
 			"unassigned": "Unassigned",
+			"assign_owner": "Assign owner",
 			"filters": {
 				"user": "Filter by user",
 				"user_selected": "User: {username}",

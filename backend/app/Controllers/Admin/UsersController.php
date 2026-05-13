@@ -906,7 +906,7 @@ class UsersController
             new OA\Response(response: 401, description: 'Unauthorized'),
             new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
             new OA\Response(response: 404, description: 'User not found'),
-            new OA\Response(response: 409, description: 'Conflict - User has active servers and cannot be deleted'),
+            new OA\Response(response: 409, description: 'Conflict - User has active servers or VDS instances and cannot be deleted'),
             new OA\Response(response: 500, description: 'Internal server error - Failed to delete user or send account deleted email'),
         ]
     )]
@@ -943,6 +943,15 @@ class UsersController
 
         if (!empty($servers)) {
             return ApiResponse::error('Cannot delete user with active servers. Please transfer or delete all servers first.', 'USER_HAS_SERVERS', 409);
+        }
+
+        $vmCount = VmInstance::countByUserUuid((string) $user['uuid']);
+        if ($vmCount > 0) {
+            return ApiResponse::error(
+                'Cannot delete user with VDS instances assigned. Reassign or delete those instances first.',
+                'USER_HAS_VM_INSTANCES',
+                409
+            );
         }
 
         // Emit event

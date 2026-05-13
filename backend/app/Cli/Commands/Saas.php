@@ -257,6 +257,12 @@ class Saas extends App implements CommandBuilder
             return;
         }
 
+        if (\App\Chat\VmInstance::countByUserUuid((string) $user['uuid']) > 0) {
+            self::$cliApp->send('&cError: Cannot delete user with VDS instances assigned');
+
+            return;
+        }
+
         // Delete related data
         \App\Chat\Activity::deleteUserData($user['uuid']);
         \App\Chat\MailList::deleteAllMailListsByUserId($user['uuid']);
