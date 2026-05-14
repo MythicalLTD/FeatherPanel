@@ -21,11 +21,11 @@ use App\App;
 use App\Chat\User;
 use App\Cache\Cache;
 use App\Chat\Activity;
-use App\Helpers\ApiResponse;
 use App\Helpers\UUIDUtils;
+use App\Helpers\ApiResponse;
 use App\Config\ConfigInterface;
-use App\Helpers\EmailDomainValidator;
 use App\CloudFlare\CloudFlareRealIP;
+use App\Helpers\EmailDomainValidator;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -118,6 +118,7 @@ class DiscordController
 
         if (!isset($tokenData['access_token'])) {
             $app->getLogger()->error('Discord OAuth token exchange failed. HTTP ' . $httpCode . ' Response: ' . ($tokenResponse ?: 'Empty'));
+
             return new RedirectResponse('/auth/login?error=discord_token_failed');
         }
 
@@ -393,7 +394,7 @@ class DiscordController
         string $discordUsername,
         string $discordName,
         string $discordEmail,
-        string $accessToken
+        string $accessToken,
     ): ?array {
         $app = App::getInstance(true);
         $config = $app->getConfig();

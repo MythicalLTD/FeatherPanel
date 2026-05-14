@@ -14,15 +14,24 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
 import type { NextConfig } from 'next';
+import path from 'path';
 
 const nextConfig: NextConfig = {
     reactCompiler: true,
-    experimental: {
-        turbopackFileSystemCacheForDev: true, // Huge boost for cold starts
+
+    turbopack: {
+        root: path.resolve(__dirname),
     },
+
+    experimental: {
+        turbopackFileSystemCacheForDev: true,
+    },
+
     // Enable standalone output for optimized Docker builds
     output: 'standalone',
+
     allowedDevOrigins: ['testingpanel.mythical.systems'],
+
     // Prevent caching of HTML so users always get fresh chunk references after deploys
     async headers() {
         return [
@@ -37,6 +46,7 @@ const nextConfig: NextConfig = {
             },
         ];
     },
+
     images: {
         remotePatterns: [
             {
@@ -49,6 +59,7 @@ const nextConfig: NextConfig = {
             },
         ],
     },
+
     // Proxy API requests to backend during development (like Vite proxy)
     async rewrites() {
         return [

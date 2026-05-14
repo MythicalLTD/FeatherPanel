@@ -496,8 +496,12 @@ export default function MailTemplatesPage() {
                                 </div>
                             </div>
                             <div className='flex flex-col space-y-2 lg:overflow-hidden'>
-                                <Label>{t('admin.mail_templates.form.preview_title', { name: formData.name || 'Template' })}</Label>
-                                <div className='border-border/50 bg-white relative flex-1 overflow-hidden rounded-2xl border shadow-xl'>
+                                <Label>
+                                    {t('admin.mail_templates.form.preview_title', {
+                                        name: formData.name || 'Template',
+                                    })}
+                                </Label>
+                                <div className='border-border/50 relative flex-1 overflow-hidden rounded-2xl border bg-white shadow-xl'>
                                     <iframe
                                         srcDoc={formData.body}
                                         className='h-full w-full border-none'
@@ -557,8 +561,12 @@ export default function MailTemplatesPage() {
                                 </div>
                             </div>
                             <div className='flex flex-col space-y-2 lg:overflow-hidden'>
-                                <Label>{t('admin.mail_templates.form.preview_title', { name: formData.name || 'Template' })}</Label>
-                                <div className='border-border/50 bg-white relative flex-1 overflow-hidden rounded-2xl border shadow-xl'>
+                                <Label>
+                                    {t('admin.mail_templates.form.preview_title', {
+                                        name: formData.name || 'Template',
+                                    })}
+                                </Label>
+                                <div className='border-border/50 relative flex-1 overflow-hidden rounded-2xl border bg-white shadow-xl'>
                                     <iframe
                                         srcDoc={formData.body}
                                         className='h-full w-full border-none'

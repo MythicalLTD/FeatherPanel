@@ -14,7 +14,12 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
 import DashboardShell from '@/components/layout/DashboardShell';
+import PermissionGuard from '@/components/auth/PermissionGuard';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-    return <DashboardShell>{children}</DashboardShell>;
+    return (
+        <PermissionGuard>
+            <DashboardShell>{children}</DashboardShell>
+        </PermissionGuard>
+    );
 }

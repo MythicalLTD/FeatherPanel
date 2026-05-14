@@ -59,7 +59,11 @@ export function FeatherIDE({ className, containerClassName, options, title, ...p
                         <div className='h-3 w-3 rounded-full bg-yellow-500/50' />
                         <div className='h-3 w-3 rounded-full bg-green-500/50' />
                     </div>
-                    {title && <span className='text-muted-foreground ml-2 text-xs font-bold uppercase tracking-wider'>{title}</span>}
+                    {title && (
+                        <span className='text-muted-foreground ml-2 text-xs font-bold tracking-wider uppercase'>
+                            {title}
+                        </span>
+                    )}
                 </div>
                 <Button
                     variant='ghost'
@@ -101,4 +105,3 @@ export function FeatherIDE({ className, containerClassName, options, title, ...p
         </div>
     );
 }
-

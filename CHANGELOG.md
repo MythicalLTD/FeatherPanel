@@ -12,6 +12,7 @@
 - Removed support for reForge Captcha invisible and managed widget modes; the panel only supports checkbox and image, with legacy invisible/managed settings coerced to checkbox in the UI. by @nayskutzu
 - Admin-facing copy for reForge Captcha now consistently uses the product name reForge Captcha (labels, descriptions, and provider dropdown text). by @nayskutzu
 - Mail templates page now supports the FeatherIDE code editor for editing mail templates. by @nayskutzu
+- Admin page rendering now won't get leaked to users (design only) or won't flash them. by @nayskutzu
 
 ### Added
 
