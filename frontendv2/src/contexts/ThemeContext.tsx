@@ -248,16 +248,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
             setBackgroundImageFitState(forcedFit);
             localStorage.setItem('backgroundImageFit', forcedFit);
         }
-    }, [
-        settings,
-        mounted,
-        theme,
-        accentColor,
-        backgroundType,
-        backdropBlur,
-        backdropDarken,
-        backgroundImageFit,
-    ]);
+    }, [settings, mounted, theme, accentColor, backgroundType, backdropBlur, backdropDarken, backgroundImageFit]);
 
     useEffect(() => {
         if (!mounted) return;

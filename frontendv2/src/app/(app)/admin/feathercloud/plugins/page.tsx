@@ -59,13 +59,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select } from '@/components/ui/select-native';
 import { cn } from '@/lib/utils';
 import { Sheet, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface OnlineAddon {
     identifier: string;
@@ -164,7 +158,7 @@ export default function PluginsPage() {
     // Dependency check state
     const [requirementsDialogOpen, setRequirementsDialogOpen] = useState(false);
     const [requirementsCheck, setRequirementsCheck] = useState<RequirementsCheckResult | null>(null);
-    const [checkingRequirements, setCheckingRequirements] = useState(false);
+    const [, setCheckingRequirements] = useState(false);
     const [pendingInstallId, setPendingInstallId] = useState<string | null>(null);
 
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-feathercloud-plugins');
@@ -308,7 +302,11 @@ export default function PluginsPage() {
         } catch (err: unknown) {
             const e = err as {
                 response?: {
-                    data?: { message?: string; missing_dependencies?: string[]; dependency_details?: DependencyCheck[] };
+                    data?: {
+                        message?: string;
+                        missing_dependencies?: string[];
+                        dependency_details?: DependencyCheck[];
+                    };
                     status?: number;
                 };
             };
@@ -1190,58 +1188,60 @@ export default function PluginsPage() {
                         ) : null}
 
                         {/* Dependencies List */}
-                        {requirementsCheck && requirementsCheck.dependencies?.checks && requirementsCheck.dependencies.checks.length > 0 && (
-                            <div className='space-y-2'>
-                                <h4 className='flex items-center gap-2 text-sm font-semibold'>
-                                    <Layers className='h-4 w-4' />
-                                    {t('admin.marketplace.plugins.requirements.dependencies')}
-                                </h4>
+                        {requirementsCheck &&
+                            requirementsCheck.dependencies?.checks &&
+                            requirementsCheck.dependencies.checks.length > 0 && (
                                 <div className='space-y-2'>
-                                    {requirementsCheck.dependencies.checks.map((dep, index) => (
-                                        <div
-                                            key={index}
-                                            className={cn(
-                                                'flex items-start gap-2 rounded-md border p-2 text-sm',
-                                                dep.met
-                                                    ? 'border-green-200 bg-green-50/30'
-                                                    : 'border-red-200 bg-red-50/30',
-                                            )}
-                                        >
-                                            {dep.met ? (
-                                                <CheckCircle2 className='mt-0.5 h-4 w-4 shrink-0 text-green-500' />
-                                            ) : (
-                                                <XCircle className='mt-0.5 h-4 w-4 shrink-0 text-red-500' />
-                                            )}
-                                            <div className='flex-1'>
-                                                <div className='flex items-center gap-2'>
-                                                    <Badge
-                                                        variant='outline'
-                                                        className={cn(
-                                                            'h-5 text-[10px]',
-                                                            dep.met
-                                                                ? 'border-green-300 text-green-700'
-                                                                : 'border-red-300 text-red-700',
-                                                        )}
-                                                    >
-                                                        {dep.type}
-                                                    </Badge>
-                                                    <span className='font-medium'>{dep.name}</span>
-                                                </div>
-                                                {!dep.met && (
-                                                    <p className='text-muted-foreground mt-1 text-xs'>
-                                                        {dep.message}
-                                                    </p>
+                                    <h4 className='flex items-center gap-2 text-sm font-semibold'>
+                                        <Layers className='h-4 w-4' />
+                                        {t('admin.marketplace.plugins.requirements.dependencies')}
+                                    </h4>
+                                    <div className='space-y-2'>
+                                        {requirementsCheck.dependencies.checks.map((dep, index) => (
+                                            <div
+                                                key={index}
+                                                className={cn(
+                                                    'flex items-start gap-2 rounded-md border p-2 text-sm',
+                                                    dep.met
+                                                        ? 'border-green-200 bg-green-50/30'
+                                                        : 'border-red-200 bg-red-50/30',
                                                 )}
+                                            >
+                                                {dep.met ? (
+                                                    <CheckCircle2 className='mt-0.5 h-4 w-4 shrink-0 text-green-500' />
+                                                ) : (
+                                                    <XCircle className='mt-0.5 h-4 w-4 shrink-0 text-red-500' />
+                                                )}
+                                                <div className='flex-1'>
+                                                    <div className='flex items-center gap-2'>
+                                                        <Badge
+                                                            variant='outline'
+                                                            className={cn(
+                                                                'h-5 text-[10px]',
+                                                                dep.met
+                                                                    ? 'border-green-300 text-green-700'
+                                                                    : 'border-red-300 text-red-700',
+                                                            )}
+                                                        >
+                                                            {dep.type}
+                                                        </Badge>
+                                                        <span className='font-medium'>{dep.name}</span>
+                                                    </div>
+                                                    {!dep.met && (
+                                                        <p className='text-muted-foreground mt-1 text-xs'>
+                                                            {dep.message}
+                                                        </p>
+                                                    )}
+                                                </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
-                        )}
+                            )}
 
                         {/* Missing dependencies warning */}
                         {!requirementsCheck?.dependencies.all_met && (
-                            <div className='bg-amber-50 border-amber-200 rounded-lg border p-3'>
+                            <div className='rounded-lg border border-amber-200 bg-amber-50 p-3'>
                                 <p className='flex items-center gap-2 text-sm font-medium text-amber-800'>
                                     <AlertTriangle className='h-4 w-4' />
                                     {t('admin.marketplace.plugins.requirements.please_install_deps')}
@@ -1252,9 +1252,7 @@ export default function PluginsPage() {
 
                     <div className='flex justify-end gap-2'>
                         <Button variant='outline' onClick={() => setRequirementsDialogOpen(false)}>
-                            {requirementsCheck?.can_install
-                                ? t('common.cancel')
-                                : t('common.close')}
+                            {requirementsCheck?.can_install ? t('common.cancel') : t('common.close')}
                         </Button>
                         {requirementsCheck?.can_install && pendingInstallId && (
                             <Button
