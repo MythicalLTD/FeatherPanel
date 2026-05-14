@@ -42,6 +42,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Set lowercase repository owner
+        id: repo-owner
+        run: |
+          REPO_OWNER_LOWER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          echo "owner=$REPO_OWNER_LOWER" >> $GITHUB_OUTPUT
+
       - name: Set version tag
         id: version
         run: |
@@ -80,13 +86,13 @@ jobs:
           platforms: ${{ matrix.platform }}
           push: true
           cache-from: |
-            type=registry,ref=ghcr.io/${{ github.repository_owner }}/featherpanel-oci:buildcache-${{ matrix.cache-key }}
+            type=registry,ref=ghcr.io/${{ steps.repo-owner.outputs.owner }}/featherpanel-oci:buildcache-${{ matrix.cache-key }}
             type=gha
           cache-to: |
-            type=registry,ref=ghcr.io/${{ github.repository_owner }}/featherpanel-oci:buildcache-${{ matrix.cache-key }},mode=max
+            type=registry,ref=ghcr.io/${{ steps.repo-owner.outputs.owner }}/featherpanel-oci:buildcache-${{ matrix.cache-key }},mode=max
             type=gha,mode=max
           tags: |
-            ghcr.io/${{ github.repository_owner }}/featherpanel-oci:${{ steps.version.outputs.tag }}-${{ steps.platform-tag.outputs.tag }}
+            ghcr.io/${{ steps.repo-owner.outputs.owner }}/featherpanel-oci:${{ steps.version.outputs.tag }}-${{ steps.platform-tag.outputs.tag }}
 
   manifest-oci:
     name: Create Multi-Arch Manifest - OCI
@@ -99,6 +105,12 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Set lowercase repository owner
+        id: repo-owner
+        run: |
+          REPO_OWNER_LOWER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          echo "owner=$REPO_OWNER_LOWER" >> $GITHUB_OUTPUT
 
       - name: Set version tag
         id: version
@@ -131,10 +143,10 @@ jobs:
 
       - name: Create and push manifest
         run: |
-          docker buildx imagetools create --tag ghcr.io/${{ github.repository_owner }}/featherpanel-oci:${{ steps.version.outputs.tag }} \
-            ghcr.io/${{ github.repository_owner }}/featherpanel-oci:${{ steps.version.outputs.tag }}-linux-amd64 \
-            ghcr.io/${{ github.repository_owner }}/featherpanel-oci:${{ steps.version.outputs.tag }}-linux-arm64
-          docker buildx imagetools create --tag ghcr.io/${{ github.repository_owner }}/featherpanel-oci:latest \
-            ghcr.io/${{ github.repository_owner }}/featherpanel-oci:${{ steps.version.outputs.tag }}-linux-amd64 \
-            ghcr.io/${{ github.repository_owner }}/featherpanel-oci:${{ steps.version.outputs.tag }}-linux-arm64
+          docker buildx imagetools create --tag ghcr.io/${{ steps.repo-owner.outputs.owner }}/featherpanel-oci:${{ steps.version.outputs.tag }} \
+            ghcr.io/${{ steps.repo-owner.outputs.owner }}/featherpanel-oci:${{ steps.version.outputs.tag }}-linux-amd64 \
+            ghcr.io/${{ steps.repo-owner.outputs.owner }}/featherpanel-oci:${{ steps.version.outputs.tag }}-linux-arm64
+          docker buildx imagetools create --tag ghcr.io/${{ steps.repo-owner.outputs.owner }}/featherpanel-oci:latest \
+            ghcr.io/${{ steps.repo-owner.outputs.owner }}/featherpanel-oci:${{ steps.version.outputs.tag }}-linux-amd64 \
+            ghcr.io/${{ steps.repo-owner.outputs.owner }}/featherpanel-oci:${{ steps.version.outputs.tag }}-linux-arm64
 
