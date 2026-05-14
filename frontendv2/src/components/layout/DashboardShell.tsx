@@ -164,17 +164,18 @@ export default function DashboardShell({ children }: { children: React.ReactNode
 
                     <main
                         className={cn(
-                            'flex-1',
+                            'flex min-h-0 flex-1 flex-col',
                             isFullWidthMode ? 'overflow-hidden p-0' : 'px-3 py-5 sm:px-6 sm:py-6 lg:px-8',
                         )}
                     >
                         <div
                             className={cn(
+                                'flex min-h-0 flex-1 flex-col',
                                 isFullWidthMode && 'h-full',
                                 !isFullWidthMode &&
                                     (isServerConsoleHome
                                         ? 'mx-auto w-full max-w-[min(100rem,calc(100vw-1.5rem))] sm:max-w-[min(100rem,calc(100vw-2rem))]'
-                                        : 'mx-auto max-w-7xl'),
+                                        : 'mx-auto w-full max-w-7xl'),
                             )}
                         >
                             {children}
