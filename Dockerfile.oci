@@ -53,10 +53,16 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     redis-server \
     # Process manager
     supervisor \
-    # Node.js for frontend (already in base but ensure dependencies)
+    # Node.js dependencies
     curl ca-certificates gnupg \
     # Backend dependencies
     git zip unzip cron libssl3 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Node.js 22.x (LTS) for Next.js frontend
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+    && apt-get install -y nodejs \
+    && npm install -g pnpm \
     && rm -rf /var/lib/apt/lists/*
 
 # Install PHP extensions
@@ -165,45 +171,96 @@ mkdir -p /data/{mysql,redis,uploads,backups,config,logs}
 # Setup .env file
 ENV_FILE="/var/www/html/storage/config/.env"
 generate_encryption_key() {
-    head -c 32 /dev/urandom | base64
+    php -r 'echo base64_encode(sodium_crypto_secretbox_keygen());'
 }
 
-if [ -f "$ENV_FILE" ]; then
-    grep -q '^REDIS_HOST=' "$ENV_FILE" && sed -i 's/^REDIS_HOST=.*/REDIS_HOST=127.0.0.1/' "$ENV_FILE" || echo 'REDIS_HOST=127.0.0.1' >>"$ENV_FILE"
-    [ -n "$REDIS_PASSWORD" ] && (grep -q '^REDIS_PASSWORD=' "$ENV_FILE" && sed -i "s/^REDIS_PASSWORD=.*/REDIS_PASSWORD=${REDIS_PASSWORD}/" "$ENV_FILE" || echo "REDIS_PASSWORD=${REDIS_PASSWORD}" >>"$ENV_FILE") || true
-    grep -q '^DATABASE_HOST=' "$ENV_FILE" && sed -i 's/^DATABASE_HOST=.*/DATABASE_HOST=127.0.0.1/' "$ENV_FILE" || echo 'DATABASE_HOST=127.0.0.1' >>"$ENV_FILE"
-    grep -q '^DATABASE_PORT=' "$ENV_FILE" && sed -i 's/^DATABASE_PORT=.*/DATABASE_PORT=3306/' "$ENV_FILE" || echo 'DATABASE_PORT=3306' >>"$ENV_FILE"
-    [ -n "$DATABASE_DATABASE" ] && (grep -q '^DATABASE_DATABASE=' "$ENV_FILE" && sed -i "s/^DATABASE_DATABASE=.*/DATABASE_DATABASE=${DATABASE_DATABASE}/" "$ENV_FILE" || echo "DATABASE_DATABASE=${DATABASE_DATABASE}" >>"$ENV_FILE") || true
-    [ -n "$DATABASE_USER" ] && (grep -q '^DATABASE_USER=' "$ENV_FILE" && sed -i "s/^DATABASE_USER=.*/DATABASE_USER=${DATABASE_USER}/" "$ENV_FILE" || echo "DATABASE_USER=${DATABASE_USER}" >>"$ENV_FILE") || true
-    [ -n "$DATABASE_PASSWORD" ] && (grep -q '^DATABASE_PASSWORD=' "$ENV_FILE" && sed -i "s/^DATABASE_PASSWORD=.*/DATABASE_PASSWORD=${DATABASE_PASSWORD}/" "$ENV_FILE" || echo "DATABASE_PASSWORD=${DATABASE_PASSWORD}" >>"$ENV_FILE") || true
-    grep -q '^DATABASE_ENCRYPTION=' "$ENV_FILE" && sed -i 's/^DATABASE_ENCRYPTION=.*/DATABASE_ENCRYPTION="xchacha20"/' "$ENV_FILE" || echo 'DATABASE_ENCRYPTION="xchacha20"' >>"$ENV_FILE"
-    if grep -q '^DATABASE_ENCRYPTION_KEY=' "$ENV_FILE"; then
-        if [ -z "$(grep '^DATABASE_ENCRYPTION_KEY=' "$ENV_FILE" | cut -d'=' -f2-)" ]; then
+setup_env_file() {
+    if [ -f "$ENV_FILE" ]; then
+        echo "Updating existing .env file..."
+        grep -q '^REDIS_HOST=' "$ENV_FILE" && sed -i 's/^REDIS_HOST=.*/REDIS_HOST=127.0.0.1/' "$ENV_FILE" || echo 'REDIS_HOST=127.0.0.1' >>"$ENV_FILE"
+        [ -n "$REDIS_PASSWORD" ] && (grep -q '^REDIS_PASSWORD=' "$ENV_FILE" && sed -i "s/^REDIS_PASSWORD=.*/REDIS_PASSWORD=${REDIS_PASSWORD}/" "$ENV_FILE" || echo "REDIS_PASSWORD=${REDIS_PASSWORD}" >>"$ENV_FILE") || true
+        grep -q '^DATABASE_HOST=' "$ENV_FILE" && sed -i 's/^DATABASE_HOST=.*/DATABASE_HOST=127.0.0.1/' "$ENV_FILE" || echo 'DATABASE_HOST=127.0.0.1' >>"$ENV_FILE"
+        grep -q '^DATABASE_PORT=' "$ENV_FILE" && sed -i 's/^DATABASE_PORT=.*/DATABASE_PORT=3306/' "$ENV_FILE" || echo 'DATABASE_PORT=3306' >>"$ENV_FILE"
+        [ -n "$DATABASE_DATABASE" ] && (grep -q '^DATABASE_DATABASE=' "$ENV_FILE" && sed -i "s/^DATABASE_DATABASE=.*/DATABASE_DATABASE=${DATABASE_DATABASE}/" "$ENV_FILE" || echo "DATABASE_DATABASE=${DATABASE_DATABASE}" >>"$ENV_FILE") || true
+        [ -n "$DATABASE_USER" ] && (grep -q '^DATABASE_USER=' "$ENV_FILE" && sed -i "s/^DATABASE_USER=.*/DATABASE_USER=${DATABASE_USER}/" "$ENV_FILE" || echo "DATABASE_USER=${DATABASE_USER}" >>"$ENV_FILE") || true
+        [ -n "$DATABASE_PASSWORD" ] && (grep -q '^DATABASE_PASSWORD=' "$ENV_FILE" && sed -i "s/^DATABASE_PASSWORD=.*/DATABASE_PASSWORD=${DATABASE_PASSWORD}/" "$ENV_FILE" || echo "DATABASE_PASSWORD=${DATABASE_PASSWORD}" >>"$ENV_FILE") || true
+        grep -q '^DATABASE_ENCRYPTION=' "$ENV_FILE" && sed -i 's/^DATABASE_ENCRYPTION=.*/DATABASE_ENCRYPTION=xchacha20/' "$ENV_FILE" || echo 'DATABASE_ENCRYPTION=xchacha20' >>"$ENV_FILE"
+        if grep -q '^DATABASE_ENCRYPTION_KEY=' "$ENV_FILE"; then
+            if [ -z "$(grep '^DATABASE_ENCRYPTION_KEY=' "$ENV_FILE" | cut -d'=' -f2- | tr -d '\"')" ]; then
+                ENC_KEY=$(generate_encryption_key)
+                sed -i "s|^DATABASE_ENCRYPTION_KEY=.*|DATABASE_ENCRYPTION_KEY=$ENC_KEY|" "$ENV_FILE"
+            fi
+        else
             ENC_KEY=$(generate_encryption_key)
-            sed -i "s|^DATABASE_ENCRYPTION_KEY=.*|DATABASE_ENCRYPTION_KEY=\"$ENC_KEY\"|" "$ENV_FILE"
+            echo "DATABASE_ENCRYPTION_KEY=$ENC_KEY" >>"$ENV_FILE"
         fi
     else
+        echo "Creating new .env file..."
         ENC_KEY=$(generate_encryption_key)
-        echo "DATABASE_ENCRYPTION_KEY=\"$ENC_KEY\"" >>"$ENV_FILE"
-    fi
-else
-    ENC_KEY=$(generate_encryption_key)
-    cat >"$ENV_FILE" <<ENVFILE
+        mkdir -p "$(dirname "$ENV_FILE")"
+        cat >"$ENV_FILE" <<ENVFILE
 DATABASE_HOST=127.0.0.1
 DATABASE_PORT=3306
 DATABASE_DATABASE=${DATABASE_DATABASE:-featherpanel}
 DATABASE_USER=${DATABASE_USER:-featherpanel}
 DATABASE_PASSWORD=${DATABASE_PASSWORD:-featherpanel_password}
-DATABASE_ENCRYPTION="xchacha20"
-DATABASE_ENCRYPTION_KEY="$ENC_KEY"
+DATABASE_ENCRYPTION=xchacha20
+DATABASE_ENCRYPTION_KEY=$ENC_KEY
 REDIS_HOST=127.0.0.1
 REDIS_PASSWORD=${REDIS_PASSWORD:-featherpanel_redis}
 ENVFILE
-fi
+    fi
+    chown www-data:www-data "$ENV_FILE"
+    chmod 640 "$ENV_FILE"
+    echo "Environment file configured"
+}
+
+# Create first admin user if needed
+create_first_admin() {
+    local admin_email="${FEATHERPANEL_ADMIN_EMAIL:-admin@example.com}"
+    local admin_username="${FEATHERPANEL_ADMIN_USERNAME:-admin}"
+    local admin_password="${FEATHERPANEL_ADMIN_PASSWORD:-}"
+
+    # Only create if password is provided
+    if [ -z "$admin_password" ]; then
+        echo "=============================================="
+        echo "  FIRST ADMIN USER NOT CREATED"
+        echo "  Set FEATHERPANEL_ADMIN_PASSWORD env var"
+        echo "  or run: docker exec -it <container> php cli saas createuser <username> <email> <firstName> <lastName> <password> [roleId]"
+        echo "=============================================="
+        return 0
+    fi
+
+    cd /var/www/html
+
+    # Check if users exist using CLI - look for "Total:" in output
+    local user_count
+    user_count=$(php cli saas listusers 1 2>/dev/null | grep -oP 'Total:\s*\K[0-9]+' || echo "0")
+
+    if [ "$user_count" = "0" ]; then
+        echo "Creating first admin user: $admin_username..."
+
+        # Use saas createuser command: username email firstName lastName password roleId
+        if php cli saas createuser "$admin_username" "$admin_email" "Admin" "User" "$admin_password" 1 2>/dev/null; then
+            echo "=============================================="
+            echo "  FIRST ADMIN USER CREATED!"
+            echo "  Username: $admin_username"
+            echo "  Email: $admin_email"
+            echo "=============================================="
+        else
+            echo "ERROR: Failed to create admin user. Check logs for details."
+        fi
+    else
+        echo "Users already exist ($user_count total), skipping first admin creation"
+    fi
+}
+
+# Setup environment
+setup_env_file
 
 echo "Waiting for MariaDB to be ready..."
 for i in {1..30}; do
-    if mysqladmin ping -h127.0.0.1 -P3306 --silent; then
+    if mysqladmin ping -h127.0.0.1 -P3306 --silent 2>/dev/null; then
         echo "MariaDB is ready!"
         break
     fi
@@ -211,9 +268,68 @@ for i in {1..30}; do
     sleep 2
 done
 
-echo "Running migrations..."
+echo "Waiting for Redis to be ready..."
+for i in {1..30}; do
+    if redis-cli -a "${REDIS_PASSWORD}" ping 2>/dev/null | grep -q PONG; then
+        echo "Redis is ready!"
+        break
+    fi
+    echo "Waiting for Redis... attempt $i/30"
+    sleep 1
+done
+
+echo "Running database migrations..."
 cd /var/www/html
-php cli migrate || true
+if php cli migrate; then
+    echo "Migrations completed successfully!"
+else
+    echo "WARNING: Migrations failed or had errors"
+fi
+
+# Create first admin user
+create_first_admin
+
+# Regenerate addon public symlinks from storage/addons (deterministic on every boot)
+# Source of truth is storage/addons (persisted via volume); public/addons and
+# public/components are derived state and live inside the image layer, so we
+# rebuild them here to guarantee they match disk reality after every restart
+# or panel image upgrade.
+echo "Resyncing addon public symlinks..."
+ADDONS_DIR="/var/www/html/storage/addons"
+PUBLIC_ADDONS="/var/www/html/public/addons"
+PUBLIC_COMPONENTS="/var/www/html/public/components"
+
+mkdir -p "$PUBLIC_ADDONS" "$PUBLIC_COMPONENTS"
+
+find "$PUBLIC_ADDONS" -mindepth 1 -maxdepth 1 ! -name '.gitkeep' -exec rm -rf {} + 2>/dev/null || true
+find "$PUBLIC_COMPONENTS" -mindepth 1 -maxdepth 1 ! -name '.gitkeep' -exec rm -rf {} + 2>/dev/null || true
+
+if [ -d "$ADDONS_DIR" ]; then
+    for addon_path in "$ADDONS_DIR"/*/; do
+        [ -d "$addon_path" ] || continue
+        id="$(basename "$addon_path")"
+        case "$id" in
+            .|..|'') continue ;;
+        esac
+
+        if [ -d "${addon_path}Public" ]; then
+            ln -s "${addon_path%/}/Public" "$PUBLIC_ADDONS/$id" 2>/dev/null || true
+        fi
+        if [ -d "${addon_path}Frontend/Components" ]; then
+            ln -s "${addon_path%/}/Frontend/Components" "$PUBLIC_COMPONENTS/$id" 2>/dev/null || true
+        fi
+    done
+fi
+
+chown -R www-data:www-data "$PUBLIC_ADDONS" "$PUBLIC_COMPONENTS" 2>/dev/null || true
+echo "Addon symlinks resynced."
+
+# Start services that depend on initialization
+sleep 2
+if command -v supervisorctl >/dev/null 2>&1; then
+    echo "Starting async-runner..."
+    supervisorctl start async-runner 2>/dev/null || true
+fi
 
 echo "Backend initialization complete!"
 EOF
@@ -268,93 +384,6 @@ COPY --from=frontend-builder /app/public ./public
 # Setup Async Runner
 COPY --from=runner-builder /build/async-runner /app/runner
 RUN mkdir -p /tmp/runner-logs /var/www/html/storage/logs
-
-# ============================================================================
-# Setup Supervisor (manages all services)
-COPY <<'EOF' /etc/supervisor/conf.d/supervisord.conf
-[supervisord]
-nodaemon=true
-user=root
-logfile=/var/log/supervisor/supervisord.log
-pidfile=/var/run/supervisord.pid
-
-[program:mariadb]
-command=/usr/sbin/mysqld --user=mysql --datadir=/data/mysql
-stdout_logfile=/dev/stdout
-stdout_logfile_maxbytes=0
-stderr_logfile=/dev/stderr
-stderr_logfile_maxbytes=0
-autostart=true
-autorestart=true
-priority=1
-
-[program:redis]
-command=/usr/bin/redis-server --daemonize no --dir /data/redis --requirepass %(ENV_REDIS_PASSWORD)s
-stdout_logfile=/dev/stdout
-stdout_logfile_maxbytes=0
-stderr_logfile=/dev/stderr
-stderr_logfile_maxbytes=0
-autostart=true
-autorestart=true
-priority=2
-
-[program:backend-init]
-command=/usr/local/bin/backend-init.sh
-stdout_logfile=/dev/stdout
-stdout_logfile_maxbytes=0
-stderr_logfile=/dev/stderr
-stderr_logfile_maxbytes=0
-autostart=true
-autorestart=false
-startsecs=0
-priority=3
-startretries=1
-
-[program:frankenphp]
-command=frankenphp run -c /etc/caddy/backend.Caddyfile
-directory=/var/www/html
-stdout_logfile=/dev/stdout
-stdout_logfile_maxbytes=0
-stderr_logfile=/dev/stderr
-stderr_logfile_maxbytes=0
-autostart=true
-autorestart=true
-priority=4
-
-[program:nextjs]
-command=node server.js
-environment=HOSTNAME="0.0.0.0",PORT="3000",INTERNAL_API_URL="http://127.0.0.1:8080"
-directory=/app
-stdout_logfile=/dev/stdout
-stdout_logfile_maxbytes=0
-stderr_logfile=/dev/stderr
-stderr_logfile_maxbytes=0
-autostart=true
-autorestart=true
-priority=5
-
-[program:async-runner]
-command=/app/runner
-environment=RUST_LOG="info",LOG_DIR="/var/www/html/storage/logs",DB_HOST="127.0.0.1",DB_PORT="3306",DB_NAME="%(ENV_DATABASE_DATABASE)s",DB_USER="%(ENV_DATABASE_USER)s",DB_PASS="%(ENV_DATABASE_PASSWORD)s",REDIS_URL="redis://:%(ENV_REDIS_PASSWORD)s@127.0.0.1:6379"
-directory=/app
-stdout_logfile=/dev/stdout
-stdout_logfile_maxbytes=0
-stderr_logfile=/dev/stderr
-stderr_logfile_maxbytes=0
-autostart=true
-autorestart=true
-priority=6
-
-[program:cron-runner]
-command=/usr/local/bin/cron-runner.sh
-stdout_logfile=/dev/stdout
-stdout_logfile_maxbytes=0
-stderr_logfile=/dev/stderr
-stderr_logfile_maxbytes=0
-autostart=true
-autorestart=true
-priority=7
-EOF
 
 # ============================================================================
 # Main Caddyfile (external - reverse proxies to all services)
@@ -437,6 +466,75 @@ COPY <<'EOF' /usr/local/bin/entrypoint.sh
 #!/bin/bash
 set -e
 
+# Generate encryption key for database
+generate_encryption_key() {
+    php -r 'echo base64_encode(sodium_crypto_secretbox_keygen());'
+}
+
+# Create .env file if it doesn't exist
+setup_env_file() {
+    local env_file="/data/config/.env"
+    local encryption_key
+
+    if [ ! -f "$env_file" ]; then
+        echo "Creating environment configuration..."
+        encryption_key=$(generate_encryption_key)
+
+        cat > "$env_file" <<ENVFILE
+DATABASE_HOST=127.0.0.1
+DATABASE_PORT=3306
+DATABASE_USER=${DATABASE_USER}
+DATABASE_PASSWORD=${DATABASE_PASSWORD}
+DATABASE_DATABASE=${DATABASE_DATABASE}
+DATABASE_ENCRYPTION=xchacha20
+DATABASE_ENCRYPTION_KEY=${encryption_key}
+REDIS_PASSWORD=${REDIS_PASSWORD}
+REDIS_HOST=127.0.0.1
+ENVFILE
+
+        echo "Environment file created with encryption key"
+    fi
+
+    # Ensure proper permissions
+    chown www-data:www-data "$env_file"
+    chmod 640 "$env_file"
+}
+
+# Create first admin user if no users exist
+create_first_admin() {
+    local admin_email="${FEATHERPANEL_ADMIN_EMAIL:-admin@example.com}"
+    local admin_username="${FEATHERPANEL_ADMIN_USERNAME:-admin}"
+    local admin_password="${FEATHERPANEL_ADMIN_PASSWORD:-}"
+
+    # Only create if password is provided and no users exist
+    if [ -z "$admin_password" ]; then
+        echo "WARNING: No admin password set. Set FEATHERPANEL_ADMIN_PASSWORD to create first admin."
+        echo "Run: docker exec -it <container> php cli saas createuser <username> <email> <firstName> <lastName> <password> [roleId]"
+        return 0
+    fi
+
+    cd /var/www/html
+
+    # Check if users exist using CLI
+    local user_count
+    user_count=$(php cli saas listusers 1 2>/dev/null | wc -l || echo "0")
+
+    if [ "$user_count" = "0" ] || [ "$user_count" = "1" ]; then
+        echo "Creating first admin user: $admin_username..."
+
+        # Use saas createuser command: username email firstName lastName password roleId
+        if php cli saas createuser "$admin_username" "$admin_email" "Admin" "User" "$admin_password" 1 2>/dev/null; then
+            echo "Admin user created successfully!"
+            echo "Username: $admin_username"
+            echo "Email: $admin_email"
+        else
+            echo "ERROR: Failed to create admin user. Check if user already exists."
+        fi
+    else
+        echo "Users already exist, skipping first admin creation"
+    fi
+}
+
 # Initialize MariaDB data directory if empty
 if [ ! -d "/data/mysql/mysql" ]; then
     echo "Initializing MariaDB data directory..."
@@ -488,6 +586,12 @@ ln -sf /data/config /var/www/html/storage/config 2>/dev/null || true
 ln -sf /data/logs /var/www/html/storage/logs 2>/dev/null || true
 ln -sf /data/backups /var/www/html/storage/backups 2>/dev/null || true
 
+# Create symlink for async-runner config (expects /app/config/.env)
+ln -sf /data/config /app/config 2>/dev/null || true
+
+# Setup environment file
+setup_env_file
+
 # Setup IPv6 disable for runner (as per original compose)
 sysctl -w net.ipv6.conf.all.disable_ipv6=1 2>/dev/null || true
 sysctl -w net.ipv6.conf.default.disable_ipv6=1 2>/dev/null || true
@@ -499,10 +603,164 @@ echo "  All services running in single container"
 echo "  http://localhost"
 echo "========================================"
 
+# Export DATABASE_ENCRYPTION_KEY from .env file for async-runner
+if [ -f /data/config/.env ]; then
+    export DATABASE_ENCRYPTION_KEY=$(grep '^DATABASE_ENCRYPTION_KEY=' /data/config/.env | cut -d'=' -f2)
+    echo "Exported DATABASE_ENCRYPTION_KEY for services"
+fi
+
+# Generate supervisord config based on enabled services
+/usr/local/bin/generate-supervisord-conf.sh
+
+# Create initialization flag for post-startup tasks
+touch /tmp/first-start
+
 # Start all services via supervisor
 exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
 EOF
 RUN chmod +x /usr/local/bin/entrypoint.sh
+
+# Create the supervisord config generator script
+COPY <<'EOF' /usr/local/bin/generate-supervisord-conf.sh
+#!/bin/bash
+SUPERVISOR_CONF="/etc/supervisor/conf.d/supervisord.conf"
+
+# Start with base config
+cat > "$SUPERVISOR_CONF" <<'SUPERBASE'
+[supervisord]
+nodaemon=true
+user=root
+logfile=/var/log/supervisor/supervisord.log
+pidfile=/var/run/supervisord.pid
+SUPERBASE
+
+# Add services based on env vars
+if [ "${ENABLE_MARIADB:-true}" = "true" ]; then
+cat >> "$SUPERVISOR_CONF" <<'SVCFILE'
+
+[program:mariadb]
+command=/usr/sbin/mysqld --user=mysql --datadir=/data/mysql
+stdout_logfile=/dev/stdout
+stdout_logfile_maxbytes=0
+stderr_logfile=/dev/stderr
+stderr_logfile_maxbytes=0
+autostart=true
+autorestart=true
+priority=1
+SVCFILE
+fi
+
+if [ "${ENABLE_REDIS:-true}" = "true" ]; then
+cat >> "$SUPERVISOR_CONF" <<'SVCFILE'
+
+[program:redis]
+command=/usr/bin/redis-server --daemonize no --dir /data/redis --requirepass %(ENV_REDIS_PASSWORD)s
+stdout_logfile=/dev/stdout
+stdout_logfile_maxbytes=0
+stderr_logfile=/dev/stderr
+stderr_logfile_maxbytes=0
+autostart=true
+autorestart=true
+priority=2
+SVCFILE
+fi
+
+if [ "${ENABLE_BACKEND:-true}" = "true" ]; then
+cat >> "$SUPERVISOR_CONF" <<'SVCFILE'
+
+[program:backend-init]
+command=/usr/local/bin/backend-init.sh
+stdout_logfile=/dev/stdout
+stdout_logfile_maxbytes=0
+stderr_logfile=/dev/stderr
+stderr_logfile_maxbytes=0
+autostart=true
+autorestart=false
+startsecs=0
+priority=3
+startretries=1
+
+[program:frankenphp]
+command=frankenphp run -c /etc/caddy/backend.Caddyfile
+directory=/var/www/html
+stdout_logfile=/dev/stdout
+stdout_logfile_maxbytes=0
+stderr_logfile=/dev/stderr
+stderr_logfile_maxbytes=0
+autostart=true
+autorestart=true
+priority=4
+SVCFILE
+fi
+
+if [ "${ENABLE_FRONTEND:-true}" = "true" ]; then
+cat >> "$SUPERVISOR_CONF" <<'SVCFILE'
+
+[program:nextjs]
+command=node server.js
+environment=HOSTNAME="0.0.0.0",PORT="3000",INTERNAL_API_URL="http://127.0.0.1:8080"
+directory=/app
+stdout_logfile=/dev/stdout
+stdout_logfile_maxbytes=0
+stderr_logfile=/dev/stderr
+stderr_logfile_maxbytes=0
+autostart=true
+autorestart=true
+priority=5
+SVCFILE
+fi
+
+if [ "${ENABLE_ASYNC_RUNNER:-true}" = "true" ]; then
+cat >> "$SUPERVISOR_CONF" <<'SVCFILE'
+
+[program:async-runner]
+command=/app/runner
+environment=RUST_LOG="info",LOG_DIR="/var/www/html/storage/logs",DB_HOST="127.0.0.1",DB_PORT="3306",DB_NAME="%(ENV_DATABASE_DATABASE)s",DB_USER="%(ENV_DATABASE_USER)s",DB_PASS="%(ENV_DATABASE_PASSWORD)s",REDIS_URL="redis://:%(ENV_REDIS_PASSWORD)s@127.0.0.1:6379"
+directory=/app
+stdout_logfile=/dev/stdout
+stdout_logfile_maxbytes=0
+stderr_logfile=/dev/stderr
+stderr_logfile_maxbytes=0
+autostart=false
+autorestart=true
+priority=6
+startsecs=3
+SVCFILE
+fi
+
+if [ "${ENABLE_BACKEND:-true}" = "true" ]; then
+cat >> "$SUPERVISOR_CONF" <<'SVCFILE'
+
+[program:caddy-main]
+command=frankenphp run -c /etc/caddy/Caddyfile
+stdout_logfile=/dev/stdout
+stdout_logfile_maxbytes=0
+stderr_logfile=/dev/stderr
+stderr_logfile_maxbytes=0
+autostart=true
+autorestart=true
+priority=7
+SVCFILE
+fi
+
+if [ "${ENABLE_CRON:-true}" = "true" ]; then
+cat >> "$SUPERVISOR_CONF" <<'SVCFILE'
+
+[program:cron-runner]
+command=/usr/local/bin/cron-runner.sh
+stdout_logfile=/dev/stdout
+stdout_logfile_maxbytes=0
+stderr_logfile=/dev/stderr
+stderr_logfile_maxbytes=0
+autostart=true
+autorestart=true
+priority=8
+SVCFILE
+fi
+
+echo "Generated supervisord config with enabled services"
+EOF
+RUN chmod +x /usr/local/bin/generate-supervisord-conf.sh
 
 # Expose port 80
 EXPOSE 80

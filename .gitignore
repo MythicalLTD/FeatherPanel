@@ -36,3 +36,4 @@ TODO.txt
 .install_mode
 todo.txt
 backend/storage/config/panel_integrity_baseline.json
+build.log
