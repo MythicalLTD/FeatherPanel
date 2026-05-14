@@ -1,0 +1,42 @@
+# FeatherPanel All-in-One (OCI) Docker Compose
+# Single container deployment for OCI-compliant runtimes
+# Usage: docker compose -f docker-compose.oci.yml up -d
+
+services:
+  featherpanel:
+    build:
+      context: .
+      dockerfile: Dockerfile.oci
+    image: featherpanel-oci:latest
+    container_name: featherpanel
+    restart: unless-stopped
+    ports:
+      - "${FEATHERPANEL_PANEL_PORT:-80}:80"
+    environment:
+      - DATABASE_DATABASE=${MARIADB_DATABASE:-featherpanel}
+      - DATABASE_USER=${MARIADB_USER:-featherpanel}
+      - DATABASE_PASSWORD=${MARIADB_PASSWORD:-featherpanel_password}
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-featherpanel_redis}
+      - MARIADB_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD:-featherpanel_root}
+      - PANEL_DOCKER_DEPLOYMENT=true
+      - TRUST_PROXY_HEADERS=true
+    volumes:
+      - featherpanel_data:/data
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80"]
+      timeout: 20s
+      retries: 10
+      start_period: 60s
+    # Optional: resource limits
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: '4'
+    #       memory: 4G
+    #     reservations:
+    #       cpus: '2'
+    #       memory: 2G
+
+volumes:
+  featherpanel_data:
+    driver: local

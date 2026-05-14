@@ -1,0 +1,73 @@
+# Docker ignore for OCI build
+# Usage: docker build -f Dockerfile.oci -t featherpanel-oci . --ignorefile .dockerignore.oci
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+*.md
+!Dockerfile.all-in-one.README.md
+CHANGELOG.md
+LICENSE
+docs/
+
+# Docker files (not needed in build context)
+Dockerfile*
+docker-compose*
+.dockerignore*
+build-oci.sh
+
+# Node modules (will be installed fresh)
+frontendv2/node_modules/
+frontendv2/.next/
+frontendv2/dist/
+
+# Backend vendor (will be installed fresh)
+backend/vendor/
+backend/storage/logs/*
+backend/storage/cache/*
+backend/storage/uploads/*
+backend/storage/temp/*
+backend/public/attachments/*
+backend/.env
+backend/.env.local
+
+# Runner target (will be built fresh)
+runner/target/
+runner/Cargo.lock
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+Jenkinsfile
+
+# Tests
+tests/
+test/
+__tests__/
+*.test.js
+*.test.ts
+*.test.php
+
+# Logs
+*.log
+logs/
+
+# Temp
+tmp/
+temp/
+*.tmp
