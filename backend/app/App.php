@@ -201,12 +201,20 @@ class App
             }
         }
 
-        // Load plugin routes from backend/storage/addons/*/routes/
+        // Load plugin routes from backend/storage/addons/*/Routes/
         $addonsDir = __DIR__ . '/../storage/addons';
         if (is_dir($addonsDir)) {
+            $addonIdentifiers = [];
+            foreach (new \DirectoryIterator($addonsDir) as $entry) {
+                if ($entry->isDir() && !$entry->isDot()) {
+                    $addonIdentifiers[$entry->getBasename()] = true;
+                }
+            }
+
             $pluginDirs = new \DirectoryIterator($addonsDir);
             foreach ($pluginDirs as $pluginDir) {
                 if ($pluginDir->isDir() && !$pluginDir->isDot()) {
+                    $currentAddonId = $pluginDir->getBasename();
                     $pluginRoutesDir = $pluginDir->getPathname() . '/Routes';
                     if (is_dir($pluginRoutesDir)) {
                         $pluginIterator = new \RecursiveIteratorIterator(
@@ -216,6 +224,18 @@ class App
 
                         foreach ($pluginIterator as $file) {
                             if ($file->isFile() && $file->getExtension() === 'php') {
+                                $routeBasename = $file->getBasename('.php');
+                                if (
+                                    isset($addonIdentifiers[$routeBasename])
+                                    && $routeBasename !== $currentAddonId
+                                ) {
+                                    self::getLogger()->warning(
+                                        'Skipping addon route file whose name matches another addon identifier '
+                                        . "(likely a mistaken copy): {$file->getPathname()}"
+                                    );
+
+                                    continue;
+                                }
                                 try {
                                     $register = require $file->getPathname();
                                     if (is_callable($register)) {

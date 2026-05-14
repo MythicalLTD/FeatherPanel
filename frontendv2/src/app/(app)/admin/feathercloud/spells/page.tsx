@@ -46,6 +46,7 @@ import {
     Settings,
     Info,
     BadgeCheck,
+    Package,
 } from 'lucide-react';
 
 interface OnlineSpell {
@@ -67,6 +68,8 @@ interface OnlinePagination {
     current_page: number;
     total_pages: number;
     total_records: number;
+    has_next?: boolean;
+    has_prev?: boolean;
 }
 
 interface Realm {
@@ -84,6 +87,7 @@ export default function SpellsPage() {
     const [onlinePagination, setOnlinePagination] = useState<OnlinePagination | null>(null);
     const [currentOnlinePage, setCurrentOnlinePage] = useState(1);
     const [onlineSearch, setOnlineSearch] = useState('');
+    const [loadingMore, setLoadingMore] = useState(false);
 
     const [confirmInstallOpen, setConfirmInstallOpen] = useState(false);
     const [selectedSpell, setSelectedSpell] = useState<OnlineSpell | null>(null);
@@ -133,8 +137,12 @@ export default function SpellsPage() {
     }, []);
 
     const fetchOnlineSpells = useCallback(
-        async (page = currentOnlinePage, search = onlineSearch) => {
-            setOnlineLoading(true);
+        async (page: number, mode: 'replace' | 'append' = 'replace') => {
+            if (mode === 'append') {
+                setLoadingMore(true);
+            } else {
+                setOnlineLoading(true);
+            }
             setOnlineError(null);
 
             const params = new URLSearchParams({
@@ -142,25 +150,61 @@ export default function SpellsPage() {
                 per_page: '20',
             });
 
-            if (search) params.set('q', search);
+            const q = onlineSearch.trim();
+            if (q) params.set('q', q);
 
             try {
                 const response = await axios.get(`/api/admin/spells/online/list?${params.toString()}`);
-                setOnlineSpells(response.data?.data?.spells || []);
-                setOnlinePagination(response.data?.data?.pagination || null);
+                const spells: OnlineSpell[] = response.data?.data?.spells || [];
+                const pagination = response.data?.data?.pagination || null;
+
+                if (mode === 'append') {
+                    setOnlineSpells((prev) => {
+                        const seen = new Set(prev.map((s) => s.identifier));
+                        const merged = [...prev];
+                        for (const s of spells) {
+                            if (!seen.has(s.identifier)) {
+                                seen.add(s.identifier);
+                                merged.push(s);
+                            }
+                        }
+                        return merged;
+                    });
+                } else {
+                    setOnlineSpells(spells);
+                }
+                setOnlinePagination(pagination);
+                setCurrentOnlinePage(page);
             } catch (err: unknown) {
                 const e = err as { response?: { data?: { message?: string } } };
                 setOnlineError(e?.response?.data?.message || t('admin.marketplace.spells.loading_error'));
             } finally {
-                setOnlineLoading(false);
+                if (mode === 'append') {
+                    setLoadingMore(false);
+                } else {
+                    setOnlineLoading(false);
+                }
             }
         },
-        [currentOnlinePage, onlineSearch, t],
+        [onlineSearch, t],
     );
+
+    const loadMoreOnlineSpells = useCallback(() => {
+        if (loadingMore || onlineLoading) return;
+        void fetchOnlineSpells(currentOnlinePage + 1, 'append');
+    }, [currentOnlinePage, fetchOnlineSpells, loadingMore, onlineLoading]);
+
+    const hasMoreToLoad =
+        onlineSpells.length > 0 &&
+        (onlinePagination?.has_next === true || currentOnlinePage < (onlinePagination?.total_pages ?? 1));
+
+    const runSpellsSearch = useCallback(() => {
+        void fetchOnlineSpells(1, 'replace');
+    }, [fetchOnlineSpells]);
 
     useEffect(() => {
         fetchWidgets();
-        fetchOnlineSpells();
+        void fetchOnlineSpells(1, 'replace');
         fetchRealms(1, '');
         fetchInstalledSpells();
     }, [fetchOnlineSpells, fetchRealms, fetchInstalledSpells, fetchWidgets]);
@@ -230,36 +274,6 @@ export default function SpellsPage() {
         }
     };
 
-    const renderPagination = () => {
-        if (!onlinePagination || onlinePagination.total_pages <= 1) return null;
-
-        return (
-            <div className='mt-8 flex items-center justify-center gap-2'>
-                <Button
-                    variant='outline'
-                    size='icon'
-                    disabled={currentOnlinePage === 1}
-                    onClick={() => setCurrentOnlinePage((p) => p - 1)}
-                >
-                    <ChevronLeft className='h-4 w-4' />
-                </Button>
-                <div className='flex items-center gap-2'>
-                    <span className='text-sm font-medium'>
-                        {currentOnlinePage} / {onlinePagination.total_pages}
-                    </span>
-                </div>
-                <Button
-                    variant='outline'
-                    size='icon'
-                    disabled={currentOnlinePage === onlinePagination.total_pages}
-                    onClick={() => setCurrentOnlinePage((p) => p + 1)}
-                >
-                    <ChevronRight className='h-4 w-4' />
-                </Button>
-            </div>
-        );
-    };
-
     return (
         <div className='space-y-6'>
             <WidgetRenderer widgets={getWidgets('admin-feathercloud-spells', 'top-of-page')} />
@@ -305,18 +319,41 @@ export default function SpellsPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-feathercloud-spells', 'before-content')} />
 
-            <div className='bg-card/50 border-border flex flex-col items-center gap-4 rounded-2xl border p-4 shadow-sm backdrop-blur-md sm:flex-row'>
-                <div className='group relative flex-1'>
-                    <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
-                    <Input
-                        placeholder={t('admin.marketplace.spells.search_placeholder')}
-                        className='h-11 pl-10'
-                        value={onlineSearch}
-                        onChange={(e) => setOnlineSearch(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && fetchOnlineSpells(1)}
-                    />
+            <PageCard title={t('admin.marketplace.spells.search_section_title')} icon={Search}>
+                <div className='space-y-4'>
+                    <p className='text-muted-foreground text-sm leading-relaxed'>
+                        {t('admin.marketplace.spells.search_helper')}
+                    </p>
+                    <div className='flex flex-col gap-3 sm:flex-row sm:items-stretch'>
+                        <div className='group relative min-w-0 flex-1'>
+                            <Search className='text-muted-foreground group-focus-within:text-primary pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
+                            <Input
+                                id='feathercloud-spells-search'
+                                placeholder={t('admin.marketplace.spells.search_placeholder')}
+                                className='h-11 pl-10'
+                                value={onlineSearch}
+                                onChange={(e) => setOnlineSearch(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                        runSpellsSearch();
+                                    }
+                                }}
+                                autoComplete='off'
+                            />
+                        </div>
+                        <Button
+                            type='button'
+                            variant='default'
+                            className='h-11 shrink-0 px-6 sm:min-w-[120px]'
+                            onClick={() => runSpellsSearch()}
+                        >
+                            <Search className='mr-2 h-4 w-4' />
+                            {t('admin.marketplace.spells.search_button')}
+                        </Button>
+                    </div>
                 </div>
-            </div>
+            </PageCard>
 
             {onlineLoading ? (
                 <EmptyState
@@ -330,7 +367,7 @@ export default function SpellsPage() {
                     description={onlineError}
                     icon={AlertCircle}
                     action={
-                        <Button variant='outline' onClick={() => fetchOnlineSpells()}>
+                        <Button variant='outline' onClick={() => void fetchOnlineSpells(1, 'replace')}>
                             <RefreshCw className='mr-2 h-4 w-4' />
                             {t('admin.marketplace.plugins.try_again')}
                         </Button>
@@ -341,109 +378,157 @@ export default function SpellsPage() {
                     title={t('admin.marketplace.plugins.no_results')}
                     description={t('admin.marketplace.spells.search_placeholder')}
                     icon={Settings}
+                    action={
+                        <Button
+                            variant='outline'
+                            onClick={() => {
+                                setOnlineSearch('');
+                                void fetchOnlineSpells(1, 'replace');
+                            }}
+                        >
+                            {t('admin.marketplace.plugins.clear_search')}
+                        </Button>
+                    }
                 />
             ) : (
-                <div className='grid grid-cols-1 gap-6'>
-                    {onlineSpells.map((spell) => {
-                        const IconComponent = ({ className }: { className?: string }) =>
-                            spell.icon ? (
-                                <div className={cn('relative', className)}>
-                                    <Image
-                                        src={spell.icon}
-                                        alt={spell.name}
-                                        fill
-                                        className='rounded-lg object-cover'
-                                        unoptimized
-                                    />
-                                </div>
-                            ) : (
-                                <Settings className={className} />
-                            );
+                <PageCard
+                    id='spells-online-list'
+                    title={t('admin.marketplace.spells.online_list_heading')}
+                    icon={Package}
+                    action={
+                        onlinePagination && onlinePagination.total_records > 0 ? (
+                            <p className='text-muted-foreground max-w-40 truncate text-right text-[10px] font-semibold tracking-wide sm:max-w-none sm:text-xs'>
+                                {t('admin.marketplace.spells.online_list_count', {
+                                    shown: String(onlineSpells.length),
+                                    total: String(onlinePagination.total_records),
+                                })}
+                            </p>
+                        ) : undefined
+                    }
+                >
+                    <div className='grid grid-cols-1 gap-6'>
+                        {onlineSpells.map((spell) => {
+                            const IconComponent = ({ className }: { className?: string }) =>
+                                spell.icon ? (
+                                    <div className={cn('relative', className)}>
+                                        <Image
+                                            src={spell.icon}
+                                            alt={spell.name}
+                                            fill
+                                            className='rounded-lg object-cover'
+                                            unoptimized
+                                        />
+                                    </div>
+                                ) : (
+                                    <Settings className={className} />
+                                );
 
-                        return (
-                            <ResourceCard
-                                key={spell.identifier}
-                                icon={IconComponent}
-                                title={spell.name}
-                                subtitle={
-                                    spell.author
-                                        ? t('admin.marketplace.common.by_author', { author: spell.author })
-                                        : undefined
-                                }
-                                badges={
-                                    [
-                                        installedSpellIds.includes(spell.name)
-                                            ? {
-                                                  label: t('admin.marketplace.plugins.installed'),
-                                                  className: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
-                                              }
-                                            : null,
-                                        spell.verified
-                                            ? {
-                                                  label: t('admin.marketplace.spells.grid.pterodactyl_verified'),
-                                                  className: 'bg-green-500/10 text-green-600 border-green-500/20',
-                                              }
-                                            : null,
-                                        spell.latest_version?.version
-                                            ? {
-                                                  label: `v${spell.latest_version.version}`,
-                                                  className: 'bg-primary/10 text-primary border-primary/20',
-                                              }
-                                            : null,
-                                    ].filter(Boolean) as ResourceBadge[]
-                                }
-                                description={
-                                    <div className='space-y-4'>
-                                        <p className='text-muted-foreground line-clamp-3 text-sm leading-relaxed'>
-                                            {spell.description || t('admin.marketplace.spells.grid.no_description')}
-                                        </p>
-                                        {!spell.verified && (
-                                            <div className='flex items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/10 p-2 text-[10px] text-amber-700'>
-                                                <AlertCircle className='h-3 w-3 shrink-0' />
-                                                <span>{t('admin.marketplace.spells.grid.external_source')}</span>
-                                            </div>
-                                        )}
-                                        <div className='text-muted-foreground flex items-center justify-between pt-2 text-xs font-medium'>
-                                            <div className='flex items-center gap-2'>
-                                                <CloudDownload className='h-3.5 w-3.5' />
-                                                <span>{spell.downloads.toLocaleString()}</span>
+                            return (
+                                <ResourceCard
+                                    key={spell.identifier}
+                                    icon={IconComponent}
+                                    title={spell.name}
+                                    subtitle={
+                                        spell.author
+                                            ? t('admin.marketplace.common.by_author', { author: spell.author })
+                                            : undefined
+                                    }
+                                    badges={
+                                        [
+                                            installedSpellIds.includes(spell.name)
+                                                ? {
+                                                      label: t('admin.marketplace.plugins.installed'),
+                                                      className: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
+                                                  }
+                                                : null,
+                                            spell.verified
+                                                ? {
+                                                      label: t('admin.marketplace.spells.grid.pterodactyl_verified'),
+                                                      className: 'bg-green-500/10 text-green-600 border-green-500/20',
+                                                  }
+                                                : null,
+                                            spell.latest_version?.version
+                                                ? {
+                                                      label: `v${spell.latest_version.version}`,
+                                                      className: 'bg-primary/10 text-primary border-primary/20',
+                                                  }
+                                                : null,
+                                        ].filter(Boolean) as ResourceBadge[]
+                                    }
+                                    description={
+                                        <div className='space-y-4'>
+                                            <p className='text-muted-foreground line-clamp-3 text-sm leading-relaxed'>
+                                                {spell.description || t('admin.marketplace.spells.grid.no_description')}
+                                            </p>
+                                            {!spell.verified && (
+                                                <div className='flex items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/10 p-2 text-[10px] text-amber-700'>
+                                                    <AlertCircle className='h-3 w-3 shrink-0' />
+                                                    <span>{t('admin.marketplace.spells.grid.external_source')}</span>
+                                                </div>
+                                            )}
+                                            <div className='text-muted-foreground flex items-center justify-between pt-2 text-xs font-medium'>
+                                                <div className='flex items-center gap-2'>
+                                                    <CloudDownload className='h-3.5 w-3.5' />
+                                                    <span>{spell.downloads.toLocaleString()}</span>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                }
-                                actions={
-                                    <div className='flex w-full items-center gap-2'>
-                                        <Button
-                                            variant='default'
-                                            className='flex-1'
-                                            disabled={installingId === spell.identifier}
-                                            onClick={() => openInstallDialog(spell)}
-                                        >
-                                            {installingId === spell.identifier ? (
-                                                <RefreshCw className='mr-2 h-4 w-4 animate-spin' />
-                                            ) : (
-                                                <CloudDownload className='mr-2 h-4 w-4' />
-                                            )}
-                                            {t('admin.marketplace.spells.grid.install')}
-                                        </Button>
-                                        {spell.website && (
+                                    }
+                                    actions={
+                                        <div className='flex w-full items-center gap-2'>
                                             <Button
-                                                variant='outline'
-                                                size='icon'
-                                                onClick={() => window.open(spell.website as string, '_blank')}
+                                                variant='default'
+                                                className='flex-1'
+                                                disabled={installingId === spell.identifier}
+                                                onClick={() => openInstallDialog(spell)}
                                             >
-                                                <Globe className='h-4 w-4' />
+                                                {installingId === spell.identifier ? (
+                                                    <RefreshCw className='mr-2 h-4 w-4 animate-spin' />
+                                                ) : (
+                                                    <CloudDownload className='mr-2 h-4 w-4' />
+                                                )}
+                                                {t('admin.marketplace.spells.grid.install')}
                                             </Button>
-                                        )}
-                                    </div>
-                                }
-                            />
-                        );
-                    })}
-                </div>
+                                            {spell.website && (
+                                                <Button
+                                                    variant='outline'
+                                                    size='icon'
+                                                    onClick={() => window.open(spell.website as string, '_blank')}
+                                                >
+                                                    <Globe className='h-4 w-4' />
+                                                </Button>
+                                            )}
+                                        </div>
+                                    }
+                                />
+                            );
+                        })}
+                    </div>
+                    {hasMoreToLoad && (
+                        <div className='border-border flex flex-col items-center gap-2 border-t pt-4'>
+                            <Button
+                                type='button'
+                                variant='outline'
+                                className='h-11 min-w-[220px] px-6'
+                                loading={loadingMore}
+                                disabled={onlineLoading || loadingMore}
+                                onClick={loadMoreOnlineSpells}
+                            >
+                                <CloudDownload className='mr-2 h-4 w-4' />
+                                {t('admin.marketplace.spells.load_more')}
+                            </Button>
+                            {onlinePagination && (
+                                <p className='text-muted-foreground text-center text-xs'>
+                                    {t('admin.marketplace.spells.load_more_hint', {
+                                        page: String(onlinePagination.current_page ?? currentOnlinePage),
+                                        pages: String(onlinePagination.total_pages ?? 1),
+                                    })}
+                                </p>
+                            )}
+                        </div>
+                    )}
+                </PageCard>
             )}
-
-            {renderPagination()}
 
             <div className='grid grid-cols-1 gap-6 pt-10 pb-12 md:grid-cols-2 lg:grid-cols-3'>
                 <PageCard title={t('admin.marketplace.spells.help.official_repo_title')} icon={Globe}>
