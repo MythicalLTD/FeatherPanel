@@ -52,7 +52,8 @@ jobs:
       - name: Set image tags
         id: tags
         run: |
-          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          # Use checked-out HEAD so manifest job matches per-arch tags (github.sha on workflow_dispatch can differ).
+          SHORT_SHA=$(git rev-parse --short HEAD)
           BRANCH_NAME="${{ github.ref_name }}"
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ github.event.inputs.branch }}" ]; then
             BRANCH_NAME="${{ github.event.inputs.branch }}"
@@ -118,7 +119,7 @@ jobs:
       - name: Set image tags
         id: tags
         run: |
-          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          SHORT_SHA=$(git rev-parse --short HEAD)
           BRANCH_NAME="${{ github.ref_name }}"
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ github.event.inputs.branch }}" ]; then
             BRANCH_NAME="${{ github.event.inputs.branch }}"
@@ -147,6 +148,7 @@ jobs:
           OWNER="${{ steps.repo-owner.outputs.owner }}"
           B="${{ steps.tags.outputs.branch }}"
           S="${{ steps.tags.outputs.sha }}"
+          echo "Publishing multi-arch manifests for: dev, dev-${B}, dev-${B}-${S}"
           docker buildx imagetools create --tag "ghcr.io/${OWNER}/featherpanel-oci:dev" \
             "ghcr.io/${OWNER}/featherpanel-oci:dev-${B}-${S}-linux-amd64" \
             "ghcr.io/${OWNER}/featherpanel-oci:dev-${B}-${S}-linux-arm64"
@@ -156,3 +158,5 @@ jobs:
           docker buildx imagetools create --tag "ghcr.io/${OWNER}/featherpanel-oci:dev-${B}-${S}" \
             "ghcr.io/${OWNER}/featherpanel-oci:dev-${B}-${S}-linux-amd64" \
             "ghcr.io/${OWNER}/featherpanel-oci:dev-${B}-${S}-linux-arm64"
+          echo "--- ghcr.io/${OWNER}/featherpanel-oci:dev (inspect) ---"
+          docker buildx imagetools inspect "ghcr.io/${OWNER}/featherpanel-oci:dev"
