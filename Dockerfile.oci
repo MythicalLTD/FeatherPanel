@@ -77,10 +77,11 @@ RUN install-php-extensions \
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 # ============================================================================
-# Setup MariaDB
-RUN mkdir -p /var/run/mysqld /var/lib/mysql /home/container/data/mysql /home/container/data/mysql/run \
-    && chown -R mysql:mysql /var/run/mysqld /var/lib/mysql /home/container/data/mysql \
-    && chmod -R 777 /var/run/mysqld /home/container/data/mysql
+# Setup MariaDB - use /home/container/data for all runtime files
+RUN mkdir -p /var/lib/mysql /home/container/data/mysql /home/container/data/mysql/run \
+    && chown -R mysql:mysql /var/lib/mysql /home/container/data/mysql \
+    && chmod -R 777 /home/container/data/mysql \
+    && ln -sf /home/container/data/mysql/run /var/run/mysqld
 
 # Create MySQL init directory (init scripts are generated at runtime if needed)
 RUN mkdir -p /docker-entrypoint-initdb.d/
@@ -715,7 +716,8 @@ SUPERVISOR_CONF="/etc/supervisor/conf.d/supervisord.conf"
 
 # Add services based on env vars
 if [ "${ENABLE_MARIADB:-true}" = "true" ]; then
-MYSQLD_CMD="/usr/sbin/mysqld --user=mysql --datadir=/home/container/data/mysql --pid-file=/var/run/mysqld/mysqld.pid"
+# Always use /home/container/data for PID file to ensure writability in all environments
+MYSQLD_CMD="/usr/sbin/mysqld --user=mysql --datadir=/home/container/data/mysql --pid-file=/home/container/data/mysql/mysqld.pid"
 if [ "${OCI_RUN_AS_ROOT:-1}" != "1" ]; then
     MYSQLD_CMD="/usr/sbin/mysqld --datadir=/home/container/data/mysql --pid-file=/home/container/data/mysql/mysqld.pid"
 fi
