@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.3.7.2 STABLE
+
+### Fixed
+
+- Enhanced the plugin loader strategy to resolve minor issues introduced in the previous update. by @nayskutzu
+
 ## v1.3.7.1 STABLE
 
 ### Improved

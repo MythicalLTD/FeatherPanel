@@ -369,7 +369,14 @@ class CloudManagementController
 
             // Get panel information
             $panelName = $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel');
-            $panelUrl = $config->getSetting(ConfigInterface::APP_URL, 'https://featherpanel.mythical.systems');
+            // app_url may exist in DB as an empty string, which bypasses the default argument to getSetting()
+            $panelUrl = trim((string) ($config->getSetting(ConfigInterface::APP_URL, 'https://featherpanel.mythical.systems') ?? ''));
+            if ($panelUrl === '') {
+                $panelUrl = rtrim($request->getSchemeAndHttpHost() . $request->getBasePath(), '/');
+            }
+            if ($panelUrl === '') {
+                $panelUrl = 'https://featherpanel.mythical.systems';
+            }
             $logoUrl = $config->getSetting(ConfigInterface::APP_LOGO_WHITE, 'https://github.com/featherpanel-com.png');
 
             // Get or generate panel credentials

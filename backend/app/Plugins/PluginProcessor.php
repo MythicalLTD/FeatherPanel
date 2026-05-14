@@ -55,6 +55,12 @@ class PluginProcessor
 
             $eventClass = "App\\Addons\\{$identifier}\\{$entryClass}";
             if (!class_exists($eventClass)) {
+                $discovered = self::discoverAppPluginClassInAddonRoot($identifier);
+                if ($discovered !== null) {
+                    $eventClass = $discovered;
+                }
+            }
+            if (!class_exists($eventClass)) {
                 $logger->warning("Event class not found: {$eventClass}");
 
                 return null;
@@ -196,5 +202,40 @@ class PluginProcessor
 
             return false;
         }
+    }
+
+    /**
+     * When plugin.name in conf.yml does not match the AppPlugin entry class (for example
+     * after a copy-paste between similar addons), locate the single AppPlugin implementation
+     * shipped at the root of the addon directory.
+     */
+    private static function discoverAppPluginClassInAddonRoot(string $identifier): ?string
+    {
+        $dir = PluginHelper::getPluginsDir() . '/' . $identifier;
+        if (!is_dir($dir)) {
+            return null;
+        }
+
+        $candidates = [];
+        foreach (glob($dir . '/*.php') ?: [] as $file) {
+            $basename = basename($file, '.php');
+            $class = "App\\Addons\\{$identifier}\\{$basename}";
+            if (class_exists($class) && is_subclass_of($class, AppPlugin::class)) {
+                $candidates[] = $class;
+            }
+        }
+
+        if (count($candidates) === 1) {
+            return $candidates[0];
+        }
+
+        if (count($candidates) > 1) {
+            App::getInstance(true)->getLogger()->warning(
+                'Multiple AppPlugin classes in addon root for ' . $identifier
+                . '; set plugin.name in conf.yml to the correct entry class name.'
+            );
+        }
+
+        return null;
     }
 }
