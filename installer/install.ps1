@@ -318,7 +318,7 @@ function Show-ReleaseTypeMenu {
     Draw-HR
     Write-Host "Choose release type:" -ForegroundColor White
     Write-Host "  [1] Stable Release (Recommended for production)" -ForegroundColor Green
-    Write-Host "  [2] Development Build (Latest from main branch)" -ForegroundColor Yellow
+    Write-Host "  [2] Development Build (Latest from develop branch)" -ForegroundColor Yellow
     Write-Host "  [3] Custom Development Build (Specify branch/commit)" -ForegroundColor Cyan
     Draw-HR
 }
@@ -350,7 +350,7 @@ function Get-DevImageTag {
     )
     
     if ([string]::IsNullOrEmpty($Branch)) {
-        return "dev-main"
+        return "dev-develop"
     }
     
     $sanitizedBranch = $Branch -replace '/', '-'
@@ -828,7 +828,7 @@ function Install-Panel {
     
     if ($Dev) {
         $useDev = $true
-        $devBranch = if ($DevBranch) { $DevBranch } else { "main" }
+        $devBranch = if ($DevBranch) { $DevBranch } else { "develop" }
         $devSha = $DevSha
     } else {
         Show-ReleaseTypeMenu
@@ -838,13 +838,13 @@ function Install-Panel {
             "1" { $useDev = $false }
             "2" { 
                 $useDev = $true
-                $devBranch = "main"
+                $devBranch = "develop"
             }
             "3" {
                 $useDev = $true
-                $devBranch = Read-Host "Enter branch name (default: main)"
+                $devBranch = Read-Host "Enter branch name (default: develop)"
                 if ([string]::IsNullOrEmpty($devBranch)) {
-                    $devBranch = "main"
+                    $devBranch = "develop"
                 }
                 $devSha = Read-Host "Enter commit SHA (optional, press Enter to skip)"
             }
@@ -1012,7 +1012,7 @@ function Update-Panel {
     
     if ($Dev) {
         $useDev = $true
-        $devBranch = if ($DevBranch) { $DevBranch } else { "main" }
+        $devBranch = if ($DevBranch) { $DevBranch } else { "develop" }
         $devSha = $DevSha
     } else {
         Show-ReleaseTypeMenu
@@ -1029,13 +1029,13 @@ function Update-Panel {
             "1" { $useDev = $false }
             "2" { 
                 $useDev = $true
-                $devBranch = "main"
+                $devBranch = "develop"
             }
             "3" {
                 $useDev = $true
-                $devBranch = Read-Host "Enter branch name (default: main)"
+                $devBranch = Read-Host "Enter branch name (default: develop)"
                 if ([string]::IsNullOrEmpty($devBranch)) {
-                    $devBranch = "main"
+                    $devBranch = "develop"
                 }
                 $devSha = Read-Host "Enter commit SHA (optional, press Enter to skip)"
             }

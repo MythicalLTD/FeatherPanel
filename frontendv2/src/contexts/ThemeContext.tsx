@@ -79,7 +79,7 @@ const ACCENT_COLORS = {
     pink: '330 81% 60%',
     teal: '173 80% 40%',
     yellow: '48 96% 53%',
-    white: '210 20% 92%',
+    indigo: '245 58% 51%',
     violet: '270 75% 55%',
     cyan: '188 78% 41%',
     lime: '84 69% 35%',
@@ -120,6 +120,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+        // Load initial values from localStorage (will be overridden by admin settings if locked)
         setThemeState(saved || (prefersDark ? 'dark' : 'light'));
         setAccentColorState(savedAccent && savedAccent in ACCENT_COLORS ? savedAccent : 'purple');
         setBackgroundTypeState(
@@ -160,6 +161,94 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         setFontFamilyState(initialFont);
         localStorage.setItem('fontFamily', initialFont);
     }, []);
+
+    // Enforce admin settings on load and when settings change
+    useEffect(() => {
+        if (!mounted || !settings) return;
+
+        const adminBgUrl = (settings.app_background_image_url ?? '').trim();
+        const imageLock = settings.app_background_lock === 'true';
+        const forcedTheme = settings.app_theme_default as Theme;
+        const forcedAccent = settings.app_accent_color_default;
+        const forcedBgType = settings.app_background_type_default as BackgroundType;
+        const forcedBlur = parseAndClamp(settings.app_backdrop_blur_default ?? '0', 0, 24, 0);
+        const forcedDarken = parseAndClamp(settings.app_backdrop_darken_default ?? '0', 0, 100, 0);
+        const rawFit = (settings.app_background_image_fit_default ?? 'cover').toLowerCase();
+        const forcedFit: BackgroundImageFit =
+            rawFit === 'contain' || rawFit === 'fill' ? (rawFit as BackgroundImageFit) : 'cover';
+
+        // Enforce theme lock - use admin's default theme
+        if (settings.app_theme_lock === 'true' && forcedTheme && theme !== forcedTheme) {
+            setThemeState(forcedTheme);
+            localStorage.setItem('theme', forcedTheme);
+        }
+
+        // Enforce accent color lock - use admin's default accent color
+        if (settings.app_accent_color_lock === 'true' && forcedAccent && forcedAccent in ACCENT_COLORS) {
+            if (accentColor !== forcedAccent) {
+                setAccentColorState(forcedAccent);
+                localStorage.setItem('accentColor', forcedAccent);
+            }
+        }
+
+        // Enforce background type: light mode limits, admin lock, forced image when background URL is locked
+        const validBgTypes: BackgroundType[] = ['aurora', 'gradient', 'solid', 'image', 'pattern'];
+        const mustUseImageForLockedBg = imageLock && adminBgUrl !== '';
+        if (theme === 'light') {
+            if (backgroundType !== 'pattern' && backgroundType !== 'solid') {
+                setBackgroundTypeState('pattern');
+                localStorage.setItem('backgroundType', 'pattern');
+            }
+        } else if (settings.app_background_type_lock === 'true' || mustUseImageForLockedBg) {
+            const targetType: BackgroundType | null = mustUseImageForLockedBg
+                ? 'image'
+                : forcedBgType && validBgTypes.includes(forcedBgType)
+                  ? forcedBgType
+                  : null;
+            if (targetType && backgroundType !== targetType) {
+                setBackgroundTypeState(targetType);
+                localStorage.setItem('backgroundType', targetType);
+            }
+        } else if (localStorage.getItem('backgroundType') === null) {
+            if (forcedBgType && validBgTypes.includes(forcedBgType) && backgroundType !== forcedBgType) {
+                setBackgroundTypeState(forcedBgType);
+                localStorage.setItem('backgroundType', forcedBgType);
+            }
+        }
+
+        // Blur: locked always uses admin default; otherwise seed from admin default when user has not stored a value
+        if (settings.app_backdrop_blur_lock === 'true') {
+            if (backdropBlur !== forcedBlur) {
+                setBackdropBlurState(forcedBlur);
+                localStorage.setItem('backdropBlur', String(forcedBlur));
+            }
+        } else if (localStorage.getItem('backdropBlur') === null && backdropBlur !== forcedBlur) {
+            setBackdropBlurState(forcedBlur);
+            localStorage.setItem('backdropBlur', String(forcedBlur));
+        }
+
+        // Darken: same pattern as blur
+        if (settings.app_backdrop_darken_lock === 'true') {
+            if (backdropDarken !== forcedDarken) {
+                setBackdropDarkenState(forcedDarken);
+                localStorage.setItem('backdropDarken', String(forcedDarken));
+            }
+        } else if (localStorage.getItem('backdropDarken') === null && backdropDarken !== forcedDarken) {
+            setBackdropDarkenState(forcedDarken);
+            localStorage.setItem('backdropDarken', String(forcedDarken));
+        }
+
+        // Background image fit: locked or first-time default from admin
+        if (settings.app_background_image_fit_lock === 'true') {
+            if (backgroundImageFit !== forcedFit) {
+                setBackgroundImageFitState(forcedFit);
+                localStorage.setItem('backgroundImageFit', forcedFit);
+            }
+        } else if (localStorage.getItem('backgroundImageFit') === null && backgroundImageFit !== forcedFit) {
+            setBackgroundImageFitState(forcedFit);
+            localStorage.setItem('backgroundImageFit', forcedFit);
+        }
+    }, [settings, mounted, theme, accentColor, backgroundType, backdropBlur, backdropDarken, backgroundImageFit]);
 
     useEffect(() => {
         if (!mounted) return;
@@ -208,8 +297,21 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     };
 
     const setBackgroundType = (type: BackgroundType) => {
-        // If admin locked background type, ignore user changes.
-        if (settings?.app_background_type_lock === 'true') return;
+        const adminUrl = (settings?.app_background_image_url ?? '').trim();
+        const imageLocked = settings?.app_background_lock === 'true';
+        const mustUseImageForLockedBg = Boolean(imageLocked && adminUrl);
+        if (mustUseImageForLockedBg && type !== 'image') {
+            return;
+        }
+        if (settings?.app_background_type_lock === 'true') {
+            if (!mustUseImageForLockedBg) {
+                const forced = settings.app_background_type_default as BackgroundType;
+                const validBgTypes: BackgroundType[] = ['aurora', 'gradient', 'solid', 'image', 'pattern'];
+                if (!forced || !validBgTypes.includes(forced) || type !== forced) {
+                    return;
+                }
+            }
+        }
         setBackgroundTypeState(type);
         localStorage.setItem('backgroundType', type);
     };
@@ -223,8 +325,16 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     };
 
     const setBackgroundImage = (image: string) => {
-        // If admin locked global background image, ignore user changes.
-        if (settings?.app_background_lock === 'true') return;
+        if (settings?.app_background_lock === 'true') {
+            const adminUrl = (settings.app_background_image_url ?? '').trim();
+            const next = image.trim();
+            if (adminUrl !== '' && next !== adminUrl) {
+                return;
+            }
+            if (adminUrl === '' && next !== '') {
+                return;
+            }
+        }
         setBackgroundImageState(image);
         localStorage.setItem('backgroundImage', image);
     };
@@ -246,8 +356,12 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     };
 
     const setBackgroundImageFit = (fit: BackgroundImageFit) => {
-        // If admin locked image fit, ignore user changes.
-        if (settings?.app_background_image_fit_lock === 'true') return;
+        if (settings?.app_background_image_fit_lock === 'true') {
+            const raw = (settings.app_background_image_fit_default ?? 'cover').toLowerCase();
+            const forced: BackgroundImageFit =
+                raw === 'contain' || raw === 'fill' ? (raw as BackgroundImageFit) : 'cover';
+            if (fit !== forced) return;
+        }
         setBackgroundImageFitState(fit);
         localStorage.setItem('backgroundImageFit', fit);
     };

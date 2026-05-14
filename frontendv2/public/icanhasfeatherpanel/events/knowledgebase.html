@@ -24,7 +24,7 @@
     <a href="/icanhasfeatherpanel/events/index.html" class="back-link">&larr; Back to all event categories</a>
     <header>
       <h1>Knowledgebase</h1>
-      <p class="muted">22 events in this category.</p>
+      <p class="muted">23 events in this category.</p>
     </header>
 
 <article class="card">
@@ -101,6 +101,32 @@ public static function processEvents(PluginEvents $evt): void
     $evt->on(KnowledgebaseEvent::onKnowledgebaseArticleRetrieved(), function ($article) {
         // Handle featherpanel:admin:knowledgebase:article:retrieved
         // Data keys: article
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:knowledgebase:articles:reordered</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onKnowledgebaseArticlesReordered</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> array articles, array reordered_by.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> articles, reordered_by</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/KnowledgebaseController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\KnowledgebaseEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(KnowledgebaseEvent::onKnowledgebaseArticlesReordered(), function ($articles, $reorderedBy) {
+        // Handle featherpanel:admin:knowledgebase:articles:reordered
+        // Data keys: articles, reordered_by
     });
 }</code></pre>
 </article>

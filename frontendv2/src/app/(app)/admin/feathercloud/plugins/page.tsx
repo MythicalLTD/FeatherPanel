@@ -44,6 +44,10 @@ import {
     Lock,
     Package,
     Crown,
+    AlertTriangle,
+    CheckCircle2,
+    XCircle,
+    Layers,
 } from 'lucide-react';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { ResourceCard, type ResourceBadge } from '@/components/featherui/ResourceCard';
@@ -55,6 +59,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select } from '@/components/ui/select-native';
 import { cn } from '@/lib/utils';
 import { Sheet, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface OnlineAddon {
     identifier: string;
@@ -83,6 +88,41 @@ interface OnlinePagination {
     current_page: number;
     total_pages: number;
     total_records: number;
+}
+
+interface DependencyCheck {
+    dependency: string;
+    type: 'composer' | 'plugin' | 'php' | 'php-ext' | 'unknown';
+    name: string;
+    met: boolean;
+    message: string;
+}
+
+interface RequirementsCheckResult {
+    can_install: boolean;
+    already_installed: boolean;
+    update_available: boolean;
+    installed_version: string | null;
+    latest_version: string | null;
+    package: {
+        identifier: string;
+        name: string;
+        description: string | null;
+        version: string | null;
+        author: string | null;
+        verified: boolean;
+        premium: number;
+    };
+    dependencies: {
+        checks: DependencyCheck[];
+        all_met: boolean;
+    };
+    panel_version: {
+        ok: boolean;
+        message: string | null;
+        min: string | null;
+        max: string | null;
+    };
 }
 
 export default function PluginsPage() {
@@ -114,6 +154,12 @@ export default function PluginsPage() {
     const [selectedPluginIds, setSelectedPluginIds] = useState<string[]>([]);
     const [queuedPlugins, setQueuedPlugins] = useState<Record<string, string>>({});
     const [bulkInstalling, setBulkInstalling] = useState(false);
+
+    // Dependency check state
+    const [requirementsDialogOpen, setRequirementsDialogOpen] = useState(false);
+    const [requirementsCheck, setRequirementsCheck] = useState<RequirementsCheckResult | null>(null);
+    const [, setCheckingRequirements] = useState(false);
+    const [pendingInstallId, setPendingInstallId] = useState<string | null>(null);
 
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-feathercloud-plugins');
 
@@ -208,8 +254,42 @@ export default function PluginsPage() {
         }
     };
 
+    const checkRequirements = async (identifier: string): Promise<RequirementsCheckResult | null> => {
+        try {
+            const response = await axios.get(`/api/admin/plugins/online/${identifier}/check`);
+            return response.data?.data || null;
+        } catch (err) {
+            console.error('Failed to check requirements:', err);
+            return null;
+        }
+    };
+
     const handleInstall = async (identifier: string) => {
+        // First check requirements
+        setCheckingRequirements(true);
+        const requirements = await checkRequirements(identifier);
+        setCheckingRequirements(false);
+
+        if (!requirements) {
+            toast.error(t('admin.marketplace.plugins.requirements_check_failed'));
+            return;
+        }
+
+        // If dependencies not met or panel version incompatible, show dialog
+        if (!requirements.can_install) {
+            setRequirementsCheck(requirements);
+            setPendingInstallId(identifier);
+            setRequirementsDialogOpen(true);
+            return;
+        }
+
+        // Proceed with installation
+        await performInstall(identifier);
+    };
+
+    const performInstall = async (identifier: string) => {
         setInstallingOnlineId(identifier);
+        setRequirementsDialogOpen(false);
         try {
             await axios.post('/api/admin/plugins/online/install', { identifier });
             toast.success(
@@ -220,10 +300,38 @@ export default function PluginsPage() {
             fetchInstalledPlugins();
             setTimeout(() => window.location.reload(), 1500);
         } catch (err: unknown) {
-            const e = err as { response?: { data?: { message?: string } } };
-            toast.error(e?.response?.data?.message || t('admin.marketplace.plugins.install_failed'));
+            const e = err as {
+                response?: {
+                    data?: {
+                        message?: string;
+                        missing_dependencies?: string[];
+                        dependency_details?: DependencyCheck[];
+                    };
+                    status?: number;
+                };
+            };
+
+            // Handle 412 Precondition Failed - missing dependencies
+            if (e?.response?.status === 412 && e?.response?.data?.missing_dependencies) {
+                toast.error(t('admin.marketplace.plugins.missing_dependencies'));
+                // Show requirements dialog with missing dependencies
+                if (requirementsCheck) {
+                    setRequirementsCheck({
+                        ...requirementsCheck,
+                        can_install: false,
+                        dependencies: {
+                            checks: e.response.data.dependency_details || [],
+                            all_met: false,
+                        },
+                    });
+                    setRequirementsDialogOpen(true);
+                }
+            } else {
+                toast.error(e?.response?.data?.message || t('admin.marketplace.plugins.install_failed'));
+            }
         } finally {
             setInstallingOnlineId(null);
+            setPendingInstallId(null);
         }
     };
 
@@ -232,9 +340,41 @@ export default function PluginsPage() {
 
         setBulkInstalling(true);
 
-        let successCount = 0;
+        // Check requirements for all plugins first
+        const pluginsWithIssues: { identifier: string; requirements: RequirementsCheckResult }[] = [];
+        const pluginsReady: string[] = [];
 
         for (const identifier of selectedPluginIds) {
+            const requirements = await checkRequirements(identifier);
+            if (requirements && !requirements.can_install) {
+                pluginsWithIssues.push({ identifier, requirements });
+            } else if (requirements && requirements.can_install) {
+                pluginsReady.push(identifier);
+            }
+        }
+
+        // If any plugins have issues, show the first one
+        if (pluginsWithIssues.length > 0) {
+            setRequirementsCheck(pluginsWithIssues[0].requirements);
+            setPendingInstallId(pluginsWithIssues[0].identifier);
+            setRequirementsDialogOpen(true);
+            setBulkInstalling(false);
+
+            // Show warning about skipped plugins
+            if (pluginsWithIssues.length > 1) {
+                toast.warning(
+                    t('admin.marketplace.plugins.queue.multiple_requirements_issues', {
+                        count: String(pluginsWithIssues.length),
+                    }),
+                );
+            }
+            return;
+        }
+
+        // Install all ready plugins
+        let successCount = 0;
+
+        for (const identifier of pluginsReady) {
             try {
                 await axios.post('/api/admin/plugins/online/install', { identifier });
                 successCount++;
@@ -613,6 +753,14 @@ export default function PluginsPage() {
                                                   className: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
                                               }
                                             : null,
+                                        addon.latest_version?.dependencies &&
+                                        addon.latest_version.dependencies.length > 0 &&
+                                        !installedPluginIds.includes(addon.identifier)
+                                            ? {
+                                                  label: t('admin.marketplace.plugins.has_dependencies'),
+                                                  className: 'bg-purple-500/10 text-purple-600 border-purple-500/20',
+                                              }
+                                            : null,
                                     ].filter(Boolean) as ResourceBadge[]
                                 }
                                 description={
@@ -985,6 +1133,148 @@ export default function PluginsPage() {
             </Sheet>
 
             <WidgetRenderer widgets={getWidgets('admin-feathercloud-plugins', 'bottom-of-page')} />
+
+            {/* Requirements Check Dialog */}
+            <Dialog open={requirementsDialogOpen} onOpenChange={setRequirementsDialogOpen}>
+                <DialogContent className='max-w-lg'>
+                    <DialogHeader>
+                        <DialogTitle className='flex items-center gap-2'>
+                            {requirementsCheck?.can_install ? (
+                                <>
+                                    <CheckCircle2 className='h-5 w-5 text-green-500' />
+                                    {t('admin.marketplace.plugins.requirements.title_ready')}
+                                </>
+                            ) : (
+                                <>
+                                    <AlertTriangle className='h-5 w-5 text-amber-500' />
+                                    {t('admin.marketplace.plugins.requirements.title_missing')}
+                                </>
+                            )}
+                        </DialogTitle>
+                        <DialogDescription>
+                            {requirementsCheck?.package.name && (
+                                <span className='font-medium'>{requirementsCheck.package.name}</span>
+                            )}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className='space-y-4 py-4'>
+                        {/* Panel Version Status */}
+                        {requirementsCheck?.panel_version.min || requirementsCheck?.panel_version.max ? (
+                            <div
+                                className={cn(
+                                    'flex items-start gap-3 rounded-lg border p-3',
+                                    requirementsCheck.panel_version.ok
+                                        ? 'border-green-200 bg-green-50/50'
+                                        : 'border-red-200 bg-red-50/50',
+                                )}
+                            >
+                                {requirementsCheck.panel_version.ok ? (
+                                    <CheckCircle2 className='mt-0.5 h-5 w-5 shrink-0 text-green-500' />
+                                ) : (
+                                    <XCircle className='mt-0.5 h-5 w-5 shrink-0 text-red-500' />
+                                )}
+                                <div>
+                                    <p className='font-medium'>
+                                        {t('admin.marketplace.plugins.requirements.panel_version')}
+                                    </p>
+                                    <p className='text-muted-foreground text-sm'>
+                                        {requirementsCheck.panel_version.ok
+                                            ? t('admin.marketplace.plugins.requirements.panel_compatible')
+                                            : requirementsCheck.panel_version.message}
+                                    </p>
+                                </div>
+                            </div>
+                        ) : null}
+
+                        {/* Dependencies List */}
+                        {requirementsCheck &&
+                            requirementsCheck.dependencies?.checks &&
+                            requirementsCheck.dependencies.checks.length > 0 && (
+                                <div className='space-y-2'>
+                                    <h4 className='flex items-center gap-2 text-sm font-semibold'>
+                                        <Layers className='h-4 w-4' />
+                                        {t('admin.marketplace.plugins.requirements.dependencies')}
+                                    </h4>
+                                    <div className='space-y-2'>
+                                        {requirementsCheck.dependencies.checks.map((dep, index) => (
+                                            <div
+                                                key={index}
+                                                className={cn(
+                                                    'flex items-start gap-2 rounded-md border p-2 text-sm',
+                                                    dep.met
+                                                        ? 'border-green-200 bg-green-50/30'
+                                                        : 'border-red-200 bg-red-50/30',
+                                                )}
+                                            >
+                                                {dep.met ? (
+                                                    <CheckCircle2 className='mt-0.5 h-4 w-4 shrink-0 text-green-500' />
+                                                ) : (
+                                                    <XCircle className='mt-0.5 h-4 w-4 shrink-0 text-red-500' />
+                                                )}
+                                                <div className='flex-1'>
+                                                    <div className='flex items-center gap-2'>
+                                                        <Badge
+                                                            variant='outline'
+                                                            className={cn(
+                                                                'h-5 text-[10px]',
+                                                                dep.met
+                                                                    ? 'border-green-300 text-green-700'
+                                                                    : 'border-red-300 text-red-700',
+                                                            )}
+                                                        >
+                                                            {dep.type}
+                                                        </Badge>
+                                                        <span className='font-medium'>{dep.name}</span>
+                                                    </div>
+                                                    {!dep.met && (
+                                                        <p className='text-muted-foreground mt-1 text-xs'>
+                                                            {dep.message}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                        {/* Missing dependencies warning */}
+                        {!requirementsCheck?.dependencies.all_met && (
+                            <div className='rounded-lg border border-amber-200 bg-amber-50 p-3'>
+                                <p className='flex items-center gap-2 text-sm font-medium text-amber-800'>
+                                    <AlertTriangle className='h-4 w-4' />
+                                    {t('admin.marketplace.plugins.requirements.please_install_deps')}
+                                </p>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className='flex justify-end gap-2'>
+                        <Button variant='outline' onClick={() => setRequirementsDialogOpen(false)}>
+                            {requirementsCheck?.can_install ? t('common.cancel') : t('common.close')}
+                        </Button>
+                        {requirementsCheck?.can_install && pendingInstallId && (
+                            <Button
+                                onClick={() => performInstall(pendingInstallId)}
+                                disabled={installingOnlineId === pendingInstallId}
+                            >
+                                {installingOnlineId === pendingInstallId ? (
+                                    <>
+                                        <RefreshCw className='mr-2 h-4 w-4 animate-spin' />
+                                        {t('admin.marketplace.plugins.installing')}
+                                    </>
+                                ) : (
+                                    <>
+                                        <CloudDownload className='mr-2 h-4 w-4' />
+                                        {t('admin.marketplace.plugins.install')}
+                                    </>
+                                )}
+                            </Button>
+                        )}
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

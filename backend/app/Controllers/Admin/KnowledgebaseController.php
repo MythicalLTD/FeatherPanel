@@ -58,6 +58,7 @@ use App\Plugins\Events\Events\KnowledgebaseEvent;
         new OA\Property(property: 'author_id', type: 'integer', description: 'Author user ID'),
         new OA\Property(property: 'status', type: 'string', enum: ['draft', 'published', 'archived'], description: 'Article status'),
         new OA\Property(property: 'pinned', type: 'string', enum: ['false', 'true'], description: 'Whether article is pinned'),
+        new OA\Property(property: 'sort_order', type: 'integer', description: 'Article sort order for positioning'),
         new OA\Property(property: 'published_at', type: 'string', format: 'date-time', nullable: true, description: 'Publication timestamp'),
         new OA\Property(property: 'created_at', type: 'string', format: 'date-time', description: 'Creation timestamp'),
         new OA\Property(property: 'updated_at', type: 'string', format: 'date-time', description: 'Last update timestamp'),
@@ -113,6 +114,7 @@ use App\Plugins\Events\Events\KnowledgebaseEvent;
         new OA\Property(property: 'author_id', type: 'integer', description: 'Author user ID'),
         new OA\Property(property: 'status', type: 'string', enum: ['draft', 'published', 'archived'], nullable: true, description: 'Article status', default: 'draft'),
         new OA\Property(property: 'pinned', type: 'boolean', nullable: true, description: 'Whether article is pinned', default: false),
+        new OA\Property(property: 'sort_order', type: 'integer', nullable: true, description: 'Article sort order for positioning', default: 0),
         new OA\Property(property: 'published_at', type: 'string', format: 'date-time', nullable: true, description: 'Publication timestamp'),
     ]
 )]
@@ -128,7 +130,27 @@ use App\Plugins\Events\Events\KnowledgebaseEvent;
         new OA\Property(property: 'author_id', type: 'integer', description: 'Author user ID'),
         new OA\Property(property: 'status', type: 'string', enum: ['draft', 'published', 'archived'], description: 'Article status'),
         new OA\Property(property: 'pinned', type: 'boolean', description: 'Whether article is pinned'),
+        new OA\Property(property: 'sort_order', type: 'integer', description: 'Article sort order for positioning'),
         new OA\Property(property: 'published_at', type: 'string', format: 'date-time', nullable: true, description: 'Publication timestamp'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'KnowledgebaseArticleReorder',
+    type: 'object',
+    required: ['articles'],
+    properties: [
+        new OA\Property(
+            property: 'articles',
+            type: 'array',
+            description: 'Array of articles with their new sort orders',
+            items: new OA\Items(
+                type: 'object',
+                properties: [
+                    new OA\Property(property: 'id', type: 'integer', description: 'Article ID'),
+                    new OA\Property(property: 'sort_order', type: 'integer', description: 'New sort order value'),
+                ]
+            )
+        ),
     ]
 )]
 class KnowledgebaseController
@@ -1085,6 +1107,91 @@ class KnowledgebaseController
         }
 
         return ApiResponse::success([], 'Article deleted successfully', 200);
+    }
+
+    #[OA\Post(
+        path: '/api/admin/knowledgebase/articles/reorder',
+        summary: 'Reorder knowledgebase articles',
+        description: 'Update the sort order of multiple articles at once for custom positioning.',
+        tags: ['Admin - Knowledgebase'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/KnowledgebaseArticleReorder')
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Articles reordered successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', description: 'Success message'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Invalid request data'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
+            new OA\Response(response: 500, description: 'Internal server error'),
+        ]
+    )]
+    public function articlesReorder(Request $request): Response
+    {
+        $data = json_decode($request->getContent(), true);
+
+        if (!isset($data['articles']) || !is_array($data['articles'])) {
+            return ApiResponse::error('Articles array is required', 'INVALID_REQUEST', 400);
+        }
+
+        if (empty($data['articles'])) {
+            return ApiResponse::error('Articles array cannot be empty', 'EMPTY_ARTICLES', 400);
+        }
+
+        $articles = [];
+        foreach ($data['articles'] as $article) {
+            if (!isset($article['id']) || !is_numeric($article['id'])) {
+                continue;
+            }
+            if (!isset($article['sort_order']) || !is_numeric($article['sort_order'])) {
+                continue;
+            }
+
+            $articles[] = [
+                'id' => (int) $article['id'],
+                'sort_order' => (int) $article['sort_order'],
+            ];
+        }
+
+        if (empty($articles)) {
+            return ApiResponse::error('No valid article order data provided', 'INVALID_ARTICLES', 400);
+        }
+
+        $success = KnowledgebaseArticle::updateSortOrders($articles);
+        if (!$success) {
+            return ApiResponse::error('Failed to reorder articles', 'REORDER_FAILED', 500);
+        }
+
+        // Log activity
+        $admin = $request->attributes->get('user');
+        Activity::createActivity([
+            'user_uuid' => $admin['uuid'] ?? null,
+            'name' => 'reorder_knowledgebase_articles',
+            'context' => 'Reordered ' . count($articles) . ' knowledgebase articles',
+            'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                KnowledgebaseEvent::onKnowledgebaseArticlesReordered(),
+                [
+                    'articles' => $articles,
+                    'reordered_by' => $admin,
+                ]
+            );
+        }
+
+        return ApiResponse::success([], 'Articles reordered successfully', 200);
     }
 
     // ==================== FILE UPLOADS ====================

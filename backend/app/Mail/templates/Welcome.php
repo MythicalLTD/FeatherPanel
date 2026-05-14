@@ -98,7 +98,7 @@ class Welcome
             'body' => $template,
         ]);
 
-        if ($id == false) {
+        if ($id === false || $id === true) {
             return;
         }
 

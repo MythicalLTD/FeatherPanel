@@ -232,8 +232,8 @@ export function SpigotConfigurationEditor({
     };
 
     return (
-        <Card className='bg-card/50 border-border/50 rounded-3xl border shadow-sm backdrop-blur-3xl'>
-            <CardHeader className='border-border/10 border-b pb-6'>
+        <Card className='bg-card/50 border-border/50 flex flex-col overflow-hidden rounded-3xl border shadow-sm backdrop-blur-3xl'>
+            <CardHeader className='border-border/10 shrink-0 border-b pb-6'>
                 <div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
                     <div className='space-y-2'>
                         <CardTitle className='text-2xl font-bold'>{t('files.editors.spigotConfig.title')}</CardTitle>
@@ -256,7 +256,7 @@ export function SpigotConfigurationEditor({
                     </div>
                 </div>
             </CardHeader>
-            <div className='space-y-10 p-6'>
+            <div className='flex-1 space-y-10 overflow-y-auto p-6'>
                 <section className='space-y-4'>
                     <div className='flex items-center gap-3'>
                         <div className='bg-primary/10 text-primary flex h-10 w-10 items-center justify-center rounded-lg'>

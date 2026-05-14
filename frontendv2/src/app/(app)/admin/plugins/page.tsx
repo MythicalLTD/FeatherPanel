@@ -1076,7 +1076,7 @@ export default function PluginsPage() {
                                                                         </div>
                                                                     )}
                                                                 </div>
-                                                                <div className='flex-shrink-0 pt-0.5'>
+                                                                <div className='shrink-0 pt-0.5'>
                                                                     <div className='relative'>
                                                                         <input
                                                                             type='checkbox'

@@ -1,0 +1,73 @@
+# FeatherPanel All-in-One (OCI) Docker Compose
+# Single container deployment for OCI-compliant runtimes
+# Usage: docker compose -f docker-compose.oci.yml up -d
+#
+# DATA PERSISTENCE ACROSS UPDATES:
+# The /data volume contains all persistent data. On container updates:
+# - Database (MariaDB): /data/mysql
+# - Cache (Redis): /data/redis  
+# - Attachments: /data/attachments (symlinked to /var/www/html/public/attachments)
+# - Translations: /data/translations (symlinked to /var/www/html/public/translations)
+# - Addons: /data/addons (symlinked to /var/www/html/storage/addons)
+# - Config (.env): /data/config (symlinked to /var/www/html/storage/config)
+# - Logs: /data/logs (symlinked to /var/www/html/storage/logs)
+# - Backups: /data/backups (symlinked to /var/www/html/storage/backups)
+#
+# The container regenerates addon symlinks on every start, so addons persist.
+
+services:
+  featherpanel:
+    build:
+      context: .
+      dockerfile: Dockerfile.oci
+    image: featherpanel-oci:latest
+    container_name: featherpanel
+    restart: unless-stopped
+    ports:
+      - "${FEATHERPANEL_PANEL_PORT:-80}:80"
+    environment:
+      - DATABASE_DATABASE=${MARIADB_DATABASE:-featherpanel}
+      - DATABASE_USER=${MARIADB_USER:-featherpanel}
+      - DATABASE_PASSWORD=${MARIADB_PASSWORD:-featherpanel_password}
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-featherpanel_redis}
+      - MARIADB_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD:-featherpanel_root}
+      # First admin user (only created if no users exist)
+      - FEATHERPANEL_ADMIN_EMAIL=${FEATHERPANEL_ADMIN_EMAIL:-admin@localhost}
+      - FEATHERPANEL_ADMIN_USERNAME=${FEATHERPANEL_ADMIN_USERNAME:-admin}
+      - FEATHERPANEL_ADMIN_PASSWORD=${FEATHERPANEL_ADMIN_PASSWORD:-}
+      # Service toggles (set to "false" to disable)
+      - ENABLE_MARIADB=${ENABLE_MARIADB:-true}
+      - ENABLE_REDIS=${ENABLE_REDIS:-true}
+      - ENABLE_BACKEND=${ENABLE_BACKEND:-true}
+      - ENABLE_FRONTEND=${ENABLE_FRONTEND:-true}
+      - ENABLE_ASYNC_RUNNER=${ENABLE_ASYNC_RUNNER:-true}
+      - ENABLE_CRON=${ENABLE_CRON:-true}
+      # Port exports (set to empty to not expose, or specify different port)
+      - EXPORT_HTTP_PORT=${EXPORT_HTTP_PORT:-80}
+      - PANEL_DOCKER_DEPLOYMENT=true
+      - TRUST_PROXY_HEADERS=true
+      # Shown on container console login banner (optional; else parsed from app_url in .env when present)
+      - FEATHERPANEL_APP_URL=${FEATHERPANEL_APP_URL:-}
+    volumes:
+      # Single volume for all persistent data
+      - featherpanel_data:/data
+      # Optional: bind mount for easier access to specific data
+      # - ./data:/data
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80"]
+      timeout: 20s
+      retries: 10
+      start_period: 60s
+    # Optional: resource limits
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: '4'
+    #       memory: 4G
+    #     reservations:
+    #       cpus: '2'
+    #       memory: 2G
+
+volumes:
+  featherpanel_data:
+    driver: local

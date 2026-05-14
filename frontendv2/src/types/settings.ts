@@ -40,6 +40,23 @@ export interface AppSettings {
     ticket_system_enabled: string;
     turnstile_enabled: string;
     turnstile_key_pub: string;
+    captcha_provider: 'turnstile' | 'hcaptcha' | 'recaptcha' | 'friendlycaptcha' | 'reforge';
+    hcaptcha_site_key: string;
+    recaptcha_site_key: string;
+    /** Google reCAPTCHA: v2 (checkbox) or v3 (score). */
+    recaptcha_version?: string;
+    /** Minimum acceptable v3 score (0–1); server-enforced. */
+    recaptcha_v3_min_score?: string;
+    /** v3 action name; must match server setting. */
+    recaptcha_v3_action?: string;
+    friendly_captcha_site_key: string;
+    /** reForge Captcha (https://reforgecaptcha.cloud/) */
+    reforge_captcha_site_key?: string;
+    reforge_captcha_widget_type?: string;
+    reforge_captcha_theme?: string;
+    reforge_captcha_size?: string;
+    reforge_captcha_lang?: string;
+    reforge_captcha_min_score?: string;
     app_url: string;
     app_logo_white: string;
     app_logo_dark: string;
@@ -127,6 +144,8 @@ export interface AppSettings {
     /** When 'true', force the configured background image fit for all users. */
     app_background_image_fit_lock?: string;
     server_allow_user_backup_policy_edit: string;
+    /** When 'true', enable passwordless email login with 6-digit OTP codes. */
+    email_login_enabled?: string;
 }
 
 export interface CoreInfo {

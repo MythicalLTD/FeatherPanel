@@ -82,6 +82,34 @@ body {
     -moz-osx-font-smoothing: grayscale;
 }
 
+/* Full-bleed plugin routes: body bg stacks under the fixed theme layer (pattern holes etc.),
+   which reads as an extra slab in dark mode. Let BackgroundWrapper own the canvas.
+   html[data-fp-plugin-fullbleed] mirrors body.fp-fullwidth-plugin for specificity vs late-loaded plugin-css. */
+body.fp-fullwidth-plugin,
+html[data-fp-plugin-fullbleed='1'] body {
+    background: transparent !important;
+    background-color: transparent !important;
+}
+
+/* Full-bleed plugin: blur samples the transparent body and reads as a muddy extra layer in dark mode. */
+body.fp-fullwidth-plugin [data-fp-backdrop-overlay],
+html[data-fp-plugin-fullbleed='1'] body [data-fp-backdrop-overlay] {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+body.fp-fullwidth-plugin [data-fp-plugin-fullbleed-shell],
+body.fp-fullwidth-plugin [data-fp-plugin-content-column],
+body.fp-fullwidth-plugin [data-fp-plugin-main-area],
+body.fp-fullwidth-plugin [data-fp-plugin-main-inner],
+html[data-fp-plugin-fullbleed='1'] body [data-fp-plugin-fullbleed-shell],
+html[data-fp-plugin-fullbleed='1'] body [data-fp-plugin-content-column],
+html[data-fp-plugin-fullbleed='1'] body [data-fp-plugin-main-area],
+html[data-fp-plugin-fullbleed='1'] body [data-fp-plugin-main-inner] {
+    background: transparent !important;
+    background-color: transparent !important;
+}
+
 @keyframes fadeIn {
     from {
         opacity: 0;

@@ -1,0 +1,861 @@
+# FeatherPanel All-in-One OCI Dockerfile
+# Combines: MariaDB, Redis, PHP Backend, Next.js Frontend, Rust Async Runner
+# Usage: docker build -f Dockerfile.oci -t featherpanel-oci .
+#        docker run -p 80:80 -v featherpanel_data:/home/container/data featherpanel-oci
+
+FROM node:22-bookworm AS frontend-builder
+
+# Build the Next.js frontend
+WORKDIR /app
+RUN npm install -g pnpm
+COPY frontendv2/package.json frontendv2/pnpm-lock.yaml frontendv2/pnpm-workspace.yaml ./
+RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
+    pnpm install --frozen-lockfile
+COPY frontendv2/ .
+RUN pnpm build
+
+# ============================================================================
+FROM rust:1.93-slim AS runner-builder
+
+# Build the Rust async runner
+WORKDIR /build
+RUN apt-get update && apt-get install -y pkg-config libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+COPY runner/Cargo.toml runner/Cargo.lock ./
+RUN mkdir -p src && printf "fn main() {}\n" > src/main.rs
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/usr/local/cargo/git \
+    --mount=type=cache,target=/build/target \
+    cargo build --release
+COPY runner/src ./src
+RUN find src -type f -exec touch {} +
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/usr/local/cargo/git \
+    --mount=type=cache,target=/build/target \
+    cargo build --release --locked --bin async-runner && \
+    cp /build/target/release/async-runner /build/async-runner
+
+# ============================================================================
+FROM dunglas/frankenphp:php8.5 AS final
+
+# Prevent interactive prompts
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TERM=xterm
+ENV SERVER_NAME=:80
+
+# Install all system dependencies: MariaDB, Redis, Node.js runtime, supervisor
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update && apt-get install -y \
+    # MariaDB
+    mariadb-server mariadb-client \
+    # Redis
+    redis-server \
+    # Process manager
+    supervisor \
+    # Node.js dependencies
+    curl ca-certificates gnupg \
+    # Backend dependencies
+    git zip unzip cron libssl3 libcap2-bin \
+    && rm -rf /var/lib/apt/lists/*
+
+# Bind :80 as non-root (FeatherWings / Pterodactyl-style UID containers)
+RUN F="$(command -v frankenphp 2>/dev/null || true)"; \
+    if [ -n "$F" ] && command -v setcap >/dev/null 2>&1; then setcap 'cap_net_bind_service=+ep' "$F" || true; fi
+
+# Install Node.js 22.x (LTS) for Next.js frontend
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+    && apt-get install -y nodejs \
+    && npm install -g pnpm \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install PHP extensions
+RUN install-php-extensions \
+    pdo_mysql pdo_pgsql pgsql mysqli mbstring gd intl bcmath zip redis ldap bz2 yaml gmp imagick mongodb
+
+# Install Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# ============================================================================
+# Setup MariaDB - use /home/container/data for all runtime files
+RUN mkdir -p /var/lib/mysql /home/container/data/mysql /home/container/data/mysql/run \
+    && chown -R mysql:mysql /var/lib/mysql /home/container/data/mysql \
+    && chmod -R 777 /home/container/data/mysql \
+    && ln -sf /home/container/data/mysql/run /var/run/mysqld
+
+# Create MySQL init directory (init scripts are generated at runtime if needed)
+RUN mkdir -p /docker-entrypoint-initdb.d/
+
+# ============================================================================
+# Setup Redis
+RUN mkdir -p /var/run/redis /home/container/data/redis \
+    && chown redis:redis /var/run/redis /home/container/data/redis \
+    && chmod -R 777 /home/container/data/redis
+
+# ============================================================================
+# Setup Backend
+WORKDIR /var/www/html
+
+# Copy backend composer files first for caching
+COPY backend/composer.json backend/composer.lock ./
+RUN --mount=type=cache,target=/root/.composer/cache \
+    COMPOSER_ALLOW_SUPERUSER=1 composer install --no-dev --optimize-autoloader --no-interaction
+
+# Copy rest of backend
+COPY backend/ .
+
+# Game panels (FeatherWings) run the process as a non-root UID; avoid www-data-only paths
+RUN mkdir -p /var/www/html/bootstrap/cache \
+    && chmod -R 0777 /var/www/html/storage /var/www/html/bootstrap/cache \
+    && mkdir -p /var/www/html/public/attachments /var/www/html/public/translations \
+    && chmod -R 0777 /var/www/html/public/attachments /var/www/html/public/translations
+
+# Custom PHP configuration
+RUN echo 'memory_limit = -1\n\
+upload_max_filesize = 100M\n\
+post_max_size = 100M\n\
+max_execution_time = 300\n\
+max_input_vars = 3000\n\
+max_file_uploads = 20\n\
+display_errors = Off\n\
+expose_php = Off\n\
+log_errors = On\n\
+error_log = /var/log/php_errors.log\n\
+allow_url_fopen = On\n\
+date.timezone = UTC\n\
+opcache.enable = 1\n\
+opcache.memory_consumption = 128\n\
+opcache.interned_strings_buffer = 8\n\
+opcache.max_accelerated_files = 4000\n\
+opcache.revalidate_freq = 2\n\
+opcache.fast_shutdown = 1' > /usr/local/etc/php/conf.d/custom.ini
+
+# Create backend directories
+RUN mkdir -p /var/www/html/storage/{logs,cache,uploads,temp,config,backups,addons} \
+    /var/www/html/public/{attachments,translations,addons,components} \
+    /var/log/cron /var/www/html/storage/cron
+
+# Backend Caddyfile (internal only - backend listens on :8080)
+COPY <<'EOF' /etc/caddy/backend.Caddyfile
+:8080 {
+    root * /var/www/html/public
+    encode zstd br gzip
+    header Server FeatherPanel
+
+    log {
+        output file /var/www/html/storage/logs/featherpanel-web.fplog {
+            roll_size 50mb
+            roll_keep 3
+        }
+        format console
+        level INFO
+    }
+
+    request_body {
+        max_size 250MB
+    }
+
+    @block_php path_regexp ^/(attachments|uploads|storage)/.*\.php$
+    handle @block_php {
+        respond 403
+    }
+
+    @dot_ht path_regexp /\.ht
+    handle @dot_ht {
+        respond 403
+    }
+
+    php_server {
+        try_files {path} index.php
+    }
+}
+EOF
+
+# Backend init script
+COPY <<'EOF' /usr/local/bin/backend-init.sh
+#!/bin/bash
+set -e
+
+# Ensure storage directories exist
+mkdir -p /var/www/html/storage/{logs,cache,uploads,temp,config,backups,addons}
+mkdir -p /var/www/html/public/{attachments,translations,addons,components}
+mkdir -p /home/container/data/{mysql,redis,uploads,backups,config,logs}
+
+# Setup .env file
+ENV_FILE="/var/www/html/storage/config/.env"
+generate_encryption_key() {
+    php -r 'echo base64_encode(sodium_crypto_secretbox_keygen());'
+}
+
+setup_env_file() {
+    if [ -f "$ENV_FILE" ]; then
+        echo "Updating existing .env file..."
+        grep -q '^REDIS_HOST=' "$ENV_FILE" && sed -i 's/^REDIS_HOST=.*/REDIS_HOST=127.0.0.1/' "$ENV_FILE" || echo 'REDIS_HOST=127.0.0.1' >>"$ENV_FILE"
+        [ -n "$REDIS_PASSWORD" ] && (grep -q '^REDIS_PASSWORD=' "$ENV_FILE" && sed -i "s/^REDIS_PASSWORD=.*/REDIS_PASSWORD=${REDIS_PASSWORD}/" "$ENV_FILE" || echo "REDIS_PASSWORD=${REDIS_PASSWORD}" >>"$ENV_FILE") || true
+        grep -q '^DATABASE_HOST=' "$ENV_FILE" && sed -i 's/^DATABASE_HOST=.*/DATABASE_HOST=127.0.0.1/' "$ENV_FILE" || echo 'DATABASE_HOST=127.0.0.1' >>"$ENV_FILE"
+        grep -q '^DATABASE_PORT=' "$ENV_FILE" && sed -i 's/^DATABASE_PORT=.*/DATABASE_PORT=3306/' "$ENV_FILE" || echo 'DATABASE_PORT=3306' >>"$ENV_FILE"
+        [ -n "$DATABASE_DATABASE" ] && (grep -q '^DATABASE_DATABASE=' "$ENV_FILE" && sed -i "s/^DATABASE_DATABASE=.*/DATABASE_DATABASE=${DATABASE_DATABASE}/" "$ENV_FILE" || echo "DATABASE_DATABASE=${DATABASE_DATABASE}" >>"$ENV_FILE") || true
+        [ -n "$DATABASE_USER" ] && (grep -q '^DATABASE_USER=' "$ENV_FILE" && sed -i "s/^DATABASE_USER=.*/DATABASE_USER=${DATABASE_USER}/" "$ENV_FILE" || echo "DATABASE_USER=${DATABASE_USER}" >>"$ENV_FILE") || true
+        [ -n "$DATABASE_PASSWORD" ] && (grep -q '^DATABASE_PASSWORD=' "$ENV_FILE" && sed -i "s/^DATABASE_PASSWORD=.*/DATABASE_PASSWORD=${DATABASE_PASSWORD}/" "$ENV_FILE" || echo "DATABASE_PASSWORD=${DATABASE_PASSWORD}" >>"$ENV_FILE") || true
+        grep -q '^DATABASE_ENCRYPTION=' "$ENV_FILE" && sed -i 's/^DATABASE_ENCRYPTION=.*/DATABASE_ENCRYPTION=xchacha20/' "$ENV_FILE" || echo 'DATABASE_ENCRYPTION=xchacha20' >>"$ENV_FILE"
+        if grep -q '^DATABASE_ENCRYPTION_KEY=' "$ENV_FILE"; then
+            if [ -z "$(grep '^DATABASE_ENCRYPTION_KEY=' "$ENV_FILE" | cut -d'=' -f2- | tr -d '\"')" ]; then
+                ENC_KEY=$(generate_encryption_key)
+                sed -i "s|^DATABASE_ENCRYPTION_KEY=.*|DATABASE_ENCRYPTION_KEY=$ENC_KEY|" "$ENV_FILE"
+            fi
+        else
+            ENC_KEY=$(generate_encryption_key)
+            echo "DATABASE_ENCRYPTION_KEY=$ENC_KEY" >>"$ENV_FILE"
+        fi
+    else
+        echo "Creating new .env file..."
+        ENC_KEY=$(generate_encryption_key)
+        mkdir -p "$(dirname "$ENV_FILE")"
+        cat >"$ENV_FILE" <<ENVFILE
+DATABASE_HOST=127.0.0.1
+DATABASE_PORT=3306
+DATABASE_DATABASE=${DATABASE_DATABASE:-featherpanel}
+DATABASE_USER=${DATABASE_USER:-featherpanel}
+DATABASE_PASSWORD=${DATABASE_PASSWORD:-featherpanel_password}
+DATABASE_ENCRYPTION=xchacha20
+DATABASE_ENCRYPTION_KEY=$ENC_KEY
+REDIS_HOST=127.0.0.1
+REDIS_PASSWORD=${REDIS_PASSWORD:-featherpanel_redis}
+ENVFILE
+    fi
+    if [ "$(id -u)" -eq 0 ]; then
+        chown www-data:www-data "$ENV_FILE" 2>/dev/null || true
+    fi
+    chmod 640 "$ENV_FILE" 2>/dev/null || chmod 600 "$ENV_FILE"
+    echo "Environment file configured"
+}
+
+# Ensure data directories are writable when running as non-root
+ensure_data_dirs() {
+    local dirs="/home/container/data /home/container/data/mysql /home/container/data/redis /home/container/data/uploads /home/container/data/backups /home/container/data/config /home/container/data/logs /home/container/data/attachments /home/container/data/translations /home/container/data/addons /home/container/data/mysql/run"
+    for dir in $dirs; do
+        if [ -d "$dir" ]; then
+            chmod 777 "$dir" 2>/dev/null || true
+        else
+            mkdir -p "$dir" 2>/dev/null || true
+            chmod 777 "$dir" 2>/dev/null || true
+        fi
+    done
+}
+
+# Create first admin user if needed
+create_first_admin() {
+    local admin_email="${FEATHERPANEL_ADMIN_EMAIL:-admin@example.com}"
+    local admin_username="${FEATHERPANEL_ADMIN_USERNAME:-admin}"
+    local admin_password="${FEATHERPANEL_ADMIN_PASSWORD:-}"
+
+    # Only create if password is provided
+    if [ -z "$admin_password" ]; then
+        echo "=============================================="
+        echo "  FIRST ADMIN USER NOT CREATED"
+        echo "  Set FEATHERPANEL_ADMIN_PASSWORD env var"
+        echo "  or run: docker exec -it <container> php cli saas createuser <username> <email> <firstName> <lastName> <password> [roleId]"
+        echo "=============================================="
+        return 0
+    fi
+
+    cd /var/www/html
+
+    # Check if users exist using CLI - look for "Total:" in output
+    local user_count
+    user_count=$(php cli saas listusers 1 2>/dev/null | grep -oP 'Total:\s*\K[0-9]+' || echo "0")
+
+    if [ "$user_count" = "0" ]; then
+        echo "Creating first admin user: $admin_username..."
+
+        # Use saas createuser command: username email firstName lastName password roleId
+        if php cli saas createuser "$admin_username" "$admin_email" "Admin" "User" "$admin_password" 1 2>/dev/null; then
+            echo "=============================================="
+            echo "  FIRST ADMIN USER CREATED!"
+            echo "  Username: $admin_username"
+            echo "  Email: $admin_email"
+            echo "=============================================="
+        else
+            echo "ERROR: Failed to create admin user. Check logs for details."
+        fi
+    else
+        echo "Users already exist ($user_count total), skipping first admin creation"
+    fi
+}
+
+# Setup environment
+setup_env_file
+ensure_data_dirs
+
+echo "Waiting for MariaDB to be ready..."
+for i in {1..30}; do
+    if mysqladmin ping -h127.0.0.1 -P3306 --silent 2>/dev/null; then
+        echo "MariaDB is ready!"
+        break
+    fi
+    echo "Waiting for MariaDB... attempt $i/30"
+    sleep 2
+done
+
+echo "Waiting for Redis to be ready..."
+for i in {1..30}; do
+    if redis-cli -a "${REDIS_PASSWORD}" ping 2>/dev/null | grep -q PONG; then
+        echo "Redis is ready!"
+        break
+    fi
+    echo "Waiting for Redis... attempt $i/30"
+    sleep 1
+done
+
+echo "Running database migrations..."
+cd /var/www/html
+if php cli migrate; then
+    echo "Migrations completed successfully!"
+else
+    echo "WARNING: Migrations failed or had errors"
+fi
+
+# Create first admin user
+create_first_admin
+
+# Regenerate addon public symlinks from storage/addons (deterministic on every boot)
+# Source of truth is storage/addons (persisted via volume); public/addons and
+# public/components are derived state and live inside the image layer, so we
+# rebuild them here to guarantee they match disk reality after every restart
+# or panel image upgrade.
+echo "Resyncing addon public symlinks..."
+ADDONS_DIR="/var/www/html/storage/addons"
+PUBLIC_ADDONS="/var/www/html/public/addons"
+PUBLIC_COMPONENTS="/var/www/html/public/components"
+
+mkdir -p "$PUBLIC_ADDONS" "$PUBLIC_COMPONENTS"
+
+find "$PUBLIC_ADDONS" -mindepth 1 -maxdepth 1 ! -name '.gitkeep' -exec rm -rf {} + 2>/dev/null || true
+find "$PUBLIC_COMPONENTS" -mindepth 1 -maxdepth 1 ! -name '.gitkeep' -exec rm -rf {} + 2>/dev/null || true
+
+if [ -d "$ADDONS_DIR" ]; then
+    for addon_path in "$ADDONS_DIR"/*/; do
+        [ -d "$addon_path" ] || continue
+        id="$(basename "$addon_path")"
+        case "$id" in
+            .|..|'') continue ;;
+        esac
+
+        if [ -d "${addon_path}Public" ]; then
+            ln -s "${addon_path%/}/Public" "$PUBLIC_ADDONS/$id" 2>/dev/null || true
+        fi
+        if [ -d "${addon_path}Frontend/Components" ]; then
+            ln -s "${addon_path%/}/Frontend/Components" "$PUBLIC_COMPONENTS/$id" 2>/dev/null || true
+        fi
+    done
+fi
+
+if [ "$(id -u)" -eq 0 ]; then
+    chown -R www-data:www-data "$PUBLIC_ADDONS" "$PUBLIC_COMPONENTS" 2>/dev/null || true
+fi
+echo "Addon symlinks resynced."
+
+# Start services that depend on initialization
+sleep 2
+if command -v supervisorctl >/dev/null 2>&1; then
+    echo "Starting async-runner..."
+    supervisorctl start async-runner 2>/dev/null || true
+fi
+
+echo "Backend initialization complete!"
+EOF
+RUN chmod +x /usr/local/bin/backend-init.sh
+
+# Cron scripts
+COPY <<'EOF' /usr/local/bin/setup-cron.sh
+#!/bin/bash
+mkdir -p /var/spool/cron/crontabs
+CRON_FILE="/var/spool/cron/crontabs/www-data"
+
+# Clear existing crons
+> "$CRON_FILE"
+
+# Add cron jobs from storage/cron directory if it exists
+CRON_DIR="/var/www/html/storage/cron"
+if [ -d "$CRON_DIR" ]; then
+    for cron_file in "$CRON_DIR"/*.cron; do
+        [ -f "$cron_file" ] || continue
+        cat "$cron_file" >> "$CRON_FILE"
+        echo "" >> "$CRON_FILE"
+    done
+fi
+
+# Basic panel cron jobs
+{
+    echo "* * * * * cd /var/www/html && php cli schedule:run >> /dev/null 2>&1"
+} >> "$CRON_FILE"
+
+chmod 600 "$CRON_FILE"
+if [ "$(id -u)" -eq 0 ]; then
+    chown www-data:www-data "$CRON_FILE" 2>/dev/null || true
+fi
+EOF
+RUN chmod +x /usr/local/bin/setup-cron.sh
+
+COPY <<'EOF' /usr/local/bin/cron-runner.sh
+#!/bin/bash
+/usr/local/bin/setup-cron.sh
+exec cron -f
+EOF
+RUN chmod +x /usr/local/bin/cron-runner.sh
+
+# ============================================================================
+# Setup Frontend
+WORKDIR /app
+
+# Copy standalone build from frontend-builder
+COPY --from=frontend-builder /app/.next/standalone ./
+COPY --from=frontend-builder /app/.next/static ./.next/static
+COPY --from=frontend-builder /app/public ./public
+
+RUN chmod -R 0777 /app
+
+# ============================================================================
+# Setup Async Runner
+COPY --from=runner-builder /build/async-runner /app/runner
+RUN mkdir -p /tmp/runner-logs /var/www/html/storage/logs
+
+# ============================================================================
+# Main Caddyfile (external - reverse proxies to all services)
+COPY <<'EOF' /etc/caddy/Caddyfile
+{
+    servers {
+        trusted_proxies static private_ranges
+    }
+}
+
+:80 {
+    encode zstd gzip
+
+    request_body {
+        max_size 250MB
+    }
+
+    header X-Frame-Options "SAMEORIGIN"
+    header X-Content-Type-Options "nosniff"
+    header X-XSS-Protection "1; mode=block"
+    header Referrer-Policy "strict-origin-when-cross-origin"
+
+    @api path /api*
+    handle @api {
+        reverse_proxy 127.0.0.1:8080
+    }
+
+    @pma path /pma*
+    handle @pma {
+        reverse_proxy 127.0.0.1:8080
+    }
+
+    @attachments path /attachments*
+    handle @attachments {
+        reverse_proxy 127.0.0.1:8080
+    }
+
+    @addons path /addons*
+    handle @addons {
+        reverse_proxy 127.0.0.1:8080
+    }
+
+    @components path /components*
+    handle @components {
+        reverse_proxy 127.0.0.1:8080
+    }
+
+    handle {
+        reverse_proxy 127.0.0.1:3000 {
+            transport http {
+                read_timeout 86400s
+            }
+        }
+    }
+}
+EOF
+
+# ============================================================================
+# Environment defaults
+ENV DATABASE_DATABASE=featherpanel
+ENV DATABASE_USER=featherpanel
+ENV DATABASE_PASSWORD=featherpanel_password
+ENV REDIS_PASSWORD=featherpanel_redis
+ENV MARIADB_ROOT_PASSWORD=featherpanel_root
+ENV PANEL_DOCKER_DEPLOYMENT=true
+ENV TRUST_PROXY_HEADERS=true
+
+# MariaDB init
+COPY <<'EOF' /docker-entrypoint-initdb.d/init.sql
+CREATE DATABASE IF NOT EXISTS featherpanel CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER IF NOT EXISTS 'featherpanel'@'127.0.0.1' IDENTIFIED BY 'featherpanel_password';
+CREATE USER IF NOT EXISTS 'featherpanel'@'localhost' IDENTIFIED BY 'featherpanel_password';
+GRANT ALL PRIVILEGES ON featherpanel.* TO 'featherpanel'@'127.0.0.1';
+GRANT ALL PRIVILEGES ON featherpanel.* TO 'featherpanel'@'localhost';
+FLUSH PRIVILEGES;
+EOF
+
+# Entrypoint script
+COPY <<'EOF' /usr/local/bin/entrypoint.sh
+#!/bin/bash
+set -e
+
+# FeatherWings / Wings run server containers as the node UID (non-root). Skip chown
+# to system users, MariaDB/Redis run as the current user, and cron is disabled.
+RUN_AS_ROOT=1
+if [ "$(id -u)" -ne 0 ]; then
+    RUN_AS_ROOT=0
+    export ENABLE_CRON=false
+    echo "[FeatherPanel OCI] Non-root UID $(id -u) (e.g. FeatherWings): using user-writable paths; cron disabled."
+fi
+export OCI_RUN_AS_ROOT=$RUN_AS_ROOT
+
+MYSQL_BOOT_SOCK="/var/run/mysqld/mysqld.sock"
+if [ "$RUN_AS_ROOT" -eq 0 ]; then
+    # Ensure /home/container/data/mysql exists and is writable by any user (for non-root execution)
+    if [ -d "/home/container/data/mysql" ]; then
+        chmod 777 /home/container/data/mysql 2>/dev/null || true
+    fi
+    mkdir -p /home/container/data/mysql/run 2>/dev/null || { echo "ERROR: Cannot create /home/container/data/mysql/run - check volume permissions"; exit 1; }
+    chmod 777 /home/container/data/mysql/run 2>/dev/null || true
+    MYSQL_BOOT_SOCK="/home/container/data/mysql/run/mysqld.sock"
+fi
+
+# Generate encryption key for database
+generate_encryption_key() {
+    php -r 'echo base64_encode(sodium_crypto_secretbox_keygen());'
+}
+
+# Create .env file if it doesn't exist
+setup_env_file() {
+    local env_file="/home/container/data/config/.env"
+    local encryption_key
+
+    if [ ! -f "$env_file" ]; then
+        echo "Creating environment configuration..."
+        encryption_key=$(generate_encryption_key)
+
+        cat > "$env_file" <<ENVFILE
+DATABASE_HOST=127.0.0.1
+DATABASE_PORT=3306
+DATABASE_USER=${DATABASE_USER}
+DATABASE_PASSWORD=${DATABASE_PASSWORD}
+DATABASE_DATABASE=${DATABASE_DATABASE}
+DATABASE_ENCRYPTION=xchacha20
+DATABASE_ENCRYPTION_KEY=${encryption_key}
+REDIS_PASSWORD=${REDIS_PASSWORD}
+REDIS_HOST=127.0.0.1
+ENVFILE
+
+        echo "Environment file created with encryption key"
+    fi
+
+    # Ensure proper permissions
+    if [ "$RUN_AS_ROOT" -eq 1 ]; then
+        chown www-data:www-data "$env_file" 2>/dev/null || true
+    fi
+    chmod 640 "$env_file" 2>/dev/null || chmod 600 "$env_file"
+}
+
+# Create first admin user if no users exist
+create_first_admin() {
+    local admin_email="${FEATHERPANEL_ADMIN_EMAIL:-admin@example.com}"
+    local admin_username="${FEATHERPANEL_ADMIN_USERNAME:-admin}"
+    local admin_password="${FEATHERPANEL_ADMIN_PASSWORD:-}"
+
+    # Only create if password is provided and no users exist
+    if [ -z "$admin_password" ]; then
+        echo "WARNING: No admin password set. Set FEATHERPANEL_ADMIN_PASSWORD to create first admin."
+        echo "Run: docker exec -it <container> php cli saas createuser <username> <email> <firstName> <lastName> <password> [roleId]"
+        return 0
+    fi
+
+    cd /var/www/html
+
+    # Check if users exist using CLI
+    local user_count
+    user_count=$(php cli saas listusers 1 2>/dev/null | wc -l || echo "0")
+
+    if [ "$user_count" = "0" ] || [ "$user_count" = "1" ]; then
+        echo "Creating first admin user: $admin_username..."
+
+        # Use saas createuser command: username email firstName lastName password roleId
+        if php cli saas createuser "$admin_username" "$admin_email" "Admin" "User" "$admin_password" 1 2>/dev/null; then
+            echo "Admin user created successfully!"
+            echo "Username: $admin_username"
+            echo "Email: $admin_email"
+        else
+            echo "ERROR: Failed to create admin user. Check if user already exists."
+        fi
+    else
+        echo "Users already exist, skipping first admin creation"
+    fi
+}
+
+# Initialize MariaDB data directory if empty
+if [ ! -d "/home/container/data/mysql/mysql" ]; then
+    echo "Initializing MariaDB data directory..."
+    if [ "$RUN_AS_ROOT" -eq 1 ]; then
+        mysql_install_db --user=mysql --datadir=/home/container/data/mysql --rpm
+        chown -R mysql:mysql /home/container/data/mysql
+    else
+        mysql_install_db --datadir=/home/container/data/mysql --rpm 2>/dev/null || mariadb-install-db --datadir=/home/container/data/mysql --skip-test-db
+    fi
+fi
+
+# Start MariaDB temporarily for init
+if [ "$RUN_AS_ROOT" -eq 1 ]; then
+    mysqld_safe --datadir=/home/container/data/mysql --skip-networking &
+else
+    mariadbd --datadir=/home/container/data/mysql --skip-networking --socket="$MYSQL_BOOT_SOCK" &
+fi
+MYSQL_PID=$!
+
+# Wait for MariaDB socket
+for i in {1..30}; do
+    if mysqladmin ping --socket="$MYSQL_BOOT_SOCK" --silent 2>/dev/null; then
+        break
+    fi
+    sleep 1
+done
+
+# Run init SQL
+mysql --socket="$MYSQL_BOOT_SOCK" -u root <<MYSQL
+ALTER USER 'root'@'localhost' IDENTIFIED BY '${MARIADB_ROOT_PASSWORD}';
+CREATE DATABASE IF NOT EXISTS ${DATABASE_DATABASE} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER IF NOT EXISTS '${DATABASE_USER}'@'127.0.0.1' IDENTIFIED BY '${DATABASE_PASSWORD}';
+CREATE USER IF NOT EXISTS '${DATABASE_USER}'@'localhost' IDENTIFIED BY '${DATABASE_PASSWORD}';
+GRANT ALL PRIVILEGES ON ${DATABASE_DATABASE}.* TO '${DATABASE_USER}'@'127.0.0.1';
+GRANT ALL PRIVILEGES ON ${DATABASE_DATABASE}.* TO '${DATABASE_USER}'@'localhost';
+FLUSH PRIVILEGES;
+MYSQL
+
+# Stop temp MariaDB
+mysqladmin --socket="$MYSQL_BOOT_SOCK" -u root -p"${MARIADB_ROOT_PASSWORD}" shutdown 2>/dev/null || true
+kill $MYSQL_PID 2>/dev/null || true
+sleep 2
+
+echo "MariaDB initialized!"
+
+# Ensure all data directories exist
+mkdir -p /home/container/data/{mysql,redis,uploads,backups,config,logs,attachments,translations,addons}
+chmod -R 777 /home/container/data/{mysql,redis,uploads,backups,config,logs,attachments,translations,addons}
+if [ "$RUN_AS_ROOT" -eq 1 ]; then
+    chown -R mysql:mysql /home/container/data/mysql 2>/dev/null || true
+    chown redis:redis /home/container/data/redis 2>/dev/null || true
+    chown -R www-data:www-data /home/container/data/uploads /home/container/data/backups /home/container/data/config /home/container/data/logs /home/container/data/attachments /home/container/data/translations /home/container/data/addons 2>/dev/null || true
+fi
+
+# Create symlinks for persistence
+ln -sf /home/container/data/attachments /var/www/html/public/attachments 2>/dev/null || true
+ln -sf /home/container/data/translations /var/www/html/public/translations 2>/dev/null || true
+ln -sf /home/container/data/addons /var/www/html/storage/addons 2>/dev/null || true
+ln -sf /home/container/data/config /var/www/html/storage/config 2>/dev/null || true
+ln -sf /home/container/data/logs /var/www/html/storage/logs 2>/dev/null || true
+ln -sf /home/container/data/backups /var/www/html/storage/backups 2>/dev/null || true
+
+# Create symlink for async-runner config (expects /app/config/.env)
+ln -sf /home/container/data/config /app/config 2>/dev/null || true
+
+# Setup environment file
+setup_env_file
+
+# Setup IPv6 disable for runner (as per original compose)
+sysctl -w net.ipv6.conf.all.disable_ipv6=1 2>/dev/null || true
+sysctl -w net.ipv6.conf.default.disable_ipv6=1 2>/dev/null || true
+sysctl -w net.ipv6.conf.lo.disable_ipv6=1 2>/dev/null || true
+
+echo "========================================"
+echo "  FeatherPanel OCI Container"
+echo "  All services running in single container"
+echo "  http://localhost"
+echo "========================================"
+
+# Export DATABASE_ENCRYPTION_KEY from .env file for async-runner
+if [ -f /home/container/data/config/.env ]; then
+    export DATABASE_ENCRYPTION_KEY=$(grep '^DATABASE_ENCRYPTION_KEY=' /home/container/data/config/.env | cut -d'=' -f2)
+    echo "Exported DATABASE_ENCRYPTION_KEY for services"
+fi
+
+# Generate supervisord config based on enabled services
+/usr/local/bin/generate-supervisord-conf.sh
+
+# Create initialization flag for post-startup tasks
+touch /tmp/first-start
+
+# Start all services via supervisor
+exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
+EOF
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+# FeatherPanel CLI wrapper + interactive login (Proxmox CT / docker attach)
+COPY oci/bin/featherpanel /usr/local/bin/featherpanel
+COPY oci/bin/featherpanel-session.sh /usr/local/bin/featherpanel-session.sh
+RUN chmod +x /usr/local/bin/featherpanel /usr/local/bin/featherpanel-session.sh \
+    && usermod -s /usr/local/bin/featherpanel-session.sh root
+
+# Create the supervisord config generator script
+COPY <<'EOF' /usr/local/bin/generate-supervisord-conf.sh
+#!/bin/bash
+SUPERVISOR_CONF="/etc/supervisor/conf.d/supervisord.conf"
+
+# Start with base config (FeatherWings: no root → no supervisord user=root, pidfile in /tmp)
+{
+    echo '[supervisord]'
+    echo 'nodaemon=true'
+    if [ "${OCI_RUN_AS_ROOT:-1}" = "1" ]; then
+        echo 'user=root'
+        echo 'pidfile=/var/run/supervisord.pid'
+        echo 'logfile=/var/log/supervisor/supervisord.log'
+    else
+        echo 'pidfile=/tmp/supervisord.pid'
+        echo 'logfile=/tmp/supervisord.log'
+    fi
+} > "$SUPERVISOR_CONF"
+
+# Add services based on env vars
+if [ "${ENABLE_MARIADB:-true}" = "true" ]; then
+# Always use /home/container/data for PID file to ensure writability in all environments
+MYSQLD_CMD="/usr/sbin/mysqld --user=mysql --datadir=/home/container/data/mysql --pid-file=/home/container/data/mysql/mysqld.pid"
+if [ "${OCI_RUN_AS_ROOT:-1}" != "1" ]; then
+    MYSQLD_CMD="/usr/sbin/mysqld --datadir=/home/container/data/mysql --pid-file=/home/container/data/mysql/mysqld.pid"
+fi
+cat >> "$SUPERVISOR_CONF" <<SV1
+
+[program:mariadb]
+command=${MYSQLD_CMD}
+stdout_logfile=/dev/stdout
+stdout_logfile_maxbytes=0
+stderr_logfile=/dev/stderr
+stderr_logfile_maxbytes=0
+autostart=true
+autorestart=true
+priority=1
+SV1
+fi
+
+if [ "${ENABLE_REDIS:-true}" = "true" ]; then
+REDIS_CMD='/usr/bin/redis-server --daemonize no --dir /home/container/data/redis --requirepass %(ENV_REDIS_PASSWORD)s'
+if [ "${OCI_RUN_AS_ROOT:-1}" != "1" ]; then
+    REDIS_CMD='/usr/bin/redis-server --daemonize no --dir /home/container/data/redis --requirepass %(ENV_REDIS_PASSWORD)s --pidfile /tmp/redis-server.pid'
+fi
+cat >> "$SUPERVISOR_CONF" <<RS1
+
+[program:redis]
+command=${REDIS_CMD}
+stdout_logfile=/dev/stdout
+stdout_logfile_maxbytes=0
+stderr_logfile=/dev/stderr
+stderr_logfile_maxbytes=0
+autostart=true
+autorestart=true
+priority=2
+RS1
+fi
+
+if [ "${ENABLE_BACKEND:-true}" = "true" ]; then
+cat >> "$SUPERVISOR_CONF" <<'SVCFILE'
+
+[program:backend-init]
+command=/usr/local/bin/backend-init.sh
+stdout_logfile=/dev/stdout
+stdout_logfile_maxbytes=0
+stderr_logfile=/dev/stderr
+stderr_logfile_maxbytes=0
+autostart=true
+autorestart=false
+startsecs=0
+priority=3
+startretries=1
+
+[program:frankenphp]
+command=frankenphp run -c /etc/caddy/backend.Caddyfile
+directory=/var/www/html
+stdout_logfile=/dev/stdout
+stdout_logfile_maxbytes=0
+stderr_logfile=/dev/stderr
+stderr_logfile_maxbytes=0
+autostart=true
+autorestart=true
+priority=4
+SVCFILE
+fi
+
+if [ "${ENABLE_FRONTEND:-true}" = "true" ]; then
+cat >> "$SUPERVISOR_CONF" <<'SVCFILE'
+
+[program:nextjs]
+command=node server.js
+environment=HOSTNAME="0.0.0.0",PORT="3000",INTERNAL_API_URL="http://127.0.0.1:8080"
+directory=/app
+stdout_logfile=/dev/stdout
+stdout_logfile_maxbytes=0
+stderr_logfile=/dev/stderr
+stderr_logfile_maxbytes=0
+autostart=true
+autorestart=true
+priority=5
+SVCFILE
+fi
+
+if [ "${ENABLE_ASYNC_RUNNER:-true}" = "true" ]; then
+cat >> "$SUPERVISOR_CONF" <<'SVCFILE'
+
+[program:async-runner]
+command=/app/runner
+environment=RUST_LOG="info",LOG_DIR="/var/www/html/storage/logs",DB_HOST="127.0.0.1",DB_PORT="3306",DB_NAME="%(ENV_DATABASE_DATABASE)s",DB_USER="%(ENV_DATABASE_USER)s",DB_PASS="%(ENV_DATABASE_PASSWORD)s",REDIS_URL="redis://:%(ENV_REDIS_PASSWORD)s@127.0.0.1:6379"
+directory=/app
+stdout_logfile=/dev/stdout
+stdout_logfile_maxbytes=0
+stderr_logfile=/dev/stderr
+stderr_logfile_maxbytes=0
+autostart=false
+autorestart=true
+priority=6
+startsecs=3
+SVCFILE
+fi
+
+if [ "${ENABLE_BACKEND:-true}" = "true" ]; then
+cat >> "$SUPERVISOR_CONF" <<'SVCFILE'
+
+[program:caddy-main]
+command=frankenphp run -c /etc/caddy/Caddyfile
+stdout_logfile=/dev/stdout
+stdout_logfile_maxbytes=0
+stderr_logfile=/dev/stderr
+stderr_logfile_maxbytes=0
+autostart=true
+autorestart=true
+priority=7
+SVCFILE
+fi
+
+if [ "${ENABLE_CRON:-true}" = "true" ] && [ "${OCI_RUN_AS_ROOT:-1}" = "1" ]; then
+cat >> "$SUPERVISOR_CONF" <<'SVCFILE'
+
+[program:cron-runner]
+command=/usr/local/bin/cron-runner.sh
+stdout_logfile=/dev/stdout
+stdout_logfile_maxbytes=0
+stderr_logfile=/dev/stderr
+stderr_logfile_maxbytes=0
+autostart=true
+autorestart=true
+priority=8
+SVCFILE
+fi
+
+echo "Generated supervisord config with enabled services"
+EOF
+RUN chmod +x /usr/local/bin/generate-supervisord-conf.sh
+
+# Expose port 80
+EXPOSE 80
+
+# Data volume for persistence
+VOLUME ["/home/container/data"]
+
+# Start
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

@@ -37,7 +37,7 @@ export default function PageTransition({ children }: PageTransitionProps) {
         motionLevel === 'none' ? '' : motionLevel === 'reduced' ? 'animate-fade-in' : 'animate-fade-in-up';
 
     return (
-        <div key={currentPath} className={clsx('motion-content min-h-screen', animationClass)}>
+        <div key={currentPath} className={clsx('motion-content h-full min-h-screen overflow-y-auto', animationClass)}>
             {children}
         </div>
     );

@@ -15,15 +15,17 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { RotateCcw, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PluginWidget } from '@/types/plugin-widgets';
 import { isCloudflareChallengeDocument, withCacheBuster } from '@/lib/cloudflare-challenge';
+import { getPluginIframeThemeOverrideCss } from '@/lib/pluginIframeThemeCss';
 
 interface WidgetRendererProps {
     widgets: PluginWidget[];
@@ -33,16 +35,40 @@ interface WidgetRendererProps {
 
 export function WidgetRenderer({ widgets, height = '400px', context }: WidgetRendererProps) {
     const { t } = useTranslation();
+    const { theme } = useTheme();
     const pathname = usePathname();
     const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({});
     const [errorStates, setErrorStates] = useState<Record<string, string | null>>({});
     const [challengeRetries, setChallengeRetries] = useState<Record<string, number>>({});
+    const [widgetSrcs, setWidgetSrcs] = useState<Record<string, string>>({});
+    const iframeReadyRef = useRef<Record<string, boolean>>({});
 
     const MAX_CHALLENGE_RETRIES = 4;
 
-    if (!widgets || widgets.length === 0) return null;
+    // Stable fingerprints so useEffect does not re-fire every render when parents pass
+    // a new `widgets` array (e.g. getWidgets()) or a new `context` object with the same values.
+    const widgetsKey = JSON.stringify(
+        widgets.map((w) => ({
+            id: w.id,
+            plugin: w.plugin,
+            component: w.component,
+            enabled: w.enabled !== false,
+        })),
+    );
+    const contextKey =
+        context == null
+            ? ''
+            : JSON.stringify(
+                  Object.fromEntries(
+                      Object.entries(context)
+                          .filter(([, v]) => v !== null && v !== undefined)
+                          .sort(([a], [b]) => a.localeCompare(b))
+                          .map(([k, v]) => [k, String(v)] as [string, string]),
+                  ),
+              );
 
-    const getWidgetSrc = (widget: PluginWidget): string => {
+    // Build widget src URLs with current theme
+    const buildWidgetSrc = (widget: PluginWidget): string => {
         const raw = widget.component;
         const pluginBase = `/components/${widget.plugin}/`;
         let pathWithFile: string;
@@ -59,6 +85,7 @@ export function WidgetRenderer({ widgets, height = '400px', context }: WidgetRen
 
         const baseUrl = `${pluginBase}${pathWithFile}`;
         merged.set('route', pathname || '');
+        merged.set('__theme', theme);
 
         if (context) {
             Object.entries(context).forEach(([key, value]) => {
@@ -68,8 +95,101 @@ export function WidgetRenderer({ widgets, height = '400px', context }: WidgetRen
             });
         }
 
+        // Bust browser / CDN caches for plugin widget documents (HTML entry + hashed assets).
+        merged.set('_fp_wcb', String(Date.now()));
+
         const qs = merged.toString();
         return qs ? `${baseUrl}?${qs}` : baseUrl;
+    };
+
+    // Update widget srcs when theme, route, widget set, or context values change.
+    // Uses widgetsKey/contextKey so a fresh array/object reference does not retrigger the effect.
+    useEffect(() => {
+        const newSrcs: Record<string, string> = {};
+        widgets.forEach((widget) => {
+            newSrcs[widget.id] = buildWidgetSrc(widget);
+        });
+        setWidgetSrcs((prev) => {
+            const prevKeys = Object.keys(prev);
+            const newKeys = Object.keys(newSrcs);
+            if (prevKeys.length !== newKeys.length) {
+                return newSrcs;
+            }
+            for (const id of newKeys) {
+                if (prev[id] !== newSrcs[id]) {
+                    return newSrcs;
+                }
+            }
+            return prev;
+        });
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- widgets/buildWidgetSrc omitted; widgetsKey/contextKey capture meaningful changes
+    }, [theme, pathname, widgetsKey, contextKey]);
+
+    // Send theme to all ready widget iframes when theme changes and inject styles
+    useEffect(() => {
+        widgets.forEach((widget) => {
+            const iframe = document.querySelector(`iframe[data-widget-id="${widget.id}"]`) as HTMLIFrameElement;
+            if (iframe?.contentWindow && iframeReadyRef.current[widget.id]) {
+                iframe.contentWindow.postMessage({ type: 'featherpanel-theme', theme }, '*');
+                injectThemeStyles(iframe);
+            }
+        });
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- injectThemeStyles below; widgets omitted (use widgetsKey)
+    }, [theme, widgetsKey]);
+
+    // Listen for widget ready signals and send theme + inject styles
+    useEffect(() => {
+        const handleMessage = (event: MessageEvent) => {
+            if (event.data?.type === 'featherpanel-ready' && event.data?.widgetId) {
+                const widgetId = event.data.widgetId;
+                iframeReadyRef.current[widgetId] = true;
+                const iframe = document.querySelector(`iframe[data-widget-id="${widgetId}"]`) as HTMLIFrameElement;
+                if (iframe?.contentWindow) {
+                    iframe.contentWindow.postMessage({ type: 'featherpanel-theme', theme }, '*');
+                    setTimeout(() => injectThemeStyles(iframe), 100);
+                }
+            }
+        };
+
+        window.addEventListener('message', handleMessage);
+        return () => window.removeEventListener('message', handleMessage);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [theme]);
+
+    if (!widgets || widgets.length === 0) return null;
+
+    const injectThemeStyles = (iframe: HTMLIFrameElement) => {
+        try {
+            const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+            if (!iframeDoc) return;
+
+            // Remove existing theme styles
+            const existingStyle = iframeDoc.getElementById('featherpanel-theme-override');
+            if (existingStyle) {
+                existingStyle.remove();
+            }
+
+            // Same strategy as PluginPage: light → html.light; dark → html.dark
+            // plus injected shell transparency so the panel backdrop shows through.
+            const root = iframeDoc.documentElement;
+            root.setAttribute('data-fp-theme', theme);
+            if (theme === 'light') {
+                root.classList.add('light');
+                root.classList.remove('dark');
+            } else {
+                root.classList.add('dark');
+                root.classList.remove('light');
+            }
+
+            const style = iframeDoc.createElement('style');
+            style.id = 'featherpanel-theme-override';
+            style.textContent = getPluginIframeThemeOverrideCss(theme);
+            if (iframeDoc.head) {
+                iframeDoc.head.appendChild(style);
+            }
+        } catch {
+            // Ignore cross-origin access errors
+        }
     };
 
     const handleIframeLoad = (widgetId: string, iframe: HTMLIFrameElement) => {
@@ -104,6 +224,13 @@ export function WidgetRenderer({ widgets, height = '400px', context }: WidgetRen
         setChallengeRetries((prev) => ({ ...prev, [widgetId]: 0 }));
         setLoadingStates((prev) => ({ ...prev, [widgetId]: false }));
         setErrorStates((prev) => ({ ...prev, [widgetId]: null }));
+
+        // Inject theme styles and send postMessage
+        iframeReadyRef.current[widgetId] = true;
+        if (iframe.contentWindow) {
+            iframe.contentWindow.postMessage({ type: 'featherpanel-theme', theme }, '*');
+        }
+        setTimeout(() => injectThemeStyles(iframe), 100);
     };
 
     const handleIframeError = (widgetId: string) => {
@@ -156,7 +283,7 @@ export function WidgetRenderer({ widgets, height = '400px', context }: WidgetRen
     };
 
     const shouldRenderAsCard = (widget: PluginWidget) => {
-        if (widget.useRawRendering) return false;
+        if (widget.useRawRendering || widget.borderless) return false;
         if (widget.card === null) return true;
         if (typeof widget.card?.enabled === 'boolean') return widget.card.enabled;
         return true;
@@ -264,10 +391,11 @@ export function WidgetRenderer({ widgets, height = '400px', context }: WidgetRen
                                         </div>
                                     )}
 
-                                    {!errorStates[widget.id] && (
+                                    {!errorStates[widget.id] && widgetSrcs[widget.id] && (
                                         <iframe
+                                            key={`${widget.id}-${theme}-${widgetSrcs[widget.id]}`}
                                             data-widget-id={widget.id}
-                                            src={getWidgetSrc(widget)}
+                                            src={widgetSrcs[widget.id]}
                                             className={cn(
                                                 'h-full w-full border-0 transition-opacity duration-300',
                                                 loadingStates[widget.id] ? 'opacity-0' : 'opacity-100',
@@ -301,10 +429,11 @@ export function WidgetRenderer({ widgets, height = '400px', context }: WidgetRen
                                 className='relative h-full w-full'
                                 style={{ minHeight: widget.iframe?.minHeight || height }}
                             >
-                                {!errorStates[widget.id] && (
+                                {!errorStates[widget.id] && widgetSrcs[widget.id] && (
                                     <iframe
+                                        key={`${widget.id}-${theme}-${widgetSrcs[widget.id]}`}
                                         data-widget-id={widget.id}
-                                        src={getWidgetSrc(widget)}
+                                        src={widgetSrcs[widget.id]}
                                         className={cn(
                                             'h-full w-full border-0 transition-opacity duration-300',
                                             loadingStates[widget.id] ? 'opacity-0' : 'opacity-100',
@@ -314,9 +443,13 @@ export function WidgetRenderer({ widgets, height = '400px', context }: WidgetRen
                                             minHeight: widget.iframe?.minHeight || height,
                                             background: 'transparent',
                                         }}
+                                        {...widget.iframe}
+                                        referrerPolicy={
+                                            widget.iframe?.referrerPolicy as React.HTMLAttributeReferrerPolicy
+                                        }
                                         onLoad={(event) => handleIframeLoad(widget.id, event.currentTarget)}
                                         onError={() => handleIframeError(widget.id)}
-                                        {...{ allowtransparency: true }}
+                                        {...{ allowtransparency: 'true' }}
                                     />
                                 )}
                             </div>

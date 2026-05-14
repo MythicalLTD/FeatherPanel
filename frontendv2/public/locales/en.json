@@ -11,7 +11,65 @@
 			"create_account": "Create account",
 			"discord": "Discord",
 			"or_continue": "Or continue with",
-			"sso": "Single Sign-On"
+			"sso": "Single Sign-On",
+			"passwordLogin": "Password",
+			"emailLogin": "Email Code",
+			"email": "Email Address",
+			"success": "Login successful",
+			"step1Title": "Enter your email or username",
+			"step1Subtitle": "We'll check what login methods are available",
+			"welcomeBack": "Welcome back!",
+			"continueWithPassword": "Enter your password to continue",
+			"or": "or",
+			"requestLoginCode": "Request Login Code",
+			"usePasswordInstead": "Use Password Instead",
+			"useDifferentAccount": "Use a different account",
+			"step1_title": "Enter your email or username",
+			"step1_subtitle": "We'll check what login methods are available",
+			"welcome_back": "Welcome back!",
+			"continue_with_password": "Enter your password to continue",
+			"request_login_code": "Request Login Code",
+			"use_password_instead": "Use Password Instead",
+			"use_different_account": "Use a different account"
+		},
+		"emailLogin": {
+			"title": "Email Login",
+			"subtitle": "Enter your email to receive a 6-digit login code",
+			"sendCode": "Send Login Code",
+			"enterCode": "Enter Login Code",
+			"codeSentTo": "A 6-digit code has been sent to {email}",
+			"code": "6-Digit Code",
+			"codeSent": "If this email exists, a login code has been sent.",
+			"resend": "Resend Code",
+			"invalidCode": "Please enter a valid 6-digit code"
+		},
+		"passkey": {
+			"signIn": "Sign in with passkey",
+			"unavailable": "Passkey sign-in is not available right now.",
+			"noneForAccount": "No passkeys are registered for this account.",
+			"emptyList": "You have not added any passkeys yet.",
+			"failed": "Passkey sign-in failed.",
+			"title": "Passkeys",
+			"description": "Sign in without a password using your device PIN, fingerprint, or security key.",
+			"add": "Add passkey",
+			"added": "Passkey added",
+			"removed": "Passkey removed",
+			"remove": "Remove",
+			"loadFailed": "Could not load passkeys",
+			"registerFailed": "Could not register passkey",
+			"removeFailed": "Could not remove passkey",
+			"unnamed": "Passkey",
+			"addedOn": "Added {date}",
+			"rename": "Rename passkey",
+			"renamed": "Passkey name updated",
+			"renameFailed": "Could not update passkey name",
+			"addDialogTitle": "Add a passkey",
+			"addDialogDescription": "Optionally give it a name so you can tell devices apart. Your browser will ask you to confirm with your PIN, fingerprint, or security key.",
+			"nameLabel": "Display name",
+			"namePlaceholder": "e.g. Work laptop, YubiKey 5",
+			"continueRegistration": "Continue",
+			"renameDialogTitle": "Rename passkey",
+			"renameDialogDescription": "Choose a name you will recognize when signing in or managing devices."
 		},
 		"register": {
 			"title": "Create an account",
@@ -100,6 +158,12 @@
 			"submit": "Link Account",
 			"success": "Discord account linked successfully! Redirecting...",
 			"cancel": "Cancel"
+		},
+		"discordRegistration": {
+			"title": "Register with Discord",
+			"question": "Would you like to create a new FeatherPanel account using your Discord account?",
+			"submit": "Yes, Create Account",
+			"cancel": "No, Cancel"
 		}
 	},
 	"public_portal": {
@@ -159,6 +223,7 @@
 		"total": "Total",
 		"status": "Status",
 		"deleting": "Deleting...",
+		"current": "Current",
 		"enable": "Enable",
 		"copiedToClipboard": "Copied to clipboard",
 		"copied_to_clipboard": "Copied to clipboard",
@@ -171,6 +236,7 @@
 		"warning": "Warning",
 		"saving": "Saving...",
 		"show": "Show",
+		"back": "Back",
 		"optional": "Optional",
 		"goBack": "Go Back",
 		"success": "Success",
@@ -192,7 +258,6 @@
 		"events": "events",
 		"users": "users",
 		"confirm": "Confirm",
-		"back": "Back",
 		"search": "Search",
 		"copy": "Copy",
 		"time": {
@@ -247,6 +312,7 @@
 	"validation": {
 		"required": "This field is required",
 		"email": "Please enter a valid email address",
+		"invalid_email": "Please enter a valid email address",
 		"min_length": "Must be at least {min} characters",
 		"password_mismatch": "Passwords do not match",
 		"invalid_username": "Username can only contain letters, numbers, and underscores",
@@ -756,12 +822,12 @@
 				"url_copied": "Log URL copied to clipboard"
 			},
 			"terminal": {
-                "title": "Console",
-                "subtitle": "Live output, command input, and optional filters that match the rest of the panel.",
-                "preset_group_redact": "Hide & redact",
-                "preset_group_highlight": "Highlight",
-                "more_menu": "More actions",
-                "auto_scroll": "Auto-scroll",
+				"title": "Console",
+				"subtitle": "Live output, command input, and optional filters that match the rest of the panel.",
+				"preset_group_redact": "Hide & redact",
+				"preset_group_highlight": "Highlight",
+				"more_menu": "More actions",
+				"auto_scroll": "Auto-scroll",
 				"history_title": "Command History",
 				"no_history": "No history yet",
 				"scroll_bottom": "Scroll to bottom",
@@ -1036,12 +1102,15 @@
 			"light": "Light Mode",
 			"dark": "Dark Mode",
 			"switchToLight": "Switch to light mode",
-			"switchToDark": "Switch to dark mode"
+			"switchToDark": "Switch to dark mode",
+			"lockedByAdmin": "Theme is locked by administrator"
 		},
 		"background": {
 			"title": "Background Settings",
 			"customize": "Customize background",
 			"change": "Change Background",
+			"disabledInLightMode": "Background customization is disabled in light mode",
+			"notAvailableInLight": "Not available in light mode",
 			"aurora": "Aurora",
 			"auroraDescription": "Animated backgrounds that match your theme colors",
 			"variants": {
@@ -1094,7 +1163,7 @@
 			"pink": "Pink",
 			"teal": "Teal",
 			"yellow": "Yellow",
-			"white": "White",
+			"indigo": "Indigo",
 			"violet": "Violet",
 			"cyan": "Cyan",
 			"lime": "Lime",
@@ -1159,6 +1228,11 @@
 			"marketplace": "Marketplace",
 			"cloudManagement": "Cloud Management",
 			"knowledgebase": "Knowledge Base",
+			"knowledgebase_categories": "Categories",
+			"knowledgebase_articles": "Articles",
+			"knowledgebase_order": "Reorder Articles",
+			"analytics_overview": "Overview",
+			"language_analytics": "Languages",
 			"tickets": "Support Tickets",
 			"ticketCategories": "Ticket Categories",
 			"ticketPriorities": "Ticket Priorities",
@@ -4390,6 +4464,7 @@
 			"no_results": "No VDS instances found",
 			"unknown_node": "Unknown Node",
 			"unassigned": "Unassigned",
+			"assign_owner": "Assign owner",
 			"filters": {
 				"user": "Filter by user",
 				"user_selected": "User: {username}",
@@ -5687,6 +5762,21 @@
 				"disk_usage": "Disk Usage",
 				"memory_usage": "Memory Usage"
 			},
+			"languages": {
+				"title": "Language Analytics",
+				"subtitle": "Breakdown of user language preferences and locale distribution",
+				"messages": {
+					"fetch_failed": "Failed to load language analytics"
+				},
+				"total_users": "Total Users",
+				"total_languages": "Languages",
+				"top_language": "Top Language",
+				"distribution": "Language Distribution",
+				"breakdown": "Top Languages",
+				"all_languages": "All Languages",
+				"other": "Other",
+				"trends": "12-Month Trends"
+			},
 			"content": {
 				"title": "Content Analytics",
 				"subtitle": "Realms, eggs, nests, redirect links, mail templates, and content management insights",
@@ -5921,8 +6011,23 @@
 				"clear_search": "Clear Search",
 				"no_results": "No results found",
 				"featured": "Featured",
+				"has_dependencies": "Has Dependencies",
 				"install_success": "Successfully installed {identifier}",
 				"install_failed": "Failed to install plugin",
+				"missing_dependencies": "Cannot install: missing dependencies",
+				"requirements_check_failed": "Failed to check installation requirements",
+				"requirements": {
+					"title_ready": "Ready to Install",
+					"title_missing": "Missing Requirements",
+					"panel_version": "Panel Version",
+					"panel_compatible": "Compatible with your panel version",
+					"dependencies": "Dependencies",
+					"please_install_deps": "Please install the missing dependencies before installing this plugin.",
+					"composer": "Composer",
+					"plugin": "Plugin",
+					"php": "PHP",
+					"php-ext": "Extension"
+				},
 				"queue": {
 					"title": "Download List",
 					"subtitle": "The following plugins were added to the download list. Click download to install them now.",
@@ -5935,7 +6040,8 @@
 					"install_success_single": "Installed 1 plugin successfully",
 					"install_success_multiple": "Installed {count} plugins successfully",
 					"install_failed": "Failed to install selected plugins",
-					"install_failed_single": "Failed to install {identifier}"
+					"install_failed_single": "Failed to install {identifier}",
+					"multiple_requirements_issues": "{count} plugins have unmet requirements and cannot be installed"
 				},
 				"repo": {
 					"title": "Plugin Repositories",
@@ -6526,7 +6632,21 @@
 				"save": "Save Changes"
 			},
 			"messages": {
-				"updated": "Knowledgebase updated successfully"
+				"updated": "Knowledgebase updated successfully",
+				"fetch_failed": "Failed to fetch knowledgebase data"
+			},
+			"order": {
+				"title": "Reorder Articles",
+				"subtitle": "Drag and drop articles to change their display order",
+				"filter_by_category": "Filter by Category",
+				"all_categories": "All Categories",
+				"no_articles": "No articles found",
+				"order": "Order",
+				"unsaved_changes": "You have unsaved changes",
+				"messages": {
+					"saved": "Article order saved successfully",
+					"save_failed": "Failed to save article order"
+				}
 			}
 		},
 		"settings": {
@@ -6582,6 +6702,147 @@
 				"progress_modal": {
 					"title": "System update ongoing",
 					"description": "Please wait for FeatherPanel to update. Do not close this tab. Containers are restarting, so your browser may show a connection error—that usually means the update has started. This page will refresh periodically until the panel responds again."
+				}
+			},
+			"fields": {
+				"captcha_provider": {
+					"label": "Captcha Provider",
+					"description": "Choose which captcha service to use: Cloudflare Turnstile, hCaptcha, Google reCAPTCHA, Friendly Captcha, or reForge Captcha.",
+					"options": {
+						"turnstile": "Cloudflare Turnstile",
+						"hcaptcha": "hCaptcha",
+						"recaptcha": "Google reCAPTCHA",
+						"friendlycaptcha": "Friendly Captcha",
+						"reforge": "reForge Captcha"
+					}
+				},
+				"turnstile_enabled": {
+					"label": "Captcha Enabled",
+					"description": "Enable or disable global captcha protection for authentication and sensitive forms."
+				},
+				"turnstile_key_pub": {
+					"label": "Cloudflare Turnstile Site Key",
+					"description": "The public site key provided by Cloudflare Turnstile."
+				},
+				"turnstile_key_priv": {
+					"label": "Cloudflare Turnstile Secret Key",
+					"description": "The private secret key provided by Cloudflare Turnstile."
+				},
+				"hcaptcha_site_key": {
+					"label": "hCaptcha Site Key",
+					"description": "The public site key provided by hCaptcha."
+				},
+				"hcaptcha_secret_key": {
+					"label": "hCaptcha Secret Key",
+					"description": "The private secret key provided by hCaptcha."
+				},
+				"recaptcha_site_key": {
+					"label": "Google reCAPTCHA Site Key",
+					"description": "The public site key provided by Google reCAPTCHA."
+				},
+				"recaptcha_secret_key": {
+					"label": "Google reCAPTCHA Secret Key",
+					"description": "The private secret key provided by Google reCAPTCHA."
+				},
+				"recaptcha_version": {
+					"label": "Google reCAPTCHA version",
+					"description": "v2 shows a checkbox challenge. v3 runs invisibly and uses a risk score. Create the matching key type in Google reCAPTCHA Admin."
+				},
+				"recaptcha_v3_min_score": {
+					"label": "reCAPTCHA v3 minimum score",
+					"description": "Scores range from 0.0 (likely bot) to 1.0 (likely human). Requests below this value are rejected. Only used when version is v3."
+				},
+				"recaptcha_v3_action": {
+					"label": "reCAPTCHA v3 action name",
+					"description": "Short label for this check (e.g. submit, login). Must match what the panel sends and must use only letters, numbers, underscores, and slashes."
+				},
+				"friendly_captcha_site_key": {
+					"label": "Friendly Captcha Site Key",
+					"description": "The public site key provided by Friendly Captcha."
+				},
+				"friendly_captcha_secret_key": {
+					"label": "Friendly Captcha Secret Key",
+					"description": "The private secret key provided by Friendly Captcha."
+				},
+				"reforge_captcha_site_key": {
+					"label": "reForge Captcha site key",
+					"description": "Public site key from the reForge Captcha dashboard (Sites → your site)."
+				},
+				"reforge_captcha_secret_key": {
+					"label": "reForge Captcha secret key",
+					"description": "Private secret key from the reForge Captcha dashboard. Used only on the server for POST /api/verify — never expose it in the browser."
+				},
+				"reforge_captcha_widget_type": {
+					"label": "reForge Captcha widget type",
+					"description": "checkbox: classic challenge; image: grid challenge. (Invisible and managed modes are not supported.)"
+				},
+				"reforge_captcha_theme": {
+					"label": "reForge Captcha widget theme",
+					"description": "reForge Captcha widget colours: auto follows the visitor OS, or force dark / light."
+				},
+				"reforge_captcha_size": {
+					"label": "reForge Captcha widget size",
+					"description": "normal or compact layout for the reForge Captcha widget."
+				},
+				"reforge_captcha_lang": {
+					"label": "reForge Captcha widget language",
+					"description": "Optional reForge Captcha UI language code (e.g. en, nl, de). Leave empty for the widget default."
+				},
+				"reforge_captcha_min_score": {
+					"label": "reForge Captcha minimum verify score",
+					"description": "After a successful reForge Captcha verify, reject if the returned score is below this (0.0–1.0). Stricter when higher."
+				},
+				"altcha_hmac_key": {
+					"label": "Altcha HMAC Key",
+					"description": "The HMAC key used to sign and verify Altcha payloads."
+				},
+				"email_login_enabled": {
+					"label": "Email Login Enabled",
+					"description": "Allow users to log in using a code sent to their email instead of a password."
+				},
+				"registration_enabled": {
+					"label": "Registration Enabled",
+					"description": "Allow new users to create accounts on the panel."
+				},
+				"registration_require_email_verification": {
+					"label": "Require Email Verification",
+					"description": "Force new users to verify their email address before they can use the panel."
+				},
+				"email_domain_blocking_enabled": {
+					"label": "Email Domain Blocking",
+					"description": "Block registration from specific email domains (configured in Blocked Email Domains)."
+				},
+				"telemetry": {
+					"label": "Send Telemetry",
+					"description": "Help us improve FeatherPanel by sending anonymous usage data."
+				},
+				"require_two_fa_admins": {
+					"label": "Require 2FA for Admins",
+					"description": "Force all administrators to enable Two-Factor Authentication."
+				},
+				"user_allow_avatar_change": {
+					"label": "Allow Avatar Change",
+					"description": "Allow users to upload and change their own profile avatars."
+				},
+				"user_allow_username_change": {
+					"label": "Allow Username Change",
+					"description": "Allow users to change their account username."
+				},
+				"user_allow_email_change": {
+					"label": "Allow Email Change",
+					"description": "Allow users to change their account email address."
+				},
+				"user_allow_first_name_change": {
+					"label": "Allow First Name Change",
+					"description": "Allow users to change their first name."
+				},
+				"user_allow_last_name_change": {
+					"label": "Allow Last Name Change",
+					"description": "Allow users to change their last name."
+				},
+				"user_allow_api_keys_create": {
+					"label": "Allow API Key Creation",
+					"description": "Allow non-admin users to create their own API keys."
 				}
 			}
 		},

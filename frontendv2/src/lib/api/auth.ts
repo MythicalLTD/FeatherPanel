@@ -62,6 +62,10 @@ export const authApi = {
         const response = await api.put('/user/auth/discord/link', data);
         return response.data;
     },
+    discordRegister: async (data: { token: string }) => {
+        const response = await api.put('/user/auth/discord/register', data);
+        return response.data;
+    },
 
     verify2FA: async (data: { username_or_email: string; code: string }) => {
         const response = await api.post('/user/auth/verify-2fa', data);
@@ -75,6 +79,39 @@ export const authApi = {
 
     enable2FA: async (code: string) => {
         const response = await api.post('/user/auth/enable-2fa', { code });
+        return response.data;
+    },
+
+    requestEmailLoginCode: async (data: { email: string; turnstile_token?: string }) => {
+        const response = await api.post('/user/auth/email-login/request', data);
+        return response.data;
+    },
+
+    verifyEmailLoginCode: async (data: { email: string; code: string }) => {
+        const response = await api.post('/user/auth/email-login/verify', data);
+        return response.data;
+    },
+
+    passkeyStatus: async (data: { username_or_email: string; turnstile_token?: string }) => {
+        const response = await api.post('/user/auth/passkeys/status', data);
+        return response.data;
+    },
+
+    passkeyAuthenticationOptions: async (data: {
+        username_or_email?: string;
+        turnstile_token?: string;
+        mediation?: string;
+    }) => {
+        const response = await api.post('/user/auth/passkeys/authentication/options', data);
+        return response.data;
+    },
+
+    passkeyAuthenticationVerify: async (data: {
+        challenge_token: string;
+        credential: unknown;
+        turnstile_token?: string;
+    }) => {
+        const response = await api.post('/user/auth/passkeys/authentication/verify', data);
         return response.data;
     },
 };

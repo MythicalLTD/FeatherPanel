@@ -113,8 +113,8 @@ export function BannedPlayersEditor({
     };
 
     return (
-        <Card className='bg-card/50 border-border/50 rounded-3xl border shadow-sm backdrop-blur-3xl'>
-            <CardHeader className='border-border/10 border-b pb-6'>
+        <Card className='bg-card/50 border-border/50 flex flex-col overflow-hidden rounded-3xl border shadow-sm backdrop-blur-3xl'>
+            <CardHeader className='border-border/10 shrink-0 border-b pb-6'>
                 <div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
                     <div className='space-y-2'>
                         <CardTitle className='text-2xl font-bold'>
@@ -138,7 +138,7 @@ export function BannedPlayersEditor({
                     </div>
                 </div>
             </CardHeader>
-            <div className='space-y-6 p-6'>
+            <div className='flex-1 space-y-6 overflow-y-auto p-6'>
                 <section className='space-y-3'>
                     <div className='border-destructive/20 bg-destructive/5 text-muted-foreground rounded-xl border p-4 text-sm'>
                         {t('files.editors.bannedPlayersConfig.notice') ||

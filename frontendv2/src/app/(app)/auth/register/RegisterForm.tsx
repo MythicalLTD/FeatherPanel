@@ -15,24 +15,27 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { useSession } from '@/contexts/SessionContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Mail, Lock, User, ArrowRight } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useTranslation } from '@/contexts/TranslationContext';
-import { useTheme } from '@/contexts/ThemeContext';
-import Turnstile from 'react-turnstile';
+import { Captcha } from '@/components/Captcha';
 import { authApi } from '@/lib/api/auth';
+import { isCaptchaConfigured, obtainCaptchaResponseToken } from '@/lib/captchaGate';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
-import { useEffect } from 'react';
 
 export default function RegisterForm() {
-    const { settings } = useSettings();
+    const router = useRouter();
+    const searchParams = useSearchParams();
     const { t } = useTranslation();
-    const { theme } = useTheme();
+    const { settings } = useSettings();
+    const { fetchSession } = useSession();
     const { getWidgets, fetchWidgets } = usePluginWidgets('auth-register');
 
     useEffect(() => {
@@ -53,9 +56,42 @@ export default function RegisterForm() {
     const [turnstileKey, setTurnstileKey] = useState(0);
 
     const registrationEnabled = settings?.registration_enabled === 'true';
-    const turnstileEnabled = settings?.turnstile_enabled === 'true';
-    const turnstileSiteKey = settings?.turnstile_key_pub || '';
-    const showTurnstile = turnstileEnabled && turnstileSiteKey;
+    const showCaptcha = isCaptchaConfigured(settings);
+    const discordEnabled = settings?.discord_oauth_enabled === 'true';
+
+    const [discordLinkToken, setDiscordLinkToken] = useState<string | null>(null);
+
+    useEffect(() => {
+        const linkToken = searchParams.get('discord_link_token');
+        if (linkToken) {
+            setDiscordLinkToken(linkToken);
+        }
+    }, [searchParams]);
+
+    const handleDiscordRegister = async () => {
+        if (!discordLinkToken) return;
+
+        setLoading(true);
+        setError('');
+        setSuccess('');
+
+        try {
+            const response = await authApi.discordRegister({ token: discordLinkToken });
+
+            if (response.success) {
+                setSuccess(t('common.success'));
+                await fetchSession(true);
+                location.href = '/dashboard';
+            } else {
+                setError(response.message || t('common.error'));
+            }
+        } catch (err: unknown) {
+            const error = err as { response?: { data?: { message?: string } } };
+            setError(error.response?.data?.message || t('common.error'));
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -102,9 +138,13 @@ export default function RegisterForm() {
             return;
         }
 
-        if (turnstileEnabled && !form.turnstile_token) {
-            setError(t('validation.captcha_required'));
-            return;
+        let captchaToken = '';
+        if (showCaptcha) {
+            captchaToken = await obtainCaptchaResponseToken(settings ?? null, form.turnstile_token);
+            if (!captchaToken) {
+                setError(t('validation.captcha_required'));
+                return;
+            }
         }
 
         setLoading(true);
@@ -116,7 +156,7 @@ export default function RegisterForm() {
                 email: form.email.trim(),
                 username: form.username.trim(),
                 password: form.password,
-                turnstile_token: form.turnstile_token,
+                turnstile_token: captchaToken,
             });
 
             if (response.success) {
@@ -142,7 +182,7 @@ export default function RegisterForm() {
             } else {
                 setError(response.message || t('common.error'));
 
-                if (showTurnstile) {
+                if (showCaptcha) {
                     setForm((prev) => ({ ...prev, turnstile_token: '' }));
                     setTurnstileKey((prev) => prev + 1);
                 }
@@ -151,7 +191,7 @@ export default function RegisterForm() {
             const error = err as { response?: { data?: { message?: string } } };
             setError(error.response?.data?.message || t('common.error'));
 
-            if (showTurnstile) {
+            if (showCaptcha) {
                 setForm((prev) => ({ ...prev, turnstile_token: '' }));
                 setTurnstileKey((prev) => prev + 1);
             }
@@ -163,6 +203,34 @@ export default function RegisterForm() {
     const handleTurnstileSuccess = (token: string) => {
         setForm((prev) => ({ ...prev, turnstile_token: token }));
     };
+
+    if (discordLinkToken) {
+        return (
+            <div className='space-y-6'>
+                <div className='text-center'>
+                    <h1 className='text-2xl font-bold tracking-tight'>{t('auth.discordRegistration.title')}</h1>
+                    <p className='text-muted-foreground mt-2'>{t('auth.discordRegistration.question')}</p>
+                </div>
+
+                {error && <div className='bg-destructive/15 text-destructive rounded-lg p-3 text-sm'>{error}</div>}
+                {success && <div className='bg-primary/15 text-primary rounded-lg p-3 text-sm'>{success}</div>}
+
+                <div className='flex flex-col gap-3'>
+                    <Button onClick={handleDiscordRegister} disabled={loading} className='w-full'>
+                        {loading ? t('common.loading') : t('auth.discordRegistration.submit')}
+                    </Button>
+                    <Button
+                        variant='outline'
+                        onClick={() => router.replace('/auth/register')}
+                        disabled={loading}
+                        className='w-full'
+                    >
+                        {t('auth.discordRegistration.cancel')}
+                    </Button>
+                </div>
+            </div>
+        );
+    }
 
     if (!registrationEnabled) {
         return (
@@ -257,24 +325,16 @@ export default function RegisterForm() {
                     placeholder={t('auth.register.password_placeholder')}
                 />
 
-                {showTurnstile && (
-                    <div className='flex justify-center'>
-                        <Turnstile
-                            key={turnstileKey}
-                            sitekey={turnstileSiteKey}
-                            theme={theme === 'dark' ? 'dark' : 'light'}
-                            size='normal'
-                            refreshExpired='auto'
-                            onVerify={handleTurnstileSuccess}
-                            onError={() => {
-                                setForm((prev) => ({ ...prev, turnstile_token: '' }));
-                            }}
-                            onExpire={() => {
-                                setForm((prev) => ({ ...prev, turnstile_token: '' }));
-                            }}
-                        />
-                    </div>
-                )}
+                <Captcha
+                    refreshKey={turnstileKey}
+                    onVerify={handleTurnstileSuccess}
+                    onError={() => {
+                        setForm((prev) => ({ ...prev, turnstile_token: '' }));
+                    }}
+                    onExpire={() => {
+                        setForm((prev) => ({ ...prev, turnstile_token: '' }));
+                    }}
+                />
 
                 <Button type='submit' className='group w-full' loading={loading}>
                     {!loading && (
@@ -304,6 +364,31 @@ export default function RegisterForm() {
                     {t('auth.register.sign_in')}
                 </Link>
             </div>
+
+            {discordEnabled && (
+                <>
+                    <div className='relative'>
+                        <div className='absolute inset-0 flex items-center'>
+                            <div className='border-border w-full border-t' />
+                        </div>
+                        <div className='relative flex justify-center text-xs uppercase'>
+                            <span className='bg-card text-muted-foreground px-2'>{t('auth.login.or_continue')}</span>
+                        </div>
+                    </div>
+
+                    <Button
+                        type='button'
+                        variant='outline'
+                        className='w-full'
+                        onClick={() => (window.location.href = '/api/user/auth/discord/login')}
+                    >
+                        <svg className='mr-2 h-5 w-5' viewBox='0 0 24 24' fill='currentColor'>
+                            <path d='M20.317 4.369a19.791 19.791 0 00-4.885-1.515.07.07 0 00-.075.035 13.812 13.812 0 00-.605 1.246 18.016 18.016 0 00-5.427 0 12.217 12.217 0 00-.617-1.246.064.064 0 00-.075-.035c-1.724.285-3.362.83-4.885 1.515a.06.06 0 00-.024.022C.533 8.059-.32 11.591.099 15.08a.078.078 0 00.028.055 20.53 20.53 0 006.104 3.108.073.073 0 00.078-.023c.472-.651.889-1.341 1.246-2.065a.07.07 0 00-.038-.094 13.235 13.235 0 01-1.885-.884.07.07 0 01-.007-.117c.126-.094.252-.192.374-.291a.06.06 0 01.061-.011c3.927 1.792 8.18 1.792 12.061 0 a.062.062 0 01.063.008c.122.099.248.197.374.291a.07.07 0 01-.006.117 12.298 12.298 0 01-1.885.883.07.07 0 00-.038.095c.36.723.777 1.413 1.246 2.064a.073.073 0 00.078.023 20.477 20.477 0 006.105-3.107.075.075 0 00.028-.055c.5-4.101-.838-7.597-3.548-10.692a.061.061 0 00-.024-.023zM8.02 15.331c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.949-2.418 2.157-2.418 1.222 0 2.172 1.101 2.157 2.418 0 1.334-.949 2.419-2.157 2.419zm7.974 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.948-2.418 2.157-2.418 1.221 0 2.171 1.101 2.157 2.418 0 1.334-.936 2.419-2.157 2.419z' />
+                        </svg>
+                        {t('auth.login.discord')}
+                    </Button>
+                </>
+            )}
             <WidgetRenderer widgets={getWidgets('auth-register', 'auth-register-bottom')} />
         </div>
     );

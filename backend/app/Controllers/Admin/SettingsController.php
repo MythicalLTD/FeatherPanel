@@ -154,8 +154,13 @@ class SettingsController
         ConfigInterface::CHATBOT_GROK_API_KEY,
         ConfigInterface::CHATBOT_PERPLEXITY_API_KEY,
         ConfigInterface::DISCORD_OAUTH_CLIENT_SECRET,
+        ConfigInterface::HCAPTCHA_SECRET_KEY,
+        ConfigInterface::RECAPTCHA_SECRET_KEY,
+        ConfigInterface::FRIENDLY_CAPTCHA_SECRET_KEY,
+        ConfigInterface::REFORGE_CAPTCHA_SECRET_KEY,
         // Add other sensitive settings here
     ];
+
     private $settingsCategories = [
         'app' => [
             'name' => 'App',
@@ -198,10 +203,29 @@ class SettingsController
             'description' => 'Security and authentication settings',
             'icon' => 'shield',
             'settings' => [
+                ConfigInterface::EMAIL_LOGIN_ENABLED,
+                ConfigInterface::CAPTCHA_PROVIDER,
                 ConfigInterface::TURNSTILE_ENABLED,
                 ConfigInterface::TURNSTILE_KEY_PUB,
                 ConfigInterface::TURNSTILE_KEY_PRIV,
+                ConfigInterface::HCAPTCHA_SITE_KEY,
+                ConfigInterface::HCAPTCHA_SECRET_KEY,
+                ConfigInterface::RECAPTCHA_SITE_KEY,
+                ConfigInterface::RECAPTCHA_SECRET_KEY,
+                ConfigInterface::RECAPTCHA_VERSION,
+                ConfigInterface::RECAPTCHA_V3_MIN_SCORE,
+                ConfigInterface::RECAPTCHA_V3_ACTION,
+                ConfigInterface::FRIENDLY_CAPTCHA_SITE_KEY,
+                ConfigInterface::FRIENDLY_CAPTCHA_SECRET_KEY,
+                ConfigInterface::REFORGE_CAPTCHA_SITE_KEY,
+                ConfigInterface::REFORGE_CAPTCHA_SECRET_KEY,
+                ConfigInterface::REFORGE_CAPTCHA_WIDGET_TYPE,
+                ConfigInterface::REFORGE_CAPTCHA_THEME,
+                ConfigInterface::REFORGE_CAPTCHA_SIZE,
+                ConfigInterface::REFORGE_CAPTCHA_LANG,
+                ConfigInterface::REFORGE_CAPTCHA_MIN_SCORE,
                 ConfigInterface::REGISTRATION_ENABLED,
+
                 ConfigInterface::REGISTRATION_REQUIRE_EMAIL_VERIFICATION,
                 ConfigInterface::EMAIL_DOMAIN_BLOCKING_ENABLED,
                 ConfigInterface::TELEMETRY,
@@ -924,6 +948,25 @@ class SettingsController
                 'options' => ['tls', 'ssl'],
                 'category' => 'email',
             ],
+            ConfigInterface::CAPTCHA_PROVIDER => [
+                'name' => ConfigInterface::CAPTCHA_PROVIDER,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::CAPTCHA_PROVIDER, 'turnstile'),
+                'description' => 'Captcha service provider (Turnstile, hCaptcha, Google reCAPTCHA, Friendly Captcha, or reForge Captcha)',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'turnstile',
+                'validation' => 'required|string|max:255',
+                'options' => [
+                    'turnstile',
+                    'hcaptcha',
+                    'recaptcha',
+                    'friendlycaptcha',
+                    'reforge',
+                ],
+                'category' => 'security',
+            ],
             ConfigInterface::TURNSTILE_ENABLED => [
                 'name' => ConfigInterface::TURNSTILE_ENABLED,
                 'value' => $this->app
@@ -964,6 +1007,235 @@ class SettingsController
                 'options' => [],
                 'category' => 'security',
                 'sensitive' => true,
+            ],
+            ConfigInterface::HCAPTCHA_SITE_KEY => [
+                'name' => ConfigInterface::HCAPTCHA_SITE_KEY,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::HCAPTCHA_SITE_KEY, ''),
+                'description' => 'The hCaptcha site key of the application',
+                'type' => 'text',
+                'required' => false,
+                'placeholder' => '',
+                'validation' => 'string|max:255',
+                'options' => [],
+                'category' => 'security',
+            ],
+            ConfigInterface::HCAPTCHA_SECRET_KEY => [
+                'name' => ConfigInterface::HCAPTCHA_SECRET_KEY,
+                'value' => $this->maskSensitiveSetting(
+                    ConfigInterface::HCAPTCHA_SECRET_KEY,
+                    '',
+                ),
+                'description' => 'The hCaptcha secret key of the application',
+                'type' => 'password',
+                'required' => false,
+                'placeholder' => 'Enter secret key to change',
+                'validation' => 'string|max:255',
+                'options' => [],
+                'category' => 'security',
+                'sensitive' => true,
+            ],
+            ConfigInterface::RECAPTCHA_SITE_KEY => [
+                'name' => ConfigInterface::RECAPTCHA_SITE_KEY,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::RECAPTCHA_SITE_KEY, ''),
+                'description' => 'The reCAPTCHA site key of the application',
+                'type' => 'text',
+                'required' => false,
+                'placeholder' => '',
+                'validation' => 'string|max:255',
+                'options' => [],
+                'category' => 'security',
+            ],
+            ConfigInterface::RECAPTCHA_SECRET_KEY => [
+                'name' => ConfigInterface::RECAPTCHA_SECRET_KEY,
+                'value' => $this->maskSensitiveSetting(
+                    ConfigInterface::RECAPTCHA_SECRET_KEY,
+                    '',
+                ),
+                'description' => 'The reCAPTCHA secret key of the application',
+                'type' => 'password',
+                'required' => false,
+                'placeholder' => 'Enter secret key to change',
+                'validation' => 'string|max:255',
+                'options' => [],
+                'category' => 'security',
+                'sensitive' => true,
+            ],
+            ConfigInterface::RECAPTCHA_VERSION => [
+                'name' => ConfigInterface::RECAPTCHA_VERSION,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::RECAPTCHA_VERSION, 'v2'),
+                'description' => 'Use reCAPTCHA v2 (checkbox) or v3 (invisible score). Keys must match the version in Google Admin.',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'v2',
+                'validation' => 'required|string|max:10',
+                'options' => ['v2', 'v3'],
+                'category' => 'security',
+            ],
+            ConfigInterface::RECAPTCHA_V3_MIN_SCORE => [
+                'name' => ConfigInterface::RECAPTCHA_V3_MIN_SCORE,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::RECAPTCHA_V3_MIN_SCORE, '0.5'),
+                'description' => 'Minimum v3 score (0.0–1.0). Higher is stricter. Ignored when version is v2.',
+                'type' => 'text',
+                'required' => true,
+                'placeholder' => '0.5',
+                'validation' => 'required|string|max:10',
+                'options' => [],
+                'category' => 'security',
+            ],
+            ConfigInterface::RECAPTCHA_V3_ACTION => [
+                'name' => ConfigInterface::RECAPTCHA_V3_ACTION,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::RECAPTCHA_V3_ACTION, 'submit'),
+                'description' => 'reCAPTCHA v3 action name (must match what the frontend sends). Use letters, numbers, underscores, and slashes only.',
+                'type' => 'text',
+                'required' => true,
+                'placeholder' => 'submit',
+                'validation' => 'required|string|max:100',
+                'options' => [],
+                'category' => 'security',
+            ],
+            ConfigInterface::FRIENDLY_CAPTCHA_SITE_KEY => [
+                'name' => ConfigInterface::FRIENDLY_CAPTCHA_SITE_KEY,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::FRIENDLY_CAPTCHA_SITE_KEY, ''),
+                'description' => 'The Friendly Captcha site key of the application',
+                'type' => 'text',
+                'required' => false,
+                'placeholder' => '',
+                'validation' => 'string|max:255',
+                'options' => [],
+                'category' => 'security',
+            ],
+            ConfigInterface::FRIENDLY_CAPTCHA_SECRET_KEY => [
+                'name' => ConfigInterface::FRIENDLY_CAPTCHA_SECRET_KEY,
+                'value' => $this->maskSensitiveSetting(
+                    ConfigInterface::FRIENDLY_CAPTCHA_SECRET_KEY,
+                    '',
+                ),
+                'description' => 'The Friendly Captcha secret key of the application',
+                'type' => 'password',
+                'required' => false,
+                'placeholder' => 'Enter secret key to change',
+                'validation' => 'string|max:255',
+                'options' => [],
+                'category' => 'security',
+                'sensitive' => true,
+            ],
+            ConfigInterface::REFORGE_CAPTCHA_SITE_KEY => [
+                'name' => ConfigInterface::REFORGE_CAPTCHA_SITE_KEY,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::REFORGE_CAPTCHA_SITE_KEY, ''),
+                'description' => 'reForge Captcha public site key (from dashboard → Sites)',
+                'type' => 'text',
+                'required' => false,
+                'placeholder' => 'site_...',
+                'validation' => 'string|max:255',
+                'options' => [],
+                'category' => 'security',
+            ],
+            ConfigInterface::REFORGE_CAPTCHA_SECRET_KEY => [
+                'name' => ConfigInterface::REFORGE_CAPTCHA_SECRET_KEY,
+                'value' => $this->maskSensitiveSetting(
+                    ConfigInterface::REFORGE_CAPTCHA_SECRET_KEY,
+                    '',
+                ),
+                'description' => 'reForge Captcha secret key (server-side only; never expose to the browser)',
+                'type' => 'password',
+                'required' => false,
+                'placeholder' => 'Enter secret key to change',
+                'validation' => 'string|max:255',
+                'options' => [],
+                'category' => 'security',
+                'sensitive' => true,
+            ],
+            ConfigInterface::REFORGE_CAPTCHA_WIDGET_TYPE => [
+                'name' => ConfigInterface::REFORGE_CAPTCHA_WIDGET_TYPE,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::REFORGE_CAPTCHA_WIDGET_TYPE, 'checkbox'),
+                'description' => 'reForge Captcha widget challenge type (checkbox or image)',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'checkbox',
+                'validation' => 'required|string|max:32',
+                'options' => ['checkbox', 'image'],
+                'category' => 'security',
+            ],
+            ConfigInterface::REFORGE_CAPTCHA_THEME => [
+                'name' => ConfigInterface::REFORGE_CAPTCHA_THEME,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::REFORGE_CAPTCHA_THEME, 'auto'),
+                'description' => 'reForge Captcha widget colour theme',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'auto',
+                'validation' => 'required|string|max:16',
+                'options' => ['auto', 'dark', 'light'],
+                'category' => 'security',
+            ],
+            ConfigInterface::REFORGE_CAPTCHA_SIZE => [
+                'name' => ConfigInterface::REFORGE_CAPTCHA_SIZE,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::REFORGE_CAPTCHA_SIZE, 'normal'),
+                'description' => 'reForge Captcha widget size',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'normal',
+                'validation' => 'required|string|max:16',
+                'options' => ['normal', 'compact'],
+                'category' => 'security',
+            ],
+            ConfigInterface::REFORGE_CAPTCHA_LANG => [
+                'name' => ConfigInterface::REFORGE_CAPTCHA_LANG,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::REFORGE_CAPTCHA_LANG, ''),
+                'description' => 'Optional reForge Captcha widget UI language (e.g. en, nl, de). Leave empty for default.',
+                'type' => 'text',
+                'required' => false,
+                'placeholder' => 'en',
+                'validation' => 'string|max:16',
+                'options' => [],
+                'category' => 'security',
+            ],
+            ConfigInterface::REFORGE_CAPTCHA_MIN_SCORE => [
+                'name' => ConfigInterface::REFORGE_CAPTCHA_MIN_SCORE,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::REFORGE_CAPTCHA_MIN_SCORE, '0.5'),
+                'description' => 'Minimum reForge Captcha verify score (0.0–1.0) when the verify API returns a score (stricter = higher)',
+                'type' => 'text',
+                'required' => true,
+                'placeholder' => '0.5',
+                'validation' => 'required|string|max:10',
+                'options' => [],
+                'category' => 'security',
+            ],
+            ConfigInterface::EMAIL_LOGIN_ENABLED => [
+                'name' => ConfigInterface::EMAIL_LOGIN_ENABLED,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::EMAIL_LOGIN_ENABLED, 'false'),
+                'description' => 'Enable passwordless email login with 6-digit OTP codes sent to user email addresses (requires SMTP to be configured)',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'false',
+                'validation' => 'required|string|max:255',
+                'options' => ['true', 'false'],
+                'category' => 'security',
             ],
             ConfigInterface::LEGAL_TOS => [
                 'name' => ConfigInterface::LEGAL_TOS,
@@ -2950,7 +3222,14 @@ class SettingsController
 
         $queueId = \App\Chat\MailQueue::create($queueData);
 
-        if (!$queueId) {
+        if ($queueId === true) {
+            return ApiResponse::error(
+                'SMTP disabled — skipping enqueue/send',
+                'SMTP_DISABLED',
+                400,
+            );
+        }
+        if ($queueId === false) {
             return ApiResponse::error(
                 'Failed to queue test email',
                 'FAILED_TO_QUEUE_EMAIL',

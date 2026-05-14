@@ -25,7 +25,7 @@ import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/featherui/Textarea';
+import { FeatherIDE } from '@/components/featherui/FeatherIDE';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Sheet, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
 import {
@@ -454,43 +454,63 @@ export default function MailTemplatesPage() {
                 </PageCard>
             </div>
 
-            <Sheet open={createOpen} onOpenChange={setCreateOpen}>
-                <div className='space-y-6'>
+            <Sheet open={createOpen} onOpenChange={setCreateOpen} className='max-w-7xl'>
+                <div className='flex h-full flex-col space-y-6'>
                     <SheetHeader>
                         <SheetTitle>{t('admin.mail_templates.form.create_title')}</SheetTitle>
                         <SheetDescription>{t('admin.mail_templates.form.create_description')}</SheetDescription>
                     </SheetHeader>
-                    <form onSubmit={handleCreate} className='space-y-4 pt-6'>
-                        <div className='space-y-2'>
-                            <Label htmlFor='create-name'>{t('admin.mail_templates.form.name')}</Label>
-                            <Input
-                                id='create-name'
-                                value={formData.name}
-                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                required
-                            />
+                    <form onSubmit={handleCreate} className='flex flex-1 flex-col gap-6 overflow-hidden'>
+                        <div className='grid grid-cols-1 gap-6 lg:grid-cols-2 lg:overflow-hidden'>
+                            <div className='space-y-6 lg:overflow-y-auto lg:pr-2'>
+                                <div className='space-y-2'>
+                                    <Label htmlFor='create-name'>{t('admin.mail_templates.form.name')}</Label>
+                                    <Input
+                                        id='create-name'
+                                        value={formData.name}
+                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                                <div className='space-y-2'>
+                                    <Label htmlFor='create-subject'>{t('admin.mail_templates.form.subject')}</Label>
+                                    <Input
+                                        id='create-subject'
+                                        value={formData.subject}
+                                        onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                                <div className='space-y-2'>
+                                    <Label htmlFor='create-body'>{t('admin.mail_templates.form.body')}</Label>
+                                    <FeatherIDE
+                                        height='600px'
+                                        defaultLanguage='html'
+                                        value={formData.body}
+                                        onChange={(value) => setFormData({ ...formData, body: value || '' })}
+                                        title='Editor'
+                                    />
+                                    <p className='text-muted-foreground text-xs'>
+                                        {t('admin.mail_templates.form.html_help')}
+                                    </p>
+                                </div>
+                            </div>
+                            <div className='flex flex-col space-y-2 lg:overflow-hidden'>
+                                <Label>
+                                    {t('admin.mail_templates.form.preview_title', {
+                                        name: formData.name || 'Template',
+                                    })}
+                                </Label>
+                                <div className='border-border/50 relative flex-1 overflow-hidden rounded-2xl border bg-white shadow-xl'>
+                                    <iframe
+                                        srcDoc={formData.body}
+                                        className='h-full w-full border-none'
+                                        title='Live Preview'
+                                    />
+                                </div>
+                            </div>
                         </div>
-                        <div className='space-y-2'>
-                            <Label htmlFor='create-subject'>{t('admin.mail_templates.form.subject')}</Label>
-                            <Input
-                                id='create-subject'
-                                value={formData.subject}
-                                onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                                required
-                            />
-                        </div>
-                        <div className='space-y-2'>
-                            <Label htmlFor='create-body'>{t('admin.mail_templates.form.body')}</Label>
-                            <Textarea
-                                id='create-body'
-                                className='min-h-[400px] font-mono text-xs'
-                                value={formData.body}
-                                onChange={(e) => setFormData({ ...formData, body: e.target.value })}
-                                required
-                            />
-                            <p className='text-muted-foreground text-xs'>{t('admin.mail_templates.form.html_help')}</p>
-                        </div>
-                        <SheetFooter>
+                        <SheetFooter className='mt-0 pt-4'>
                             <Button type='submit' loading={processing}>
                                 {t('admin.mail_templates.form.submit_create')}
                             </Button>
@@ -499,49 +519,63 @@ export default function MailTemplatesPage() {
                 </div>
             </Sheet>
 
-            <Sheet open={editOpen} onOpenChange={setEditOpen}>
-                <div className='space-y-6'>
+            <Sheet open={editOpen} onOpenChange={setEditOpen} className='max-w-7xl'>
+                <div className='flex h-full flex-col space-y-6'>
                     <SheetHeader>
-                        <SheetTitle>
-                            {String(t('admin.mail_templates.form.edit_title', { name: selectedTemplate?.name || '' }))}
-                        </SheetTitle>
-                        <SheetDescription>
-                            {String(
-                                t('admin.mail_templates.form.edit_description', { name: selectedTemplate?.name || '' }),
-                            )}
-                        </SheetDescription>
+                        <SheetTitle>{t('admin.mail_templates.form.edit_title')}</SheetTitle>
+                        <SheetDescription>{t('admin.mail_templates.form.edit_description')}</SheetDescription>
                     </SheetHeader>
-                    <form onSubmit={handleUpdate} className='space-y-4 pt-6'>
-                        <div className='space-y-2'>
-                            <Label htmlFor='edit-name'>{t('admin.mail_templates.form.name')}</Label>
-                            <Input
-                                id='edit-name'
-                                value={formData.name}
-                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                required
-                            />
+                    <form onSubmit={handleUpdate} className='flex flex-1 flex-col gap-6 overflow-hidden'>
+                        <div className='grid grid-cols-1 gap-6 lg:grid-cols-2 lg:overflow-hidden'>
+                            <div className='space-y-6 lg:overflow-y-auto lg:pr-2'>
+                                <div className='space-y-2'>
+                                    <Label htmlFor='edit-name'>{t('admin.mail_templates.form.name')}</Label>
+                                    <Input
+                                        id='edit-name'
+                                        value={formData.name}
+                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                                <div className='space-y-2'>
+                                    <Label htmlFor='edit-subject'>{t('admin.mail_templates.form.subject')}</Label>
+                                    <Input
+                                        id='edit-subject'
+                                        value={formData.subject}
+                                        onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                                <div className='space-y-2'>
+                                    <Label htmlFor='edit-body'>{t('admin.mail_templates.form.body')}</Label>
+                                    <FeatherIDE
+                                        height='600px'
+                                        defaultLanguage='html'
+                                        value={formData.body}
+                                        onChange={(value) => setFormData({ ...formData, body: value || '' })}
+                                        title='Editor'
+                                    />
+                                    <p className='text-muted-foreground text-xs'>
+                                        {t('admin.mail_templates.form.html_help')}
+                                    </p>
+                                </div>
+                            </div>
+                            <div className='flex flex-col space-y-2 lg:overflow-hidden'>
+                                <Label>
+                                    {t('admin.mail_templates.form.preview_title', {
+                                        name: formData.name || 'Template',
+                                    })}
+                                </Label>
+                                <div className='border-border/50 relative flex-1 overflow-hidden rounded-2xl border bg-white shadow-xl'>
+                                    <iframe
+                                        srcDoc={formData.body}
+                                        className='h-full w-full border-none'
+                                        title='Live Preview'
+                                    />
+                                </div>
+                            </div>
                         </div>
-                        <div className='space-y-2'>
-                            <Label htmlFor='edit-subject'>{t('admin.mail_templates.form.subject')}</Label>
-                            <Input
-                                id='edit-subject'
-                                value={formData.subject}
-                                onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                                required
-                            />
-                        </div>
-                        <div className='space-y-2'>
-                            <Label htmlFor='edit-body'>{t('admin.mail_templates.form.body')}</Label>
-                            <Textarea
-                                id='edit-body'
-                                className='min-h-[400px] font-mono text-xs'
-                                value={formData.body}
-                                onChange={(e) => setFormData({ ...formData, body: e.target.value })}
-                                required
-                            />
-                            <p className='text-muted-foreground text-xs'>{t('admin.mail_templates.form.html_help')}</p>
-                        </div>
-                        <SheetFooter>
+                        <SheetFooter className='mt-0 pt-4'>
                             <Button type='submit' loading={processing}>
                                 {t('admin.mail_templates.form.submit_update')}
                             </Button>
@@ -619,12 +653,11 @@ export default function MailTemplatesPage() {
                             </div>
                             <div className='space-y-2'>
                                 <Label htmlFor='mass-body'>{t('admin.mail_templates.form.body')}</Label>
-                                <Textarea
-                                    id='mass-body'
-                                    className='min-h-[400px] font-mono text-xs'
+                                <FeatherIDE
+                                    height='400px'
+                                    defaultLanguage='html'
                                     value={massEmailData.body}
-                                    onChange={(e) => setMassEmailData({ ...massEmailData, body: e.target.value })}
-                                    required
+                                    onChange={(value) => setMassEmailData({ ...massEmailData, body: value || '' })}
                                 />
                                 <p className='text-muted-foreground text-xs'>
                                     {t('admin.mail_templates.form.html_help')}
@@ -680,12 +713,11 @@ export default function MailTemplatesPage() {
                             </div>
                             <div className='space-y-2'>
                                 <Label htmlFor='test-body'>{t('admin.mail_templates.form.body')}</Label>
-                                <Textarea
-                                    id='test-body'
-                                    className='min-h-[300px] font-mono text-xs'
+                                <FeatherIDE
+                                    height='300px'
+                                    defaultLanguage='html'
                                     value={testEmailData.body}
-                                    onChange={(e) => setTestEmailData({ ...testEmailData, body: e.target.value })}
-                                    required
+                                    onChange={(value) => setTestEmailData({ ...testEmailData, body: value || '' })}
                                 />
                                 <p className='text-muted-foreground text-xs'>
                                     {t('admin.mail_templates.form.html_help')}

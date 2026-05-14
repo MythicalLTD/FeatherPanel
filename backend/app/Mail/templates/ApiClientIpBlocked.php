@@ -124,7 +124,7 @@ class ApiClientIpBlocked
             'body' => $body,
         ]);
 
-        if ($id == false) {
+        if ($id === false || $id === true) {
             return;
         }
 

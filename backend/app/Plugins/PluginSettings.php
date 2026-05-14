@@ -60,7 +60,13 @@ class PluginSettings extends PluginDB
             ]);
 
             $exists = $stmt->fetch(\PDO::FETCH_ASSOC);
-            $value = self::sanitizeInput($settings['value'] ?? '');
+            // Store raw string values: JSON and other structured settings must not pass through
+            // htmlspecialchars() (used by sanitizeInput), or quotes become entities and break decode.
+            // Identifier/key are still validated; PDO parameters prevent SQL injection on the value.
+            $value = $settings['value'] ?? '';
+            if (!is_string($value)) {
+                $value = (string) $value;
+            }
 
             if ($exists) {
                 $stmt = $conn->prepare("

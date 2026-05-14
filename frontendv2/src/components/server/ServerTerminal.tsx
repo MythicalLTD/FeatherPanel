@@ -152,7 +152,7 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                     background: bufBg,
                     foreground: hslFromVar('--foreground', '#f4f4f5'),
                     cursor: hslFromVar('--primary', '#a78bfa'),
-                    selectionBackground: hslaFromVar('--primary', 0.2, 'rgba(167, 139, 250, 0.2)'),
+                    selectionBackground: hslaFromVar('--primary', 0.4, 'rgba(167, 139, 250, 0.4)'),
                     selectionForeground: hslFromVar('--foreground', '#f4f4f5'),
                 };
                 terminal.refresh(0, terminal.rows - 1);

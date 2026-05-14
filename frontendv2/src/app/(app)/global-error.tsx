@@ -20,6 +20,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/contexts/ThemeContext';
+import { backgroundFitToCssSize } from '@/lib/backgroundImageFit';
 import ThemeCustomizer from '@/components/layout/ThemeCustomizer';
 import { Home, RefreshCw } from 'lucide-react';
 
@@ -95,7 +96,7 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
                         className='absolute inset-0 bg-center bg-no-repeat'
                         style={{
                             backgroundImage: `url(${backgroundImage})`,
-                            backgroundSize: backgroundImageFit,
+                            backgroundSize: backgroundFitToCssSize(backgroundImageFit),
                         }}
                     />
                 ) : null;

@@ -304,10 +304,6 @@ export default function AdminUpdatesPage() {
     }, [plugins, searchQuery]);
 
     const panelVersion = dashboardData?.version;
-    const totalUpdatesAvailable =
-        (panelVersion?.update_available ? 1 : 0) +
-        Object.values(nodeVersions).filter((v) => v.update_available).length +
-        Object.values(pluginUpdates).filter((v) => v.update_available).length;
 
     return (
         <div className='space-y-6'>
@@ -399,7 +395,7 @@ export default function AdminUpdatesPage() {
                     <PageCard
                         title={t('admin_updates.panel.title')}
                         icon={ArrowUpCircle}
-                        className='border-primary/20 bg-primary/[0.02] h-full'
+                        className='border-primary/20 bg-primary/2 h-full'
                     >
                         <div className='space-y-5'>
                             <div className='flex items-center justify-between'>

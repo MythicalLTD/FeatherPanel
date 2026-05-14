@@ -20,8 +20,12 @@ namespace App\Controllers\User\Auth;
 use App\App;
 use App\Chat\User;
 use App\Cache\Cache;
+use App\Chat\Activity;
+use App\Helpers\UUIDUtils;
 use App\Helpers\ApiResponse;
 use App\Config\ConfigInterface;
+use App\CloudFlare\CloudFlareRealIP;
+use App\Helpers\EmailDomainValidator;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -56,7 +60,7 @@ class DiscordController
         Cache::put('discord_oauth_state_' . $state, true, 10);
 
         // Build Discord OAuth URL
-        $redirectUri = urlencode($app->getConfig()->getSetting(ConfigInterface::APP_URL, '') . '/api/user/auth/discord/callback');
+        $redirectUri = urlencode(rtrim($app->getConfig()->getSetting(ConfigInterface::APP_URL, ''), '/') . '/api/user/auth/discord/callback');
         $scopes = urlencode('identify email');
         $url = "https://discord.com/api/oauth2/authorize?client_id={$clientId}&redirect_uri={$redirectUri}&response_type=code&scope={$scopes}&state={$state}";
 
@@ -91,7 +95,7 @@ class DiscordController
         // Exchange code for access token
         $clientId = $config->getSetting(ConfigInterface::DISCORD_OAUTH_CLIENT_ID, '');
         $clientSecret = $config->getSetting(ConfigInterface::DISCORD_OAUTH_CLIENT_SECRET, '');
-        $redirectUri = $app->getConfig()->getSetting(ConfigInterface::APP_URL, '') . '/api/user/auth/discord/callback';
+        $redirectUri = rtrim($app->getConfig()->getSetting(ConfigInterface::APP_URL, ''), '/') . '/api/user/auth/discord/callback';
 
         $tokenUrl = 'https://discord.com/api/oauth2/token';
         $postData = http_build_query([
@@ -107,11 +111,16 @@ class DiscordController
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
         curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/x-www-form-urlencoded']);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
         $tokenResponse = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $tokenData = json_decode($tokenResponse, true);
         // curl_close() is deprecated in PHP 8.5 (no-op since PHP 8.0)
 
         if (!isset($tokenData['access_token'])) {
+            $app->getLogger()->error('Discord OAuth token exchange failed. HTTP ' . $httpCode . ' Response: ' . ($tokenResponse ?: 'Empty'));
+
             return new RedirectResponse('/auth/login?error=discord_token_failed');
         }
 
@@ -119,10 +128,12 @@ class DiscordController
 
         // Get user info from Discord
         $userUrl = 'https://discord.com/api/users/@me';
-        $ch = curl_init($userUrl);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Authorization: Bearer ' . $accessToken]);
-        $userResponse = curl_exec($ch);
+        $userCh = curl_init($userUrl);
+        curl_setopt($userCh, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($userCh, CURLOPT_HTTPHEADER, ['Authorization: Bearer ' . $accessToken]);
+        curl_setopt($userCh, CURLOPT_CONNECTTIMEOUT, 5);
+        curl_setopt($userCh, CURLOPT_TIMEOUT, 10);
+        $userResponse = curl_exec($userCh);
         $discordUser = json_decode($userResponse, true);
         // curl_close() is deprecated in PHP 8.5 (no-op since PHP 8.0)
 
@@ -155,7 +166,26 @@ class DiscordController
             return new RedirectResponse('/auth/login?discord_token=' . $tempToken);
         }
 
-        // User not linked yet, store Discord data for linking
+        // User not linked yet — try to auto-register if registration is enabled
+        $registrationEnabled = $config->getSetting(ConfigInterface::REGISTRATION_ENABLED, 'true') === 'true';
+
+        if ($registrationEnabled) {
+            $tempToken = bin2hex(random_bytes(32));
+
+            // Store Discord data with temporary token (10 minute expiration for registration)
+            Cache::put('discord_link_token_' . $tempToken, [
+                'discord_id' => $discordId,
+                'discord_access_token' => $accessToken,
+                'discord_username' => $discordUsername,
+                'discord_name' => $discordName,
+                'discord_email' => $discordEmail,
+                'is_registration' => true,
+            ], 10);
+
+            return new RedirectResponse('/auth/register?discord_link_token=' . $tempToken);
+        }
+
+        // Registration is disabled or provisioning failed — fall back to the link-to-existing-account flow
         $tempToken = bin2hex(random_bytes(32));
 
         // Store Discord data with temporary token (10 minute expiration for linking)
@@ -299,6 +329,55 @@ class DiscordController
     }
 
     /**
+     * Handle Discord registration confirmation.
+     *
+     * PUT /api/user/auth/discord/register
+     */
+    public function register(Request $request): Response
+    {
+        $app = App::getInstance(true);
+        $config = $app->getConfig();
+        $data = json_decode($request->getContent(), true);
+        $token = $data['token'] ?? null;
+
+        if (!$token || !is_string($token)) {
+            return ApiResponse::error('Missing registration token', 'MISSING_TOKEN', 400);
+        }
+
+        $cached = Cache::get('discord_link_token_' . $token);
+        if (!$cached || !is_array($cached)) {
+            return ApiResponse::error('Invalid or expired registration token', 'INVALID_TOKEN', 400);
+        }
+
+        if (!isset($cached['is_registration']) || $cached['is_registration'] !== true) {
+            return ApiResponse::error('This token is not for registration', 'INVALID_TOKEN_TYPE', 400);
+        }
+
+        $registrationEnabled = $config->getSetting(ConfigInterface::REGISTRATION_ENABLED, 'true') === 'true';
+        if (!$registrationEnabled) {
+            return ApiResponse::error('Registration is disabled', 'REGISTRATION_DISABLED', 403);
+        }
+
+        $newUser = $this->autoProvisionUser(
+            $cached['discord_id'],
+            $cached['discord_username'],
+            $cached['discord_name'],
+            $cached['discord_email'],
+            $cached['discord_access_token']
+        );
+
+        if (!$newUser) {
+            return ApiResponse::error('Failed to create account. Email might be in use or domain is blocked.', 'PROVISION_FAILED', 500);
+        }
+
+        Cache::forget('discord_link_token_' . $token);
+
+        $loginController = new LoginController();
+
+        return $loginController->completeLogin($newUser);
+    }
+
+    /**
      * Find user by Discord OAuth ID.
      */
     private function findUserByDiscordId(string $discordId): ?array
@@ -308,5 +387,126 @@ class DiscordController
         $stmt->execute(['discord_id' => $discordId]);
 
         return $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
+    }
+
+    /**
+     * Auto-provision a new FeatherPanel user account from Discord OAuth data.
+     * Returns the created user array on success, or null on failure.
+     */
+    private function autoProvisionUser(
+        string $discordId,
+        string $discordUsername,
+        string $discordName,
+        string $discordEmail,
+        string $accessToken,
+    ): ?array {
+        $app = App::getInstance(true);
+        $config = $app->getConfig();
+
+        // Derive a clean base username from the Discord username
+        $baseUsername = preg_replace('/[^a-zA-Z0-9_]/', '_', strtolower($discordUsername)) ?: 'user';
+        $baseUsername = substr($baseUsername, 0, 27);
+
+        // Derive first / last name from Discord display name
+        $nameParts = explode(' ', $discordName, 2);
+        $firstName = !empty($nameParts[0]) ? substr($nameParts[0], 0, 64) : $discordUsername;
+        $lastName = !empty($nameParts[1]) ? substr($nameParts[1], 0, 64) : 'Discord';
+
+        // Ensure first and last names meet minimum length
+        if (strlen($firstName) < 3) {
+            $firstName = str_pad($firstName, 3, '_');
+        }
+        if (strlen($lastName) < 3) {
+            $lastName = str_pad($lastName, 3, '_');
+        }
+
+        // Use Discord email if available; otherwise generate a placeholder
+        if (!empty($discordEmail) && filter_var($discordEmail, FILTER_VALIDATE_EMAIL)) {
+            // Check email domain blocking
+            $domainRejection = EmailDomainValidator::getRejection($config, $discordEmail);
+            if ($domainRejection !== null) {
+                $app->getLogger()->warning('Discord auto-provision rejected email domain: ' . $discordEmail);
+
+                return null;
+            }
+            // Check if email is already in use
+            if (User::getUserByEmail($discordEmail) !== null) {
+                $app->getLogger()->warning('Discord auto-provision: email already in use: ' . $discordEmail);
+
+                return null;
+            }
+            $emailValue = $discordEmail;
+        } else {
+            // No usable Discord email — cannot provision without a valid email address
+            $app->getLogger()->warning('Discord auto-provision: no valid email from Discord for user: ' . $discordUsername);
+
+            return null;
+        }
+
+        $uuid = UUIDUtils::generateV4();
+        $password = bin2hex(random_bytes(32));
+        $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
+        $ip = CloudFlareRealIP::getRealIP();
+
+        $userId = false;
+        $username = '';
+        $maxAttempts = 5;
+
+        for ($attempt = 0; $attempt < $maxAttempts; ++$attempt) {
+            if ($attempt === 0) {
+                $username = substr($baseUsername, 0, 32);
+            } else {
+                $suffix = bin2hex(random_bytes(2));
+                $username = substr($baseUsername . '_' . $suffix, 0, 32);
+            }
+
+            $userId = User::createUser([
+                'username' => $username,
+                'first_name' => $firstName,
+                'last_name' => $lastName,
+                'email' => $emailValue,
+                'password' => $hashedPassword,
+                'uuid' => $uuid,
+                'remember_token' => User::generateAccountToken(),
+                'first_ip' => $ip,
+                'last_ip' => $ip,
+            ], true);
+
+            if ($userId !== false) {
+                break;
+            }
+        }
+
+        if ($userId === false) {
+            $app->getLogger()->error('Discord auto-provision: failed to create user for Discord ID: ' . $discordId);
+
+            return null;
+        }
+
+        // Link the Discord account immediately
+        User::updateUser($uuid, [
+            'discord_oauth2_id' => $discordId,
+            'discord_oauth2_access_token' => $accessToken,
+            'discord_oauth2_linked' => 'true',
+            'discord_oauth2_username' => $discordUsername,
+            'discord_oauth2_name' => $discordName,
+        ]);
+
+        // Log registration activity
+        Activity::createActivity([
+            'user_uuid' => $uuid,
+            'name' => 'register',
+            'context' => 'User registered via Discord OAuth',
+            'ip_address' => $ip,
+        ]);
+
+        // Send first-user role promotion if applicable
+        $createdUser = User::getUserByUuid($uuid);
+        if ($createdUser && (int) $userId === 1) {
+            User::updateUser($uuid, ['role_id' => 4]);
+            $createdUser = User::getUserByUuid($uuid);
+        }
+
+        return $createdUser;
     }
 }

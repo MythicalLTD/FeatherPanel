@@ -24,11 +24,16 @@ class MailQueue
 {
     private static string $table = 'featherpanel_mail_queue';
 
-    public static function create(array $data): int | false
+    /**
+     * @return int|bool New queue row id on success, true when SMTP is disabled (nothing queued), false on validation or DB failure
+     */
+    public static function create(array $data): int | bool
     {
         $app = \App\App::getInstance(false, true);
         $config = new \App\Config\ConfigFactory($app->getDatabase()->getPdo());
-        if ($config->getSetting(\App\Config\ConfigInterface::SMTP_ENABLED, 'false') === 'false') {
+        if ($config->getSetting(\App\Config\ConfigInterface::SMTP_ENABLED, 'false') !== 'true') {
+            $app->getLogger()->warning('SMTP disabled — skipping enqueue/send');
+
             return true;
         }
 

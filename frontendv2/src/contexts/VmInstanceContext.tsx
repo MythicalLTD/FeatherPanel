@@ -18,6 +18,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import React, { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
 import axios from 'axios';
 import { useSession } from '@/contexts/SessionContext';
+import Permissions from '@/lib/permissions';
 
 export interface VmInstance {
     id: number;
@@ -124,15 +125,19 @@ export function VmInstanceProvider({ children, instanceId, initialInstance }: Vm
 
     const hasPermission = useCallback(
         (permission: string): boolean => {
-            // Admins always have access
-            if (hasGlobalPermission('admin.root')) return true;
+            if (hasGlobalPermission(Permissions.ADMIN_ROOT)) return true;
+            if (
+                hasGlobalPermission(Permissions.ADMIN_VM_INSTANCES_VIEW) ||
+                hasGlobalPermission(Permissions.ADMIN_VM_INSTANCES_EDIT) ||
+                hasGlobalPermission(Permissions.ADMIN_VM_INSTANCES_DELETE)
+            ) {
+                return true;
+            }
 
-            // Owner always has access
             if (instance?.is_owner) return true;
 
-            // Subusers: check granular permissions from backend
-            if (instance?.is_subuser) {
-                return instance.permissions?.includes(permission) ?? false;
+            if (instance?.is_subuser || (instance?.permissions?.length ?? 0) > 0) {
+                return instance?.permissions?.includes(permission) ?? false;
             }
 
             return false;

@@ -39,6 +39,8 @@ import {
     Layout,
     Info,
     Shield,
+    ArrowUp,
+    ArrowDown,
 } from 'lucide-react';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
@@ -75,6 +77,7 @@ interface Article {
     content: string;
     status: 'draft' | 'published' | 'archived';
     pinned: 'true' | 'false';
+    sort_order?: number;
 }
 
 interface Attachment {
@@ -123,6 +126,11 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
     const [tagsDialogOpen, setTagsDialogOpen] = useState(false);
     const [newTags, setNewTags] = useState('');
 
+    // Article reordering state
+    const [categoryArticles, setCategoryArticles] = useState<Article[]>([]);
+    const [reorderLoading, setReorderLoading] = useState(false);
+    const [hasOrderChanges, setHasOrderChanges] = useState(false);
+
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-knowledgebase-article-edit');
 
     const fetchData = useCallback(async () => {
@@ -148,10 +156,84 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
         }
     }, [id, t]);
 
+    // Fetch articles in the same category for reordering
+    const fetchCategoryArticles = useCallback(async (categoryId: number) => {
+        if (!categoryId) return;
+        try {
+            const res = await axios.get('/api/admin/knowledgebase/articles', {
+                params: { category_id: categoryId, limit: 100 },
+            });
+            if (res.data?.success) {
+                const sorted = res.data.data.articles.sort((a: Article, b: Article) => {
+                    if (a.pinned === 'true' && b.pinned !== 'true') return -1;
+                    if (a.pinned !== 'true' && b.pinned === 'true') return 1;
+                    return (a.sort_order || 0) - (b.sort_order || 0);
+                });
+                setCategoryArticles(sorted);
+            }
+        } catch {
+            // Silently fail - reordering is optional
+        }
+    }, []);
+
+    // Reordering functions
+    const moveArticle = (articleId: number, direction: 'up' | 'down') => {
+        const index = categoryArticles.findIndex((a) => a.id === articleId);
+        if (index === -1) return;
+
+        const newIndex = direction === 'up' ? index - 1 : index + 1;
+        if (newIndex < 0 || newIndex >= categoryArticles.length) return;
+
+        const newArticles = [...categoryArticles];
+        const [movedArticle] = newArticles.splice(index, 1);
+        newArticles.splice(newIndex, 0, movedArticle);
+
+        // Update sort_order for all articles
+        const updatedArticles = newArticles.map((article, idx) => ({
+            ...article,
+            sort_order: idx * 10,
+        }));
+
+        setCategoryArticles(updatedArticles);
+        setHasOrderChanges(true);
+    };
+
+    const saveArticleOrder = async () => {
+        setReorderLoading(true);
+        try {
+            const articlesToSave = categoryArticles.map((article) => ({
+                id: article.id,
+                sort_order: article.sort_order || 0,
+            }));
+
+            const response = await axios.post('/api/admin/knowledgebase/articles/reorder', {
+                articles: articlesToSave,
+            });
+
+            if (response.data?.success) {
+                toast.success(t('admin.knowledgebase.order.messages.saved'));
+                setHasOrderChanges(false);
+            } else {
+                toast.error(t('admin.knowledgebase.order.messages.save_failed'));
+            }
+        } catch {
+            toast.error(t('admin.knowledgebase.order.messages.save_failed'));
+        } finally {
+            setReorderLoading(false);
+        }
+    };
+
     useEffect(() => {
         fetchWidgets();
         fetchData();
     }, [fetchData, fetchWidgets]);
+
+    // Fetch category articles when category changes
+    useEffect(() => {
+        if (form.category_id) {
+            fetchCategoryArticles(form.category_id);
+        }
+    }, [form.category_id, fetchCategoryArticles]);
 
     const handleIconSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -749,6 +831,97 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
                             {t('admin.knowledgebase.help.attachments.description')}
                         </p>
                     </PageCard>
+
+                    {/* Article Reordering Section */}
+                    {categoryArticles.length > 1 && (
+                        <PageCard title={t('admin.knowledgebase.order.title')} icon={ArrowUp}>
+                            <div className='space-y-4'>
+                                <p className='text-muted-foreground text-sm'>
+                                    {t('admin.knowledgebase.order.subtitle')}
+                                </p>
+                                {hasOrderChanges && (
+                                    <div className='flex items-center justify-between'>
+                                        <div className='text-xs text-amber-500'>
+                                            {t('admin.knowledgebase.order.unsaved_changes')}
+                                        </div>
+                                        <Button size='sm' onClick={saveArticleOrder} loading={reorderLoading}>
+                                            <Save className='mr-2 h-4 w-4' />
+                                            {t('common.save')}
+                                        </Button>
+                                    </div>
+                                )}
+                                <div className='divide-border/50 max-h-[300px] space-y-2 divide-y overflow-y-auto'>
+                                    {categoryArticles.map((catArticle, index) => (
+                                        <div
+                                            key={catArticle.id}
+                                            className={`flex items-center gap-3 py-3 ${
+                                                catArticle.id === article?.id
+                                                    ? 'bg-primary/5 -mx-4 rounded-lg px-4'
+                                                    : ''
+                                            }`}
+                                        >
+                                            {/* Position */}
+                                            <div className='bg-muted text-muted-foreground flex h-6 w-6 shrink-0 items-center justify-center rounded text-xs font-medium'>
+                                                {index + 1}
+                                            </div>
+
+                                            {/* Move Buttons */}
+                                            <div className='flex flex-col gap-0.5'>
+                                                <Button
+                                                    variant='ghost'
+                                                    size='icon'
+                                                    className='h-5 w-5'
+                                                    onClick={() => moveArticle(catArticle.id, 'up')}
+                                                    disabled={index === 0}
+                                                >
+                                                    <ArrowUp className='h-3 w-3' />
+                                                </Button>
+                                                <Button
+                                                    variant='ghost'
+                                                    size='icon'
+                                                    className='h-5 w-5'
+                                                    onClick={() => moveArticle(catArticle.id, 'down')}
+                                                    disabled={index === categoryArticles.length - 1}
+                                                >
+                                                    <ArrowDown className='h-3 w-3' />
+                                                </Button>
+                                            </div>
+
+                                            {/* Article Info */}
+                                            <div className='min-w-0 flex-1'>
+                                                <div className='truncate text-sm font-medium'>
+                                                    {catArticle.title}
+                                                    {catArticle.id === article?.id && (
+                                                        <span className='text-primary ml-1 text-xs'>
+                                                            ({t('common.current')})
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <div className='text-muted-foreground mt-0.5 flex items-center gap-2 text-xs'>
+                                                    {catArticle.pinned === 'true' && (
+                                                        <span className='text-primary'>
+                                                            {t('admin.knowledgebase.articles.form.pinned')}
+                                                        </span>
+                                                    )}
+                                                    <span
+                                                        className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-xs ${
+                                                            catArticle.status === 'published'
+                                                                ? 'bg-green-500/10 text-green-600'
+                                                                : catArticle.status === 'draft'
+                                                                  ? 'bg-yellow-500/10 text-yellow-600'
+                                                                  : 'bg-gray-500/10 text-gray-600'
+                                                        }`}
+                                                    >
+                                                        {t(`admin.knowledgebase.articles.status.${catArticle.status}`)}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </PageCard>
+                    )}
                 </div>
             </div>
 

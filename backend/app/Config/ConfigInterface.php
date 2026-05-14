@@ -65,11 +65,38 @@ interface ConfigInterface
     public const WEBSITE_URL = 'website_url';
     public const STATUS_PAGE_URL = 'status_page_url';
     /**
-     * Turnstile.
+     * Captcha Settings.
      */
+    public const CAPTCHA_PROVIDER = 'captcha_provider'; // turnstile, hcaptcha, recaptcha, friendlycaptcha, reforge
     public const TURNSTILE_ENABLED = 'turnstile_enabled';
     public const TURNSTILE_KEY_PUB = 'turnstile_key_pub';
     public const TURNSTILE_KEY_PRIV = 'turnstile_key_priv';
+    public const HCAPTCHA_SITE_KEY = 'hcaptcha_site_key';
+    public const HCAPTCHA_SECRET_KEY = 'hcaptcha_secret_key';
+    public const RECAPTCHA_SITE_KEY = 'recaptcha_site_key';
+    public const RECAPTCHA_SECRET_KEY = 'recaptcha_secret_key';
+    /** reCAPTCHA widget type: v2 (checkbox) or v3 (score). */
+    public const RECAPTCHA_VERSION = 'recaptcha_version';
+    /** Minimum v3 score (0.0–1.0); ignored for v2. */
+    public const RECAPTCHA_V3_MIN_SCORE = 'recaptcha_v3_min_score';
+    /** v3 action name sent to Google (must match frontend execute action). */
+    public const RECAPTCHA_V3_ACTION = 'recaptcha_v3_action';
+    public const FRIENDLY_CAPTCHA_SITE_KEY = 'friendly_captcha_site_key';
+    public const FRIENDLY_CAPTCHA_SECRET_KEY = 'friendly_captcha_secret_key';
+    /** reForge Captcha (https://reforgecaptcha.cloud/) — public site key. */
+    public const REFORGE_CAPTCHA_SITE_KEY = 'reforge_captcha_site_key';
+    /** reForge Captcha secret key (server-side verify only). */
+    public const REFORGE_CAPTCHA_SECRET_KEY = 'reforge_captcha_secret_key';
+    /** Widget type: checkbox, invisible, managed, image. */
+    public const REFORGE_CAPTCHA_WIDGET_TYPE = 'reforge_captcha_widget_type';
+    /** Theme: auto, dark, light. */
+    public const REFORGE_CAPTCHA_THEME = 'reforge_captcha_theme';
+    /** Size: normal, compact. */
+    public const REFORGE_CAPTCHA_SIZE = 'reforge_captcha_size';
+    /** Optional UI language (e.g. en, nl, de). Empty = widget default. */
+    public const REFORGE_CAPTCHA_LANG = 'reforge_captcha_lang';
+    /** Minimum verify score (0.0–1.0) when the API returns a score; extra check after success. */
+    public const REFORGE_CAPTCHA_MIN_SCORE = 'reforge_captcha_min_score';
     /**
      * SMTP.
      */
@@ -93,6 +120,12 @@ interface ConfigInterface
     /** When true, reject registration/email changes whose domain matches featherpanel_blocked_email_domains (admin-managed). */
     public const EMAIL_DOMAIN_BLOCKING_ENABLED = 'email_domain_blocking_enabled';
     public const REQUIRE_TWO_FA_ADMINS = 'require_two_fa_admins';
+
+    /**
+     * Email Login (Passwordless authentication with 6-digit OTP).
+     */
+    public const EMAIL_LOGIN_ENABLED = 'email_login_enabled';
+
     /**
      * Telemetry.
      */

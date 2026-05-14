@@ -30,7 +30,8 @@ class AuthEvent implements PluginEvent
     }
 
     /**
-     * Callback: array user info.
+     * Callback: positional values from the emitted payload in key insertion order (see PluginEvents::emit).
+     * Possible keys across emitters: email, error, ip_address, provider, reason, user, username, username_or_email.
      */
     public static function onAuthLoginFailed(): string
     {
@@ -155,5 +156,13 @@ class AuthEvent implements PluginEvent
     public static function onAuthForgotPasswordFailed(): string
     {
         return 'featherpanel:auth:forgot:password:failed';
+    }
+
+    /**
+     * Callback: array user info, string ip_address.
+     */
+    public static function onAuthEmailLoginCodeRequested(): string
+    {
+        return 'featherpanel:auth:email:login:code:requested';
     }
 }

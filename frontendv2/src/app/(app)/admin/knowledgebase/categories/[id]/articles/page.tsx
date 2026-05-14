@@ -36,6 +36,11 @@ import {
     Layout,
     Shield,
     Image as ImageIcon,
+    ArrowUp,
+    ArrowDown,
+    GripVertical,
+    Save,
+    X,
 } from 'lucide-react';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { ResourceCard, type ResourceBadge } from '@/components/featherui/ResourceCard';
@@ -67,6 +72,7 @@ interface Article {
     content: string;
     status: 'draft' | 'published' | 'archived';
     pinned: 'true' | 'false';
+    sort_order?: number;
     created_at: string;
     updated_at: string;
 }
@@ -115,6 +121,11 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
     const [iconFile, setIconFile] = useState<File | null>(null);
     const [iconPreview, setIconPreview] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Reordering state
+    const [isReorderMode, setIsReorderMode] = useState(false);
+    const [reorderLoading, setReorderLoading] = useState(false);
+    const [hasOrderChanges, setHasOrderChanges] = useState(false);
 
     const resetForm = () => {
         setForm({
@@ -172,6 +183,115 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
             setLoading(false);
         }
     }, [id, pagination.page, pagination.pageSize, searchQuery, t]);
+
+    /** Admin KB list API caps `limit` at 100; fetch every page before reorder. */
+    const fetchAllArticlesForReorder = useCallback(async (): Promise<boolean> => {
+        const pageSize = 100;
+        try {
+            let page = 1;
+            const allArticles: Article[] = [];
+            let totalRecords = 0;
+            while (true) {
+                const { data } = await axios.get('/api/admin/knowledgebase/articles', {
+                    params: {
+                        page,
+                        limit: pageSize,
+                        category_id: id,
+                    },
+                });
+                if (!data?.success) {
+                    toast.error(t('admin.knowledgebase.articles.messages.fetch_failed'));
+                    return false;
+                }
+                const pag = data.data.pagination;
+                totalRecords = pag.total_records;
+                const batch = data.data.articles || [];
+                allArticles.push(...batch);
+                if (allArticles.length >= totalRecords || !pag.has_next) {
+                    break;
+                }
+                page += 1;
+            }
+            if (allArticles.length !== totalRecords) {
+                toast.error(t('admin.knowledgebase.articles.messages.fetch_failed'));
+                return false;
+            }
+            const sorted = [...allArticles].sort((a: Article, b: Article) => {
+                if (a.pinned === 'true' && b.pinned !== 'true') return -1;
+                if (a.pinned !== 'true' && b.pinned === 'true') return 1;
+                return (a.sort_order || 0) - (b.sort_order || 0);
+            });
+            setArticles(sorted);
+            return true;
+        } catch {
+            toast.error(t('admin.knowledgebase.articles.messages.fetch_failed'));
+            return false;
+        }
+    }, [id, t]);
+
+    // Reordering functions
+    const moveArticle = (articleId: number, direction: 'up' | 'down') => {
+        const index = articles.findIndex((a) => a.id === articleId);
+        if (index === -1) return;
+
+        const newIndex = direction === 'up' ? index - 1 : index + 1;
+        if (newIndex < 0 || newIndex >= articles.length) return;
+
+        const newArticles = [...articles];
+        const [movedArticle] = newArticles.splice(index, 1);
+        newArticles.splice(newIndex, 0, movedArticle);
+
+        // Update sort_order for all articles
+        const updatedArticles = newArticles.map((article, idx) => ({
+            ...article,
+            sort_order: idx * 10,
+        }));
+
+        setArticles(updatedArticles);
+        setHasOrderChanges(true);
+    };
+
+    const saveArticleOrder = async () => {
+        setReorderLoading(true);
+        try {
+            const articlesToSave = articles.map((article) => ({
+                id: article.id,
+                sort_order: article.sort_order || 0,
+            }));
+
+            const response = await axios.post('/api/admin/knowledgebase/articles/reorder', {
+                articles: articlesToSave,
+            });
+
+            if (response.data?.success) {
+                toast.success(t('admin.knowledgebase.order.messages.saved'));
+                setHasOrderChanges(false);
+                setIsReorderMode(false);
+                // Force a complete refresh
+                setPagination((p) => ({ ...p, page: 1 }));
+                await fetchArticles();
+            } else {
+                toast.error(t('admin.knowledgebase.order.messages.save_failed'));
+            }
+        } catch {
+            toast.error(t('admin.knowledgebase.order.messages.save_failed'));
+        } finally {
+            setReorderLoading(false);
+        }
+    };
+
+    const toggleReorderMode = async () => {
+        if (!isReorderMode) {
+            const ok = await fetchAllArticlesForReorder();
+            if (!ok) return;
+        } else {
+            // Exiting reorder mode - reset and refresh paginated view
+            setPagination((p) => ({ ...p, page: 1 }));
+            await fetchArticles();
+            setHasOrderChanges(false);
+        }
+        setIsReorderMode(!isReorderMode);
+    };
 
     useEffect(() => {
         fetchWidgets();
@@ -271,40 +391,72 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
                 icon={FileText}
                 actions={
                     <div className='flex items-center gap-2'>
-                        <Button variant='outline' onClick={() => router.push('/admin/knowledgebase/categories')}>
-                            <ChevronLeft className='mr-2 h-4 w-4' />
-                            {t('admin.knowledgebase.articles.back_to_categories')}
-                        </Button>
-                        <Button
-                            onClick={() => {
-                                resetForm();
-                                setCreateOpen(true);
-                            }}
-                        >
-                            <Plus className='mr-2 h-4 w-4' />
-                            {t('admin.knowledgebase.articles.create')}
-                        </Button>
+                        {!isReorderMode ? (
+                            <>
+                                <Button variant='outline' onClick={toggleReorderMode} className='gap-2'>
+                                    <ArrowUp className='h-4 w-4' />
+                                    <ArrowDown className='h-4 w-4' />
+                                    <span className='hidden sm:inline'>{t('admin.knowledgebase.order.title')}</span>
+                                </Button>
+                                <Button
+                                    variant='outline'
+                                    onClick={() => router.push('/admin/knowledgebase/categories')}
+                                >
+                                    <ChevronLeft className='mr-2 h-4 w-4' />
+                                    {t('admin.knowledgebase.articles.back_to_categories')}
+                                </Button>
+                                <Button
+                                    onClick={() => {
+                                        resetForm();
+                                        setCreateOpen(true);
+                                    }}
+                                >
+                                    <Plus className='mr-2 h-4 w-4' />
+                                    {t('admin.knowledgebase.articles.create')}
+                                </Button>
+                            </>
+                        ) : (
+                            <>
+                                {hasOrderChanges && (
+                                    <Button
+                                        onClick={saveArticleOrder}
+                                        loading={reorderLoading}
+                                        variant='default'
+                                        className='gap-2'
+                                    >
+                                        <Save className='h-4 w-4' />
+                                        {t('common.save')}
+                                    </Button>
+                                )}
+                                <Button variant='outline' onClick={toggleReorderMode}>
+                                    <X className='mr-2 h-4 w-4' />
+                                    {t('common.cancel')}
+                                </Button>
+                            </>
+                        )}
                     </div>
                 }
             />
 
             <WidgetRenderer widgets={getWidgets('admin-knowledgebase-category-articles', 'after-header')} />
 
-            <div className='bg-card/40 flex flex-col items-center gap-4 rounded-2xl p-4 shadow-sm backdrop-blur-md sm:flex-row'>
-                <div className='group relative w-full flex-1'>
-                    <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
-                    <Input
-                        placeholder={t('admin.knowledgebase.articles.search_placeholder')}
-                        className='h-11 pl-10'
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                    />
+            {!isReorderMode && (
+                <div className='bg-card/40 flex flex-col items-center gap-4 rounded-2xl p-4 shadow-sm backdrop-blur-md sm:flex-row'>
+                    <div className='group relative w-full flex-1'>
+                        <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
+                        <Input
+                            placeholder={t('admin.knowledgebase.articles.search_placeholder')}
+                            className='h-11 pl-10'
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                    </div>
                 </div>
-            </div>
+            )}
 
             <WidgetRenderer widgets={getWidgets('admin-knowledgebase-category-articles', 'before-list')} />
 
-            {pagination.totalPages > 1 && !loading && (
+            {pagination.totalPages > 1 && !loading && !isReorderMode && (
                 <div className='border-border bg-card/50 mb-4 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
                     <Button
                         variant='outline'
@@ -345,7 +497,100 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
                         </Button>
                     }
                 />
+            ) : isReorderMode ? (
+                // Reorder Mode UI - Improved styling
+                <div className='space-y-6'>
+                    {hasOrderChanges && (
+                        <div className='flex items-center gap-2 rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm text-amber-600'>
+                            <AlertCircle className='h-4 w-4' />
+                            {t('admin.knowledgebase.order.unsaved_changes')}
+                        </div>
+                    )}
+
+                    <PageCard
+                        title={t('admin.knowledgebase.order.subtitle')}
+                        icon={GripVertical}
+                        className='overflow-hidden'
+                    >
+                        <div className='divide-border/50 divide-y'>
+                            {articles.map((article, index) => (
+                                <div
+                                    key={article.id}
+                                    className='group hover:bg-muted/30 flex items-center gap-4 p-4 transition-colors'
+                                >
+                                    {/* Position Number */}
+                                    <div className='bg-muted text-muted-foreground flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm font-semibold'>
+                                        {index + 1}
+                                    </div>
+
+                                    {/* Move Buttons */}
+                                    <div className='flex flex-col gap-0.5'>
+                                        <Button
+                                            variant='ghost'
+                                            size='icon'
+                                            className='h-6 w-6'
+                                            onClick={() => moveArticle(article.id, 'up')}
+                                            disabled={index === 0}
+                                        >
+                                            <ArrowUp className='h-3 w-3' />
+                                        </Button>
+                                        <Button
+                                            variant='ghost'
+                                            size='icon'
+                                            className='h-6 w-6'
+                                            onClick={() => moveArticle(article.id, 'down')}
+                                            disabled={index === articles.length - 1}
+                                        >
+                                            <ArrowDown className='h-3 w-3' />
+                                        </Button>
+                                    </div>
+
+                                    {/* Article Icon */}
+                                    <div className='bg-primary/10 flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl'>
+                                        {article.icon ? (
+                                            <Image
+                                                src={article.icon}
+                                                alt={article.title}
+                                                width={48}
+                                                height={48}
+                                                className='h-full w-full object-cover'
+                                                unoptimized
+                                            />
+                                        ) : (
+                                            <FileText className='text-primary h-6 w-6' />
+                                        )}
+                                    </div>
+
+                                    {/* Article Info */}
+                                    <div className='min-w-0 flex-1'>
+                                        <div className='truncate font-medium'>{article.title}</div>
+                                        <div className='text-muted-foreground mt-1 flex items-center gap-2 text-xs'>
+                                            {article.pinned === 'true' && (
+                                                <span className='text-primary inline-flex items-center gap-1'>
+                                                    <Save className='h-3 w-3' />
+                                                    {t('admin.knowledgebase.articles.form.pinned')}
+                                                </span>
+                                            )}
+                                            <span
+                                                className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ${
+                                                    article.status === 'published'
+                                                        ? 'bg-green-500/10 text-green-600'
+                                                        : article.status === 'draft'
+                                                          ? 'bg-yellow-500/10 text-yellow-600'
+                                                          : 'bg-gray-500/10 text-gray-600'
+                                                }`}
+                                            >
+                                                {t(`admin.knowledgebase.articles.status.${article.status}`)}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </PageCard>
+                </div>
             ) : (
+                // Normal Mode UI
                 <div className='grid grid-cols-1 gap-6'>
                     {articles.map((article) => {
                         const IconComponent = ({ className }: { className?: string }) => (
@@ -433,7 +678,7 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
                 </div>
             )}
 
-            {pagination.totalPages > 1 && (
+            {pagination.totalPages > 1 && !isReorderMode && (
                 <div className='mt-8 flex items-center justify-center gap-2'>
                     <Button
                         variant='outline'
@@ -459,23 +704,25 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
                 </div>
             )}
 
-            <div className='grid grid-cols-1 gap-6 pt-10 md:grid-cols-2 lg:grid-cols-3'>
-                <PageCard title={t('admin.knowledgebase.help.managing.title')} icon={Layout}>
-                    <p className='text-muted-foreground text-sm leading-relaxed'>
-                        {t('admin.knowledgebase.help.managing.description')}
-                    </p>
-                </PageCard>
-                <PageCard title={t('admin.knowledgebase.help.content.title')} icon={Info}>
-                    <p className='text-muted-foreground text-sm leading-relaxed'>
-                        {t('admin.knowledgebase.help.content.description')}
-                    </p>
-                </PageCard>
-                <PageCard title={t('admin.knowledgebase.help.attachments.title')} icon={Shield} variant='danger'>
-                    <p className='text-muted-foreground text-sm leading-relaxed'>
-                        {t('admin.knowledgebase.help.attachments.description')}
-                    </p>
-                </PageCard>
-            </div>
+            {!isReorderMode && (
+                <div className='grid grid-cols-1 gap-6 pt-10 md:grid-cols-2 lg:grid-cols-3'>
+                    <PageCard title={t('admin.knowledgebase.help.managing.title')} icon={Layout}>
+                        <p className='text-muted-foreground text-sm leading-relaxed'>
+                            {t('admin.knowledgebase.help.managing.description')}
+                        </p>
+                    </PageCard>
+                    <PageCard title={t('admin.knowledgebase.help.content.title')} icon={Info}>
+                        <p className='text-muted-foreground text-sm leading-relaxed'>
+                            {t('admin.knowledgebase.help.content.description')}
+                        </p>
+                    </PageCard>
+                    <PageCard title={t('admin.knowledgebase.help.attachments.title')} icon={Shield} variant='danger'>
+                        <p className='text-muted-foreground text-sm leading-relaxed'>
+                            {t('admin.knowledgebase.help.attachments.description')}
+                        </p>
+                    </PageCard>
+                </div>
+            )}
 
             <Sheet open={createOpen} onOpenChange={setCreateOpen}>
                 <div className='flex h-full flex-col p-6'>

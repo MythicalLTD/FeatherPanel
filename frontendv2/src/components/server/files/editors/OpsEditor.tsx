@@ -98,8 +98,8 @@ export function OpsEditor({ content, readonly = false, saving = false, onSave, o
     };
 
     return (
-        <Card className='bg-card/50 border-border/50 rounded-3xl border shadow-sm backdrop-blur-3xl'>
-            <CardHeader className='border-border/10 border-b pb-6'>
+        <Card className='bg-card/50 border-border/50 flex flex-col overflow-hidden rounded-3xl border shadow-sm backdrop-blur-3xl'>
+            <CardHeader className='border-border/10 shrink-0 border-b pb-6'>
                 <div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
                     <div className='space-y-2'>
                         <CardTitle className='text-2xl font-bold'>{t('files.editors.opsConfig.title')}</CardTitle>
@@ -121,7 +121,7 @@ export function OpsEditor({ content, readonly = false, saving = false, onSave, o
                     </div>
                 </div>
             </CardHeader>
-            <div className='space-y-8 p-8'>
+            <div className='flex-1 space-y-8 overflow-y-auto p-8'>
                 <section className='space-y-6'>
                     <div className='border-primary/20 bg-primary/5 text-muted-foreground rounded-xl border p-4 text-sm'>
                         {t('files.editors.opsConfig.notice') ||

@@ -30,7 +30,7 @@ interface SettingsContextType {
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
 const CACHE_KEY = 'app_settings';
-const CACHE_VERSION = '1.1';
+const CACHE_VERSION = '1.2';
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
     const [settings, setSettings] = useState<AppSettings | null>(null);

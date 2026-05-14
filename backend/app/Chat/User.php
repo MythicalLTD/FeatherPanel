@@ -491,6 +491,27 @@ class User
     }
 
     /**
+     * Return a non-empty remember token for the user, generating and persisting one if missing.
+     *
+     * @param mixed $currentRememberToken Value from user row (may be null or absent)
+     *
+     * @return string|false The token, or false if the database update failed
+     */
+    public static function ensureRememberToken(string $uuid, mixed $currentRememberToken): string | false
+    {
+        $token = is_string($currentRememberToken) ? trim($currentRememberToken) : '';
+        if ($token !== '') {
+            return $token;
+        }
+        $token = self::generateAccountToken();
+        if (!self::updateUser($uuid, ['remember_token' => $token])) {
+            return false;
+        }
+
+        return $token;
+    }
+
+    /**
      * Generate a random account token.
      */
     public static function generateAccountToken(): string

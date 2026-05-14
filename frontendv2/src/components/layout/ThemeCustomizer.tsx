@@ -19,6 +19,7 @@ import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from '@
 import { Fragment, useState } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { useSettings } from '@/contexts/SettingsContext';
 import { Check, Globe, Image as ImageIcon, LayoutTemplate, Moon, Palette, PanelTop, Sun, XIcon } from 'lucide-react';
 import { useNavbarHoverReveal } from '@/hooks/useNavbarHoverReveal';
 import { useNavbarSticky } from '@/hooks/useNavbarSticky';
@@ -48,8 +49,14 @@ export default function ThemeCustomizer() {
     const { navbarSticky, setNavbarSticky } = useNavbarSticky();
     const { chromeLayout, setChromeLayout } = useChromeLayout();
     const { t, availableLanguages, setLocale, locale } = useTranslation();
+    const { settings } = useSettings();
     const [customizerOpen, setCustomizerOpen] = useState(false);
     const [backgroundDialogOpen, setBackgroundDialogOpen] = useState(false);
+
+    // Check if background customization is disabled (light mode or admin locked)
+    const isBackgroundDisabled = theme === 'light' || settings?.app_background_type_lock === 'true';
+    const isAccentColorLocked = settings?.app_accent_color_lock === 'true';
+    const isThemeLocked = settings?.app_theme_lock === 'true';
 
     const accentColorOptions = [
         { name: t('appearance.colors.purple'), value: 'purple', color: 'hsl(262 83% 58%)' },
@@ -60,7 +67,7 @@ export default function ThemeCustomizer() {
         { name: t('appearance.colors.pink'), value: 'pink', color: 'hsl(330 81% 60%)' },
         { name: t('appearance.colors.teal'), value: 'teal', color: 'hsl(173 80% 40%)' },
         { name: t('appearance.colors.yellow'), value: 'yellow', color: 'hsl(48 96% 53%)' },
-        { name: t('appearance.colors.white'), value: 'white', color: 'hsl(210 20% 92%)' },
+        { name: t('appearance.colors.indigo'), value: 'indigo', color: 'hsl(245 58% 51%)' },
         { name: t('appearance.colors.violet'), value: 'violet', color: 'hsl(270 75% 55%)' },
         { name: t('appearance.colors.cyan'), value: 'cyan', color: 'hsl(188 78% 41%)' },
         { name: t('appearance.colors.lime'), value: 'lime', color: 'hsl(84 69% 35%)' },
@@ -92,7 +99,7 @@ export default function ThemeCustomizer() {
     if (!mounted) {
         return (
             <div className='flex items-center'>
-                <div className='border-border/50 bg-muted/20 h-9 w-9 rounded-xl border sm:h-10 sm:w-10' />
+                <div className='bg-muted/25 size-9 animate-pulse rounded-lg sm:rounded-xl' />
             </div>
         );
     }
@@ -103,18 +110,18 @@ export default function ThemeCustomizer() {
                 type='button'
                 title={t('appearance.settingsMenuTitle')}
                 onClick={() => setCustomizerOpen(true)}
-                className='border-border bg-card text-muted-foreground hover:border-border hover:bg-muted/40 hover:text-foreground relative flex h-11 w-11 items-center justify-center rounded-xl border shadow-sm transition-colors'
+                className='text-muted-foreground hover:bg-muted/45 hover:text-foreground active:bg-muted/55 relative flex size-9 items-center justify-center rounded-lg border-0 transition-colors sm:rounded-xl'
             >
-                <Palette className='h-5.5 w-5.5' aria-hidden />
+                <Palette className='h-[1.15rem] w-[1.15rem] shrink-0' aria-hidden />
                 <span
-                    className='ring-card pointer-events-none absolute right-0.5 bottom-0.5 h-2 w-2 rounded-full ring-2'
+                    className='border-background pointer-events-none absolute right-0.5 bottom-0.5 box-content h-1.5 w-1.5 rounded-full border-2 shadow-sm'
                     style={{ backgroundColor: currentAccent }}
                     aria-hidden
                 />
             </button>
 
             <Transition appear show={customizerOpen} as={Fragment}>
-                <Dialog as='div' className='relative z-[90]' onClose={setCustomizerOpen}>
+                <Dialog as='div' className='relative z-90' onClose={setCustomizerOpen}>
                     <TransitionChild
                         as={Fragment}
                         enter='ease-out duration-200'
@@ -163,13 +170,21 @@ export default function ThemeCustomizer() {
                                         <div className='mb-3 grid grid-cols-2 gap-2'>
                                             <button
                                                 type='button'
-                                                onClick={toggleTheme}
+                                                onClick={() => !isThemeLocked && toggleTheme()}
+                                                disabled={isThemeLocked}
                                                 title={
-                                                    theme === 'dark'
-                                                        ? t('appearance.theme.switchToLight')
-                                                        : t('appearance.theme.switchToDark')
+                                                    isThemeLocked
+                                                        ? t('appearance.theme.lockedByAdmin')
+                                                        : theme === 'dark'
+                                                          ? t('appearance.theme.switchToLight')
+                                                          : t('appearance.theme.switchToDark')
                                                 }
-                                                className='border-border/60 bg-muted/25 hover:bg-accent/50 flex h-12 w-full items-center justify-center gap-2 rounded-xl border px-3 text-sm font-medium transition-colors sm:h-10 sm:text-xs'
+                                                className={cn(
+                                                    'border-border/60 bg-muted/25 flex h-12 w-full items-center justify-center gap-2 rounded-xl border px-3 text-sm font-medium transition-colors sm:h-10 sm:text-xs',
+                                                    isThemeLocked
+                                                        ? 'cursor-not-allowed opacity-50'
+                                                        : 'hover:bg-accent/50',
+                                                )}
                                             >
                                                 {theme === 'dark' ? (
                                                     <Sun className='h-4 w-4 text-amber-400' aria-hidden />
@@ -181,19 +196,37 @@ export default function ThemeCustomizer() {
                                                         ? t('appearance.theme.light')
                                                         : t('appearance.theme.dark')}
                                                 </span>
+                                                {isThemeLocked && (
+                                                    <span className='text-muted-foreground text-xs'>(Locked)</span>
+                                                )}
                                             </button>
 
                                             <button
                                                 type='button'
-                                                title={t('appearance.background.customize')}
+                                                title={
+                                                    isBackgroundDisabled
+                                                        ? t('appearance.background.disabledInLightMode')
+                                                        : t('appearance.background.customize')
+                                                }
                                                 onClick={() => {
+                                                    if (isBackgroundDisabled) return;
                                                     setCustomizerOpen(false);
                                                     setBackgroundDialogOpen(true);
                                                 }}
-                                                className='border-border/60 bg-muted/25 hover:bg-accent/50 flex h-12 w-full items-center justify-center gap-2 rounded-xl border px-3 text-sm font-medium transition-colors sm:h-10 sm:text-xs'
+                                                disabled={isBackgroundDisabled}
+                                                className={cn(
+                                                    'border-border/60 bg-muted/25 flex h-12 w-full items-center justify-center gap-2 rounded-xl border px-3 text-sm font-medium transition-colors sm:h-10 sm:text-xs',
+                                                    isBackgroundDisabled
+                                                        ? 'cursor-not-allowed opacity-50'
+                                                        : 'hover:bg-accent/50',
+                                                )}
                                             >
                                                 <ImageIcon className='text-muted-foreground h-4 w-4' aria-hidden />
-                                                <span>{t('appearance.background.change')}</span>
+                                                <span>
+                                                    {theme === 'light'
+                                                        ? t('appearance.background.notAvailableInLight')
+                                                        : t('appearance.background.change')}
+                                                </span>
                                             </button>
                                         </div>
 
@@ -205,12 +238,22 @@ export default function ThemeCustomizer() {
                                                         <button
                                                             key={option.value}
                                                             type='button'
-                                                            title={option.name}
-                                                            onClick={() => setAccentColor(option.value)}
+                                                            title={
+                                                                isAccentColorLocked
+                                                                    ? `${option.name} (Locked)`
+                                                                    : option.name
+                                                            }
+                                                            onClick={() =>
+                                                                !isAccentColorLocked && setAccentColor(option.value)
+                                                            }
+                                                            disabled={isAccentColorLocked}
                                                             className={cn(
-                                                                'ring-border/60 relative mx-auto flex h-10 w-10 items-center justify-center rounded-full ring-1 transition-transform hover:scale-105 sm:h-8 sm:w-8',
+                                                                'ring-border/60 relative mx-auto flex h-10 w-10 items-center justify-center rounded-full ring-1 transition-transform sm:h-8 sm:w-8',
                                                                 accentColor === option.value &&
                                                                     'ring-primary ring-offset-card ring-2 ring-offset-1',
+                                                                isAccentColorLocked
+                                                                    ? 'cursor-not-allowed opacity-50'
+                                                                    : 'hover:scale-105',
                                                             )}
                                                             style={{ backgroundColor: option.color }}
                                                         >
@@ -218,8 +261,7 @@ export default function ThemeCustomizer() {
                                                                 <Check
                                                                     className={cn(
                                                                         'h-3 w-3 drop-shadow-sm sm:h-2.5 sm:w-2.5',
-                                                                        option.value === 'white' ||
-                                                                            option.value === 'yellow'
+                                                                        option.value === 'yellow'
                                                                             ? 'text-foreground'
                                                                             : 'text-white',
                                                                     )}

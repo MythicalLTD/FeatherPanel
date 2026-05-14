@@ -115,27 +115,29 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
     return (
         <div
             className={cn(
-                'space-y-4',
-                isPublicKnowledgebasePage && 'mx-auto w-full max-w-5xl px-4 pt-4 pb-10 md:px-8 md:pt-5',
+                'space-y-6',
+                isPublicKnowledgebasePage && 'mx-auto w-full max-w-7xl px-4 pt-8 pb-12 md:px-8 md:pt-10',
             )}
         >
             <WidgetRenderer widgets={getWidgets('dashboard-knowledgebase-category', 'top-of-page')} />
 
-            <div className='flex flex-col justify-between gap-3 sm:flex-row sm:items-center'>
+            <div
+                className={cn(
+                    'flex flex-col justify-between gap-3 sm:flex-row sm:items-center',
+                    isPublicKnowledgebasePage &&
+                        'border-border/60 from-card via-card/90 to-primary/5 rounded-2xl border bg-linear-to-b p-5 shadow-[0_20px_60px_-30px_rgba(0,0,0,0.65)] md:p-7',
+                )}
+            >
                 <div className='flex items-center gap-4'>
                     <Link href={knowledgebaseBasePath}>
-                        <Button
-                            variant='ghost'
-                            size='icon'
-                            className='border-border/50 hover:bg-card/80 h-9 w-9 rounded-full border'
-                        >
+                        <Button variant='ghost' size='icon' className='h-9 w-9 rounded-full'>
                             <ChevronLeft className='h-4 w-4' />
                         </Button>
                     </Link>
                     <div>
-                        <h1 className='text-foreground text-2xl font-bold tracking-tight'>{category.name}</h1>
+                        <h1 className='text-2xl font-bold tracking-tight md:text-3xl'>{category.name}</h1>
                         {category.description && (
-                            <p className='text-muted-foreground text-sm'>{category.description}</p>
+                            <p className='text-muted-foreground mt-1 text-sm'>{category.description}</p>
                         )}
                     </div>
                 </div>
@@ -144,7 +146,7 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
 
             <WidgetRenderer widgets={getWidgets('dashboard-knowledgebase-category', 'before-articles-list')} />
             {pagination && pagination.total_pages > 1 && (
-                <div className='border-border/50 bg-card/40 flex items-center justify-between gap-4 rounded-xl border px-3.5 py-2.5'>
+                <div className='border-border bg-card/50 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
                     <Button
                         variant='outline'
                         size='sm'
@@ -170,16 +172,18 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
                     </Button>
                 </div>
             )}
-            <div className='bg-card border-border/50 overflow-hidden rounded-xl border shadow-sm'>
-                {articles.length === 0 ? (
-                    <div className='py-24 text-center'>
-                        <div className='bg-primary/10 text-primary mb-6 inline-flex h-16 w-16 items-center justify-center rounded-full font-bold'>
-                            <BookOpen className='h-8 w-8' />
-                        </div>
-                        <h3 className='mb-2 text-xl font-medium'>{t('dashboard.knowledgebase.noArticles')}</h3>
-                        <p className='text-muted-foreground'>{t('dashboard.knowledgebase.no_articles_desc')}</p>
+            {articles.length === 0 ? (
+                <div className='border-border/50 bg-card/10 rounded-xl border border-dashed py-24 text-center'>
+                    <div className='bg-primary/10 mb-6 inline-flex h-16 w-16 items-center justify-center rounded-full'>
+                        <BookOpen className='text-primary h-8 w-8' />
                     </div>
-                ) : (
+                    <h3 className='mb-2 text-xl font-medium'>{t('dashboard.knowledgebase.noArticles')}</h3>
+                    <p className='text-muted-foreground mx-auto max-w-sm'>
+                        {t('dashboard.knowledgebase.no_articles_desc')}
+                    </p>
+                </div>
+            ) : (
+                <div className='bg-card/50 border-border/50 overflow-hidden rounded-xl border backdrop-blur-xl'>
                     <div className='divide-border/50 divide-y'>
                         {articles.map((article) => (
                             <Link
@@ -187,7 +191,7 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
                                 href={`${knowledgebaseBasePath}/article/${article.id}`}
                                 className='block'
                             >
-                                <div className='hover:bg-muted/20 group hover:border-l-primary flex cursor-pointer flex-col justify-between gap-3 border-l-2 border-l-transparent p-4 transition-all duration-200 sm:flex-row sm:items-center'>
+                                <div className='group hover:border-l-primary flex cursor-pointer flex-col justify-between gap-3 border-l-2 border-l-transparent p-4 transition-all duration-200 hover:bg-white/2 sm:flex-row sm:items-center'>
                                     <div className='flex flex-1 items-center gap-4'>
                                         <div className='bg-primary/5 text-primary flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-transform duration-300 group-hover:scale-110'>
                                             {article.icon ? (
@@ -233,38 +237,38 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
                             </Link>
                         ))}
                     </div>
-                )}
 
-                {pagination && pagination.total_pages > 1 && (
-                    <div className='border-border/50 flex items-center justify-between border-t bg-white/1 p-3'>
-                        <p className='text-muted-foreground text-sm'>
-                            {currentPage} / {pagination.total_pages}
-                        </p>
-                        <div className='flex gap-2'>
-                            <Button
-                                variant='outline'
-                                size='sm'
-                                className='border-border/50 h-9'
-                                disabled={!pagination.has_prev}
-                                onClick={() => setCurrentPage((p) => p - 1)}
-                            >
-                                <ChevronLeft className='mr-1 h-4 w-4' />
-                                {t('dashboard.knowledgebase.previous')}
-                            </Button>
-                            <Button
-                                variant='outline'
-                                size='sm'
-                                className='border-border/50 h-9'
-                                disabled={!pagination.has_next}
-                                onClick={() => setCurrentPage((p) => p + 1)}
-                            >
-                                {t('dashboard.knowledgebase.next')}
-                                <ChevronRight className='ml-1 h-4 w-4' />
-                            </Button>
+                    {pagination && pagination.total_pages > 1 && (
+                        <div className='border-border/50 bg-muted/20 flex items-center justify-between border-t p-3'>
+                            <p className='text-muted-foreground text-sm'>
+                                {currentPage} / {pagination.total_pages}
+                            </p>
+                            <div className='flex gap-2'>
+                                <Button
+                                    variant='outline'
+                                    size='sm'
+                                    className='border-border/50 h-9'
+                                    disabled={!pagination.has_prev}
+                                    onClick={() => setCurrentPage((p) => p - 1)}
+                                >
+                                    <ChevronLeft className='mr-1 h-4 w-4' />
+                                    {t('dashboard.knowledgebase.previous')}
+                                </Button>
+                                <Button
+                                    variant='outline'
+                                    size='sm'
+                                    className='border-border/50 h-9'
+                                    disabled={!pagination.has_next}
+                                    onClick={() => setCurrentPage((p) => p + 1)}
+                                >
+                                    {t('dashboard.knowledgebase.next')}
+                                    <ChevronRight className='ml-1 h-4 w-4' />
+                                </Button>
+                            </div>
                         </div>
-                    </div>
-                )}
-            </div>
+                    )}
+                </div>
+            )}
             <WidgetRenderer widgets={getWidgets('dashboard-knowledgebase-category', 'after-articles-list')} />
             <WidgetRenderer widgets={getWidgets('dashboard-knowledgebase-category', 'bottom-of-page')} />
         </div>

@@ -47,10 +47,8 @@ import {
     Search,
     X,
     Send,
-    RefreshCw,
 } from 'lucide-react';
 import { copyToClipboard, cn } from '@/lib/utils';
-import { isDockerUpdateTriggerLikelyStartedError } from '@/lib/is-docker-update-connection-loss';
 
 interface LogData {
     success: boolean;
@@ -112,14 +110,24 @@ function matchesSettingsQuery(
 function SettingFieldRow({
     settingKey,
     currentSetting,
-    formattedName,
     onSettingChange,
+    t,
 }: {
     settingKey: string;
     currentSetting: Setting;
-    formattedName: string;
     onSettingChange: (key: string, value: string | number | boolean) => void;
+    t: (key: string) => string;
 }) {
+    const labelKey = `admin.settings.fields.${settingKey}.label`;
+    const descriptionKey = `admin.settings.fields.${settingKey}.description`;
+
+    const translatedLabel = t(labelKey);
+    const translatedDescription = t(descriptionKey);
+
+    const formattedName =
+        translatedLabel !== labelKey ? translatedLabel : formatSettingName(currentSetting.name, settingKey);
+    const description = translatedDescription !== descriptionKey ? translatedDescription : currentSetting.description;
+
     if (currentSetting.type === 'toggle' || (currentSetting.type as string) === 'boolean') {
         return (
             <div className='border-border/50 bg-card/30 hover:bg-card/50 flex flex-row items-center justify-between gap-4 rounded-2xl border p-4 transition-colors'>
@@ -127,9 +135,7 @@ function SettingFieldRow({
                     <Label htmlFor={settingKey} className='text-base font-medium'>
                         {formattedName}
                     </Label>
-                    <p className='text-muted-foreground max-w-[min(100%,42rem)] text-sm'>
-                        {currentSetting.description}
-                    </p>
+                    <p className='text-muted-foreground max-w-[min(100%,42rem)] text-sm'>{description}</p>
                 </div>
                 <Switch
                     id={settingKey}
@@ -156,7 +162,7 @@ function SettingFieldRow({
                     placeholder={currentSetting.placeholder}
                     className='min-h-30'
                 />
-                <p className='text-muted-foreground text-sm'>{currentSetting.description}</p>
+                <p className='text-muted-foreground text-sm'>{description}</p>
             </div>
         );
     }
@@ -173,11 +179,22 @@ function SettingFieldRow({
                     onChange={(e) => onSettingChange(settingKey, e.target.value)}
                 >
                     {currentSetting.options.map((opt) => {
-                        let label = opt;
-                        if (opt === 'true') label = 'Enabled';
-                        if (opt === 'false') label = 'Disabled';
-                        if (opt === 'hard_limit') label = 'Hard limit (block at max)';
-                        if (opt === 'fifo_rolling') label = 'FIFO rolling (drop oldest)';
+                        const optKey = `admin.settings.fields.${settingKey}.options.${opt}`;
+                        const translated = t(optKey);
+                        let label: string;
+                        if (translated !== optKey) {
+                            label = translated;
+                        } else if (opt === 'true') {
+                            label = 'Enabled';
+                        } else if (opt === 'false') {
+                            label = 'Disabled';
+                        } else if (opt === 'hard_limit') {
+                            label = 'Hard limit (block at max)';
+                        } else if (opt === 'fifo_rolling') {
+                            label = 'FIFO rolling (drop oldest)';
+                        } else {
+                            label = opt;
+                        }
                         return (
                             <option key={opt} value={opt} className='bg-card text-foreground'>
                                 {label}
@@ -185,7 +202,7 @@ function SettingFieldRow({
                         );
                     })}
                 </Select>
-                <p className='text-muted-foreground text-sm'>{currentSetting.description}</p>
+                <p className='text-muted-foreground text-sm'>{description}</p>
             </div>
         );
     }
@@ -202,7 +219,7 @@ function SettingFieldRow({
                 onChange={(e) => onSettingChange(settingKey, e.target.value)}
                 placeholder={currentSetting.placeholder}
             />
-            <p className='text-muted-foreground text-sm'>{currentSetting.description}</p>
+            <p className='text-muted-foreground text-sm'>{description}</p>
         </div>
     );
 }
@@ -212,10 +229,6 @@ export default function SettingsPage() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [sendingTestEmail, setSendingTestEmail] = useState(false);
-    const [updatingDocker, setUpdatingDocker] = useState(false);
-    const [updateInProgress, setUpdateInProgress] = useState(false);
-    const [showUpdateProgressModal, setShowUpdateProgressModal] = useState(false);
-    const [showDockerConfirmModal, setShowDockerConfirmModal] = useState(false);
     const [organizedSettings, setOrganizedSettings] = useState<OrganizedSettings | null>(null);
     const [settings, setSettings] = useState<Record<string, Setting>>({});
     const [initialSettings, setInitialSettings] = useState<Record<string, Setting>>({});
@@ -277,28 +290,10 @@ export default function SettingsPage() {
         if (!raw) return;
         const startedAt = Number(raw);
         if (Number.isFinite(startedAt) && Date.now() - startedAt <= UPDATE_PROGRESS_TTL_MS) {
-            setUpdateInProgress(true);
-            setShowUpdateProgressModal(true);
             return;
         }
         window.localStorage.removeItem(UPDATE_PROGRESS_STORAGE_KEY);
     }, []);
-
-    useEffect(() => {
-        if (!updateInProgress || typeof window === 'undefined') return;
-        const interval = window.setInterval(() => {
-            window.location.reload();
-        }, 10000);
-        return () => window.clearInterval(interval);
-    }, [updateInProgress]);
-
-    useEffect(() => {
-        if (typeof window === 'undefined') return;
-        if (loading || !organizedSettings) return;
-        window.localStorage.removeItem(UPDATE_PROGRESS_STORAGE_KEY);
-        setUpdateInProgress(false);
-        setShowUpdateProgressModal(false);
-    }, [loading, organizedSettings]);
 
     const handleCategoryChange = useCallback(
         (newTab: string) => {
@@ -448,38 +443,6 @@ export default function SettingsPage() {
         }
     };
 
-    const handleDockerUpdate = async () => {
-        if (updatingDocker || updateInProgress) return;
-        setUpdatingDocker(true);
-        try {
-            const response = await adminSettingsApi.triggerDockerUpdate();
-            if (response.success) {
-                if (typeof window !== 'undefined') {
-                    window.localStorage.setItem(UPDATE_PROGRESS_STORAGE_KEY, String(Date.now()));
-                }
-                setUpdateInProgress(true);
-                setShowUpdateProgressModal(true);
-                setShowDockerConfirmModal(false);
-                toast.success(response.message || t('admin.settings.docker_update.success'));
-            } else {
-                toast.error(response.message || t('admin.settings.docker_update.failed'));
-            }
-        } catch (error: unknown) {
-            if (isDockerUpdateTriggerLikelyStartedError(error)) {
-                if (typeof window !== 'undefined') {
-                    window.localStorage.setItem(UPDATE_PROGRESS_STORAGE_KEY, String(Date.now()));
-                }
-                setUpdateInProgress(true);
-                setShowUpdateProgressModal(true);
-                setShowDockerConfirmModal(false);
-                return;
-            }
-            toast.error(t('admin.settings.docker_update.failed'));
-        } finally {
-            setUpdatingDocker(false);
-        }
-    };
-
     const getIconForCategory = (category: string) => {
         switch (category.toLowerCase()) {
             case 'general':
@@ -527,23 +490,6 @@ export default function SettingsPage() {
                             <UploadCloud className='mr-2 h-4 w-4' />
                             {t('admin.settings.actions.upload_logs')}
                         </Button>
-                        <Button
-                            variant='outline'
-                            onClick={() => setShowDockerConfirmModal(true)}
-                            disabled={updatingDocker || updateInProgress}
-                            className='shrink-0'
-                        >
-                            {updatingDocker ? (
-                                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-                            ) : (
-                                <RefreshCw className='mr-2 h-4 w-4' />
-                            )}
-                            {updatingDocker
-                                ? t('admin.settings.docker_update.updating')
-                                : updateInProgress
-                                  ? t('admin.settings.docker_update.in_progress_button')
-                                  : t('admin.settings.docker_update.button')}
-                        </Button>
                         <Button onClick={handleSave} disabled={saving} className='shrink-0'>
                             {saving ? (
                                 <Loader2 className='mr-2 h-4 w-4 animate-spin' />
@@ -583,7 +529,7 @@ export default function SettingsPage() {
                 ) : null}
             </div>
 
-            <div className='block'>
+            <div className='block overflow-visible'>
                 <Tabs
                     value={activeTab || categoryKeys[0]}
                     onValueChange={handleCategoryChange}
@@ -591,7 +537,7 @@ export default function SettingsPage() {
                     className='flex w-full flex-col gap-6 lg:flex-row lg:gap-8'
                 >
                     <aside className='flex min-h-0 w-full shrink-0 flex-col gap-3 lg:w-72'>
-                        <TabsList className='bg-card/30 border-border/50 custom-scrollbar flex h-auto w-full max-w-full flex-row gap-1 overflow-x-auto rounded-2xl border p-2 lg:max-h-[calc(100vh-12rem)] lg:flex-col lg:overflow-x-visible lg:overflow-y-auto'>
+                        <TabsList className='bg-card/30 border-border/50 flex h-auto w-full max-w-full flex-row gap-1 overflow-x-auto rounded-2xl border p-2 lg:max-h-[calc(100vh-12rem)] lg:flex-col lg:overflow-x-visible lg:overflow-y-auto'>
                             {Object.entries(organizedSettings).map(([key, data]) => {
                                 const Icon = getIconForCategory(key);
                                 const matchCount = categoryMatchCounts[key] ?? 0;
@@ -748,17 +694,13 @@ export default function SettingsPage() {
                                                 )}
                                                 {filteredEntries.map(([settingKey, setting]) => {
                                                     const currentSetting = settings[settingKey] || setting;
-                                                    const formattedName = formatSettingName(
-                                                        currentSetting.name,
-                                                        settingKey,
-                                                    );
                                                     return (
                                                         <SettingFieldRow
                                                             key={settingKey}
                                                             settingKey={settingKey}
                                                             currentSetting={currentSetting}
-                                                            formattedName={formattedName}
                                                             onSettingChange={handleSettingChange}
+                                                            t={t}
                                                         />
                                                     );
                                                 })}
@@ -854,48 +796,6 @@ export default function SettingsPage() {
                             )}
                         </div>
                     )}
-                </DialogContent>
-            </Dialog>
-
-            <Dialog
-                open={showUpdateProgressModal}
-                onOpenChange={(open) => {
-                    if (updateInProgress) return;
-                    setShowUpdateProgressModal(open);
-                }}
-            >
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>{t('admin.settings.docker_update.progress_modal.title')}</DialogTitle>
-                        <DialogDescription>
-                            {t('admin.settings.docker_update.progress_modal.description')}
-                        </DialogDescription>
-                    </DialogHeader>
-                </DialogContent>
-            </Dialog>
-
-            <Dialog open={showDockerConfirmModal} onOpenChange={setShowDockerConfirmModal}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>{t('admin.settings.docker_update.confirm_modal.title')}</DialogTitle>
-                        <DialogDescription>
-                            {t('admin.settings.docker_update.confirm_modal.description')}
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className='flex justify-end gap-2 pt-2'>
-                        <Button
-                            variant='outline'
-                            onClick={() => setShowDockerConfirmModal(false)}
-                            disabled={updatingDocker}
-                        >
-                            {t('admin.settings.docker_update.confirm_modal.cancel')}
-                        </Button>
-                        <Button onClick={handleDockerUpdate} disabled={updatingDocker}>
-                            {updatingDocker
-                                ? t('admin.settings.docker_update.updating')
-                                : t('admin.settings.docker_update.confirm_modal.confirm')}
-                        </Button>
-                    </div>
                 </DialogContent>
             </Dialog>
 

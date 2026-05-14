@@ -44,7 +44,9 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
     const isOnVdsPage = pathname?.startsWith('/vds/');
     const isOnAdminPage = pathname?.startsWith('/admin');
     const serverName = isOnServerPage ? serverContext?.server?.name : null;
-    const headerTitle = serverName ?? t('dashboard.title');
+    const isKnowledgeBaseSection = pathname?.startsWith('/dashboard/knowledgebase');
+    const headerTitle =
+        serverName ?? (isKnowledgeBaseSection ? t('dashboard.knowledgebase.title') : t('dashboard.title'));
 
     const userNavigation = [{ name: t('navbar.profile'), href: '/dashboard/account', icon: CircleUser }];
 

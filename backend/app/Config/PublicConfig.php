@@ -101,9 +101,23 @@ class PublicConfig extends ConfigFactory
             ConfigInterface::WEBSITE_URL => '',
             ConfigInterface::STATUS_PAGE_URL => '',
 
-            // Turnstile settings
+            // Captcha settings
+            ConfigInterface::CAPTCHA_PROVIDER => 'turnstile',
             ConfigInterface::TURNSTILE_ENABLED => 'false',
             ConfigInterface::TURNSTILE_KEY_PUB => 'XXXX',
+            ConfigInterface::HCAPTCHA_SITE_KEY => 'XXXX',
+            ConfigInterface::RECAPTCHA_SITE_KEY => 'XXXX',
+            ConfigInterface::RECAPTCHA_VERSION => 'v2',
+            ConfigInterface::RECAPTCHA_V3_MIN_SCORE => '0.5',
+            ConfigInterface::RECAPTCHA_V3_ACTION => 'submit',
+            ConfigInterface::FRIENDLY_CAPTCHA_SITE_KEY => 'XXXX',
+
+            ConfigInterface::REFORGE_CAPTCHA_SITE_KEY => '',
+            ConfigInterface::REFORGE_CAPTCHA_WIDGET_TYPE => 'checkbox',
+            ConfigInterface::REFORGE_CAPTCHA_THEME => 'auto',
+            ConfigInterface::REFORGE_CAPTCHA_SIZE => 'normal',
+            ConfigInterface::REFORGE_CAPTCHA_LANG => '',
+            ConfigInterface::REFORGE_CAPTCHA_MIN_SCORE => '0.5',
 
             // Legal links
             ConfigInterface::LEGAL_TOS => '/tos',
@@ -194,6 +208,7 @@ class PublicConfig extends ConfigFactory
 
             // Demo mode settings
             ConfigInterface::APP_DEMO_YES => 'false',
+            ConfigInterface::EMAIL_LOGIN_ENABLED => 'false',
         ];
     }
 }

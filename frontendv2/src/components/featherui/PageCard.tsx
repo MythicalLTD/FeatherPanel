@@ -81,7 +81,7 @@ export function PageCard({
         <div
             id={id}
             className={cn(
-                'group relative space-y-6 overflow-hidden rounded-3xl border p-8 backdrop-blur-xl transition-all',
+                'group relative space-y-6 overflow-visible rounded-3xl border p-8 backdrop-blur-xl transition-all',
                 styles.bg,
                 styles.border,
                 className,

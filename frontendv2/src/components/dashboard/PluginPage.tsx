@@ -20,6 +20,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSettings } from '@/contexts/SettingsContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { RefreshCw, AlertTriangle, ArrowLeft, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn, isEnabled } from '@/lib/utils';
@@ -27,6 +28,7 @@ import type { PluginSidebarItem } from '@/types/navigation';
 import { usePluginRoutes } from '@/hooks/usePluginRoutes';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { isCloudflareChallengeDocument, withCacheBuster } from '@/lib/cloudflare-challenge';
+import { getPluginIframeThemeOverrideCss } from '@/lib/pluginIframeThemeCss';
 
 interface PluginPageProps {
     context: 'admin' | 'client' | 'server' | 'vds';
@@ -37,13 +39,82 @@ interface PluginPageProps {
 export default function PluginPage({ context, serverUuid, vdsId }: PluginPageProps) {
     const { t } = useTranslation();
     const { settings } = useSettings();
+    const { theme } = useTheme();
     const pathname = usePathname();
     const router = useRouter();
     const iframeRef = useRef<HTMLIFrameElement>(null);
     const challengeRetryCountRef = useRef(0);
     const challengeRetryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const iframeReadyRef = useRef(false);
 
     const pluginData = usePluginRoutes();
+
+    const injectThemeStyles = () => {
+        if (!iframeRef.current) return;
+
+        try {
+            const iframe = iframeRef.current;
+            const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+
+            if (!iframeDoc) return;
+
+            // Remove existing theme styles
+            const existingStyle = iframeDoc.getElementById('featherpanel-theme-override');
+            if (existingStyle) {
+                existingStyle.remove();
+            }
+
+            // `data-fp-theme` + postMessage / `__theme=` for plugin JS.
+            // Light: `html.light` + color-scheme (see getPluginIframeThemeOverrideCss).
+            // Dark: `html.dark` so shadcn/Tailwind flip semantic colors (otherwise
+            // light-mode --foreground stays dark and you get unreadable text on a
+            // transparent body over the panel). Shell transparency is enforced in
+            // injected CSS so the panel backdrop still shows through.
+            const root = iframeDoc.documentElement;
+            root.setAttribute('data-fp-theme', theme);
+            if (theme === 'light') {
+                root.classList.add('light');
+                root.classList.remove('dark');
+            } else {
+                root.classList.add('dark');
+                root.classList.remove('light');
+            }
+
+            const style = iframeDoc.createElement('style');
+            style.id = 'featherpanel-theme-override';
+            style.textContent = getPluginIframeThemeOverrideCss(theme);
+            if (iframeDoc.head) {
+                iframeDoc.head.appendChild(style);
+            }
+        } catch (err) {
+            console.debug('Could not inject theme into iframe (cross-origin limitation):', err);
+        }
+    };
+
+    // Send theme to iframe via postMessage when it changes and inject styles
+    useEffect(() => {
+        if (iframeRef.current?.contentWindow && iframeReadyRef.current) {
+            iframeRef.current.contentWindow.postMessage({ type: 'featherpanel-theme', theme }, '*');
+            injectThemeStyles();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [theme]);
+
+    // Also listen for plugin ready signal
+    useEffect(() => {
+        const handleMessage = (event: MessageEvent) => {
+            if (event.data?.type === 'featherpanel-ready') {
+                iframeReadyRef.current = true;
+                // Send current theme when plugin signals it's ready
+                if (iframeRef.current?.contentWindow) {
+                    iframeRef.current.contentWindow.postMessage({ type: 'featherpanel-theme', theme }, '*');
+                }
+            }
+        };
+
+        window.addEventListener('message', handleMessage);
+        return () => window.removeEventListener('message', handleMessage);
+    }, [theme]);
 
     const { server } = useServerPermissions(serverUuid || '');
     const serverSpellId = server?.spell_id || null;
@@ -172,7 +243,10 @@ export default function PluginPage({ context, serverUuid, vdsId }: PluginPagePro
                         }
                     }
 
-                    setIframeSrc(componentUrl);
+                    // Add theme as URL parameter for immediate access on load
+                    const themeSeparator = componentUrl.includes('?') ? '&' : '?';
+                    const urlWithTheme = `${componentUrl}${themeSeparator}__theme=${theme}`;
+                    setIframeSrc(urlWithTheme);
                 } else {
                     setError(t('errors.plugin.not_found'));
                 }
@@ -185,7 +259,7 @@ export default function PluginPage({ context, serverUuid, vdsId }: PluginPagePro
         };
 
         processPluginData();
-    }, [pathname, context, serverUuid, vdsId, t, pluginData, serverSpellId]);
+    }, [pathname, context, serverUuid, vdsId, t, pluginData, serverSpellId, theme]);
 
     const injectScrollbarStyles = () => {
         if (!iframeRef.current) return;
@@ -256,7 +330,18 @@ export default function PluginPage({ context, serverUuid, vdsId }: PluginPagePro
         challengeRetryCountRef.current = 0;
         setIframeError(null);
         setIframeLoading(false);
-        setTimeout(injectScrollbarStyles, 100);
+        iframeReadyRef.current = true;
+
+        // Send current theme to iframe on load
+        if (iframeRef.current?.contentWindow) {
+            iframeRef.current.contentWindow.postMessage({ type: 'featherpanel-theme', theme }, '*');
+        }
+
+        // Inject theme styles directly
+        setTimeout(() => {
+            injectScrollbarStyles();
+            injectThemeStyles();
+        }, 100);
     };
 
     const onIframeError = () => {
@@ -385,14 +470,17 @@ export default function PluginPage({ context, serverUuid, vdsId }: PluginPagePro
 
             {iframeSrc && (
                 <iframe
+                    key={`${iframeSrc}-${theme}`}
                     ref={iframeRef}
                     src={iframeSrc}
                     className={cn(
                         'h-full w-full border-0 transition-all duration-500',
                         iframeLoading ? 'scale-95 opacity-0' : 'scale-100 opacity-100',
                     )}
+                    style={{ background: 'transparent' }}
                     onLoad={onIframeLoad}
                     onError={onIframeError}
+                    {...{ allowtransparency: 'true' }}
                 />
             )}
         </div>

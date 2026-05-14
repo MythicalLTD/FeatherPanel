@@ -98,11 +98,11 @@ export default function VerifyTwoFactorForm() {
         <div className='space-y-6'>
             <WidgetRenderer widgets={getWidgets('auth-verify-2fa', 'auth-verify-2fa-top')} />
 
-            <div className='space-y-3 text-center'>
-                <div className='bg-primary/10 mb-2 inline-flex h-16 w-16 items-center justify-center rounded-2xl'>
-                    <ShieldCheck className='text-primary h-8 w-8' />
+            <div className='space-y-2 text-center'>
+                <div className='bg-primary/10 mb-1 inline-flex h-12 w-12 items-center justify-center rounded-xl'>
+                    <ShieldCheck className='text-primary h-6 w-6' />
                 </div>
-                <h2 className='text-2xl font-bold tracking-tight'>{t('auth.verify_2fa.title')}</h2>
+                <h2 className='text-xl font-bold tracking-tight'>{t('auth.verify_2fa.title')}</h2>
                 <p className='text-muted-foreground text-sm'>{t('auth.verify_2fa.subtitle')}</p>
             </div>
 

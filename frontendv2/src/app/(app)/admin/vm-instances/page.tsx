@@ -47,6 +47,7 @@ import {
     HelpCircle,
     Layers,
     X,
+    UserPlus,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -469,6 +470,7 @@ export default function VmInstancesPage() {
                             const cpus = (inst.plan_cpus ?? 1) * (inst.plan_cores ?? 1);
                             const disk = inst.plan_disk ?? 0;
                             const ip = inst.ip_pool_address ?? inst.ip_address ?? null;
+                            const isUnassigned = !inst.user_uuid;
                             return (
                                 <ResourceCard
                                     key={inst.id}
@@ -529,6 +531,21 @@ export default function VmInstancesPage() {
                                             >
                                                 <Eye className='h-4 w-4' />
                                             </Button>
+                                            {isUnassigned && (
+                                                <Button
+                                                    size='sm'
+                                                    variant='ghost'
+                                                    className='text-primary hover:text-primary hover:bg-primary/10'
+                                                    onClick={() =>
+                                                        router.push(
+                                                            `/admin/vm-instances/${inst.id}/edit?tab=details&assign=1`,
+                                                        )
+                                                    }
+                                                    title={t('admin.vmInstances.assign_owner') ?? 'Assign owner'}
+                                                >
+                                                    <UserPlus className='h-4 w-4' />
+                                                </Button>
+                                            )}
                                             <Button
                                                 size='sm'
                                                 variant='ghost'

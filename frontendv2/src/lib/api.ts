@@ -16,6 +16,9 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import axios, { AxiosError, AxiosInstance } from 'axios';
 import { isCloudflareChallengeResponseData, triggerCloudflareRecovery } from '@/lib/cloudflare-challenge';
 
+// Same-origin panel API calls must include cookies (session). Default axios does not.
+axios.defaults.withCredentials = true;
+
 // API base configuration
 const api = axios.create({
     baseURL: '/api',
@@ -78,7 +81,7 @@ const attachCommonResponseInterceptor = (client: AxiosInstance) => {
             const shouldForceLogout =
                 errorCode === 'INVALID_ACCOUNT_TOKEN' ||
                 errorCode === 'USER_BANNED' ||
-                (status === 401 && (isSessionEndpoint || isAuthEndpoint));
+                (status === 401 && (isSessionEndpoint || isAuthEndpoint) && errorCode !== 'TWO_FACTOR_REQUIRED');
 
             if (shouldForceLogout) {
                 handleAuthStateFailure();

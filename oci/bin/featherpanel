@@ -1,0 +1,4 @@
+#!/bin/bash
+set -e
+cd /var/www/html || exit 1
+exec php cli "$@"

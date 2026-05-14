@@ -26,7 +26,7 @@ import { Input } from '@/components/featherui/Input';
 import { Textarea } from '@/components/featherui/Textarea';
 import axios from 'axios';
 import { toast } from 'sonner';
-import Turnstile from 'react-turnstile';
+import { Captcha } from '@/components/Captcha';
 import { Switch } from '@/components/ui/switch';
 import { cn, isEnabled } from '@/lib/utils';
 import { getAnalyticsCookie, setAnalyticsCookie } from '@/lib/analytics-cookie';
@@ -379,15 +379,12 @@ export default function ProfileTab() {
                 </Fieldset>
 
                 <div className='border-border space-y-4 border-t pt-4'>
-                    {isEnabled(settings?.turnstile_enabled) && settings?.turnstile_key_pub && (
-                        <div className='flex justify-start'>
-                            <Turnstile
-                                key={turnstileKey}
-                                sitekey={settings.turnstile_key_pub}
-                                onVerify={(token) => setTurnstileToken(token)}
-                            />
-                        </div>
-                    )}
+                    <Captcha
+                        refreshKey={turnstileKey}
+                        onVerify={(token) => setTurnstileToken(token)}
+                        onExpire={() => setTurnstileToken('')}
+                        onError={() => setTurnstileToken('')}
+                    />
 
                     <div className='flex gap-3'>
                         <Button type='submit' disabled={isSubmitting || isUploadingAvatar} className='min-w-[120px]'>

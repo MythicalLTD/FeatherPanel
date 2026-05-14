@@ -736,7 +736,7 @@ class MailTemplatesController
 
             $queueId = MailQueue::create($queueData);
 
-            if ($queueId) {
+            if (is_int($queueId) && $queueId > 0) {
                 // Create mail list entry
                 $listData = [
                     'queue_id' => $queueId,
@@ -750,7 +750,7 @@ class MailTemplatesController
                 } else {
                     ++$failedCount;
                 }
-            } else {
+            } elseif ($queueId === false) {
                 ++$failedCount;
             }
         }
@@ -879,7 +879,10 @@ class MailTemplatesController
 
         $queueId = MailQueue::create($queueData);
 
-        if (!$queueId) {
+        if ($queueId === true) {
+            return ApiResponse::error('SMTP disabled — skipping enqueue/send', 'SMTP_DISABLED', 400);
+        }
+        if ($queueId === false) {
             return ApiResponse::error('Failed to queue test email', 'FAILED_TO_QUEUE_EMAIL', 500);
         }
 

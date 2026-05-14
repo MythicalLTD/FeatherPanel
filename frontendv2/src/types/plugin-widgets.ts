@@ -102,6 +102,8 @@ export interface PluginWidget {
     behavior?: PluginWidgetBehaviorConfig | null;
     iframe?: PluginWidgetIframeConfig | null;
     classes?: PluginWidgetClassConfig | null;
+    /** When true, skip Card wrapper (same visual as useRawRendering; preferred name in widgets.json). */
+    borderless?: boolean;
     useRawRendering: boolean;
 }
 

@@ -159,6 +159,8 @@ export default function DashboardPage() {
     const { user } = useSession();
     const [allServers, setAllServers] = useState<ServerData[]>([]);
     const [vms, setVms] = useState<VmInstance[]>([]);
+    const [serverTotal, setServerTotal] = useState(0);
+    const [vmTotal, setVmTotal] = useState(0);
     const [activities, setActivities] = useState<Activity[]>([]);
     const [loadingServers, setLoadingServers] = useState(true);
     const [loadingVms, setLoadingVms] = useState(true);
@@ -240,6 +242,11 @@ export default function DashboardPage() {
                 }
 
                 setAllServers(orderedServers);
+                setServerTotal(
+                    typeof serversResponse.pagination?.total_records === 'number'
+                        ? serversResponse.pagination.total_records
+                        : serversArray.length,
+                );
             } catch (err) {
                 console.error('Failed to fetch servers', err);
             } finally {
@@ -249,8 +256,16 @@ export default function DashboardPage() {
             // Fetch VMs
             try {
                 const vmsResponse = await vmsApi.getVms(1, 50);
-                if (vmsResponse.data?.instances) {
-                    setVms(vmsResponse.data.instances.slice(0, 5));
+                const instances = vmsResponse.data?.instances;
+                if (Array.isArray(instances)) {
+                    setVms(instances.slice(0, 5));
+                    setVmTotal(
+                        typeof vmsResponse.data?.pagination?.total_records === 'number'
+                            ? vmsResponse.data.pagination.total_records
+                            : instances.length,
+                    );
+                } else {
+                    setVmTotal(0);
                 }
             } catch (err) {
                 console.error('Failed to fetch VMs', err);
@@ -341,50 +356,50 @@ export default function DashboardPage() {
         activity: 'dashboard.layout.block_labels.activity',
     };
 
+    useEffect(() => {
+        if (loadingServers || loadingVms) {
+            return;
+        }
+        if (serverTotal > 0 && vmTotal > 0) {
+            return;
+        }
+        setResourceFilter('all');
+    }, [loadingServers, loadingVms, serverTotal, vmTotal]);
+
     const blockLabel = (id: DashboardBlockId) => t(BLOCK_LABEL_KEYS[id]);
+
+    const showResourceFilterTabs = !loadingServers && !loadingVms && serverTotal > 0 && vmTotal > 0;
 
     const resourcesSection = (
         <div className='space-y-6'>
             <WidgetRenderer widgets={getWidgets('dashboard', 'before-server-list')} />
-            <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4'>
-                <div className='flex min-w-0 items-center justify-between gap-3'>
-                    <h2 className='truncate text-lg font-bold sm:text-xl'>{t('dashboard.resources.title')}</h2>
-                    <Link
-                        href={
-                            resourceFilter === 'all'
-                                ? '/dashboard/servers'
-                                : resourceFilter === 'servers'
-                                  ? '/dashboard/servers'
-                                  : '/dashboard/vms'
-                        }
-                        className='text-primary hover:text-primary/80 shrink-0 text-xs font-medium whitespace-nowrap transition-colors sm:text-sm'
-                    >
-                        {t('dashboard.resources.view_all')} &rarr;
-                    </Link>
-                </div>
-                <div className='-mx-0.5 w-full min-w-0 overflow-x-auto overscroll-x-contain px-0.5 pb-0.5 sm:mx-0 sm:w-auto sm:overflow-visible sm:px-0'>
-                    <div className='bg-background/30 border-border/50 inline-flex w-max max-w-full items-center gap-0.5 rounded-lg border p-1 sm:flex sm:w-auto'>
-                        {(['all', 'servers', 'vds'] as const).map((filter) => (
-                            <button
-                                key={filter}
-                                type='button'
-                                onClick={() => setResourceFilter(filter)}
-                                className={cn(
-                                    'shrink-0 rounded-md px-3 py-2 text-xs font-medium whitespace-nowrap transition-all sm:px-4 sm:text-sm',
-                                    resourceFilter === filter
-                                        ? 'bg-primary text-primary-foreground shadow-md'
-                                        : 'text-muted-foreground hover:text-foreground hover:bg-background/50',
-                                )}
-                            >
-                                {filter === 'all'
-                                    ? t('dashboard.resources.filter_all')
-                                    : filter === 'servers'
-                                      ? t('dashboard.resources.filter_servers')
-                                      : t('dashboard.resources.filter_vms')}
-                            </button>
-                        ))}
+            <div className='space-y-3'>
+                <h2 className='truncate text-lg font-bold sm:text-xl'>{t('dashboard.resources.title')}</h2>
+                {showResourceFilterTabs ? (
+                    <div className='-mx-0.5 w-full min-w-0 overflow-x-auto overscroll-x-contain px-0.5 pb-0.5 sm:mx-0 sm:w-auto sm:overflow-visible sm:px-0'>
+                        <div className='bg-background/30 border-border/50 inline-flex w-max max-w-full items-center gap-0.5 rounded-lg border p-1 sm:flex sm:w-auto'>
+                            {(['all', 'servers', 'vds'] as const).map((filter) => (
+                                <button
+                                    key={filter}
+                                    type='button'
+                                    onClick={() => setResourceFilter(filter)}
+                                    className={cn(
+                                        'shrink-0 rounded-md px-3 py-2 text-xs font-medium whitespace-nowrap transition-all sm:px-4 sm:text-sm',
+                                        resourceFilter === filter
+                                            ? 'bg-primary text-primary-foreground shadow-md'
+                                            : 'text-muted-foreground hover:text-foreground hover:bg-background/50',
+                                    )}
+                                >
+                                    {filter === 'all'
+                                        ? t('dashboard.resources.filter_all')
+                                        : filter === 'servers'
+                                          ? t('dashboard.resources.filter_servers')
+                                          : t('dashboard.resources.filter_vms')}
+                                </button>
+                            ))}
+                        </div>
                     </div>
-                </div>
+                ) : null}
             </div>
 
             {loadingServers || loadingVms ? (
