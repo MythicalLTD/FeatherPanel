@@ -4,7 +4,7 @@ set -euo pipefail
 
 PANEL_DIR="${PANEL_DIR:-/var/www/featherpanel}"
 PANEL_GIT_REF_TYPE="${PANEL_GIT_REF_TYPE:-branch}"
-PANEL_GIT_REF="${PANEL_GIT_REF:-main}"
+PANEL_GIT_REF="${PANEL_GIT_REF:-develop}"
 BACKEND_DIR="${BACKEND_DIR:-${PANEL_DIR}/backend}"
 FRONTEND_DIR="${FRONTEND_DIR:-${PANEL_DIR}/frontendv2}"
 RUNNER_DIR="${RUNNER_DIR:-${PANEL_DIR}/runner}"

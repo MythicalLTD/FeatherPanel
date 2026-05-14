@@ -94,15 +94,15 @@ while [[ $# -gt 0 ]]; do
 		echo "  --skip-system-update   Skip apt update and essential package installation"
 		echo "  --refresh-docker-updater-only  Rewrite /etc/featherpanel host updater scripts only (no full install)"
 		echo "  --dev                  Use latest dev release images"
-		echo "  --dev-branch BRANCH    Use dev images for specific branch (e.g., main, develop)"
+		echo "  --dev-branch BRANCH    Use dev images for specific branch (e.g., develop, main)"
 		echo "  --dev-sha SHA          Use dev images for specific commit SHA (requires --dev-branch)"
 		echo "  --config, -c           Open configuration manager"
 		echo "  --help, -h             Show this help message"
 		echo ""
 		echo "Dev Release Examples:"
 		echo "  $0 --dev                           # Latest dev release"
-		echo "  $0 --dev-branch main                # Dev images from main branch"
-		echo "  $0 --dev-branch main --dev-sha abc1234  # Specific commit from main branch"
+		echo "  $0 --dev-branch develop                # Dev images from develop branch"
+		echo "  $0 --dev-branch develop --dev-sha abc1234  # Specific commit from develop branch"
 		echo ""
 		echo "Warning: Using --skip-os-check, --force-arm, --skip-install-check, --skip-virt-check, or --skip-system-update"
 		echo "may result in unsupported configurations. Use at your own risk."
@@ -331,7 +331,7 @@ AUTO_UPDATE_SCHEDULE="daily"
 
 # Development branch settings
 PREFER_DEV=no
-DEV_BRANCH="main"
+DEV_BRANCH="develop"
 
 # Custom panel port setting (0 = use default 4831)
 PANEL_PORT=0
@@ -479,14 +479,14 @@ refresh_host_updater_scripts() {
 	local log_file="/var/www/featherpanel/install.log"
 	local installer="/var/www/featherpanel/installer/install.bash"
 	local cache_dir="/var/www/featherpanel/.featherpanel-installer-cache"
-	local tmp branch="main"
+	local tmp branch="develop"
 
 	mkdir -p /var/www/featherpanel "$cache_dir" || true
 	touch "$log_file" 2>/dev/null || true
 
 	if grep -q 'featherpanel-backend:dev-' /var/www/featherpanel/docker-compose.yml 2>/dev/null; then
 		branch=$(grep -m1 'featherpanel-backend:dev-' /var/www/featherpanel/docker-compose.yml | sed -n 's/.*featherpanel-backend:dev-\([^-]*\).*/\1/p' || true)
-		[ -z "$branch" ] && branch="main"
+		[ -z "$branch" ] && branch="develop"
 	fi
 
 	tmp="${cache_dir}/install.bash.tmp.$$"
@@ -504,7 +504,7 @@ refresh_host_updater_scripts() {
 }
 
 refresh_compose_from_upstream() {
-	local branch="main"
+	local branch="develop"
 	local upstream_name="docker-compose.yml"
 
 	# Match installer get_compose_file_url: dev stacks use docker-compose.v2.dev.yml from GitHub.
@@ -512,7 +512,7 @@ refresh_compose_from_upstream() {
 		upstream_name="docker-compose.v2.dev.yml"
 		if grep -q 'featherpanel-backend:dev-' "$COMPOSE_FILE" 2>/dev/null; then
 			branch=$(grep -m1 'featherpanel-backend:dev-' "$COMPOSE_FILE" | sed -n 's/.*featherpanel-backend:dev-\([^-]*\).*/\1/p' || true)
-			[ -z "$branch" ] && branch="main"
+			[ -z "$branch" ] && branch="develop"
 		fi
 	fi
 
@@ -919,17 +919,17 @@ configure_dev_branch() {
 	case $choice in
 	1)
 		PREFER_DEV="no"
-		DEV_BRANCH="main"
+		DEV_BRANCH="develop"
 		log_success "Set to use stable releases"
 		;;
 	2)
 		PREFER_DEV="yes"
-		DEV_BRANCH="main"
-		log_success "Set to always use development builds from main"
+		DEV_BRANCH="develop"
+		log_success "Set to always use development builds from develop"
 		;;
 	3)
 		echo ""
-		prompt "Enter branch name (main, develop, etc.): " DEV_BRANCH
+		prompt "Enter branch name (develop, main, etc.): " DEV_BRANCH
 		if [ -n "$DEV_BRANCH" ]; then
 			PREFER_DEV="yes"
 			log_success "Set to use branch: $DEV_BRANCH"
@@ -1390,14 +1390,14 @@ select_source_release_mode() {
 			;;
 		2)
 			USE_DEV=true
-			DEV_BRANCH="main"
-			log_info "Development build from main branch selected"
+			DEV_BRANCH="develop"
+			log_info "Development build from develop branch selected"
 			;;
 		3)
 			USE_DEV=true
-			prompt "${BOLD}Branch name${NC} ${BLUE}(e.g., main, develop)${NC}: " DEV_BRANCH
+			prompt "${BOLD}Branch name${NC} ${BLUE}(e.g., develop, main)${NC}: " DEV_BRANCH
 			if [ -z "$DEV_BRANCH" ]; then
-				DEV_BRANCH="main"
+				DEV_BRANCH="develop"
 			fi
 			log_info "Custom dev branch selected: $DEV_BRANCH"
 			;;
@@ -1425,7 +1425,7 @@ set_source_target_ref_env() {
 	local latest_tag=""
 	if [ "${USE_DEV:-false}" = "true" ]; then
 		export PANEL_GIT_REF_TYPE="branch"
-		export PANEL_GIT_REF="${DEV_BRANCH:-main}"
+		export PANEL_GIT_REF="${DEV_BRANCH:-develop}"
 	else
 		latest_tag="$(get_latest_panel_release_tag)"
 		if [ -z "$latest_tag" ]; then
@@ -2063,9 +2063,9 @@ show_release_type_menu() {
 	echo -e "     ${BLUE}→ Latest stable, tested release${NC}"
 	echo -e "     ${BLUE}→ Best for production environments${NC}"
 	echo ""
-	echo -e "  ${YELLOW}[2]${NC} ${BOLD}Development Build${NC} ${BLUE}(Latest from main branch)${NC}"
+	echo -e "  ${YELLOW}[2]${NC} ${BOLD}Development Build${NC} ${BLUE}(Latest from develop branch)${NC}"
 	echo -e "     ${YELLOW}⚠️  May be unstable - for testing only${NC}"
-	echo -e "     ${BLUE}→ Latest development build from main branch${NC}"
+	echo -e "     ${BLUE}→ Latest development build from develop branch${NC}"
 	echo -e "     ${BLUE}→ Includes newest features and fixes${NC}"
 	echo ""
 	echo -e "  ${CYAN}[3]${NC} ${BOLD}Development Build (Custom)${NC} ${BLUE}(Specific branch/commit)${NC}"
@@ -6850,18 +6850,18 @@ if [ -f /etc/os-release ]; then
 				if [ "$update_choice" = "1" ]; then
 					USE_DEV=true
 					# Try to detect current branch from compose file
-					if grep -q "featherpanel-backend:dev-main" /var/www/featherpanel/docker-compose.yml 2>/dev/null; then
-						DEV_BRANCH="main"
+					if grep -q "featherpanel-backend:dev-develop" /var/www/featherpanel/docker-compose.yml 2>/dev/null; then
+						DEV_BRANCH="develop"
 					elif grep -q "featherpanel-backend:dev-" /var/www/featherpanel/docker-compose.yml 2>/dev/null; then
 						# Extract branch from tag
 						EXTRACTED_BRANCH=$(grep "featherpanel-backend:dev-" /var/www/featherpanel/docker-compose.yml | sed -n 's/.*featherpanel-backend:dev-\([^-]*\).*/\1/p' | head -1)
 						if [ -n "$EXTRACTED_BRANCH" ]; then
 							DEV_BRANCH="$EXTRACTED_BRANCH"
 						else
-							DEV_BRANCH="main"
+							DEV_BRANCH="develop"
 						fi
 					else
-						DEV_BRANCH="main"
+						DEV_BRANCH="develop"
 					fi
 					log_info "Staying on development builds (branch: $DEV_BRANCH)"
 				else
@@ -6887,7 +6887,7 @@ if [ -f /etc/os-release ]; then
 
 				echo -e "${BOLD}What would you like to do?${NC}"
 				echo -e "  ${GREEN}[1]${NC} ${BOLD}Update to Latest Stable Release${NC} ${BLUE}(Recommended)${NC}"
-				echo -e "  ${YELLOW}[2]${NC} ${BOLD}Switch to Development Build${NC} ${BLUE}(Latest from main branch)${NC}"
+				echo -e "  ${YELLOW}[2]${NC} ${BOLD}Switch to Development Build${NC} ${BLUE}(Latest from develop branch)${NC}"
 				echo -e "  ${CYAN}[3]${NC} ${BOLD}Switch to Custom Development Build${NC} ${BLUE}(Specific branch/commit)${NC}"
 				draw_hr
 
@@ -6895,7 +6895,7 @@ if [ -f /etc/os-release ]; then
 				update_choice=""
 				if [ "$PREFER_DEV" = "yes" ] && [ -z "$DEV_BRANCH" ]; then
 					update_choice="2"
-					DEV_BRANCH="main"
+					DEV_BRANCH="develop"
 					log_info "Auto-selecting development build based on configuration preference"
 				elif [ "$PREFER_DEV" = "yes" ] && [ -n "$DEV_BRANCH" ]; then
 					update_choice="3"
@@ -6917,8 +6917,8 @@ if [ -f /etc/os-release ]; then
 					;;
 				2)
 					USE_DEV=true
-					DEV_BRANCH="main"
-					log_info "Switching to development build from main branch"
+					DEV_BRANCH="develop"
+					log_info "Switching to development build from develop branch"
 					;;
 				3)
 					USE_DEV=true
@@ -6928,10 +6928,10 @@ if [ -f /etc/os-release ]; then
 					echo -e "${BOLD}${CYAN}Custom Development Build${NC}"
 					draw_hr
 					echo ""
-					echo -e "${BLUE}Enter the branch name (default: main)${NC}"
-					prompt "${BOLD}Branch name${NC} ${BLUE}(e.g., main, develop)${NC}: " DEV_BRANCH
+					echo -e "${BLUE}Enter the branch name (default: develop)${NC}"
+					prompt "${BOLD}Branch name${NC} ${BLUE}(e.g., develop, main)${NC}: " DEV_BRANCH
 					if [ -z "$DEV_BRANCH" ]; then
-						DEV_BRANCH="main"
+						DEV_BRANCH="develop"
 					fi
 
 					echo ""

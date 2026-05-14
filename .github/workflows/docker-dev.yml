@@ -3,12 +3,11 @@ name: Docker Build & Publish (Dev)
 on:
   push:
     branches:
-      - main
       - develop
   workflow_dispatch:
     inputs:
       branch:
-        description: "Branch to build (e.g., main, develop). Defaults to current branch."
+        description: "Branch to build (e.g., develop, main). Defaults to current branch."
         required: false
         type: string
 
