@@ -1,7 +1,7 @@
 # FeatherPanel All-in-One OCI Dockerfile
 # Combines: MariaDB, Redis, PHP Backend, Next.js Frontend, Rust Async Runner
 # Usage: docker build -f Dockerfile.oci -t featherpanel-oci .
-#        docker run -p 80:80 -v featherpanel_data:/data featherpanel-oci
+#        docker run -p 80:80 -v featherpanel_data:/home/container/data featherpanel-oci
 
 FROM node:22-bookworm AS frontend-builder
 
@@ -78,18 +78,18 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 # ============================================================================
 # Setup MariaDB
-RUN mkdir -p /var/run/mysqld /var/lib/mysql /data/mysql /data/mysql/run \
-    && chown -R mysql:mysql /var/run/mysqld /var/lib/mysql /data/mysql \
-    && chmod -R 777 /data/mysql
+RUN mkdir -p /var/run/mysqld /var/lib/mysql /home/container/data/mysql /home/container/data/mysql/run \
+    && chown -R mysql:mysql /var/run/mysqld /var/lib/mysql /home/container/data/mysql \
+    && chmod -R 777 /var/run/mysqld /home/container/data/mysql
 
 # Create MySQL init directory (init scripts are generated at runtime if needed)
 RUN mkdir -p /docker-entrypoint-initdb.d/
 
 # ============================================================================
 # Setup Redis
-RUN mkdir -p /var/run/redis /data/redis \
-    && chown redis:redis /var/run/redis /data/redis \
-    && chmod -R 777 /data/redis
+RUN mkdir -p /var/run/redis /home/container/data/redis \
+    && chown redis:redis /var/run/redis /home/container/data/redis \
+    && chmod -R 777 /home/container/data/redis
 
 # ============================================================================
 # Setup Backend
@@ -178,7 +178,7 @@ set -e
 # Ensure storage directories exist
 mkdir -p /var/www/html/storage/{logs,cache,uploads,temp,config,backups,addons}
 mkdir -p /var/www/html/public/{attachments,translations,addons,components}
-mkdir -p /data/{mysql,redis,uploads,backups,config,logs}
+mkdir -p /home/container/data/{mysql,redis,uploads,backups,config,logs}
 
 # Setup .env file
 ENV_FILE="/var/www/html/storage/config/.env"
@@ -231,7 +231,7 @@ ENVFILE
 
 # Ensure data directories are writable when running as non-root
 ensure_data_dirs() {
-    local dirs="/data /data/mysql /data/redis /data/uploads /data/backups /data/config /data/logs /data/attachments /data/translations /data/addons /data/mysql/run"
+    local dirs="/home/container/data /home/container/data/mysql /home/container/data/redis /home/container/data/uploads /home/container/data/backups /home/container/data/config /home/container/data/logs /home/container/data/attachments /home/container/data/translations /home/container/data/addons /home/container/data/mysql/run"
     for dir in $dirs; do
         if [ -d "$dir" ]; then
             chmod 777 "$dir" 2>/dev/null || true
@@ -512,13 +512,13 @@ export OCI_RUN_AS_ROOT=$RUN_AS_ROOT
 
 MYSQL_BOOT_SOCK="/var/run/mysqld/mysqld.sock"
 if [ "$RUN_AS_ROOT" -eq 0 ]; then
-    # Ensure /data/mysql exists and is writable by any user (for non-root execution)
-    if [ -d "/data/mysql" ]; then
-        chmod 777 /data/mysql 2>/dev/null || true
+    # Ensure /home/container/data/mysql exists and is writable by any user (for non-root execution)
+    if [ -d "/home/container/data/mysql" ]; then
+        chmod 777 /home/container/data/mysql 2>/dev/null || true
     fi
-    mkdir -p /data/mysql/run 2>/dev/null || { echo "ERROR: Cannot create /data/mysql/run - check volume permissions"; exit 1; }
-    chmod 777 /data/mysql/run 2>/dev/null || true
-    MYSQL_BOOT_SOCK="/data/mysql/run/mysqld.sock"
+    mkdir -p /home/container/data/mysql/run 2>/dev/null || { echo "ERROR: Cannot create /home/container/data/mysql/run - check volume permissions"; exit 1; }
+    chmod 777 /home/container/data/mysql/run 2>/dev/null || true
+    MYSQL_BOOT_SOCK="/home/container/data/mysql/run/mysqld.sock"
 fi
 
 # Generate encryption key for database
@@ -528,7 +528,7 @@ generate_encryption_key() {
 
 # Create .env file if it doesn't exist
 setup_env_file() {
-    local env_file="/data/config/.env"
+    local env_file="/home/container/data/config/.env"
     local encryption_key
 
     if [ ! -f "$env_file" ]; then
@@ -593,21 +593,21 @@ create_first_admin() {
 }
 
 # Initialize MariaDB data directory if empty
-if [ ! -d "/data/mysql/mysql" ]; then
+if [ ! -d "/home/container/data/mysql/mysql" ]; then
     echo "Initializing MariaDB data directory..."
     if [ "$RUN_AS_ROOT" -eq 1 ]; then
-        mysql_install_db --user=mysql --datadir=/data/mysql --rpm
-        chown -R mysql:mysql /data/mysql
+        mysql_install_db --user=mysql --datadir=/home/container/data/mysql --rpm
+        chown -R mysql:mysql /home/container/data/mysql
     else
-        mysql_install_db --datadir=/data/mysql --rpm 2>/dev/null || mariadb-install-db --datadir=/data/mysql --skip-test-db
+        mysql_install_db --datadir=/home/container/data/mysql --rpm 2>/dev/null || mariadb-install-db --datadir=/home/container/data/mysql --skip-test-db
     fi
 fi
 
 # Start MariaDB temporarily for init
 if [ "$RUN_AS_ROOT" -eq 1 ]; then
-    mysqld_safe --datadir=/data/mysql --skip-networking &
+    mysqld_safe --datadir=/home/container/data/mysql --skip-networking &
 else
-    mariadbd --datadir=/data/mysql --skip-networking --socket="$MYSQL_BOOT_SOCK" &
+    mariadbd --datadir=/home/container/data/mysql --skip-networking --socket="$MYSQL_BOOT_SOCK" &
 fi
 MYSQL_PID=$!
 
@@ -638,24 +638,24 @@ sleep 2
 echo "MariaDB initialized!"
 
 # Ensure all data directories exist
-mkdir -p /data/{mysql,redis,uploads,backups,config,logs,attachments,translations,addons}
-chmod -R 777 /data/{mysql,redis,uploads,backups,config,logs,attachments,translations,addons}
+mkdir -p /home/container/data/{mysql,redis,uploads,backups,config,logs,attachments,translations,addons}
+chmod -R 777 /home/container/data/{mysql,redis,uploads,backups,config,logs,attachments,translations,addons}
 if [ "$RUN_AS_ROOT" -eq 1 ]; then
-    chown -R mysql:mysql /data/mysql 2>/dev/null || true
-    chown redis:redis /data/redis 2>/dev/null || true
-    chown -R www-data:www-data /data/uploads /data/backups /data/config /data/logs /data/attachments /data/translations /data/addons 2>/dev/null || true
+    chown -R mysql:mysql /home/container/data/mysql 2>/dev/null || true
+    chown redis:redis /home/container/data/redis 2>/dev/null || true
+    chown -R www-data:www-data /home/container/data/uploads /home/container/data/backups /home/container/data/config /home/container/data/logs /home/container/data/attachments /home/container/data/translations /home/container/data/addons 2>/dev/null || true
 fi
 
 # Create symlinks for persistence
-ln -sf /data/attachments /var/www/html/public/attachments 2>/dev/null || true
-ln -sf /data/translations /var/www/html/public/translations 2>/dev/null || true
-ln -sf /data/addons /var/www/html/storage/addons 2>/dev/null || true
-ln -sf /data/config /var/www/html/storage/config 2>/dev/null || true
-ln -sf /data/logs /var/www/html/storage/logs 2>/dev/null || true
-ln -sf /data/backups /var/www/html/storage/backups 2>/dev/null || true
+ln -sf /home/container/data/attachments /var/www/html/public/attachments 2>/dev/null || true
+ln -sf /home/container/data/translations /var/www/html/public/translations 2>/dev/null || true
+ln -sf /home/container/data/addons /var/www/html/storage/addons 2>/dev/null || true
+ln -sf /home/container/data/config /var/www/html/storage/config 2>/dev/null || true
+ln -sf /home/container/data/logs /var/www/html/storage/logs 2>/dev/null || true
+ln -sf /home/container/data/backups /var/www/html/storage/backups 2>/dev/null || true
 
 # Create symlink for async-runner config (expects /app/config/.env)
-ln -sf /data/config /app/config 2>/dev/null || true
+ln -sf /home/container/data/config /app/config 2>/dev/null || true
 
 # Setup environment file
 setup_env_file
@@ -672,8 +672,8 @@ echo "  http://localhost"
 echo "========================================"
 
 # Export DATABASE_ENCRYPTION_KEY from .env file for async-runner
-if [ -f /data/config/.env ]; then
-    export DATABASE_ENCRYPTION_KEY=$(grep '^DATABASE_ENCRYPTION_KEY=' /data/config/.env | cut -d'=' -f2)
+if [ -f /home/container/data/config/.env ]; then
+    export DATABASE_ENCRYPTION_KEY=$(grep '^DATABASE_ENCRYPTION_KEY=' /home/container/data/config/.env | cut -d'=' -f2)
     echo "Exported DATABASE_ENCRYPTION_KEY for services"
 fi
 
@@ -715,9 +715,9 @@ SUPERVISOR_CONF="/etc/supervisor/conf.d/supervisord.conf"
 
 # Add services based on env vars
 if [ "${ENABLE_MARIADB:-true}" = "true" ]; then
-MYSQLD_CMD="/usr/sbin/mysqld --user=mysql --datadir=/data/mysql"
+MYSQLD_CMD="/usr/sbin/mysqld --user=mysql --datadir=/home/container/data/mysql --pid-file=/var/run/mysqld/mysqld.pid"
 if [ "${OCI_RUN_AS_ROOT:-1}" != "1" ]; then
-    MYSQLD_CMD="/usr/sbin/mysqld --datadir=/data/mysql"
+    MYSQLD_CMD="/usr/sbin/mysqld --datadir=/home/container/data/mysql --pid-file=/home/container/data/mysql/mysqld.pid"
 fi
 cat >> "$SUPERVISOR_CONF" <<SV1
 
@@ -734,9 +734,9 @@ SV1
 fi
 
 if [ "${ENABLE_REDIS:-true}" = "true" ]; then
-REDIS_CMD='/usr/bin/redis-server --daemonize no --dir /data/redis --requirepass %(ENV_REDIS_PASSWORD)s'
+REDIS_CMD='/usr/bin/redis-server --daemonize no --dir /home/container/data/redis --requirepass %(ENV_REDIS_PASSWORD)s'
 if [ "${OCI_RUN_AS_ROOT:-1}" != "1" ]; then
-    REDIS_CMD='/usr/bin/redis-server --daemonize no --dir /data/redis --requirepass %(ENV_REDIS_PASSWORD)s --pidfile /tmp/redis-server.pid'
+    REDIS_CMD='/usr/bin/redis-server --daemonize no --dir /home/container/data/redis --requirepass %(ENV_REDIS_PASSWORD)s --pidfile /tmp/redis-server.pid'
 fi
 cat >> "$SUPERVISOR_CONF" <<RS1
 
@@ -853,7 +853,7 @@ RUN chmod +x /usr/local/bin/generate-supervisord-conf.sh
 EXPOSE 80
 
 # Data volume for persistence
-VOLUME ["/data"]
+VOLUME ["/home/container/data"]
 
 # Start
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
