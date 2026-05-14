@@ -28,7 +28,7 @@ if [ "$1" == "--help" ] || [ "$1" == "-h" ]; then
     echo "  --push              Push to registry after build"
     echo "  --registry REGISTRY Set registry (e.g., ghcr.io/mythicalltd)"
     echo "  --tag TAG           Set image tag (default: latest)"
-    echo "  --name NAME         Set image name (default: featherpanel-coi)"
+    echo "  --name NAME         Set image name (default: featherpanel-oci)"
     echo "  --help, -h          Show this help"
     echo ""
     echo "Environment variables:"

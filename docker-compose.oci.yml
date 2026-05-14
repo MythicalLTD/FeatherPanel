@@ -46,6 +46,8 @@ services:
       - EXPORT_HTTP_PORT=${EXPORT_HTTP_PORT:-80}
       - PANEL_DOCKER_DEPLOYMENT=true
       - TRUST_PROXY_HEADERS=true
+      # Shown on container console login banner (optional; else parsed from app_url in .env when present)
+      - FEATHERPANEL_APP_URL=${FEATHERPANEL_APP_URL:-}
     volumes:
       # Single volume for all persistent data
       - featherpanel_data:/data

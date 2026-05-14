@@ -620,6 +620,12 @@ exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
 EOF
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
+# FeatherPanel CLI wrapper + interactive login (Proxmox CT / docker attach)
+COPY oci/bin/featherpanel /usr/local/bin/featherpanel
+COPY oci/bin/featherpanel-session.sh /usr/local/bin/featherpanel-session.sh
+RUN chmod +x /usr/local/bin/featherpanel /usr/local/bin/featherpanel-session.sh \
+    && usermod -s /usr/local/bin/featherpanel-session.sh root
+
 # Create the supervisord config generator script
 COPY <<'EOF' /usr/local/bin/generate-supervisord-conf.sh
 #!/bin/bash
