@@ -78,8 +78,9 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 # ============================================================================
 # Setup MariaDB
-RUN mkdir -p /var/run/mysqld /var/lib/mysql /data/mysql \
-    && chown -R mysql:mysql /var/run/mysqld /var/lib/mysql /data/mysql
+RUN mkdir -p /var/run/mysqld /var/lib/mysql /data/mysql /data/mysql/run \
+    && chown -R mysql:mysql /var/run/mysqld /var/lib/mysql /data/mysql \
+    && chmod -R 777 /data/mysql
 
 # Create MySQL init directory (init scripts are generated at runtime if needed)
 RUN mkdir -p /docker-entrypoint-initdb.d/
@@ -87,7 +88,8 @@ RUN mkdir -p /docker-entrypoint-initdb.d/
 # ============================================================================
 # Setup Redis
 RUN mkdir -p /var/run/redis /data/redis \
-    && chown redis:redis /var/run/redis /data/redis
+    && chown redis:redis /var/run/redis /data/redis \
+    && chmod -R 777 /data/redis
 
 # ============================================================================
 # Setup Backend
@@ -227,6 +229,19 @@ ENVFILE
     echo "Environment file configured"
 }
 
+# Ensure data directories are writable when running as non-root
+ensure_data_dirs() {
+    local dirs="/data /data/mysql /data/redis /data/uploads /data/backups /data/config /data/logs /data/attachments /data/translations /data/addons /data/mysql/run"
+    for dir in $dirs; do
+        if [ -d "$dir" ]; then
+            chmod 777 "$dir" 2>/dev/null || true
+        else
+            mkdir -p "$dir" 2>/dev/null || true
+            chmod 777 "$dir" 2>/dev/null || true
+        fi
+    done
+}
+
 # Create first admin user if needed
 create_first_admin() {
     local admin_email="${FEATHERPANEL_ADMIN_EMAIL:-admin@example.com}"
@@ -269,6 +284,7 @@ create_first_admin() {
 
 # Setup environment
 setup_env_file
+ensure_data_dirs
 
 echo "Waiting for MariaDB to be ready..."
 for i in {1..30}; do
@@ -496,7 +512,12 @@ export OCI_RUN_AS_ROOT=$RUN_AS_ROOT
 
 MYSQL_BOOT_SOCK="/var/run/mysqld/mysqld.sock"
 if [ "$RUN_AS_ROOT" -eq 0 ]; then
-    mkdir -p /data/mysql/run
+    # Ensure /data/mysql exists and is writable by any user (for non-root execution)
+    if [ -d "/data/mysql" ]; then
+        chmod 777 /data/mysql 2>/dev/null || true
+    fi
+    mkdir -p /data/mysql/run 2>/dev/null || { echo "ERROR: Cannot create /data/mysql/run - check volume permissions"; exit 1; }
+    chmod 777 /data/mysql/run 2>/dev/null || true
     MYSQL_BOOT_SOCK="/data/mysql/run/mysqld.sock"
 fi
 
@@ -618,10 +639,11 @@ echo "MariaDB initialized!"
 
 # Ensure all data directories exist
 mkdir -p /data/{mysql,redis,uploads,backups,config,logs,attachments,translations,addons}
+chmod -R 777 /data/{mysql,redis,uploads,backups,config,logs,attachments,translations,addons}
 if [ "$RUN_AS_ROOT" -eq 1 ]; then
-    chown -R mysql:mysql /data/mysql
-    chown redis:redis /data/redis
-    chown -R www-data:www-data /data/uploads /data/backups /data/config /data/logs /data/attachments /data/translations /data/addons
+    chown -R mysql:mysql /data/mysql 2>/dev/null || true
+    chown redis:redis /data/redis 2>/dev/null || true
+    chown -R www-data:www-data /data/uploads /data/backups /data/config /data/logs /data/attachments /data/translations /data/addons 2>/dev/null || true
 fi
 
 # Create symlinks for persistence
