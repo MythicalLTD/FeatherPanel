@@ -56,8 +56,12 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     # Node.js dependencies
     curl ca-certificates gnupg \
     # Backend dependencies
-    git zip unzip cron libssl3 \
+    git zip unzip cron libssl3 libcap2-bin \
     && rm -rf /var/lib/apt/lists/*
+
+# Bind :80 as non-root (FeatherWings / Pterodactyl-style UID containers)
+RUN F="$(command -v frankenphp 2>/dev/null || true)"; \
+    if [ -n "$F" ] && command -v setcap >/dev/null 2>&1; then setcap 'cap_net_bind_service=+ep' "$F" || true; fi
 
 # Install Node.js 22.x (LTS) for Next.js frontend
 RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
@@ -96,6 +100,11 @@ RUN --mount=type=cache,target=/root/.composer/cache \
 
 # Copy rest of backend
 COPY backend/ .
+
+# Game panels (FeatherWings) run the process as a non-root UID; avoid www-data-only paths
+RUN chmod -R 0777 /var/www/html/storage /var/www/html/bootstrap/cache \
+    && mkdir -p /var/www/html/public/attachments /var/www/html/public/translations \
+    && chmod -R 0777 /var/www/html/public/attachments /var/www/html/public/translations
 
 # Custom PHP configuration
 RUN echo 'memory_limit = -1\n\
@@ -210,8 +219,10 @@ REDIS_HOST=127.0.0.1
 REDIS_PASSWORD=${REDIS_PASSWORD:-featherpanel_redis}
 ENVFILE
     fi
-    chown www-data:www-data "$ENV_FILE"
-    chmod 640 "$ENV_FILE"
+    if [ "$(id -u)" -eq 0 ]; then
+        chown www-data:www-data "$ENV_FILE" 2>/dev/null || true
+    fi
+    chmod 640 "$ENV_FILE" 2>/dev/null || chmod 600 "$ENV_FILE"
     echo "Environment file configured"
 }
 
@@ -321,7 +332,9 @@ if [ -d "$ADDONS_DIR" ]; then
     done
 fi
 
-chown -R www-data:www-data "$PUBLIC_ADDONS" "$PUBLIC_COMPONENTS" 2>/dev/null || true
+if [ "$(id -u)" -eq 0 ]; then
+    chown -R www-data:www-data "$PUBLIC_ADDONS" "$PUBLIC_COMPONENTS" 2>/dev/null || true
+fi
 echo "Addon symlinks resynced."
 
 # Start services that depend on initialization
@@ -360,7 +373,9 @@ fi
 } >> "$CRON_FILE"
 
 chmod 600 "$CRON_FILE"
-chown www-data:www-data "$CRON_FILE"
+if [ "$(id -u)" -eq 0 ]; then
+    chown www-data:www-data "$CRON_FILE" 2>/dev/null || true
+fi
 EOF
 RUN chmod +x /usr/local/bin/setup-cron.sh
 
@@ -379,6 +394,8 @@ WORKDIR /app
 COPY --from=frontend-builder /app/.next/standalone ./
 COPY --from=frontend-builder /app/.next/static ./.next/static
 COPY --from=frontend-builder /app/public ./public
+
+RUN chmod -R 0777 /app
 
 # ============================================================================
 # Setup Async Runner
@@ -466,6 +483,22 @@ COPY <<'EOF' /usr/local/bin/entrypoint.sh
 #!/bin/bash
 set -e
 
+# FeatherWings / Wings run server containers as the node UID (non-root). Skip chown
+# to system users, MariaDB/Redis run as the current user, and cron is disabled.
+RUN_AS_ROOT=1
+if [ "$(id -u)" -ne 0 ]; then
+    RUN_AS_ROOT=0
+    export ENABLE_CRON=false
+    echo "[FeatherPanel OCI] Non-root UID $(id -u) (e.g. FeatherWings): using user-writable paths; cron disabled."
+fi
+export OCI_RUN_AS_ROOT=$RUN_AS_ROOT
+
+MYSQL_BOOT_SOCK="/var/run/mysqld/mysqld.sock"
+if [ "$RUN_AS_ROOT" -eq 0 ]; then
+    mkdir -p /data/mysql/run
+    MYSQL_BOOT_SOCK="/data/mysql/run/mysqld.sock"
+fi
+
 # Generate encryption key for database
 generate_encryption_key() {
     php -r 'echo base64_encode(sodium_crypto_secretbox_keygen());'
@@ -496,8 +529,10 @@ ENVFILE
     fi
 
     # Ensure proper permissions
-    chown www-data:www-data "$env_file"
-    chmod 640 "$env_file"
+    if [ "$RUN_AS_ROOT" -eq 1 ]; then
+        chown www-data:www-data "$env_file" 2>/dev/null || true
+    fi
+    chmod 640 "$env_file" 2>/dev/null || chmod 600 "$env_file"
 }
 
 # Create first admin user if no users exist
@@ -538,24 +573,32 @@ create_first_admin() {
 # Initialize MariaDB data directory if empty
 if [ ! -d "/data/mysql/mysql" ]; then
     echo "Initializing MariaDB data directory..."
-    mysql_install_db --user=mysql --datadir=/data/mysql --rpm
-    chown -R mysql:mysql /data/mysql
+    if [ "$RUN_AS_ROOT" -eq 1 ]; then
+        mysql_install_db --user=mysql --datadir=/data/mysql --rpm
+        chown -R mysql:mysql /data/mysql
+    else
+        mysql_install_db --datadir=/data/mysql --rpm 2>/dev/null || mariadb-install-db --datadir=/data/mysql --skip-test-db
+    fi
 fi
 
 # Start MariaDB temporarily for init
-mysqld_safe --datadir=/data/mysql --skip-networking &
+if [ "$RUN_AS_ROOT" -eq 1 ]; then
+    mysqld_safe --datadir=/data/mysql --skip-networking &
+else
+    mariadbd --datadir=/data/mysql --skip-networking --socket="$MYSQL_BOOT_SOCK" &
+fi
 MYSQL_PID=$!
 
 # Wait for MariaDB socket
 for i in {1..30}; do
-    if mysqladmin ping --socket=/var/run/mysqld/mysqld.sock --silent 2>/dev/null; then
+    if mysqladmin ping --socket="$MYSQL_BOOT_SOCK" --silent 2>/dev/null; then
         break
     fi
     sleep 1
 done
 
 # Run init SQL
-mysql --socket=/var/run/mysqld/mysqld.sock -u root <<MYSQL
+mysql --socket="$MYSQL_BOOT_SOCK" -u root <<MYSQL
 ALTER USER 'root'@'localhost' IDENTIFIED BY '${MARIADB_ROOT_PASSWORD}';
 CREATE DATABASE IF NOT EXISTS ${DATABASE_DATABASE} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE USER IF NOT EXISTS '${DATABASE_USER}'@'127.0.0.1' IDENTIFIED BY '${DATABASE_PASSWORD}';
@@ -566,7 +609,7 @@ FLUSH PRIVILEGES;
 MYSQL
 
 # Stop temp MariaDB
-mysqladmin --socket=/var/run/mysqld/mysqld.sock -u root -p"${MARIADB_ROOT_PASSWORD}" shutdown 2>/dev/null || true
+mysqladmin --socket="$MYSQL_BOOT_SOCK" -u root -p"${MARIADB_ROOT_PASSWORD}" shutdown 2>/dev/null || true
 kill $MYSQL_PID 2>/dev/null || true
 sleep 2
 
@@ -574,9 +617,11 @@ echo "MariaDB initialized!"
 
 # Ensure all data directories exist
 mkdir -p /data/{mysql,redis,uploads,backups,config,logs,attachments,translations,addons}
-chown -R mysql:mysql /data/mysql
-chown redis:redis /data/redis
-chown -R www-data:www-data /data/uploads /data/backups /data/config /data/logs /data/attachments /data/translations /data/addons
+if [ "$RUN_AS_ROOT" -eq 1 ]; then
+    chown -R mysql:mysql /data/mysql
+    chown redis:redis /data/redis
+    chown -R www-data:www-data /data/uploads /data/backups /data/config /data/logs /data/attachments /data/translations /data/addons
+fi
 
 # Create symlinks for persistence
 ln -sf /data/attachments /var/www/html/public/attachments 2>/dev/null || true
@@ -631,21 +676,30 @@ COPY <<'EOF' /usr/local/bin/generate-supervisord-conf.sh
 #!/bin/bash
 SUPERVISOR_CONF="/etc/supervisor/conf.d/supervisord.conf"
 
-# Start with base config
-cat > "$SUPERVISOR_CONF" <<'SUPERBASE'
-[supervisord]
-nodaemon=true
-user=root
-logfile=/var/log/supervisor/supervisord.log
-pidfile=/var/run/supervisord.pid
-SUPERBASE
+# Start with base config (FeatherWings: no root → no supervisord user=root, pidfile in /tmp)
+{
+    echo '[supervisord]'
+    echo 'nodaemon=true'
+    if [ "${OCI_RUN_AS_ROOT:-1}" = "1" ]; then
+        echo 'user=root'
+        echo 'pidfile=/var/run/supervisord.pid'
+        echo 'logfile=/var/log/supervisor/supervisord.log'
+    else
+        echo 'pidfile=/tmp/supervisord.pid'
+        echo 'logfile=/tmp/supervisord.log'
+    fi
+} > "$SUPERVISOR_CONF"
 
 # Add services based on env vars
 if [ "${ENABLE_MARIADB:-true}" = "true" ]; then
-cat >> "$SUPERVISOR_CONF" <<'SVCFILE'
+MYSQLD_CMD="/usr/sbin/mysqld --user=mysql --datadir=/data/mysql"
+if [ "${OCI_RUN_AS_ROOT:-1}" != "1" ]; then
+    MYSQLD_CMD="/usr/sbin/mysqld --datadir=/data/mysql"
+fi
+cat >> "$SUPERVISOR_CONF" <<SV1
 
 [program:mariadb]
-command=/usr/sbin/mysqld --user=mysql --datadir=/data/mysql
+command=${MYSQLD_CMD}
 stdout_logfile=/dev/stdout
 stdout_logfile_maxbytes=0
 stderr_logfile=/dev/stderr
@@ -653,14 +707,18 @@ stderr_logfile_maxbytes=0
 autostart=true
 autorestart=true
 priority=1
-SVCFILE
+SV1
 fi
 
 if [ "${ENABLE_REDIS:-true}" = "true" ]; then
-cat >> "$SUPERVISOR_CONF" <<'SVCFILE'
+REDIS_CMD='/usr/bin/redis-server --daemonize no --dir /data/redis --requirepass %(ENV_REDIS_PASSWORD)s'
+if [ "${OCI_RUN_AS_ROOT:-1}" != "1" ]; then
+    REDIS_CMD='/usr/bin/redis-server --daemonize no --dir /data/redis --requirepass %(ENV_REDIS_PASSWORD)s --pidfile /tmp/redis-server.pid'
+fi
+cat >> "$SUPERVISOR_CONF" <<RS1
 
 [program:redis]
-command=/usr/bin/redis-server --daemonize no --dir /data/redis --requirepass %(ENV_REDIS_PASSWORD)s
+command=${REDIS_CMD}
 stdout_logfile=/dev/stdout
 stdout_logfile_maxbytes=0
 stderr_logfile=/dev/stderr
@@ -668,7 +726,7 @@ stderr_logfile_maxbytes=0
 autostart=true
 autorestart=true
 priority=2
-SVCFILE
+RS1
 fi
 
 if [ "${ENABLE_BACKEND:-true}" = "true" ]; then
@@ -749,7 +807,7 @@ priority=7
 SVCFILE
 fi
 
-if [ "${ENABLE_CRON:-true}" = "true" ]; then
+if [ "${ENABLE_CRON:-true}" = "true" ] && [ "${OCI_RUN_AS_ROOT:-1}" = "1" ]; then
 cat >> "$SUPERVISOR_CONF" <<'SVCFILE'
 
 [program:cron-runner]
