@@ -25,6 +25,7 @@
 - Extended admin security settings with provider-specific keys, reCAPTCHA version and v3 options, Friendly Captcha fields, and reForge Captcha site key, secret, widget type (checkbox or image), theme, size, language, and minimum verify score. by @nayskutzu
 - Captcha provider select options in the admin settings UI now show human-readable labels (including reForge Captcha for the reforge provider value). by @nayskutzu
 - FeatherPanel now prompts users without an existing Discord account to easily create one, streamlining the integration process. by @nayskutzu
+- Added advanced dependency injection and automatic detection for plugin installations, preventing unexpected issues and ensuring smooth, reliable plugin setup. by @nayskutzu
 
 ### Fixed
 
@@ -33,6 +34,7 @@
 - Fixed panel logins failing with `INVALID_ACCOUNT_TOKEN` when a user row had a missing or empty `remember_token` by generating and persisting a token during login completion (and the same for two-factor completion). by @nayskutzu
 - Fixed session refresh after login by loading `/user/session` through the credentialed API client, enabling global `axios` credentials for cookie-based auth, and blocking native HTML form navigation on the login page so third-party captcha scripts cannot trigger a GET navigation that drops the session cookie. by @nayskutzu
 - Fixed TypeScript checking for captcha script loaders by accounting for the non-standard `complete` property on `HTMLScriptElement` in Chromium-based browsers. by @nayskutzu
+- Fixed the Lock and Image Fit features aren't working properly in featherpanel by @nayskutzu
 
 ## v1.3.7 STABLE
 

@@ -6011,8 +6011,23 @@
 				"clear_search": "Clear Search",
 				"no_results": "No results found",
 				"featured": "Featured",
+				"has_dependencies": "Has Dependencies",
 				"install_success": "Successfully installed {identifier}",
 				"install_failed": "Failed to install plugin",
+				"missing_dependencies": "Cannot install: missing dependencies",
+				"requirements_check_failed": "Failed to check installation requirements",
+				"requirements": {
+					"title_ready": "Ready to Install",
+					"title_missing": "Missing Requirements",
+					"panel_version": "Panel Version",
+					"panel_compatible": "Compatible with your panel version",
+					"dependencies": "Dependencies",
+					"please_install_deps": "Please install the missing dependencies before installing this plugin.",
+					"composer": "Composer",
+					"plugin": "Plugin",
+					"php": "PHP",
+					"php-ext": "Extension"
+				},
 				"queue": {
 					"title": "Download List",
 					"subtitle": "The following plugins were added to the download list. Click download to install them now.",
@@ -6025,7 +6040,8 @@
 					"install_success_single": "Installed 1 plugin successfully",
 					"install_success_multiple": "Installed {count} plugins successfully",
 					"install_failed": "Failed to install selected plugins",
-					"install_failed_single": "Failed to install {identifier}"
+					"install_failed_single": "Failed to install {identifier}",
+					"multiple_requirements_issues": "{count} plugins have unmet requirements and cannot be installed"
 				},
 				"repo": {
 					"title": "Plugin Repositories",

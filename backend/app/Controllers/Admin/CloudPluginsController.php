@@ -823,6 +823,16 @@ class CloudPluginsController
             new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
             new OA\Response(response: 404, description: 'Package not found in registry'),
             new OA\Response(response: 409, description: 'Conflict - Addon already installed'),
+            new OA\Response(
+                response: 412,
+                description: 'Precondition Failed - Dependencies not met',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'missing_dependencies', type: 'array', items: new OA\Items(type: 'string'), description: 'List of missing dependencies'),
+                        new OA\Property(property: 'dependency_details', type: 'array', items: new OA\Items(type: 'object'), description: 'Detailed dependency check results'),
+                    ]
+                )
+            ),
             new OA\Response(response: 422, description: 'Unprocessable Entity - Failed to extract addon package or migrations failed'),
             new OA\Response(response: 500, description: 'Internal server error - Failed to install addon or download failed'),
         ]
@@ -865,6 +875,103 @@ class CloudPluginsController
 
             $pkg = $data['data']['package'];
             $latestVersion = $data['data']['latest_version'] ?? [];
+
+            // Check dependencies BEFORE downloading/installing
+            $dependencyChecks = [];
+            $missingDependencies = [];
+            $allDependenciesMet = true;
+
+            // Download and parse conf.yml to check dependencies
+            $downloadUrl = isset($latestVersion['download_url']) ? ('https://api.featherpanel.com' . $latestVersion['download_url']) : null;
+            if ($downloadUrl) {
+                $tempFile = sys_get_temp_dir() . '/' . uniqid('featherpanel_check_', true) . '.fpa';
+                $fileContent = @file_get_contents($downloadUrl, false, $context);
+                if ($fileContent !== false) {
+                    file_put_contents($tempFile, $fileContent);
+
+                    // Extract conf.yml
+                    $tempDir = sys_get_temp_dir() . '/' . uniqid('featherpanel_check_', true);
+                    @mkdir($tempDir, 0755, true);
+                    $pwd = self::PASSWORD;
+                    $unzipCommand = sprintf('unzip -P %s %s conf.yml -d %s', escapeshellarg($pwd), escapeshellarg($tempFile), escapeshellarg($tempDir));
+                    exec($unzipCommand, $out, $code);
+
+                    if ($code === 0 && file_exists($tempDir . '/conf.yml')) {
+                        try {
+                            $conf = \Symfony\Component\Yaml\Yaml::parseFile($tempDir . '/conf.yml');
+                            $confDependencies = $conf['plugin']['dependencies'] ?? [];
+
+                            foreach ($confDependencies as $dep) {
+                                $met = false;
+                                $message = '';
+                                $type = 'unknown';
+                                $name = $dep;
+
+                                if (strpos($dep, 'composer=') === 0) {
+                                    $composerPkg = substr($dep, strlen('composer='));
+                                    $met = \App\Plugins\Dependencies\ComposerDependencies::isInstalled($composerPkg);
+                                    $message = $met ? 'Composer package installed' : "Composer package required: {$composerPkg}";
+                                    $type = 'composer';
+                                    $name = $composerPkg;
+                                } elseif (strpos($dep, 'plugin=') === 0) {
+                                    $pluginDep = substr($dep, strlen('plugin='));
+                                    $met = \App\Plugins\Dependencies\AppDependencies::isInstalled($pluginDep);
+                                    $message = $met ? 'Plugin installed' : "Plugin required: {$pluginDep}";
+                                    $type = 'plugin';
+                                    $name = $pluginDep;
+                                } elseif (strpos($dep, 'php=') === 0) {
+                                    $phpVersion = substr($dep, strlen('php='));
+                                    $met = \App\Plugins\Dependencies\PhpVersionDependencies::isInstalled($phpVersion);
+                                    $message = $met ? 'PHP version requirement met' : "PHP version required: {$phpVersion}";
+                                    $type = 'php';
+                                    $name = $phpVersion;
+                                } elseif (strpos($dep, 'php-ext=') === 0) {
+                                    $ext = substr($dep, strlen('php-ext='));
+                                    $met = \App\Plugins\Dependencies\PhpExtensionDependencies::isInstalled($ext);
+                                    $message = $met ? 'PHP extension installed' : "PHP extension required: {$ext}";
+                                    $type = 'php-ext';
+                                    $name = $ext;
+                                } else {
+                                    $met = true; // Unknown dependency format, assume met
+                                    $message = "Unknown dependency format: {$dep}";
+                                }
+
+                                $dependencyChecks[] = [
+                                    'dependency' => $dep,
+                                    'type' => $type,
+                                    'name' => $name,
+                                    'met' => $met,
+                                    'message' => $message,
+                                ];
+
+                                if (!$met) {
+                                    $missingDependencies[] = $dep;
+                                    $allDependenciesMet = false;
+                                }
+                            }
+                        } catch (\Exception $e) {
+                            // Failed to parse conf.yml, log but continue (fail open for safety)
+                            App::getInstance(true)->getLogger()->warning('Failed to parse conf.yml for dependency check: ' . $e->getMessage());
+                        }
+                    }
+
+                    @exec('rm -rf ' . escapeshellarg($tempDir));
+                    @unlink($tempFile);
+                }
+            }
+
+            // If dependencies are not met, return error with details
+            if (!$allDependenciesMet) {
+                return ApiResponse::error(
+                    'Cannot install plugin: missing dependencies',
+                    'MISSING_DEPENDENCIES',
+                    412,
+                    [
+                        'missing_dependencies' => $missingDependencies,
+                        'dependency_details' => $dependencyChecks,
+                    ]
+                );
+            }
 
             // Check if addon is premium
             $isPremium = isset($pkg['premium']) && (int) $pkg['premium'] === 1;

@@ -19,6 +19,7 @@ import { useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/contexts/ThemeContext';
+import { backgroundFitToCssSize } from '@/lib/backgroundImageFit';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useTranslation } from '@/contexts/TranslationContext';
 import ThemeCustomizer from '@/components/layout/ThemeCustomizer';
@@ -103,7 +104,7 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
                         className='absolute inset-0 bg-center bg-no-repeat'
                         style={{
                             backgroundImage: `url(${backgroundImage})`,
-                            backgroundSize: backgroundImageFit,
+                            backgroundSize: backgroundFitToCssSize(backgroundImageFit),
                         }}
                     />
                 ) : null;

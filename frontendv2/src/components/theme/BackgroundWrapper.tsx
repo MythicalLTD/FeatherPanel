@@ -21,6 +21,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { useEffect, useState } from 'react';
 
 import { getAuroraColorStops, getPrimaryHex, getBeamLightHex } from '@/lib/themeColors';
+import { backgroundFitToCssSize } from '@/lib/backgroundImageFit';
 
 import '@/components/thirdparty/Aurora.css';
 import '@/components/thirdparty/Beams.css';
@@ -88,7 +89,7 @@ export default function BackgroundWrapper({ children }: { children: React.ReactN
         if (backgroundType === 'image' && backgroundImage) {
             return {
                 backgroundImage: `url(${backgroundImage})`,
-                backgroundSize: backgroundImageFit,
+                backgroundSize: backgroundFitToCssSize(backgroundImageFit),
                 backgroundPosition: 'center',
                 backgroundRepeat: 'no-repeat',
             };
