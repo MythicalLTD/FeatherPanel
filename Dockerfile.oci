@@ -77,8 +77,8 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 RUN mkdir -p /var/run/mysqld /var/lib/mysql /data/mysql \
     && chown -R mysql:mysql /var/run/mysqld /var/lib/mysql /data/mysql
 
-# Copy MySQL init scripts if any
-COPY mysql/init/. /docker-entrypoint-initdb.d/
+# Create MySQL init directory (init scripts are generated at runtime if needed)
+RUN mkdir -p /docker-entrypoint-initdb.d/
 
 # ============================================================================
 # Setup Redis
