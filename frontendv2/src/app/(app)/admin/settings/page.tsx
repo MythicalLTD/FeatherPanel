@@ -179,18 +179,22 @@ function SettingFieldRow({
                     onChange={(e) => onSettingChange(settingKey, e.target.value)}
                 >
                     {currentSetting.options.map((opt) => {
-                        let label = opt;
-                        if (settingKey === 'captcha_provider') {
-                            const optKey = `admin.settings.fields.captcha_provider.options.${opt}`;
-                            const optLabel = t(optKey);
-                            if (optLabel !== optKey) {
-                                label = optLabel;
-                            }
+                        const optKey = `admin.settings.fields.${settingKey}.options.${opt}`;
+                        const translated = t(optKey);
+                        let label: string;
+                        if (translated !== optKey) {
+                            label = translated;
+                        } else if (opt === 'true') {
+                            label = 'Enabled';
+                        } else if (opt === 'false') {
+                            label = 'Disabled';
+                        } else if (opt === 'hard_limit') {
+                            label = 'Hard limit (block at max)';
+                        } else if (opt === 'fifo_rolling') {
+                            label = 'FIFO rolling (drop oldest)';
+                        } else {
+                            label = opt;
                         }
-                        if (opt === 'true') label = 'Enabled';
-                        if (opt === 'false') label = 'Disabled';
-                        if (opt === 'hard_limit') label = 'Hard limit (block at max)';
-                        if (opt === 'fifo_rolling') label = 'FIFO rolling (drop oldest)';
                         return (
                             <option key={opt} value={opt} className='bg-card text-foreground'>
                                 {label}

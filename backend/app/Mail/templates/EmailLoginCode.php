@@ -117,7 +117,7 @@ class EmailLoginCode
             'subject' => $subject,
             'body' => $body,
         ]);
-        if ($id == false) {
+        if ($id === false || $id === true) {
             return;
         }
 

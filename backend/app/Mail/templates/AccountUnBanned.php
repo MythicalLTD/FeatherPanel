@@ -99,7 +99,7 @@ class AccountUnBanned
             'body' => $template,
         ]);
 
-        if ($id == false) {
+        if ($id === false || $id === true) {
             return;
         }
 

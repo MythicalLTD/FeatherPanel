@@ -443,6 +443,10 @@ export function WidgetRenderer({ widgets, height = '400px', context }: WidgetRen
                                             minHeight: widget.iframe?.minHeight || height,
                                             background: 'transparent',
                                         }}
+                                        {...widget.iframe}
+                                        referrerPolicy={
+                                            widget.iframe?.referrerPolicy as React.HTMLAttributeReferrerPolicy
+                                        }
                                         onLoad={(event) => handleIframeLoad(widget.id, event.currentTarget)}
                                         onError={() => handleIframeError(widget.id)}
                                         {...{ allowtransparency: 'true' }}

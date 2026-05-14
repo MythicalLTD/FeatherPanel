@@ -111,6 +111,8 @@ class DiscordController
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
         curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/x-www-form-urlencoded']);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
         $tokenResponse = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $tokenData = json_decode($tokenResponse, true);
@@ -126,10 +128,12 @@ class DiscordController
 
         // Get user info from Discord
         $userUrl = 'https://discord.com/api/users/@me';
-        $ch = curl_init($userUrl);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Authorization: Bearer ' . $accessToken]);
-        $userResponse = curl_exec($ch);
+        $userCh = curl_init($userUrl);
+        curl_setopt($userCh, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($userCh, CURLOPT_HTTPHEADER, ['Authorization: Bearer ' . $accessToken]);
+        curl_setopt($userCh, CURLOPT_CONNECTTIMEOUT, 5);
+        curl_setopt($userCh, CURLOPT_TIMEOUT, 10);
+        $userResponse = curl_exec($userCh);
         $discordUser = json_decode($userResponse, true);
         // curl_close() is deprecated in PHP 8.5 (no-op since PHP 8.0)
 

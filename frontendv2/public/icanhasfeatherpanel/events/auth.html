@@ -290,7 +290,8 @@ public static function processEvents(PluginEvents $evt): void
 <article class="card">
   <h2><code>featherpanel:auth:login:failed</code></h2>
   <p class="muted"><strong>Method:</strong> <code>onAuthLoginFailed</code></p>
-  <p class="muted"><strong>Callback parameters:</strong> array user info.</p>
+  <p class="muted"><strong>Callback parameters:</strong> positional values from the emitted payload in key insertion order (see PluginEvents::emit).
+     * Possible keys across emitters: email, error, ip_address, provider, reason, user, username, username_or_email.</p>
 
   <h3>Event Data</h3>
   <p class="muted"><strong>Data keys:</strong> email, error, ip_address, provider, reason, user, username, username_or_email</p>

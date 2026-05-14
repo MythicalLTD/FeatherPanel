@@ -32,6 +32,11 @@ import { authApi } from '@/lib/api/auth';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
+/** Reject protocol-relative URLs (e.g. `//evil.com`) while allowing same-origin paths. */
+function isSafeInternalRedirectPath(redirect: string | null): redirect is string {
+    return Boolean(redirect && redirect.startsWith('/') && !redirect.startsWith('//'));
+}
+
 export default function LoginForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -104,6 +109,71 @@ export default function LoginForm() {
         code: '',
     });
 
+    const resetCaptcha = () => {
+        if (!showCaptcha) return;
+        setForm((prev) => ({ ...prev, turnstile_token: '' }));
+        setTurnstileKey((prev) => prev + 1);
+    };
+
+    async function submitPasswordLogin(usernameOrEmail: string) {
+        let captchaToken = '';
+        if (showCaptcha) {
+            captchaToken = await obtainCaptchaResponseToken(settings ?? null, form.turnstile_token);
+            if (!captchaToken) {
+                setError(t('validation.captcha_required'));
+                return;
+            }
+        }
+
+        setLoading(true);
+
+        try {
+            const response = await authApi.login({
+                username_or_email: usernameOrEmail,
+                password: form.password,
+                turnstile_token: captchaToken,
+            });
+
+            if (response.success) {
+                if (response.data?.requires_2fa) {
+                    router.push(`/auth/verify-2fa?username_or_email=${encodeURIComponent(usernameOrEmail)}`);
+                    return;
+                }
+
+                setSuccess(t('common.success'));
+
+                await fetchSession(true);
+
+                setTimeout(() => {
+                    const redirect = searchParams.get('redirect');
+                    if (isSafeInternalRedirectPath(redirect)) {
+                        router.push(redirect);
+                    } else {
+                        router.push('/dashboard');
+                    }
+                }, 1000);
+            } else {
+                setError(response.message || t('common.error'));
+                resetCaptcha();
+            }
+        } catch (err: unknown) {
+            const error = err as {
+                response?: { data?: { message?: string; error_code?: string; data?: { email?: string } } };
+            };
+
+            if (error.response?.data?.error_code === 'TWO_FACTOR_REQUIRED') {
+                const email = error.response.data.data?.email || usernameOrEmail;
+                router.push(`/auth/verify-2fa?username_or_email=${encodeURIComponent(email)}`);
+                return;
+            }
+
+            setError(error.response?.data?.message || t('common.error'));
+            resetCaptcha();
+        } finally {
+            setLoading(false);
+        }
+    }
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
@@ -119,70 +189,7 @@ export default function LoginForm() {
             return;
         }
 
-        let captchaToken = '';
-        if (showCaptcha) {
-            captchaToken = await obtainCaptchaResponseToken(settings ?? null, form.turnstile_token);
-            if (!captchaToken) {
-                setError(t('validation.captcha_required'));
-                return;
-            }
-        }
-
-        setLoading(true);
-
-        try {
-            const response = await authApi.login({
-                username_or_email: form.username_or_email,
-                password: form.password,
-                turnstile_token: captchaToken,
-            });
-
-            if (response.success) {
-                if (response.data?.requires_2fa) {
-                    router.push(`/auth/verify-2fa?username_or_email=${encodeURIComponent(form.username_or_email)}`);
-                    return;
-                }
-
-                setSuccess(t('common.success'));
-
-                await fetchSession(true);
-
-                setTimeout(() => {
-                    const redirect = searchParams.get('redirect');
-                    if (redirect && redirect.startsWith('/')) {
-                        router.push(redirect);
-                    } else {
-                        router.push('/dashboard');
-                    }
-                }, 1000);
-            } else {
-                setError(response.message || t('common.error'));
-
-                if (showCaptcha) {
-                    setForm((prev) => ({ ...prev, turnstile_token: '' }));
-                    setTurnstileKey((prev) => prev + 1);
-                }
-            }
-        } catch (err: unknown) {
-            const error = err as {
-                response?: { data?: { message?: string; error_code?: string; data?: { email?: string } } };
-            };
-
-            if (error.response?.data?.error_code === 'TWO_FACTOR_REQUIRED') {
-                const email = error.response.data.data?.email || form.username_or_email;
-                router.push(`/auth/verify-2fa?username_or_email=${encodeURIComponent(email)}`);
-                return;
-            }
-
-            setError(error.response?.data?.message || t('common.error'));
-
-            if (showCaptcha) {
-                setForm((prev) => ({ ...prev, turnstile_token: '' }));
-                setTurnstileKey((prev) => prev + 1);
-            }
-        } finally {
-            setLoading(false);
-        }
+        await submitPasswordLogin(form.username_or_email);
     };
 
     const [isSsoLogin, setIsSsoLogin] = useState(false);
@@ -211,7 +218,7 @@ export default function LoginForm() {
                         setSuccess(response.message || t('auth.loginSuccess'));
                         await fetchSession(true);
                         const redirect = searchParams.get('redirect');
-                        location.href = redirect && redirect.startsWith('/') ? redirect : '/dashboard';
+                        location.href = isSafeInternalRedirectPath(redirect) ? redirect : '/dashboard';
                     } else {
                         setIsDiscordLogin(false);
                         setError(response.message || t('common.error'));
@@ -253,16 +260,17 @@ export default function LoginForm() {
                 await fetchSession(true);
 
                 const redirect = searchParams.get('redirect');
-                location.href = redirect && redirect.startsWith('/') ? redirect : '/dashboard';
+                location.href = isSafeInternalRedirectPath(redirect) ? redirect : '/dashboard';
             } else {
-                setError(response.message || t('common.error'));
                 setIsSsoLogin(false);
                 setError(response.message || t('common.error'));
+                authProcessed.current = false;
             }
         } catch (err: unknown) {
             setIsSsoLogin(false);
             const error = err as { response?: { data?: { message?: string } } };
             setError(error.response?.data?.message || t('common.error'));
+            authProcessed.current = false;
         } finally {
             setLoading(false);
         }
@@ -364,7 +372,7 @@ export default function LoginForm() {
 
                 setTimeout(() => {
                     const redirect = searchParams.get('redirect');
-                    if (redirect && redirect.startsWith('/')) {
+                    if (isSafeInternalRedirectPath(redirect)) {
                         router.push(redirect);
                     } else {
                         router.push('/dashboard');
@@ -478,7 +486,7 @@ export default function LoginForm() {
 
                 setTimeout(() => {
                     const redirect = searchParams.get('redirect');
-                    if (redirect && redirect.startsWith('/')) {
+                    if (isSafeInternalRedirectPath(redirect)) {
                         router.push(redirect);
                     } else {
                         router.push('/dashboard');
@@ -594,7 +602,7 @@ export default function LoginForm() {
                 await fetchSession(true);
                 setTimeout(() => {
                     const redirect = searchParams.get('redirect');
-                    if (redirect && redirect.startsWith('/')) {
+                    if (isSafeInternalRedirectPath(redirect)) {
                         router.push(redirect);
                     } else {
                         router.push('/dashboard');
@@ -647,68 +655,7 @@ export default function LoginForm() {
             return;
         }
 
-        let captchaToken = '';
-        if (showCaptcha) {
-            captchaToken = await obtainCaptchaResponseToken(settings ?? null, form.turnstile_token);
-            if (!captchaToken) {
-                setError(t('validation.captcha_required'));
-                return;
-            }
-        }
-
-        setLoading(true);
-
-        try {
-            const response = await authApi.login({
-                username_or_email: identifierValue,
-                password: form.password,
-                turnstile_token: captchaToken,
-            });
-
-            if (response.success) {
-                if (response.data?.requires_2fa) {
-                    router.push(`/auth/verify-2fa?username_or_email=${encodeURIComponent(identifierValue)}`);
-                    return;
-                }
-
-                setSuccess(t('common.success'));
-                await fetchSession(true);
-
-                setTimeout(() => {
-                    const redirect = searchParams.get('redirect');
-                    if (redirect && redirect.startsWith('/')) {
-                        router.push(redirect);
-                    } else {
-                        router.push('/dashboard');
-                    }
-                }, 1000);
-            } else {
-                setError(response.message || t('common.error'));
-                if (showCaptcha) {
-                    setForm((prev) => ({ ...prev, turnstile_token: '' }));
-                    setTurnstileKey((prev) => prev + 1);
-                }
-            }
-        } catch (err: unknown) {
-            const error = err as {
-                response?: { data?: { message?: string; error_code?: string; data?: { email?: string } } };
-            };
-
-            if (error.response?.data?.error_code === 'TWO_FACTOR_REQUIRED') {
-                const email = error.response.data.data?.email || identifierValue;
-                router.push(`/auth/verify-2fa?username_or_email=${encodeURIComponent(email)}`);
-                return;
-            }
-
-            setError(error.response?.data?.message || t('common.error'));
-
-            if (showCaptcha) {
-                setForm((prev) => ({ ...prev, turnstile_token: '' }));
-                setTurnstileKey((prev) => prev + 1);
-            }
-        } finally {
-            setLoading(false);
-        }
+        await submitPasswordLogin(identifierValue);
     };
 
     const [oidcProviders, setOidcProviders] = useState<{ uuid: string; name: string }[]>([]);

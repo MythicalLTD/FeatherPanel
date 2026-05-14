@@ -184,25 +184,48 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
         }
     }, [id, pagination.page, pagination.pageSize, searchQuery, t]);
 
-    // Fetch all articles for reordering (no pagination)
-    const fetchAllArticlesForReorder = useCallback(async () => {
+    /** Admin KB list API caps `limit` at 100; fetch every page before reorder. */
+    const fetchAllArticlesForReorder = useCallback(async (): Promise<boolean> => {
+        const pageSize = 100;
         try {
-            const { data } = await axios.get('/api/admin/knowledgebase/articles', {
-                params: {
-                    limit: 1000,
-                    category_id: id,
-                },
-            });
-            if (data?.success) {
-                const sorted = data.data.articles.sort((a: Article, b: Article) => {
-                    if (a.pinned === 'true' && b.pinned !== 'true') return -1;
-                    if (a.pinned !== 'true' && b.pinned === 'true') return 1;
-                    return (a.sort_order || 0) - (b.sort_order || 0);
+            let page = 1;
+            const allArticles: Article[] = [];
+            let totalRecords = 0;
+            while (true) {
+                const { data } = await axios.get('/api/admin/knowledgebase/articles', {
+                    params: {
+                        page,
+                        limit: pageSize,
+                        category_id: id,
+                    },
                 });
-                setArticles(sorted);
+                if (!data?.success) {
+                    toast.error(t('admin.knowledgebase.articles.messages.fetch_failed'));
+                    return false;
+                }
+                const pag = data.data.pagination;
+                totalRecords = pag.total_records;
+                const batch = data.data.articles || [];
+                allArticles.push(...batch);
+                if (allArticles.length >= totalRecords || !pag.has_next) {
+                    break;
+                }
+                page += 1;
             }
+            if (allArticles.length !== totalRecords) {
+                toast.error(t('admin.knowledgebase.articles.messages.fetch_failed'));
+                return false;
+            }
+            const sorted = [...allArticles].sort((a: Article, b: Article) => {
+                if (a.pinned === 'true' && b.pinned !== 'true') return -1;
+                if (a.pinned !== 'true' && b.pinned === 'true') return 1;
+                return (a.sort_order || 0) - (b.sort_order || 0);
+            });
+            setArticles(sorted);
+            return true;
         } catch {
             toast.error(t('admin.knowledgebase.articles.messages.fetch_failed'));
+            return false;
         }
     }, [id, t]);
 
@@ -259,8 +282,8 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
 
     const toggleReorderMode = async () => {
         if (!isReorderMode) {
-            // Entering reorder mode - fetch all articles fresh
-            await fetchAllArticlesForReorder();
+            const ok = await fetchAllArticlesForReorder();
+            if (!ok) return;
         } else {
             // Exiting reorder mode - reset and refresh paginated view
             setPagination((p) => ({ ...p, page: 1 }));
