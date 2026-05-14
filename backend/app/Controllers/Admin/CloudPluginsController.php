@@ -1062,151 +1062,6 @@ class CloudPluginsController
     }
 
     /**
-     * @param mixed $raw
-     *
-     * @return list<string>
-     */
-    private function normalizeQueuedPluginIdentifiers(mixed $raw): array
-    {
-        if (!is_array($raw)) {
-            return [];
-        }
-        $unique = [];
-        foreach ($raw as $id) {
-            if (!is_string($id)) {
-                continue;
-            }
-            if (!preg_match('/^[a-zA-Z0-9_\-]+$/', $id)) {
-                continue;
-            }
-            $unique[$id] = true;
-        }
-
-        return array_keys($unique);
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function parsePendingPluginsQuery(Request $request): array
-    {
-        $raw = $request->query->get('pending_plugins');
-        if (is_array($raw)) {
-            return $this->normalizeQueuedPluginIdentifiers($raw);
-        }
-        if (is_string($raw) && $raw !== '') {
-            $parts = array_map('trim', explode(',', $raw));
-
-            return $this->normalizeQueuedPluginIdentifiers($parts);
-        }
-
-        return [];
-    }
-
-    /**
-     * Download the .fpa and read conf.yml dependency lines.
-     *
-     * @return array{checks: list<array<string, mixed>>, all_met: bool, missing: list<string>}
-     */
-    private function evaluateConfDependencyChecksFromDownloadUrl(?string $downloadUrl, mixed $streamContext): array
-    {
-        $dependencyChecks = [];
-        $missingDependencies = [];
-        $allDependenciesMet = true;
-
-        if ($downloadUrl === null || $downloadUrl === '') {
-            return ['checks' => [], 'all_met' => true, 'missing' => []];
-        }
-
-        $tempFile = sys_get_temp_dir() . '/' . uniqid('featherpanel_check_', true) . '.fpa';
-        $fileContent = @file_get_contents($downloadUrl, false, $streamContext);
-        if ($fileContent === false) {
-            return ['checks' => [], 'all_met' => true, 'missing' => []];
-        }
-
-        file_put_contents($tempFile, $fileContent);
-
-        $tempDir = sys_get_temp_dir() . '/' . uniqid('featherpanel_check_', true);
-        @mkdir($tempDir, 0755, true);
-        $pwd = self::PASSWORD;
-        $unzipCommand = sprintf('unzip -P %s %s conf.yml -d %s', escapeshellarg($pwd), escapeshellarg($tempFile), escapeshellarg($tempDir));
-        exec($unzipCommand, $out, $code);
-
-        if ($code === 0 && file_exists($tempDir . '/conf.yml')) {
-            try {
-                $conf = \Symfony\Component\Yaml\Yaml::parseFile($tempDir . '/conf.yml');
-                $confDependencies = $conf['plugin']['dependencies'] ?? [];
-                if (!is_array($confDependencies)) {
-                    $confDependencies = [];
-                }
-
-                foreach ($confDependencies as $dep) {
-                    if (!is_string($dep)) {
-                        continue;
-                    }
-                    $met = false;
-                    $message = '';
-                    $type = 'unknown';
-                    $name = $dep;
-
-                    if (strpos($dep, 'composer=') === 0) {
-                        $composerPkg = substr($dep, strlen('composer='));
-                        $met = \App\Plugins\Dependencies\ComposerDependencies::isInstalled($composerPkg);
-                        $message = $met ? 'Composer package installed' : "Composer package required: {$composerPkg}";
-                        $type = 'composer';
-                        $name = $composerPkg;
-                    } elseif (strpos($dep, 'plugin=') === 0) {
-                        $pluginDep = substr($dep, strlen('plugin='));
-                        $met = \App\Plugins\Dependencies\AppDependencies::isInstalled($pluginDep);
-                        $message = $met ? 'Plugin installed' : "Plugin required: {$pluginDep}";
-                        $type = 'plugin';
-                        $name = $pluginDep;
-                    } elseif (strpos($dep, 'php=') === 0) {
-                        $phpVersion = substr($dep, strlen('php='));
-                        $met = \App\Plugins\Dependencies\PhpVersionDependencies::isInstalled($phpVersion);
-                        $message = $met ? 'PHP version requirement met' : "PHP version required: {$phpVersion}";
-                        $type = 'php';
-                        $name = $phpVersion;
-                    } elseif (strpos($dep, 'php-ext=') === 0) {
-                        $ext = substr($dep, strlen('php-ext='));
-                        $met = \App\Plugins\Dependencies\PhpExtensionDependencies::isInstalled($ext);
-                        $message = $met ? 'PHP extension installed' : "PHP extension required: {$ext}";
-                        $type = 'php-ext';
-                        $name = $ext;
-                    } else {
-                        $met = true;
-                        $message = "Unknown dependency format: {$dep}";
-                    }
-
-                    $dependencyChecks[] = [
-                        'dependency' => $dep,
-                        'type' => $type,
-                        'name' => $name,
-                        'met' => $met,
-                        'message' => $message,
-                    ];
-
-                    if (!$met) {
-                        $missingDependencies[] = $dep;
-                        $allDependenciesMet = false;
-                    }
-                }
-            } catch (\Exception $e) {
-                App::getInstance(true)->getLogger()->warning('Failed to parse conf.yml for dependency check: ' . $e->getMessage());
-            }
-        }
-
-        @exec('rm -rf ' . escapeshellarg($tempDir));
-        @unlink($tempFile);
-
-        return [
-            'checks' => $dependencyChecks,
-            'all_met' => $allDependenciesMet,
-            'missing' => $missingDependencies,
-        ];
-    }
-
-    /**
      * Perform the common installation routine given an extracted addon temp directory.
      * Handles identifier resolution (from conf.yml if not provided), copying files,
      * exposing public assets, running migrations, and calling the install hook.
@@ -1483,6 +1338,149 @@ class CloudPluginsController
         }
 
         return self::$instance;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function normalizeQueuedPluginIdentifiers(mixed $raw): array
+    {
+        if (!is_array($raw)) {
+            return [];
+        }
+        $unique = [];
+        foreach ($raw as $id) {
+            if (!is_string($id)) {
+                continue;
+            }
+            if (!preg_match('/^[a-zA-Z0-9_\-]+$/', $id)) {
+                continue;
+            }
+            $unique[$id] = true;
+        }
+
+        return array_keys($unique);
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function parsePendingPluginsQuery(Request $request): array
+    {
+        $raw = $request->query->get('pending_plugins');
+        if (is_array($raw)) {
+            return $this->normalizeQueuedPluginIdentifiers($raw);
+        }
+        if (is_string($raw) && $raw !== '') {
+            $parts = array_map('trim', explode(',', $raw));
+
+            return $this->normalizeQueuedPluginIdentifiers($parts);
+        }
+
+        return [];
+    }
+
+    /**
+     * Download the .fpa and read conf.yml dependency lines.
+     *
+     * @return array{checks: list<array<string, mixed>>, all_met: bool, missing: list<string>}
+     */
+    private function evaluateConfDependencyChecksFromDownloadUrl(?string $downloadUrl, mixed $streamContext): array
+    {
+        $dependencyChecks = [];
+        $missingDependencies = [];
+        $allDependenciesMet = true;
+
+        if ($downloadUrl === null || $downloadUrl === '') {
+            return ['checks' => [], 'all_met' => true, 'missing' => []];
+        }
+
+        $tempFile = sys_get_temp_dir() . '/' . uniqid('featherpanel_check_', true) . '.fpa';
+        $fileContent = @file_get_contents($downloadUrl, false, $streamContext);
+        if ($fileContent === false) {
+            return ['checks' => [], 'all_met' => true, 'missing' => []];
+        }
+
+        file_put_contents($tempFile, $fileContent);
+
+        $tempDir = sys_get_temp_dir() . '/' . uniqid('featherpanel_check_', true);
+        @mkdir($tempDir, 0755, true);
+        $pwd = self::PASSWORD;
+        $unzipCommand = sprintf('unzip -P %s %s conf.yml -d %s', escapeshellarg($pwd), escapeshellarg($tempFile), escapeshellarg($tempDir));
+        exec($unzipCommand, $out, $code);
+
+        if ($code === 0 && file_exists($tempDir . '/conf.yml')) {
+            try {
+                $conf = \Symfony\Component\Yaml\Yaml::parseFile($tempDir . '/conf.yml');
+                $confDependencies = $conf['plugin']['dependencies'] ?? [];
+                if (!is_array($confDependencies)) {
+                    $confDependencies = [];
+                }
+
+                foreach ($confDependencies as $dep) {
+                    if (!is_string($dep)) {
+                        continue;
+                    }
+                    $met = false;
+                    $message = '';
+                    $type = 'unknown';
+                    $name = $dep;
+
+                    if (strpos($dep, 'composer=') === 0) {
+                        $composerPkg = substr($dep, strlen('composer='));
+                        $met = \App\Plugins\Dependencies\ComposerDependencies::isInstalled($composerPkg);
+                        $message = $met ? 'Composer package installed' : "Composer package required: {$composerPkg}";
+                        $type = 'composer';
+                        $name = $composerPkg;
+                    } elseif (strpos($dep, 'plugin=') === 0) {
+                        $pluginDep = substr($dep, strlen('plugin='));
+                        $met = \App\Plugins\Dependencies\AppDependencies::isInstalled($pluginDep);
+                        $message = $met ? 'Plugin installed' : "Plugin required: {$pluginDep}";
+                        $type = 'plugin';
+                        $name = $pluginDep;
+                    } elseif (strpos($dep, 'php=') === 0) {
+                        $phpVersion = substr($dep, strlen('php='));
+                        $met = \App\Plugins\Dependencies\PhpVersionDependencies::isInstalled($phpVersion);
+                        $message = $met ? 'PHP version requirement met' : "PHP version required: {$phpVersion}";
+                        $type = 'php';
+                        $name = $phpVersion;
+                    } elseif (strpos($dep, 'php-ext=') === 0) {
+                        $ext = substr($dep, strlen('php-ext='));
+                        $met = \App\Plugins\Dependencies\PhpExtensionDependencies::isInstalled($ext);
+                        $message = $met ? 'PHP extension installed' : "PHP extension required: {$ext}";
+                        $type = 'php-ext';
+                        $name = $ext;
+                    } else {
+                        $met = true;
+                        $message = "Unknown dependency format: {$dep}";
+                    }
+
+                    $dependencyChecks[] = [
+                        'dependency' => $dep,
+                        'type' => $type,
+                        'name' => $name,
+                        'met' => $met,
+                        'message' => $message,
+                    ];
+
+                    if (!$met) {
+                        $missingDependencies[] = $dep;
+                        $allDependenciesMet = false;
+                    }
+                }
+            } catch (\Exception $e) {
+                App::getInstance(true)->getLogger()->warning('Failed to parse conf.yml for dependency check: ' . $e->getMessage());
+            }
+        }
+
+        @exec('rm -rf ' . escapeshellarg($tempDir));
+        @unlink($tempFile);
+
+        return [
+            'checks' => $dependencyChecks,
+            'all_met' => $allDependenciesMet,
+            'missing' => $missingDependencies,
+        ];
     }
 
     /**

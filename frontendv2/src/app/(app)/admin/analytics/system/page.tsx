@@ -208,38 +208,41 @@ export default function SystemAnalyticsPage() {
                                 <CardContent>
                                     {stats.recent_queued.length > 0 ? (
                                         <div className='space-y-6'>
-                                            {stats.recent_queued.map((item) => (
-                                                <div
-                                                    key={item.id}
-                                                    className='flex items-center justify-between border-b pb-4 last:border-0 last:pb-0'
-                                                >
-                                                    <div className='space-y-1'>
-                                                        <p className='text-sm font-medium'>{item.subject}</p>
-                                                        <p className='text-muted-foreground text-xs'>
-                                                            {item.recipient}
-                                                        </p>
+                                            {stats.recent_queued.map((item) => {
+                                                const statusKey = item.status === 'pending' ? 'queued' : item.status;
+                                                return (
+                                                    <div
+                                                        key={item.id}
+                                                        className='flex items-center justify-between border-b pb-4 last:border-0 last:pb-0'
+                                                    >
+                                                        <div className='space-y-1'>
+                                                            <p className='text-sm font-medium'>{item.subject}</p>
+                                                            <p className='text-muted-foreground text-xs'>
+                                                                {item.recipient}
+                                                            </p>
+                                                        </div>
+                                                        <div className='text-right'>
+                                                            <span
+                                                                className={`rounded-full px-2 py-1 text-xs ${
+                                                                    item.status === 'sent'
+                                                                        ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                                                                        : item.status === 'failed'
+                                                                          ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                                                                          : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
+                                                                }`}
+                                                            >
+                                                                {t(`admin.analytics.system.status.${statusKey}`) ||
+                                                                    item.status}
+                                                            </span>
+                                                            <p className='text-muted-foreground mt-1 text-xs'>
+                                                                {formatDistanceToNow(new Date(item.created_at), {
+                                                                    addSuffix: true,
+                                                                })}
+                                                            </p>
+                                                        </div>
                                                     </div>
-                                                    <div className='text-right'>
-                                                        <span
-                                                            className={`rounded-full px-2 py-1 text-xs ${
-                                                                item.status === 'sent'
-                                                                    ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                                                                    : item.status === 'failed'
-                                                                      ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
-                                                                      : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
-                                                            }`}
-                                                        >
-                                                            {t(`admin.analytics.system.status.${item.status}`) ||
-                                                                item.status}
-                                                        </span>
-                                                        <p className='text-muted-foreground mt-1 text-xs'>
-                                                            {formatDistanceToNow(new Date(item.created_at), {
-                                                                addSuffix: true,
-                                                            })}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            ))}
+                                                );
+                                            })}
                                         </div>
                                     ) : (
                                         <div className='text-muted-foreground flex justify-center py-8'>
