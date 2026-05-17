@@ -77,6 +77,17 @@ return function (RouteCollection $routes): void {
     );
     App::getInstance(true)->registerAuthRoute(
         $routes,
+        'data-request-create',
+        '/api/user/data-request',
+        function (Request $request) {
+            return (new SessionController())->requestDataExport($request);
+        },
+        ['POST'],
+        Rate::perMinute(2), // Default: Admin can override in ratelimit.json
+        'user-session'
+    );
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
         'mails-get',
         '/api/user/mails',
         function (Request $request) {

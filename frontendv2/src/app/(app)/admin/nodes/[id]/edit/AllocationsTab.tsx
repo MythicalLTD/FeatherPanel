@@ -100,9 +100,21 @@ export function AllocationsTab({ nodeId, nodeName }: AllocationsTabProps) {
     const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
     const [deleteUnusedConfirm, setDeleteUnusedConfirm] = useState(false);
     const [deleteUnusedIpFilter, setDeleteUnusedIpFilter] = useState('');
+    const [bulkAddressOpen, setBulkAddressOpen] = useState(false);
+    const [bulkAddressForm, setBulkAddressForm] = useState({
+        from_ip: '',
+        to_ip: '',
+        ip_alias: '',
+        update_alias: false,
+    });
     const [submitting, setSubmitting] = useState(false);
 
     const availableIPs = ['0.0.0.0', ...nodeIPs.filter((ip) => ip !== '0.0.0.0')];
+    const allocationIpOptions = Array.from(
+        new Set([...allocations.map((allocation) => allocation.ip), ...availableIPs]),
+    )
+        .filter(Boolean)
+        .sort();
 
     const fetchAllocations = useCallback(async () => {
         setLoading(true);
@@ -229,6 +241,51 @@ export function AllocationsTab({ nodeId, nodeName }: AllocationsTabProps) {
         }
     };
 
+    const handleBulkAddressUpdate = async () => {
+        const fromIp = bulkAddressForm.from_ip.trim();
+        const toIp = bulkAddressForm.to_ip.trim();
+
+        if (!fromIp || (!toIp && !bulkAddressForm.update_alias)) {
+            toast.error(t('admin.node.allocations.messages.bulk_address_missing'));
+            return;
+        }
+
+        setSubmitting(true);
+        try {
+            const payload: {
+                node_id: string | number;
+                from_ip: string;
+                to_ip?: string;
+                ip_alias?: string | null;
+            } = {
+                node_id: nodeId,
+                from_ip: fromIp,
+            };
+
+            if (toIp) {
+                payload.to_ip = toIp;
+            }
+
+            if (bulkAddressForm.update_alias) {
+                payload.ip_alias = bulkAddressForm.ip_alias.trim() || null;
+            }
+
+            await axios.patch('/api/admin/allocations/bulk-address', payload);
+            toast.success(t('admin.node.allocations.messages.bulk_address_success'));
+            setBulkAddressOpen(false);
+            setBulkAddressForm({ from_ip: '', to_ip: '', ip_alias: '', update_alias: false });
+            fetchAllocations();
+        } catch (error: unknown) {
+            console.error('Error updating allocation addresses:', error);
+            const errorMessage = axios.isAxiosError(error)
+                ? error.response?.data?.message
+                : t('admin.node.allocations.messages.bulk_address_failed');
+            toast.error(errorMessage || t('admin.node.allocations.messages.bulk_address_failed'));
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
     const toggleSelection = (id: number) => {
         setSelectedIds((prev) => (prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]));
     };
@@ -256,6 +313,10 @@ export function AllocationsTab({ nodeId, nodeName }: AllocationsTabProps) {
                         <Button variant='outline' size='sm' onClick={() => setDeleteUnusedConfirm(true)}>
                             <Trash2 className='mr-2 h-4 w-4' />
                             {t('admin.node.allocations.delete_unused')}
+                        </Button>
+                        <Button variant='outline' size='sm' onClick={() => setBulkAddressOpen(true)}>
+                            <RefreshCw className='mr-2 h-4 w-4' />
+                            {t('admin.node.allocations.change_address')}
                         </Button>
                         <Button size='sm' onClick={() => setCreatingAllocation(true)}>
                             <Plus className='mr-2 h-4 w-4' />
@@ -704,6 +765,85 @@ export function AllocationsTab({ nodeId, nodeName }: AllocationsTabProps) {
                         showFooter
                     />
                 </div>
+            </Sheet>
+
+            <Sheet open={bulkAddressOpen} onOpenChange={setBulkAddressOpen}>
+                <SheetHeader>
+                    <SheetTitle>{t('admin.node.allocations.bulk_address.title')}</SheetTitle>
+                    <SheetDescription>{t('admin.node.allocations.bulk_address.description')}</SheetDescription>
+                </SheetHeader>
+                <div className='mt-8 space-y-6'>
+                    <div className='space-y-2'>
+                        <Label className='text-sm font-semibold'>
+                            {t('admin.node.allocations.bulk_address.from_ip')}
+                        </Label>
+                        <Input
+                            list='allocation-ip-options'
+                            placeholder='0.0.0.0'
+                            value={bulkAddressForm.from_ip}
+                            className='h-11 font-mono'
+                            onChange={(e) => setBulkAddressForm((prev) => ({ ...prev, from_ip: e.target.value }))}
+                        />
+                        <datalist id='allocation-ip-options'>
+                            {allocationIpOptions.map((ip) => (
+                                <option key={ip} value={ip} />
+                            ))}
+                        </datalist>
+                    </div>
+
+                    <div className='space-y-2'>
+                        <Label className='text-sm font-semibold'>
+                            {t('admin.node.allocations.bulk_address.to_ip')}
+                        </Label>
+                        <Input
+                            placeholder='6.6.6.6'
+                            value={bulkAddressForm.to_ip}
+                            className='h-11 font-mono'
+                            onChange={(e) => setBulkAddressForm((prev) => ({ ...prev, to_ip: e.target.value }))}
+                        />
+                        <p className='text-muted-foreground text-[10px] leading-relaxed italic'>
+                            {t('admin.node.allocations.bulk_address.to_ip_help')}
+                        </p>
+                    </div>
+
+                    <div className='bg-muted/30 border-border/50 flex items-start gap-3 rounded-2xl border p-4'>
+                        <input
+                            type='checkbox'
+                            id='bulkAllocationAddressAlias'
+                            className='border-border bg-background mt-1 rounded'
+                            checked={bulkAddressForm.update_alias}
+                            onChange={(e) =>
+                                setBulkAddressForm((prev) => ({ ...prev, update_alias: e.target.checked }))
+                            }
+                        />
+                        <div className='flex-1 space-y-3'>
+                            <Label
+                                htmlFor='bulkAllocationAddressAlias'
+                                className='cursor-pointer text-sm font-semibold'
+                            >
+                                {t('admin.node.allocations.bulk_address.update_alias')}
+                            </Label>
+                            <Input
+                                placeholder='domain.com'
+                                value={bulkAddressForm.ip_alias}
+                                className='h-11 font-mono'
+                                disabled={!bulkAddressForm.update_alias}
+                                onChange={(e) => setBulkAddressForm((prev) => ({ ...prev, ip_alias: e.target.value }))}
+                            />
+                            <p className='text-muted-foreground text-[10px] leading-relaxed italic'>
+                                {t('admin.node.allocations.bulk_address.alias_help')}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <SheetFooter>
+                    <Button variant='outline' onClick={() => setBulkAddressOpen(false)}>
+                        {t('common.cancel')}
+                    </Button>
+                    <Button onClick={handleBulkAddressUpdate} loading={submitting}>
+                        {t('admin.node.allocations.bulk_address.submit')}
+                    </Button>
+                </SheetFooter>
             </Sheet>
 
             <AlertDialog open={bulkDeleteConfirm} onOpenChange={setBulkDeleteConfirm}>

@@ -143,12 +143,12 @@ export function VmIpPickerSheet({
         const ipRegex = /^(\d{1,3}\.){3}\d{1,3}$/;
         const entries = parseBulkIps(bulkIpsInput);
         if (entries.length === 0) {
-            toast.error('Add at least one IP (one per line, comma, or space separated).');
+            toast.error(t('admin.vdsNodes.ips.bulk_empty'));
             return;
         }
         const invalid = entries.find((ip) => !ipRegex.test(ip));
         if (invalid) {
-            toast.error(`Invalid IP in list: ${invalid}`);
+            toast.error(t('admin.vdsNodes.ips.bulk_invalid_ip', { ip: invalid }));
             return;
         }
         if (createForm.cidr !== '') {
@@ -298,7 +298,7 @@ export function VmIpPickerSheet({
                                     )}
                                     onClick={() => setCreateType('single')}
                                 >
-                                    Single
+                                    {t('admin.vdsNodes.ips.single')}
                                 </Button>
                                 <Button
                                     type='button'
@@ -309,21 +309,19 @@ export function VmIpPickerSheet({
                                     )}
                                     onClick={() => setCreateType('bulk')}
                                 >
-                                    Bulk
+                                    {t('admin.vdsNodes.ips.bulk')}
                                 </Button>
                             </div>
                             {createType === 'bulk' && (
                                 <div className='space-y-2'>
-                                    <Label className='text-sm font-semibold'>IP list</Label>
+                                    <Label className='text-sm font-semibold'>{t('admin.vdsNodes.ips.bulk_list')}</Label>
                                     <Textarea
                                         placeholder={'10.0.0.10\n10.0.0.11\n10.0.0.12'}
                                         value={bulkIpsInput}
                                         className='min-h-30 font-mono'
                                         onChange={(e) => setBulkIpsInput(e.target.value)}
                                     />
-                                    <p className='text-muted-foreground text-xs'>
-                                        One IP per line, or comma/space separated. CIDR/gateway/notes apply to all.
-                                    </p>
+                                    <p className='text-muted-foreground text-xs'>{t('admin.vdsNodes.ips.bulk_help')}</p>
                                 </div>
                             )}
                             {createType === 'single' && (

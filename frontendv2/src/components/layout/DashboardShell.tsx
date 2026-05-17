@@ -77,6 +77,11 @@ export default function DashboardShell({ children }: { children: React.ReactNode
 
     const pathSegments = (pathname || '').split('/').filter(Boolean);
     const isServerConsoleHome = pathSegments.length === 2 && pathSegments[0] === 'server' && Boolean(pathSegments[1]);
+    const isTicketDetailPage =
+        pathSegments.length === 3 &&
+        (pathSegments[0] === 'admin' || pathSegments[0] === 'dashboard') &&
+        pathSegments[1] === 'tickets' &&
+        Boolean(pathSegments[2]);
 
     const { navbarHoverReveal } = useNavbarHoverReveal();
     const { chromeLayout } = useChromeLayout();
@@ -175,7 +180,9 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                                 !isFullWidthMode &&
                                     (isServerConsoleHome
                                         ? 'mx-auto w-full max-w-[min(100rem,calc(100vw-1.5rem))] sm:max-w-[min(100rem,calc(100vw-2rem))]'
-                                        : 'mx-auto w-full max-w-7xl'),
+                                        : isTicketDetailPage
+                                          ? 'mx-auto w-full max-w-[min(112rem,calc(100vw-1.5rem))] sm:max-w-[min(112rem,calc(100vw-2rem))]'
+                                          : 'mx-auto w-full max-w-7xl'),
                             )}
                         >
                             {children}

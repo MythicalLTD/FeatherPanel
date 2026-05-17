@@ -219,15 +219,17 @@ export default function UserAnalyticsPage() {
                         />
                         <ResourceCard
                             title={overview.unverified.toString()}
-                            subtitle='Unverified'
-                            description='Users pending email verification'
+                            subtitle={t('admin.analytics.users.unverified')}
+                            description={t('admin.analytics.users.pending_email_verification')}
                             icon={UserMinus}
                             className='bg-card/50 shadow-none! backdrop-blur-sm'
                         />
                         <ResourceCard
                             title={(securityOverview?.not_secured ?? 0).toString()}
-                            subtitle='Not secured'
-                            description={`Fully secured: ${securityOverview?.fully_secured ?? 0}`}
+                            subtitle={t('admin.analytics.users.not_secured')}
+                            description={t('admin.analytics.users.fully_secured', {
+                                count: String(securityOverview?.fully_secured ?? 0),
+                            })}
                             icon={ShieldAlert}
                             className='bg-card/50 shadow-none! backdrop-blur-sm'
                         />

@@ -33,6 +33,7 @@ export interface NavigationItem {
     showBadge?: boolean;
     description?: string;
     group?: string;
+    priority?: number;
     badge?: string;
     children?: NavigationItem[]; // Optional submenu items
 }
@@ -56,6 +57,7 @@ export interface PluginSidebarItem {
     permission?: string;
     showBadge?: boolean;
     group?: string;
+    priority?: number; // Lower numbers render first within the same sidebar group
     allowedOnlyOnSpells?: number[] | null; // Array of spell IDs if restricted, null if no restrictions
 }
 

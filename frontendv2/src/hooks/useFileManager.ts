@@ -128,8 +128,8 @@ export function useFileManager(serverUuid: string) {
             }
 
             if (err instanceof Error && err.message === 'Request timeout') {
-                setError('Request timed out');
-                toast.error('File loading timed out. Please try again.');
+                setError(t('files.messages.request_timed_out'));
+                toast.error(t('files.messages.load_timeout_retry'));
             } else {
                 setError(apiMessage || t('files.messages.load_error'));
                 toast.error(apiMessage || t('files.messages.load_error'));
@@ -216,10 +216,10 @@ export function useFileManager(serverUuid: string) {
     const cancelPull = async (id: string) => {
         try {
             await filesApi.deletePullFile(serverUuid, id);
-            toast.success('Download cancelled');
+            toast.success(t('files.messages.download_cancelled'));
             refreshPulls();
         } catch {
-            toast.error('Failed to cancel download');
+            toast.error(t('files.messages.cancel_download_failed'));
         }
     };
 

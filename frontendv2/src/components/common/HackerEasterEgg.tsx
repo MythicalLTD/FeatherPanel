@@ -16,6 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useTranslation } from '@/contexts/TranslationContext';
 
 const SECRET_PHRASE = 'iamasecurityhacker';
 const FLAG_KEY = 'iamahacker';
@@ -59,17 +60,16 @@ function isHackerFlagSet(): boolean {
 }
 
 function LockScreen() {
+    const { t } = useTranslation();
+
     return (
         <div
             className='bg-background fixed inset-0 z-99999 flex flex-col items-center justify-center p-6 text-center'
             style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
         >
             <div className='max-w-md space-y-4'>
-                <p className='text-foreground text-xl font-medium'>Look what you have done script kiddy.</p>
-                <p className='text-muted-foreground'>
-                    Hahahah how funny you are you think you&apos;re a hacker or something? Okay then, let&apos;s see how
-                    you get rid of me.
-                </p>
+                <p className='text-foreground text-xl font-medium'>{t('common.hacker_easter_egg.title')}</p>
+                <p className='text-muted-foreground'>{t('common.hacker_easter_egg.description')}</p>
             </div>
         </div>
     );

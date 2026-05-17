@@ -174,12 +174,12 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
             ),
         );
         if (entries.length === 0) {
-            toast.error('Add at least one IP (one per line, comma, or space separated).');
+            toast.error(t('admin.vdsNodes.ips.bulk_empty'));
             return;
         }
         const invalid = entries.find((ip) => !ipRegex.test(ip));
         if (invalid) {
-            toast.error(`Invalid IP in list: ${invalid}`);
+            toast.error(t('admin.vdsNodes.ips.bulk_invalid_ip', { ip: invalid }));
             return;
         }
         if (createForm.cidr !== '') {
@@ -567,7 +567,7 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                             }
                             onClick={() => setCreateMode('single')}
                         >
-                            Single
+                            {t('admin.vdsNodes.ips.single')}
                         </Button>
                         <Button
                             type='button'
@@ -579,21 +579,19 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                             }
                             onClick={() => setCreateMode('bulk')}
                         >
-                            Bulk
+                            {t('admin.vdsNodes.ips.bulk')}
                         </Button>
                     </div>
                     {createMode === 'bulk' && (
                         <div className='space-y-2'>
-                            <Label className='text-sm font-semibold'>IP list</Label>
+                            <Label className='text-sm font-semibold'>{t('admin.vdsNodes.ips.bulk_list')}</Label>
                             <Textarea
                                 placeholder={'10.0.0.10\n10.0.0.11\n10.0.0.12'}
                                 value={bulkIpsInput}
                                 className='min-h-[120px] font-mono'
                                 onChange={(e) => setBulkIpsInput(e.target.value)}
                             />
-                            <p className='text-muted-foreground text-xs'>
-                                One IP per line, or comma/space separated. CIDR/gateway/notes apply to all.
-                            </p>
+                            <p className='text-muted-foreground text-xs'>{t('admin.vdsNodes.ips.bulk_help')}</p>
                         </div>
                     )}
                     {createMode === 'single' && (

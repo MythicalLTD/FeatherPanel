@@ -206,14 +206,14 @@ export default function TranslationsPage() {
         try {
             const langCode = newLangCode.trim().toLowerCase();
             if (!langCode || !/^[a-z]{2}(-[a-z]{2})?$/.test(langCode)) {
-                toast.error('Invalid language code. Use ISO 639-1 format (e.g., en, de, fr)');
+                toast.error(t('admin.translations.messages.invalid_language_code'));
                 setIsSubmitting(false);
                 return;
             }
 
             const existingLanguage = translationFiles.some((file) => file.code === langCode);
             if (existingLanguage) {
-                toast.info(`Translation file "${langCode}.json" already exists. Opening it for editing.`);
+                toast.info(t('admin.translations.messages.file_exists_opening', { lang: langCode }));
                 setCreateOpen(false);
                 setNewLangCode('');
                 await loadTranslationContent(langCode);
@@ -230,7 +230,7 @@ export default function TranslationsPage() {
             console.error('Error creating translation file:', error);
             if (isAxiosError(error) && error.response?.data?.error_code === 'FILE_EXISTS') {
                 const langCode = newLangCode.trim().toLowerCase();
-                toast.info(`Translation file "${langCode}.json" already exists. Opening it for editing.`);
+                toast.info(t('admin.translations.messages.file_exists_opening', { lang: langCode }));
                 setCreateOpen(false);
                 await loadTranslationContent(langCode);
                 setNewLangCode('');
@@ -309,7 +309,7 @@ export default function TranslationsPage() {
             window.URL.revokeObjectURL(url);
         } catch (error) {
             console.error('Error downloading translation file:', error);
-            toast.error('Failed to download translation file');
+            toast.error(t('admin.translations.messages.download_failed'));
         }
     };
 

@@ -22,6 +22,7 @@ use App\App;
 class ChatConversation
 {
     private static string $table = 'featherpanel_chatbot_conversations';
+    private static ?array $columns = null;
 
     /**
      * Create a new conversation.
@@ -94,6 +95,10 @@ class ChatConversation
         }
 
         $pdo = Database::getPdoConnection();
+        $data = array_intersect_key($data, array_flip(self::getColumns()));
+        if (empty($data)) {
+            return false;
+        }
         $fields = array_keys($data);
         $set = implode(', ', array_map(fn ($f) => "$f = :$f", $fields));
         $sql = 'UPDATE ' . self::$table . ' SET ' . $set . ' WHERE id = :id';
@@ -143,5 +148,23 @@ class ChatConversation
 
             return false;
         }
+    }
+
+    public static function hasColumn(string $column): bool
+    {
+        return in_array($column, self::getColumns(), true);
+    }
+
+    private static function getColumns(): array
+    {
+        if (self::$columns !== null) {
+            return self::$columns;
+        }
+
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->query('SHOW COLUMNS FROM ' . self::$table);
+        self::$columns = array_map(static fn (array $column): string => $column['Field'], $stmt->fetchAll(\PDO::FETCH_ASSOC));
+
+        return self::$columns;
     }
 }

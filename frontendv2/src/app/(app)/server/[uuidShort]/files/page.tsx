@@ -274,7 +274,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 }
             } catch {
                 if (!cancelled) {
-                    toast.error('Failed to search files');
+                    toast.error(t('files.search.search_failed'));
                     setSearchResults([]);
                 }
             } finally {

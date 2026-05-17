@@ -242,18 +242,18 @@ export default function VdsActivitiesPage() {
                     to: p.to || 0,
                 });
             } catch {
-                toast.error('Failed to fetch activity log');
+                toast.error(t('vds.activities.fetch_failed'));
             } finally {
                 setLoading(false);
             }
         },
-        [id, searchQuery, selectedEventFilter],
+        [id, searchQuery, selectedEventFilter, t],
     );
 
     useEffect(() => {
         if (!instanceLoading) {
             if (!hasPermission('activity.read')) {
-                toast.error('You do not have permission to view this activity log');
+                toast.error(t('vds.activities.permission_denied'));
                 router.push(`/vds/${id}`);
                 return;
             }
@@ -323,7 +323,7 @@ export default function VdsActivitiesPage() {
         return (
             <div className='flex flex-col items-center justify-center py-24 text-center'>
                 <AlertTriangle className='text-destructive mb-4 h-12 w-12' />
-                <h2 className='text-xl font-black'>Instance Not Found</h2>
+                <h2 className='text-xl font-black'>{t('vds.console.not_found_title')}</h2>
             </div>
         );
     }
@@ -690,7 +690,7 @@ export default function VdsActivitiesPage() {
                                         className='h-8 border-white/5 px-4 font-black tracking-wider uppercase opacity-40 hover:opacity-100'
                                         onClick={() => {
                                             navigator.clipboard.writeText(rawJson);
-                                            toast.success('Payload copied');
+                                            toast.success(t('vds.activities.payload_copied'));
                                         }}
                                     >
                                         <Copy className='mr-2 h-3.5 w-3.5' />

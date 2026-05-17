@@ -41,7 +41,7 @@ export default function CloudManagementFinishPage() {
         const cloudApiSecret = searchParams.get('cloud_api_secret');
 
         if (!cloudApiKey || !cloudApiSecret) {
-            setError('Missing required parameters: cloud_api_key and cloud_api_secret');
+            setError(t('admin.cloud_management.finish.missing_params'));
             setIsLoading(false);
             return;
         }
@@ -55,27 +55,27 @@ export default function CloudManagementFinishPage() {
 
             if (response.data && response.data.success) {
                 setIsSuccess(true);
-                toast.success('Your panel has been successfully linked with FeatherCloud!');
+                toast.success(t('admin.cloud_management.finish.linked_toast'));
 
                 setTimeout(() => {
                     router.push('/admin/cloud-management');
                 }, 3000);
             } else {
-                throw new Error(response.data.message || 'Failed to save credentials');
+                throw new Error(response.data.message || t('admin.cloud_management.finish.save_failed'));
             }
         } catch (err) {
             console.error('Failed to save cloud credentials:', err);
             const errorMessage =
                 axios.isAxiosError(err) && err.response?.data?.message
                     ? err.response.data.message
-                    : 'Failed to save cloud credentials';
+                    : t('admin.cloud_management.finish.save_failed');
             setError(errorMessage);
-            toast.error('Failed to save cloud credentials');
+            toast.error(t('admin.cloud_management.finish.save_failed'));
         } finally {
             setIsSaving(false);
             setIsLoading(false);
         }
-    }, [searchParams, router]);
+    }, [searchParams, router, t]);
 
     useEffect(() => {
         saveCloudCredentials();

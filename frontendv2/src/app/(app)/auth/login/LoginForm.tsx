@@ -93,6 +93,8 @@ export default function LoginForm() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
+    const [unverifiedIdentifier, setUnverifiedIdentifier] = useState<string | null>(null);
+    const [resendVerificationLoading, setResendVerificationLoading] = useState(false);
     const [turnstileKey, setTurnstileKey] = useState(0);
 
     // Multi-step login state (when email login is enabled)
@@ -115,6 +117,52 @@ export default function LoginForm() {
         setTurnstileKey((prev) => prev + 1);
     };
 
+    const handleResendVerificationEmail = async () => {
+        if (!unverifiedIdentifier) return;
+
+        setResendVerificationLoading(true);
+        setSuccess('');
+
+        try {
+            const response = await authApi.resendVerificationEmail({
+                username_or_email: unverifiedIdentifier,
+            });
+
+            if (response.success) {
+                setSuccess(response.message || t('auth.verify_email.resend_sent'));
+            } else {
+                setError(response.message || t('common.error'));
+            }
+        } catch (err: unknown) {
+            const error = err as { response?: { data?: { message?: string } } };
+            setError(error.response?.data?.message || t('common.error'));
+        } finally {
+            setResendVerificationLoading(false);
+        }
+    };
+
+    const renderLoginError = () => {
+        if (!error) return null;
+
+        return (
+            <div className='bg-destructive/10 border-destructive/20 text-destructive animate-fade-in rounded-xl border p-4 text-sm'>
+                <p>{error}</p>
+                {unverifiedIdentifier && (
+                    <Button
+                        type='button'
+                        variant='outline'
+                        size='sm'
+                        className='mt-3 w-full'
+                        loading={resendVerificationLoading}
+                        onClick={handleResendVerificationEmail}
+                    >
+                        {t('auth.verify_email.resend')}
+                    </Button>
+                )}
+            </div>
+        );
+    };
+
     async function submitPasswordLogin(usernameOrEmail: string) {
         let captchaToken = '';
         if (showCaptcha) {
@@ -126,6 +174,7 @@ export default function LoginForm() {
         }
 
         setLoading(true);
+        setUnverifiedIdentifier(null);
 
         try {
             const response = await authApi.login({
@@ -153,6 +202,9 @@ export default function LoginForm() {
                     }
                 }, 1000);
             } else {
+                if (response.error_code === 'EMAIL_NOT_VERIFIED') {
+                    setUnverifiedIdentifier(usernameOrEmail);
+                }
                 setError(response.message || t('common.error'));
                 resetCaptcha();
             }
@@ -165,6 +217,10 @@ export default function LoginForm() {
                 const email = error.response.data.data?.email || usernameOrEmail;
                 router.push(`/auth/verify-2fa?username_or_email=${encodeURIComponent(email)}`);
                 return;
+            }
+
+            if (error.response?.data?.error_code === 'EMAIL_NOT_VERIFIED') {
+                setUnverifiedIdentifier(usernameOrEmail);
             }
 
             setError(error.response?.data?.message || t('common.error'));
@@ -335,7 +391,7 @@ export default function LoginForm() {
         }
 
         if (!selectedLdapProvider) {
-            setError('Please select an LDAP provider');
+            setError(t('auth.login.selectLdapProvider'));
             return;
         }
 
@@ -835,7 +891,10 @@ export default function LoginForm() {
                                     label={t('auth.login.username')}
                                     type='text'
                                     value={identifierValue}
-                                    onChange={(e) => setIdentifierValue(e.target.value)}
+                                    onChange={(e) => {
+                                        setIdentifierValue(e.target.value);
+                                        setUnverifiedIdentifier(null);
+                                    }}
                                     required
                                     autoComplete='username webauthn'
                                     autoFocus
@@ -1087,11 +1146,7 @@ export default function LoginForm() {
                                     {t('common.back')}
                                 </Button>
 
-                                {error && (
-                                    <div className='bg-destructive/10 border-destructive/20 text-destructive animate-fade-in rounded-xl border p-4 text-sm'>
-                                        {error}
-                                    </div>
-                                )}
+                                {renderLoginError()}
                                 {success && (
                                     <div className='animate-fade-in rounded-xl border border-green-500/20 bg-green-500/10 p-4 text-sm text-green-600 dark:text-green-400'>
                                         {success}
@@ -1102,7 +1157,7 @@ export default function LoginForm() {
                     ) : showLdapLogin && ldapEnabled ? (
                         <form onSubmit={handleLdapLogin} className='space-y-5'>
                             <Select
-                                label='LDAP Provider'
+                                label={t('auth.login.ldapProvider')}
                                 value={selectedLdapProvider}
                                 onChange={(e) => setSelectedLdapProvider(e.target.value)}
                                 required
@@ -1115,14 +1170,14 @@ export default function LoginForm() {
                             </Select>
 
                             <Input
-                                label='LDAP Username'
+                                label={t('auth.login.ldapUsername')}
                                 type='text'
                                 value={form.username_or_email || ''}
                                 onChange={(e) => setForm({ ...form, username_or_email: e.target.value })}
                                 required
                                 autoComplete='username'
                                 icon={<Mail className='h-5 w-5' />}
-                                placeholder='Enter your LDAP username'
+                                placeholder={t('auth.login.ldapUsernamePlaceholder')}
                             />
 
                             {showCaptcha && (
@@ -1160,11 +1215,7 @@ export default function LoginForm() {
                                 )}
                             </Button>
 
-                            {error && (
-                                <div className='bg-destructive/10 border-destructive/20 text-destructive animate-fade-in rounded-xl border p-4 text-sm'>
-                                    {error}
-                                </div>
-                            )}
+                            {renderLoginError()}
                             {success && (
                                 <div className='animate-fade-in rounded-xl border border-green-500/20 bg-green-500/10 p-4 text-sm text-green-600 dark:text-green-400'>
                                     {success}
@@ -1307,7 +1358,10 @@ export default function LoginForm() {
                                 label={t('auth.login.username')}
                                 type='text'
                                 value={form.username_or_email || ''}
-                                onChange={(e) => setForm({ ...form, username_or_email: e.target.value })}
+                                onChange={(e) => {
+                                    setForm({ ...form, username_or_email: e.target.value });
+                                    setUnverifiedIdentifier(null);
+                                }}
                                 required
                                 autoComplete='username webauthn'
                                 icon={<Mail className='h-5 w-5' />}

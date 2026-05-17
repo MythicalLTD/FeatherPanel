@@ -21,6 +21,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import React, { useEffect, useState } from 'react';
 import api from '@/lib/api';
+import { useTranslation } from '@/contexts/TranslationContext';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
@@ -34,6 +35,7 @@ interface Data {
 }
 
 export default function KnowledgebaseAnalyticsPage() {
+    const { t } = useTranslation();
     const [data, setData] = useState<Data | null>(null);
     const { getWidgets } = usePluginWidgets('admin-analytics-knowledgebase');
     const [loading, setLoading] = useState(true);
@@ -44,56 +46,60 @@ export default function KnowledgebaseAnalyticsPage() {
             .finally(() => setLoading(false));
     }, []);
 
-    if (loading) return <div className='flex min-h-[300px] items-center justify-center'>Loading...</div>;
-    if (!data) return <div className='flex min-h-[300px] items-center justify-center'>No data</div>;
+    if (loading) return <div className='flex min-h-[300px] items-center justify-center'>{t('common.loading')}</div>;
+    if (!data) return <div className='flex min-h-[300px] items-center justify-center'>{t('common.no_data')}</div>;
 
     const breakdown = [
-        { name: 'Categories', value: data.knowledgebase.categories ?? 0 },
-        { name: 'Articles', value: data.knowledgebase.articles ?? 0 },
-        { name: 'Attachments', value: data.knowledgebase.attachments ?? 0 },
-        { name: 'Tags', value: data.knowledgebase.tags ?? 0 },
+        { name: t('admin.analytics.knowledgebase.categories'), value: data.knowledgebase.categories ?? 0 },
+        { name: t('admin.analytics.knowledgebase.articles'), value: data.knowledgebase.articles ?? 0 },
+        { name: t('admin.analytics.knowledgebase.attachments'), value: data.knowledgebase.attachments ?? 0 },
+        { name: t('admin.analytics.knowledgebase.tags'), value: data.knowledgebase.tags ?? 0 },
     ];
 
     return (
         <>
             <WidgetRenderer widgets={getWidgets('admin-analytics-knowledgebase', 'top-of-page')} />
             <div className='space-y-6'>
-                <PageHeader title='Knowledgebase Analytics' description='Knowledgebase content KPIs.' icon={BookOpen} />
+                <PageHeader
+                    title={t('admin.analytics.knowledgebase.title')}
+                    description={t('admin.analytics.knowledgebase.subtitle')}
+                    icon={BookOpen}
+                />
                 <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-4'>
                     <ResourceCard
                         title={String(data.knowledgebase.categories ?? 0)}
-                        subtitle='Categories'
-                        description='Knowledgebase category entries'
+                        subtitle={t('admin.analytics.knowledgebase.categories')}
+                        description={t('admin.analytics.knowledgebase.category_entries')}
                         icon={FolderTree}
                     />
                     <ResourceCard
                         title={String(data.knowledgebase.articles ?? 0)}
-                        subtitle='Articles'
-                        description='Published/support articles'
+                        subtitle={t('admin.analytics.knowledgebase.articles')}
+                        description={t('admin.analytics.knowledgebase.published_articles')}
                         icon={BookOpen}
                     />
                     <ResourceCard
                         title={String(data.knowledgebase.attachments ?? 0)}
-                        subtitle='Attachments'
-                        description='Uploaded article attachments'
+                        subtitle={t('admin.analytics.knowledgebase.attachments')}
+                        description={t('admin.analytics.knowledgebase.uploaded_attachments')}
                         icon={Paperclip}
                     />
                     <ResourceCard
                         title={String(data.totals.knowledgebase_objects ?? 0)}
-                        subtitle='Total KB Objects'
-                        description='All knowledgebase entities'
+                        subtitle={t('admin.analytics.knowledgebase.total_kb_objects')}
+                        description={t('admin.analytics.knowledgebase.all_entities')}
                         icon={Tags}
                     />
                 </div>
                 <div className='grid gap-4 md:grid-cols-2'>
                     <SimplePieChart
-                        title='Knowledgebase Breakdown'
-                        description='Distribution by KB object type'
+                        title={t('admin.analytics.knowledgebase.breakdown')}
+                        description={t('admin.analytics.knowledgebase.breakdown_desc')}
                         data={breakdown}
                     />
                     <SimpleBarChart
-                        title='Knowledgebase Objects'
-                        description='Counts across KB entities'
+                        title={t('admin.analytics.knowledgebase.objects')}
+                        description={t('admin.analytics.knowledgebase.objects_desc')}
                         data={breakdown}
                     />
                 </div>

@@ -19,6 +19,7 @@ namespace App\Services\Chatbot\Providers;
 
 use App\App;
 use GuzzleHttp\Client;
+use App\Services\Chatbot\TokenUsage;
 use GuzzleHttp\Exception\GuzzleException;
 
 class GrokProvider implements ProviderInterface
@@ -132,6 +133,7 @@ class GrokProvider implements ProviderInterface
             return [
                 'response' => $responseText,
                 'model' => "Grok {$this->model}",
+                'usage' => TokenUsage::fromOpenAiUsage($data['usage'] ?? null, $message, $responseText),
             ];
         } catch (GuzzleException $e) {
             $this->app->getLogger()->error('xAI (Grok) API exception: ' . $e->getMessage());

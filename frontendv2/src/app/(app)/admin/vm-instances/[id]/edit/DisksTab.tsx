@@ -181,17 +181,17 @@ export function DisksTab({
                     <Label className='mb-2 block'>{t('admin.vmInstances.resize_disk') ?? 'Expand disk'}</Label>
                     <form onSubmit={onResizeDisk} className='flex flex-wrap items-end gap-3'>
                         <div className='min-w-[160px]'>
-                            <Label className='text-xs'>Disk</Label>
+                            <Label className='text-xs'>{t('admin.vmInstances.resize_disk_label')}</Label>
                             <HeadlessSelect
                                 value={resizeDisk}
                                 onChange={(v) => setResizeDisk(String(v))}
                                 options={diskOptions}
-                                placeholder='Select…'
+                                placeholder={t('common.select')}
                                 buttonClassName='mt-1 h-10 w-full'
                             />
                         </div>
                         <div>
-                            <Label className='text-xs'>Size</Label>
+                            <Label className='text-xs'>{t('admin.vmInstances.resize_size_label')}</Label>
                             <Input
                                 value={resizeSize}
                                 onChange={(e) => setResizeSize(e.target.value)}

@@ -360,7 +360,7 @@ export default function MailTemplatesPage() {
                                         <Button
                                             variant='ghost'
                                             size='sm'
-                                            title='Preview'
+                                            title={t('common.preview')}
                                             onClick={() => openPreview(template)}
                                         >
                                             <Eye className='h-4 w-4' />
@@ -368,7 +368,7 @@ export default function MailTemplatesPage() {
                                         <Button
                                             variant='ghost'
                                             size='sm'
-                                            title='Edit'
+                                            title={t('common.edit')}
                                             onClick={() => openEdit(template)}
                                         >
                                             <Pencil className='h-4 w-4' />
@@ -376,7 +376,7 @@ export default function MailTemplatesPage() {
                                         <Button
                                             variant='ghost'
                                             size='sm'
-                                            title='Delete'
+                                            title={t('common.delete')}
                                             className='text-destructive hover:text-destructive hover:bg-destructive/10'
                                             onClick={() => handleDelete(template.id)}
                                         >
@@ -488,7 +488,7 @@ export default function MailTemplatesPage() {
                                         defaultLanguage='html'
                                         value={formData.body}
                                         onChange={(value) => setFormData({ ...formData, body: value || '' })}
-                                        title='Editor'
+                                        title={t('admin.mail_templates.form.editor')}
                                     />
                                     <p className='text-muted-foreground text-xs'>
                                         {t('admin.mail_templates.form.html_help')}
@@ -505,7 +505,7 @@ export default function MailTemplatesPage() {
                                     <iframe
                                         srcDoc={formData.body}
                                         className='h-full w-full border-none'
-                                        title='Live Preview'
+                                        title={t('admin.mail_templates.form.live_preview')}
                                     />
                                 </div>
                             </div>
@@ -553,7 +553,7 @@ export default function MailTemplatesPage() {
                                         defaultLanguage='html'
                                         value={formData.body}
                                         onChange={(value) => setFormData({ ...formData, body: value || '' })}
-                                        title='Editor'
+                                        title={t('admin.mail_templates.form.editor')}
                                     />
                                     <p className='text-muted-foreground text-xs'>
                                         {t('admin.mail_templates.form.html_help')}
@@ -570,7 +570,7 @@ export default function MailTemplatesPage() {
                                     <iframe
                                         srcDoc={formData.body}
                                         className='h-full w-full border-none'
-                                        title='Live Preview'
+                                        title={t('admin.mail_templates.form.live_preview')}
                                     />
                                 </div>
                             </div>
@@ -621,7 +621,7 @@ export default function MailTemplatesPage() {
                             </div>
                         </div>
                         <SheetFooter>
-                            <Button onClick={() => setPreviewOpen(false)}>Close</Button>
+                            <Button onClick={() => setPreviewOpen(false)}>{t('common.close')}</Button>
                         </SheetFooter>
                     </div>
                 </div>

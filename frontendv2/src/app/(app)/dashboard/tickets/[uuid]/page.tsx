@@ -280,7 +280,7 @@ export default function TicketViewPage() {
     }
 
     return (
-        <div className='mx-auto flex h-[calc(100vh-6rem)] max-w-[1700px] flex-col px-1 pt-2 pb-6 sm:px-2'>
+        <div className='flex h-[calc(100vh-6rem)] w-full flex-col pt-2 pb-6'>
             <WidgetRenderer widgets={getWidgets('dashboard-tickets-view', 'top-of-page')} />
 
             <div className='border-border/50 bg-card/60 mb-4 flex shrink-0 items-center justify-between rounded-2xl border p-3 px-1 shadow-[0_10px_30px_-24px_rgba(0,0,0,0.7)] backdrop-blur-xl sm:p-4'>
@@ -315,16 +315,16 @@ export default function TicketViewPage() {
             </div>
             <WidgetRenderer widgets={getWidgets('dashboard-tickets-view', 'after-header')} />
 
-            <div className='grid min-h-0 flex-1 grid-cols-1 gap-6 lg:grid-cols-12'>
-                <div className='bg-card/65 border-border/50 flex h-full flex-col overflow-hidden rounded-2xl border shadow-[0_12px_36px_-24px_rgba(0,0,0,0.75)] backdrop-blur-xl lg:col-span-8'>
-                    <div className='custom-scrollbar flex-1 space-y-8 overflow-y-auto p-4 sm:p-6'>
+            <div className='grid min-h-0 flex-1 grid-cols-1 gap-4 xl:grid-cols-12 xl:gap-6'>
+                <div className='bg-card/65 border-border/50 flex h-full flex-col overflow-hidden rounded-2xl border shadow-[0_12px_36px_-24px_rgba(0,0,0,0.75)] backdrop-blur-xl xl:col-span-9 2xl:col-span-10'>
+                    <div className='custom-scrollbar flex-1 space-y-8 overflow-y-auto p-4 sm:p-6 lg:p-8'>
                         <div className='group flex gap-4'>
                             <Avatar className='ring-border/50 bg-primary/10 text-primary mt-1 h-10 w-10 ring-2'>
                                 <div className='flex h-full w-full items-center justify-center'>
                                     <FileText className='h-4 w-4' />
                                 </div>
                             </Avatar>
-                            <div className='max-w-[85%] flex-1 space-y-1'>
+                            <div className='max-w-[92%] flex-1 space-y-1 lg:max-w-[88%]'>
                                 <div className='flex items-center gap-2'>
                                     <span className='text-sm font-semibold'>{t('tickets.originalRequest')}</span>
                                     <span className='text-muted-foreground text-xs'>
@@ -362,7 +362,7 @@ export default function TicketViewPage() {
 
                                     <div
                                         className={clsx(
-                                            'flex max-w-[85%] flex-col lg:max-w-[75%]',
+                                            'flex max-w-[92%] flex-col lg:max-w-[84%] 2xl:max-w-[78%]',
                                             isMe ? 'items-end' : 'items-start',
                                         )}
                                     >
@@ -605,7 +605,7 @@ export default function TicketViewPage() {
                     <WidgetRenderer widgets={getWidgets('dashboard-tickets-view', 'after-messages')} />
                 </div>
 
-                <div className='custom-scrollbar h-full space-y-4 overflow-y-auto pb-6 lg:col-span-4'>
+                <div className='custom-scrollbar h-full space-y-4 overflow-y-auto pb-6 xl:col-span-3 2xl:col-span-2'>
                     <WidgetRenderer widgets={getWidgets('dashboard-tickets-view', 'sidebar-top')} />
 
                     <Card className='border-border/50 bg-card/65 sticky top-2 shadow-[0_12px_36px_-24px_rgba(0,0,0,0.75)] backdrop-blur-xl'>

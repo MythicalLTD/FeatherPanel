@@ -74,14 +74,14 @@ export default function CommunityTranslationsPage() {
                 setFilteredTranslations(mockTranslations);
             } catch (error) {
                 console.error('Error fetching community translations:', error);
-                toast.error('Failed to fetch community translations');
+                toast.error(t('admin.feathercloud.translations.fetch_failed'));
             } finally {
                 setLoading(false);
             }
         };
 
         fetchTranslations();
-    }, []);
+    }, [t]);
 
     useEffect(() => {
         if (!debouncedSearchQuery) {

@@ -1734,7 +1734,7 @@ export default function ServersPage() {
                     <div className='relative'>
                         <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
                         <Input
-                            placeholder='Search nodes...'
+                            placeholder={t('admin.servers.transfer.search_nodes')}
                             value={nodeSearch}
                             onChange={(e) => {
                                 setNodeSearch(e.target.value);
@@ -1749,7 +1749,7 @@ export default function ServersPage() {
                                 <Loader2 className='text-primary h-6 w-6 animate-spin' />
                             </div>
                         ) : nodesList.length === 0 ? (
-                            <div className='text-muted-foreground py-10 text-center'>No results found</div>
+                            <div className='text-muted-foreground py-10 text-center'>{t('common.no_results')}</div>
                         ) : (
                             nodesList.map((node) => (
                                 <button
@@ -1786,7 +1786,7 @@ export default function ServersPage() {
                     <div className='relative'>
                         <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
                         <Input
-                            placeholder='Search allocations...'
+                            placeholder={t('admin.servers.transfer.search_allocations')}
                             value={allocationSearch}
                             onChange={(e) => {
                                 setAllocationSearch(e.target.value);
@@ -1801,7 +1801,9 @@ export default function ServersPage() {
                                 <Loader2 className='text-primary h-6 w-6 animate-spin' />
                             </div>
                         ) : allocationsList.length === 0 ? (
-                            <div className='text-muted-foreground py-10 text-center'>No free allocations found</div>
+                            <div className='text-muted-foreground py-10 text-center'>
+                                {t('admin.servers.transfer.no_free_allocations')}
+                            </div>
                         ) : (
                             allocationsList.map((allc) => (
                                 <button

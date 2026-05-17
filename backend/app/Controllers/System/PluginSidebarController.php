@@ -51,6 +51,7 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'lucideIcon', type: 'string', nullable: true, description: 'Lucide icon name (e.g., "camera", "search"). If provided, this will be used instead of the icon field. See https://lucide.dev/icons/ for available icons.'),
         new OA\Property(property: 'permission', type: 'string', nullable: true, description: 'Required permission for this item'),
         new OA\Property(property: 'group', type: 'string', nullable: true, description: 'Group name for organizing items (e.g., "Minecraft Java Edition"). Items with the same group name will be grouped together.'),
+        new OA\Property(property: 'priority', type: 'integer', nullable: true, description: 'Sort order within the sidebar group. Lower numbers render first.'),
     ]
 )]
 class PluginSidebarController

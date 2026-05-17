@@ -570,6 +570,93 @@ class Allocation
     }
 
     /**
+     * Count allocations matching a node and IP address.
+     */
+    public static function countByNodeAndIp(int $nodeId, string $ip): int
+    {
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare('SELECT COUNT(*) FROM ' . self::$table . ' WHERE node_id = :node_id AND ip = :ip');
+        $stmt->execute([
+            'node_id' => $nodeId,
+            'ip' => $ip,
+        ]);
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    /**
+     * Count allocations that would conflict when moving ports from one IP to another.
+     */
+    public static function countIpUpdateConflicts(int $nodeId, string $fromIp, string $toIp): int
+    {
+        if ($fromIp === $toIp) {
+            return 0;
+        }
+
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare('
+            SELECT COUNT(*)
+            FROM ' . self::$table . ' target
+            WHERE target.node_id = :node_id
+              AND target.ip = :to_ip
+              AND EXISTS (
+                  SELECT 1
+                  FROM ' . self::$table . ' source
+                  WHERE source.node_id = :source_node_id
+                    AND source.ip = :from_ip
+                    AND source.port = target.port
+              )
+        ');
+        $stmt->execute([
+            'node_id' => $nodeId,
+            'source_node_id' => $nodeId,
+            'from_ip' => $fromIp,
+            'to_ip' => $toIp,
+        ]);
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    /**
+     * Update the IP and/or IP alias for every allocation on a node using a specific IP.
+     */
+    public static function updateAddressByNodeAndIp(int $nodeId, string $fromIp, ?string $toIp, mixed $ipAlias, bool $updateAlias): int | false
+    {
+        $set = [];
+        $params = [
+            'node_id' => $nodeId,
+            'from_ip' => $fromIp,
+        ];
+
+        if ($toIp !== null) {
+            $set[] = 'ip = :to_ip';
+            $params['to_ip'] = $toIp;
+        }
+
+        if ($updateAlias) {
+            $set[] = 'ip_alias = :ip_alias';
+            $params['ip_alias'] = $ipAlias;
+        }
+
+        if (empty($set)) {
+            return false;
+        }
+
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare('UPDATE ' . self::$table . ' SET ' . implode(', ', $set) . ' WHERE node_id = :node_id AND ip = :from_ip');
+
+        try {
+            $stmt->execute($params);
+
+            return $stmt->rowCount();
+        } catch (\Exception $e) {
+            App::getInstance(true)->getLogger()->error('Failed to bulk update allocation address: ' . $e->getMessage());
+
+            return false;
+        }
+    }
+
+    /**
      * Get allocation with node information.
      */
     public static function getWithNode(int $id): ?array

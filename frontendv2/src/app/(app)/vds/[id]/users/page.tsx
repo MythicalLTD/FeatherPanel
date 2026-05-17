@@ -81,20 +81,20 @@ export default function VdsSubusersPage() {
             const axiosError = error as AxiosError<{ message: string }>;
             // 403 means subuser trying to access — redirect
             if (axiosError.response?.status === 403) {
-                toast.error('Only the VM owner can manage subusers.');
+                toast.error(t('vds.subusers.owner_only'));
                 router.push(`/vds/${id}`);
                 return;
             }
-            toast.error('Failed to fetch subusers');
+            toast.error(t('vds.subusers.fetch_failed'));
         } finally {
             setLoading(false);
         }
-    }, [id, router]);
+    }, [id, router, t]);
 
     React.useEffect(() => {
         if (!instanceLoading) {
             if (!instance?.is_owner) {
-                toast.error('Only the VM owner can manage subusers.');
+                toast.error(t('vds.subusers.owner_only'));
                 router.push(`/vds/${id}`);
                 return;
             }
@@ -113,11 +113,11 @@ export default function VdsSubusersPage() {
 
     const handleAdd = async () => {
         if (!addEmail || !addEmail.includes('@')) {
-            toast.error('Please enter a valid email address.');
+            toast.error(t('validation.email'));
             return;
         }
         if (addPermissions.length === 0) {
-            toast.error('Select at least one permission.');
+            toast.error(t('vds.subusers.select_permission'));
             return;
         }
         setAddLoading(true);
@@ -127,17 +127,17 @@ export default function VdsSubusersPage() {
                 permissions: addPermissions,
             });
             if (data.success) {
-                toast.success('Subuser added successfully.');
+                toast.success(t('vds.subusers.added'));
                 setIsAddOpen(false);
                 setAddEmail('');
                 setAddPermissions(['power', 'console']);
                 fetchSubusers();
             } else {
-                toast.error(data.message || 'Failed to add subuser.');
+                toast.error(data.message || t('vds.subusers.add_failed'));
             }
         } catch (error) {
             const axiosError = error as AxiosError<{ message: string }>;
-            toast.error(axiosError.response?.data?.message || 'Failed to add subuser.');
+            toast.error(axiosError.response?.data?.message || t('vds.subusers.add_failed'));
         } finally {
             setAddLoading(false);
         }
@@ -149,15 +149,15 @@ export default function VdsSubusersPage() {
         try {
             const { data } = await axios.delete(`/api/user/vm-instances/${id}/subusers/${selectedSubuser.id}`);
             if (data.success) {
-                toast.success('Subuser removed.');
+                toast.success(t('vds.subusers.removed'));
                 setIsDeleteOpen(false);
                 fetchSubusers();
             } else {
-                toast.error(data.message || 'Failed to remove subuser.');
+                toast.error(data.message || t('vds.subusers.remove_failed'));
             }
         } catch (error) {
             const axiosError = error as AxiosError<{ message: string }>;
-            toast.error(axiosError.response?.data?.message || 'Failed to remove subuser.');
+            toast.error(axiosError.response?.data?.message || t('vds.subusers.remove_failed'));
         } finally {
             setDeleting(false);
         }
@@ -184,15 +184,15 @@ export default function VdsSubusersPage() {
                 permissions: editPerms,
             });
             if (data.success) {
-                toast.success('Permissions updated.');
+                toast.success(t('vds.subusers.permissions_updated'));
                 setIsPermOpen(false);
                 fetchSubusers();
             } else {
-                toast.error(data.message || 'Failed to update permissions.');
+                toast.error(data.message || t('vds.subusers.permissions_update_failed'));
             }
         } catch (error) {
             const axiosError = error as AxiosError<{ message: string }>;
-            toast.error(axiosError.response?.data?.message || 'Failed to update permissions.');
+            toast.error(axiosError.response?.data?.message || t('vds.subusers.permissions_update_failed'));
         } finally {
             setSavingPerms(false);
         }
@@ -211,7 +211,7 @@ export default function VdsSubusersPage() {
         return (
             <div className='flex flex-col items-center justify-center py-24 text-center'>
                 <AlertTriangle className='text-destructive mb-4 h-12 w-12' />
-                <h2 className='text-xl font-black'>Instance Not Found</h2>
+                <h2 className='text-xl font-black'>{t('vds.console.not_found_title')}</h2>
             </div>
         );
     }
@@ -223,8 +223,8 @@ export default function VdsSubusersPage() {
                     <Lock className='h-10 w-10 text-red-400' />
                 </div>
                 <div>
-                    <h2 className='text-2xl font-black'>Access Denied</h2>
-                    <p className='text-muted-foreground mt-2'>Only the VM owner can manage subusers.</p>
+                    <h2 className='text-2xl font-black'>{t('common.accessDenied')}</h2>
+                    <p className='text-muted-foreground mt-2'>{t('vds.subusers.owner_only')}</p>
                 </div>
                 <Button variant='outline' onClick={() => router.push(`/vds/${id}`)}>
                     Go Back
@@ -276,7 +276,7 @@ export default function VdsSubusersPage() {
 
             {subusers.length === 0 ? (
                 <EmptyState
-                    title='No Subusers'
+                    title={t('vds.subusers.no_subusers')}
                     description='Add a subuser to grant them access to this VDS instance.'
                     icon={Users}
                     action={
@@ -339,7 +339,7 @@ export default function VdsSubusersPage() {
             <HeadlessModal
                 isOpen={isAddOpen}
                 onClose={() => setIsAddOpen(false)}
-                title='Add Subuser'
+                title={t('vds.subusers.add')}
                 description='Enter the email address of the user you want to add and select their permissions.'
             >
                 <div className='space-y-6 py-4'>
@@ -437,7 +437,7 @@ export default function VdsSubusersPage() {
             <HeadlessModal
                 isOpen={isDeleteOpen}
                 onClose={() => setIsDeleteOpen(false)}
-                title='Remove Subuser'
+                title={t('vds.subusers.remove')}
                 description={`Are you sure you want to remove ${selectedSubuser?.username || `user #${selectedSubuser?.user_id}`} from this VDS instance?`}
             >
                 <div className='border-border/5 flex justify-end gap-3 border-t pt-6'>
@@ -471,7 +471,7 @@ export default function VdsSubusersPage() {
             <HeadlessModal
                 isOpen={isPermOpen}
                 onClose={() => setIsPermOpen(false)}
-                title='Edit Permissions'
+                title={t('vds.subusers.edit_permissions')}
                 description={`Manage permissions for ${permSubuser?.username || `user #${permSubuser?.user_id}`}`}
                 className='max-w-lg'
             >

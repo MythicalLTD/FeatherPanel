@@ -55,6 +55,7 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'first_name', type: 'string', description: 'First name'),
         new OA\Property(property: 'last_name', type: 'string', description: 'Last name'),
         new OA\Property(property: 'email', type: 'string', format: 'email', description: 'Email address'),
+        new OA\Property(property: 'email_verified', type: 'boolean', description: 'Whether the user email is verified'),
         new OA\Property(property: 'avatar', type: 'string', format: 'uri', description: 'Avatar URL'),
         new OA\Property(property: 'last_seen', type: 'string', format: 'date-time', nullable: true, description: 'Last seen timestamp'),
         new OA\Property(property: 'banned', type: 'boolean', description: 'Banned status'),
@@ -307,6 +308,7 @@ class UsersController
                 'avatar',
                 'last_seen',
                 'email',
+                'mail_verify',
                 'oidc_provider',
                 'oidc_subject',
                 'ldap_provider_uuid',
@@ -342,11 +344,12 @@ class UsersController
                 $user['role']['display_name'] = 'User';
                 $user['role']['color'] = '#666666';
             }
+            $user['email_verified'] = !isset($user['mail_verify']) || trim((string) $user['mail_verify']) === '';
             if ($app->isDemoMode()) {
                 $user['first_ip'] = $app->getIPIntoFBIFormat();
                 $user['last_ip'] = $app->getIPIntoFBIFormat();
             }
-            unset($user['role_id']);
+            unset($user['role_id'], $user['mail_verify']);
         }
 
         $total = User::getCount(
@@ -435,7 +438,8 @@ class UsersController
             'color' => $rolesMap[$roleId]['color'] ?? '#666666',
         ];
 
-        unset($user['password']);
+        $user['email_verified'] = !isset($user['mail_verify']) || trim((string) $user['mail_verify']) === '';
+        unset($user['password'], $user['mail_verify']);
 
         $user['activities'] = array_map(function ($activity) use ($app) {
             unset($activity['user_uuid'], $activity['id'], $activity['updated_at']);
@@ -525,7 +529,8 @@ class UsersController
             'color' => $rolesMap[$roleId]['color'] ?? '#666666',
         ];
 
-        unset($user['password']);
+        $user['email_verified'] = !isset($user['mail_verify']) || trim((string) $user['mail_verify']) === '';
+        unset($user['password'], $user['mail_verify']);
 
         $user['activities'] = array_map(function ($activity) use ($app) {
             unset($activity['user_uuid'], $activity['id'], $activity['updated_at']);
@@ -1389,6 +1394,74 @@ class UsersController
         return ApiResponse::success([
             'queue_id' => $queueId,
         ], 'Email queued successfully', 200);
+    }
+
+    #[OA\Post(
+        path: '/api/admin/users/{uuid}/verify-email',
+        summary: 'Force verify user email',
+        description: 'Mark a user email address as verified by clearing their pending email verification token.',
+        tags: ['Admin - Users'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuid',
+                in: 'path',
+                description: 'User UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string', format: 'uuid')
+            ),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'User email verified successfully'),
+            new OA\Response(response: 400, description: 'Bad request - User is already verified or demo mode restriction'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
+            new OA\Response(response: 404, description: 'User not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to verify email'),
+        ]
+    )]
+    public function forceVerifyEmail(Request $request, string $uuid): Response
+    {
+        $user = User::getUserByUuid($uuid);
+        if (!$user) {
+            return ApiResponse::error('User not found', 'USER_NOT_FOUND', 404);
+        }
+
+        $app = App::getInstance(true);
+        if ($app->isDemoMode() && in_array((int) $user['id'], [1, 2], true)) {
+            return ApiResponse::error('Unmanaged actions are not permitted in demo mode', 'UNMANAGED_ACTIONS_NOT_PERMITTED', 400);
+        }
+
+        if (!isset($user['mail_verify']) || trim((string) $user['mail_verify']) === '') {
+            return ApiResponse::error('User email is already verified', 'EMAIL_ALREADY_VERIFIED', 400);
+        }
+
+        $updated = User::updateUser($user['uuid'], ['mail_verify' => null]);
+        if (!$updated) {
+            return ApiResponse::error('Failed to verify user email', 'FAILED_TO_VERIFY_EMAIL', 500);
+        }
+
+        Activity::createActivity([
+            'user_uuid' => $request->attributes->get('user')['uuid'] ?? null,
+            'name' => 'force_verify_user_email',
+            'context' => 'Force verified email for user ' . ($user['username'] ?? $user['uuid']),
+            'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                UserEvent::onUserUpdated(),
+                [
+                    'user' => $user,
+                    'updated_data' => ['mail_verify' => null],
+                    'updated_by' => $request->attributes->get('user'),
+                ]
+            );
+        }
+
+        $app->getLogger()->info('User ' . $user['uuid'] . ' email force verified by ' . ($request->attributes->get('user')['uuid'] ?? 'unknown'));
+
+        return ApiResponse::success([], 'User email verified successfully', 200);
     }
 
     #[OA\Post(

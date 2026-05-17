@@ -336,7 +336,7 @@ export default function VmInstancesCreatePage() {
     const handleNext = () => {
         if (wizardBlockedByInfra || wizardNavWaitingInfra) {
             if (wizardBlockedByInfra) {
-                toast.error('Add at least one VPS location and one VDS node before continuing.');
+                toast.error(t('admin.vmInstances.infrastructure_required_to_continue'));
             }
             return;
         }
@@ -405,7 +405,7 @@ export default function VmInstancesCreatePage() {
     const handleCreate = async () => {
         if (wizardBlockedByInfra || wizardNavWaitingInfra) {
             if (wizardBlockedByInfra) {
-                toast.error('Add at least one VPS location and one VDS node before continuing.');
+                toast.error(t('admin.vmInstances.infrastructure_required_to_continue'));
             }
             return;
         }
@@ -448,7 +448,7 @@ export default function VmInstancesCreatePage() {
         }
         setSubmitting(true);
         setCreatingMessage(null);
-        const toastId = toast.loading('Initiating VM creation…');
+        const toastId = toast.loading(t('admin.vmInstances.initiating_creation'));
         try {
             const payload: Record<string, unknown> = {
                 vm_node_id: nodeId,
@@ -560,14 +560,19 @@ export default function VmInstancesCreatePage() {
                                 <AlertTriangle className='h-5 w-5' aria-hidden />
                             </div>
                             <div className='min-w-0 space-y-1'>
-                                <p className='text-sm leading-snug font-semibold'>Infrastructure required</p>
+                                <p className='text-sm leading-snug font-semibold'>
+                                    {t('admin.vmInstances.infrastructure_required')}
+                                </p>
                                 <p className='text-muted-foreground text-sm leading-relaxed'>
                                     {infraGate.vpsLocations === 0
-                                        ? 'Create at least one VPS location first.'
-                                        : 'Create at least one VDS node and link it to a location.'}
+                                        ? t('admin.vmInstances.create_vps_location_first')
+                                        : t('admin.vmInstances.create_vds_node_first')}
                                 </p>
                                 <p className='text-muted-foreground/80 text-xs'>
-                                    {infraGate.vpsLocations} VPS location(s) · {infraGate.vdsNodes} VDS node(s)
+                                    {t('admin.vmInstances.infrastructure_counts', {
+                                        locations: infraGate.vpsLocations.toString(),
+                                        nodes: infraGate.vdsNodes.toString(),
+                                    })}
                                 </p>
                             </div>
                         </div>
@@ -577,7 +582,7 @@ export default function VmInstancesCreatePage() {
                                 variant='ghost'
                                 size='icon'
                                 className='text-muted-foreground hover:text-foreground h-10 w-10 rounded-xl'
-                                title='Recheck infrastructure'
+                                title={t('admin.vmInstances.recheck_infrastructure')}
                                 onClick={() => void refreshInfrastructureCheck()}
                             >
                                 <RefreshCw className='h-4 w-4' />
@@ -927,7 +932,7 @@ export default function VmInstancesCreatePage() {
                                                     variant='ghost'
                                                     size='icon'
                                                     onClick={() => openIpPickerForRow(row.key, 'create')}
-                                                    title='Create IP and assign'
+                                                    title={t('admin.vmInstances.create_ip_and_assign')}
                                                     className='self-end sm:self-auto'
                                                 >
                                                     <Plus className='h-4 w-4' />

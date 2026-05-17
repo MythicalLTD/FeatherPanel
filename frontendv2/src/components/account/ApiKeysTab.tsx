@@ -86,7 +86,7 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
             }
         } catch (error) {
             console.error('Error fetching API clients:', error);
-            toast.error('Failed to load API clients');
+            toast.error(t('account.apiKeys.loadClientsFailed'));
         } finally {
             setLoading(false);
         }
@@ -146,7 +146,7 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
             }
         } catch (error) {
             console.error('Error updating API client:', error);
-            toast.error('Failed to update API client');
+            toast.error(t('account.apiKeys.updateClientFailed'));
         }
     };
 
@@ -159,7 +159,7 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
             }
         } catch (error) {
             console.error('Error loading API client:', error);
-            toast.error('Failed to load API client');
+            toast.error(t('account.apiKeys.loadClientFailed'));
         }
     };
 
@@ -175,7 +175,7 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
             }
         } catch (error) {
             console.error('Error loading API client:', error);
-            toast.error('Failed to load API client');
+            toast.error(t('account.apiKeys.loadClientFailed'));
         }
     };
 
@@ -209,7 +209,7 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
             }
         } catch (error) {
             console.error('Error regenerating API keys:', error);
-            toast.error('Failed to regenerate API keys');
+            toast.error(t('account.apiKeys.regenerateFailed'));
         }
     };
 

@@ -102,8 +102,19 @@ class DeleteDatabaseTool implements ToolInterface
         } elseif ($databaseName) {
             // Get all databases for this server and find by name
             $databases = ServerDatabase::getServerDatabasesWithDetailsByServerId($server['id']);
+            $normalizedRequestedName = $this->normalizeDatabaseIdentifier((string) $databaseName);
             foreach ($databases as $db) {
-                if ($db['database'] === $databaseName || $db['username'] === $databaseName) {
+                $normalizedDatabaseName = $this->normalizeDatabaseIdentifier((string) $db['database']);
+                $normalizedUsername = $this->normalizeDatabaseIdentifier((string) $db['username']);
+
+                if (
+                    $db['database'] === $databaseName
+                    || $db['username'] === $databaseName
+                    || $normalizedDatabaseName === $normalizedRequestedName
+                    || $normalizedUsername === $normalizedRequestedName
+                    || str_ends_with($normalizedDatabaseName, $normalizedRequestedName)
+                    || str_contains($normalizedDatabaseName, $normalizedRequestedName)
+                ) {
                     $database = $db;
                     break;
                 }
@@ -211,5 +222,10 @@ class DeleteDatabaseTool implements ToolInterface
             'database_id' => 'Database ID (required if database_name not provided)',
             'database_name' => 'Database name or username (required if database_id not provided)',
         ];
+    }
+
+    private function normalizeDatabaseIdentifier(string $value): string
+    {
+        return preg_replace('/[^a-z0-9]+/', '', strtolower($value)) ?? '';
     }
 }

@@ -20,10 +20,15 @@ namespace App\Controllers\User\User;
 use App\App;
 use App\Chat\Role;
 use App\Chat\User;
+use App\Chat\Ticket;
 use App\Chat\Activity;
 use App\Chat\MailList;
 use App\Chat\ApiClient;
 use App\Chat\Permission;
+use App\Chat\TicketStatus;
+use App\Chat\TicketMessage;
+use App\Chat\TicketCategory;
+use App\Chat\TicketPriority;
 use App\Chat\UserPreference;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
@@ -32,6 +37,7 @@ use App\Middleware\AuthMiddleware;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Helpers\EmailDomainValidator;
 use App\Plugins\Events\Events\UserEvent;
+use App\Plugins\Events\Events\TicketEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -344,6 +350,148 @@ class SessionController
             'permissions' => $permissions,
             'preferences' => [],
         ], 'Session retrieved', 200);
+    }
+
+    #[OA\Post(
+        path: '/api/user/data-request',
+        summary: 'Request account data export',
+        description: 'Create a support ticket requesting a personal data export for the authenticated user.',
+        tags: ['User - Session'],
+        responses: [
+            new OA\Response(response: 201, description: 'Data request ticket created successfully'),
+            new OA\Response(response: 400, description: 'Bad request - Missing ticket configuration'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Ticket system disabled or open ticket limit reached'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to create request'),
+        ]
+    )]
+    public function requestDataExport(Request $request): Response
+    {
+        $app = App::getInstance(true);
+        $config = $app->getConfig();
+
+        if ($config->getSetting(ConfigInterface::TICKET_SYSTEM_ENABLED, 'true') !== 'true') {
+            return ApiResponse::error('Ticket system is disabled', 'TICKET_SYSTEM_DISABLED', 403);
+        }
+
+        $user = AuthMiddleware::getCurrentUser($request);
+        if ($user == null) {
+            return ApiResponse::error('You are not allowed to access this resource!', 'INVALID_ACCOUNT_TOKEN', 400, []);
+        }
+
+        $maxOpenTickets = (int) $config->getSetting(ConfigInterface::TICKET_SYSTEM_MAX_OPEN_TICKETS, '10');
+        if ($maxOpenTickets > 0 && Ticket::getOpenTicketsCount($user['uuid']) >= $maxOpenTickets) {
+            return ApiResponse::error(
+                "You have reached the maximum number of open tickets ({$maxOpenTickets}). Please close or wait for resolution of existing tickets before creating a new one.",
+                'MAX_OPEN_TICKETS_REACHED',
+                403
+            );
+        }
+
+        $categories = TicketCategory::getAll('privacy', 1, 0);
+        if (empty($categories)) {
+            $categories = TicketCategory::getAll('data', 1, 0);
+        }
+        if (empty($categories)) {
+            $categories = TicketCategory::getAll(null, 1, 0);
+        }
+        if (empty($categories)) {
+            return ApiResponse::error('No ticket categories configured', 'NO_CATEGORIES', 500);
+        }
+
+        $priorities = TicketPriority::getAll('normal', 1, 0);
+        if (empty($priorities)) {
+            $priorities = TicketPriority::getAll('medium', 1, 0);
+        }
+        if (empty($priorities)) {
+            $priorities = TicketPriority::getAll('low', 1, 0);
+        }
+        if (empty($priorities)) {
+            $priorities = TicketPriority::getAll(null, 1, 0);
+        }
+        if (empty($priorities)) {
+            return ApiResponse::error('No ticket priorities configured', 'NO_PRIORITIES', 500);
+        }
+
+        $statuses = TicketStatus::getAll(null, 100, 0);
+        $openStatus = null;
+        foreach ($statuses as $status) {
+            if (strtolower($status['name']) === 'open') {
+                $openStatus = $status;
+                break;
+            }
+        }
+        if (!$openStatus && !empty($statuses)) {
+            $openStatus = $statuses[0];
+        }
+        if (!$openStatus) {
+            return ApiResponse::error('No ticket statuses configured', 'NO_STATUSES', 500);
+        }
+
+        $title = 'Personal data request';
+        $description = implode("\n", [
+            'I am requesting a copy of my personal data under UK GDPR.',
+            '',
+            'Account details:',
+            '- User UUID: ' . $user['uuid'],
+            '- Username: ' . $user['username'],
+            '- Email: ' . $user['email'],
+            '',
+            'Please provide the data export or advise on any identity verification and fulfilment timeline.',
+        ]);
+
+        $ticketData = [
+            'uuid' => Ticket::generateUuid(),
+            'user_uuid' => $user['uuid'],
+            'server_id' => null,
+            'category_id' => (int) $categories[0]['id'],
+            'priority_id' => (int) $priorities[0]['id'],
+            'status_id' => (int) $openStatus['id'],
+            'title' => $title,
+            'description' => $description,
+        ];
+
+        $ticketId = Ticket::create($ticketData);
+        if (!$ticketId) {
+            return ApiResponse::error('Failed to create data request', 'CREATE_FAILED', 500);
+        }
+
+        $messageId = TicketMessage::create([
+            'ticket_id' => $ticketId,
+            'user_uuid' => $user['uuid'],
+            'message' => $description,
+            'is_internal' => false,
+        ]);
+
+        if (!$messageId) {
+            $app->getLogger()->warning('Failed to create initial message for data request ticket: ' . $ticketId);
+        }
+
+        $ticket = Ticket::getById($ticketId);
+
+        Activity::createActivity([
+            'user_uuid' => $user['uuid'],
+            'name' => 'request_data_export',
+            'context' => 'Requested personal data export',
+            'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                TicketEvent::onTicketCreated(),
+                [
+                    'ticket' => $ticket,
+                    'ticket_id' => $ticketId,
+                    'user_uuid' => $user['uuid'],
+                ]
+            );
+        }
+
+        return ApiResponse::success([
+            'ticket' => $ticket,
+            'message_id' => $messageId,
+        ], 'Data request created successfully', 201);
     }
 
     #[OA\Post(

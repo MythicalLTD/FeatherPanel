@@ -179,11 +179,11 @@ export default function VdsSettingsPage() {
 
     const handleReinstall = async () => {
         if (!selectedTemplate) {
-            toast.error('Please select a template first.');
+            toast.error(t('vds.settings.reinstall.select_template_first'));
             return;
         }
         setReinstalling(true);
-        const toastId = toast.loading('Initiating reinstall…');
+        const toastId = toast.loading(t('vds.settings.reinstall.initiating'));
         try {
             const payload: Record<string, unknown> = { template_id: selectedTemplate };
             if (isQemu) {
@@ -193,19 +193,19 @@ export default function VdsSettingsPage() {
             }
             const { data } = await axios.post(`/api/user/vm-instances/${id}/reinstall`, payload);
             if (!data.success) {
-                toast.error(data.message || 'Failed to start reinstall.', { id: toastId });
+                toast.error(data.message || t('vds.settings.reinstall.start_failed'), { id: toastId });
                 setReinstalling(false);
                 return;
             }
 
             const reinstallId: string | undefined = data.data?.reinstall_id;
             if (!reinstallId) {
-                toast.error('Reinstall did not return a reinstall_id', { id: toastId });
+                toast.error(t('vds.settings.reinstall.missing_id'), { id: toastId });
                 setReinstalling(false);
                 return;
             }
 
-            toast.loading(data.message || 'Reinstall initiated. This may take several minutes.', { id: toastId });
+            toast.loading(data.message || t('vds.settings.reinstall.started'), { id: toastId });
             setReinstallOpen(false);
 
             // Poll reinstall status until active or failed (mirrors admin VM flow).
@@ -213,7 +213,7 @@ export default function VdsSettingsPage() {
             let polls = 0;
             const poll = async (): Promise<void> => {
                 if (polls >= MAX_POLLS) {
-                    toast.error('Reinstall timed out waiting for completion', { id: toastId });
+                    toast.error(t('vds.settings.reinstall.timeout'), { id: toastId });
                     setReinstalling(false);
                     return;
                 }
@@ -223,14 +223,14 @@ export default function VdsSettingsPage() {
                     const s = statusRes.data?.data;
 
                     if (s?.status === 'completed' || s?.status === 'active') {
-                        toast.success('VDS reinstalled successfully.', { id: toastId });
+                        toast.success(t('vds.settings.reinstall.success'), { id: toastId });
                         await refreshInstance();
                         setReinstalling(false);
                         return;
                     }
 
                     if (s?.status === 'failed') {
-                        toast.error(s?.error ?? 'Reinstall failed', { id: toastId });
+                        toast.error(s?.error ?? t('vds.settings.reinstall.failed'), { id: toastId });
                         setReinstalling(false);
                         return;
                     }
@@ -330,7 +330,7 @@ export default function VdsSettingsPage() {
 
             const poll = async () => {
                 if (polls >= MAX_POLLS) {
-                    toast.error('ISO fetch timed out');
+                    toast.error(t('vds.settings.iso.fetch_timeout'));
                     setIsoFetchingFromUrl(false);
                     return;
                 }
@@ -392,7 +392,7 @@ export default function VdsSettingsPage() {
                     <div className='bg-destructive/10 mx-auto flex h-20 w-20 items-center justify-center rounded-3xl'>
                         <AlertTriangle className='text-destructive h-10 w-10' />
                     </div>
-                    <h2 className='text-2xl font-black'>VDS Not Found</h2>
+                    <h2 className='text-2xl font-black'>{t('vds.console.not_found_title')}</h2>
                     <Button variant='outline' onClick={() => router.push('/dashboard')}>
                         Go Back
                     </Button>
@@ -411,8 +411,10 @@ export default function VdsSettingsPage() {
                     <Lock className='h-10 w-10 text-red-400' />
                 </div>
                 <div>
-                    <h2 className='font-header text-2xl font-black tracking-tighter uppercase italic'>Access Denied</h2>
-                    <p className='text-muted-foreground mt-2'>You do not have permission to access VDS settings.</p>
+                    <h2 className='font-header text-2xl font-black tracking-tighter uppercase italic'>
+                        {t('common.accessDenied')}
+                    </h2>
+                    <p className='text-muted-foreground mt-2'>{t('vds.settings.access_denied')}</p>
                 </div>
                 <Button variant='outline' onClick={() => router.push(`/vds/${id}`)}>
                     Go Back
@@ -426,7 +428,7 @@ export default function VdsSettingsPage() {
             <WidgetRenderer widgets={getWidgets('vds-settings', 'top-of-page')} />
 
             <PageHeader
-                title='VDS Settings'
+                title={t('vds.settings.title')}
                 description='Manage your VDS instance settings and reinstall options.'
                 actions={
                     <div className='flex w-full sm:w-auto sm:justify-end'>
@@ -435,10 +437,10 @@ export default function VdsSettingsPage() {
                             size='sm'
                             onClick={fetchTemplates}
                             disabled={templatesLoading}
-                            aria-label='Refresh'
+                            aria-label={t('common.refresh')}
                         >
                             <RefreshCw className={cn('h-4 w-4 sm:mr-1.5', templatesLoading && 'animate-spin')} />
-                            <span className='hidden sm:inline'>Refresh</span>
+                            <span className='hidden sm:inline'>{t('common.refresh')}</span>
                         </Button>
                     </div>
                 }

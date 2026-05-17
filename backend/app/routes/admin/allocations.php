@@ -82,6 +82,18 @@ return function (RouteCollection $routes): void {
         ['DELETE']
     );
 
+    // Bulk update address - PATCH /api/admin/allocations/bulk-address
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-allocations-bulk-address',
+        '/api/admin/allocations/bulk-address',
+        function (Request $request) {
+            return (new AllocationsController())->bulkUpdateAddress($request);
+        },
+        Permissions::ADMIN_ALLOCATIONS_EDIT,
+        ['PATCH']
+    );
+
     // PARAMETERIZED ROUTES (must come AFTER specific routes)
     // Show single - GET /api/admin/allocations/{id}
     App::getInstance(true)->registerAdminRoute(

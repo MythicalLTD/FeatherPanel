@@ -21,7 +21,7 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { useSession } from '@/contexts/SessionContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { Button } from '@/components/ui/button';
-import { ShieldCheck, Check, Fingerprint, Pencil } from 'lucide-react';
+import { ShieldCheck, Check, Fingerprint, Pencil, FileText } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { Captcha } from '@/components/Captcha';
@@ -46,6 +46,7 @@ export default function SettingsTab() {
     const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isRequestingData, setIsRequestingData] = useState(false);
     const [passkeys, setPasskeys] = useState<{ id: number; label?: string | null; created_at?: string }[]>([]);
     const [passkeysLoading, setPasskeysLoading] = useState(false);
     const [addPasskeyOpen, setAddPasskeyOpen] = useState(false);
@@ -98,7 +99,7 @@ export default function SettingsTab() {
     const handleDisable2FA = async () => {
         try {
             if (isEnabled(settings?.turnstile_enabled) && !turnstileToken) {
-                toast.error('Please complete the CAPTCHA verification');
+                toast.error(t('validation.captcha_required'));
                 return;
             }
 
@@ -114,11 +115,11 @@ export default function SettingsTab() {
             const response = await axios.patch('/api/user/session', payload);
 
             if (response.data?.success) {
-                toast.success('2FA disabled successfully');
+                toast.success(t('account.twoFactor.disabledSuccessfully'));
                 await fetchSession(true);
                 resetTurnstile();
             } else {
-                toast.error(response.data?.message || 'Failed to disable 2FA');
+                toast.error(response.data?.message || t('account.twoFactor.disableFailed'));
                 resetTurnstile();
             }
         } catch (error) {
@@ -126,7 +127,7 @@ export default function SettingsTab() {
             if (axios.isAxiosError(error) && error.response?.data?.message) {
                 toast.error(error.response.data.message);
             } else {
-                toast.error('Failed to disable 2FA');
+                toast.error(t('account.twoFactor.disableFailed'));
             }
             resetTurnstile();
         } finally {
@@ -143,16 +144,45 @@ export default function SettingsTab() {
             setIsSubmitting(true);
             const response = await axios.delete('/api/user/auth/discord/unlink');
             if (response.data?.success) {
-                toast.success('Discord account unlinked successfully');
+                toast.success(t('account.discordUnlinkedSuccessfully'));
                 await fetchSession(true);
             } else {
-                toast.error('Failed to unlink Discord account');
+                toast.error(t('account.discordUnlinkFailed'));
             }
         } catch (error) {
             console.error('Error unlinking Discord:', error);
-            toast.error('Failed to unlink Discord account');
+            toast.error(t('account.discordUnlinkFailed'));
         } finally {
             setIsSubmitting(false);
+        }
+    };
+
+    const handleRequestData = async () => {
+        if (!isEnabled(settings?.ticket_system_enabled)) {
+            toast.error(t('account.dataRequest.ticketSystemDisabled'));
+            return;
+        }
+
+        try {
+            setIsRequestingData(true);
+            const response = await axios.post('/api/user/data-request');
+            const ticketUuid = response.data?.data?.ticket?.uuid;
+
+            if (response.data?.success && ticketUuid) {
+                toast.success(t('account.dataRequest.success'));
+                router.push(`/dashboard/tickets/${ticketUuid}`);
+            } else {
+                toast.error(response.data?.message || t('account.dataRequest.failed'));
+            }
+        } catch (error) {
+            console.error('Error requesting account data:', error);
+            if (axios.isAxiosError(error) && error.response?.data?.message) {
+                toast.error(error.response.data.message);
+            } else {
+                toast.error(t('account.dataRequest.failed'));
+            }
+        } finally {
+            setIsRequestingData(false);
         }
     };
 
@@ -252,7 +282,7 @@ export default function SettingsTab() {
             router.push('/auth/login');
         } catch (error) {
             console.error('Error during logout:', error);
-            toast.error('Logout failed');
+            toast.error(t('account.logoutFailed'));
         } finally {
             setIsSubmitting(false);
         }
@@ -457,6 +487,42 @@ export default function SettingsTab() {
                     </div>
                 </div>
             )}
+
+            <div className='border-border/50 bg-card/50 rounded-lg border p-6 backdrop-blur-xl'>
+                <div className='flex items-start gap-4'>
+                    <div className='shrink-0'>
+                        <div className='bg-primary/10 flex h-12 w-12 items-center justify-center rounded-lg'>
+                            <FileText className='text-primary h-6 w-6' />
+                        </div>
+                    </div>
+                    <div className='min-w-0 flex-1'>
+                        <div className='flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between'>
+                            <div className='flex-1'>
+                                <h4 className='text-foreground text-sm font-medium'>
+                                    {t('account.dataRequest.title')}
+                                </h4>
+                                <p className='text-muted-foreground mt-1 text-sm'>
+                                    {isEnabled(settings?.ticket_system_enabled)
+                                        ? t('account.dataRequest.description')
+                                        : t('account.dataRequest.ticketSystemDisabledDescription')}
+                                </p>
+                            </div>
+                            <Button
+                                type='button'
+                                variant='outline'
+                                size='sm'
+                                className='shrink-0'
+                                disabled={
+                                    isSubmitting || isRequestingData || !isEnabled(settings?.ticket_system_enabled)
+                                }
+                                onClick={() => void handleRequestData()}
+                            >
+                                {isRequestingData ? t('common.loading') : t('account.dataRequest.button')}
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <div className='border-border/50 bg-card/50 rounded-lg border p-6 backdrop-blur-xl'>
                 <div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>

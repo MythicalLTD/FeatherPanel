@@ -58,6 +58,11 @@ export const authApi = {
         return response.data;
     },
 
+    resendVerificationEmail: async (data: { username_or_email: string }) => {
+        const response = await api.post('/user/auth/verify-email/resend', data);
+        return response.data;
+    },
+
     linkDiscord: async (data: { token: string; username_or_email: string; password: string }) => {
         const response = await api.put('/user/auth/discord/link', data);
         return response.data;

@@ -81,7 +81,7 @@ export function NavbarClassicChrome(props: NavbarChromeProps) {
     return (
         <div
             className={cn(
-                'border-border/20 bg-card/78 z-30 flex h-14 shrink-0 items-center gap-x-2 border-b px-2 backdrop-blur-xl sm:h-16 sm:gap-x-4 sm:px-6 lg:px-8',
+                'border-border/50 bg-card z-30 flex h-14 shrink-0 items-center gap-x-2 border-b px-2 sm:h-16 sm:gap-x-4 sm:px-6 lg:px-8',
                 navbarSticky ? 'sticky top-0' : 'relative',
                 desktopHoverDock && 'lg:static lg:top-auto',
             )}

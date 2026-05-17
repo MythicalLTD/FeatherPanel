@@ -246,16 +246,23 @@ export default function InfrastructureAnalyticsPage() {
                         />
                         <ResourceCard
                             title={topPort ? String(topPort.port) : '0'}
-                            subtitle='Top used port'
-                            description={`Assigned: ${topPort?.assigned ?? 0} allocations`}
+                            subtitle={t('admin.analytics.infrastructure.top_used_port')}
+                            description={t('admin.analytics.infrastructure.assigned_allocations', {
+                                count: String(topPort?.assigned ?? 0),
+                            })}
                             icon={EthernetPort}
                             className='bg-card/50 shadow-none! backdrop-blur-sm'
                         />
                         <ResourceCard
                             title={topIp ? String(topIp.total_ports) : '0'}
-                            subtitle='Top IP total ports'
+                            subtitle={t('admin.analytics.infrastructure.top_ip_total_ports')}
                             description={
-                                topIp ? `${topIp.ip} (${topIp.usage_percentage}% used)` : 'No allocation usage data'
+                                topIp
+                                    ? t('admin.analytics.infrastructure.ip_usage', {
+                                          ip: topIp.ip,
+                                          percentage: String(topIp.usage_percentage),
+                                      })
+                                    : t('admin.analytics.infrastructure.no_allocation_usage_data')
                             }
                             icon={Globe}
                             className='bg-card/50 shadow-none! backdrop-blur-sm'

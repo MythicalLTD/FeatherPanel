@@ -30,6 +30,7 @@ import {
     ChevronRight,
     AlertCircle,
     UserPlus,
+    CheckCircle2,
 } from 'lucide-react';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { ResourceCard, type ResourceBadge } from '@/components/featherui/ResourceCard';
@@ -56,6 +57,7 @@ interface ApiUser {
     avatar: string;
     username: string;
     email: string;
+    email_verified?: boolean;
     role?: UserRole;
     banned?: string;
     two_fa_enabled?: string;
@@ -210,6 +212,27 @@ export default function UsersPage() {
             const errorMessage =
                 (error as { response?: { data?: { message?: string } } })?.response?.data?.message ||
                 t('admin.users.messages.delete_failed');
+            toast.error(errorMessage);
+        }
+    };
+
+    const handleForceVerifyEmail = async (user: ApiUser) => {
+        if (!confirm(t('admin.users.messages.force_verify_email_confirm', { username: user.username }))) {
+            return;
+        }
+
+        try {
+            const { data } = await axios.post(`/api/admin/users/${user.uuid}/verify-email`);
+            if (data?.success) {
+                toast.success(t('admin.users.messages.force_verify_email_success'));
+                setRefreshKey((prev) => prev + 1);
+            } else {
+                toast.error(data?.message || t('admin.users.messages.force_verify_email_failed'));
+            }
+        } catch (error: unknown) {
+            const errorMessage =
+                (error as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+                t('admin.users.messages.force_verify_email_failed');
             toast.error(errorMessage);
         }
     };
@@ -371,6 +394,14 @@ export default function UsersPage() {
                             });
                         }
 
+                        const isEmailUnverified = user.email_verified === false;
+                        if (isEmailUnverified) {
+                            badges.push({
+                                label: t('admin.users.badges.email_unverified'),
+                                className: 'bg-yellow-500/10 text-yellow-700 border-yellow-500/20',
+                            });
+                        }
+
                         if (user.discord_oauth2_linked === 'true') {
                             badges.push({
                                 label: t('admin.users.badges.discord_linked'),
@@ -449,6 +480,19 @@ export default function UsersPage() {
                                         >
                                             <Eye className='h-4 w-4' />
                                         </Button>
+                                        {isEmailUnverified && (
+                                            <Button
+                                                variant='outline'
+                                                size='sm'
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleForceVerifyEmail(user);
+                                                }}
+                                                title={t('admin.users.actions.force_verify_email')}
+                                            >
+                                                <CheckCircle2 className='h-4 w-4' />
+                                            </Button>
+                                        )}
                                         <Button
                                             variant='destructive'
                                             size='sm'

@@ -18,6 +18,16 @@
 namespace App\Services\Chatbot\Tools;
 
 use App\App;
+use App\Services\Chatbot\Tools\Vds\GetVdsStatusTool;
+use App\Services\Chatbot\Tools\Vds\GetVdsBackupsTool;
+use App\Services\Chatbot\Tools\Vds\GetVdsDetailsTool;
+use App\Services\Chatbot\Tools\Vds\GetVdsSubusersTool;
+use App\Services\Chatbot\Tools\Vds\VdsPowerActionTool;
+use App\Services\Chatbot\Tools\Vds\CreateVdsBackupTool;
+use App\Services\Chatbot\Tools\Vds\DeleteVdsBackupTool;
+use App\Services\Chatbot\Tools\Vds\GetVdsActivitiesTool;
+use App\Services\Chatbot\Tools\Vds\GetVdsNetworkingTool;
+use App\Services\Chatbot\Tools\Vds\RestoreVdsBackupTool;
 
 /**
  * Tool handler for executing AI-requested tools/functions.
@@ -26,10 +36,12 @@ class ToolHandler
 {
     private $app;
     private $tools = [];
+    private bool $includeDashboardTools;
 
-    public function __construct()
+    public function __construct(bool $includeDashboardTools = false)
     {
         $this->app = App::getInstance(true);
+        $this->includeDashboardTools = $includeDashboardTools;
         $this->registerTools();
     }
 
@@ -149,9 +161,14 @@ class ToolHandler
      */
     public function removeToolCalls(string $response): string
     {
-        $pattern = '/TOOL_CALL:\s*\w+\s*\{[^}]*\}/s';
+        $pattern = '/TOOL_CALL:\s*\w+\s*\{[^}]*\}|TOOL_CALL:\s*[^\n]+/s';
 
         return preg_replace($pattern, '', $response);
+    }
+
+    public function hasMalformedToolCall(string $response): bool
+    {
+        return str_contains($response, 'TOOL_CALL:') && empty($this->parseToolCalls($response));
     }
 
     /**
@@ -176,6 +193,10 @@ class ToolHandler
         }
 
         if (is_array($data)) {
+            if ($toolName === 'create_database' && ($data['success'] ?? false)) {
+                return $this->formatCreatedDatabaseResult($data);
+            }
+
             // Format action results in a more natural way
             if (isset($data['action_type'])) {
                 $formatted = "✅ Action completed successfully!\n\n";
@@ -548,6 +569,30 @@ class ToolHandler
         return $tools;
     }
 
+    private function formatCreatedDatabaseResult(array $data): string
+    {
+        $formatted = "Database created successfully.\n\n";
+
+        if (isset($data['database_name'])) {
+            $formatted .= "Database Name: {$data['database_name']}\n";
+        }
+        if (isset($data['username'])) {
+            $formatted .= "Username: {$data['username']}\n";
+        }
+        if (isset($data['password'])) {
+            $formatted .= "Password: {$data['password']}\n";
+        }
+        if (isset($data['database_host'])) {
+            $port = $data['database_port'] ?? '';
+            $formatted .= "Host: {$data['database_host']}" . ($port !== '' ? ":{$port}" : '') . "\n";
+        }
+        if (isset($data['database_type'])) {
+            $formatted .= "Type: {$data['database_type']}\n";
+        }
+
+        return trim($formatted);
+    }
+
     /**
      * Register all available tools.
      */
@@ -597,5 +642,23 @@ class ToolHandler
             'decompress_archive' => new DecompressArchiveTool(),
             'pull_file' => new PullFileTool(),
         ];
+
+        if ($this->includeDashboardTools) {
+            $this->tools += [
+                'get_vds_details' => new GetVdsDetailsTool(),
+                'get_vds_status' => new GetVdsStatusTool(),
+                'vds_power_action' => new VdsPowerActionTool(),
+                'get_vds_backups' => new GetVdsBackupsTool(),
+                'get_vds_activities' => new GetVdsActivitiesTool(),
+                'create_vds_backup' => new CreateVdsBackupTool(),
+                'delete_vds_backup' => new DeleteVdsBackupTool(),
+                'restore_vds_backup' => new RestoreVdsBackupTool(),
+                'get_vds_networking' => new GetVdsNetworkingTool(),
+                'get_vds_subusers' => new GetVdsSubusersTool(),
+                'search_knowledgebase' => new SearchKnowledgebaseTool(),
+                'get_knowledgebase_article' => new GetKnowledgebaseArticleTool(),
+                'list_knowledgebase_categories' => new ListKnowledgebaseCategoriesTool(),
+            ];
+        }
     }
 }

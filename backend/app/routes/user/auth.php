@@ -96,6 +96,19 @@ return function (RouteCollection $routes): void {
         'user-auth'
     );
 
+    // POST (resend verification email)
+    App::getInstance(true)->registerApiRoute(
+        $routes,
+        'verify-email-resend',
+        '/api/user/auth/verify-email/resend',
+        function (Request $request) {
+            return (new VerifyEmailController())->resend($request);
+        },
+        ['POST'],
+        Rate::perMinute(3),
+        'user-auth-verify-email'
+    );
+
     // PUT (reset password)
     App::getInstance(true)->registerApiRoute(
         $routes,

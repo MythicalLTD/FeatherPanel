@@ -208,15 +208,17 @@ export default function ContentAnalyticsPage() {
                         />
                         <ResourceCard
                             title={(spellOverview?.with_variables ?? 0).toString()}
-                            subtitle='Spells with variables'
-                            description={`Privileged scripts: ${spellOverview?.privileged_scripts ?? 0}`}
+                            subtitle={t('admin.analytics.content.spells_with_variables')}
+                            description={t('admin.analytics.content.privileged_scripts', {
+                                count: String(spellOverview?.privileged_scripts ?? 0),
+                            })}
                             icon={ShieldAlert}
                             className='bg-card/50 shadow-none! backdrop-blur-sm'
                         />
                         <ResourceCard
                             title={mailTemplatesTotal.toString()}
-                            subtitle='Mail templates'
-                            description='Templates available for notifications'
+                            subtitle={t('admin.analytics.content.mail_templates')}
+                            description={t('admin.analytics.content.notification_templates')}
                             icon={Mail}
                             className='bg-card/50 shadow-none! backdrop-blur-sm'
                         />

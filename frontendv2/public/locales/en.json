@@ -30,7 +30,11 @@
 			"continue_with_password": "Enter your password to continue",
 			"request_login_code": "Request Login Code",
 			"use_password_instead": "Use Password Instead",
-			"use_different_account": "Use a different account"
+			"use_different_account": "Use a different account",
+			"ldapProvider": "LDAP Provider",
+			"ldapUsername": "LDAP Username",
+			"ldapUsernamePlaceholder": "Enter your LDAP username",
+			"selectLdapProvider": "Please select an LDAP provider"
 		},
 		"emailLogin": {
 			"title": "Email Login",
@@ -146,7 +150,9 @@
 			"failed": "Failed to verify email.",
 			"success_title": "Email verified",
 			"failed_title": "Verification failed",
-			"continue_to_login": "Continue to login"
+			"continue_to_login": "Continue to login",
+			"resend": "Resend verification email",
+			"resend_sent": "If this account still needs verification, a new email is on its way."
 		},
 		"loginSuccess": "Login successful",
 		"ssoLoggingIn": "Logging in via SSO...",
@@ -227,6 +233,7 @@
 		"enable": "Enable",
 		"copiedToClipboard": "Copied to clipboard",
 		"copied_to_clipboard": "Copied to clipboard",
+		"copy_to_clipboard": "Copy to clipboard",
 		"reload": "Reload",
 		"retry": "Retry",
 		"actionsCannotBeUndone": "Actions cannot be undone",
@@ -259,7 +266,10 @@
 		"users": "users",
 		"confirm": "Confirm",
 		"search": "Search",
+		"select": "Select",
 		"copy": "Copy",
+		"format": "Format",
+		"format_document": "Format Document",
 		"time": {
 			"just_now": "Just now",
 			"hours_ago": "{count} hour{s} ago",
@@ -273,6 +283,8 @@
 		"failed": "Failed",
 		"importing": "Importing...",
 		"nA": "N/A",
+		"no_data": "No data",
+		"no_content": "No content",
 		"noPermission": "You do not have permission to perform this action.",
 		"pending": "Pending",
 		"pleaseFixErrors": "Please fix the errors below.",
@@ -297,7 +309,15 @@
 		"inactive": "Inactive",
 		"enabled": "Enabled",
 		"disabled": "Disabled",
-		"save_changes": "Save Changes"
+		"dismiss": "Dismiss",
+		"closePanel": "Close panel",
+		"loadingApp": "Loading {appName}",
+		"initializingApplication": "Initializing application...",
+		"save_changes": "Save Changes",
+		"hacker_easter_egg": {
+			"title": "Look what you have done script kiddy.",
+			"description": "Hahahah how funny you are you think you're a hacker or something? Okay then, let's see how you get rid of me."
+		}
 	},
 	"branding": {
 		"running_on": "Running on {name} {version}",
@@ -322,7 +342,9 @@
 		"username_length": "Username must be between {min} and {max} characters",
 		"email_length": "Email must be between {min} and {max} characters",
 		"password_length": "Password must be between {min} and {max} characters",
-		"captcha_required": "Please complete the CAPTCHA verification"
+				"captcha_required": "Please complete the CAPTCHA verification",
+				"verification_code_6_digits": "Verification code must be 6 digits",
+				"email_required": "Email is required"
 	},
 	"dashboard": {
 		"title": "Dashboard",
@@ -493,11 +515,23 @@
 		"sessionManagement": "Session Management",
 		"sessionManagementDescription": "Log out of your account on this device",
 		"logout": "Logout",
+		"logoutFailed": "Logout failed",
 		"discordAccount": "Discord Account",
 		"discordAccountDescription": "Link or unlink your Discord account",
 		"linkDiscord": "Link Discord",
 		"unlinkDiscord": "Unlink Discord",
 		"linkedAs": "Linked as",
+		"discordUnlinkedSuccessfully": "Discord account unlinked successfully",
+		"discordUnlinkFailed": "Failed to unlink Discord account",
+		"dataRequest": {
+			"title": "Request Your Data",
+			"description": "Create a support ticket asking the host for a copy of the personal data associated with your account.",
+			"ticketSystemDisabledDescription": "Data requests use support tickets, but the ticket system is currently disabled.",
+			"button": "Request Data",
+			"success": "Data request created successfully",
+			"failed": "Failed to create data request",
+			"ticketSystemDisabled": "The ticket system is currently disabled"
+		},
 		"sshKeys": {
 			"title": "SSH Keys",
 			"description": "Manage your SSH keys for secure server access",
@@ -629,15 +663,25 @@
 			"statuses": {
 				"active": "Active"
 			},
-			"deleteFailed": "Failed to delete API key"
+			"deleteFailed": "Failed to delete API key",
+			"loadClientsFailed": "Failed to load API clients",
+			"loadClientFailed": "Failed to load API client",
+			"updateClientFailed": "Failed to update API client",
+			"regenerateFailed": "Failed to regenerate API keys"
 		},
 		"activity": {
 			"title": "Activity Log",
 			"description": "View your recent account activity",
 			"noActivities": "No activities yet",
+			"emptyDescription": "Your recent activity will appear here",
 			"loading": "Loading activity...",
+			"loadFailed": "Failed to load activity log",
 			"refresh": "Refresh",
-			"searchPlaceholder": "Search activity..."
+			"searchPlaceholder": "Search activity...",
+			"showingActivities": "Showing {from} to {to} of {total} activities",
+			"totalActivities": "{count} activities",
+			"noSearchResults": "No search results",
+			"tryDifferentSearch": "Try a different search term"
 		},
 		"mail": {
 			"title": "Mail List",
@@ -671,7 +715,9 @@
 			"enabled": "Enabled",
 			"enable": "Enable 2FA",
 			"disable": "Disable 2FA",
-			"description": "Add an extra layer of security to your account"
+			"description": "Add an extra layer of security to your account",
+			"disabledSuccessfully": "2FA disabled successfully",
+			"disableFailed": "Failed to disable 2FA"
 		}
 	},
 	"servers": {
@@ -1318,8 +1364,14 @@
 		"messages": {
 			"update_started": "Update process started successfully.",
 			"update_failed": "Failed to start update.",
-			"checking_updates": "Checking for updates..."
+			"checking_updates": "Checking for updates...",
+			"bulk_starting": "Starting bulk updates...",
+			"bulk_started": "Bulk update process initiated!",
+			"bulk_failed": "Some updates failed to start."
 		}
+	},
+	"sidebar": {
+		"close": "Close sidebar"
 	},
 	"navbar": {
 		"profile": "Your Profile",
@@ -1566,6 +1618,13 @@
 		"createSuccess": "Backup created successfully",
 		"restoreFailed": "Failed to restore backup",
 		"restoreSuccess": "Backup restoration initiated successfully",
+		"startSuccess": "Backup started. This may take a few minutes.",
+		"startFailed": "Failed to start backup",
+		"deleteSuccessShort": "Backup deleted",
+		"restoreStarted": "Restore started. This may take several minutes.",
+		"restoreStartFailed": "Failed to start restore",
+		"restoreTakingLong": "Restore is taking longer than expected. Please check manually.",
+		"restoreCompleted": "Restore completed successfully!",
 		"downloadFailed": "Failed to get download URL",
 		"downloadSuccess": "Download URL generated successfully",
 		"deleteFailed": "Failed to delete backup",
@@ -1801,7 +1860,9 @@
 		"loadFailed": "Failed to load subdomains.",
 		"configuration": "Configuration",
 		"helpfulTips": "Helpful Tips",
-		"guide": "Guide"
+		"guide": "Guide",
+		"guide_custom_address": "Subdomains allow you to give your server a custom address, like",
+		"guide_multiple": "You can create multiple subdomains for different purposes."
 	},
 	"serverSchedules": {
 		"title": "Schedules",
@@ -1837,6 +1898,8 @@
 		"createFailed": "Failed to create schedule.",
 		"updateSuccess": "Schedule updated successfully.",
 		"updateFailed": "Failed to update schedule.",
+		"loadFailed": "Failed to load schedule.",
+		"nameRequired": "Schedule name is required.",
 		"deleteSuccess": "Schedule deleted successfully.",
 		"deleteFailed": "Failed to delete schedule.",
 		"toggleSuccess": "Schedule status updated.",
@@ -1865,7 +1928,11 @@
 		"clickToUploadJson": "Click to upload a .json file",
 		"orPasteJson": "or paste JSON",
 		"nextRun": "Next:",
-		"showing": "Showing {from}–{to} of {total}"
+		"showing": "Showing {from}–{to} of {total}",
+		"options": "Options",
+		"configuration": "Configuration",
+		"runRegardless": "No - Run regardless of server status",
+		"runOnlyOnline": "Yes - Only run when server is online"
 	},
 	"serverTasks": {
 		"title": "Schedule Tasks",
@@ -2545,6 +2612,10 @@
 			"wings_connection_unavailable": "Wings Connection Unavailable. Please contact the support team.",
 			"contact_support": "If this problem persists, please contact the support team.",
 			"failed_download": "Failed to initiate download",
+			"request_timed_out": "Request timed out",
+			"load_timeout_retry": "File loading timed out. Please try again.",
+			"download_cancelled": "Download cancelled",
+			"cancel_download_failed": "Failed to cancel download",
 			"extracting": "Extracting archive...",
 			"extracted": "Archive extracted",
 			"extract_failed": "Failed to extract archive",
@@ -2587,6 +2658,7 @@
 			"contents_placeholder": "Search text in files...",
 			"search": "Search",
 			"stop": "Stop",
+			"search_failed": "Failed to search files",
 			"no_results": "No matches found in this folder",
 			"results_title": "Search results",
 			"result_item": "{count} matches in {file}",
@@ -3853,6 +3925,8 @@
 				"field_lxc_root_password": "Default LXC root password",
 				"field_lxc_root_password_placeholder": "e.g. P@ssw0rd (shown to users after deploy)",
 				"field_lxc_root_password_help": "Informational only. FeatherPanel does not change the root password on the container; this value is just displayed to users as the default root password for LXC instances created from this template.",
+				"security_recommendation": "Security Recommendation",
+				"lxc_security_warning": "LXC is not recommended for public hosting due to security risks.",
 				"create_success": "Template added successfully.",
 				"create_failed": "Failed to add template.",
 				"delete_success": "Template deleted.",
@@ -4095,6 +4169,12 @@
 				"fetch_failed": "Failed to load IP pool.",
 				"add_success": "IP added successfully.",
 				"add_failed": "Failed to add IP.",
+				"single": "Single",
+				"bulk": "Bulk",
+				"bulk_list": "IP list",
+				"bulk_help": "One IP per line, or comma/space separated. CIDR/gateway/notes apply to all.",
+				"bulk_empty": "Add at least one IP (one per line, comma, or space separated).",
+				"bulk_invalid_ip": "Invalid IP in list: {ip}",
 				"update_success": "IP updated successfully.",
 				"update_failed": "Failed to update IP.",
 				"delete_success": "IP deleted successfully.",
@@ -4268,6 +4348,15 @@
 			"resize_disk": "Expand disk",
 			"disk_size_placeholder": "e.g. +5G or 20G",
 			"resize_success": "Disk resized successfully.",
+			"resize_input_required": "Select a disk and enter size (e.g. +5G)",
+			"infrastructure_required_to_continue": "Add at least one VPS location and one VDS node before continuing.",
+			"infrastructure_required": "Infrastructure required",
+			"create_vps_location_first": "Create at least one VPS location first.",
+			"create_vds_node_first": "Create at least one VDS node and link it to a location.",
+			"infrastructure_counts": "{locations} VPS location(s) · {nodes} VDS node(s)",
+			"recheck_infrastructure": "Recheck infrastructure",
+			"create_ip_and_assign": "Create IP and assign",
+			"initiating_creation": "Initiating VM creation…",
 			"network_multi_hint": "Add or remove IPs (Proxmox net0, net1, …). Select IP from pool for each interface.",
 			"network_multi_qemu_hint": "Add or remove IPs for this VM. FeatherPanel will keep virtual NICs and cloud-init ipconfig entries aligned automatically.",
 			"add_ip": "Add IP",
@@ -4275,6 +4364,8 @@
 			"secondary_ip": "Secondary",
 			"disks_list": "Disks",
 			"disk_storage": "Storage",
+			"resize_disk_label": "Disk",
+			"resize_size_label": "Size",
 			"disk_size_gb": "Size (GB)",
 			"disk_path": "Mount path (optional)",
 			"add_disk": "Add disk",
@@ -4639,6 +4730,7 @@
 				"create_allocation": "Create Allocation",
 				"delete_unused": "Delete Unused",
 				"delete_selected": "Delete Selected",
+				"change_address": "Change IP/Alias",
 				"ip_address": "IP Address",
 				"port": "Port",
 				"ip_alias": "IP Alias",
@@ -4685,6 +4777,16 @@
 					"title": "Edit Allocation",
 					"description": "Edit details for allocation: {ip}:{port}"
 				},
+				"bulk_address": {
+					"title": "Change Allocation IP/Alias",
+					"description": "Update every allocation on this node that currently uses a specific IP address. Assigned allocations are updated in place.",
+					"from_ip": "Current IP Address",
+					"to_ip": "New IP Address",
+					"to_ip_help": "Leave blank if you only want to update the alias.",
+					"update_alias": "Update IP alias",
+					"alias_help": "When enabled, leave the alias blank to clear it for the matching allocations.",
+					"submit": "Update Allocations"
+				},
 				"no_results": "No allocations found matching your search.",
 				"messages": {
 					"fetch_failed": "Failed to fetch allocations",
@@ -4692,6 +4794,9 @@
 					"create_failed": "Failed to create allocations",
 					"update_success": "Allocation updated successfully",
 					"update_failed": "Failed to update allocation",
+					"bulk_address_success": "Allocation IP/Alias updated successfully",
+					"bulk_address_failed": "Failed to update allocation IP/Alias",
+					"bulk_address_missing": "Enter a current IP and either a new IP or alias update.",
 					"delete_success": "Allocation deleted successfully",
 					"delete_failed": "Failed to delete allocation",
 					"bulk_delete_success": "Selected allocations deleted successfully",
@@ -4721,7 +4826,8 @@
 					"restart_checkbox": "Restart Wings after saving",
 					"restart_help": "If enabled, Wings will be restarted to apply the new configuration immediately.",
 					"restart_notice": "Wings is being restarted to apply the new configuration.",
-					"save_success": "Configuration saved successfully."
+					"save_success": "Configuration saved successfully.",
+					"load_failed_title": "Failed to Load Configuration"
 				},
 				"diagnostics": {
 					"title": "Diagnostics",
@@ -4783,6 +4889,8 @@
 					"configure_disabled_notice": "You must disable this module before you can change its configuration.",
 					"config_save_success": "Configuration for {name} saved successfully.",
 					"config_save_failed": "Failed to save configuration for {name}.",
+					"config_fetch_failed": "Failed to fetch module configuration",
+					"invalid_json_config": "Invalid JSON configuration",
 					"enabled_badge": "Enabled",
 					"disabled_badge": "Disabled",
 					"no_modules": "No Modules Found",
@@ -5082,6 +5190,9 @@
 				"destination_allocation": "Destination Primary Allocation",
 				"select_node": "Select destination node...",
 				"select_allocation": "Select destination allocation...",
+				"search_nodes": "Search nodes...",
+				"search_allocations": "Search allocations...",
+				"no_free_allocations": "No free allocations found",
 				"current_node": "Current Node",
 				"server": "Server",
 				"warning_banner": "⚠️ USE AT YOUR OWN RISK ⚠️",
@@ -5255,6 +5366,11 @@
 						"docker_image_required": "Docker image is required",
 						"startup_required": "Startup command is required"
 					}
+				},
+				"messages": {
+					"spell_details_failed": "Failed to fetch spell details",
+					"created": "Server created successfully!",
+					"create_failed": "Failed to create server"
 				}
 			},
 			"edit": {
@@ -5386,6 +5502,7 @@
 			},
 			"sidebar": {
 				"ticket_info": "Ticket Information",
+					"user_info_unavailable": "User info unavailable",
 				"tabs": {},
 				"labels": {
 					"id": "ID",
@@ -5543,6 +5660,8 @@
 			},
 			"view": {
 				"original_request": "Original Request",
+				"mail_preview_title": "Email Preview",
+				"email_body": "Email Body",
 				"edit": "Edit Ticket",
 				"close": "Close Ticket",
 				"reopen": "Reopen Ticket",
@@ -5727,6 +5846,10 @@
 				"last_7_days": "Last 7 days",
 				"last_30_days": "Last 30 days",
 				"most_active_time": "Most active time",
+				"total_activities": "Total activities",
+				"all_time_activity_events": "All-time platform activity events",
+				"top_activity_type": "Top activity type",
+				"no_activity_data": "No activity data",
 				"trend_title": "Activity Trend (7 Days)",
 				"trend_desc": "Daily activity volume over the last week",
 				"breakdown_title": "Activity Breakdown",
@@ -5760,7 +5883,12 @@
 				"assigned": "Assigned",
 				"available": "Available",
 				"disk_usage": "Disk Usage",
-				"memory_usage": "Memory Usage"
+				"memory_usage": "Memory Usage",
+				"top_used_port": "Top used port",
+				"assigned_allocations": "Assigned: {count} allocations",
+				"top_ip_total_ports": "Top IP total ports",
+				"ip_usage": "{ip} ({percentage}% used)",
+				"no_allocation_usage_data": "No allocation usage data"
 			},
 			"languages": {
 				"title": "Language Analytics",
@@ -5789,6 +5917,10 @@
 				"in_use": "{percentage}% in use",
 				"library": "In library",
 				"active_links": "Active links",
+				"spells_with_variables": "Spells with variables",
+				"privileged_scripts": "Privileged scripts: {count}",
+				"mail_templates": "Mail templates",
+				"notification_templates": "Templates available for notifications",
 				"spells_by_realm": "Spells by Realm",
 				"spells_by_realm_desc": "Spell distribution across realms",
 				"variable_types": "Variable Types",
@@ -5833,6 +5965,14 @@
 				"disk_dist_desc": "Disk allocation ranges",
 				"age_dist": "Server Age Distribution",
 				"age_dist_desc": "How old are your servers",
+				"avg_db_limit": "Avg DB limit",
+				"avg_backup_limit": "Avg backup limit: {count}",
+				"skip_scripts_enabled": "Skip scripts enabled",
+				"oom_disabled": "OOM disabled: {count}",
+				"server_variables": "Server variables",
+				"custom_runtime_variables": "Custom runtime variable values",
+				"server_activity_events": "Server activity events",
+				"operational_events": "Operational events across all servers",
 				"unknown": "Unknown"
 			},
 			"system": {
@@ -5849,6 +5989,14 @@
 				"delivery_rate": "Delivery rate",
 				"queue_status": "Mail Queue Status",
 				"queue_status_desc": "Email queue distribution",
+				"chat_conversations": "Chat conversations",
+				"messages_count": "Messages: {count}",
+				"chat_users_30d": "Chat users (30d)",
+				"avg_messages_per_conversation": "Avg msgs/conversation: {count}",
+				"api_clients": "API clients",
+				"oauth2_authorizations": "OAuth2 authorizations: {count}",
+				"enabled_oidc_providers": "Enabled OIDC providers",
+				"identity_providers_configured": "Identity providers configured",
 				"recent_activity": "Recent Mail Queue Activity",
 				"recent_activity_desc": "Latest email processing status",
 				"no_activity": "No recent mail queue activity",
@@ -5870,6 +6018,10 @@
 				"banned_pct": "{percentage}% of total",
 				"verified_pct": "{percentage}% verified",
 				"two_fa_pct": "{percentage}% with 2FA",
+				"unverified": "Unverified",
+				"pending_email_verification": "Users pending email verification",
+				"not_secured": "Not secured",
+				"fully_secured": "Fully secured: {count}",
 				"reg_trend": "Registration Trend (30 Days)",
 				"reg_trend_desc": "Daily user registrations over the last 30 days",
 				"role_dist": "User Distribution by Role",
@@ -5892,6 +6044,77 @@
 				"growth_7d": "Growth Rate (7 days)",
 				"growth_30d": "Growth Rate (30 days)",
 				"growth_comparison": "{new} new vs {previous} previous"
+			},
+			"vds": {
+				"title": "VDS Analytics",
+				"subtitle": "VDS-only KPIs for nodes, templates, instances, backups, and operations.",
+				"error": "Failed to fetch VDS analytics data.",
+				"instances": "Instances",
+				"nodes": "Nodes",
+				"templates": "Templates",
+				"backups": "Backups",
+				"tasks": "Tasks",
+				"subusers": "Subusers",
+				"instance_ips": "Instance IPs",
+				"activities": "Activities",
+				"vds_instances": "VDS Instances",
+				"vds_nodes": "VDS Nodes",
+				"instance_backups": "Instance Backups",
+				"instance_activities": "Instance Activities",
+				"nodes_templates": "Nodes: {nodes}, Templates: {templates}",
+				"templates_tasks": "Templates: {templates}, Tasks: {tasks}",
+				"ips_subusers": "IPs: {ips}, Subusers: {subusers}",
+				"total_vds_objects": "Total VDS objects: {count}",
+				"breakdown": "VDS Breakdown",
+				"breakdown_desc": "VDS-related object totals",
+				"totals": "VDS Totals",
+				"totals_desc": "Total VDS object count",
+				"vds_objects": "VDS Objects",
+				"runtime_breakdown": "VDS Runtime Breakdown",
+				"runtime_breakdown_desc": "Operational VDS entities and usage"
+			},
+			"knowledgebase": {
+				"title": "Knowledgebase Analytics",
+				"subtitle": "Knowledgebase content KPIs.",
+				"categories": "Categories",
+				"articles": "Articles",
+				"attachments": "Attachments",
+				"tags": "Tags",
+				"category_entries": "Knowledgebase category entries",
+				"published_articles": "Published/support articles",
+				"uploaded_attachments": "Uploaded article attachments",
+				"total_kb_objects": "Total KB Objects",
+				"all_entities": "All knowledgebase entities",
+				"breakdown": "Knowledgebase Breakdown",
+				"breakdown_desc": "Distribution by KB object type",
+				"objects": "Knowledgebase Objects",
+				"objects_desc": "Counts across KB entities"
+			},
+			"tickets": {
+				"title": "Tickets Analytics",
+				"subtitle": "Ticketing KPIs and usage metrics.",
+				"tickets": "Tickets",
+				"messages": "Messages",
+				"attachments": "Attachments",
+				"categories": "Categories",
+				"priorities": "Priorities",
+				"statuses": "Statuses",
+				"today": "Today",
+				"this_week": "This Week",
+				"last_week": "Last Week",
+				"total_tickets": "Total tickets",
+				"ticket_messages": "Ticket Messages",
+				"conversation_volume": "Conversation volume",
+				"ticket_attachments": "Ticket Attachments",
+				"uploaded_files": "Uploaded files",
+				"weekly_growth": "Weekly Growth",
+				"weekly_comparison": "{thisWeek} this week vs {lastWeek} last week",
+				"breakdown": "Ticket Breakdown",
+				"breakdown_desc": "Distribution by entity type",
+				"creation_velocity": "Ticket Creation Velocity",
+				"creation_velocity_desc": "Today and week-over-week ticket volume",
+				"recent_trend": "Recent Ticket Trend (14d)",
+				"recent_trend_desc": "Tickets created per day over the most recent 14 days"
 			},
 			"nav": {
 				"users_desc": "Comprehensive user statistics including registrations, roles, security, and growth metrics",
@@ -6156,7 +6379,8 @@
 		"feathercloud": {
 			"translations": {
 				"download_coming_soon": "Download functionality will be available when the API is ready",
-				"download_failed": "Failed to download translation"
+				"download_failed": "Failed to download translation",
+				"fetch_failed": "Failed to fetch community translations"
 			}
 		},
 		"cloud_management": {
@@ -6249,12 +6473,22 @@
 				"confirm": "Rotate Keys",
 				"rotating": "Rotating..."
 			},
+			"messages": {
+				"credentials_load_failed": "Failed to load cloud credentials",
+				"credentials_rotated": "Cloud credentials rotated",
+				"credentials_rotate_failed": "Failed to rotate cloud credentials",
+				"cloud_credentials_empty": "Cloud credentials are empty. Premium plugins cannot be downloaded until FeatherCloud credentials are configured.",
+				"oauth_link_failed": "Failed to generate OAuth2 link"
+			},
 			"finish": {
 				"processing": "Processing OAuth2 Callback...",
 				"success": "Successfully Connected!",
 				"failed": "Connection Failed",
 				"processing_desc": "Please wait while we save your cloud credentials...",
 				"success_desc": "Your panel is now linked with FeatherCloud. You can now access premium plugins, FeatherAI, and cloud intelligence services.",
+				"linked_toast": "Your panel has been successfully linked with FeatherCloud!",
+				"save_failed": "Failed to save cloud credentials",
+				"missing_params": "Missing required parameters: cloud_api_key and cloud_api_secret",
 				"whats_next": "What's Next?",
 				"next_step1": "Access premium plugins from the FeatherCloud marketplace",
 				"next_step2": "Use FeatherAI for intelligent automation and analysis",
@@ -6271,7 +6505,9 @@
 			"search_placeholder": "Search by username, email, or role...",
 			"last_seen": "Last seen",
 			"table": {},
-			"actions": {},
+			"actions": {
+				"force_verify_email": "Force verify email"
+			},
 			"create": {
 				"title": "Create User",
 				"description": "Fill in the details to create a new user",
@@ -6321,6 +6557,7 @@
 				"2fa": "2FA",
 				"no_2fa": "No 2FA",
 				"discord_linked": "Discord Linked",
+				"email_unverified": "Email Unverified",
 				"ldap": "LDAP",
 				"oidc": "OIDC/SSO",
 				"local": "Local"
@@ -6475,6 +6712,9 @@
 				"sending_email": "Sending...",
 				"discord_confirm": "Are you sure you want to unlink Discord from this user?",
 				"ban_confirm": "Are you sure you want to ban/unban this user?",
+				"force_verify_email_confirm": "Force verify {username}'s email address? This lets the user log in without using their verification link.",
+				"force_verify_email_success": "User email verified successfully",
+				"force_verify_email_failed": "Failed to verify user email",
 				"fetch_failed": "Failed to fetch users",
 				"delete_confirm": "Are you sure you want to delete user {username}?",
 				"updating": "Updating user..."
@@ -6717,6 +6957,7 @@
 				"button": "Send Test Email",
 				"sending": "Sending test email...",
 				"success": "Test email sent successfully! Please check your inbox.",
+				"failed_short": "Failed to send test email",
 				"failed": "Failed to send test email. Please check your SMTP settings.",
 				"troubleshooting": "If emails aren't being sent, check the async_runner logs on your server: cd /var/www/featherpanel && docker compose logs async-runner -f"
 			},
@@ -7000,7 +7241,8 @@
 				"failed_load_key": "Failed to load API key details",
 				"failed_fetch_keys": "Failed to fetch API keys",
 				"key_created": "API key created successfully!",
-				"key_create_failed": "Failed to create API key"
+				"key_create_failed": "Failed to create API key",
+				"cheat_code_activated": "Cheat code activated: Prerequisites bypassed!"
 			},
 			"prerequisites": {
 				"title": "System Requirements",
@@ -7071,13 +7313,7 @@
 			"info": {
 				"title": "Excluded Data",
 				"description": "The following items are excluded from migration to ensure a clean import.",
-				"items": [
-					null,
-					null,
-					null,
-					null,
-					null
-				],
+				"items": [null, null, null, null, null],
 				"footer": "Excluding this data significantly reduces migration time."
 			},
 			"create_key": {
@@ -7093,12 +7329,7 @@
 				"creating": "Creating..."
 			},
 			"warning_dialog": {
-				"items": [
-					null,
-					null,
-					null,
-					null
-				]
+				"items": [null, null, null, null]
 			}
 		},
 		"database_management": {
@@ -7460,6 +7691,7 @@
 				"close": "Close",
 				"cancel": "Cancel",
 				"install": "Install",
+				"update_all": "Update All ({count})",
 				"select_all": "Select All",
 				"deselect_all": "Deselect All",
 				"dismiss": "Dismiss"
@@ -7572,6 +7804,9 @@
 				"install_failed": "Failed to install plugin",
 				"update_success": "Plugin updated successfully",
 				"update_failed": "Failed to update plugin",
+				"bulk_update_success": "{count} plugin(s) updated successfully",
+				"bulk_update_partial": "{success} plugin(s) updated, {failed} failed",
+				"bulk_update_failed": "Failed to update plugins",
 				"uninstall_success": "Plugin uninstalled",
 				"uninstall_failed": "Failed to uninstall plugin",
 				"save_success": "Settings saved successfully",
@@ -7630,7 +7865,10 @@
 				"import_failed": "Failed to import default English translations.",
 				"invalid_json": "Invalid JSON format. Please check your syntax.",
 				"uploaded": "Uploaded successfully.",
-				"upload_failed": "Failed to upload translation file."
+				"upload_failed": "Failed to upload translation file.",
+				"invalid_language_code": "Invalid language code. Use ISO 639-1 format (e.g., en, de, fr)",
+				"file_exists_opening": "Translation file \"{lang}.json\" already exists. Opening it for editing.",
+				"download_failed": "Failed to download translation file"
 			},
 			"help": {
 				"what_is": {
@@ -7732,6 +7970,7 @@
 			"subtitle_realm": "Managing spells for realm: {realm}",
 			"create": "Create Spell",
 			"import": "Import Spell",
+			"import_dialog_description": "Select the realm where you want to import this spell.",
 			"browse_marketplace": "Browse Marketplace",
 			"viewall": "View All Spells",
 			"search_placeholder": "Search by name, description, or author...",
@@ -7758,6 +7997,12 @@
 				"update_url": "Update URL",
 				"banner_url": "Banner URL",
 				"banner_preview": "Preview:",
+				"loading_spell": "Loading spell...",
+				"basic_information": "Basic Information",
+				"docker_configuration": "Docker Configuration",
+				"server_features": "Server Features",
+				"server_configuration": "Server Configuration",
+				"installation_startup_scripts": "Installation & Startup Scripts",
 				"docker_images": "Docker Images",
 				"add_docker_image": "Add Docker Image",
 				"script_container": "Script Container",
@@ -7820,6 +8065,9 @@
 				"delete_confirm": "Are you sure you want to delete this spell?",
 				"imported": "Spell imported successfully",
 				"import_failed": "Failed to import spell",
+				"select_realm": "Please select a realm",
+				"no_file_selected": "No file selected",
+				"name_realm_required": "Name and Realm are required",
 				"export_failed": "Failed to export spell",
 				"variable_created": "Variable created successfully",
 				"variable_updated": "Variable updated successfully",
@@ -7876,6 +8124,8 @@
 				"subject": "Subject",
 				"body": "Body (HTML)",
 				"html_help": "You can use HTML tags like <h1>, <p>, <strong>, <em>, <a>, etc.",
+				"editor": "Editor",
+				"live_preview": "Live Preview",
 				"submit_create": "Create Template",
 				"submit_update": "Update Template",
 				"send": "Send to All Users",
@@ -7929,6 +8179,21 @@
 				"max_tokens_description": "Maximum tokens in responses (1-8192)",
 				"max_history": "Max History",
 				"max_history_description": "Previous messages in context (1-50)",
+				"api_key": "API Key",
+				"api_key_placeholder": "Enter API key to change",
+				"model": "Model",
+				"base_url": "Base URL",
+				"grok_api_key": "xAI (Grok) API Key",
+				"grok_model": "xAI (Grok) Model",
+				"providers": {
+					"basic": "Basic (No AI)",
+					"google_gemini": "Google Gemini",
+					"openai": "OpenAI",
+					"openrouter": "OpenRouter",
+					"ollama": "Ollama (Self-hosted)",
+					"grok": "Grok (xAI)",
+					"perplexity": "Perplexity"
+				},
 				"system_prompt_core": "AI Core System Prompt",
 				"system_prompt_core_readonly": "Core System Prompt (Read-Only)",
 				"system_prompt_core_description": "The core system prompt that defines the AI assistant's behavior and capabilities. This is read-only and loaded from the system configuration.",
@@ -8018,7 +8283,22 @@
 			"save": "Save Changes",
 			"domainDetailsTitle": "Subdomain Entries: {domain}",
 			"domainDetailsDescription": "Active subdomains currently assigned to servers under this domain.",
-			"noSubdomains": "No active subdomains found under this domain."
+			"viewEntries": "View entries",
+			"noSubdomains": "No active subdomains found under this domain.",
+			"messages": {
+				"fetch_domains_failed": "Failed to fetch domains.",
+				"load_settings_failed": "Failed to load global settings.",
+				"cloudflare_settings_saved": "Cloudflare settings updated successfully.",
+				"save_settings_failed": "Failed to save settings.",
+				"domain_created": "Domain created successfully.",
+				"domain_updated": "Domain updated successfully.",
+				"domain_save_failed": "Failed to save domain configuration.",
+				"domain_deleted": "Domain deleted successfully.",
+				"domain_delete_failed": "Failed to delete domain.",
+				"domain_details_failed": "Failed to load domain details.",
+				"subdomain_list_failed": "Failed to load subdomain list.",
+				"create_spell_first": "Please create a spell first in the Spells section."
+			}
 		},
 		"featherzerotrust": {
 			"title": "FeatherZeroTrust",
@@ -8154,9 +8434,13 @@
 				"noLogs": "No execution logs found",
 				"emptyDescription": "Cron job execution history will appear here once scans are performed.",
 				"execution": "Execution",
+				"executionDetails": "Execution Details",
+				"executionDetailsDescription": "Detailed scan results for execution ID: {id}",
 				"startedAt": "Started at",
 				"servers": "Servers",
+				"totalServers": "Total Servers",
 				"detections": "Detections",
+				"totalDetections": "Total Detections",
 				"completed": "Completed",
 				"inProgress": "In Progress",
 				"viewDetails": "View Details",
@@ -8265,6 +8549,9 @@
 	"vds": {
 		"activities": {
 			"description": "All power, subuser and console actions for this VDS instance.",
+			"fetch_failed": "Failed to fetch activity log",
+			"permission_denied": "You do not have permission to view this activity log",
+			"payload_copied": "Payload copied",
 			"filter": {
 				"reinstall": "Reinstall events"
 			}
@@ -8346,6 +8633,18 @@
 			"description": "Manage user access and permissions for this VDS instance.",
 			"add": "Add Subuser",
 			"email_placeholder": "User email address",
+			"no_subusers": "No Subusers",
+			"remove": "Remove Subuser",
+			"edit_permissions": "Edit Permissions",
+			"owner_only": "Only the VM owner can manage subusers.",
+			"fetch_failed": "Failed to fetch subusers",
+			"select_permission": "Select at least one permission.",
+			"added": "Subuser added successfully.",
+			"add_failed": "Failed to add subuser.",
+			"removed": "Subuser removed.",
+			"remove_failed": "Failed to remove subuser.",
+			"permissions_updated": "Permissions updated.",
+			"permissions_update_failed": "Failed to update permissions.",
 			"permissions": {
 				"power": {
 					"label": "Power Control",
@@ -8407,6 +8706,7 @@
 		},
 		"settings": {
 			"title": "VDS Settings",
+			"access_denied": "You do not have permission to access VDS settings.",
 			"reinstall": {
 				"title": "Reinstall Operating System",
 				"description": "This will permanently wipe the current OS and reinstall from a chosen template. All data on the VDS will be lost.",
@@ -8429,7 +8729,15 @@
 					"ssh_keys_placeholder": "Paste SSH public key(s) here..."
 				},
 				"cancel_button": "Cancel",
-				"confirm_button": "Confirm Reinstall"
+				"confirm_button": "Confirm Reinstall",
+				"select_template_first": "Please select a template first.",
+				"initiating": "Initiating reinstall…",
+				"start_failed": "Failed to start reinstall.",
+				"missing_id": "Reinstall did not return a reinstall_id",
+				"started": "Reinstall initiated. This may take several minutes.",
+				"timeout": "Reinstall timed out waiting for completion",
+				"success": "VDS reinstalled successfully.",
+				"failed": "Reinstall failed"
 			},
 			"hardware": {
 				"title": "QEMU Hardware (EFI / TPM)",
@@ -8472,6 +8780,7 @@
 				"toast_unmounted": "ISO unmounted successfully.",
 				"toast_unmount_failed": "Failed to unmount ISO.",
 				"toast_fetch_failed": "Failed to fetch ISO.",
+				"fetch_timeout": "ISO fetch timed out",
 				"errors": {
 					"iso_file_required": "Select an ISO file",
 					"storage_required": "Select an ISO storage",
@@ -8575,6 +8884,50 @@
 		"you": "You",
 		"toolActionSuccess": "Action '{action}' completed successfully",
 		"toolActionFailed": "Action '{action}' failed",
-		"toggleSidebar": "Toggle sidebar"
+		"toggleSidebar": "Toggle sidebar",
+		"welcomeDashboard": "Hi {name}! I'm your FeatherPanel Dashboard AI. I can help you find servers, manage VDS instances, navigate the dashboard, and look up knowledgebase articles when you ask.",
+		"commandsHint": "Type /help for commands.",
+		"availableCommands": "Available commands:\n\n- `/help` or `/commands` - show chatbot commands\n- `/context` - show current chat mode, route, and context limits\n- `/compact` - compact the visible conversation locally\n- `/clear` - start a fresh chat",
+		"contextCommand": "Current context:\n\n- Mode: {mode}\n- Route: {route}\n- History sent to AI: compacted server-side, recent turns only\n- Server/VDS/KB details: fetched with tools only when needed\n- Logs: not included unless troubleshooting is requested",
+		"compactCommand": "Compacted the visible conversation. Future requests already use server-side compact memory and recent turns.",
+		"unknownCommand": "Unknown command: `{command}`.\n\nType `/help` to see available commands.",
+		"tokenUsageAssistant": "{total} tokens",
+		"tokenUsageAssistantDetails": "Input {input} / Output {output} / Total {total} tokens",
+		"tokenUsageUser": "{count} tokens",
+		"tokenUsageUserDetails": "{count} input tokens",
+		"callingTool": "Calling {tool}",
+		"toolFinished": "{tool} finished",
+		"toolFailed": "{tool} failed",
+		"toolRunning": "Running",
+		"toolDone": "Done",
+		"toolFailedShort": "Failed",
+		"toolRunningSummary": "Running...",
+		"online": "Online",
+		"readyToHelp": "Ready to help",
+		"assistant": "Assistant",
+		"slashCommands": "Commands",
+		"commandHelpTitle": "Help",
+		"commandHelpDescription": "Show every available chatbot command.",
+		"commandContextTitle": "Context",
+		"commandContextDescription": "Show the current chat mode, route, and context limits.",
+		"commandCompactTitle": "Compact",
+		"commandCompactDescription": "Compact the visible conversation into a short local summary.",
+		"commandClearTitle": "Clear",
+		"commandClearDescription": "Start a fresh chat locally.",
+		"commandNoMatches": "No matching commands",
+		"plannedAction": "Planned action",
+		"actionRestartServer": "Restart server",
+		"actionStartServer": "Start server",
+		"actionStopServer": "Stop server",
+		"actionKillServer": "Kill server",
+		"actionSendCommand": "Send command",
+		"actionNavigate": "Navigate",
+		"waitingForConfirmation": "Waiting for confirmation",
+		"typing": "Writing response",
+		"checkingActions": "Checking planned actions",
+		"moreInfo": "More info",
+		"toolsUsed": "Tools and actions used",
+		"showDetails": "Show details",
+		"hideDetails": "Hide details"
 	}
 }

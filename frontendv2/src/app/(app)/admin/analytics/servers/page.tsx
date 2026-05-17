@@ -368,8 +368,10 @@ export default function ServerAnalyticsPage() {
                         {limitStats && (
                             <ResourceCard
                                 title={String(limitStats.avg_database_limit)}
-                                subtitle='Avg DB limit'
-                                description={`Avg backup limit: ${limitStats.avg_backup_limit}`}
+                                subtitle={t('admin.analytics.servers.avg_db_limit')}
+                                description={t('admin.analytics.servers.avg_backup_limit', {
+                                    count: String(limitStats.avg_backup_limit),
+                                })}
                                 icon={HardDrive}
                                 className='bg-card/50 shadow-none! backdrop-blur-sm'
                             />
@@ -377,8 +379,10 @@ export default function ServerAnalyticsPage() {
                         {configurationStats && (
                             <ResourceCard
                                 title={String(configurationStats.skip_scripts_enabled)}
-                                subtitle='Skip scripts enabled'
-                                description={`OOM disabled: ${configurationStats.oom_disabled}`}
+                                subtitle={t('admin.analytics.servers.skip_scripts_enabled')}
+                                description={t('admin.analytics.servers.oom_disabled', {
+                                    count: String(configurationStats.oom_disabled),
+                                })}
                                 icon={Settings}
                                 className='bg-card/50 shadow-none! backdrop-blur-sm'
                             />
@@ -386,8 +390,8 @@ export default function ServerAnalyticsPage() {
                         {variableStats && (
                             <ResourceCard
                                 title={String(variableStats.total_variables)}
-                                subtitle='Server variables'
-                                description='Custom runtime variable values'
+                                subtitle={t('admin.analytics.servers.server_variables')}
+                                description={t('admin.analytics.servers.custom_runtime_variables')}
                                 icon={ShieldAlert}
                                 className='bg-card/50 shadow-none! backdrop-blur-sm'
                             />
@@ -395,8 +399,8 @@ export default function ServerAnalyticsPage() {
                         {serverActivityStats && (
                             <ResourceCard
                                 title={String(serverActivityStats.total_activities)}
-                                subtitle='Server activity events'
-                                description='Operational events across all servers'
+                                subtitle={t('admin.analytics.servers.server_activity_events')}
+                                description={t('admin.analytics.servers.operational_events')}
                                 icon={Activity}
                                 className='bg-card/50 shadow-none! backdrop-blur-sm'
                             />

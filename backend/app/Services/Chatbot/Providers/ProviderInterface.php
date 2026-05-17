@@ -29,7 +29,7 @@ interface ProviderInterface
      * @param array $history Chat history (array of ['role' => 'user'|'assistant', 'content' => string])
      * @param string $systemPrompt Optional system prompt
      *
-     * @return array Response with 'response' and 'model' keys
+     * @return array Response with 'response', 'model', and optional 'usage' keys
      */
     public function processMessage(string $message, array $history, string $systemPrompt = ''): array;
 }

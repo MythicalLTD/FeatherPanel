@@ -129,6 +129,38 @@ interface RequirementsCheckResult {
     };
 }
 
+type UnknownRecord = Record<string, unknown>;
+
+const asRecord = (value: unknown): UnknownRecord | null =>
+    value !== null && typeof value === 'object' && !Array.isArray(value) ? (value as UnknownRecord) : null;
+
+const normalizeCloudPackageId = (value: string) => value.trim().toLowerCase();
+const compactCloudPackageId = (value: string) => normalizeCloudPackageId(value).replace(/[^a-z0-9]/g, '');
+const cloudPackageIdsMatch = (ownedId: string, addonId: string) =>
+    normalizeCloudPackageId(ownedId) === normalizeCloudPackageId(addonId) ||
+    compactCloudPackageId(ownedId) === compactCloudPackageId(addonId);
+
+const collectOwnedCloudPackageIds = (purchase: unknown): string[] => {
+    const ids = new Set<string>();
+    const add = (value: unknown) => {
+        if (typeof value !== 'string') return;
+        const normalized = normalizeCloudPackageId(value);
+        if (normalized !== '') ids.add(normalized);
+    };
+    const addFields = (source: UnknownRecord | null) => {
+        if (!source) return;
+        ['identifier', 'package_identifier', 'product_identifier', 'name', 'slug'].forEach((field) =>
+            add(source[field]),
+        );
+    };
+
+    const root = asRecord(purchase);
+    addFields(root);
+    ['product', 'package', 'addon', 'item'].forEach((field) => addFields(asRecord(root?.[field])));
+
+    return [...ids];
+};
+
 /** Any of these in the search box + Enter toggles UI preview mode. */
 const PLUGIN_UI_PREVIEW_SECRETS = ['testpluginuinow', 'testingpluginui'] as const;
 
@@ -326,10 +358,7 @@ export default function PluginsPage() {
                 const data = res.data?.data;
                 const purchases = Array.isArray(data?.purchases) ? data.purchases : [];
                 for (const p of purchases) {
-                    const raw = p?.product?.identifier;
-                    if (typeof raw === 'string' && raw.trim() !== '') {
-                        ids.add(raw.trim().toLowerCase());
-                    }
+                    collectOwnedCloudPackageIds(p).forEach((id) => ids.add(id));
                 }
                 if (purchases.length < limit) {
                     break;
@@ -800,7 +829,7 @@ export default function PluginsPage() {
             if (uiPreviewMode && id === 'premiumstorepreview') {
                 return true;
             }
-            return ownedCloudPackageIdsRef.current.some((x) => x.toLowerCase() === id);
+            return ownedCloudPackageIdsRef.current.some((x) => cloudPackageIdsMatch(x, id));
         });
         if (toInstall.length < pluginsReady.length) {
             toast.message(t('admin.marketplace.plugins.queue.premium_skipped_not_owned'));
@@ -864,7 +893,7 @@ export default function PluginsPage() {
             if (uiPreviewMode && id === 'premiumstorepreview') {
                 return true;
             }
-            return ownedCloudPackageIdsRef.current.some((x) => x.toLowerCase() === id);
+            return ownedCloudPackageIdsRef.current.some((x) => cloudPackageIdsMatch(x, id));
         },
         [uiPreviewMode],
     );
@@ -881,7 +910,6 @@ export default function PluginsPage() {
         if (uiPreviewMode) {
             return;
         }
-        const ownedSet = new Set(ownedCloudPackageIds.map((x) => x.toLowerCase()));
         const oa = onlineAddonsRef.current;
         const pa = popularAddonsRef.current;
         setSelectedPluginIds((prev) => {
@@ -890,7 +918,7 @@ export default function PluginsPage() {
                 if (!row || row.premium !== 1) {
                     return true;
                 }
-                return ownedSet.has(id.toLowerCase());
+                return ownedCloudPackageIds.some((ownedId) => cloudPackageIdsMatch(ownedId, id));
             });
             return next.length === prev.length ? prev : next;
         });

@@ -22,6 +22,7 @@ use App\App;
 class ChatMessage
 {
     private static string $table = 'featherpanel_chatbot_messages';
+    private static ?array $columns = null;
 
     /**
      * Create a new message.
@@ -32,8 +33,18 @@ class ChatMessage
      */
     public static function createMessage(array $data): int | false
     {
+        foreach (['tool_activity', 'usage_json'] as $jsonField) {
+            if (isset($data[$jsonField]) && is_array($data[$jsonField])) {
+                $data[$jsonField] = json_encode($data[$jsonField]);
+            }
+        }
+
         $pdo = Database::getPdoConnection();
+        $data = array_intersect_key($data, array_flip(self::getColumns()));
         $fields = array_keys($data);
+        if (empty($fields)) {
+            return false;
+        }
         $placeholders = array_map(fn ($f) => ':' . $f, $fields);
         $sql = 'INSERT INTO ' . self::$table . ' (' . implode(',', $fields) . ') VALUES (' . implode(',', $placeholders) . ')';
         $stmt = $pdo->prepare($sql);
@@ -60,7 +71,7 @@ class ChatMessage
         $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
         $stmt->execute();
 
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        return array_map([self::class, 'normalizeMessage'], $stmt->fetchAll(\PDO::FETCH_ASSOC));
     }
 
     /**
@@ -92,7 +103,9 @@ class ChatMessage
         $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE id = :id LIMIT 1');
         $stmt->execute(['id' => $id]);
 
-        return $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
+        $message = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        return $message ? self::normalizeMessage($message) : null;
     }
 
     /**
@@ -114,5 +127,38 @@ class ChatMessage
 
             return false;
         }
+    }
+
+    private static function normalizeMessage(array $message): array
+    {
+        foreach (['input_tokens', 'output_tokens', 'total_tokens'] as $field) {
+            if (array_key_exists($field, $message)) {
+                $message[$field] = $message[$field] !== null ? (int) $message[$field] : null;
+            }
+        }
+
+        foreach (['tool_activity', 'usage_json'] as $field) {
+            if (!empty($message[$field]) && is_string($message[$field])) {
+                $decoded = json_decode($message[$field], true);
+                $message[$field] = json_last_error() === JSON_ERROR_NONE ? $decoded : null;
+            } elseif (!array_key_exists($field, $message)) {
+                $message[$field] = null;
+            }
+        }
+
+        return $message;
+    }
+
+    private static function getColumns(): array
+    {
+        if (self::$columns !== null) {
+            return self::$columns;
+        }
+
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->query('SHOW COLUMNS FROM ' . self::$table);
+        self::$columns = array_map(static fn (array $column): string => $column['Field'], $stmt->fetchAll(\PDO::FETCH_ASSOC));
+
+        return self::$columns;
     }
 }

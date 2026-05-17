@@ -328,7 +328,7 @@ export default function EditSpellPage() {
             <div className='flex items-center justify-center py-12'>
                 <div className='flex items-center gap-3'>
                     <div className='border-primary h-6 w-6 animate-spin rounded-full border-2 border-t-transparent'></div>
-                    <span className='text-muted-foreground'>Loading spell...</span>
+                    <span className='text-muted-foreground'>{t('admin.spells.form.loading_spell')}</span>
                 </div>
             </div>
         );
@@ -346,7 +346,7 @@ export default function EditSpellPage() {
                     <div className='flex items-center gap-2'>
                         <Button variant='outline' onClick={() => router.push('/admin/spells')}>
                             <ArrowLeft className='mr-2 h-4 w-4' />
-                            Back
+                            {t('common.back')}
                         </Button>
                         <Button onClick={handleSave} loading={saving}>
                             {t('admin.spells.form.submit_update')}
@@ -368,7 +368,7 @@ export default function EditSpellPage() {
                 </TabsList>
 
                 <TabsContent value='general' className='space-y-4'>
-                    <PageCard title='Basic Information' icon={Sparkles}>
+                    <PageCard title={t('admin.spells.form.basic_information')} icon={Sparkles}>
                         <div className='space-y-4'>
                             <div className='grid grid-cols-2 gap-4'>
                                 <div className='space-y-2'>
@@ -426,7 +426,7 @@ export default function EditSpellPage() {
                 </TabsContent>
 
                 <TabsContent value='docker' className='space-y-4'>
-                    <PageCard title='Docker Configuration' icon={Container}>
+                    <PageCard title={t('admin.spells.form.docker_configuration')} icon={Container}>
                         <div className='space-y-4'>
                             <div className='space-y-2'>
                                 <Label>{t('admin.spells.form.docker_images')}</Label>
@@ -495,7 +495,7 @@ export default function EditSpellPage() {
                 </TabsContent>
 
                 <TabsContent value='features' className='space-y-4'>
-                    <PageCard title='Server Features' icon={Zap}>
+                    <PageCard title={t('admin.spells.form.server_features')} icon={Zap}>
                         <div className='space-y-2'>
                             <Label>{t('admin.spells.form.features')}</Label>
                             <div className='space-y-2'>
@@ -526,7 +526,7 @@ export default function EditSpellPage() {
                 </TabsContent>
 
                 <TabsContent value='config' className='space-y-4'>
-                    <PageCard title='Server Configuration' icon={FileCode}>
+                    <PageCard title={t('admin.spells.form.server_configuration')} icon={FileCode}>
                         <div className='space-y-4'>
                             <div className='space-y-2'>
                                 <Label>{t('admin.spells.form.file_denylist')}</Label>
@@ -579,7 +579,7 @@ export default function EditSpellPage() {
                 </TabsContent>
 
                 <TabsContent value='script' className='space-y-4'>
-                    <PageCard title='Installation & Startup Scripts' icon={Terminal}>
+                    <PageCard title={t('admin.spells.form.installation_startup_scripts')} icon={Terminal}>
                         <div className='space-y-4'>
                             <div className='space-y-2'>
                                 <Label>{t('admin.spells.form.script_install')}</Label>

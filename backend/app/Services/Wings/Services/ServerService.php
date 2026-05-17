@@ -619,6 +619,8 @@ class ServerService
             $response = $this->connection->delete("/api/servers/{$serverUuid}/backup/{$backupId}");
 
             return new WingsResponse($response, 204);
+        } catch (WingsAuthenticationException | WingsRequestException $e) {
+            return new WingsResponse(['error' => $e->getMessage()], $e->getCode() > 0 ? $e->getCode() : 500);
         } catch (\Exception $e) {
             return new WingsResponse(['error' => $e->getMessage()], 500);
         }

@@ -246,13 +246,25 @@ export default function FeatherAiAgentPage() {
                                         value={providerValue || 'basic'}
                                         onChange={(e) => updateSettingValue('chatbot_ai_provider', e.target.value)}
                                     >
-                                        <option value='basic'>Basic (No AI)</option>
-                                        <option value='google_gemini'>Google Gemini</option>
-                                        <option value='openai'>OpenAI</option>
-                                        <option value='openrouter'>OpenRouter</option>
-                                        <option value='ollama'>Ollama (Self-hosted)</option>
-                                        <option value='grok'>Grok (xAI)</option>
-                                        <option value='perplexity'>Perplexity</option>
+                                        <option value='basic'>
+                                            {t('admin.featherai_agent.config.providers.basic')}
+                                        </option>
+                                        <option value='google_gemini'>
+                                            {t('admin.featherai_agent.config.providers.google_gemini')}
+                                        </option>
+                                        <option value='openai'>
+                                            {t('admin.featherai_agent.config.providers.openai')}
+                                        </option>
+                                        <option value='openrouter'>
+                                            {t('admin.featherai_agent.config.providers.openrouter')}
+                                        </option>
+                                        <option value='ollama'>
+                                            {t('admin.featherai_agent.config.providers.ollama')}
+                                        </option>
+                                        <option value='grok'>{t('admin.featherai_agent.config.providers.grok')}</option>
+                                        <option value='perplexity'>
+                                            {t('admin.featherai_agent.config.providers.perplexity')}
+                                        </option>
                                     </Select>
                                 </div>
 
@@ -334,10 +346,12 @@ export default function FeatherAiAgentPage() {
                                     {providerValue === 'google_gemini' && (
                                         <>
                                             <div className='space-y-3'>
-                                                <Label className='text-sm font-semibold'>API Key</Label>
+                                                <Label className='text-sm font-semibold'>
+                                                    {t('admin.featherai_agent.config.api_key')}
+                                                </Label>
                                                 <Input
                                                     type='password'
-                                                    placeholder='Enter API key to change'
+                                                    placeholder={t('admin.featherai_agent.config.api_key_placeholder')}
                                                     className='h-12'
                                                     value={String(getSettingValue('chatbot_google_ai_api_key') || '')}
                                                     onChange={(e) =>
@@ -346,7 +360,9 @@ export default function FeatherAiAgentPage() {
                                                 />
                                             </div>
                                             <div className='space-y-3'>
-                                                <Label className='text-sm font-semibold'>Model</Label>
+                                                <Label className='text-sm font-semibold'>
+                                                    {t('admin.featherai_agent.config.model')}
+                                                </Label>
                                                 <Input
                                                     placeholder='gemini-2.0-flash'
                                                     className='h-12'
@@ -362,10 +378,12 @@ export default function FeatherAiAgentPage() {
                                     {providerValue === 'openai' && (
                                         <>
                                             <div className='space-y-3'>
-                                                <Label className='text-sm font-semibold'>API Key</Label>
+                                                <Label className='text-sm font-semibold'>
+                                                    {t('admin.featherai_agent.config.api_key')}
+                                                </Label>
                                                 <Input
                                                     type='password'
-                                                    placeholder='Enter API key to change'
+                                                    placeholder={t('admin.featherai_agent.config.api_key_placeholder')}
                                                     className='h-12'
                                                     value={String(getSettingValue('chatbot_openai_api_key') || '')}
                                                     onChange={(e) =>
@@ -374,7 +392,9 @@ export default function FeatherAiAgentPage() {
                                                 />
                                             </div>
                                             <div className='space-y-3'>
-                                                <Label className='text-sm font-semibold'>Model</Label>
+                                                <Label className='text-sm font-semibold'>
+                                                    {t('admin.featherai_agent.config.model')}
+                                                </Label>
                                                 <Input
                                                     placeholder='gpt-4o-mini'
                                                     className='h-12'
@@ -385,7 +405,9 @@ export default function FeatherAiAgentPage() {
                                                 />
                                             </div>
                                             <div className='space-y-3 md:col-span-2'>
-                                                <Label className='text-sm font-semibold'>Base URL</Label>
+                                                <Label className='text-sm font-semibold'>
+                                                    {t('admin.featherai_agent.config.base_url')}
+                                                </Label>
                                                 <Input
                                                     placeholder='https://api.openai.com'
                                                     className='h-12'
@@ -401,10 +423,12 @@ export default function FeatherAiAgentPage() {
                                     {providerValue === 'openrouter' && (
                                         <>
                                             <div className='space-y-3'>
-                                                <Label className='text-sm font-semibold'>API Key</Label>
+                                                <Label className='text-sm font-semibold'>
+                                                    {t('admin.featherai_agent.config.api_key')}
+                                                </Label>
                                                 <Input
                                                     type='password'
-                                                    placeholder='Enter API key to change'
+                                                    placeholder={t('admin.featherai_agent.config.api_key_placeholder')}
                                                     className='h-12'
                                                     value={String(getSettingValue('chatbot_openrouter_api_key') || '')}
                                                     onChange={(e) =>
@@ -413,7 +437,9 @@ export default function FeatherAiAgentPage() {
                                                 />
                                             </div>
                                             <div className='space-y-3'>
-                                                <Label className='text-sm font-semibold'>Model</Label>
+                                                <Label className='text-sm font-semibold'>
+                                                    {t('admin.featherai_agent.config.model')}
+                                                </Label>
                                                 <Input
                                                     placeholder='openai/gpt-4o-mini'
                                                     className='h-12'
@@ -429,7 +455,9 @@ export default function FeatherAiAgentPage() {
                                     {providerValue === 'ollama' && (
                                         <>
                                             <div className='space-y-3'>
-                                                <Label className='text-sm font-semibold'>Base URL</Label>
+                                                <Label className='text-sm font-semibold'>
+                                                    {t('admin.featherai_agent.config.base_url')}
+                                                </Label>
                                                 <Input
                                                     placeholder='http://localhost:11434'
                                                     className='h-12'
@@ -440,7 +468,9 @@ export default function FeatherAiAgentPage() {
                                                 />
                                             </div>
                                             <div className='space-y-3'>
-                                                <Label className='text-sm font-semibold'>Model</Label>
+                                                <Label className='text-sm font-semibold'>
+                                                    {t('admin.featherai_agent.config.model')}
+                                                </Label>
                                                 <Input
                                                     placeholder='llama3.2'
                                                     className='h-12'
@@ -456,7 +486,9 @@ export default function FeatherAiAgentPage() {
                                     {providerValue === 'grok' && (
                                         <>
                                             <div className='space-y-3'>
-                                                <Label className='text-sm font-semibold'>xAI (Grok) API Key</Label>
+                                                <Label className='text-sm font-semibold'>
+                                                    {t('admin.featherai_agent.config.grok_api_key')}
+                                                </Label>
                                                 <Input
                                                     type='password'
                                                     className='h-12'
@@ -467,7 +499,9 @@ export default function FeatherAiAgentPage() {
                                                 />
                                             </div>
                                             <div className='space-y-3'>
-                                                <Label className='text-sm font-semibold'>xAI (Grok) Model</Label>
+                                                <Label className='text-sm font-semibold'>
+                                                    {t('admin.featherai_agent.config.grok_model')}
+                                                </Label>
                                                 <Input
                                                     placeholder='grok-2-1212'
                                                     className='h-12'
@@ -483,10 +517,12 @@ export default function FeatherAiAgentPage() {
                                     {providerValue === 'perplexity' && (
                                         <>
                                             <div className='space-y-3'>
-                                                <Label className='text-sm font-semibold'>API Key</Label>
+                                                <Label className='text-sm font-semibold'>
+                                                    {t('admin.featherai_agent.config.api_key')}
+                                                </Label>
                                                 <Input
                                                     type='password'
-                                                    placeholder='Enter API key to change'
+                                                    placeholder={t('admin.featherai_agent.config.api_key_placeholder')}
                                                     className='h-12'
                                                     value={String(getSettingValue('chatbot_perplexity_api_key') || '')}
                                                     onChange={(e) =>
@@ -495,7 +531,9 @@ export default function FeatherAiAgentPage() {
                                                 />
                                             </div>
                                             <div className='space-y-3'>
-                                                <Label className='text-sm font-semibold'>Model</Label>
+                                                <Label className='text-sm font-semibold'>
+                                                    {t('admin.featherai_agent.config.model')}
+                                                </Label>
                                                 <Input
                                                     placeholder='sonar-pro'
                                                     className='h-12'
@@ -506,7 +544,9 @@ export default function FeatherAiAgentPage() {
                                                 />
                                             </div>
                                             <div className='space-y-3 md:col-span-2'>
-                                                <Label className='text-sm font-semibold'>Base URL</Label>
+                                                <Label className='text-sm font-semibold'>
+                                                    {t('admin.featherai_agent.config.base_url')}
+                                                </Label>
                                                 <Input
                                                     placeholder='https://api.perplexity.ai'
                                                     className='h-12'

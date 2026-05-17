@@ -173,6 +173,8 @@ export function useNavigation() {
                         }
                     }
 
+                    const sidebarPriority = Number.isFinite(item.priority) ? item.priority : undefined;
+
                     return {
                         id: `plugin-${item.plugin}-${url}`,
                         name: item.name,
@@ -190,6 +192,7 @@ export function useNavigation() {
                         description: item.description,
                         permission: item.permission,
                         group: normalizedGroup,
+                        priority: sidebarPriority,
                     };
                 });
         },

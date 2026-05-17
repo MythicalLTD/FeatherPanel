@@ -62,7 +62,7 @@ export default function CreateSchedulePage() {
         e.preventDefault();
 
         if (!formData.name.trim()) {
-            toast.error('Schedule name is required');
+            toast.error(t('serverSchedules.nameRequired'));
             return;
         }
 
@@ -286,9 +286,11 @@ export default function CreateSchedulePage() {
                             <Calendar className='text-primary h-5 w-5' />
                         </div>
                         <div className='space-y-0.5'>
-                            <h2 className='text-xl font-black tracking-tight uppercase italic'>Options</h2>
+                            <h2 className='text-xl font-black tracking-tight uppercase italic'>
+                                {t('serverSchedules.options')}
+                            </h2>
                             <p className='text-muted-foreground text-[9px] font-bold tracking-widest uppercase opacity-50'>
-                                Configuration
+                                {t('serverSchedules.configuration')}
                             </p>
                         </div>
                     </div>
@@ -302,8 +304,8 @@ export default function CreateSchedulePage() {
                                 value={String(formData.only_when_online)}
                                 onChange={(val) => setFormData({ ...formData, only_when_online: Number(val) })}
                                 options={[
-                                    { id: '0', name: 'No - Run regardless of server status' },
-                                    { id: '1', name: 'Yes - Only run when server is online' },
+                                    { id: '0', name: t('serverSchedules.runRegardless') },
+                                    { id: '1', name: t('serverSchedules.runOnlyOnline') },
                                 ]}
                                 disabled={saving}
                                 buttonClassName='h-12 bg-secondary/50 border-border/10 focus:border-primary/50 rounded-xl text-sm font-extrabold transition-all'

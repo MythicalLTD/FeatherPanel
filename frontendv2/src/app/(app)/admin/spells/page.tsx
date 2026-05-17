@@ -261,13 +261,13 @@ export default function SpellsPage() {
 
     const handleImportDialogSubmit = async () => {
         if (!importRealmId) {
-            toast.error('Please select a realm');
+            toast.error(t('admin.spells.messages.select_realm'));
             return;
         }
 
         const file = (window as unknown as { __importFile?: File }).__importFile;
         if (!file) {
-            toast.error('No file selected');
+            toast.error(t('admin.spells.messages.no_file_selected'));
             setImportDialogOpen(false);
             return;
         }
@@ -480,7 +480,7 @@ export default function SpellsPage() {
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>{t('admin.spells.import')}</DialogTitle>
-                        <DialogDescription>Select the realm where you want to import this spell.</DialogDescription>
+                        <DialogDescription>{t('admin.spells.import_dialog_description')}</DialogDescription>
                     </DialogHeader>
                     <div className='space-y-4 py-4'>
                         <div className='space-y-2'>

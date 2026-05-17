@@ -463,7 +463,7 @@ export default function VmInstanceEditPage() {
     const handleResizeDisk = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!resizeDisk || !resizeSize.trim()) {
-            toast.error('Select a disk and enter size (e.g. +5G)');
+            toast.error(t('admin.vmInstances.resize_input_required'));
             return;
         }
         setResizing(true);

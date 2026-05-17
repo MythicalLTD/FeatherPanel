@@ -64,12 +64,12 @@ export default function ActivityTab() {
                 }
             } catch (error) {
                 console.error('Error fetching activities:', error);
-                toast.error('Failed to load activity log');
+                toast.error(t('account.activity.loadFailed'));
             } finally {
                 setLoading(false);
             }
         },
-        [searchQuery],
+        [searchQuery, t],
     );
 
     useEffect(() => {
@@ -158,10 +158,14 @@ export default function ActivityTab() {
                 <p className='text-muted-foreground text-sm'>
                     {pagination ? (
                         <span>
-                            Showing {pagination.from} to {pagination.to} of {pagination.total_records} activities
+                            {t('account.activity.showingActivities', {
+                                from: pagination.from.toString(),
+                                to: pagination.to.toString(),
+                                total: pagination.total_records.toString(),
+                            })}
                         </span>
                     ) : (
-                        <span>{activities.length} activities</span>
+                        <span>{t('account.activity.totalActivities', { count: activities.length.toString() })}</span>
                     )}
                 </p>
                 <Button variant='outline' size='sm' onClick={() => fetchActivities(currentPage)}>
@@ -204,10 +208,12 @@ export default function ActivityTab() {
                 <div className='py-12 text-center'>
                     <Clock className='text-muted-foreground mx-auto mb-4 h-12 w-12' />
                     <h4 className='text-foreground mb-2 text-sm font-semibold'>
-                        {searchQuery ? 'No search results' : t('account.activity.noActivities')}
+                        {searchQuery ? t('account.activity.noSearchResults') : t('account.activity.noActivities')}
                     </h4>
                     <p className='text-muted-foreground text-sm'>
-                        {searchQuery ? 'Try a different search term' : 'Your recent activity will appear here'}
+                        {searchQuery
+                            ? t('account.activity.tryDifferentSearch')
+                            : t('account.activity.emptyDescription')}
                     </p>
                 </div>
             )}

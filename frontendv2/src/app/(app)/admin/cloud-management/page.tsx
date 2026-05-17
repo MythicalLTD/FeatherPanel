@@ -123,12 +123,12 @@ export default function CloudManagementPage() {
                 },
             });
         } catch (error) {
-            toast.error('Failed to load cloud credentials');
+            toast.error(t('admin.cloud_management.messages.credentials_load_failed'));
             console.error(error);
         } finally {
             setIsLoading(false);
         }
-    }, []);
+    }, [t]);
 
     const regenerateKeys = async () => {
         setIsRegenerating(true);
@@ -150,14 +150,12 @@ export default function CloudManagementPage() {
 
             const cloudCredsEmpty = !data?.cloud_credentials?.public_key || !data?.cloud_credentials?.private_key;
             if (cloudCredsEmpty) {
-                toast.warning(
-                    'Cloud credentials are empty. Premium plugins cannot be downloaded until FeatherCloud credentials are configured.',
-                );
+                toast.warning(t('admin.cloud_management.messages.cloud_credentials_empty'));
             } else {
-                toast.success('Cloud credentials rotated');
+                toast.success(t('admin.cloud_management.messages.credentials_rotated'));
             }
         } catch (error) {
-            toast.error('Failed to rotate cloud credentials');
+            toast.error(t('admin.cloud_management.messages.credentials_rotate_failed'));
             console.error(error);
         } finally {
             setIsRegenerating(false);
@@ -172,10 +170,10 @@ export default function CloudManagementPage() {
             if (oauth2Url) {
                 window.location.href = oauth2Url;
             } else {
-                toast.error('Failed to generate OAuth2 link');
+                toast.error(t('admin.cloud_management.messages.oauth_link_failed'));
             }
         } catch (error) {
-            toast.error('Failed to generate OAuth2 link');
+            toast.error(t('admin.cloud_management.messages.oauth_link_failed'));
             console.error(error);
         } finally {
             setIsLinking(false);

@@ -144,15 +144,33 @@ final class BackupFifoEviction
         }
 
         $response = $wings->getServer()->deleteBackup($serverUuid, (string) $victim['uuid']);
+        $missingOnNode = false;
         if (!$response->isSuccessful()) {
-            return [
-                'message' => 'Failed to remove oldest backup for rotation: ' . $response->getError(),
-                'code' => 'FIFO_EVICTION_FAILED',
-                'status' => $response->getStatusCode() >= 400 ? $response->getStatusCode() : 500,
-            ];
+            $status = $response->getStatusCode();
+            $error = $response->getError();
+            if ($status === 404 && self::isMissingBackupOnNodeError($error)) {
+                $missingOnNode = true;
+                $app->getLogger()->warning('FIFO eviction found stale backup record ' . $victim['uuid'] . ' for server ' . $serverUuid . ': ' . $error);
+            } else {
+                return [
+                    'message' => 'Failed to remove oldest backup for rotation: ' . $error,
+                    'code' => 'FIFO_EVICTION_FAILED',
+                    'status' => $status >= 400 ? $status : 500,
+                ];
+            }
         }
 
         if (!Backup::deleteBackup((int) $victim['id'])) {
+            if ($missingOnNode) {
+                $app->getLogger()->error('FIFO eviction: stale backup ' . $victim['uuid'] . ' was missing on Wings but DB soft-delete failed');
+
+                return [
+                    'message' => 'Backup was already missing on node but failed to update backup record',
+                    'code' => 'FIFO_EVICTION_DB_FAILED',
+                    'status' => 500,
+                ];
+            }
+
             $app->getLogger()->error('FIFO eviction: Wings deleted backup ' . $victim['uuid'] . ' but DB soft-delete failed');
 
             return [
@@ -160,6 +178,12 @@ final class BackupFifoEviction
                 'code' => 'FIFO_EVICTION_DB_FAILED',
                 'status' => 500,
             ];
+        }
+
+        if ($missingOnNode) {
+            $app->getLogger()->info('FIFO backup rotation cleared stale Wings backup record ' . $victim['uuid'] . ' for server ' . $serverUuid);
+
+            return null;
         }
 
         $app->getLogger()->info('FIFO backup rotation evicted Wings backup ' . $victim['uuid'] . ' for server ' . $serverUuid);
@@ -231,5 +255,15 @@ final class BackupFifoEviction
         $app->getLogger()->info('FIFO VM backup rotation evicted ' . $victim['volid'] . ' for instance id ' . $instanceId);
 
         return null;
+    }
+
+    private static function isMissingBackupOnNodeError(string $error): bool
+    {
+        $normalized = strtolower($error);
+
+        return str_contains($normalized, 'requested backup was not found')
+            || str_contains($normalized, 'backup was not found')
+            || str_contains($normalized, 'backup not found')
+            || str_contains($normalized, 'no such backup');
     }
 }

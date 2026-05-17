@@ -53,10 +53,6 @@ class VdsContextBuilder
         $context[] = "User UUID: {$user['uuid']}";
         $context[] = "User ID: {$user['id']}";
 
-        if (isset($user['email'])) {
-            $context[] = "Email: {$user['email']}";
-        }
-
         if (isset($user['first_name']) || isset($user['last_name'])) {
             $name = trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? ''));
             if (!empty($name)) {
@@ -85,30 +81,6 @@ class VdsContextBuilder
                 $context[] = "- ID: {$instance['id']}";
                 $context[] = '- Status: ' . ($instance['status'] ?? 'unknown');
                 $context[] = '- Type: ' . ($instance['vm_type'] ?? 'unknown');
-
-                if (!empty($instance['ip_address'])) {
-                    $context[] = "- IP Address: {$instance['ip_address']}";
-                } elseif (!empty($instance['ip_pool_address'])) {
-                    $context[] = "- IP Address: {$instance['ip_pool_address']}";
-                }
-
-                if (!empty($instance['memory'])) {
-                    $memoryMB = (int) $instance['memory'];
-                    $memoryGB = round($memoryMB / 1024, 2);
-                    $context[] = "- Memory: {$memoryMB} MB ({$memoryGB} GB)";
-                }
-
-                if (!empty($instance['cpus'])) {
-                    $context[] = "- CPUs: {$instance['cpus']}";
-                }
-
-                if (!empty($instance['disk_gb'])) {
-                    $context[] = "- Disk: {$instance['disk_gb']} GB";
-                }
-
-                if (!empty($instance['node_name'])) {
-                    $context[] = "- Node: {$instance['node_name']}";
-                }
 
                 $context[] = '';
             }
@@ -225,7 +197,7 @@ class VdsContextBuilder
     }
 
     /**
-     * Get the user's VDS instances (up to 10).
+     * Get the user's VDS instances (up to 5).
      *
      * @param string $userUuid User UUID
      *
@@ -234,7 +206,7 @@ class VdsContextBuilder
     public function getUserVdsInstances(string $userUuid): array
     {
         try {
-            $instances = VmInstance::getByUserUuid($userUuid, 1, 10);
+            $instances = VmInstance::getByUserUuid($userUuid, 1, 5);
 
             return is_array($instances) ? $instances : [];
         } catch (\Exception $e) {

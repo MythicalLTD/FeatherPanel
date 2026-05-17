@@ -1,5 +1,28 @@
 # Changelog
 
+## v1.3.7.3 STABLE
+
+### Added
+
+- Plugin sidebar priority system by to control the order of the sidebar items. by @nayskutzu
+- Verify button on the admin user edit page to force verify the user's email by @nayskutzu
+- Verification email resend system in case the user didn't receive the email by @nayskutzu
+
+### Fixed
+
+- FIFO (First In, First Out) rotation scheme for log file rotation and cleanup. by @nayskutzu
+- Resolved an issue where your avatar would reload 100 times when you type in the chat box. by @nayskutzu
+- Admins with admin.dashboard.view permission can now view the dashboard. by @nayskutzu
+- Fixed an issue where the chatbot would sometimes get stuck in a loop when trying to do stuff. by @nayskutzu
+- Added missing translations to the translations file. by @nayskutzu
+- The default theme from admin was not applied if you didn't lock it. by @nayskutzu
+
+### Improved
+
+- Tickets were pretty cramped and didn't look good on big screens. by @nayskutzu
+- Chatbot now supports the ability to get the article content by its ID. by @nayskutzu
+- Chatbot token usage has been cut in half by @nayskutzu
+
 ## v1.3.7.2 STABLE
 
 ### Fixed

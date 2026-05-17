@@ -237,11 +237,11 @@ export default function AdminSubdomainsPage() {
             });
         } catch (error) {
             console.error('Error fetching domains:', error);
-            toast.error('Failed to fetch domains.');
+            toast.error(t('admin.subdomains.messages.fetch_domains_failed'));
         } finally {
             setLoading(false);
         }
-    }, [pagination.page, pagination.pageSize, debouncedSearchQuery]);
+    }, [pagination.page, pagination.pageSize, debouncedSearchQuery, t]);
 
     const fetchInitialData = useCallback(async () => {
         try {
@@ -264,9 +264,9 @@ export default function AdminSubdomainsPage() {
             setSpells(spellsData || []);
         } catch (error) {
             console.error('Error fetching initial data:', error);
-            toast.error('Failed to load global settings.');
+            toast.error(t('admin.subdomains.messages.load_settings_failed'));
         }
-    }, []);
+    }, [t]);
 
     useEffect(() => {
         fetchDomains();
@@ -313,12 +313,12 @@ export default function AdminSubdomainsPage() {
                 payload.cloudflare_api_key = settingsForm.cloudflare_api_key.trim();
             }
             await axios.patch('/api/admin/subdomains/settings', payload);
-            toast.success('Cloudflare settings updated successfully.');
+            toast.success(t('admin.subdomains.messages.cloudflare_settings_saved'));
             setSettingsForm((prev) => ({ ...prev, cloudflare_api_key: '' }));
             fetchInitialData();
         } catch (error) {
             console.error('Error saving settings:', error);
-            toast.error('Failed to save settings.');
+            toast.error(t('admin.subdomains.messages.save_settings_failed'));
         } finally {
             setSavingSettings(false);
         }
@@ -339,16 +339,16 @@ export default function AdminSubdomainsPage() {
 
             if (dialogMode === 'create') {
                 await axios.put('/api/admin/subdomains', payload);
-                toast.success('Domain created successfully.');
+                toast.success(t('admin.subdomains.messages.domain_created'));
             } else if (selectedDomain) {
                 await axios.patch(`/api/admin/subdomains/${selectedDomain.uuid}`, payload);
-                toast.success('Domain updated successfully.');
+                toast.success(t('admin.subdomains.messages.domain_updated'));
             }
             setManageOpen(false);
             setRefreshKey((prev) => prev + 1);
         } catch (error: unknown) {
             console.error('Error saving domain:', error);
-            let msg = 'Failed to save domain configuration.';
+            let msg = t('admin.subdomains.messages.domain_save_failed');
             if (isAxiosError(error) && error.response?.data?.message) {
                 msg = error.response.data.message;
             }
@@ -367,11 +367,11 @@ export default function AdminSubdomainsPage() {
             return;
         try {
             await axios.delete(`/api/admin/subdomains/${domain.uuid}`);
-            toast.success('Domain deleted successfully.');
+            toast.success(t('admin.subdomains.messages.domain_deleted'));
             setRefreshKey((prev) => prev + 1);
         } catch (error) {
             console.error('Error deleting domain:', error);
-            toast.error('Failed to delete domain.');
+            toast.error(t('admin.subdomains.messages.domain_delete_failed'));
         }
     };
 
@@ -410,7 +410,7 @@ export default function AdminSubdomainsPage() {
             setManageOpen(true);
         } catch (error) {
             console.error('Error fetching domain details:', error);
-            toast.error('Failed to load domain details.');
+            toast.error(t('admin.subdomains.messages.domain_details_failed'));
         }
     };
 
@@ -426,13 +426,13 @@ export default function AdminSubdomainsPage() {
             setDomainEntries(entries || []);
         } catch (error) {
             console.error('Error fetching subdomain list:', error);
-            toast.error('Failed to load subdomain list.');
+            toast.error(t('admin.subdomains.messages.subdomain_list_failed'));
         }
     };
 
     const addSpell = () => {
         if (spells.length === 0) {
-            toast.error('Please create a spell first in the Spells section.');
+            toast.error(t('admin.subdomains.messages.create_spell_first'));
             return;
         }
         setDomainForm((prev) => ({
@@ -659,18 +659,23 @@ export default function AdminSubdomainsPage() {
                                         <Button
                                             variant='ghost'
                                             size='sm'
-                                            title='View entries'
+                                            title={t('admin.subdomains.viewEntries')}
                                             onClick={() => openDetails(domain)}
                                         >
                                             <Eye className='h-4 w-4' />
                                         </Button>
-                                        <Button variant='ghost' size='sm' title='Edit' onClick={() => openEdit(domain)}>
+                                        <Button
+                                            variant='ghost'
+                                            size='sm'
+                                            title={t('common.edit')}
+                                            onClick={() => openEdit(domain)}
+                                        >
                                             <Pencil className='h-4 w-4' />
                                         </Button>
                                         <Button
                                             variant='ghost'
                                             size='sm'
-                                            title='Delete'
+                                            title={t('common.delete')}
                                             className='text-destructive hover:text-destructive hover:bg-destructive/10'
                                             onClick={() => handleDelete(domain)}
                                         >
