@@ -68,6 +68,7 @@ import {
     Realm,
     Spell,
     SpellVariable,
+    CustomVariable,
 } from './types';
 
 const initialFormData: ServerFormData = {
@@ -140,6 +141,14 @@ export default function EditServerPage() {
 
     const [spellDetails, setSpellDetails] = useState<Spell | null>(null);
     const [spellVariables, setSpellVariables] = useState<SpellVariable[]>([]);
+    const [customVariables, setCustomVariables] = useState<CustomVariable[]>([]);
+    const [customVariableSaving, setCustomVariableSaving] = useState(false);
+    const [customVariableForm, setCustomVariableForm] = useState({
+        name: '',
+        env_variable: '',
+        variable_value: '',
+        is_encrypted: false,
+    });
     const [dockerImages, setDockerImages] = useState<string[]>([]);
 
     const [ownerModalOpen, setOwnerModalOpen] = useState(false);
@@ -322,6 +331,7 @@ export default function EditServerPage() {
                 }
 
                 const variablesList = (server.variables || []) as ServerVariableResponse[];
+                setCustomVariables((server.custom_variables || []) as CustomVariable[]);
                 const mappedVariables: SpellVariable[] = variablesList.map((v) => ({
                     id: v.variable_id,
                     name: v.name,
@@ -481,6 +491,79 @@ export default function EditServerPage() {
     useEffect(() => {
         fetchServerData();
     }, [fetchServerData]);
+
+    const handleAddCustomVariable = useCallback(async () => {
+        const name = customVariableForm.name.trim();
+        const envVariable = customVariableForm.env_variable.trim().toUpperCase();
+
+        if (!name || !envVariable) {
+            toast.error('Name and environment variable are required');
+            return;
+        }
+
+        if (!/^[A-Z_][A-Z0-9_]*$/.test(envVariable)) {
+            toast.error(
+                'Env variable must use uppercase letters, numbers, and underscores, and cannot start with a number',
+            );
+            return;
+        }
+
+        setCustomVariableSaving(true);
+        try {
+            const { data } = await axios.post<{ success: boolean; message?: string }>(
+                `/api/admin/servers/${serverId}/custom-variables`,
+                {
+                    name,
+                    env_variable: envVariable,
+                    variable_value: customVariableForm.variable_value,
+                    is_encrypted: customVariableForm.is_encrypted,
+                },
+            );
+
+            if (data.success) {
+                toast.success('Custom variable added');
+                setCustomVariableForm({ name: '', env_variable: '', variable_value: '', is_encrypted: false });
+                await fetchServerData();
+            } else {
+                toast.error(data.message || 'Failed to add custom variable');
+            }
+        } catch (error) {
+            toast.error(
+                axios.isAxiosError(error)
+                    ? error.response?.data?.message || 'Failed to add custom variable'
+                    : 'Failed to add custom variable',
+            );
+        } finally {
+            setCustomVariableSaving(false);
+        }
+    }, [customVariableForm, fetchServerData, serverId]);
+
+    const handleDeleteCustomVariable = useCallback(
+        async (variable: CustomVariable) => {
+            setCustomVariableSaving(true);
+            try {
+                const { data } = await axios.delete<{ success: boolean; message?: string }>(
+                    `/api/admin/servers/${serverId}/custom-variables/${variable.id}`,
+                );
+
+                if (data.success) {
+                    toast.success('Custom variable deleted');
+                    await fetchServerData();
+                } else {
+                    toast.error(data.message || 'Failed to delete custom variable');
+                }
+            } catch (error) {
+                toast.error(
+                    axios.isAxiosError(error)
+                        ? error.response?.data?.message || 'Failed to delete custom variable'
+                        : 'Failed to delete custom variable',
+                );
+            } finally {
+                setCustomVariableSaving(false);
+            }
+        },
+        [fetchServerData, serverId],
+    );
 
     useEffect(() => {
         if (!form.spell_id) {
@@ -971,7 +1054,17 @@ export default function EditServerPage() {
                     </TabsContent>
 
                     <TabsContent value='startup' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
-                        <StartupTab form={form} setForm={setForm} errors={errors} />
+                        <StartupTab
+                            form={form}
+                            setForm={setForm}
+                            errors={errors}
+                            customVariables={customVariables}
+                            customVariableForm={customVariableForm}
+                            customVariableSaving={customVariableSaving}
+                            setCustomVariableForm={setCustomVariableForm}
+                            onAddCustomVariable={handleAddCustomVariable}
+                            onDeleteCustomVariable={handleDeleteCustomVariable}
+                        />
                     </TabsContent>
 
                     <TabsContent value='mounts' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>

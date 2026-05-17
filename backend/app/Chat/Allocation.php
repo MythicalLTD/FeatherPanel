@@ -585,42 +585,9 @@ class Allocation
     }
 
     /**
-     * Count allocations that would conflict when moving ports from one IP to another.
-     */
-    public static function countIpUpdateConflicts(int $nodeId, string $fromIp, string $toIp): int
-    {
-        if ($fromIp === $toIp) {
-            return 0;
-        }
-
-        $pdo = Database::getPdoConnection();
-        $stmt = $pdo->prepare('
-            SELECT COUNT(*)
-            FROM ' . self::$table . ' target
-            WHERE target.node_id = :node_id
-              AND target.ip = :to_ip
-              AND EXISTS (
-                  SELECT 1
-                  FROM ' . self::$table . ' source
-                  WHERE source.node_id = :source_node_id
-                    AND source.ip = :from_ip
-                    AND source.port = target.port
-              )
-        ');
-        $stmt->execute([
-            'node_id' => $nodeId,
-            'source_node_id' => $nodeId,
-            'from_ip' => $fromIp,
-            'to_ip' => $toIp,
-        ]);
-
-        return (int) $stmt->fetchColumn();
-    }
-
-    /**
      * Update the IP and/or IP alias for every allocation on a node using a specific IP.
      */
-    public static function updateAddressByNodeAndIp(int $nodeId, string $fromIp, ?string $toIp, mixed $ipAlias, bool $updateAlias): int | false
+    public static function updateAddressByNodeAndIp(int $nodeId, string $fromIp, ?string $toIp, mixed $ipAlias, bool $updateAlias): array | false
     {
         $set = [];
         $params = [
@@ -643,13 +610,88 @@ class Allocation
         }
 
         $pdo = Database::getPdoConnection();
-        $stmt = $pdo->prepare('UPDATE ' . self::$table . ' SET ' . implode(', ', $set) . ' WHERE node_id = :node_id AND ip = :from_ip');
+        $deletedTargetConflicts = 0;
+        $deletedSourceConflicts = 0;
+        $assignedConflictCount = 0;
 
         try {
-            $stmt->execute($params);
+            $pdo->beginTransaction();
 
-            return $stmt->rowCount();
+            if ($toIp !== null && $toIp !== $fromIp) {
+                $conflictStmt = $pdo->prepare('
+                    SELECT
+                        src.id AS source_id,
+                        src.server_id AS source_server_id,
+                        dst.id AS target_id,
+                        dst.server_id AS target_server_id
+                    FROM ' . self::$table . ' src
+                    INNER JOIN ' . self::$table . ' dst
+                        ON dst.node_id = src.node_id
+                        AND dst.ip = :to_ip
+                        AND dst.port = src.port
+                    WHERE src.node_id = :node_id
+                      AND src.ip = :from_ip
+                ');
+                $conflictStmt->execute([
+                    'node_id' => $nodeId,
+                    'from_ip' => $fromIp,
+                    'to_ip' => $toIp,
+                ]);
+                $conflicts = $conflictStmt->fetchAll(\PDO::FETCH_ASSOC);
+
+                $deleteTargetStmt = $pdo->prepare('DELETE FROM ' . self::$table . ' WHERE id = :id AND server_id IS NULL');
+                $deleteSourceStmt = $pdo->prepare('DELETE FROM ' . self::$table . ' WHERE id = :id AND server_id IS NULL');
+                $updateTargetAliasStmt = $pdo->prepare('UPDATE ' . self::$table . ' SET ip_alias = :ip_alias WHERE id = :id');
+
+                foreach ($conflicts as $conflict) {
+                    $sourceAssigned = $conflict['source_server_id'] !== null;
+                    $targetAssigned = $conflict['target_server_id'] !== null;
+
+                    if ($sourceAssigned && $targetAssigned) {
+                        ++$assignedConflictCount;
+                        continue;
+                    }
+
+                    if (!$targetAssigned) {
+                        $deleteTargetStmt->execute(['id' => (int) $conflict['target_id']]);
+                        $deletedTargetConflicts += $deleteTargetStmt->rowCount();
+                    } else {
+                        $deleteSourceStmt->execute(['id' => (int) $conflict['source_id']]);
+                        $deletedSourceConflicts += $deleteSourceStmt->rowCount();
+
+                        if ($updateAlias) {
+                            $updateTargetAliasStmt->execute([
+                                'id' => (int) $conflict['target_id'],
+                                'ip_alias' => $ipAlias,
+                            ]);
+                        }
+                    }
+                }
+
+                if ($assignedConflictCount > 0) {
+                    $pdo->rollBack();
+
+                    return [
+                        'assigned_conflict_count' => $assignedConflictCount,
+                    ];
+                }
+            }
+
+            $stmt = $pdo->prepare('UPDATE ' . self::$table . ' SET ' . implode(', ', $set) . ' WHERE node_id = :node_id AND ip = :from_ip');
+            $stmt->execute($params);
+            $updatedCount = $stmt->rowCount();
+            $pdo->commit();
+
+            return [
+                'updated_count' => $updatedCount,
+                'deleted_target_conflicts' => $deletedTargetConflicts,
+                'deleted_source_conflicts' => $deletedSourceConflicts,
+                'assigned_conflict_count' => 0,
+            ];
         } catch (\Exception $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
             App::getInstance(true)->getLogger()->error('Failed to bulk update allocation address: ' . $e->getMessage());
 
             return false;

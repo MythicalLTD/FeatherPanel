@@ -34,6 +34,7 @@ use App\Chat\ServerDatabase;
 use App\Chat\ServerVariable;
 use App\Helpers\ApiResponse;
 use App\Chat\SubdomainDomain;
+use App\Chat\ServerCustomVariable;
 use OpenApi\Attributes as OA;
 use App\Chat\DatabaseInstance;
 use App\Config\ConfigInterface;
@@ -754,6 +755,7 @@ class ServerUserController
         }
 
         $server['variables'] = $mergedVariables;
+        $server['custom_variables'] = ServerCustomVariable::getCustomVariablesByServerId((int) $server['id']);
 
         // Start flatten specific fields if they are valid JSON, else leave as is (do not json_decode, just keep string if not)
         $spell = &$server['spell'];
@@ -1468,6 +1470,136 @@ class ServerUserController
                 'updated_at' => $updatedServer['updated_at'] ?? null,
             ],
         ], 'Server updated successfully', 200);
+    }
+
+    public function createCustomVariable(Request $request, string $uuidShort): Response
+    {
+        $user = $request->attributes->get('user');
+        if (!$user) {
+            return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
+        }
+
+        $server = Server::getServerByUuidShort($uuidShort);
+        if (!$server) {
+            return ApiResponse::error('Server not found', 'NOT_FOUND', 404);
+        }
+
+        $isOwner = (int) $server['owner_id'] === (int) $user['id'];
+        if (!$isOwner) {
+            $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::STARTUP_UPDATE);
+            if ($permissionCheck !== null) {
+                return $permissionCheck;
+            }
+        }
+
+        $data = json_decode($request->getContent(), true);
+        if (!is_array($data)) {
+            return ApiResponse::error('Invalid request data', 'INVALID_REQUEST', 400);
+        }
+
+        $name = trim((string) ($data['name'] ?? ''));
+        $envVariable = strtoupper(trim((string) ($data['env_variable'] ?? '')));
+        $value = (string) ($data['variable_value'] ?? '');
+        $isEncrypted = isset($data['is_encrypted']) && filter_var($data['is_encrypted'], FILTER_VALIDATE_BOOLEAN);
+
+        if ($name === '' || strlen($name) > 191) {
+            return ApiResponse::error('Variable name is required and must be less than 191 characters', 'INVALID_NAME', 400);
+        }
+
+        if (!ServerCustomVariable::isValidEnvVariable($envVariable) || strlen($envVariable) > 191) {
+            return ApiResponse::error('Environment variable must use only uppercase letters, numbers, and underscores, and cannot start with a number', 'INVALID_ENV_VARIABLE', 400);
+        }
+
+        $reservedVariables = [
+            'P_SERVER_LOCATION',
+            'P_SERVER_UUID',
+            'P_SERVER_ALLOCATION_LIMIT',
+            'SERVER_MEMORY',
+            'SERVER_IP',
+            'SERVER_PORT',
+        ];
+        if (in_array($envVariable, $reservedVariables, true) || str_starts_with($envVariable, 'P_SERVER_')) {
+            return ApiResponse::error('This environment variable name is reserved', 'RESERVED_ENV_VARIABLE', 400);
+        }
+
+        if (ServerCustomVariable::envVariableExists((int) $server['id'], $envVariable)) {
+            return ApiResponse::error('An environment variable with this name already exists', 'ENV_VARIABLE_EXISTS', 409);
+        }
+
+        $variableId = ServerCustomVariable::createCustomVariable([
+            'server_id' => (int) $server['id'],
+            'user_id' => (int) $user['id'],
+            'name' => $name,
+            'env_variable' => $envVariable,
+            'variable_value' => $value,
+            'is_encrypted' => $isEncrypted ? 1 : 0,
+        ]);
+
+        if (!$variableId) {
+            return ApiResponse::error('Failed to create custom variable', 'CUSTOM_VARIABLE_CREATE_FAILED', 500);
+        }
+
+        $syncError = $this->syncServerConfiguration($server);
+        if ($syncError !== null) {
+            return $syncError;
+        }
+
+        $node = Node::getNodeById($server['node_id']);
+        if ($node) {
+            $this->logActivity($server, $node, 'server_custom_variable_created', [
+                'server_uuid' => $server['uuid'],
+                'env_variable' => $envVariable,
+            ], $user);
+        }
+
+        return ApiResponse::success([
+            'custom_variable' => ServerCustomVariable::getCustomVariableById((int) $variableId),
+        ], 'Custom variable created successfully', 201);
+    }
+
+    public function deleteCustomVariable(Request $request, string $uuidShort, int $variableId): Response
+    {
+        $user = $request->attributes->get('user');
+        if (!$user) {
+            return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
+        }
+
+        $server = Server::getServerByUuidShort($uuidShort);
+        if (!$server) {
+            return ApiResponse::error('Server not found', 'NOT_FOUND', 404);
+        }
+
+        $isOwner = (int) $server['owner_id'] === (int) $user['id'];
+        if (!$isOwner) {
+            $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::STARTUP_UPDATE);
+            if ($permissionCheck !== null) {
+                return $permissionCheck;
+            }
+        }
+
+        $customVariable = ServerCustomVariable::getCustomVariableById($variableId);
+        if (!$customVariable || (int) $customVariable['server_id'] !== (int) $server['id']) {
+            return ApiResponse::error('Custom variable not found', 'CUSTOM_VARIABLE_NOT_FOUND', 404);
+        }
+
+        if (!ServerCustomVariable::deleteCustomVariableForServer($variableId, (int) $server['id'])) {
+            return ApiResponse::error('Failed to delete custom variable', 'CUSTOM_VARIABLE_DELETE_FAILED', 500);
+        }
+
+        $syncError = $this->syncServerConfiguration($server);
+        if ($syncError !== null) {
+            return $syncError;
+        }
+
+        $node = Node::getNodeById($server['node_id']);
+        if ($node) {
+            $this->logActivity($server, $node, 'server_custom_variable_deleted', [
+                'server_uuid' => $server['uuid'],
+                'env_variable' => $customVariable['env_variable'],
+            ], $user);
+        }
+
+        return ApiResponse::success([], 'Custom variable deleted successfully', 200);
     }
 
     #[OA\Post(
@@ -2229,6 +2361,34 @@ class ServerUserController
             // Log error but don't fail reinstall
             App::getInstance(true)->getLogger()->error('Error wiping server files: ' . $e->getMessage());
         }
+    }
+
+    private function syncServerConfiguration(array $server): ?Response
+    {
+        $node = Node::getNodeById((int) $server['node_id']);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+
+        try {
+            $wings = new \App\Services\Wings\Wings(
+                $node['fqdn'],
+                $node['daemonListen'],
+                $node['scheme'],
+                $node['daemon_token'],
+                30
+            );
+            $response = $wings->getServer()->syncServer($server['uuid']);
+            if (!$response->isSuccessful()) {
+                return ApiResponse::error('Failed to sync server configuration: ' . $response->getError(), 'WINGS_ERROR', $response->getStatusCode());
+            }
+        } catch (\Exception $e) {
+            App::getInstance(true)->getLogger()->error('Failed to sync server configuration: ' . $e->getMessage());
+
+            return ApiResponse::error('Failed to sync server configuration: ' . $e->getMessage(), 'SERVER_SYNC_FAILED', 500);
+        }
+
+        return null;
     }
 
     /**

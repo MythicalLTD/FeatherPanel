@@ -35,6 +35,7 @@ use App\Chat\ServerTransfer;
 use App\Chat\ServerVariable;
 use App\Helpers\ApiResponse;
 use App\Services\Wings\Wings;
+use App\Chat\ServerCustomVariable;
 use OpenApi\Attributes as OA;
 use App\Chat\DatabaseInstance;
 use App\Config\ConfigInterface;
@@ -539,6 +540,7 @@ class ServersController
         }
 
         $server['variables'] = $mergedVariables;
+        $server['custom_variables'] = ServerCustomVariable::getCustomVariablesByServerId((int) $server['id']);
 
         $attachedMounts = Mount::getMountsAttachedToServer((int) $server['id']);
         $server['mounts'] = $attachedMounts;
@@ -575,6 +577,110 @@ class ServersController
         );
 
         return ApiResponse::success($server, 'Server fetched successfully', 200);
+    }
+
+    public function createCustomVariable(Request $request, int $id): Response
+    {
+        $server = Server::getServerById($id);
+        if (!$server) {
+            return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+        }
+
+        $data = json_decode($request->getContent(), true);
+        if (!is_array($data)) {
+            return ApiResponse::error('Invalid request data', 'INVALID_REQUEST', 400);
+        }
+
+        $name = trim((string) ($data['name'] ?? ''));
+        $envVariable = strtoupper(trim((string) ($data['env_variable'] ?? '')));
+        $value = (string) ($data['variable_value'] ?? '');
+        $isEncrypted = isset($data['is_encrypted']) && filter_var($data['is_encrypted'], FILTER_VALIDATE_BOOLEAN);
+
+        if ($name === '' || strlen($name) > 191) {
+            return ApiResponse::error('Variable name is required and must be less than 191 characters', 'INVALID_NAME', 400);
+        }
+
+        if (!ServerCustomVariable::isValidEnvVariable($envVariable) || strlen($envVariable) > 191) {
+            return ApiResponse::error('Environment variable must use only uppercase letters, numbers, and underscores, and cannot start with a number', 'INVALID_ENV_VARIABLE', 400);
+        }
+
+        $reservedVariables = [
+            'P_SERVER_LOCATION',
+            'P_SERVER_UUID',
+            'P_SERVER_ALLOCATION_LIMIT',
+            'SERVER_MEMORY',
+            'SERVER_IP',
+            'SERVER_PORT',
+        ];
+        if (in_array($envVariable, $reservedVariables, true) || str_starts_with($envVariable, 'P_SERVER_')) {
+            return ApiResponse::error('This environment variable name is reserved', 'RESERVED_ENV_VARIABLE', 400);
+        }
+
+        if (ServerCustomVariable::envVariableExists((int) $server['id'], $envVariable)) {
+            return ApiResponse::error('An environment variable with this name already exists', 'ENV_VARIABLE_EXISTS', 409);
+        }
+
+        $user = $request->attributes->get('user');
+        $variableId = ServerCustomVariable::createCustomVariable([
+            'server_id' => (int) $server['id'],
+            'user_id' => (int) ($user['id'] ?? $server['owner_id']),
+            'name' => $name,
+            'env_variable' => $envVariable,
+            'variable_value' => $value,
+            'is_encrypted' => $isEncrypted ? 1 : 0,
+        ]);
+
+        if (!$variableId) {
+            return ApiResponse::error('Failed to create custom variable', 'CUSTOM_VARIABLE_CREATE_FAILED', 500);
+        }
+
+        $syncError = $this->syncServerConfiguration($server);
+        if ($syncError !== null) {
+            return $syncError;
+        }
+
+        Activity::createActivity([
+            'user_uuid' => $user['uuid'] ?? null,
+            'name' => 'create_server_custom_variable',
+            'context' => 'Created custom variable ' . $envVariable . ' for server ' . $server['name'],
+            'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        return ApiResponse::success([
+            'custom_variable' => ServerCustomVariable::getCustomVariableById((int) $variableId),
+        ], 'Custom variable created successfully', 201);
+    }
+
+    public function deleteCustomVariable(Request $request, int $id, int $variableId): Response
+    {
+        $server = Server::getServerById($id);
+        if (!$server) {
+            return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+        }
+
+        $customVariable = ServerCustomVariable::getCustomVariableById($variableId);
+        if (!$customVariable || (int) $customVariable['server_id'] !== (int) $server['id']) {
+            return ApiResponse::error('Custom variable not found', 'CUSTOM_VARIABLE_NOT_FOUND', 404);
+        }
+
+        if (!ServerCustomVariable::deleteCustomVariableForServer($variableId, (int) $server['id'])) {
+            return ApiResponse::error('Failed to delete custom variable', 'CUSTOM_VARIABLE_DELETE_FAILED', 500);
+        }
+
+        $syncError = $this->syncServerConfiguration($server);
+        if ($syncError !== null) {
+            return $syncError;
+        }
+
+        $user = $request->attributes->get('user');
+        Activity::createActivity([
+            'user_uuid' => $user['uuid'] ?? null,
+            'name' => 'delete_server_custom_variable',
+            'context' => 'Deleted custom variable ' . $customVariable['env_variable'] . ' from server ' . $server['name'],
+            'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        return ApiResponse::success([], 'Custom variable deleted successfully', 200);
     }
 
     #[OA\Get(
@@ -3042,6 +3148,34 @@ class ServersController
 
             return ApiResponse::error('Failed to cancel transfer: ' . $e->getMessage(), 'CANCEL_FAILED', 500);
         }
+    }
+
+    private function syncServerConfiguration(array $server): ?Response
+    {
+        $node = Node::getNodeById((int) $server['node_id']);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+
+        try {
+            $wings = new Wings(
+                $node['fqdn'],
+                $node['daemonListen'],
+                $node['scheme'],
+                $node['daemon_token'],
+                30
+            );
+            $response = $wings->getServer()->syncServer($server['uuid']);
+            if (!$response->isSuccessful()) {
+                return ApiResponse::error('Failed to sync server configuration: ' . $response->getError(), 'WINGS_ERROR', $response->getStatusCode());
+            }
+        } catch (\Exception $e) {
+            App::getInstance(true)->getLogger()->error('Failed to sync server configuration: ' . $e->getMessage());
+
+            return ApiResponse::error('Failed to sync server configuration: ' . $e->getMessage(), 'SERVER_SYNC_FAILED', 500);
+        }
+
+        return null;
     }
 
     /**

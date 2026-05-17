@@ -289,8 +289,8 @@ export default function ServerSettingsPage() {
             <PageHeader title={t('serverSettings.title')} description={t('serverSettings.description')} />
             <WidgetRenderer widgets={getWidgets('server-settings', 'after-header')} />
 
-            <div className='grid grid-cols-1 gap-8 lg:grid-cols-12'>
-                <div className='space-y-8 lg:col-span-8'>
+            <div className='grid min-w-0 grid-cols-1 gap-8 lg:grid-cols-12'>
+                <div className='min-w-0 space-y-8 lg:col-span-8'>
                     <PageCard
                         title={t('serverSettings.serverInformation')}
                         description={t('serverSettings.serverInformationDescription')}
@@ -358,19 +358,19 @@ export default function ServerSettingsPage() {
                             description={t('serverSettings.backupPolicyDescription')}
                             icon={Archive}
                         >
-                            <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
-                                <div className='space-y-2'>
+                            <div className='grid min-w-0 grid-cols-1 gap-6 md:grid-cols-2'>
+                                <div className='min-w-0 space-y-2'>
                                     <Label className='text-muted-foreground ml-1 text-xs font-bold tracking-wider uppercase'>
                                         {t('serverSettings.backupLimitReadOnlyLabel')}
                                     </Label>
                                     <div className='border-border/10 bg-muted/40 flex h-12 items-center rounded-xl border px-4 text-sm font-medium'>
                                         {server?.backup_limit === 0 ? '∞' : String(server?.backup_limit ?? '—')}
                                     </div>
-                                    <p className='text-muted-foreground ml-1 text-xs'>
+                                    <p className='text-muted-foreground ml-1 text-xs break-words'>
                                         {t('serverSettings.backupLimitReadOnlyHelp')}
                                     </p>
                                 </div>
-                                <div className='space-y-2'>
+                                <div className='min-w-0 space-y-2'>
                                     <Label className='text-muted-foreground ml-1 text-xs font-bold tracking-wider uppercase'>
                                         {t('admin.servers.form.backup_retention_mode')}
                                     </Label>
@@ -394,15 +394,15 @@ export default function ServerSettingsPage() {
                                             {t('admin.servers.form.backup_retention_fifo')}
                                         </option>
                                     </select>
-                                    <p className='text-muted-foreground ml-1 text-xs'>
+                                    <p className='text-muted-foreground ml-1 text-xs break-words'>
                                         {t('admin.servers.form.backup_retention_mode_help')}
                                     </p>
                                 </div>
                             </div>
                             {server?.fifo_rolling_enabled && server.backup_limit > 0 && (
-                                <p className='mt-4 flex items-start gap-2 text-sm text-sky-600 dark:text-sky-400'>
+                                <p className='mt-4 flex min-w-0 items-start gap-2 text-sm break-words text-sky-600 dark:text-sky-400'>
                                     <Info className='mt-0.5 h-4 w-4 shrink-0' />
-                                    <span>
+                                    <span className='min-w-0 flex-1'>
                                         {t('serverBackups.fifoRollingDescription', {
                                             limit: String(server.backup_limit),
                                         })}
@@ -558,7 +558,7 @@ export default function ServerSettingsPage() {
                     <WidgetRenderer widgets={getWidgets('server-settings', 'after-sftp-details')} />
                 </div>
 
-                <div className='space-y-8 lg:col-span-4'>
+                <div className='min-w-0 space-y-8 lg:col-span-4'>
                     {canReinstall && (
                         <>
                             <PageCard title={t('serverSettings.reinstallServer')} icon={Settings} variant='warning'>

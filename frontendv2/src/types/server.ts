@@ -93,6 +93,18 @@ export interface Variable {
     field_type: string;
 }
 
+export interface CustomVariable {
+    id: number;
+    server_id: number;
+    user_id: number;
+    name: string;
+    env_variable: string;
+    variable_value: string;
+    is_encrypted: number;
+    created_at?: string;
+    updated_at?: string;
+}
+
 export interface ServerStats {
     memory_bytes: number;
     memory_limit_bytes: number;

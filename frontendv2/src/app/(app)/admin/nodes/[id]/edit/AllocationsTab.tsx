@@ -16,6 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { PageCard } from '@/components/featherui/PageCard';
@@ -72,6 +73,7 @@ interface AllocationsTabProps {
 
 export function AllocationsTab({ nodeId, nodeName }: AllocationsTabProps) {
     const { t } = useTranslation();
+    const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [allocations, setAllocations] = useState<Allocation[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
@@ -449,9 +451,15 @@ export function AllocationsTab({ nodeId, nodeName }: AllocationsTabProps) {
                                             </td>
                                             <td className='px-4 py-3'>
                                                 {allocation.server_id ? (
-                                                    <span className='text-primary font-medium'>
+                                                    <button
+                                                        type='button'
+                                                        className='text-primary hover:text-primary/80 cursor-pointer font-medium hover:underline'
+                                                        onClick={() =>
+                                                            router.push(`/admin/servers/${allocation.server_id}/edit`)
+                                                        }
+                                                    >
                                                         {allocation.server_name || allocation.server_id}
-                                                    </span>
+                                                    </button>
                                                 ) : (
                                                     <span className='text-muted-foreground'>-</span>
                                                 )}

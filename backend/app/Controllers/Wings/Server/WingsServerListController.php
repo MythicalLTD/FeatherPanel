@@ -24,6 +24,7 @@ use App\Chat\Spell;
 use App\Chat\Server;
 use App\Chat\Allocation;
 use App\Chat\ServerVariable;
+use App\Chat\ServerCustomVariable;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Plugins\Events\Events\WingsEvent;
@@ -144,6 +145,10 @@ class WingsServerListController
             // Build environment variables from server variables
             foreach ($serverVariables as $variable) {
                 $environment[$variable['env_variable']] = $variable['variable_value'];
+            }
+
+            foreach (ServerCustomVariable::getEnvironmentVariablesByServerId((int) $server['id']) as $envVariable => $value) {
+                $environment[$envVariable] = $value;
             }
 
             // Add default environment variables

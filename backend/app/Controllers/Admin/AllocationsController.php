@@ -931,7 +931,7 @@ class AllocationsController
             new OA\Response(response: 401, description: 'Unauthorized'),
             new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
             new OA\Response(response: 404, description: 'Node or matching allocations not found'),
-            new OA\Response(response: 409, description: 'Target IP would conflict with existing allocation ports'),
+            new OA\Response(response: 409, description: 'Target IP has ports already assigned to another server'),
         ]
     )]
     public function bulkUpdateAddress(Request $request): Response
@@ -1011,21 +1011,22 @@ class AllocationsController
             return ApiResponse::error('No allocations found for this node and IP address', 'ALLOCATIONS_NOT_FOUND', 404);
         }
 
-        if ($toIp !== null && $toIp !== $fromIp) {
-            $conflictCount = Allocation::countIpUpdateConflicts($nodeId, $fromIp, $toIp);
-            if ($conflictCount > 0) {
-                return ApiResponse::error(
-                    "Cannot update IP because {$conflictCount} port(s) already exist on the target IP for this node",
-                    'DUPLICATE_IP_PORT',
-                    409
-                );
-            }
-        }
-
-        $updatedCount = Allocation::updateAddressByNodeAndIp($nodeId, $fromIp, $toIp, $ipAlias, $updateAlias);
-        if ($updatedCount === false) {
+        $result = Allocation::updateAddressByNodeAndIp($nodeId, $fromIp, $toIp, $ipAlias, $updateAlias);
+        if ($result === false) {
             return ApiResponse::error('Failed to update allocations', 'ALLOCATION_UPDATE_FAILED', 400);
         }
+
+        if (($result['assigned_conflict_count'] ?? 0) > 0) {
+            return ApiResponse::error(
+                "Cannot merge {$result['assigned_conflict_count']} port(s) because both the source and target allocation are assigned to servers",
+                'ASSIGNED_IP_PORT_CONFLICT',
+                409
+            );
+        }
+
+        $updatedCount = (int) ($result['updated_count'] ?? 0);
+        $deletedTargetConflicts = (int) ($result['deleted_target_conflicts'] ?? 0);
+        $deletedSourceConflicts = (int) ($result['deleted_source_conflicts'] ?? 0);
 
         $changes = [];
         if ($toIp !== null) {
@@ -1038,7 +1039,7 @@ class AllocationsController
         Activity::createActivity([
             'user_uuid' => $admin['uuid'] ?? null,
             'name' => 'allocations_address_updated',
-            'context' => 'Updated ' . implode(' and ', $changes) . " for {$matchedCount} allocation(s) on node ID {$nodeId}",
+            'context' => 'Updated ' . implode(' and ', $changes) . " for {$matchedCount} allocation(s) on node ID {$nodeId}. Merged {$deletedTargetConflicts} target conflict(s) and {$deletedSourceConflicts} source conflict(s).",
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
@@ -1053,6 +1054,8 @@ class AllocationsController
                     'ip_alias' => $ipAlias,
                     'matched_count' => $matchedCount,
                     'updated_count' => $updatedCount,
+                    'deleted_target_conflicts' => $deletedTargetConflicts,
+                    'deleted_source_conflicts' => $deletedSourceConflicts,
                     'updated_by' => $admin,
                 ]
             );
@@ -1061,6 +1064,8 @@ class AllocationsController
         return ApiResponse::success([
             'matched_count' => $matchedCount,
             'updated_count' => $updatedCount,
+            'deleted_target_conflicts' => $deletedTargetConflicts,
+            'deleted_source_conflicts' => $deletedSourceConflicts,
         ], "Updated {$matchedCount} allocation(s)", 200);
     }
 

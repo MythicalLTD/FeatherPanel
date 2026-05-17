@@ -108,6 +108,18 @@ export interface SpellVariable {
     field_type: string;
 }
 
+export interface CustomVariable {
+    id: number;
+    server_id: number;
+    user_id: number;
+    name: string;
+    env_variable: string;
+    variable_value: string;
+    is_encrypted: number;
+    created_at?: string;
+    updated_at?: string;
+}
+
 export interface ServerFormData {
     name: string;
     description: string;

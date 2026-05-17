@@ -227,6 +227,42 @@ return function (RouteCollection $routes): void {
         Permissions::ADMIN_SERVERS_VIEW,
     );
 
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-servers-custom-variable-create',
+        '/api/admin/servers/{id}/custom-variables',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid server ID', 'INVALID_SERVER_ID', 400);
+            }
+
+            return (new ServersController())->createCustomVariable($request, (int) $id);
+        },
+        Permissions::ADMIN_SERVERS_EDIT,
+        ['POST']
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-servers-custom-variable-delete',
+        '/api/admin/servers/{id}/custom-variables/{variableId}',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            $variableId = $args['variableId'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid server ID', 'INVALID_SERVER_ID', 400);
+            }
+            if (!$variableId || !is_numeric($variableId)) {
+                return ApiResponse::error('Missing or invalid variable ID', 'INVALID_VARIABLE_ID', 400);
+            }
+
+            return (new ServersController())->deleteCustomVariable($request, (int) $id, (int) $variableId);
+        },
+        Permissions::ADMIN_SERVERS_EDIT,
+        ['DELETE']
+    );
+
     // Suspend a server
     App::getInstance(true)->registerAdminRoute(
         $routes,
