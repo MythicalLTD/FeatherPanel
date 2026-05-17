@@ -282,6 +282,7 @@
 		"copied": "Copied to clipboard",
 		"failed": "Failed",
 		"importing": "Importing...",
+		"not_available": "—",
 		"nA": "N/A",
 		"no_data": "No data",
 		"no_content": "No content",
@@ -512,6 +513,18 @@
 		"analyticsEnabled": "Allow analytics and external scripts",
 		"securitySettings": "Security Settings",
 		"securitySettingsDescription": "Manage your account security and authentication methods",
+		"preferences": {
+			"title": "Display Preferences",
+			"description": "Choose how dates and times are displayed across the panel."
+		},
+		"timezone": {
+			"title": "Timezone",
+			"description": "All dates and times shown in the panel will be converted to the timezone you select here. Leave on the default to follow your current device.",
+			"useBrowser": "Auto-detect from this device ({timezone})",
+			"current": "Currently using",
+			"saved": "Timezone updated",
+			"saveFailed": "Failed to update timezone"
+		},
 		"sessionManagement": "Session Management",
 		"sessionManagementDescription": "Log out of your account on this device",
 		"logout": "Logout",
@@ -1884,6 +1897,8 @@
 		"dayOfMonth": "Day (Month)",
 		"month": "Month",
 		"dayOfWeek": "Day (Week)",
+		"timezone": "Timezone",
+		"timezoneHelp": "The timezone the cron expression above is interpreted in. For example, '0 3 * * *' with 'Europe/Paris' means 3 AM Paris time, not 3 AM UTC.",
 		"onlyWhenOnline": "Only When Online",
 		"onlyWhenOnlineHelp": "Should this schedule only run when the server is online?",
 		"scheduleEnabled": "Schedule Enabled",
@@ -2601,9 +2616,25 @@
 			"header_name": "Name",
 			"header_size": "Size",
 			"header_modified": "Last Modified",
+			"header_actions": "Actions",
 			"empty": {},
 			"empty_description": "This directory is empty.",
 			"empty_title": "No Files Found"
+		},
+		"archive_browser": {
+			"title": "Browse archive",
+			"loading": "Loading...",
+			"empty": "This folder is empty.",
+			"error": "Could not read this archive. It may be unsupported, corrupted, or too large.",
+			"truncated": "Listing was truncated. Extract the archive to see everything.",
+			"up": "Up",
+			"close": "Close",
+			"drag_hint": "Drag files or folders onto a directory in the file manager to extract them there, or onto a breadcrumb to choose a parent path. Folders use the grip on the right.",
+			"drag_handle": "Drag to extract this item",
+			"extract_here": "Extract here",
+			"extract_root": "Extract to root",
+			"extract_full": "Extract entire archive here",
+			"extract_full_loading": "Extracting archive..."
 		},
 		"messages": {
 			"active_pull": "Active Pull",
@@ -2619,6 +2650,9 @@
 			"extracting": "Extracting archive...",
 			"extracted": "Archive extracted",
 			"extract_failed": "Failed to extract archive",
+			"archive_members_extracting": "Extracting from archive...",
+			"archive_members_extracted": "Extracted into folder",
+			"archive_members_extract_failed": "Could not extract from archive",
 			"uploading": "Uploading {file}...",
 			"upload_complete": "Upload complete",
 			"upload_failed": "Upload failed",
@@ -3284,11 +3318,21 @@
 			"move": "Move",
 			"hash": "File Hash",
 			"extract": "Extract",
+			"browse_archive": "Browse archive",
 			"compress": "Compress",
 			"permissions": "Permissions",
 			"delete": "Delete"
 		},
 		"dialogs": {
+			"archive_browse": {
+				"title": "Browse archive",
+				"loading": "Loading…",
+				"empty": "This folder is empty.",
+				"error": "Could not read this archive. It may be unsupported, corrupted, or too large.",
+				"truncated": "Listing was truncated. Extract the archive to see everything.",
+				"up": "Up",
+				"close": "Close"
+			},
 			"create_file": {
 				"title": "Create New File",
 				"description": "Create a new file in {root}",
@@ -5063,6 +5107,7 @@
 			"description": "Manage all servers in your system.",
 			"search_placeholder": "Search by name, description, or status...",
 			"no_results": "No servers found",
+			"owner_last_seen": "Owner last seen",
 			"create": "Create Server",
 			"filters": {
 				"advanced": "Advanced filters",
@@ -6468,14 +6513,14 @@
 				"warning1": "New keys will be generated immediately",
 				"warning2": "You must update your FeatherCloud account with the new keys",
 				"warning3": "Old keys will no longer work after rotation",
-				"warning4": "Cloud credentials are currently empty - premium plugins cannot be downloaded until FeatherCloud credentials are configured",
+				"warning4": "After rotation you must use Link with FeatherCloud again so FeatherCloud can issue new API keys; premium and cloud features stay offline until OAuth completes",
 				"cancel": "Cancel",
 				"confirm": "Rotate Keys",
 				"rotating": "Rotating..."
 			},
 			"messages": {
 				"credentials_load_failed": "Failed to load cloud credentials",
-				"credentials_rotated": "Cloud credentials rotated",
+				"credentials_rotated": "Keys rotated. Link with FeatherCloud again (OAuth) to restore cloud API access.",
 				"credentials_rotate_failed": "Failed to rotate cloud credentials",
 				"cloud_credentials_empty": "Cloud credentials are empty. Premium plugins cannot be downloaded until FeatherCloud credentials are configured.",
 				"oauth_link_failed": "Failed to generate OAuth2 link"

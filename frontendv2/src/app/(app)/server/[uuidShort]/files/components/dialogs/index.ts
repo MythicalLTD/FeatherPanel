@@ -25,3 +25,4 @@ export * from './WipeAllDialog';
 export * from './IgnoredContentDialog';
 export * from './CompressDialog';
 export * from './FileHashDialog';
+export * from './ArchiveBrowseDialog';

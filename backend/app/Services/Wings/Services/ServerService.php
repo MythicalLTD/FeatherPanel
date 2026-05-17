@@ -228,12 +228,18 @@ class ServerService
 
     /**
      * List items in a directory.
+     *
+     * @param bool $includeDirectorySizes when true, requests Wings recursive per-folder sizes (cached on the daemon)
      */
-    public function listDirectory(string $serverUuid, string $directory = '/'): WingsResponse
+    public function listDirectory(string $serverUuid, string $directory = '/', bool $includeDirectorySizes = false): WingsResponse
     {
         try {
             $encodedDirectory = urlencode($directory);
-            $response = $this->connection->get("/api/servers/{$serverUuid}/files/list-directory?directory={$encodedDirectory}");
+            $query = "directory={$encodedDirectory}";
+            if ($includeDirectorySizes) {
+                $query .= '&directory_sizes=true';
+            }
+            $response = $this->connection->get("/api/servers/{$serverUuid}/files/list-directory?{$query}");
 
             return new WingsResponse($response, 200);
         } catch (\Exception $e) {
@@ -252,6 +258,27 @@ class ServerService
             $query = http_build_query($filters);
             $endpoint = "/api/servers/{$serverUuid}/files/search" . ($query !== '' ? "?{$query}" : '');
             $response = $this->connection->get($endpoint);
+
+            return new WingsResponse($response, 200);
+        } catch (\Exception $e) {
+            return new WingsResponse(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * List one directory inside an on-disk archive without extracting (supported formats only).
+     *
+     * @param string $innerPath Path inside the archive (empty string = root)
+     */
+    public function listArchiveDirectory(string $serverUuid, string $directory, string $file, string $innerPath = ''): WingsResponse
+    {
+        try {
+            $query = http_build_query([
+                'directory' => $directory,
+                'file' => $file,
+                'path' => $innerPath,
+            ]);
+            $response = $this->connection->get("/api/servers/{$serverUuid}/files/archive/list?{$query}");
 
             return new WingsResponse($response, 200);
         } catch (\Exception $e) {
@@ -482,6 +509,36 @@ class ServerService
             // Use 15 minute timeout for archive operations (like pelican) if not specified
             $requestTimeout = $timeout ?? (60 * 15);
             $response = $this->connection->post("/api/servers/{$serverUuid}/files/decompress", $data, [], 3, $requestTimeout);
+
+            return new WingsResponse($response, 204);
+        } catch (\Exception $e) {
+            return new WingsResponse(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Extract selected paths from an on-disk archive without unpacking the whole archive (Wings 204).
+     *
+     * @param array<int, string> $entries Paths inside the archive (files and/or directories)
+     */
+    public function extractArchiveSelection(
+        string $serverUuid,
+        string $root,
+        string $file,
+        string $destination,
+        array $entries,
+        ?int $timeout = null,
+    ): WingsResponse {
+        try {
+            $data = [
+                'root' => $root,
+                'file' => $file,
+                'destination' => $destination,
+                'entries' => array_values($entries),
+            ];
+
+            $requestTimeout = $timeout ?? (60 * 15);
+            $response = $this->connection->post("/api/servers/{$serverUuid}/files/archive/extract", $data, [], 3, $requestTimeout);
 
             return new WingsResponse($response, 204);
         } catch (\Exception $e) {

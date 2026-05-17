@@ -38,10 +38,11 @@ import {
     IgnoredContentDialog,
     CompressDialog,
     FileHashDialog,
+    ArchiveBrowsePanel,
 } from './components/dialogs';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { toast } from 'sonner';
-import { filesApi } from '@/lib/files-api';
+import { filesApi, ARCHIVE_EXTRACT_DRAG_MIME } from '@/lib/files-api';
 import { isBinaryLikeFileName } from '@/lib/binary-like-file-names';
 import { FileObject } from '@/types/server';
 import { Download, X, Upload, CheckCircle2, AlertCircle } from 'lucide-react';
@@ -67,6 +68,13 @@ function resolveDirectoryTarget(currentDirectory: string, nameOrPath: string): s
     if (!nameOrPath) return normalizePath(currentDirectory || '/');
     if (nameOrPath.startsWith('/')) return normalizePath(nameOrPath);
     return joinPath(currentDirectory || '/', nameOrPath);
+}
+
+/** Server-relative destination for Wings archive/extract (no leading slash; empty = server root). */
+function toDestinationRelative(absoluteDir: string): string {
+    const n = normalizePath(absoluteDir || '/');
+    if (n === '/') return '';
+    return n.replace(/^\//, '');
 }
 
 async function collectFilesFromDataTransfer(dt: DataTransfer): Promise<FileWithPath[]> {
@@ -175,6 +183,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
     const canCreate = hasPermission('file.create');
     const canUpdate = hasPermission('file.update');
     const canDelete = hasPermission('file.delete');
+    const canArchive = hasPermission('file.archive');
 
     const [createFolderOpen, setCreateFolderOpen] = useState(false);
     const [createFileOpen, setCreateFileOpen] = useState(false);
@@ -188,6 +197,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
     const [permissionsOpen, setPermissionsOpen] = useState(false);
     const [compressOpen, setCompressOpen] = useState(false);
     const [fileHashOpen, setFileHashOpen] = useState(false);
+    const [archiveBrowseOpen, setArchiveBrowseOpen] = useState(false);
     const [filesToCompress, setFilesToCompress] = useState<string[]>([]);
     const [moveCopyAction, setMoveCopyAction] = useState<'move' | 'copy'>('move');
     const [uploadQueue, setUploadQueue] = useState<UploadQueueItem[]>([]);
@@ -237,6 +247,33 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
     ]);
     const hasAdvancedFilters = activeAdvancedFiltersCount > 0;
     const visibleFiles = searchResults ?? files;
+    const previousDirectoryRef = useRef(currentDirectory || '/');
+
+    const closeArchiveBrowse = useCallback(() => {
+        setArchiveBrowseOpen(false);
+        setActionFile((file) => (file && archiveBrowseOpen ? null : file));
+    }, [archiveBrowseOpen]);
+
+    const handleArchiveBrowseOpenChange = useCallback((open: boolean) => {
+        setArchiveBrowseOpen(open);
+        if (!open) setActionFile(null);
+    }, []);
+
+    const navigateAndCloseArchive = useCallback(
+        (path: string) => {
+            closeArchiveBrowse();
+            navigate(path);
+        },
+        [closeArchiveBrowse, navigate],
+    );
+
+    useEffect(() => {
+        const nextDirectory = currentDirectory || '/';
+        if (previousDirectoryRef.current !== nextDirectory) {
+            previousDirectoryRef.current = nextDirectory;
+            closeArchiveBrowse();
+        }
+    }, [closeArchiveBrowse, currentDirectory]);
 
     useEffect(() => {
         if (anchorName && !visibleFiles.some((f) => f.name === anchorName)) {
@@ -302,6 +339,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
         maxFileSizeMiB,
         includeOversized,
         hasAdvancedFilters,
+        t,
     ]);
 
     const handleSelectToggle = useCallback(
@@ -353,6 +391,29 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
             }
         },
         [visibleFiles, anchorName, selectedFiles, setSelectedFiles, toggleSelect],
+    );
+
+    const performArchiveExtract = useCallback(
+        async (payload: { root: string; file: string; entries: string[] }, destinationRelative: string) => {
+            const toastId = toast.loading(t('files.messages.archive_members_extracting'));
+            try {
+                await filesApi.extractArchiveSelection(
+                    uuidShort,
+                    payload.root,
+                    payload.file,
+                    destinationRelative,
+                    payload.entries,
+                );
+                toast.success(t('files.messages.archive_members_extracted'), { id: toastId });
+                closeArchiveBrowse();
+                refresh();
+            } catch (error) {
+                const err = error as { response?: { data?: { error?: string } } };
+                const msg = err.response?.data?.error || t('files.messages.archive_members_extract_failed');
+                toast.error(msg, { id: toastId });
+            }
+        },
+        [closeArchiveBrowse, refresh, t, uuidShort],
     );
 
     const handleRowDragStart = useCallback(
@@ -420,6 +481,26 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
     const handleDropOnFolder = useCallback(
         (destinationFolder: FileObject, event: React.DragEvent) => {
             try {
+                const archiveRaw = event.dataTransfer.getData(ARCHIVE_EXTRACT_DRAG_MIME);
+                if (archiveRaw) {
+                    if (!canArchive) return;
+                    const payload = JSON.parse(archiveRaw) as { root?: string; file?: string; entries?: string[] };
+                    if (
+                        typeof payload.root !== 'string' ||
+                        typeof payload.file !== 'string' ||
+                        !Array.isArray(payload.entries) ||
+                        payload.entries.length === 0
+                    ) {
+                        return;
+                    }
+                    const destAbs = joinPath(currentDirectory || '/', destinationFolder.name);
+                    const destRel = toDestinationRelative(destAbs);
+                    void performArchiveExtract(
+                        { root: payload.root, file: payload.file, entries: payload.entries as string[] },
+                        destRel,
+                    );
+                    return;
+                }
                 const raw = event.dataTransfer.getData(DRAG_MIME);
                 if (!raw) return;
                 const payload = JSON.parse(raw) as { sourceRoot?: string; files?: string[] };
@@ -434,12 +515,31 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 setDraggingFileNames([]);
             }
         },
-        [currentDirectory, performMoveFiles],
+        [canArchive, currentDirectory, performArchiveExtract, performMoveFiles],
     );
 
     const handleDropOnPath = useCallback(
         (destinationPath: string, event: React.DragEvent) => {
             try {
+                const archiveRaw = event.dataTransfer.getData(ARCHIVE_EXTRACT_DRAG_MIME);
+                if (archiveRaw) {
+                    if (!canArchive) return;
+                    const payload = JSON.parse(archiveRaw) as { root?: string; file?: string; entries?: string[] };
+                    if (
+                        typeof payload.root !== 'string' ||
+                        typeof payload.file !== 'string' ||
+                        !Array.isArray(payload.entries) ||
+                        payload.entries.length === 0
+                    ) {
+                        return;
+                    }
+                    const destRel = toDestinationRelative(destinationPath);
+                    void performArchiveExtract(
+                        { root: payload.root, file: payload.file, entries: payload.entries as string[] },
+                        destRel,
+                    );
+                    return;
+                }
                 const raw = event.dataTransfer.getData(DRAG_MIME);
                 if (!raw) return;
                 const payload = JSON.parse(raw) as { sourceRoot?: string; files?: string[] };
@@ -452,7 +552,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 setDraggingFileNames([]);
             }
         },
-        [currentDirectory, performMoveFiles],
+        [canArchive, currentDirectory, performArchiveExtract, performMoveFiles],
     );
 
     const handleAction = (action: string, file: FileObject) => {
@@ -498,6 +598,9 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 break;
             case 'decompress':
                 handleDecompress(file.name);
+                break;
+            case 'browse-archive':
+                setArchiveBrowseOpen(true);
                 break;
             case 'copy':
                 setMoveCopyAction('copy');
@@ -564,7 +667,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
         const openFile = (file: FileObject) => {
             if (!file.isFile) {
                 const nextDir = resolveDirectoryTarget(currentDirectory || '/', file.name);
-                navigate(nextDir);
+                navigateAndCloseArchive(nextDir);
             } else if (isEditableFile(file.size, file.name) && canUpdate) {
                 const editPath = `/server/${uuidShort}/files/edit?file=${encodeURIComponent(
                     file.name,
@@ -687,7 +790,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 if (current === '/' || current === '') return;
                 e.preventDefault();
                 const parent = current.replace(/\/+$/, '').split('/').slice(0, -1).join('/') || '/';
-                navigate(parent);
+                navigateAndCloseArchive(parent);
                 return;
             }
 
@@ -743,7 +846,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
         setSelectedFiles,
         anchorName,
         currentDirectory,
-        navigate,
+        navigateAndCloseArchive,
         refresh,
         toggleSelect,
         uuidShort,
@@ -991,8 +1094,11 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
     };
 
     useEffect(() => {
-        const isInternal = (e: DragEvent) =>
-            e.dataTransfer?.types?.includes('application/x-featherpanel-files') ?? false;
+        const isInternal = (e: DragEvent) => {
+            const types = e.dataTransfer?.types;
+            if (!types) return false;
+            return types.includes(DRAG_MIME) || types.includes(ARCHIVE_EXTRACT_DRAG_MIME);
+        };
 
         const handleDragOver = (e: DragEvent) => {
             if (isInternal(e)) return;
@@ -1046,7 +1152,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                         onNavigate={navigate}
                         searchQuery={searchQuery}
                         onSearchChange={setSearchQuery}
-                        onDropFilesToPath={canUpdate ? handleDropOnPath : undefined}
+                        onDropFilesToPath={canUpdate || canArchive ? handleDropOnPath : undefined}
                         onToggleFilters={() => setSearchFiltersOpen(true)}
                         activeFiltersCount={activeAdvancedFiltersCount}
                     />
@@ -1353,6 +1459,29 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
 
                         <WidgetRenderer widgets={getWidgets('server-files', 'before-files-list')} />
 
+                        <ArchiveBrowsePanel
+                            open={archiveBrowseOpen}
+                            onOpenChange={handleArchiveBrowseOpenChange}
+                            uuid={uuidShort}
+                            serverDirectory={currentDirectory || '/'}
+                            archiveFileName={actionFile?.name ?? ''}
+                            canExtract={canArchive}
+                            onExtractEntries={(entries, destinationPath) => {
+                                if (!actionFile) return;
+                                void performArchiveExtract(
+                                    {
+                                        root: currentDirectory || '/',
+                                        file: actionFile.name,
+                                        entries,
+                                    },
+                                    toDestinationRelative(destinationPath),
+                                );
+                            }}
+                            onExtractComplete={() => {
+                                refresh();
+                            }}
+                        />
+
                         <FileList
                             files={visibleFiles}
                             loading={loading || searchLoading}
@@ -1361,15 +1490,18 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                             onSelectAll={handleSelectAllToggle}
                             onModifierClick={handleModifierClick}
                             anchorName={anchorName}
-                            onNavigate={(name) => navigate(resolveDirectoryTarget(currentDirectory || '/', name))}
+                            onNavigate={(name) =>
+                                navigateAndCloseArchive(resolveDirectoryTarget(currentDirectory || '/', name))
+                            }
                             onAction={handleAction}
                             onRowDragStart={canUpdate ? handleRowDragStart : undefined}
                             onRowDragEnd={canUpdate ? handleRowDragEnd : undefined}
-                            onDropFiles={canUpdate ? handleDropOnFolder : undefined}
+                            onDropFiles={canUpdate || canArchive ? handleDropOnFolder : undefined}
                             draggingFileNames={draggingFileNames}
                             canEdit={canUpdate}
                             canDelete={canDelete}
                             canDownload={canRead}
+                            acceptArchiveExtract={canArchive}
                             serverUuid={uuidShort}
                             currentDirectory={currentDirectory || '/'}
                         />

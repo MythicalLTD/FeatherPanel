@@ -17,12 +17,14 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { useDateFormatOptions } from '@/contexts/PreferencesContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/featherui/Input';
 import { Clock, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { ActivityFeed } from '@/components/dashboard/ActivityFeed';
+import { formatRelativeTime } from '@/lib/dateUtils';
 import type { Activity } from '@/types/activity';
 
 interface PaginationInfo {
@@ -38,6 +40,7 @@ interface PaginationInfo {
 
 export default function ActivityTab() {
     const { t } = useTranslation();
+    const dateOpts = useDateFormatOptions();
     const [activities, setActivities] = useState<Activity[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
@@ -85,31 +88,7 @@ export default function ActivityTab() {
         return () => clearTimeout(timeout);
     }, [searchQuery, fetchActivities]);
 
-    const formatDate = (dateString: string): string => {
-        if (!dateString) return '-';
-        try {
-            const date = new Date(dateString);
-            const now = new Date();
-            const diffInHours = Math.abs(now.getTime() - date.getTime()) / (1000 * 60 * 60);
-
-            if (diffInHours < 1) {
-                return t('common.time.just_now');
-            } else if (diffInHours < 24) {
-                const hours = Math.floor(diffInHours);
-                return t('common.time.hours_ago', { count: hours.toString(), s: hours > 1 ? 's' : '' });
-            } else if (diffInHours < 48) {
-                return t('common.time.yesterday');
-            } else {
-                return (
-                    date.toLocaleDateString() +
-                    ' ' +
-                    date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                );
-            }
-        } catch {
-            return dateString;
-        }
-    };
+    const formatDate = (dateString: string): string => formatRelativeTime(dateString, dateOpts);
 
     const visiblePages = () => {
         if (!pagination) return [];

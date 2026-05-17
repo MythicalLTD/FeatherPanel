@@ -27,13 +27,14 @@ use App\Chat\ApiClient;
 use App\Chat\Permission;
 use App\Chat\TicketStatus;
 use App\Chat\TicketMessage;
+use App\Helpers\TimeHelper;
 use App\Chat\TicketCategory;
 use App\Chat\TicketPriority;
 use App\Chat\UserDataExport;
 use App\Chat\UserPreference;
 use App\Helpers\ApiResponse;
-use App\Helpers\CaptchaHelper;
 use OpenApi\Attributes as OA;
+use App\Helpers\CaptchaHelper;
 use App\Config\ConfigInterface;
 use App\Middleware\AuthMiddleware;
 use App\CloudFlare\CloudFlareRealIP;
@@ -133,7 +134,7 @@ class SessionController
             if (!isset($data['turnstile_token']) || trim($data['turnstile_token']) === '') {
                 return ApiResponse::error('Captcha token is required', 'CAPTCHA_TOKEN_REQUIRED');
             }
-            if (!\App\Helpers\CaptchaHelper::validate($data['turnstile_token'], CloudFlareRealIP::getRealIP())) {
+            if (!CaptchaHelper::validate($data['turnstile_token'], CloudFlareRealIP::getRealIP())) {
                 return ApiResponse::error('Captcha validation failed', 'CAPTCHA_VALIDATION_FAILED');
             }
             // Remove turnstile_token from data after validation (it's not a user field)
@@ -794,6 +795,15 @@ class SessionController
             $data['favorite_server_uuids'] = $cleanFavorites;
         }
 
+        if (array_key_exists('timezone', $data)) {
+            if ($data['timezone'] === null || $data['timezone'] === '') {
+                // Treat empty value as "clear preference, fall back to browser/global default"
+                $data['timezone'] = null;
+            } elseif (!is_string($data['timezone']) || !TimeHelper::isValidTimezone($data['timezone'])) {
+                return ApiResponse::error('Invalid timezone identifier', 'INVALID_TIMEZONE', 400, []);
+            }
+        }
+
         // Update preferences (merges with existing)
         $success = UserPreference::updatePreferences($user['uuid'], $data);
 
@@ -904,7 +914,7 @@ class SessionController
                 'subject' => $mail['subject'] ?? '',
                 'body' => $mail['body'] ?? '',
                 'status' => $mail['status'] ?? 'pending',
-                'created_at' => $mail['created_at'] ?? '',
+                'created_at' => TimeHelper::toIso8601($mail['created_at'] ?? null),
             ];
             $mails[] = $mailData;
         }
@@ -1038,8 +1048,8 @@ class SessionController
                 'name' => $activity['name'] ?? '',
                 'context' => $activity['context'] ?? null,
                 'ip_address' => $ipAddress,
-                'created_at' => $activity['created_at'] ?? '',
-                'updated_at' => $activity['updated_at'] ?? '',
+                'created_at' => TimeHelper::toIso8601($activity['created_at'] ?? null),
+                'updated_at' => TimeHelper::toIso8601($activity['updated_at'] ?? null),
             ];
             $formattedActivities[] = $activityData;
         }

@@ -14,7 +14,9 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
 import { FileObject } from '@/types/server';
-import { formatFileSize, formatDate } from '@/lib/utils';
+import { formatFileSize } from '@/lib/utils';
+import { formatDateTimeInTz, formatRelativeTime, parseApiDate } from '@/lib/dateUtils';
+import { useDateFormatOptions } from '@/contexts/PreferencesContext';
 import {
     Folder,
     FileText,
@@ -29,6 +31,7 @@ import {
     Settings,
     File as FileIcon,
     Fingerprint,
+    PackageSearch,
     type LucideIcon,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -46,10 +49,31 @@ import { isBinaryLikeFileName, isDecompressibleArchiveFileName } from '@/lib/bin
 import { useTranslation } from '@/contexts/TranslationContext';
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { ARCHIVE_EXTRACT_DRAG_MIME } from '@/lib/files-api';
 
 const isImageName = (name: string) => /\.(png|jpg|jpeg|gif|webp|svg)$/i.test(name);
 const isEditableFile = (size: number, name: string) =>
     size < 1024 * 1024 * 5 && !isBinaryLikeFileName(name) && !isImageName(name);
+
+function formatListEntrySize(file: FileObject): string {
+    if (file.isFile) {
+        return formatFileSize(file.size);
+    }
+    if (file.directory_size !== undefined && file.directory_size !== null) {
+        return formatFileSize(file.directory_size);
+    }
+    return '—';
+}
+
+function formatListEntrySizeMobile(file: FileObject, folderLabel: string): string {
+    if (file.isFile) {
+        return formatFileSize(file.size);
+    }
+    if (file.directory_size !== undefined && file.directory_size !== null) {
+        return formatFileSize(file.directory_size);
+    }
+    return folderLabel;
+}
 
 interface FileRowProps {
     file: FileObject;
@@ -67,6 +91,8 @@ interface FileRowProps {
     canEdit: boolean;
     canDelete: boolean;
     canDownload: boolean;
+    /** Accept drag-and-drop from archive browse (extract) onto this folder row */
+    acceptArchiveExtract?: boolean;
     serverUuid: string;
     currentDirectory: string;
 }
@@ -190,10 +216,21 @@ export function FileRow({
     canEdit,
     canDelete,
     canDownload,
+    acceptArchiveExtract = false,
     serverUuid,
     currentDirectory,
 }: FileRowProps) {
     const { t } = useTranslation();
+    const dateOpts = useDateFormatOptions();
+    const { modifiedRelative, modifiedTitle } = useMemo(() => {
+        if (!parseApiDate(file.modified_at)) {
+            return { modifiedRelative: t('common.not_available'), modifiedTitle: undefined as string | undefined };
+        }
+        return {
+            modifiedRelative: formatRelativeTime(file.modified_at, dateOpts),
+            modifiedTitle: formatDateTimeInTz(file.modified_at, dateOpts),
+        };
+    }, [file.modified_at, dateOpts, t]);
     const rowRef = useRef<HTMLDivElement>(null);
     const [isDropTarget, setIsDropTarget] = useState(false);
     const dragCounterRef = useRef(0);
@@ -204,6 +241,8 @@ export function FileRow({
             rowRef.current.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
         }
     }, [isAnchor]);
+
+    const canBrowseArchive = file.isFile && isDecompressibleArchiveFileName(file.name) && (canEdit || canDownload);
 
     const menuActions = useMemo<MenuAction[]>(() => {
         const items: MenuAction[] = [];
@@ -226,6 +265,9 @@ export function FileRow({
         if (file.isFile && canDownload) {
             items.push({ key: 'hash', label: t('files.row.hash'), Icon: Fingerprint });
         }
+        if (canBrowseArchive) {
+            items.push({ key: 'browse-archive', label: t('files.row.browse_archive'), Icon: PackageSearch });
+        }
         if (file.isFile && isDecompressibleArchiveFileName(file.name) && canEdit) {
             items.push({ key: 'decompress', label: t('files.row.extract'), Icon: Archive });
         }
@@ -243,7 +285,7 @@ export function FileRow({
             });
         }
         return items;
-    }, [file, canEdit, canDelete, canDownload, t]);
+    }, [file, canEdit, canDelete, canDownload, t, canBrowseArchive]);
 
     const handleRowClick = (e: React.MouseEvent) => {
         if (onRowClick?.(file, e)) {
@@ -251,6 +293,8 @@ export function FileRow({
         }
         if (!file.isFile) {
             onNavigate(file.name);
+        } else if (canBrowseArchive) {
+            onAction('browse-archive', file);
         } else if (isEditableFile(file.size, file.name) && canEdit) {
             onAction('edit', file);
         } else if (isImageName(file.name)) {
@@ -266,7 +310,7 @@ export function FileRow({
         setContextMenu({ x: e.clientX, y: e.clientY });
     };
 
-    const isFolderDropTarget = !file.isFile && canEdit && !!onDropFiles;
+    const isFolderDropTarget = !file.isFile && !!onDropFiles && (canEdit || acceptArchiveExtract);
 
     const handleDragStart = (e: React.DragEvent) => {
         if (!onDragStart) {
@@ -282,10 +326,14 @@ export function FileRow({
         onDragEnd?.(file, e);
     };
 
-    const isInternalDrag = (e: React.DragEvent) => e.dataTransfer.types.includes(DRAG_MIME);
+    const acceptsFolderDrop = (e: React.DragEvent) => {
+        if (canEdit && e.dataTransfer.types.includes(DRAG_MIME)) return true;
+        if (acceptArchiveExtract && e.dataTransfer.types.includes(ARCHIVE_EXTRACT_DRAG_MIME)) return true;
+        return false;
+    };
 
     const handleDragEnter = (e: React.DragEvent) => {
-        if (!isFolderDropTarget || !isInternalDrag(e)) return;
+        if (!isFolderDropTarget || !acceptsFolderDrop(e)) return;
         e.preventDefault();
         e.stopPropagation();
         dragCounterRef.current += 1;
@@ -293,14 +341,19 @@ export function FileRow({
     };
 
     const handleDragOver = (e: React.DragEvent) => {
-        if (!isFolderDropTarget || !isInternalDrag(e)) return;
+        if (!isFolderDropTarget || !acceptsFolderDrop(e)) return;
         e.preventDefault();
         e.stopPropagation();
-        e.dataTransfer.dropEffect = isDragging ? 'none' : 'move';
+        const archiveDrag = acceptArchiveExtract && e.dataTransfer.types.includes(ARCHIVE_EXTRACT_DRAG_MIME);
+        if (archiveDrag) {
+            e.dataTransfer.dropEffect = 'copy';
+        } else {
+            e.dataTransfer.dropEffect = isDragging ? 'none' : 'move';
+        }
     };
 
     const handleDragLeave = (e: React.DragEvent) => {
-        if (!isFolderDropTarget || !isInternalDrag(e)) return;
+        if (!isFolderDropTarget || !acceptsFolderDrop(e)) return;
         e.preventDefault();
         e.stopPropagation();
         dragCounterRef.current = Math.max(0, dragCounterRef.current - 1);
@@ -310,12 +363,13 @@ export function FileRow({
     };
 
     const handleDrop = (e: React.DragEvent) => {
-        if (!isFolderDropTarget || !isInternalDrag(e)) return;
+        if (!isFolderDropTarget || !acceptsFolderDrop(e)) return;
         e.preventDefault();
         e.stopPropagation();
         dragCounterRef.current = 0;
         setIsDropTarget(false);
-        if (isDragging) return;
+        const archiveDrag = acceptArchiveExtract && e.dataTransfer.types.includes(ARCHIVE_EXTRACT_DRAG_MIME);
+        if (!archiveDrag && isDragging) return;
         onDropFiles?.(file, e);
     };
 
@@ -339,124 +393,144 @@ export function FileRow({
             )}
             onClick={handleRowClick}
         >
-            <div className='pointer-events-none flex min-w-0 flex-1 items-center gap-3'>
-                <div className='pointer-events-auto' onClick={(e) => e.stopPropagation()}>
-                    <Checkbox
-                        checked={selected}
-                        onCheckedChange={() => onSelect(file.name)}
-                        className='border-primary/50 data-[state=checked]:bg-primary data-[state=checked]:border-primary'
-                    />
-                </div>
+            <div className='pointer-events-auto shrink-0' onClick={(e) => e.stopPropagation()}>
+                <Checkbox
+                    checked={selected}
+                    onCheckedChange={() => onSelect(file.name)}
+                    className='border-primary/50 data-[state=checked]:bg-primary data-[state=checked]:border-primary'
+                />
+            </div>
 
-                <div
-                    className={cn(
-                        'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/5 transition-all group-hover:scale-110',
-                        file.isFile
-                            ? 'bg-gray-100 text-gray-500 dark:bg-white/5 dark:text-gray-400'
-                            : 'bg-amber-500/10 text-amber-500',
-                    )}
-                >
-                    {file.isFile ? (
-                        isImageName(file.name) ? (
-                            <Eye className='h-4.5 w-4.5' />
-                        ) : (
-                            <FileText className='h-4.5 w-4.5' />
-                        )
+            <div
+                className={cn(
+                    'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/5 transition-all group-hover:scale-110',
+                    file.isFile
+                        ? 'bg-gray-100 text-gray-500 dark:bg-white/5 dark:text-gray-400'
+                        : 'bg-amber-500/10 text-amber-500',
+                )}
+            >
+                {file.isFile ? (
+                    isImageName(file.name) ? (
+                        <Eye className='h-4.5 w-4.5' />
+                    ) : canBrowseArchive ? (
+                        <Archive className='h-4.5 w-4.5' />
                     ) : (
-                        <Folder className='h-4.5 w-4.5 fill-amber-500/10' />
-                    )}
-                </div>
+                        <FileText className='h-4.5 w-4.5' />
+                    )
+                ) : (
+                    <Folder className='h-4.5 w-4.5 fill-amber-500/10' />
+                )}
+            </div>
 
-                <div className='pointer-events-auto flex-1 overflow-hidden'>
-                    {(() => {
-                        const fullPath = currentDirectory.endsWith('/')
-                            ? `${currentDirectory}${file.name}`
-                            : `${currentDirectory}/${file.name}`;
+            <div className='pointer-events-auto min-w-0 flex-1 overflow-hidden'>
+                {(() => {
+                    const fullPath = currentDirectory.endsWith('/')
+                        ? `${currentDirectory}${file.name}`
+                        : `${currentDirectory}/${file.name}`;
 
-                        if (!file.isFile) {
-                            return (
-                                <Link
-                                    href={`?path=${encodeURIComponent(fullPath)}`}
-                                    className='text-primary block truncate text-sm font-semibold'
-                                    onClick={(e) => {
-                                        if (onRowClick?.(file, e)) {
-                                            e.preventDefault();
-                                            return;
-                                        }
+                    if (!file.isFile) {
+                        return (
+                            <Link
+                                href={`?path=${encodeURIComponent(fullPath)}`}
+                                className='text-primary block truncate text-sm font-semibold'
+                                onClick={(e) => {
+                                    if (onRowClick?.(file, e)) {
                                         e.preventDefault();
-                                        onNavigate(file.name);
-                                    }}
-                                >
-                                    {file.name}
-                                </Link>
-                            );
-                        } else if (isEditableFile(file.size, file.name) && canEdit) {
-                            return (
-                                <Link
-                                    href={`/server/${serverUuid}/files/edit?file=${encodeURIComponent(file.name)}&directory=${encodeURIComponent(currentDirectory || '/')}`}
-                                    className='text-primary block truncate text-sm font-semibold'
-                                    onClick={(e) => {
-                                        if (onRowClick?.(file, e)) {
-                                            e.preventDefault();
-                                        }
-                                    }}
-                                >
-                                    {file.name}
-                                </Link>
-                            );
-                        } else if (isImageName(file.name)) {
-                            return (
-                                <button
-                                    onClick={(e) => {
-                                        if (onRowClick?.(file, e)) {
-                                            e.preventDefault();
-                                            e.stopPropagation();
-                                            return;
-                                        }
+                                        return;
+                                    }
+                                    e.preventDefault();
+                                    onNavigate(file.name);
+                                }}
+                            >
+                                {file.name}
+                            </Link>
+                        );
+                    } else if (isEditableFile(file.size, file.name) && canEdit) {
+                        return (
+                            <Link
+                                href={`/server/${serverUuid}/files/edit?file=${encodeURIComponent(file.name)}&directory=${encodeURIComponent(currentDirectory || '/')}`}
+                                className='text-primary block truncate text-sm font-semibold'
+                                onClick={(e) => {
+                                    if (onRowClick?.(file, e)) {
+                                        e.preventDefault();
+                                    }
+                                }}
+                            >
+                                {file.name}
+                            </Link>
+                        );
+                    } else if (isImageName(file.name)) {
+                        return (
+                            <button
+                                onClick={(e) => {
+                                    if (onRowClick?.(file, e)) {
                                         e.preventDefault();
                                         e.stopPropagation();
-                                        onAction('preview', file);
-                                    }}
-                                    className='text-primary block w-full truncate text-left text-sm font-semibold'
-                                >
-                                    {file.name}
-                                </button>
-                            );
-                        } else {
-                            return (
-                                <span
-                                    className='text-primary block cursor-default truncate text-sm font-semibold opacity-90'
-                                    onClick={(e) => e.stopPropagation()}
-                                    title={t('files.row.cant_preview')}
-                                >
-                                    {file.name}
-                                </span>
-                            );
-                        }
-                    })()}
-                    <div className='text-muted-foreground flex items-center gap-2 text-[10px] font-medium tracking-wider uppercase sm:hidden'>
-                        <span>{file.isFile ? formatFileSize(file.size) : t('files.row.folder_label')}</span>
-                        <span className='opacity-30'>•</span>
-                        <span>{formatDate(file.modified_at)}</span>
-                    </div>
+                                        return;
+                                    }
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    onAction('preview', file);
+                                }}
+                                className='text-primary block w-full truncate text-left text-sm font-semibold'
+                            >
+                                {file.name}
+                            </button>
+                        );
+                    } else if (canBrowseArchive) {
+                        return (
+                            <button
+                                type='button'
+                                onClick={(e) => {
+                                    if (onRowClick?.(file, e)) {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        return;
+                                    }
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    onAction('browse-archive', file);
+                                }}
+                                className='text-primary block w-full truncate text-left text-sm font-semibold'
+                            >
+                                {file.name}
+                            </button>
+                        );
+                    } else {
+                        return (
+                            <span
+                                className='text-primary block cursor-default truncate text-sm font-semibold opacity-90'
+                                onClick={(e) => e.stopPropagation()}
+                                title={t('files.row.cant_preview')}
+                            >
+                                {file.name}
+                            </span>
+                        );
+                    }
+                })()}
+                <div className='text-muted-foreground flex items-center gap-2 text-[10px] font-medium tracking-wider uppercase sm:hidden'>
+                    <span>{formatListEntrySizeMobile(file, t('files.row.folder_label'))}</span>
+                    <span className='opacity-30'>•</span>
+                    <span title={modifiedTitle}>{modifiedRelative}</span>
                 </div>
             </div>
 
             <div
-                className='text-muted-foreground hidden w-32 px-4 text-xs font-semibold sm:block'
+                className='text-muted-foreground hidden w-[5.5rem] shrink-0 text-right text-xs font-semibold tabular-nums sm:block'
                 style={{ opacity: 0.8 }}
             >
-                {file.isFile ? formatFileSize(file.size) : '-'}
+                {formatListEntrySize(file)}
             </div>
 
             <div
-                className='text-muted-foreground hidden w-48 px-4 text-xs font-semibold sm:block'
+                className='text-muted-foreground hidden w-[9rem] shrink-0 truncate text-right text-xs font-semibold sm:block'
                 style={{ opacity: 0.8 }}
+                title={modifiedTitle}
             >
-                {formatDate(file.modified_at)}
+                {modifiedRelative}
             </div>
 
-            <div className='flex w-10 justify-end'>
+            <div className='flex w-9 shrink-0 justify-end'>
                 <DropdownMenu>
                     <DropdownMenuTrigger
                         as={Button}

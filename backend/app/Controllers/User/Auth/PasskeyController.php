@@ -23,6 +23,7 @@ use App\Cache\Cache;
 use App\Permissions;
 use Cose\Algorithms;
 use App\Chat\UserPasskey;
+use App\Helpers\TimeHelper;
 use App\Helpers\ApiResponse;
 use App\Config\ConfigInterface;
 use App\Helpers\WebAuthnHelper;
@@ -260,7 +261,7 @@ class PasskeyController
             $out[] = [
                 'id' => (int) $row['id'],
                 'label' => $row['label'],
-                'created_at' => $row['created_at'],
+                'created_at' => TimeHelper::toIso8601($row['created_at'] ?? null),
                 'aaguid' => $row['aaguid'],
             ];
         }

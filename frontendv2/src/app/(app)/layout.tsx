@@ -19,6 +19,7 @@ import { ThemeProvider } from '@/contexts/ThemeContext';
 import { SettingsProvider } from '@/contexts/SettingsContext';
 import { TranslationProvider } from '@/contexts/TranslationContext';
 import { SessionProvider } from '@/contexts/SessionContext';
+import { PreferencesProvider } from '@/contexts/PreferencesContext';
 import { NotificationProvider } from '@/contexts/NotificationContext';
 import AppContent from '@/components/common/AppContent';
 import { Toaster } from 'sonner';
@@ -279,14 +280,16 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                     <ThemeProvider>
                         <TranslationProvider>
                             <SessionProvider>
-                                <NotificationProvider>
-                                    <PluginAssets />
-                                    <ChunkLoadErrorHandler />
-                                    <SystemHealthCheck />
-                                    <PwaInstaller />
-                                    <AppContent>{children}</AppContent>
-                                    <Toaster richColors position='top-right' />
-                                </NotificationProvider>
+                                <PreferencesProvider>
+                                    <NotificationProvider>
+                                        <PluginAssets />
+                                        <ChunkLoadErrorHandler />
+                                        <SystemHealthCheck />
+                                        <PwaInstaller />
+                                        <AppContent>{children}</AppContent>
+                                        <Toaster richColors position='top-right' />
+                                    </NotificationProvider>
+                                </PreferencesProvider>
                             </SessionProvider>
                         </TranslationProvider>
                     </ThemeProvider>

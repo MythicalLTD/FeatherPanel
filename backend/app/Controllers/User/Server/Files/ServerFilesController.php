@@ -36,7 +36,8 @@ use App\Controllers\User\Server\CheckSubuserPermissionsTrait;
     properties: [
         new OA\Property(property: 'name', type: 'string', description: 'File or directory name'),
         new OA\Property(property: 'type', type: 'string', enum: ['file', 'directory'], description: 'Item type'),
-        new OA\Property(property: 'size', type: 'integer', nullable: true, description: 'File size in bytes'),
+        new OA\Property(property: 'size', type: 'integer', nullable: true, description: 'File size in bytes (directory entry size for folders)'),
+        new OA\Property(property: 'directory_size', type: 'integer', nullable: true, description: 'Recursive size of folder contents in bytes (only when requested from Wings)'),
         new OA\Property(property: 'permissions', type: 'string', nullable: true, description: 'File permissions'),
         new OA\Property(property: 'modified_at', type: 'string', format: 'date-time', nullable: true, description: 'Last modified timestamp'),
         new OA\Property(property: 'path', type: 'string', description: 'Full file path'),
@@ -184,7 +185,7 @@ class ServerFilesController
             $path = $this->getPathFromQuery();
 
             $wings = $this->createWingsConnection($node);
-            $response = $wings->getServer()->listDirectory($server['uuid'], $path);
+            $response = $wings->getServer()->listDirectory($server['uuid'], $path, true);
 
             if (!$response->isSuccessful()) {
                 $error = $response->getError();
@@ -219,6 +220,69 @@ class ServerFilesController
             ], 'Files fetched successfully');
         } catch (\Exception $e) {
             return $this->handleWingsError($e, 'fetch files');
+        }
+    }
+
+    #[OA\Get(
+        path: '/api/user/servers/{uuidShort}/archive-list',
+        summary: 'List directory inside an archive',
+        description: 'Browse supported archives (zip, tar, …) on the server without extracting them.',
+        tags: ['User - Server Files'],
+        parameters: [
+            new OA\Parameter(name: 'uuidShort', in: 'path', required: true, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'path', in: 'query', required: false, schema: new OA\Schema(type: 'string', default: '/')),
+            new OA\Parameter(name: 'file', in: 'query', required: true, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'archive_path', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Archive listing retrieved'),
+            new OA\Response(response: 400, description: 'Bad request'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 500, description: 'Internal server error'),
+        ]
+    )]
+    public function listArchiveDirectory(Request $request, string $serverUuid): Response
+    {
+        try {
+            $user = $this->validateUser($request);
+            $server = $this->validateServer($serverUuid);
+            $node = $this->validateNode($server['node_id']);
+
+            $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::FILE_READ);
+            if ($permissionCheck !== null) {
+                return $permissionCheck;
+            }
+
+            $directory = $this->getPathFromQuery('/');
+            $file = $_GET['file'] ?? '';
+            if ($file === '' || !is_string($file)) {
+                return ApiResponse::error('Missing file parameter (archive path relative to path).', 'MISSING_FILE', 400);
+            }
+            $innerPath = isset($_GET['archive_path']) && is_string($_GET['archive_path']) ? $_GET['archive_path'] : '';
+
+            $wings = $this->createWingsConnection($node);
+            $response = $wings->getServer()->listArchiveDirectory($server['uuid'], $directory, $file, $innerPath);
+            if (!$response->isSuccessful()) {
+                $error = $response->getError();
+                if ($this->isWingsConnectionUnavailableError($error)) {
+                    return ApiResponse::error(
+                        'Wings Connection Unavailable. Please contact the support team. Technical details: ' . $error,
+                        'WINGS_CONNECTION_UNAVAILABLE',
+                        503
+                    );
+                }
+
+                return ApiResponse::error('Failed to list archive: ' . $error, 'WINGS_ERROR', $response->getStatusCode());
+            }
+
+            $data = $response->getData();
+            if (!is_array($data)) {
+                $data = ['contents' => [], 'truncated' => false];
+            }
+
+            return ApiResponse::success($data, 'Archive listing retrieved successfully');
+        } catch (\Exception $e) {
+            return $this->handleWingsError($e, 'list archive');
         }
     }
 
@@ -1330,6 +1394,123 @@ class ServerFilesController
             return $this->handleWingsError($e, 'decompress archive');
         } catch (\Exception $e) {
             return $this->handleWingsError($e, 'decompress archive');
+        }
+    }
+
+    #[OA\Post(
+        path: '/api/user/servers/{uuidShort}/extract-archive-selection',
+        summary: 'Extract selected paths from an archive',
+        description: 'Extract specific files or directories from an on-disk archive into a destination folder without unpacking the whole archive.',
+        tags: ['User - Server Files'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['root', 'file', 'destination', 'entries'],
+                properties: [
+                    new OA\Property(property: 'root', type: 'string', description: 'Directory on the server that contains the archive'),
+                    new OA\Property(property: 'file', type: 'string', description: 'Archive file name relative to root'),
+                    new OA\Property(
+                        property: 'destination',
+                        type: 'string',
+                        description: 'Destination directory relative to server root (use empty string for /)'
+                    ),
+                    new OA\Property(
+                        property: 'entries',
+                        type: 'array',
+                        items: new OA\Items(type: 'string'),
+                        description: 'Paths inside the archive to extract'
+                    ),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Extraction started or completed successfully'),
+            new OA\Response(response: 400, description: 'Bad request'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 500, description: 'Internal server error'),
+        ]
+    )]
+    public function extractArchiveSelection(Request $request, string $serverUuid): Response
+    {
+        try {
+            $user = $this->validateUser($request);
+            $server = $this->validateServer($serverUuid);
+            $node = $this->validateNode($server['node_id']);
+
+            $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::FILE_ARCHIVE);
+            if ($permissionCheck !== null) {
+                return $permissionCheck;
+            }
+
+            $data = $this->validateJsonBody($request, ['root', 'file', 'destination', 'entries']);
+            if (!is_array($data['entries'])) {
+                return ApiResponse::error('Field entries must be an array of strings.', 'INVALID_ENTRIES', 400);
+            }
+            $entries = [];
+            foreach ($data['entries'] as $entry) {
+                if (is_string($entry) && $entry !== '') {
+                    $entries[] = $entry;
+                }
+            }
+            if ($entries === []) {
+                return ApiResponse::error('At least one non-empty archive entry path is required.', 'INVALID_ENTRIES', 400);
+            }
+
+            $root = $this->normalizeDirectoryPath((string) $data['root']);
+            $file = (string) $data['file'];
+
+            $destRaw = $data['destination'];
+            if (!is_string($destRaw)) {
+                return ApiResponse::error('Field destination must be a string.', 'INVALID_DESTINATION', 400);
+            }
+            $destination = ($destRaw === '' || $destRaw === '/') ? '' : ltrim($this->normalizeDirectoryPath($destRaw), '/');
+
+            $wings = $this->createWingsConnection($node);
+            $response = $wings->getServer()->extractArchiveSelection($server['uuid'], $root, $file, $destination, $entries);
+
+            if (!$response->isSuccessful()) {
+                $error = $response->getError();
+                if (strpos(strtolower($error), 'timeout') !== false || strpos(strtolower($error), 'timed out') !== false) {
+                    return ApiResponse::error(
+                        'Archive extraction timed out. Try a smaller selection or extract the full archive instead.',
+                        'ARCHIVE_TIMEOUT',
+                        $response->getStatusCode()
+                    );
+                }
+
+                return ApiResponse::error('Failed to extract from archive: ' . $error, 'WINGS_ERROR', $response->getStatusCode());
+            }
+
+            $this->logActivity($server, $node, 'archive_selection_extracted', [
+                'root' => $root,
+                'file' => $file,
+                'destination' => $destination,
+                'entry_count' => count($entries),
+            ], $user);
+
+            return ApiResponse::success($response->getData(), 'Archive selection extracted successfully');
+        } catch (\App\Services\Wings\Exceptions\WingsConnectionException $e) {
+            $errorMessage = $e->getMessage();
+            if (strpos(strtolower($errorMessage), 'timeout') !== false || strpos(strtolower($errorMessage), 'timed out') !== false) {
+                return ApiResponse::error(
+                    'Archive extraction timed out. Try a smaller selection or extract the full archive instead.',
+                    'ARCHIVE_TIMEOUT',
+                    504
+                );
+            }
+
+            return $this->handleWingsError($e, 'extract archive selection');
+        } catch (\Exception $e) {
+            return $this->handleWingsError($e, 'extract archive selection');
         }
     }
 

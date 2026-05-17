@@ -9,6 +9,9 @@
 - Verification email resend system in case the user didn't receive the email by @nayskutzu
 - Custom server variables system so users can set variables for their servers and also encrypt them. by @nayskutzu
 - GDPR compliance system for user data export by @nayskutzu
+- Per-user timezone preference in account settings, with browser auto-detection on first visit, so all dates and "X ago" labels render in each user's preferred zone. by @nayskutzu
+- Per-server-schedule timezone selector. Each cron schedule now stores its own IANA timezone by @nayskutzu
+- Server archives can now be opened and even viewed in the file manager. by @nayskutzu
 
 ### Fixed
 
@@ -18,6 +21,7 @@
 - Fixed an issue where the chatbot would sometimes get stuck in a loop when trying to do stuff. by @nayskutzu
 - Added missing translations to the translations file. by @nayskutzu
 - The default theme from admin was not applied if you didn't lock it. by @nayskutzu
+- Buch of timezone issues were fixed. by @nayskutzu
 
 ### Improved
 

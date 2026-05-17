@@ -44,6 +44,24 @@ return function (RouteCollection $routes): void {
 
     App::getInstance(true)->registerServerRoute(
         $routes,
+        'session-server-archive-list',
+        '/api/user/servers/{uuidShort}/archive-list',
+        function (Request $request, array $args) {
+            $uuidShort = $args['uuidShort'] ?? null;
+            if (!$uuidShort) {
+                return ApiResponse::error('Missing or invalid UUID short', 'INVALID_UUID_SHORT', 400);
+            }
+
+            return (new ServerFilesController())->listArchiveDirectory($request, $uuidShort);
+        },
+        'uuidShort',
+        ['GET'],
+        Rate::perMinute(60),
+        'user-server-files'
+    );
+
+    App::getInstance(true)->registerServerRoute(
+        $routes,
         'session-server-search-files',
         '/api/user/servers/{uuidShort}/search-files',
         function (Request $request, array $args) {
@@ -209,6 +227,21 @@ return function (RouteCollection $routes): void {
         'uuidShort', // Pass the server UUID for middleware
         ['POST'],
         Rate::perMinute(20), // Default: Admin can override in ratelimit.json
+        'user-server-files'
+    );
+
+    App::getInstance(true)->registerServerRoute(
+        $routes,
+        'session-server-extract-archive-selection',
+        '/api/user/servers/{uuidShort}/extract-archive-selection',
+        function (Request $request, array $args) {
+            $uuidShort = $args['uuidShort'] ?? null;
+
+            return (new ServerFilesController())->extractArchiveSelection($request, $uuidShort);
+        },
+        'uuidShort',
+        ['POST'],
+        Rate::perMinute(20),
         'user-server-files'
     );
 

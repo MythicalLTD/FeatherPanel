@@ -15,13 +15,14 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSession } from '@/contexts/SessionContext';
 import { useSettings } from '@/contexts/SettingsContext';
+import { usePreferences, useDateFormatOptions } from '@/contexts/PreferencesContext';
 import { Button } from '@/components/ui/button';
-import { ShieldCheck, Check, Fingerprint, Pencil, FileText } from 'lucide-react';
+import { ShieldCheck, Check, Fingerprint, Pencil, FileText, Clock } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { Captcha } from '@/components/Captcha';
@@ -30,6 +31,13 @@ import { isCaptchaConfigured, obtainCaptchaResponseToken } from '@/lib/captchaGa
 import { startRegistration } from '@simplewebauthn/browser';
 import { passkeysApi } from '@/lib/api/passkeys';
 import { format } from 'date-fns';
+import {
+    formatDateTimeInTz,
+    getEffectiveTimezone,
+    listSupportedTimezones,
+    parseApiDate,
+    resolveDateFnsLocale,
+} from '@/lib/dateUtils';
 import {
     Dialog,
     DialogContent,
@@ -44,7 +52,18 @@ export default function SettingsTab() {
     const { t } = useTranslation();
     const { user, fetchSession, logout } = useSession();
     const { settings } = useSettings();
+    const { preferences, timezone, setTimezone, ready: preferencesReady } = usePreferences();
+    const dateOpts = useDateFormatOptions();
     const router = useRouter();
+    const browserTimezone = useMemo(() => getEffectiveTimezone(null), []);
+    const supportedTimezones = useMemo(() => listSupportedTimezones(), []);
+    const [savingTimezone, setSavingTimezone] = useState(false);
+    const [tzNowTick, setTzNowTick] = useState(0);
+
+    useEffect(() => {
+        const interval = setInterval(() => setTzNowTick((n) => n + 1), 30_000);
+        return () => clearInterval(interval);
+    }, []);
     const [loading, setLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isRequestingData, setIsRequestingData] = useState(false);
@@ -307,6 +326,13 @@ export default function SettingsTab() {
         }
     };
 
+    // `tzNowTick` is referenced here so the preview re-renders periodically.
+    const tzPreviewLabel = useMemo(
+        () => formatDateTimeInTz(new Date(), dateOpts),
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [dateOpts, tzNowTick],
+    );
+
     if (loading) {
         return (
             <div className='flex items-center justify-center py-12'>
@@ -318,8 +344,77 @@ export default function SettingsTab() {
         );
     }
 
+    const explicitTimezone =
+        typeof preferences.timezone === 'string' && preferences.timezone.trim() !== '' ? preferences.timezone : '';
+    const handleTimezoneChange = async (value: string) => {
+        const trimmed = value.trim();
+        // Empty string clears the preference and falls back to browser detection.
+        const nextValue = trimmed === '' ? null : trimmed;
+        setSavingTimezone(true);
+        try {
+            const ok = await setTimezone(nextValue);
+            if (ok) {
+                toast.success(t('account.timezone.saved'));
+            } else {
+                toast.error(t('account.timezone.saveFailed'));
+            }
+        } catch {
+            toast.error(t('account.timezone.saveFailed'));
+        } finally {
+            setSavingTimezone(false);
+        }
+    };
+
     return (
         <div className='space-y-6'>
+            <div className='border-border/50 bg-muted/20 rounded-xl border p-4'>
+                <h3 className='text-foreground text-lg font-semibold'>{t('account.preferences.title')}</h3>
+                <p className='text-muted-foreground mt-1 text-sm'>{t('account.preferences.description')}</p>
+            </div>
+
+            <div className='border-border/50 bg-card/50 rounded-lg border p-6 backdrop-blur-xl'>
+                <div className='flex items-start gap-4'>
+                    <div className='shrink-0'>
+                        <div className='bg-primary/10 flex h-12 w-12 items-center justify-center rounded-lg'>
+                            <Clock className='text-primary h-6 w-6' />
+                        </div>
+                    </div>
+                    <div className='min-w-0 flex-1'>
+                        <div className='flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between'>
+                            <div className='flex-1'>
+                                <h4 className='text-foreground text-sm font-medium'>{t('account.timezone.title')}</h4>
+                                <p className='text-muted-foreground mt-1 max-w-xl text-sm'>
+                                    {t('account.timezone.description')}
+                                </p>
+                            </div>
+                        </div>
+                        <div className='mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center'>
+                            <select
+                                value={explicitTimezone}
+                                onChange={(e) => void handleTimezoneChange(e.target.value)}
+                                disabled={!preferencesReady || savingTimezone}
+                                className='border-border bg-background focus:ring-primary w-full rounded-lg border p-2.5 text-sm focus:ring-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50'
+                            >
+                                <option value=''>
+                                    {t('account.timezone.useBrowser', { timezone: browserTimezone })}
+                                </option>
+                                {supportedTimezones.map((tz) => (
+                                    <option key={tz} value={tz}>
+                                        {tz}
+                                    </option>
+                                ))}
+                            </select>
+                            <div className='text-muted-foreground text-xs sm:text-right'>
+                                <div>
+                                    <span className='font-medium'>{t('account.timezone.current')}:</span> {timezone}
+                                </div>
+                                <div className='font-mono text-[11px] opacity-80'>{tzPreviewLabel}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div className='border-border/50 bg-muted/20 rounded-xl border p-4'>
                 <h3 className='text-foreground text-lg font-semibold'>{t('account.securitySettings')}</h3>
                 <p className='text-muted-foreground mt-1 text-sm'>{t('account.securitySettingsDescription')}</p>
@@ -422,10 +517,15 @@ export default function SettingsTab() {
                                     const title = p.label?.trim() ? p.label : t('auth.passkey.unnamed');
                                     let dateLine = '';
                                     if (p.created_at) {
-                                        try {
-                                            dateLine = format(new Date(p.created_at), 'PP');
-                                        } catch {
-                                            dateLine = '';
+                                        const parsed = parseApiDate(p.created_at);
+                                        if (parsed) {
+                                            try {
+                                                dateLine = format(parsed, 'PP', {
+                                                    locale: resolveDateFnsLocale(dateOpts.locale),
+                                                });
+                                            } catch {
+                                                dateLine = '';
+                                            }
                                         }
                                     }
                                     return (

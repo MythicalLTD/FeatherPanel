@@ -232,16 +232,16 @@
         },
         {
             "name": "dg/mysql-dump",
-            "version": "v1.6.0",
+            "version": "v1.7.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/dg/MySQL-dump.git",
-                "reference": "b83859026dc3651c6aa39376705fbfa57c0486c5"
+                "reference": "f6d429fc78603ba1c1bcf83f583cf262cf74a167"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/dg/MySQL-dump/zipball/b83859026dc3651c6aa39376705fbfa57c0486c5",
-                "reference": "b83859026dc3651c6aa39376705fbfa57c0486c5",
+                "url": "https://api.github.com/repos/dg/MySQL-dump/zipball/f6d429fc78603ba1c1bcf83f583cf262cf74a167",
+                "reference": "f6d429fc78603ba1c1bcf83f583cf262cf74a167",
                 "shasum": ""
             },
             "require": {
@@ -269,9 +269,9 @@
                 "mysql"
             ],
             "support": {
-                "source": "https://github.com/dg/MySQL-dump/tree/v1.6.0"
+                "source": "https://github.com/dg/MySQL-dump/tree/v1.7.0"
             },
-            "time": "2024-09-16T04:30:48+00:00"
+            "time": "2026-05-17T22:40:25+00:00"
         },
         {
             "name": "doctrine/deprecations",
@@ -4138,16 +4138,16 @@
         },
         {
             "name": "web-auth/webauthn-lib",
-            "version": "5.3.2",
+            "version": "5.3.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/web-auth/webauthn-lib.git",
-                "reference": "a272f254c056fb3d6c80a4801d3c7c5fedc6a08d"
+                "reference": "e6f656d6c6b29fa305382fe6a0a3be8177d177df"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/web-auth/webauthn-lib/zipball/a272f254c056fb3d6c80a4801d3c7c5fedc6a08d",
-                "reference": "a272f254c056fb3d6c80a4801d3c7c5fedc6a08d",
+                "url": "https://api.github.com/repos/web-auth/webauthn-lib/zipball/e6f656d6c6b29fa305382fe6a0a3be8177d177df",
+                "reference": "e6f656d6c6b29fa305382fe6a0a3be8177d177df",
                 "shasum": ""
             },
             "require": {
@@ -4208,7 +4208,7 @@
                 "webauthn"
             ],
             "support": {
-                "source": "https://github.com/web-auth/webauthn-lib/tree/5.3.2"
+                "source": "https://github.com/web-auth/webauthn-lib/tree/5.3.3"
             },
             "funding": [
                 {
@@ -4220,7 +4220,7 @@
                     "type": "patreon"
                 }
             ],
-            "time": "2026-05-01T12:14:37+00:00"
+            "time": "2026-05-17T19:04:30+00:00"
         },
         {
             "name": "webmozart/assert",

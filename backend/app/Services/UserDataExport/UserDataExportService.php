@@ -21,9 +21,9 @@ use App\App;
 use App\Chat\Node;
 use App\Chat\Backup;
 use App\Chat\Database;
-use App\Config\ConfigInterface;
 use GuzzleHttp\Client;
 use App\Services\Wings\Wings;
+use App\Config\ConfigInterface;
 use App\Services\Wings\Services\JwtService;
 
 /**
@@ -691,7 +691,7 @@ class UserDataExportService
                 $write();
 
                 $offset = 0;
-                do {
+                while (true) {
                     $rows = $pdo->query('SELECT * FROM ' . $safeTable . ' LIMIT ' . $chunkSize . ' OFFSET ' . $offset)->fetchAll(\PDO::FETCH_ASSOC);
                     if (empty($rows)) {
                         break;
@@ -713,7 +713,7 @@ class UserDataExportService
                     $write('INSERT INTO ' . $safeTable . ' ' . $columns . ' VALUES');
                     $write(implode(",\n", $valuesList) . ';');
                     $offset += $chunkSize;
-                } while (true);
+                }
 
                 if ($offset > 0) {
                     $write();
@@ -806,7 +806,7 @@ class UserDataExportService
     private function waitForBackupCompletion(string $backupUuid): ?array
     {
         $deadline = time() + self::BACKUP_WAIT_SECONDS;
-        do {
+        while (true) {
             $backup = Backup::getBackupByUuid($backupUuid);
             if ($backup && (int) ($backup['is_successful'] ?? 0) === 1) {
                 return $backup;
@@ -817,7 +817,7 @@ class UserDataExportService
             }
 
             sleep(self::BACKUP_WAIT_INTERVAL_SECONDS);
-        } while (true);
+        }
 
         return null;
     }

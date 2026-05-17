@@ -18,6 +18,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { useDateFormatOptions } from '@/contexts/PreferencesContext';
 import axios from 'axios';
 import {
     Users as UsersIcon,
@@ -44,6 +45,7 @@ import { Select } from '@/components/ui/select-native';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { toast } from 'sonner';
+import { formatDateTimeInTz, formatRelativeTime } from '@/lib/dateUtils';
 
 interface UserRole {
     name: string;
@@ -92,6 +94,7 @@ interface AvailableRole {
 
 export default function UsersPage() {
     const { t } = useTranslation();
+    const dateOpts = useDateFormatOptions();
     const router = useRouter();
 
     const [users, setUsers] = useState<ApiUser[]>([]);
@@ -440,13 +443,17 @@ export default function UsersPage() {
                                             {user.last_seen && (
                                                 <div className='flex items-center gap-1.5'>
                                                     <span className='font-semibold'>{t('admin.users.last_seen')}:</span>
-                                                    {user.last_seen}
+                                                    <span title={formatDateTimeInTz(user.last_seen, dateOpts)}>
+                                                        {formatRelativeTime(user.last_seen, dateOpts)}
+                                                    </span>
                                                 </div>
                                             )}
                                             {user.created_at && (
                                                 <div className='flex items-center gap-1.5'>
                                                     <span className='font-semibold'>{t('admin.users.created')}:</span>
-                                                    {user.created_at}
+                                                    <span title={formatDateTimeInTz(user.created_at, dateOpts)}>
+                                                        {formatRelativeTime(user.created_at, dateOpts)}
+                                                    </span>
                                                 </div>
                                             )}
                                             {user.last_ip && (

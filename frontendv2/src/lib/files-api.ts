@@ -31,6 +31,31 @@ export interface FileHashesResponse {
     path: string;
 }
 
+export interface ArchiveListEntry {
+    name: string;
+    path: string;
+    size: number;
+    directory: boolean;
+    modified?: string;
+}
+
+export interface ArchiveListData {
+    contents: ArchiveListEntry[];
+    truncated: boolean;
+}
+
+/** DataTransfer type for dragging paths out of the archive browser into the file list. */
+export const ARCHIVE_EXTRACT_DRAG_MIME = 'application/x-featherpanel-archive-extract' as const;
+
+export interface ArchiveExtractDragPayload {
+    /** Server directory that contains the archive (same as decompress `root`). */
+    root: string;
+    /** Archive file name only. */
+    file: string;
+    /** Paths inside the archive (files and/or directories). */
+    entries: string[];
+}
+
 export interface AdvancedFileSearchFilters {
     directory?: string;
     pattern?: string;
@@ -141,6 +166,26 @@ export const filesApi = {
                 mimetype: f.mime || f.mimetype,
             };
         });
+    },
+
+    listArchiveDirectory: async (
+        uuid: string,
+        serverDirectory: string,
+        archiveFileName: string,
+        archiveInnerPath = '',
+    ): Promise<ArchiveListData> => {
+        const response = await api.get<ApiResponse<ArchiveListData>>(`/user/servers/${uuid}/archive-list`, {
+            params: {
+                path: serverDirectory,
+                file: archiveFileName,
+                archive_path: archiveInnerPath,
+            },
+        });
+        const d = response.data.data;
+        if (!d.contents) {
+            return { contents: [], truncated: Boolean(d.truncated) };
+        }
+        return d;
     },
 
     getFileContent: async (uuid: string, path: string): Promise<string> => {
@@ -285,6 +330,21 @@ export const filesApi = {
         await api.post(`/user/servers/${uuid}/decompress-archive`, {
             root,
             file,
+        });
+    },
+
+    extractArchiveSelection: async (
+        uuid: string,
+        root: string,
+        file: string,
+        destination: string,
+        entries: string[],
+    ): Promise<void> => {
+        await api.post(`/user/servers/${uuid}/extract-archive-selection`, {
+            root,
+            file,
+            destination,
+            entries,
         });
     },
 

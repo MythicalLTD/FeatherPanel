@@ -19,6 +19,7 @@ import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import axios from 'axios';
 import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { useDateFormatOptions } from '@/contexts/PreferencesContext';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/ui/input';
 import { PageHeader } from '@/components/featherui/PageHeader';
@@ -45,6 +46,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { HeadlessModal } from '@/components/ui/headless-modal';
 import { toast } from 'sonner';
+import { formatDateTimeInTz, formatRelativeTime } from '@/lib/dateUtils';
 
 import { DetailsTab } from './DetailsTab';
 import { ResourcesTab } from './ResourcesTab';
@@ -121,6 +123,7 @@ interface ServerVariableResponse {
 
 export default function EditServerPage() {
     const { t } = useTranslation();
+    const dateOpts = useDateFormatOptions();
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
@@ -1198,7 +1201,9 @@ export default function EditServerPage() {
                                                 {user.last_seen && (
                                                     <div className='text-muted-foreground mt-1 text-xs'>
                                                         {t('admin.users.last_seen')}:{' '}
-                                                        {new Date(user.last_seen).toLocaleDateString()}
+                                                        <span title={formatDateTimeInTz(user.last_seen, dateOpts)}>
+                                                            {formatRelativeTime(user.last_seen, dateOpts)}
+                                                        </span>
                                                     </div>
                                                 )}
                                             </div>

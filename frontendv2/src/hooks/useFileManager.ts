@@ -26,33 +26,7 @@ function sanitizeDirectoryPath(path: string | null): string | null {
     if (!path) return null;
 
     const normalized = ('/' + path).replace(/\/+/g, '/').replace(/\/+$/, '') || '/';
-    const segments = normalized.split('/').filter(Boolean);
-
-    // Collapse duplicated leading path chunks:
-    // /a/b/c/a/b/c/d -> /a/b/c/d
-    let collapsed = segments;
-    let changed = true;
-    while (changed) {
-        changed = false;
-        const n = collapsed.length;
-        for (let size = Math.floor(n / 2); size >= 1; size--) {
-            let matches = true;
-            for (let i = 0; i < size; i++) {
-                if (collapsed[i] !== collapsed[i + size]) {
-                    matches = false;
-                    break;
-                }
-            }
-            if (matches) {
-                collapsed = collapsed.slice(size);
-                changed = true;
-                break;
-            }
-        }
-    }
-
-    if (collapsed.length === 0) return '/';
-    return '/' + collapsed.join('/');
+    return normalized === '' ? '/' : normalized;
 }
 
 export function useFileManager(serverUuid: string) {

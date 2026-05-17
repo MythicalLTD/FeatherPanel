@@ -32,6 +32,8 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { isEnabled } from '@/lib/utils';
+import { listSupportedTimezones } from '@/lib/dateUtils';
+import { useUserTimezone } from '@/contexts/PreferencesContext';
 import type { ScheduleCreateRequest } from '@/types/server';
 
 export default function CreateSchedulePage() {
@@ -42,6 +44,7 @@ export default function CreateSchedulePage() {
     const { hasPermission, loading: permissionsLoading } = useServerPermissions(uuidShort);
 
     const canCreate = hasPermission('schedule.create');
+    const userTimezone = useUserTimezone();
 
     const [saving, setSaving] = React.useState(false);
 
@@ -52,9 +55,23 @@ export default function CreateSchedulePage() {
         cron_day_of_month: '*',
         cron_month: '*',
         cron_day_of_week: '*',
+        timezone: userTimezone || 'UTC',
         only_when_online: 0,
         is_active: 1,
     });
+
+    React.useEffect(() => {
+        // Reflect a late-arriving user preference (PreferencesContext loads
+        // asynchronously on the first paint) into the form's default zone,
+        // but only while the user hasn't manually changed it.
+        setFormData((prev) =>
+            prev.timezone === 'UTC' && userTimezone && userTimezone !== 'UTC'
+                ? { ...prev, timezone: userTimezone }
+                : prev,
+        );
+    }, [userTimezone]);
+
+    const timezoneOptions = React.useMemo(() => listSupportedTimezones().map((tz) => ({ id: tz, name: tz })), []);
 
     const { getWidgets, fetchWidgets } = usePluginWidgets('server-schedules-new');
 
@@ -278,6 +295,23 @@ export default function CreateSchedulePage() {
                     </div>
 
                     <p className='text-muted-foreground text-xs'>{t('serverSchedules.cronHelp')}</p>
+
+                    <div className='space-y-2.5'>
+                        <Label
+                            htmlFor='schedule-timezone'
+                            className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'
+                        >
+                            {t('serverSchedules.timezone')}
+                        </Label>
+                        <HeadlessSelect
+                            value={formData.timezone}
+                            onChange={(val) => setFormData({ ...formData, timezone: String(val) })}
+                            options={timezoneOptions}
+                            disabled={saving}
+                            buttonClassName='h-12 bg-secondary/50 border-border/10 focus:border-primary/50 rounded-xl text-sm font-extrabold transition-all'
+                        />
+                        <p className='text-muted-foreground ml-1 text-xs'>{t('serverSchedules.timezoneHelp')}</p>
+                    </div>
                 </div>
 
                 <div className='bg-card/50 border-border/50 space-y-6 rounded-3xl border p-8 backdrop-blur-3xl'>

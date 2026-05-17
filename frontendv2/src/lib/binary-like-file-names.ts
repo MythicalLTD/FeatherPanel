@@ -89,7 +89,7 @@ export function isBinaryLikeFileName(fileName: string): boolean {
     return BINARY_LIKE_EXTENSIONS.has(ext);
 }
 
-/** Archives that the panel may offer to extract (zip-like and common bundles). */
+/** Archives that the panel may offer to extract or browse (zip-like and common bundles). */
 export function isDecompressibleArchiveFileName(fileName: string): boolean {
-    return /\.(zip|jar|war|ear|7z|tar|tar\.gz|tgz|rar)$/i.test(fileName.trim());
+    return /\.(zip|jar|war|ear|7z|tar|tar\.gz|tgz|tar\.bz2|tbz2|tar\.xz|txz|rar)$/i.test(fileName.trim());
 }

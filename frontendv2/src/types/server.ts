@@ -503,6 +503,7 @@ export interface Schedule {
     cron_day_of_month: string;
     cron_hour: string;
     cron_minute: string;
+    timezone: string;
     is_active: number;
     is_processing: number;
     only_when_online: number;
@@ -519,6 +520,7 @@ export interface ScheduleCreateRequest {
     cron_day_of_month: string;
     cron_month: string;
     cron_day_of_week: string;
+    timezone: string;
     only_when_online: number;
     is_active: number;
 }
@@ -657,6 +659,8 @@ export interface FileObject {
     mimetype: string;
     created_at: string;
     modified_at: string;
+    /** Recursive byte size of directory contents (FeatherWings when directory_sizes is enabled). */
+    directory_size?: number;
     // API Response raw fields
     created?: string;
     modified?: string;

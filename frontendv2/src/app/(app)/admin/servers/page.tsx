@@ -15,10 +15,11 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, type ReactNode, type ElementType } from 'react';
 import { useRouter } from 'next/navigation';
 import axios, { isAxiosError } from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { useDateFormatOptions } from '@/contexts/PreferencesContext';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
@@ -52,9 +53,11 @@ import {
     AlertTriangle,
     Network,
     Terminal,
+    Clock,
 } from 'lucide-react';
 import { StatusBadge } from '@/components/servers/StatusBadge';
 import { displayStatus } from '@/lib/server-utils';
+import { formatDateTimeInTz, formatRelativeTime } from '@/lib/dateUtils';
 import { ApiServer, Pagination, ApiNode, ApiAllocation } from '@/types/adminServerTypes';
 import type { Server as ServerType } from '@/types/server';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
@@ -75,6 +78,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 
 export default function ServersPage() {
     const { t } = useTranslation();
+    const dateOpts = useDateFormatOptions();
     const router = useRouter();
 
     const [loading, setLoading] = useState(true);
@@ -787,6 +791,26 @@ export default function ServersPage() {
                                                 <HardDrive className='h-3.5 w-3.5' />
                                                 <span>{formatDisk(server.disk)}</span>
                                             </div>
+                                            {server.owner?.last_seen && (
+                                                <div className='text-muted-foreground flex items-center gap-1.5 text-xs'>
+                                                    <Clock className='h-3.5 w-3.5' />
+                                                    <span>
+                                                        {t('admin.servers.owner_last_seen')}:{' '}
+                                                        <span
+                                                            title={
+                                                                server.owner.last_seen
+                                                                    ? formatDateTimeInTz(
+                                                                          server.owner.last_seen,
+                                                                          dateOpts,
+                                                                      )
+                                                                    : undefined
+                                                            }
+                                                        >
+                                                            {formatRelativeTime(server.owner.last_seen, dateOpts)}
+                                                        </span>
+                                                    </span>
+                                                </div>
+                                            )}
                                         </div>
                                     }
                                     actions={
@@ -983,17 +1007,41 @@ export default function ServersPage() {
                                                     <DetailItem
                                                         label={t('admin.servers.details.labels.created')}
                                                         value={
-                                                            selectedServer?.created_at
-                                                                ? new Date(selectedServer.created_at).toLocaleString()
-                                                                : 'N/A'
+                                                            selectedServer?.created_at ? (
+                                                                <span
+                                                                    title={formatDateTimeInTz(
+                                                                        selectedServer.created_at,
+                                                                        dateOpts,
+                                                                    )}
+                                                                >
+                                                                    {formatRelativeTime(
+                                                                        selectedServer.created_at,
+                                                                        dateOpts,
+                                                                    )}
+                                                                </span>
+                                                            ) : (
+                                                                'N/A'
+                                                            )
                                                         }
                                                     />
                                                     <DetailItem
                                                         label={t('admin.servers.details.labels.updated')}
                                                         value={
-                                                            selectedServer?.updated_at
-                                                                ? new Date(selectedServer.updated_at).toLocaleString()
-                                                                : 'N/A'
+                                                            selectedServer?.updated_at ? (
+                                                                <span
+                                                                    title={formatDateTimeInTz(
+                                                                        selectedServer.updated_at,
+                                                                        dateOpts,
+                                                                    )}
+                                                                >
+                                                                    {formatRelativeTime(
+                                                                        selectedServer.updated_at,
+                                                                        dateOpts,
+                                                                    )}
+                                                                </span>
+                                                            ) : (
+                                                                'N/A'
+                                                            )
                                                         }
                                                     />
                                                 </div>
@@ -1095,6 +1143,16 @@ export default function ServersPage() {
                                                 title={t('admin.servers.details.labels.owner')}
                                                 name={selectedServer?.owner?.username}
                                                 detail={selectedServer?.owner?.email}
+                                                secondary={
+                                                    selectedServer?.owner?.last_seen
+                                                        ? `${t('admin.users.last_seen')}: ${formatRelativeTime(selectedServer.owner.last_seen, dateOpts)}`
+                                                        : undefined
+                                                }
+                                                secondaryTitle={
+                                                    selectedServer?.owner?.last_seen
+                                                        ? formatDateTimeInTz(selectedServer.owner.last_seen, dateOpts)
+                                                        : undefined
+                                                }
                                             />
                                             <RelationCard
                                                 icon={Network}
@@ -1844,7 +1902,7 @@ function DetailItem({
     truncate = false,
 }: {
     label: string;
-    value: React.ReactNode;
+    value: ReactNode;
     isMono?: boolean;
     truncate?: boolean;
 }) {
@@ -1863,11 +1921,15 @@ function RelationCard({
     title,
     name,
     detail,
+    secondary,
+    secondaryTitle,
 }: {
-    icon: React.ElementType;
+    icon: ElementType;
     title: string;
     name: string | undefined;
     detail?: string;
+    secondary?: ReactNode;
+    secondaryTitle?: string;
 }) {
     return (
         <div className='bg-muted/30 border-border/50 group hover:border-primary/30 rounded-2xl border p-4 transition-all'>
@@ -1881,6 +1943,11 @@ function RelationCard({
             </div>
             <p className='truncate text-sm font-bold'>{name || 'N/A'}</p>
             {detail && <p className='text-muted-foreground truncate text-xs'>{detail}</p>}
+            {secondary && (
+                <p className='text-muted-foreground mt-1 truncate text-xs' title={secondaryTitle}>
+                    {secondary}
+                </p>
+            )}
         </div>
     );
 }

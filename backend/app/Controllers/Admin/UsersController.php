@@ -32,6 +32,7 @@ use App\Chat\MailQueue;
 use App\Chat\Allocation;
 use App\Chat\VmInstance;
 use App\Helpers\UUIDUtils;
+use App\Helpers\TimeHelper;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
@@ -334,13 +335,13 @@ class UsersController
         }
 
         foreach ($users as &$user) {
-            $roleId = $user['role_id'];
-            if (isset($rolesMap[$roleId])) {
-                $user['role']['name'] = $rolesMap[$roleId]['name'];
-                $user['role']['display_name'] = $rolesMap[$roleId]['display_name'];
-                $user['role']['color'] = $rolesMap[$roleId]['color'];
+            $userRoleId = $user['role_id'];
+            if (isset($rolesMap[$userRoleId])) {
+                $user['role']['name'] = $rolesMap[$userRoleId]['name'];
+                $user['role']['display_name'] = $rolesMap[$userRoleId]['display_name'];
+                $user['role']['color'] = $rolesMap[$userRoleId]['color'];
             } else {
-                $user['role']['name'] = $roleId;
+                $user['role']['name'] = $userRoleId;
                 $user['role']['display_name'] = 'User';
                 $user['role']['color'] = '#666666';
             }
@@ -351,6 +352,9 @@ class UsersController
             }
             unset($user['role_id'], $user['mail_verify']);
         }
+        unset($user);
+
+        $users = TimeHelper::normaliseRows($users, ['last_seen', 'first_seen']);
 
         $total = User::getCount(
             $search,
@@ -467,6 +471,8 @@ class UsersController
             $user['last_ip'] = $app->getIPIntoFBIFormat();
         }
 
+        $user = TimeHelper::normaliseRow($user, ['last_seen', 'first_seen']);
+
         return ApiResponse::success(['user' => $user, 'roles' => $rolesMap], 'User fetched successfully', 200);
     }
 
@@ -558,6 +564,8 @@ class UsersController
             $user['first_ip'] = $app->getIPIntoFBIFormat();
             $user['last_ip'] = $app->getIPIntoFBIFormat();
         }
+
+        $user = TimeHelper::normaliseRow($user, ['last_seen', 'first_seen']);
 
         return ApiResponse::success(['user' => $user, 'roles' => $rolesMap], 'User fetched successfully', 200);
     }

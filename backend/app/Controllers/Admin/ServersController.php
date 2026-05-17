@@ -29,16 +29,17 @@ use App\Chat\Database;
 use App\Chat\Allocation;
 use App\Helpers\UUIDUtils;
 use App\Chat\SpellVariable;
+use App\Helpers\TimeHelper;
 use App\Chat\ServerActivity;
 use App\Chat\ServerDatabase;
 use App\Chat\ServerTransfer;
 use App\Chat\ServerVariable;
 use App\Helpers\ApiResponse;
 use App\Services\Wings\Wings;
-use App\Chat\ServerCustomVariable;
 use OpenApi\Attributes as OA;
 use App\Chat\DatabaseInstance;
 use App\Config\ConfigInterface;
+use App\Chat\ServerCustomVariable;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Mail\templates\ServerBanned;
 use App\Mail\templates\ServerCreated;
@@ -387,6 +388,7 @@ class ServersController
             // Remove sensitive data from owner
             if ($server['owner']) {
                 unset($server['owner']['password'], $server['owner']['remember_token'], $server['owner']['two_fa_key']);
+                $server['owner'] = TimeHelper::normaliseRow($server['owner'], ['last_seen', 'first_seen']);
             }
 
             // Remove sensitive node data
@@ -404,6 +406,8 @@ class ServersController
                     $server['node']['daemonBase']
                 );
             }
+
+            $server = TimeHelper::normaliseRow($server, ['installed_at']);
         }
 
         $total = Server::getCount(
@@ -560,6 +564,7 @@ class ServersController
         // Remove sensitive data from related objects
         if ($server['owner']) {
             unset($server['owner']['password'], $server['owner']['remember_token'], $server['owner']['two_fa_key']);
+            $server['owner'] = TimeHelper::normaliseRow($server['owner'], ['last_seen', 'first_seen']);
         }
 
         // Remove sensitive node data
@@ -575,6 +580,8 @@ class ServersController
             $server['node']['daemonSFTP'],
             $server['node']['daemonBase']
         );
+
+        $server = TimeHelper::normaliseRow($server, ['installed_at']);
 
         return ApiResponse::success($server, 'Server fetched successfully', 200);
     }

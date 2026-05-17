@@ -209,13 +209,16 @@ class ServerSchedule
 
     /**
      * Get schedules that are due to run.
-     * Uses PHP's current time (app timezone) for comparison so timezone matches
-     * the one used when calculating next_run_at, avoiding instant execution.
+     *
+     * Comparison is done in UTC: PHP's `date()` is pinned to UTC by App.php
+     * and `next_run_at` is persisted as a UTC literal by
+     * {@see calculateNextRunTime()}, so this query is timezone-deterministic
+     * regardless of the schedule's authoring zone.
      */
     public static function getDueSchedules(): array
     {
         $pdo = Database::getPdoConnection();
-        $now = date('Y-m-d H:i:s');
+        $now = gmdate('Y-m-d H:i:s');
         $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE is_active = 1 AND next_run_at <= :now AND is_processing = 0');
         $stmt->bindValue(':now', $now, \PDO::PARAM_STR);
         $stmt->execute();
@@ -542,26 +545,37 @@ class ServerSchedule
     }
 
     /**
-     * Calculate next run time based on cron expression.
+     * Calculate next run time based on cron expression, evaluated in the
+     * caller-supplied timezone, returned as a literal UTC `Y-m-d H:i:s` string
+     * suitable for storing in a `TIMESTAMP next_run_at` column.
+     *
+     * The cron expression is interpreted in `$timezone` (e.g. "Europe/Paris"),
+     * so "0 3 * * *" means 03:00 local for the schedule owner — not 03:00 UTC.
+     * The returned literal is in UTC so that the database comparison
+     * `next_run_at <= UTC_TIMESTAMP()` in `getDueSchedules()` is sound
+     * regardless of which zone the schedule was authored in.
      *
      * @param string $dayOfWeek Cron expression day of week component
      * @param string $month Cron expression month component
      * @param string $dayOfMonth Cron expression day of month component
      * @param string $hour Cron expression hour component
      * @param string $minute Cron expression minute component
-     * @param string|null $referenceTime Optional reference time (e.g. current next_run_at) to maintain cadence
+     * @param string|null $referenceTime Optional reference time (UTC literal) to maintain cadence
+     * @param string $timezone IANA timezone name the cron expression is authored in (default: UTC)
      */
-    public static function calculateNextRunTime(string $dayOfWeek, string $month, string $dayOfMonth, string $hour, string $minute, ?string $referenceTime = null): string
+    public static function calculateNextRunTime(string $dayOfWeek, string $month, string $dayOfMonth, string $hour, string $minute, ?string $referenceTime = null, string $timezone = 'UTC'): string
     {
         $expression = self::formatCronExpression($dayOfWeek, $month, $dayOfMonth, $hour, $minute);
+        $tz = self::resolveTimezone($timezone);
+        $utc = new \DateTimeZone('UTC');
 
         if (class_exists(CrontabSchedule::class)) {
             try {
                 $schedule = new CrontabSchedule($expression);
                 if (method_exists($schedule, 'getNextRunDate')) {
-                    $base = self::resolveBaseDateTime($referenceTime);
+                    $base = self::resolveBaseDateTime($referenceTime, $tz);
                     $nextRun = $schedule->getNextRunDate($base, 0, false);
-                    $now = new \DateTime();
+                    $now = new \DateTime('now', $tz);
 
                     // Ensure next run is strictly in the future to avoid schedules running instantly
                     if ($nextRun <= $now) {
@@ -569,14 +583,48 @@ class ServerSchedule
                         $nextRun = $schedule->getNextRunDate($nextRun, 0, false);
                     }
 
-                    return $nextRun->format('Y-m-d H:i:s');
+                    // Persist as UTC literal so DB comparisons stay deterministic.
+                    return $nextRun->setTimezone($utc)->format('Y-m-d H:i:s');
                 }
             } catch (\Throwable $e) {
                 App::getInstance(true)->getLogger()->error('Failed to calculate next run time for expression ' . $expression . ': ' . $e->getMessage());
             }
         }
 
-        return self::calculateNextRunTimeFallback($dayOfWeek, $month, $dayOfMonth, $hour, $minute, $referenceTime);
+        return self::calculateNextRunTimeFallback($dayOfWeek, $month, $dayOfMonth, $hour, $minute, $referenceTime, $timezone);
+    }
+
+    /**
+     * Resolve a user-supplied timezone string into a DateTimeZone, falling
+     * back to UTC if the identifier is invalid.
+     */
+    public static function resolveTimezone(?string $timezone): \DateTimeZone
+    {
+        if ($timezone === null || $timezone === '') {
+            return new \DateTimeZone('UTC');
+        }
+        try {
+            return new \DateTimeZone($timezone);
+        } catch (\Throwable $e) {
+            return new \DateTimeZone('UTC');
+        }
+    }
+
+    /**
+     * Check that a timezone identifier is a valid IANA name supported by PHP.
+     */
+    public static function isValidTimezone(?string $timezone): bool
+    {
+        if (!is_string($timezone) || $timezone === '') {
+            return false;
+        }
+        try {
+            new \DateTimeZone($timezone);
+
+            return true;
+        } catch (\Throwable $e) {
+            return false;
+        }
     }
 
     /**
@@ -588,16 +636,21 @@ class ServerSchedule
     }
 
     /**
-     * Resolve base date time for cron calculation using the greater of now or reference time.
+     * Resolve base date time for cron calculation using the greater of now or reference time,
+     * evaluated in the schedule's authoring timezone.
+     *
+     * The reference time argument is expected to be a UTC `Y-m-d H:i:s` literal
+     * (the format we persist `next_run_at` in), so it is parsed as UTC before
+     * being shifted into the schedule's zone for comparison.
      */
-    private static function resolveBaseDateTime(?string $referenceTime = null): \DateTime
+    private static function resolveBaseDateTime(?string $referenceTime, \DateTimeZone $tz): \DateTime
     {
-        $currentTime = new \DateTime();
-        $base = clone $currentTime;
+        $base = new \DateTime('now', $tz);
 
         if ($referenceTime !== null) {
             try {
-                $reference = new \DateTime($referenceTime);
+                $reference = new \DateTime($referenceTime, new \DateTimeZone('UTC'));
+                $reference->setTimezone($tz);
                 if ($reference > $base) {
                     $base = $reference;
                 }
@@ -614,14 +667,18 @@ class ServerSchedule
     /**
      * Fallback calculation when external cron library is unavailable.
      */
-    private static function calculateNextRunTimeFallback(string $dayOfWeek, string $month, string $dayOfMonth, string $hour, string $minute, ?string $referenceTime = null): string
+    private static function calculateNextRunTimeFallback(string $dayOfWeek, string $month, string $dayOfMonth, string $hour, string $minute, ?string $referenceTime = null, string $timezone = 'UTC'): string
     {
-        $currentTime = new \DateTime();
+        $tz = self::resolveTimezone($timezone);
+        $utc = new \DateTimeZone('UTC');
+
+        $currentTime = new \DateTime('now', $tz);
         $searchStart = clone $currentTime;
 
         if ($referenceTime !== null) {
             try {
-                $reference = new \DateTime($referenceTime);
+                $reference = new \DateTime($referenceTime, $utc);
+                $reference->setTimezone($tz);
                 if ($reference > $searchStart) {
                     $searchStart = $reference;
                 }
@@ -658,7 +715,7 @@ class ServerSchedule
             $nextRun->add(new \DateInterval('P1D'));
         }
 
-        return $nextRun->format('Y-m-d H:i:s');
+        return $nextRun->setTimezone($utc)->format('Y-m-d H:i:s');
     }
 
     /**

@@ -20,6 +20,8 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import NextImage from 'next/image';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSession } from '@/contexts/SessionContext';
+import { useDateFormatOptions } from '@/contexts/PreferencesContext';
+import { formatDateInTz } from '@/lib/dateUtils';
 import { Tab } from '@headlessui/react';
 import { cn } from '@/lib/utils';
 import ProfileTab from '@/components/account/ProfileTab';
@@ -34,6 +36,7 @@ import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 export default function AccountPage() {
     const { t } = useTranslation();
     const { user } = useSession();
+    const dateOpts = useDateFormatOptions();
     const searchParams = useSearchParams();
     const router = useRouter();
 
@@ -62,15 +65,8 @@ export default function AccountPage() {
 
     const formatDate = (dateString?: string) => {
         if (!dateString) return t('account.unknown');
-        try {
-            return new Date(dateString).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-            });
-        } catch {
-            return t('account.unknown');
-        }
+        const formatted = formatDateInTz(dateString, dateOpts);
+        return formatted === '-' ? t('account.unknown') : formatted;
     };
 
     const getUserInitials = () => {

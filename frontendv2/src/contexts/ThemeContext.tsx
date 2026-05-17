@@ -194,8 +194,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
         // Locked settings always win; unlocked settings use admin defaults until the user chooses otherwise.
         const shouldUseThemeDefault = settings.app_theme_lock === 'true' || !hasUserOverride('theme');
-        const shouldUseAccentDefault =
-            settings.app_accent_color_lock === 'true' || !hasUserOverride('accentColor');
+        const shouldUseAccentDefault = settings.app_accent_color_lock === 'true' || !hasUserOverride('accentColor');
         const shouldUseBackgroundTypeDefault =
             settings.app_background_type_lock === 'true' || !hasUserOverride('backgroundType');
         const shouldUseBlurDefault = settings.app_backdrop_blur_lock === 'true' || !hasUserOverride('backdropBlur');
