@@ -8,6 +8,7 @@
 - Verify button on the admin user edit page to force verify the user's email by @nayskutzu
 - Verification email resend system in case the user didn't receive the email by @nayskutzu
 - Custom server variables system so users can set variables for their servers and also encrypt them. by @nayskutzu
+- GDPR compliance system for user data export by @nayskutzu
 
 ### Fixed
 

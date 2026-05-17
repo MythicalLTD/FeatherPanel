@@ -29,8 +29,10 @@ use App\Chat\TicketStatus;
 use App\Chat\TicketMessage;
 use App\Chat\TicketCategory;
 use App\Chat\TicketPriority;
+use App\Chat\UserDataExport;
 use App\Chat\UserPreference;
 use App\Helpers\ApiResponse;
+use App\Helpers\CaptchaHelper;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
 use App\Middleware\AuthMiddleware;
@@ -369,14 +371,35 @@ class SessionController
     {
         $app = App::getInstance(true);
         $config = $app->getConfig();
+        $data = json_decode($request->getContent(), true);
+        if (!is_array($data)) {
+            $data = [];
+        }
 
         if ($config->getSetting(ConfigInterface::TICKET_SYSTEM_ENABLED, 'true') !== 'true') {
             return ApiResponse::error('Ticket system is disabled', 'TICKET_SYSTEM_DISABLED', 403);
         }
 
+        if ($config->getSetting(ConfigInterface::TURNSTILE_ENABLED, 'false') === 'true') {
+            if (!isset($data['turnstile_token']) || trim((string) $data['turnstile_token']) === '') {
+                return ApiResponse::error('Captcha token is required', 'CAPTCHA_TOKEN_REQUIRED', 400);
+            }
+            if (!CaptchaHelper::validate((string) $data['turnstile_token'], CloudFlareRealIP::getRealIP())) {
+                return ApiResponse::error('Captcha validation failed', 'CAPTCHA_VALIDATION_FAILED', 400);
+            }
+        }
+
         $user = AuthMiddleware::getCurrentUser($request);
         if ($user == null) {
             return ApiResponse::error('You are not allowed to access this resource!', 'INVALID_ACCOUNT_TOKEN', 400, []);
+        }
+
+        if (UserDataExport::hasRecentRequestForUser((string) $user['uuid'], 24)) {
+            return ApiResponse::error(
+                'You can request your personal data once every 24 hours. Please try again later.',
+                'DATA_EXPORT_RATE_LIMITED',
+                429
+            );
         }
 
         $maxOpenTickets = (int) $config->getSetting(ConfigInterface::TICKET_SYSTEM_MAX_OPEN_TICKETS, '10');
@@ -467,6 +490,19 @@ class SessionController
             $app->getLogger()->warning('Failed to create initial message for data request ticket: ' . $ticketId);
         }
 
+        $exportUuid = UserDataExport::generateUuid();
+        $exportId = UserDataExport::create([
+            'uuid' => $exportUuid,
+            'user_uuid' => $user['uuid'],
+            'ticket_id' => $ticketId,
+        ]);
+
+        if (!$exportId) {
+            $app->getLogger()->error('Failed to queue data export for ticket: ' . $ticketId);
+
+            return ApiResponse::error('Data request ticket was created, but the export could not be queued. Please contact support.', 'EXPORT_QUEUE_FAILED', 500);
+        }
+
         $ticket = Ticket::getById($ticketId);
 
         Activity::createActivity([
@@ -491,6 +527,11 @@ class SessionController
         return ApiResponse::success([
             'ticket' => $ticket,
             'message_id' => $messageId,
+            'export' => [
+                'id' => $exportId,
+                'uuid' => $exportUuid,
+                'status' => 'pending',
+            ],
         ], 'Data request created successfully', 201);
     }
 

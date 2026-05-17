@@ -355,12 +355,6 @@ class ServerBackupController
             }
         }
 
-        // Parse request body
-        $body = json_decode($request->getContent(), true);
-        if (!$body) {
-            return ApiResponse::error('Invalid request body', 'INVALID_REQUEST_BODY', 400);
-        }
-
         // Always use Wings adapter
         $adapter = 'wings';
 

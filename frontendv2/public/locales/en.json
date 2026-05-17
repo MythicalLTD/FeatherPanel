@@ -320,7 +320,7 @@
 		}
 	},
 	"branding": {
-		"running_on": "Running on {name} {version}",
+		"running_on": "Running on FeatherPanel {version}",
 		"copyright": "{company}"
 	},
 	"maintenance": {

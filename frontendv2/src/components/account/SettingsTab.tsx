@@ -26,6 +26,7 @@ import axios from 'axios';
 import { toast } from 'sonner';
 import { Captcha } from '@/components/Captcha';
 import { isEnabled } from '@/lib/utils';
+import { isCaptchaConfigured, obtainCaptchaResponseToken } from '@/lib/captchaGate';
 import { startRegistration } from '@simplewebauthn/browser';
 import { passkeysApi } from '@/lib/api/passkeys';
 import { format } from 'date-fns';
@@ -165,14 +166,31 @@ export default function SettingsTab() {
 
         try {
             setIsRequestingData(true);
-            const response = await axios.post('/api/user/data-request');
+            let captchaToken = '';
+            if (isCaptchaConfigured(settings)) {
+                captchaToken = await obtainCaptchaResponseToken(settings ?? null, turnstileToken);
+                if (!captchaToken) {
+                    toast.error(t('validation.captcha_required'));
+                    resetTurnstile();
+                    return;
+                }
+            }
+
+            const payload: { turnstile_token?: string } = {};
+            if (isCaptchaConfigured(settings)) {
+                payload.turnstile_token = captchaToken;
+            }
+
+            const response = await axios.post('/api/user/data-request', payload);
             const ticketUuid = response.data?.data?.ticket?.uuid;
 
             if (response.data?.success && ticketUuid) {
                 toast.success(t('account.dataRequest.success'));
+                resetTurnstile();
                 router.push(`/dashboard/tickets/${ticketUuid}`);
             } else {
                 toast.error(response.data?.message || t('account.dataRequest.failed'));
+                resetTurnstile();
             }
         } catch (error) {
             console.error('Error requesting account data:', error);
@@ -181,6 +199,7 @@ export default function SettingsTab() {
             } else {
                 toast.error(t('account.dataRequest.failed'));
             }
+            resetTurnstile();
         } finally {
             setIsRequestingData(false);
         }
@@ -507,18 +526,28 @@ export default function SettingsTab() {
                                         : t('account.dataRequest.ticketSystemDisabledDescription')}
                                 </p>
                             </div>
-                            <Button
-                                type='button'
-                                variant='outline'
-                                size='sm'
-                                className='shrink-0'
-                                disabled={
-                                    isSubmitting || isRequestingData || !isEnabled(settings?.ticket_system_enabled)
-                                }
-                                onClick={() => void handleRequestData()}
-                            >
-                                {isRequestingData ? t('common.loading') : t('account.dataRequest.button')}
-                            </Button>
+                            <div className='flex shrink-0 flex-col items-end gap-2'>
+                                {isCaptchaConfigured(settings) && (
+                                    <Captcha
+                                        refreshKey={turnstileKey}
+                                        onVerify={(token) => setTurnstileToken(token)}
+                                        onExpire={() => setTurnstileToken('')}
+                                        onError={() => setTurnstileToken('')}
+                                    />
+                                )}
+                                <Button
+                                    type='button'
+                                    variant='outline'
+                                    size='sm'
+                                    className='shrink-0'
+                                    disabled={
+                                        isSubmitting || isRequestingData || !isEnabled(settings?.ticket_system_enabled)
+                                    }
+                                    onClick={() => void handleRequestData()}
+                                >
+                                    {isRequestingData ? t('common.loading') : t('account.dataRequest.button')}
+                                </Button>
+                            </div>
                         </div>
                     </div>
                 </div>
