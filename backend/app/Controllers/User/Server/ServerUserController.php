@@ -2095,7 +2095,7 @@ class ServerUserController
         $parts = explode('|', $rules);
         $required = in_array('required', $parts, true);
         $nullable = in_array('nullable', $parts, true);
-        $isNumeric = in_array('numeric', $parts, true) || in_array('integer', $parts, true);
+        $isNumeric = in_array('numeric', $parts, true) || in_array('integer', $parts, true) || in_array('int', $parts, true);
         // string rule is informational for our basic validator
 
         if ($value === '') {

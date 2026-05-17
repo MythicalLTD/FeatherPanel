@@ -97,7 +97,7 @@ export default function ServerStartupPage() {
         const parts = rules.split('|');
         const parsed: Array<{ type: string; value?: number | string }> = [];
         for (const part of parts) {
-            if (['required', 'nullable', 'string', 'numeric', 'integer'].includes(part)) {
+            if (['required', 'nullable', 'string', 'numeric', 'integer', 'int'].includes(part)) {
                 parsed.push({ type: part });
                 continue;
             }
@@ -133,7 +133,7 @@ export default function ServerStartupPage() {
             const parsed = parseRules(rules || '');
             const hasNullable = parsed.some((r) => r.type === 'nullable');
             const isRequired = parsed.some((r) => r.type === 'required');
-            const isNumeric = parsed.some((r) => r.type === 'numeric' || r.type === 'integer');
+            const isNumeric = parsed.some((r) => r.type === 'numeric' || r.type === 'integer' || r.type === 'int');
 
             const val = value ?? '';
             const trimmedForEmptyCheck = val.trim();
