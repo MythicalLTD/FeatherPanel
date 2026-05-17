@@ -116,7 +116,7 @@ export function PageCard({
                             {title}
                         </h2>
                         {description && (
-                            <p className='text-muted-foreground truncate text-[9px] font-bold tracking-widest uppercase opacity-50'>
+                            <p className='text-muted-foreground line-clamp-2 text-[9px] font-bold tracking-widest uppercase opacity-50'>
                                 {description}
                             </p>
                         )}
