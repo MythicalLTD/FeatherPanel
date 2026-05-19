@@ -55,12 +55,287 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 
 const PRESET_MENU_SECTIONS: { group: ConsolePresetMenuGroup; presets: ConsolePresetTemplate[] }[] = [
     { group: 'redact', presets: CONSOLE_PRESET_TEMPLATES.filter((p) => p.menuGroup === 'redact') },
     { group: 'highlight', presets: CONSOLE_PRESET_TEMPLATES.filter((p) => p.menuGroup === 'highlight') },
 ];
+
+interface QuickRulesListProps {
+    filters: ConsoleFilterRule[];
+    onAddPreset: (presetId: string) => void;
+    onSelect?: () => void;
+}
+
+function QuickRulesList({ filters, onAddPreset, onSelect }: QuickRulesListProps) {
+    const { t } = useTranslation();
+
+    return (
+        <div className='custom-scrollbar max-h-[min(24rem,60dvh)] overflow-y-auto p-1.5 sm:max-h-72'>
+            {PRESET_MENU_SECTIONS.map(({ group, presets }, sectionIdx) => (
+                <div key={group}>
+                    {sectionIdx > 0 && <div className='bg-border/60 my-1 h-px' role='separator' />}
+                    <p className='text-muted-foreground px-2 py-1 text-[10px] font-bold tracking-wide uppercase'>
+                        {t(`servers.console.terminal.preset_group_${group}`)}
+                    </p>
+                    {presets.map((preset) => {
+                        const taken = filters.some((r) => r.presetId === preset.presetId);
+                        return (
+                            <button
+                                key={preset.presetId}
+                                type='button'
+                                disabled={taken}
+                                title={t(`servers.console.terminal.presets.${preset.presetId}.desc`)}
+                                onClick={() => {
+                                    if (!taken) {
+                                        onAddPreset(preset.presetId);
+                                        onSelect?.();
+                                    }
+                                }}
+                                className={cn(
+                                    'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors',
+                                    taken
+                                        ? 'text-muted-foreground cursor-not-allowed opacity-60'
+                                        : 'text-foreground hover:bg-muted/80 active:bg-primary/10',
+                                )}
+                            >
+                                <span className='min-w-0 flex-1 truncate font-medium'>
+                                    {t(`servers.console.terminal.presets.${preset.presetId}.title`)}
+                                </span>
+                                {taken && (
+                                    <span className='text-primary shrink-0 text-[10px] font-bold uppercase'>
+                                        {t('servers.console.terminal.preset_active')}
+                                    </span>
+                                )}
+                            </button>
+                        );
+                    })}
+                </div>
+            ))}
+        </div>
+    );
+}
+
+interface CommandHistoryListProps {
+    commandHistory: string[];
+    onSelect: (cmd: string) => void;
+}
+
+function CommandHistoryList({ commandHistory, onSelect }: CommandHistoryListProps) {
+    const { t } = useTranslation();
+
+    if (commandHistory.length === 0) {
+        return (
+            <div className='text-muted-foreground px-3 py-8 text-center text-xs'>
+                {t('servers.console.terminal.no_history')}
+            </div>
+        );
+    }
+
+    return (
+        <div className='custom-scrollbar max-h-[min(20rem,50dvh)] overflow-y-auto p-1 sm:max-h-60'>
+            {commandHistory.map((cmd, idx) => (
+                <button
+                    key={idx}
+                    type='button'
+                    onClick={() => onSelect(cmd)}
+                    className='hover:bg-muted/80 active:bg-primary/10 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors'
+                >
+                    <Clock className='h-3 w-3 opacity-50' />
+                    <span className='truncate font-mono text-xs'>{cmd}</span>
+                </button>
+            ))}
+        </div>
+    );
+}
+
+interface FilterSettingsPanelProps {
+    filters: ConsoleFilterRule[];
+    onFiltersChange?: (rules: ConsoleFilterRule[]) => void;
+    onAddFilter: () => void;
+    onUpdateFilter: (id: string, partial: Partial<ConsoleFilterRule>) => void;
+    onDeleteFilter: (id: string) => void;
+}
+
+function FilterSettingsPanel({
+    filters,
+    onFiltersChange,
+    onAddFilter,
+    onUpdateFilter,
+    onDeleteFilter,
+}: FilterSettingsPanelProps) {
+    const { t } = useTranslation();
+
+    return (
+        <>
+            <div className='mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between'>
+                <div>
+                    <p className='text-foreground text-xs font-semibold'>{t('servers.console.terminal.customize')}</p>
+                    <p className='text-muted-foreground mt-1 max-w-2xl text-[11px] leading-relaxed'>
+                        {t('servers.console.terminal.rules_intro')}
+                    </p>
+                </div>
+                <Button
+                    type='button'
+                    variant='outline'
+                    size='sm'
+                    className='shrink-0 rounded-xl font-bold'
+                    onClick={onAddFilter}
+                    disabled={!onFiltersChange}
+                >
+                    {t('servers.console.terminal.add_rule')}
+                </Button>
+            </div>
+            {filters.length === 0 ? (
+                <p className='text-muted-foreground text-xs'>{t('servers.console.terminal.no_rules')}</p>
+            ) : (
+                <div className='custom-scrollbar max-h-[min(24rem,55dvh)] space-y-3 overflow-y-auto pr-1 sm:max-h-72'>
+                    {filters.map((rule) => (
+                        <div
+                            key={rule.id}
+                            className='border-border/50 bg-card/50 space-y-2.5 rounded-xl border p-4 backdrop-blur-sm'
+                        >
+                            {rule.presetId && (
+                                <div className='flex flex-wrap items-center gap-2'>
+                                    <span className='bg-primary/12 text-primary inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase'>
+                                        {t('servers.console.terminal.preset_badge')}
+                                    </span>
+                                    <span className='text-foreground text-xs font-medium'>
+                                        {t(`servers.console.terminal.presets.${rule.presetId}.title`)}
+                                    </span>
+                                </div>
+                            )}
+                            <div className='flex items-center justify-between gap-2'>
+                                <div className='flex flex-wrap items-center gap-2'>
+                                    <input
+                                        type='checkbox'
+                                        checked={rule.enabled}
+                                        onChange={(e) =>
+                                            onUpdateFilter(rule.id, {
+                                                enabled: e.target.checked,
+                                            })
+                                        }
+                                        className='border-input h-3.5 w-3.5 rounded'
+                                        disabled={!onFiltersChange}
+                                    />
+                                    <select
+                                        value={rule.type}
+                                        onChange={(e) =>
+                                            onUpdateFilter(rule.id, {
+                                                type: e.target.value as ConsoleFilterRule['type'],
+                                                presetId: undefined,
+                                            })
+                                        }
+                                        className='border-border bg-background rounded-md border px-2 py-1 text-xs'
+                                        disabled={!onFiltersChange}
+                                    >
+                                        <option value='replace'>{t('servers.console.terminal.rule_type_replace')}</option>
+                                        <option value='hide'>{t('servers.console.terminal.rule_type_hide')}</option>
+                                        <option value='color'>{t('servers.console.terminal.rule_type_color')}</option>
+                                    </select>
+                                </div>
+                                <button
+                                    onClick={() => onDeleteFilter(rule.id)}
+                                    type='button'
+                                    className='text-muted-foreground hover:text-destructive text-[11px]'
+                                    disabled={!onFiltersChange}
+                                >
+                                    {t('servers.console.terminal.delete_rule')}
+                                </button>
+                            </div>
+                            <div className='grid grid-cols-1 gap-2 sm:grid-cols-3'>
+                                <div className='space-y-1 sm:col-span-2'>
+                                    <label className='text-muted-foreground text-[11px]'>
+                                        {t('servers.console.terminal.pattern')}
+                                    </label>
+                                    <input
+                                        type='text'
+                                        value={rule.pattern}
+                                        onChange={(e) =>
+                                            onUpdateFilter(rule.id, {
+                                                pattern: e.target.value,
+                                                presetId: undefined,
+                                            })
+                                        }
+                                        className='border-border bg-background w-full rounded-md border px-2 py-1 font-mono text-xs'
+                                        placeholder='^\\[INFO\\]'
+                                        disabled={!onFiltersChange}
+                                    />
+                                </div>
+                                <div className='space-y-1'>
+                                    <label className='text-muted-foreground text-[11px]'>
+                                        {t('servers.console.terminal.flags')}
+                                    </label>
+                                    <input
+                                        type='text'
+                                        value={rule.flags || ''}
+                                        onChange={(e) =>
+                                            onUpdateFilter(rule.id, {
+                                                flags: e.target.value,
+                                                presetId: undefined,
+                                            })
+                                        }
+                                        className='border-border bg-background w-full rounded-md border px-2 py-1 text-xs'
+                                        placeholder='gmi'
+                                        disabled={!onFiltersChange}
+                                    />
+                                </div>
+                            </div>
+                            {rule.type === 'replace' && (
+                                <div className='space-y-1'>
+                                    <label className='text-muted-foreground text-[11px]'>
+                                        {t('servers.console.terminal.replacement')}
+                                    </label>
+                                    <input
+                                        type='text'
+                                        value={rule.replacement || ''}
+                                        onChange={(e) =>
+                                            onUpdateFilter(rule.id, {
+                                                replacement: e.target.value,
+                                                presetId: undefined,
+                                            })
+                                        }
+                                        className='border-border bg-background w-full rounded-md border px-2 py-1 text-xs'
+                                        placeholder='[RENAMED]'
+                                        disabled={!onFiltersChange}
+                                    />
+                                </div>
+                            )}
+                            {rule.type === 'color' && (
+                                <div className='space-y-1'>
+                                    <label className='text-muted-foreground text-[11px]'>
+                                        {t('servers.console.terminal.color')}
+                                    </label>
+                                    <select
+                                        value={rule.color || 'yellow'}
+                                        onChange={(e) =>
+                                            onUpdateFilter(rule.id, {
+                                                color: e.target.value as ConsoleFilterRule['color'],
+                                                presetId: undefined,
+                                            })
+                                        }
+                                        className='border-border bg-background rounded-md border px-2 py-1 text-xs'
+                                        disabled={!onFiltersChange}
+                                    >
+                                        <option value='red'>{t('servers.console.terminal.color_red')}</option>
+                                        <option value='yellow'>{t('servers.console.terminal.color_yellow')}</option>
+                                        <option value='green'>{t('servers.console.terminal.color_green')}</option>
+                                        <option value='blue'>{t('servers.console.terminal.color_blue')}</option>
+                                        <option value='magenta'>{t('servers.console.terminal.color_magenta')}</option>
+                                        <option value='cyan'>{t('servers.console.terminal.color_cyan')}</option>
+                                        <option value='gray'>{t('servers.console.terminal.color_gray')}</option>
+                                    </select>
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            )}
+        </>
+    );
+}
 
 export interface ServerTerminalRef {
     write: (data: string) => void;
@@ -118,6 +393,8 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
         const [commandHistory, setCommandHistory] = useState<string[]>([]);
         const [historyIndex, setHistoryIndex] = useState(-1);
         const [showSettings, setShowSettings] = useState(false);
+        const [showQuickRules, setShowQuickRules] = useState(false);
+        const [showHistory, setShowHistory] = useState(false);
 
         const hslFromVar = useCallback((name: string, fallback: string) => {
             if (typeof window === 'undefined') return fallback;
@@ -319,6 +596,7 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
 
         const loadHistoryCommand = (cmd: string) => {
             setCommandInput(cmd);
+            setShowHistory(false);
         };
 
         const handleAddFilter = () => {
@@ -363,6 +641,7 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
             };
             onFiltersChange([newRule, ...filters]);
             setShowSettings(true);
+            setShowQuickRules(false);
         };
 
         const copyTerminalSelection = () => {
@@ -395,6 +674,10 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
             prevCanSendRef.current = canSend;
         }, [canSend]);
 
+        useEffect(() => {
+            fitAddonRef.current?.fit();
+        }, [showSettings, showQuickRules, showHistory]);
+
         return (
             <Card className='border-border/50 bg-card/50 w-full min-w-0 overflow-hidden shadow-sm backdrop-blur-xl'>
                 <CardHeader className='border-border/50 space-y-3 border-b p-3 sm:p-4'>
@@ -404,7 +687,7 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                                 <TerminalIcon className='h-4 w-4 shrink-0' aria-hidden />
                                 {t('servers.console.terminal.title')}
                             </h3>
-                            <p className='text-muted-foreground mt-1 max-w-2xl text-xs leading-relaxed'>
+                            <p className='text-muted-foreground mt-1 hidden max-w-2xl text-xs leading-relaxed sm:block'>
                                 {t('servers.console.terminal.subtitle')}
                             </p>
                         </div>
@@ -436,98 +719,63 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                                 <Settings2 className='h-3.5 w-3.5' />
                             </Button>
                             {onFiltersChange && (
-                                <Menu as='div' className='relative'>
-                                    <Menu.Button
-                                        as={Button}
+                                <>
+                                    <Button
+                                        type='button'
                                         variant='outline'
                                         size='sm'
-                                        className='h-8 gap-1.5 rounded-lg px-2.5 text-[11px]'
+                                        className='h-8 gap-1.5 rounded-lg px-2.5 text-[11px] sm:hidden'
                                         aria-label={t('servers.console.terminal.quick_rules')}
+                                        onClick={() => setShowQuickRules(true)}
                                     >
                                         <Sparkles className='text-primary h-3.5 w-3.5 shrink-0' />
-                                        <span className='hidden sm:inline'>
-                                            {t('servers.console.terminal.quick_rules')}
-                                        </span>
-                                    </Menu.Button>
-                                    <Transition
-                                        as={Fragment}
-                                        enter='transition ease-out duration-100'
-                                        enterFrom='transform opacity-0 scale-95'
-                                        enterTo='transform opacity-100 scale-100'
-                                        leave='transition ease-in duration-75'
-                                        leaveFrom='transform opacity-100 scale-100'
-                                        leaveTo='transform opacity-0 scale-95'
-                                    >
-                                        <Menu.Items className='bg-popover border-border/50 absolute right-0 z-30 mt-2 w-[min(22rem,calc(100vw-2rem))] origin-top-right overflow-hidden rounded-xl border shadow-lg focus:outline-none'>
-                                            <div className='border-border/50 bg-muted/30 border-b px-3 py-2'>
-                                                <p className='text-foreground text-xs font-semibold'>
-                                                    {t('servers.console.terminal.quick_rules')}
-                                                </p>
-                                                <p className='text-muted-foreground mt-0.5 text-[11px] leading-snug'>
-                                                    {t('servers.console.terminal.quick_rules_help')}
-                                                </p>
-                                            </div>
-                                            <div className='custom-scrollbar max-h-72 overflow-y-auto p-1.5'>
-                                                {PRESET_MENU_SECTIONS.map(({ group, presets }, sectionIdx) => (
-                                                    <div key={group}>
-                                                        {sectionIdx > 0 && (
-                                                            <div className='bg-border/60 my-1 h-px' role='separator' />
-                                                        )}
-                                                        <p className='text-muted-foreground px-2 py-1 text-[10px] font-bold tracking-wide uppercase'>
-                                                            {t(`servers.console.terminal.preset_group_${group}`)}
-                                                        </p>
-                                                        {presets.map((preset) => {
-                                                            const taken = filters.some(
-                                                                (r) => r.presetId === preset.presetId,
-                                                            );
-                                                            return (
-                                                                <Menu.Item key={preset.presetId}>
-                                                                    {({ active, close }) => (
-                                                                        <button
-                                                                            type='button'
-                                                                            disabled={taken}
-                                                                            title={t(
-                                                                                `servers.console.terminal.presets.${preset.presetId}.desc`,
-                                                                            )}
-                                                                            onClick={() => {
-                                                                                if (!taken) {
-                                                                                    handleAddPreset(preset.presetId);
-                                                                                    close();
-                                                                                }
-                                                                            }}
-                                                                            className={cn(
-                                                                                'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors',
-                                                                                active && !taken && 'bg-primary/10',
-                                                                                taken
-                                                                                    ? 'text-muted-foreground cursor-not-allowed opacity-60'
-                                                                                    : 'text-foreground hover:bg-muted/80',
-                                                                            )}
-                                                                        >
-                                                                            <span className='min-w-0 flex-1 truncate font-medium'>
-                                                                                {t(
-                                                                                    `servers.console.terminal.presets.${preset.presetId}.title`,
-                                                                                )}
-                                                                            </span>
-                                                                            {taken && (
-                                                                                <span className='text-primary shrink-0 text-[10px] font-bold uppercase'>
-                                                                                    {t(
-                                                                                        'servers.console.terminal.preset_active',
-                                                                                    )}
-                                                                                </span>
-                                                                            )}
-                                                                        </button>
-                                                                    )}
-                                                                </Menu.Item>
-                                                            );
-                                                        })}
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </Menu.Items>
-                                    </Transition>
-                                </Menu>
+                                    </Button>
+                                    <Menu as='div' className='relative hidden sm:block'>
+                                        <Menu.Button
+                                            as={Button}
+                                            variant='outline'
+                                            size='sm'
+                                            className='h-8 gap-1.5 rounded-lg px-2.5 text-[11px]'
+                                            aria-label={t('servers.console.terminal.quick_rules')}
+                                        >
+                                            <Sparkles className='text-primary h-3.5 w-3.5 shrink-0' />
+                                            <span>{t('servers.console.terminal.quick_rules')}</span>
+                                        </Menu.Button>
+                                        <Transition
+                                            as={Fragment}
+                                            enter='transition ease-out duration-100'
+                                            enterFrom='transform opacity-0 scale-95'
+                                            enterTo='transform opacity-100 scale-100'
+                                            leave='transition ease-in duration-75'
+                                            leaveFrom='transform opacity-100 scale-100'
+                                            leaveTo='transform opacity-0 scale-95'
+                                        >
+                                            <Menu.Items className='bg-popover border-border/50 absolute right-0 z-30 mt-2 w-[min(22rem,calc(100vw-2rem))] origin-top-right overflow-hidden rounded-xl border shadow-lg focus:outline-none'>
+                                                <div className='border-border/50 bg-muted/30 border-b px-3 py-2'>
+                                                    <p className='text-foreground text-xs font-semibold'>
+                                                        {t('servers.console.terminal.quick_rules')}
+                                                    </p>
+                                                    <p className='text-muted-foreground mt-0.5 text-[11px] leading-snug'>
+                                                        {t('servers.console.terminal.quick_rules_help')}
+                                                    </p>
+                                                </div>
+                                                <QuickRulesList filters={filters} onAddPreset={handleAddPreset} />
+                                            </Menu.Items>
+                                        </Transition>
+                                    </Menu>
+                                </>
                             )}
-                            <Menu as='div' className='relative'>
+                            <Button
+                                type='button'
+                                variant='outline'
+                                size='icon'
+                                className='h-8 w-8 shrink-0 rounded-lg sm:hidden'
+                                aria-label={t('servers.console.terminal.history_title')}
+                                onClick={() => setShowHistory(true)}
+                            >
+                                <History className='h-3.5 w-3.5' />
+                            </Button>
+                            <Menu as='div' className='relative hidden sm:block'>
                                 <Menu.Button
                                     as={Button}
                                     variant='outline'
@@ -552,35 +800,10 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                                                 {t('servers.console.terminal.history_title')}
                                             </p>
                                         </div>
-                                        <div className='custom-scrollbar max-h-60 overflow-y-auto p-1'>
-                                            {commandHistory.length === 0 ? (
-                                                <div className='text-muted-foreground px-3 py-4 text-center text-xs'>
-                                                    {t('servers.console.terminal.no_history')}
-                                                </div>
-                                            ) : (
-                                                commandHistory.map((cmd, idx) => (
-                                                    <Menu.Item key={idx}>
-                                                        {({ active }) => (
-                                                            <button
-                                                                type='button'
-                                                                onClick={() => loadHistoryCommand(cmd)}
-                                                                className={cn(
-                                                                    'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors',
-                                                                    active
-                                                                        ? 'bg-primary/10 text-primary'
-                                                                        : 'hover:bg-muted/80',
-                                                                )}
-                                                            >
-                                                                <Clock className='h-3 w-3 opacity-50' />
-                                                                <span className='truncate font-mono text-xs'>
-                                                                    {cmd}
-                                                                </span>
-                                                            </button>
-                                                        )}
-                                                    </Menu.Item>
-                                                ))
-                                            )}
-                                        </div>
+                                        <CommandHistoryList
+                                            commandHistory={commandHistory}
+                                            onSelect={loadHistoryCommand}
+                                        />
                                     </Menu.Items>
                                 </Transition>
                             </Menu>
@@ -643,202 +866,24 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                     </div>
                 </CardHeader>
                 {showSettings && (
-                    <div className='border-border/50 bg-muted/20 border-b px-4 py-4 sm:px-5 sm:py-5'>
-                        <div className='mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between'>
-                            <div>
-                                <p className='text-foreground text-xs font-semibold'>
-                                    {t('servers.console.terminal.customize')}
-                                </p>
-                                <p className='text-muted-foreground mt-1 max-w-2xl text-[11px] leading-relaxed'>
-                                    {t('servers.console.terminal.rules_intro')}
-                                </p>
-                            </div>
-                            <Button
-                                type='button'
-                                variant='outline'
-                                size='sm'
-                                className='shrink-0 rounded-xl font-bold'
-                                onClick={handleAddFilter}
-                                disabled={!onFiltersChange}
-                            >
-                                {t('servers.console.terminal.add_rule')}
-                            </Button>
-                        </div>
-                        {filters.length === 0 ? (
-                            <p className='text-muted-foreground text-xs'>{t('servers.console.terminal.no_rules')}</p>
-                        ) : (
-                            <div className='custom-scrollbar max-h-72 space-y-3 overflow-y-auto pr-1'>
-                                {filters.map((rule) => (
-                                    <div
-                                        key={rule.id}
-                                        className='border-border/50 bg-card/50 space-y-2.5 rounded-xl border p-4 backdrop-blur-sm'
-                                    >
-                                        {rule.presetId && (
-                                            <div className='flex flex-wrap items-center gap-2'>
-                                                <span className='bg-primary/12 text-primary inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase'>
-                                                    {t('servers.console.terminal.preset_badge')}
-                                                </span>
-                                                <span className='text-foreground text-xs font-medium'>
-                                                    {t(`servers.console.terminal.presets.${rule.presetId}.title`)}
-                                                </span>
-                                            </div>
-                                        )}
-                                        <div className='flex items-center justify-between gap-2'>
-                                            <div className='flex flex-wrap items-center gap-2'>
-                                                <input
-                                                    type='checkbox'
-                                                    checked={rule.enabled}
-                                                    onChange={(e) =>
-                                                        handleUpdateFilter(rule.id, {
-                                                            enabled: e.target.checked,
-                                                        })
-                                                    }
-                                                    className='border-input h-3.5 w-3.5 rounded'
-                                                    disabled={!onFiltersChange}
-                                                />
-                                                <select
-                                                    value={rule.type}
-                                                    onChange={(e) =>
-                                                        handleUpdateFilter(rule.id, {
-                                                            type: e.target.value as ConsoleFilterRule['type'],
-                                                            presetId: undefined,
-                                                        })
-                                                    }
-                                                    className='border-border bg-background rounded-md border px-2 py-1 text-xs'
-                                                    disabled={!onFiltersChange}
-                                                >
-                                                    <option value='replace'>
-                                                        {t('servers.console.terminal.rule_type_replace')}
-                                                    </option>
-                                                    <option value='hide'>
-                                                        {t('servers.console.terminal.rule_type_hide')}
-                                                    </option>
-                                                    <option value='color'>
-                                                        {t('servers.console.terminal.rule_type_color')}
-                                                    </option>
-                                                </select>
-                                            </div>
-                                            <button
-                                                onClick={() => handleDeleteFilter(rule.id)}
-                                                type='button'
-                                                className='text-muted-foreground hover:text-destructive text-[11px]'
-                                                disabled={!onFiltersChange}
-                                            >
-                                                {t('servers.console.terminal.delete_rule')}
-                                            </button>
-                                        </div>
-                                        <div className='grid grid-cols-1 gap-2 sm:grid-cols-3'>
-                                            <div className='space-y-1 sm:col-span-2'>
-                                                <label className='text-muted-foreground text-[11px]'>
-                                                    {t('servers.console.terminal.pattern')}
-                                                </label>
-                                                <input
-                                                    type='text'
-                                                    value={rule.pattern}
-                                                    onChange={(e) =>
-                                                        handleUpdateFilter(rule.id, {
-                                                            pattern: e.target.value,
-                                                            presetId: undefined,
-                                                        })
-                                                    }
-                                                    className='border-border bg-background w-full rounded-md border px-2 py-1 font-mono text-xs'
-                                                    placeholder='^\\[INFO\\]'
-                                                    disabled={!onFiltersChange}
-                                                />
-                                            </div>
-                                            <div className='space-y-1'>
-                                                <label className='text-muted-foreground text-[11px]'>
-                                                    {t('servers.console.terminal.flags')}
-                                                </label>
-                                                <input
-                                                    type='text'
-                                                    value={rule.flags || ''}
-                                                    onChange={(e) =>
-                                                        handleUpdateFilter(rule.id, {
-                                                            flags: e.target.value,
-                                                            presetId: undefined,
-                                                        })
-                                                    }
-                                                    className='border-border bg-background w-full rounded-md border px-2 py-1 text-xs'
-                                                    placeholder='gmi'
-                                                    disabled={!onFiltersChange}
-                                                />
-                                            </div>
-                                        </div>
-                                        {rule.type === 'replace' && (
-                                            <div className='space-y-1'>
-                                                <label className='text-muted-foreground text-[11px]'>
-                                                    {t('servers.console.terminal.replacement')}
-                                                </label>
-                                                <input
-                                                    type='text'
-                                                    value={rule.replacement || ''}
-                                                    onChange={(e) =>
-                                                        handleUpdateFilter(rule.id, {
-                                                            replacement: e.target.value,
-                                                            presetId: undefined,
-                                                        })
-                                                    }
-                                                    className='border-border bg-background w-full rounded-md border px-2 py-1 text-xs'
-                                                    placeholder='[RENAMED]'
-                                                    disabled={!onFiltersChange}
-                                                />
-                                            </div>
-                                        )}
-                                        {rule.type === 'color' && (
-                                            <div className='space-y-1'>
-                                                <label className='text-muted-foreground text-[11px]'>
-                                                    {t('servers.console.terminal.color')}
-                                                </label>
-                                                <select
-                                                    value={rule.color || 'yellow'}
-                                                    onChange={(e) =>
-                                                        handleUpdateFilter(rule.id, {
-                                                            color: e.target.value as ConsoleFilterRule['color'],
-                                                            presetId: undefined,
-                                                        })
-                                                    }
-                                                    className='border-border bg-background rounded-md border px-2 py-1 text-xs'
-                                                    disabled={!onFiltersChange}
-                                                >
-                                                    <option value='red'>
-                                                        {t('servers.console.terminal.color_red')}
-                                                    </option>
-                                                    <option value='yellow'>
-                                                        {t('servers.console.terminal.color_yellow')}
-                                                    </option>
-                                                    <option value='green'>
-                                                        {t('servers.console.terminal.color_green')}
-                                                    </option>
-                                                    <option value='blue'>
-                                                        {t('servers.console.terminal.color_blue')}
-                                                    </option>
-                                                    <option value='magenta'>
-                                                        {t('servers.console.terminal.color_magenta')}
-                                                    </option>
-                                                    <option value='cyan'>
-                                                        {t('servers.console.terminal.color_cyan')}
-                                                    </option>
-                                                    <option value='gray'>
-                                                        {t('servers.console.terminal.color_gray')}
-                                                    </option>
-                                                </select>
-                                            </div>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-                        )}
+                    <div className='border-border/50 bg-muted/20 hidden border-b px-4 py-4 sm:block sm:px-5 sm:py-5'>
+                        <FilterSettingsPanel
+                            filters={filters}
+                            onFiltersChange={onFiltersChange}
+                            onAddFilter={handleAddFilter}
+                            onUpdateFilter={handleUpdateFilter}
+                            onDeleteFilter={handleDeleteFilter}
+                        />
                     </div>
                 )}
-                <CardContent className='p-0'>
-                    <div className='relative'>
+                <CardContent className='relative z-0 p-0'>
+                    <div className='relative isolate'>
                         <div
                             ref={terminalRef}
                             className={
                                 fullHeight
-                                    ? 'h-[calc(100vh-132px)] w-full sm:h-[calc(100vh-132px)]'
-                                    : 'h-[min(40rem,calc(100vh-10rem))] w-full sm:h-[min(48rem,68vh)] 2xl:h-[min(58rem,72vh)]'
+                                    ? 'h-[calc(100dvh-132px)] w-full'
+                                    : 'h-[min(22rem,calc(100dvh-12rem))] w-full sm:h-[min(48rem,68vh)] 2xl:h-[min(58rem,72vh)]'
                             }
                         />
                         {showScrollButton && (
@@ -927,6 +972,50 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                         )}
                     </CardFooter>
                 )}
+
+                <div className='sm:hidden'>
+                    <Sheet open={showSettings} onOpenChange={setShowSettings} className='max-w-lg'>
+                        <SheetContent>
+                            <SheetHeader>
+                                <SheetTitle>{t('servers.console.terminal.customize')}</SheetTitle>
+                                <SheetDescription>{t('servers.console.terminal.rules_intro')}</SheetDescription>
+                            </SheetHeader>
+                            <FilterSettingsPanel
+                                filters={filters}
+                                onFiltersChange={onFiltersChange}
+                                onAddFilter={handleAddFilter}
+                                onUpdateFilter={handleUpdateFilter}
+                                onDeleteFilter={handleDeleteFilter}
+                            />
+                        </SheetContent>
+                    </Sheet>
+
+                    {onFiltersChange && (
+                        <Sheet open={showQuickRules} onOpenChange={setShowQuickRules} className='max-w-lg'>
+                            <SheetContent>
+                                <SheetHeader>
+                                    <SheetTitle>{t('servers.console.terminal.quick_rules')}</SheetTitle>
+                                    <SheetDescription>{t('servers.console.terminal.quick_rules_help')}</SheetDescription>
+                                </SheetHeader>
+                                <QuickRulesList
+                                    filters={filters}
+                                    onAddPreset={handleAddPreset}
+                                    onSelect={() => setShowQuickRules(false)}
+                                />
+                            </SheetContent>
+                        </Sheet>
+                    )}
+
+                    <Sheet open={showHistory} onOpenChange={setShowHistory} className='max-w-lg'>
+                        <SheetContent>
+                            <SheetHeader>
+                                <SheetTitle>{t('servers.console.terminal.history_title')}</SheetTitle>
+                            </SheetHeader>
+                            <CommandHistoryList commandHistory={commandHistory} onSelect={loadHistoryCommand} />
+                        </SheetContent>
+                    </Sheet>
+                </div>
+
                 <style jsx global>{`
                     .xterm-viewport::-webkit-scrollbar {
                         width: 8px;

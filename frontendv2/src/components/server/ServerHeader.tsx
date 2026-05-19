@@ -135,10 +135,10 @@ export default function ServerHeader({
 
     return (
         <div className='border-border/50 bg-card/50 rounded-xl border backdrop-blur-xl'>
-            <div className='p-6'>
+            <div className='p-4 sm:p-6'>
                 <div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
                     <div className='space-y-2'>
-                        <h1 className='text-2xl font-bold tracking-tight sm:text-3xl'>{serverName}</h1>
+                        <h1 className='text-xl font-bold tracking-tight sm:text-3xl'>{serverName}</h1>
                         <div className='text-muted-foreground flex flex-wrap items-center gap-3 text-sm'>
                             <Badge className={getStatusColor(serverStatus)}>{serverStatus.toUpperCase()}</Badge>
                             {serverUuidShort && (
@@ -177,7 +177,7 @@ export default function ServerHeader({
                         )}
                     </div>
 
-                    <div className='flex flex-wrap gap-2'>
+                    <div className='grid grid-cols-2 gap-2 sm:flex sm:flex-wrap'>
                         {canStart && (
                             <Button
                                 variant='outline'

@@ -35,6 +35,8 @@
 - Chatbot now supports the ability to get the article content by its ID. by @nayskutzu
 - Chatbot token usage has been cut in half by @nayskutzu
 - Enhanced Minecraft server compatibility and features to fully support the latest release version. by @nayskutzu
+- Added a white (light) mode option for Wings server configuration files, enhancing visibility and user experience in brighter environments. by @nayskutzu
+- Enhanced the console layout for mobile devices, offering a smoother and more intuitive user experience. by @nayskutzu
 
 ## v1.3.7.2 STABLE
 

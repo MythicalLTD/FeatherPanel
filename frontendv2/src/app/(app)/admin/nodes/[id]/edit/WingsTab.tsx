@@ -38,6 +38,40 @@ interface SetupCommandData {
     config_path_hint: string;
 }
 
+interface CommandBlockProps {
+    command: string;
+    copyLabel: string;
+    onCopy: () => void;
+    preClassName?: string;
+}
+
+function CommandBlock({ command, copyLabel, onCopy, preClassName }: CommandBlockProps) {
+    return (
+        <div className='overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950'>
+            <div className='flex justify-end border-b border-zinc-800 bg-zinc-900 px-3 py-2'>
+                <Button
+                    type='button'
+                    variant='plain'
+                    size='sm'
+                    className='border border-zinc-600 bg-zinc-800 text-zinc-100 hover:border-zinc-500 hover:bg-zinc-700 hover:text-white'
+                    onClick={onCopy}
+                >
+                    <Copy className='mr-2 h-4 w-4 shrink-0' />
+                    <span className='truncate'>{copyLabel}</span>
+                </Button>
+            </div>
+            <pre
+                className={
+                    preClassName ??
+                    'overflow-x-auto p-4 font-mono text-xs break-all whitespace-pre-wrap text-zinc-300'
+                }
+            >
+                {command}
+            </pre>
+        </div>
+    );
+}
+
 export function WingsTab({ nodeId, wingsConfigYaml, handleResetKey, resetting }: WingsTabProps) {
     const { t } = useTranslation();
     const [setupData, setSetupData] = useState<SetupCommandData | null>(null);
@@ -79,21 +113,11 @@ export function WingsTab({ nodeId, wingsConfigYaml, handleResetKey, resetting }:
                                 <p className='text-foreground text-xs font-semibold'>
                                     {t('admin.node.wings.setup_step_1')}
                                 </p>
-                                <div className='group relative'>
-                                    <pre className='overflow-x-auto rounded-xl border border-white/5 bg-zinc-950 p-4 font-mono text-xs break-all whitespace-pre-wrap text-zinc-300'>
-                                        {setupData.install_command}
-                                    </pre>
-                                    <Button
-                                        type='button'
-                                        variant='outline'
-                                        size='sm'
-                                        className='absolute top-2 right-2 border-white/10 bg-zinc-900/80 backdrop-blur-md hover:bg-zinc-800'
-                                        onClick={() => copyToClipboard(setupData.install_command, t)}
-                                    >
-                                        <Copy className='mr-2 h-4 w-4' />
-                                        {t('admin.node.wings.copy_setup_command')}
-                                    </Button>
-                                </div>
+                                <CommandBlock
+                                    command={setupData.install_command}
+                                    copyLabel={t('admin.node.wings.copy_setup_command')}
+                                    onCopy={() => copyToClipboard(setupData.install_command, t)}
+                                />
                             </div>
                             {/* Step 2: Fetch config and restart */}
                             {setupData.setup_command && (
@@ -101,21 +125,11 @@ export function WingsTab({ nodeId, wingsConfigYaml, handleResetKey, resetting }:
                                     <p className='text-foreground text-xs font-semibold'>
                                         {t('admin.node.wings.setup_step_2')}
                                     </p>
-                                    <div className='group relative'>
-                                        <pre className='overflow-x-auto rounded-xl border border-white/5 bg-zinc-950 p-4 font-mono text-xs break-all whitespace-pre-wrap text-zinc-300'>
-                                            {setupData.setup_command}
-                                        </pre>
-                                        <Button
-                                            type='button'
-                                            variant='outline'
-                                            size='sm'
-                                            className='absolute top-2 right-2 border-white/10 bg-zinc-900/80 backdrop-blur-md hover:bg-zinc-800'
-                                            onClick={() => copyToClipboard(setupData.setup_command, t)}
-                                        >
-                                            <Copy className='mr-2 h-4 w-4' />
-                                            {t('admin.node.wings.copy_setup_command')}
-                                        </Button>
-                                    </div>
+                                    <CommandBlock
+                                        command={setupData.setup_command}
+                                        copyLabel={t('admin.node.wings.copy_setup_command')}
+                                        onCopy={() => copyToClipboard(setupData.setup_command, t)}
+                                    />
                                 </div>
                             )}
                             <p className='text-muted-foreground text-xs'>{t('admin.node.wings.setup_command_then')}</p>
@@ -131,21 +145,12 @@ export function WingsTab({ nodeId, wingsConfigYaml, handleResetKey, resetting }:
             <PageCard title={t('admin.node.wings.config_title')} icon={Shield}>
                 <div className='space-y-6'>
                     <p className='text-muted-foreground text-sm'>{t('admin.node.wings.config_help')}</p>
-                    <div className='group relative'>
-                        <pre className='scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent overflow-x-auto rounded-2xl border border-white/5 bg-zinc-950 p-6 font-mono text-xs text-zinc-300'>
-                            {wingsConfigYaml}
-                        </pre>
-                        <Button
-                            type='button'
-                            variant='outline'
-                            size='sm'
-                            className='absolute top-3 right-3 border-white/10 bg-zinc-900/80 backdrop-blur-md hover:bg-zinc-800'
-                            onClick={() => copyToClipboard(wingsConfigYaml, t)}
-                        >
-                            <Copy className='mr-2 h-4 w-4' />
-                            {t('admin.node.wings.copy_config')}
-                        </Button>
-                    </div>
+                    <CommandBlock
+                        command={wingsConfigYaml}
+                        copyLabel={t('admin.node.wings.copy_config')}
+                        onCopy={() => copyToClipboard(wingsConfigYaml, t)}
+                        preClassName='scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent overflow-x-auto p-6 font-mono text-xs whitespace-pre text-zinc-300'
+                    />
 
                     <div className='space-y-4 border-t border-white/5 pt-6'>
                         <div className='flex items-center justify-between'>
