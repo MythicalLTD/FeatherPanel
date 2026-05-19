@@ -661,6 +661,10 @@ export interface FileObject {
     modified_at: string;
     /** Recursive byte size of directory contents (FeatherWings when directory_sizes is enabled). */
     directory_size?: number;
+    /** Virtual row in the file manager that opens the trash UI instead of the real folder. */
+    isTrashShortcut?: boolean;
+    /** Item count in trash (virtual folder row only). */
+    trashItemCount?: number;
     // API Response raw fields
     created?: string;
     modified?: string;

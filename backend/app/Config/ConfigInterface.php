@@ -203,6 +203,15 @@ interface ConfigInterface
     public const SERVER_LIFECYCLE_HOOKS_ENABLED = 'server_lifecycle_hooks_enabled';
 
     /**
+     * File trash bin (soft-delete via FeatherWings).
+     */
+    public const FILE_TRASH_ENABLED = 'file_trash_enabled';
+    /** Maximum total size of trashed files per server, in megabytes (0 = unlimited). */
+    public const FILE_TRASH_MAX_SIZE_MB = 'file_trash_max_size_mb';
+    /** Automatically purge trashed files older than this many days (0 = never by age). */
+    public const FILE_TRASH_RETENTION_DAYS = 'file_trash_retention_days';
+
+    /**
      * User Related Configs.
      */
     public const USER_ALLOW_AVATAR_CHANGE = 'user_allow_avatar_change';

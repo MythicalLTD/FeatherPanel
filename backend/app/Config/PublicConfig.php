@@ -163,6 +163,9 @@ class PublicConfig extends ConfigFactory
             ConfigInterface::SERVER_ALLOW_USER_MADE_FASTDL => 'false',
             ConfigInterface::SERVER_ALLOW_USER_MADE_SUBDOMAINS => 'false',
             ConfigInterface::SERVER_HIDE_IPS => 'false',
+            ConfigInterface::FILE_TRASH_ENABLED => 'false',
+            ConfigInterface::FILE_TRASH_MAX_SIZE_MB => '512',
+            ConfigInterface::FILE_TRASH_RETENTION_DAYS => '30',
 
             // User related settings
             ConfigInterface::USER_ALLOW_AVATAR_CHANGE => 'true',

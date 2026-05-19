@@ -34,7 +34,12 @@
 			"ldapProvider": "LDAP Provider",
 			"ldapUsername": "LDAP Username",
 			"ldapUsernamePlaceholder": "Enter your LDAP username",
-			"selectLdapProvider": "Please select an LDAP provider"
+			"selectLdapProvider": "Please select an LDAP provider",
+			"ldapLogin": "LDAP Login",
+			"ldapLoginDescription": "Use your directory account",
+			"ldapLoginTitle": "Directory sign in",
+			"ldapLoginSubtitle": "Choose your provider and sign in with your LDAP credentials.",
+			"loginWithLdap": "Login with LDAP"
 		},
 		"emailLogin": {
 			"title": "Email Login",
@@ -536,6 +541,40 @@
 		"linkedAs": "Linked as",
 		"discordUnlinkedSuccessfully": "Discord account unlinked successfully",
 		"discordUnlinkFailed": "Failed to unlink Discord account",
+		"oidcAccount": "OIDC Account",
+		"oidcAccountDescription": "Link an external single sign-on account to this FeatherPanel account.",
+		"linkOidc": "Link OIDC",
+		"unlinkOidc": "Unlink OIDC",
+		"selectOidcProvider": "Please select an OIDC provider",
+		"oidcLinkedSuccessfully": "OIDC account linked successfully",
+		"oidcUnlinkedSuccessfully": "OIDC account unlinked successfully",
+		"oidcLinkFailed": "Failed to link OIDC account",
+		"oidcAccessDenied": "OIDC access was denied by the provider.",
+		"oidcDiscoveryFailed": "OIDC discovery failed. Please check the provider issuer URL.",
+		"oidcEmailNotVerified": "Your OIDC email address is not verified. Verify your email with the identity provider, then try again.",
+		"oidcInvalidAudience": "The OIDC token audience does not match this FeatherPanel client.",
+		"oidcInvalidIdToken": "The identity provider returned an invalid OIDC ID token.",
+		"oidcInvalidIssuer": "The OIDC token issuer does not match the configured provider.",
+		"oidcInvalidState": "The OIDC login session expired or is invalid. Please try again.",
+		"oidcMissingCode": "The identity provider did not return an authorization code.",
+		"oidcMissingSubject": "The identity provider did not return a user subject identifier.",
+		"oidcNotConfigured": "This OIDC provider is not fully configured.",
+		"oidcProviderMissing": "Please select an OIDC provider.",
+		"oidcProviderNotFound": "The selected OIDC provider is unavailable.",
+		"oidcTokenFailed": "The identity provider rejected the token request. Please check the OIDC client configuration.",
+		"oidcUserNotFound": "No FeatherPanel account matches this OIDC identity.",
+		"oidcUnlinkFailed": "Failed to unlink OIDC account",
+		"ldapAccount": "LDAP Account",
+		"ldapAccountDescription": "Link your directory credentials so this account can sign in with LDAP.",
+		"linkLdap": "Link LDAP",
+		"unlinkLdap": "Unlink LDAP",
+		"ldapUsernamePlaceholder": "LDAP username",
+		"ldapPasswordPlaceholder": "LDAP password",
+		"ldapMissingFields": "Please select a provider and enter your LDAP username and password",
+		"ldapLinkedSuccessfully": "LDAP account linked successfully",
+		"ldapUnlinkedSuccessfully": "LDAP account unlinked successfully",
+		"ldapLinkFailed": "Failed to link LDAP account",
+		"ldapUnlinkFailed": "Failed to unlink LDAP account",
 		"dataRequest": {
 			"title": "Request Your Data",
 			"description": "Create a support ticket asking the host for a copy of the personal data associated with your account.",
@@ -1297,6 +1336,7 @@
 			"ticketPriorities": "Ticket Priorities",
 			"ticketStatuses": "Ticket Statuses",
 			"files": "Files",
+			"trash": "Trash",
 			"databases": "Databases",
 			"schedules": "Schedules",
 			"lifecycleHooks": "Lifecycle Hooks",
@@ -2610,7 +2650,8 @@
 			"upload_files": "Upload files",
 			"upload_folders": "Upload folder(s)",
 			"ignored_content": "Ignored Content",
-			"wipe_all": "Wipe All"
+			"wipe_all": "Wipe All",
+			"trash": "Trash"
 		},
 		"list": {
 			"header_name": "Name",
@@ -2620,6 +2661,54 @@
 			"empty": {},
 			"empty_description": "This directory is empty.",
 			"empty_title": "No Files Found"
+		},
+		"trash": {
+			"title": "Trash",
+			"subtitle": "Restore or permanently remove deleted files from your server.",
+			"description": "{count} item(s) using {size} in trash",
+			"disabled": "The file trash bin is disabled by your administrator.",
+			"back_to_files": "Back to file manager",
+			"loading": "Loading trash...",
+			"empty_title": "Trash is empty",
+			"empty": "Deleted files from the file manager will appear here until restored or purged.",
+			"restore": "Restore",
+			"delete_permanent": "Delete permanently",
+			"empty_all": "Empty trash",
+			"stats": {
+				"items": "Items",
+				"size": "Total size",
+				"selected": "Selected"
+			},
+			"list": {
+				"header_name": "Name",
+				"header_size": "Size",
+				"header_deleted": "Deleted"
+			},
+			"empty_dialog": {
+				"title": "Empty trash",
+				"description": "Permanently delete every item in trash. This cannot be undone.",
+				"cancel": "Cancel",
+				"confirm": "Empty trash",
+				"confirming": "Emptying..."
+			},
+			"restore_dialog": {
+				"title": "Restore from trash",
+				"description": "Restore {count} selected item(s) to their original location.",
+				"overwrite_label": "Replace existing files",
+				"overwrite_hint": "If the server recreated a file with the same name (for example banned-players.json), enable this to replace it with the trashed copy.",
+				"cancel": "Cancel",
+				"confirm": "Restore",
+				"confirming": "Restoring..."
+			},
+			"messages": {
+				"load_error": "Failed to load trash",
+				"restored": "Restored from trash",
+				"restore_error": "Failed to restore files",
+				"deleted": "Permanently deleted from trash",
+				"delete_error": "Failed to delete trash items",
+				"emptied": "Trash emptied",
+				"empty_error": "Failed to empty trash"
+			}
 		},
 		"archive_browser": {
 			"title": "Browse archive",
@@ -2647,6 +2736,9 @@
 			"load_timeout_retry": "File loading timed out. Please try again.",
 			"download_cancelled": "Download cancelled",
 			"cancel_download_failed": "Failed to cancel download",
+			"moved_to_trash": "Moved to trash",
+			"deleted": "Deleted successfully",
+			"delete_failed": "Failed to delete files",
 			"extracting": "Extracting archive...",
 			"extracted": "Archive extracted",
 			"extract_failed": "Failed to extract archive",
@@ -3311,6 +3403,8 @@
 			"preview": "Preview",
 			"cant_preview": "Cannot preview this file",
 			"folder_label": "Folder",
+			"trash_open": "Open trash",
+			"trash_empty": "Empty trash",
 			"edit": "Edit",
 			"rename": "Rename",
 			"download": "Download",
@@ -3356,7 +3450,12 @@
 			},
 			"delete": {
 				"title": "Delete Files",
+				"title_trash": "Delete files",
 				"description": "Are you sure you want to delete {count} item(s)? This action cannot be undone.",
+				"description_trash": "Move {count} selected item(s) to trash. You can restore them from the Trash page.",
+				"move_to_trash": "Move to trash",
+				"moving_to_trash": "Moving to trash…",
+				"delete_permanent_short": "Delete permanently",
 				"cancel": "Cancel",
 				"delete": "Delete",
 				"deleting": "Deleting..."
@@ -8751,7 +8850,16 @@
 		},
 		"settings": {
 			"title": "VDS Settings",
+			"description": "Manage your VDS instance settings and reinstall options.",
+			"loading": "Loading VDS settings…",
 			"access_denied": "You do not have permission to access VDS settings.",
+			"instance_info": {
+				"title": "Instance Info",
+				"hostname": "Hostname",
+				"vmid": "VMID",
+				"type": "Type",
+				"node": "Node"
+			},
 			"reinstall": {
 				"title": "Reinstall Operating System",
 				"description": "This will permanently wipe the current OS and reinstall from a chosen template. All data on the VDS will be lost.",
@@ -8825,6 +8933,8 @@
 				"toast_unmounted": "ISO unmounted successfully.",
 				"toast_unmount_failed": "Failed to unmount ISO.",
 				"toast_fetch_failed": "Failed to fetch ISO.",
+				"toast_queue_failed": "Failed to queue ISO task.",
+				"toast_fetch_queued": "ISO fetch queued.",
 				"fetch_timeout": "ISO fetch timed out",
 				"errors": {
 					"iso_file_required": "Select an ISO file",

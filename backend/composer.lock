@@ -236,12 +236,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/dg/MySQL-dump.git",
-                "reference": "f6d429fc78603ba1c1bcf83f583cf262cf74a167"
+                "reference": "257d0c2c0ed4415330912456d252f2f4253496cc"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/dg/MySQL-dump/zipball/f6d429fc78603ba1c1bcf83f583cf262cf74a167",
-                "reference": "f6d429fc78603ba1c1bcf83f583cf262cf74a167",
+                "url": "https://api.github.com/repos/dg/MySQL-dump/zipball/257d0c2c0ed4415330912456d252f2f4253496cc",
+                "reference": "257d0c2c0ed4415330912456d252f2f4253496cc",
                 "shasum": ""
             },
             "require": {
@@ -271,7 +271,7 @@
             "support": {
                 "source": "https://github.com/dg/MySQL-dump/tree/v1.7.0"
             },
-            "time": "2026-05-17T22:40:25+00:00"
+            "time": "2026-05-18T00:49:32+00:00"
         },
         {
             "name": "doctrine/deprecations",
@@ -5128,11 +5128,11 @@
         },
         {
             "name": "phpstan/phpstan",
-            "version": "2.1.54",
+            "version": "2.1.55",
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/8be50c3992107dc837b17da4d140fbbdf9a5c5bd",
-                "reference": "8be50c3992107dc837b17da4d140fbbdf9a5c5bd",
+                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/9eaac3826ed5e9b8427350a43cac825eeca3f566",
+                "reference": "9eaac3826ed5e9b8427350a43cac825eeca3f566",
                 "shasum": ""
             },
             "require": {
@@ -5177,7 +5177,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-04-29T13:31:09+00:00"
+            "time": "2026-05-18T11:57:34+00:00"
         },
         {
             "name": "phpunit/php-code-coverage",

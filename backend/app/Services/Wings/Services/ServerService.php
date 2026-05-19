@@ -390,15 +390,93 @@ class ServerService
 
     /**
      * Delete files/directories.
+     *
+     * @param array<string, mixed> $options Optional keys: use_trash (bool), permanent (bool), trash (array{max_size_bytes?: int, retention_days?: int})
      */
-    public function deleteFiles(string $serverUuid, string $root, array $files): WingsResponse
+    public function deleteFiles(string $serverUuid, string $root, array $files, array $options = []): WingsResponse
     {
         try {
             $data = [
                 'root' => $root,
                 'files' => $files,
             ];
+            if (isset($options['use_trash'])) {
+                $data['use_trash'] = (bool) $options['use_trash'];
+            }
+            if (isset($options['permanent'])) {
+                $data['permanent'] = (bool) $options['permanent'];
+            }
+            if (!empty($options['trash']) && is_array($options['trash'])) {
+                $data['trash'] = $options['trash'];
+            }
             $response = $this->connection->post("/api/servers/{$serverUuid}/files/delete", $data);
+
+            return new WingsResponse($response, 204);
+        } catch (\Exception $e) {
+            return new WingsResponse(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * List trashed files for a server.
+     */
+    public function listTrash(string $serverUuid, int $maxSizeBytes = 0, int $retentionDays = 0): WingsResponse
+    {
+        try {
+            $query = http_build_query([
+                'max_size_bytes' => $maxSizeBytes,
+                'retention_days' => $retentionDays,
+            ]);
+            $response = $this->connection->get("/api/servers/{$serverUuid}/files/trash?{$query}");
+
+            return new WingsResponse($response, 200);
+        } catch (\Exception $e) {
+            return new WingsResponse(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Restore files from trash.
+     */
+    public function restoreTrash(string $serverUuid, array $ids, bool $overwrite = false): WingsResponse
+    {
+        try {
+            $this->connection->post("/api/servers/{$serverUuid}/files/trash/restore", [
+                'ids' => $ids,
+                'overwrite' => $overwrite,
+            ]);
+
+            return new WingsResponse([], 204);
+        } catch (WingsRequestException $e) {
+            return new WingsResponse(['error' => $e->getMessage()], $e->getCode());
+        } catch (\Exception $e) {
+            return new WingsResponse(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Permanently delete selected trash entries.
+     */
+    public function deleteTrashEntries(string $serverUuid, array $ids): WingsResponse
+    {
+        try {
+            $response = $this->connection->post("/api/servers/{$serverUuid}/files/trash/delete", [
+                'ids' => $ids,
+            ]);
+
+            return new WingsResponse($response, 204);
+        } catch (\Exception $e) {
+            return new WingsResponse(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Empty the entire trash bin for a server.
+     */
+    public function emptyTrash(string $serverUuid): WingsResponse
+    {
+        try {
+            $response = $this->connection->delete("/api/servers/{$serverUuid}/files/trash");
 
             return new WingsResponse($response, 204);
         } catch (\Exception $e) {

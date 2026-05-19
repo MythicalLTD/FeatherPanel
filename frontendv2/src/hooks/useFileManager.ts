@@ -18,6 +18,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { filesApi } from '@/lib/files-api';
+import { filterFeatherTrashFiles, isFeatherTrashEntry } from '@/lib/feather-trash';
 import { FileObject } from '@/types/server';
 import { toast } from 'sonner';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -121,7 +122,7 @@ export function useFileManager(serverUuid: string) {
 
     // Filtering logic
     const filteredFiles = useMemo(() => {
-        let result = files;
+        let result = filterFeatherTrashFiles(files);
 
         // Apply ignored patterns
         if (ignoredPatterns.length > 0) {
@@ -142,6 +143,10 @@ export function useFileManager(serverUuid: string) {
     const navigate = (path: string) => {
         const params = new URLSearchParams(searchParams?.toString() ?? '');
         const sanitizedPath = sanitizeDirectoryPath(path) || '/';
+        const segment = sanitizedPath.split('/').filter(Boolean).pop() ?? '';
+        if (isFeatherTrashEntry(segment) || isFeatherTrashEntry(sanitizedPath.replace(/^\//, ''))) {
+            return;
+        }
         if (sanitizedPath === '/') {
             params.delete('path');
         } else {

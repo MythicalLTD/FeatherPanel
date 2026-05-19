@@ -313,6 +313,9 @@ class SettingsController
                 ConfigInterface::SERVER_ALLOW_USER_MADE_FASTDL,
                 ConfigInterface::SERVER_ALLOW_USER_MADE_SUBDOMAINS,
                 ConfigInterface::SERVER_HIDE_IPS,
+                ConfigInterface::FILE_TRASH_ENABLED,
+                ConfigInterface::FILE_TRASH_MAX_SIZE_MB,
+                ConfigInterface::FILE_TRASH_RETENTION_DAYS,
             ],
         ],
         'chatbot' => [
@@ -1752,6 +1755,43 @@ class SettingsController
                 'placeholder' => 'false',
                 'validation' => 'required|string|max:255',
                 'options' => ['true', 'false'],
+                'category' => 'servers',
+            ],
+            ConfigInterface::FILE_TRASH_ENABLED => [
+                'name' => ConfigInterface::FILE_TRASH_ENABLED,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::FILE_TRASH_ENABLED, 'false'),
+                'description' => 'Enable a trash bin for server file deletions. Deleted files are moved to trash instead of being permanently removed, and users can restore or empty trash from the file manager.',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'false',
+                'validation' => 'required|string|max:255',
+                'options' => ['true', 'false'],
+                'category' => 'servers',
+            ],
+            ConfigInterface::FILE_TRASH_MAX_SIZE_MB => [
+                'name' => ConfigInterface::FILE_TRASH_MAX_SIZE_MB,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::FILE_TRASH_MAX_SIZE_MB, '512'),
+                'description' => 'Maximum total size of trashed files per server, in megabytes. When exceeded, the oldest trashed items are permanently deleted. Use 0 for no size limit.',
+                'type' => 'number',
+                'required' => true,
+                'placeholder' => '512',
+                'validation' => 'required|integer|min:0',
+                'category' => 'servers',
+            ],
+            ConfigInterface::FILE_TRASH_RETENTION_DAYS => [
+                'name' => ConfigInterface::FILE_TRASH_RETENTION_DAYS,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::FILE_TRASH_RETENTION_DAYS, '30'),
+                'description' => 'Automatically purge trashed files older than this many days. Use 0 to keep items until manually deleted or the size limit is reached.',
+                'type' => 'number',
+                'required' => true,
+                'placeholder' => '30',
+                'validation' => 'required|integer|min:0',
                 'category' => 'servers',
             ],
             ConfigInterface::CHATBOT_ENABLED => [

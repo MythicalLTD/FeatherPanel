@@ -254,6 +254,30 @@ return function (RouteCollection $routes): void {
         'user-auth-oidc'
     );
 
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'oidc-link',
+        '/api/user/auth/oidc/link',
+        function (Request $request) {
+            return (new OidcController())->link($request);
+        },
+        ['GET'],
+        Rate::perMinute(5),
+        'user-auth-oidc'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'oidc-unlink',
+        '/api/user/auth/oidc/unlink',
+        function (Request $request) {
+            return (new OidcController())->unlink($request);
+        },
+        ['DELETE'],
+        Rate::perMinute(5),
+        'user-auth-oidc'
+    );
+
     // Email Login (OTP) routes
     App::getInstance(true)->registerApiRoute(
         $routes,

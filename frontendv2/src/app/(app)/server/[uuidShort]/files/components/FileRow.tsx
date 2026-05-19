@@ -32,8 +32,10 @@ import {
     File as FileIcon,
     Fingerprint,
     PackageSearch,
+    ArchiveRestore,
     type LucideIcon,
 } from 'lucide-react';
+import { isTrashShortcut } from '@/lib/feather-trash';
 import Link from 'next/link';
 import { Button } from '@/components/featherui/Button';
 import {
@@ -221,6 +223,7 @@ export function FileRow({
     currentDirectory,
 }: FileRowProps) {
     const { t } = useTranslation();
+    const virtualTrash = isTrashShortcut(file);
     const dateOpts = useDateFormatOptions();
     const { modifiedRelative, modifiedTitle } = useMemo(() => {
         if (!parseApiDate(file.modified_at)) {
@@ -245,6 +248,19 @@ export function FileRow({
     const canBrowseArchive = file.isFile && isDecompressibleArchiveFileName(file.name) && (canEdit || canDownload);
 
     const menuActions = useMemo<MenuAction[]>(() => {
+        if (virtualTrash) {
+            const items: MenuAction[] = [{ key: 'trash-open', label: t('files.row.trash_open'), Icon: Trash2 }];
+            if (canDelete && (file.trashItemCount ?? 0) > 0) {
+                items.push({
+                    key: 'trash-empty',
+                    label: t('files.row.trash_empty'),
+                    Icon: Trash2,
+                    danger: true,
+                    separatorBefore: true,
+                });
+            }
+            return items;
+        }
         const items: MenuAction[] = [];
         if (file.isFile && isImageName(file.name)) {
             items.push({ key: 'preview', label: t('files.row.preview'), Icon: Eye });
@@ -285,10 +301,14 @@ export function FileRow({
             });
         }
         return items;
-    }, [file, canEdit, canDelete, canDownload, t, canBrowseArchive]);
+    }, [file, canEdit, canDelete, canDownload, t, canBrowseArchive, virtualTrash]);
 
     const handleRowClick = (e: React.MouseEvent) => {
         if (onRowClick?.(file, e)) {
+            return;
+        }
+        if (virtualTrash) {
+            onNavigate(file.name);
             return;
         }
         if (!file.isFile) {
@@ -310,7 +330,7 @@ export function FileRow({
         setContextMenu({ x: e.clientX, y: e.clientY });
     };
 
-    const isFolderDropTarget = !file.isFile && !!onDropFiles && (canEdit || acceptArchiveExtract);
+    const isFolderDropTarget = !virtualTrash && !file.isFile && !!onDropFiles && (canEdit || acceptArchiveExtract);
 
     const handleDragStart = (e: React.DragEvent) => {
         if (!onDragStart) {
@@ -376,7 +396,7 @@ export function FileRow({
     return (
         <div
             ref={rowRef}
-            draggable={!!onDragStart}
+            draggable={!virtualTrash && !!onDragStart}
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
             onDragEnter={handleDragEnter}
@@ -396,20 +416,25 @@ export function FileRow({
             <div className='pointer-events-auto shrink-0' onClick={(e) => e.stopPropagation()}>
                 <Checkbox
                     checked={selected}
+                    disabled={virtualTrash}
                     onCheckedChange={() => onSelect(file.name)}
-                    className='border-primary/50 data-[state=checked]:bg-primary data-[state=checked]:border-primary'
+                    className='border-primary/50 data-[state=checked]:bg-primary data-[state=checked]:border-primary disabled:cursor-not-allowed disabled:opacity-40'
                 />
             </div>
 
             <div
                 className={cn(
                     'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/5 transition-all group-hover:scale-110',
-                    file.isFile
-                        ? 'bg-gray-100 text-gray-500 dark:bg-white/5 dark:text-gray-400'
-                        : 'bg-amber-500/10 text-amber-500',
+                    virtualTrash
+                        ? 'border-primary/20 bg-primary/10 text-primary'
+                        : file.isFile
+                          ? 'bg-gray-100 text-gray-500 dark:bg-white/5 dark:text-gray-400'
+                          : 'bg-amber-500/10 text-amber-500',
                 )}
             >
-                {file.isFile ? (
+                {virtualTrash ? (
+                    <Trash2 className='h-4.5 w-4.5' />
+                ) : file.isFile ? (
                     isImageName(file.name) ? (
                         <Eye className='h-4.5 w-4.5' />
                     ) : canBrowseArchive ? (
@@ -427,6 +452,25 @@ export function FileRow({
                     const fullPath = currentDirectory.endsWith('/')
                         ? `${currentDirectory}${file.name}`
                         : `${currentDirectory}/${file.name}`;
+
+                    if (virtualTrash) {
+                        return (
+                            <Link
+                                href={`/server/${serverUuid}/files/trash`}
+                                className='text-primary block truncate text-sm font-semibold'
+                                onClick={(e) => {
+                                    if (onRowClick?.(file, e)) {
+                                        e.preventDefault();
+                                        return;
+                                    }
+                                    e.preventDefault();
+                                    onNavigate(file.name);
+                                }}
+                            >
+                                {file.name}
+                            </Link>
+                        );
+                    }
 
                     if (!file.isFile) {
                         return (

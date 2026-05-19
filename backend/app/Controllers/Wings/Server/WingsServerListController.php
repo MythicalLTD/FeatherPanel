@@ -27,6 +27,7 @@ use App\Chat\ServerVariable;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Chat\ServerCustomVariable;
+use App\Helpers\WingsFileTrashConfig;
 use App\Plugins\Events\Events\WingsEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -376,6 +377,7 @@ class WingsServerListController
                     'oom_disabled' => (bool) $server['oom_disabled'],
                     'requires_rebuild' => false,
                 ],
+                'file_trash' => WingsFileTrashConfig::forWings(),
             ];
             $listMounts = Mount::getWingsMountsForServer((int) $server['id']);
             if ($listMounts !== []) {

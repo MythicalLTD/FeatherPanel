@@ -24,6 +24,7 @@ use App\Chat\ServerActivity;
 use App\Helpers\ApiResponse;
 use App\Services\Wings\Wings;
 use OpenApi\Attributes as OA;
+use App\Config\ConfigInterface;
 use App\Plugins\Events\Events\ServerEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -802,9 +803,11 @@ class ServerFilesController
             }
 
             $data = $this->validateJsonBody($request, ['files', 'root']);
+            $permanent = !empty($data['permanent']);
+            $deleteOptions = $this->buildTrashDeleteOptions($permanent);
 
             $wings = $this->createWingsConnection($node);
-            $response = $wings->getServer()->deleteFiles($server['uuid'], $data['root'], $data['files']);
+            $response = $wings->getServer()->deleteFiles($server['uuid'], $data['root'], $data['files'], $deleteOptions);
 
             if (!$response->isSuccessful()) {
                 $error = $response->getError();
@@ -812,12 +815,15 @@ class ServerFilesController
                 return ApiResponse::error('Failed to delete files: ' . $error, 'WINGS_ERROR', $response->getStatusCode());
             }
 
+            $usedTrash = !empty($deleteOptions['use_trash']) && empty($deleteOptions['permanent']);
+
             // Log activity
-            $this->logActivity($server, $node, 'files_deleted', [
+            $this->logActivity($server, $node, $usedTrash ? 'files_trashed' : 'files_deleted', [
                 'root' => $data['root'],
                 'files' => $data['files'],
 
                 'file_count' => count($data['files']),
+                'trash' => $usedTrash,
             ], $user);
 
             // Emit event
@@ -832,9 +838,149 @@ class ServerFilesController
                 );
             }
 
-            return ApiResponse::success($response->getData(), 'Files deleted successfully');
+            $message = $usedTrash ? 'Files moved to trash successfully' : 'Files deleted successfully';
+
+            return ApiResponse::success($response->getData(), $message);
         } catch (\Exception $e) {
             return $this->handleWingsError($e, 'delete files');
+        }
+    }
+
+    public function listTrash(Request $request, string $serverUuid): Response
+    {
+        try {
+            $user = $this->validateUser($request);
+            $server = $this->validateServer($serverUuid);
+            $node = $this->validateNode($server['node_id']);
+
+            $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::FILE_READ);
+            if ($permissionCheck !== null) {
+                return $permissionCheck;
+            }
+
+            if (!$this->isFileTrashEnabled()) {
+                return ApiResponse::error('File trash is disabled on this panel', 'TRASH_DISABLED', 403);
+            }
+
+            $limits = $this->getTrashLimits();
+            $wings = $this->createWingsConnection($node);
+            $response = $wings->getServer()->listTrash(
+                $server['uuid'],
+                (int) $limits['max_size_bytes'],
+                (int) $limits['retention_days']
+            );
+
+            if (!$response->isSuccessful()) {
+                return ApiResponse::error('Failed to list trash: ' . $response->getError(), 'WINGS_ERROR', $response->getStatusCode());
+            }
+
+            $this->logActivity($server, $node, 'trash_listed', [], $user);
+
+            return ApiResponse::success($response->getData(), 'Trash listed successfully');
+        } catch (\Exception $e) {
+            return $this->handleWingsError($e, 'list trash');
+        }
+    }
+
+    public function restoreTrash(Request $request, string $serverUuid): Response
+    {
+        try {
+            $user = $this->validateUser($request);
+            $server = $this->validateServer($serverUuid);
+            $node = $this->validateNode($server['node_id']);
+
+            $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::FILE_UPDATE);
+            if ($permissionCheck !== null) {
+                return $permissionCheck;
+            }
+
+            if (!$this->isFileTrashEnabled()) {
+                return ApiResponse::error('File trash is disabled on this panel', 'TRASH_DISABLED', 403);
+            }
+
+            $data = $this->validateJsonBody($request, ['ids']);
+            $overwrite = isset($data['overwrite']) && (bool) $data['overwrite'];
+            $wings = $this->createWingsConnection($node);
+            $response = $wings->getServer()->restoreTrash($server['uuid'], $data['ids'], $overwrite);
+
+            if (!$response->isSuccessful()) {
+                return ApiResponse::error('Failed to restore files: ' . $response->getError(), 'WINGS_ERROR', $response->getStatusCode());
+            }
+
+            $this->logActivity($server, $node, 'trash_restored', [
+                'ids' => $data['ids'],
+                'count' => count($data['ids']),
+            ], $user);
+
+            return ApiResponse::success($response->getData(), 'Files restored successfully');
+        } catch (\Exception $e) {
+            return $this->handleWingsError($e, 'restore trash');
+        }
+    }
+
+    public function deleteTrashEntries(Request $request, string $serverUuid): Response
+    {
+        try {
+            $user = $this->validateUser($request);
+            $server = $this->validateServer($serverUuid);
+            $node = $this->validateNode($server['node_id']);
+
+            $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::FILE_DELETE);
+            if ($permissionCheck !== null) {
+                return $permissionCheck;
+            }
+
+            if (!$this->isFileTrashEnabled()) {
+                return ApiResponse::error('File trash is disabled on this panel', 'TRASH_DISABLED', 403);
+            }
+
+            $data = $this->validateJsonBody($request, ['ids']);
+            $wings = $this->createWingsConnection($node);
+            $response = $wings->getServer()->deleteTrashEntries($server['uuid'], $data['ids']);
+
+            if (!$response->isSuccessful()) {
+                return ApiResponse::error('Failed to delete trash entries: ' . $response->getError(), 'WINGS_ERROR', $response->getStatusCode());
+            }
+
+            $this->logActivity($server, $node, 'trash_deleted', [
+                'ids' => $data['ids'],
+                'count' => count($data['ids']),
+            ], $user);
+
+            return ApiResponse::success($response->getData(), 'Trash entries deleted permanently');
+        } catch (\Exception $e) {
+            return $this->handleWingsError($e, 'delete trash entries');
+        }
+    }
+
+    public function emptyTrash(Request $request, string $serverUuid): Response
+    {
+        try {
+            $user = $this->validateUser($request);
+            $server = $this->validateServer($serverUuid);
+            $node = $this->validateNode($server['node_id']);
+
+            $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::FILE_DELETE);
+            if ($permissionCheck !== null) {
+                return $permissionCheck;
+            }
+
+            if (!$this->isFileTrashEnabled()) {
+                return ApiResponse::error('File trash is disabled on this panel', 'TRASH_DISABLED', 403);
+            }
+
+            $wings = $this->createWingsConnection($node);
+            $response = $wings->getServer()->emptyTrash($server['uuid']);
+
+            if (!$response->isSuccessful()) {
+                return ApiResponse::error('Failed to empty trash: ' . $response->getError(), 'WINGS_ERROR', $response->getStatusCode());
+            }
+
+            $this->logActivity($server, $node, 'trash_emptied', [], $user);
+
+            return ApiResponse::success($response->getData(), 'Trash emptied successfully');
+        } catch (\Exception $e) {
+            return $this->handleWingsError($e, 'empty trash');
         }
     }
 
@@ -2402,5 +2548,43 @@ class ServerFilesController
         ];
 
         return $mimeTypes[$extension] ?? 'text/plain';
+    }
+
+    private function isFileTrashEnabled(): bool
+    {
+        return App::getInstance(true)->getConfig()->getSetting(ConfigInterface::FILE_TRASH_ENABLED, 'false') === 'true';
+    }
+
+    /**
+     * @return array{max_size_bytes: int, retention_days: int}
+     */
+    private function getTrashLimits(): array
+    {
+        $config = App::getInstance(true)->getConfig();
+        $maxMb = (int) $config->getSetting(ConfigInterface::FILE_TRASH_MAX_SIZE_MB, '512');
+        $retentionDays = (int) $config->getSetting(ConfigInterface::FILE_TRASH_RETENTION_DAYS, '30');
+
+        return [
+            'max_size_bytes' => $maxMb > 0 ? $maxMb * 1024 * 1024 : 0,
+            'retention_days' => $retentionDays,
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildTrashDeleteOptions(bool $permanent): array
+    {
+        if ($permanent || !$this->isFileTrashEnabled()) {
+            return ['permanent' => true];
+        }
+
+        $limits = $this->getTrashLimits();
+
+        return [
+            'use_trash' => true,
+            'permanent' => false,
+            'trash' => $limits,
+        ];
     }
 }

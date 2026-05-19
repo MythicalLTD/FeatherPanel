@@ -88,6 +88,15 @@ const ACCENT_COLORS = {
     slate: '215 20% 45%',
 };
 
+const ACCENT_FOREGROUNDS: Partial<Record<keyof typeof ACCENT_COLORS, string>> = {
+    orange: '0 0% 9%',
+    teal: '0 0% 9%',
+    yellow: '0 0% 9%',
+    cyan: '0 0% 9%',
+    lime: '0 0% 9%',
+    amber: '0 0% 9%',
+};
+
 const USER_OVERRIDE_KEYS = {
     theme: 'themeUserOverride',
     accentColor: 'accentColorUserOverride',
@@ -257,8 +266,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         localStorage.setItem('theme', theme);
 
         const accentHSL = ACCENT_COLORS[accentColor as keyof typeof ACCENT_COLORS] || ACCENT_COLORS.purple;
+        const primaryForeground = ACCENT_FOREGROUNDS[accentColor as keyof typeof ACCENT_FOREGROUNDS] || '0 0% 98%';
         root.style.setProperty('--color-primary', `hsl(${accentHSL})`);
         root.style.setProperty('--primary', accentHSL);
+        root.style.setProperty('--color-primary-foreground', `hsl(${primaryForeground})`);
+        root.style.setProperty('--primary-foreground', primaryForeground);
         localStorage.setItem('accentColor', accentColor);
 
         const fontStacks: Record<FontFamily, string> = {

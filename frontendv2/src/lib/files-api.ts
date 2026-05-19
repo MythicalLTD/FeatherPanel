@@ -14,6 +14,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
 import api from './api';
+import { filterFeatherTrashFiles } from '@/lib/feather-trash';
 import { FileObject, FilesResponse } from '@/types/server';
 
 interface ApiResponse<T> {
@@ -42,6 +43,15 @@ export interface ArchiveListEntry {
 export interface ArchiveListData {
     contents: ArchiveListEntry[];
     truncated: boolean;
+}
+
+export interface TrashEntry {
+    id: string;
+    original_root: string;
+    original_name: string;
+    deleted_at: string;
+    size: number;
+    is_directory: boolean;
 }
 
 /** DataTransfer type for dragging paths out of the archive browser into the file list. */
@@ -138,8 +148,8 @@ export const filesApi = {
             params: { path: directory },
         });
 
-        // Map fields for UI consistency
-        return response.data.data.contents.map((f) => {
+        // Map fields for UI consistency; never expose the internal trash directory in the UI
+        const mapped = response.data.data.contents.map((f) => {
             const isFile = f.file !== undefined ? f.file : f.isFile !== undefined ? f.isFile : !f.directory;
             return {
                 ...f,
@@ -149,6 +159,7 @@ export const filesApi = {
                 mimetype: f.mime || f.mimetype,
             };
         });
+        return filterFeatherTrashFiles(mapped);
     },
 
     searchFiles: async (uuid: string, filters: AdvancedFileSearchFilters): Promise<FileObject[]> => {
@@ -156,7 +167,7 @@ export const filesApi = {
             params: filters,
         });
 
-        return response.data.data.map((f) => {
+        const mapped = response.data.data.map((f) => {
             const isFile = f.file !== undefined ? f.file : f.isFile !== undefined ? f.isFile : !f.directory;
             return {
                 ...f,
@@ -166,6 +177,7 @@ export const filesApi = {
                 mimetype: f.mime || f.mimetype,
             };
         });
+        return filterFeatherTrashFiles(mapped);
     },
 
     listArchiveDirectory: async (
@@ -295,13 +307,33 @@ export const filesApi = {
         });
     },
 
-    deleteFiles: async (uuid: string, root: string, files: string[]): Promise<void> => {
+    deleteFiles: async (uuid: string, root: string, files: string[], permanent = false): Promise<void> => {
         await api.delete(`/user/servers/${uuid}/delete-files`, {
             data: {
                 root,
                 files,
+                ...(permanent ? { permanent: true } : {}),
             },
         });
+    },
+
+    listTrash: async (uuid: string): Promise<{ entries: TrashEntry[]; total_size: number }> => {
+        const res = await api.get<ApiResponse<{ entries: TrashEntry[]; total_size: number }>>(
+            `/user/servers/${uuid}/trash`,
+        );
+        return res.data.data;
+    },
+
+    restoreTrash: async (uuid: string, ids: string[], overwrite = false): Promise<void> => {
+        await api.post(`/user/servers/${uuid}/trash/restore`, { ids, overwrite });
+    },
+
+    deleteTrashEntries: async (uuid: string, ids: string[]): Promise<void> => {
+        await api.post(`/user/servers/${uuid}/trash/delete`, { ids });
+    },
+
+    emptyTrash: async (uuid: string): Promise<void> => {
+        await api.post(`/user/servers/${uuid}/trash/empty`);
     },
 
     wipeAllFiles: async (uuid: string): Promise<void> => {

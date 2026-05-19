@@ -12,6 +12,8 @@
 - Per-user timezone preference in account settings, with browser auto-detection on first visit, so all dates and "X ago" labels render in each user's preferred zone. by @nayskutzu
 - Per-server-schedule timezone selector. Each cron schedule now stores its own IANA timezone by @nayskutzu
 - Server archives can now be opened and even viewed in the file manager. by @nayskutzu
+- Trash bin support in the file manager. by @nayskutzu
+- Preview support for archive contents in the file manager. by @nayskutzu
 
 ### Fixed
 
@@ -22,6 +24,7 @@
 - Added missing translations to the translations file. by @nayskutzu
 - The default theme from admin was not applied if you didn't lock it. by @nayskutzu
 - Buch of timezone issues were fixed. by @nayskutzu
+- Color issues with vds settings page were fixed. by @nayskutzu
 
 ### Improved
 

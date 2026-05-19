@@ -29,6 +29,7 @@ import {
     CreateFolderDialog,
     CreateFileDialog,
     DeleteDialog,
+    EmptyTrashDialog,
     RenameDialog,
     ImagePreviewDialog,
     PermissionsDialog,
@@ -41,10 +42,20 @@ import {
     ArchiveBrowsePanel,
 } from './components/dialogs';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { useSettings } from '@/contexts/SettingsContext';
+import { isEnabled } from '@/lib/utils';
 import { toast } from 'sonner';
 import { filesApi, ARCHIVE_EXTRACT_DRAG_MIME } from '@/lib/files-api';
 import { isBinaryLikeFileName } from '@/lib/binary-like-file-names';
 import { FileObject } from '@/types/server';
+import {
+    createTrashFolderEntry,
+    FEATHER_TRASH_DIR,
+    filterSelectableFiles,
+    isTrashShortcut,
+    trashStatsFromList,
+    type TrashFolderStats,
+} from '@/lib/feather-trash';
 import { Download, X, Upload, CheckCircle2, AlertCircle } from 'lucide-react';
 import React, { use } from 'react';
 import { Button } from '@/components/featherui/Button';
@@ -150,6 +161,8 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
     const router = useRouter();
     const { uuidShort } = use(params);
     const { t } = useTranslation();
+    const { settings } = useSettings();
+    const trashEnabled = isEnabled(settings?.file_trash_enabled);
 
     const {
         files,
@@ -213,6 +226,9 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
     const [searchFiltersOpen, setSearchFiltersOpen] = useState(false);
     const [searchLoading, setSearchLoading] = useState(false);
     const [searchResults, setSearchResults] = useState<FileObject[] | null>(null);
+    const [trashStats, setTrashStats] = useState<TrashFolderStats | null>(null);
+    const [emptyTrashOpen, setEmptyTrashOpen] = useState(false);
+    const [emptyTrashBusy, setEmptyTrashBusy] = useState(false);
     const [includePattern, setIncludePattern] = useState('');
     const [excludePattern, setExcludePattern] = useState('');
     const [searchCaseInsensitive, setSearchCaseInsensitive] = useState(true);
@@ -246,7 +262,26 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
         maxSizeBytes,
     ]);
     const hasAdvancedFilters = activeAdvancedFiltersCount > 0;
-    const visibleFiles = searchResults ?? files;
+    const refreshTrashStats = useCallback(async () => {
+        if (!trashEnabled || !uuidShort) return;
+        try {
+            const data = await filesApi.listTrash(uuidShort);
+            setTrashStats(trashStatsFromList(data));
+        } catch {
+            setTrashStats({ totalSize: 0, lastModified: null, itemCount: 0 });
+        }
+    }, [trashEnabled, uuidShort]);
+
+    useEffect(() => {
+        void refreshTrashStats();
+    }, [refreshTrashStats]);
+
+    const baseFiles = searchResults ?? files;
+    const visibleFiles = useMemo(() => {
+        if (!trashEnabled || searchResults !== null) return baseFiles;
+        return [createTrashFolderEntry(trashStats ?? undefined), ...baseFiles];
+    }, [baseFiles, trashEnabled, searchResults, trashStats]);
+    const selectableFiles = useMemo(() => filterSelectableFiles(visibleFiles), [visibleFiles]);
     const previousDirectoryRef = useRef(currentDirectory || '/');
 
     const closeArchiveBrowse = useCallback(() => {
@@ -344,25 +379,30 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
 
     const handleSelectToggle = useCallback(
         (name: string) => {
+            const entry = visibleFiles.find((f) => f.name === name);
+            if (entry && isTrashShortcut(entry)) return;
             toggleSelect(name);
             setAnchorName(name);
             shiftPivotRef.current = null;
         },
-        [toggleSelect],
+        [toggleSelect, visibleFiles],
     );
 
     const handleSelectAllToggle = useCallback(() => {
-        if (visibleFiles.length === 0) return;
-        if (selectedFiles.length === visibleFiles.length) {
+        if (selectableFiles.length === 0) return;
+        const selectableNames = selectableFiles.map((f) => f.name);
+        const allSelected = selectableNames.length > 0 && selectableNames.every((n) => selectedFiles.includes(n));
+        if (allSelected) {
             setSelectedFiles([]);
         } else {
-            setSelectedFiles(visibleFiles.map((f) => f.name));
+            setSelectedFiles(selectableNames);
         }
         shiftPivotRef.current = null;
-    }, [visibleFiles, selectedFiles, setSelectedFiles]);
+    }, [selectableFiles, selectedFiles, setSelectedFiles]);
 
     const handleModifierClick = useCallback(
         (file: FileObject, event: React.MouseEvent) => {
+            if (isTrashShortcut(file)) return;
             const isCtrlLike = event.ctrlKey || event.metaKey;
             const isShift = event.shiftKey;
             const clickedIdx = visibleFiles.findIndex((f) => f.name === file.name);
@@ -377,7 +417,10 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 const effectivePivotIdx = pivotIdx !== -1 ? pivotIdx : clickedIdx;
                 const [s, e] =
                     effectivePivotIdx <= clickedIdx ? [effectivePivotIdx, clickedIdx] : [clickedIdx, effectivePivotIdx];
-                const range = visibleFiles.slice(s, e + 1).map((f) => f.name);
+                const range = visibleFiles
+                    .slice(s, e + 1)
+                    .filter((f) => !isTrashShortcut(f))
+                    .map((f) => f.name);
                 if (isCtrlLike) {
                     setSelectedFiles(Array.from(new Set([...selectedFiles, ...range])));
                 } else {
@@ -418,6 +461,10 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
 
     const handleRowDragStart = useCallback(
         (file: FileObject, event: React.DragEvent) => {
+            if (isTrashShortcut(file)) {
+                event.preventDefault();
+                return;
+            }
             if (!canUpdate) {
                 event.preventDefault();
                 return;
@@ -555,7 +602,34 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
         [canArchive, currentDirectory, performArchiveExtract, performMoveFiles],
     );
 
+    const handleEmptyTrash = async () => {
+        setEmptyTrashBusy(true);
+        try {
+            await filesApi.emptyTrash(uuidShort);
+            toast.success(t('files.trash.messages.emptied'));
+            setEmptyTrashOpen(false);
+            await refreshTrashStats();
+            refresh();
+        } catch {
+            toast.error(t('files.trash.messages.empty_error'));
+        } finally {
+            setEmptyTrashBusy(false);
+        }
+    };
+
     const handleAction = (action: string, file: FileObject) => {
+        if (isTrashShortcut(file)) {
+            switch (action) {
+                case 'trash-open':
+                    router.push(`/server/${uuidShort}/files/trash`);
+                    return;
+                case 'trash-empty':
+                    setEmptyTrashOpen(true);
+                    return;
+            }
+            return;
+        }
+
         const usesSelection =
             selectedFiles.length > 1 &&
             selectedFiles.includes(file.name) &&
@@ -665,6 +739,10 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
             size < 1024 * 1024 * 5 && !isBinaryLikeFileName(name) && !isImage(name);
 
         const openFile = (file: FileObject) => {
+            if (isTrashShortcut(file)) {
+                router.push(`/server/${uuidShort}/files/trash`);
+                return;
+            }
             if (!file.isFile) {
                 const nextDir = resolveDirectoryTarget(currentDirectory || '/', file.name);
                 navigateAndCloseArchive(nextDir);
@@ -704,7 +782,12 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 const effectivePivotIdx = pivotIdx !== -1 ? pivotIdx : nextIdx;
                 const [start, end] =
                     effectivePivotIdx <= nextIdx ? [effectivePivotIdx, nextIdx] : [nextIdx, effectivePivotIdx];
-                setSelectedFiles(visibleFiles.slice(start, end + 1).map((f) => f.name));
+                setSelectedFiles(
+                    visibleFiles
+                        .slice(start, end + 1)
+                        .filter((f) => !isTrashShortcut(f))
+                        .map((f) => f.name),
+                );
                 setAnchorName(nextName);
             } else {
                 shiftPivotRef.current = null;
@@ -732,12 +815,14 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
             if (isEditableTarget(e.target)) return;
 
             if (modifier && e.key.toLowerCase() === 'a') {
-                if (visibleFiles.length === 0) return;
+                if (selectableFiles.length === 0) return;
                 e.preventDefault();
-                if (selectedFiles.length === visibleFiles.length) {
+                const selectableNames = selectableFiles.map((f) => f.name);
+                const allSelected = selectableNames.every((n) => selectedFiles.includes(n));
+                if (allSelected) {
                     setSelectedFiles([]);
                 } else {
-                    setSelectedFiles(visibleFiles.map((f) => f.name));
+                    setSelectedFiles(selectableNames);
                 }
                 shiftPivotRef.current = null;
                 return;
@@ -763,6 +848,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 if (!canUpdate || selectedFiles.length !== 1) return;
                 e.preventDefault();
                 const file = visibleFiles.find((f) => f.name === selectedFiles[0]);
+                if (file && isTrashShortcut(file)) return;
                 if (file) {
                     setActionFile(file);
                     setRenameOpen(true);
@@ -824,6 +910,8 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
 
             if (e.key === ' ' && !modifier && !e.shiftKey && !e.altKey) {
                 if (!anchorName) return;
+                const anchorFile = visibleFiles.find((f) => f.name === anchorName);
+                if (anchorFile && isTrashShortcut(anchorFile)) return;
                 e.preventDefault();
                 toggleSelect(anchorName);
                 shiftPivotRef.current = null;
@@ -840,6 +928,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [
         visibleFiles,
+        selectableFiles,
         selectedFiles,
         canDelete,
         canUpdate,
@@ -1490,9 +1579,13 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                             onSelectAll={handleSelectAllToggle}
                             onModifierClick={handleModifierClick}
                             anchorName={anchorName}
-                            onNavigate={(name) =>
-                                navigateAndCloseArchive(resolveDirectoryTarget(currentDirectory || '/', name))
-                            }
+                            onNavigate={(name) => {
+                                if (name === FEATHER_TRASH_DIR) {
+                                    router.push(`/server/${uuidShort}/files/trash`);
+                                    return;
+                                }
+                                navigateAndCloseArchive(resolveDirectoryTarget(currentDirectory || '/', name));
+                            }}
                             onAction={handleAction}
                             onRowDragStart={canUpdate ? handleRowDragStart : undefined}
                             onRowDragEnd={canUpdate ? handleRowDragEnd : undefined}
@@ -1561,8 +1654,16 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 files={actionFile ? [actionFile.name] : selectedFiles}
                 onSuccess={() => {
                     refresh();
+                    void refreshTrashStats();
                     setSelectedFiles([]);
                 }}
+            />
+            <EmptyTrashDialog
+                open={emptyTrashOpen}
+                onOpenChange={setEmptyTrashOpen}
+                onConfirm={handleEmptyTrash}
+                loading={emptyTrashBusy}
+                disabled={(trashStats?.itemCount ?? 0) === 0}
             />
             <PullFileDialog
                 open={pullFileOpen}

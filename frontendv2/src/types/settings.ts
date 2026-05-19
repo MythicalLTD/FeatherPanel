@@ -86,6 +86,9 @@ export interface AppSettings {
     server_allow_schedules: string;
     /** Admin-only: gates lifecycle hooks UI + execution (sidebar entry hidden when false). */
     server_lifecycle_hooks_enabled: string;
+    file_trash_enabled: string;
+    file_trash_max_size_mb: string;
+    file_trash_retention_days: string;
     server_proxy_max_per_server: string;
     server_allow_cross_realm_spell_change: string;
     user_allow_avatar_change: string;

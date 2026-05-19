@@ -16,6 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 export * from './CreateFolderDialog';
 export * from './CreateFileDialog';
 export * from './DeleteDialog';
+export * from './EmptyTrashDialog';
 export * from './RenameDialog';
 export * from './ImagePreviewDialog';
 export * from './PermissionsDialog';

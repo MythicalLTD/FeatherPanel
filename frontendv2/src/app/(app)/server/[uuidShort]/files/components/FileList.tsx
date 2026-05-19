@@ -14,6 +14,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
 import { FileObject } from '@/types/server';
+import { filterSelectableFiles } from '@/lib/feather-trash';
 import { FileRow } from './FileRow';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2, FolderOpen, Sparkles } from 'lucide-react';
@@ -113,7 +114,9 @@ export function FileList({
         );
     }
 
-    const allSelected = files.length > 0 && selectedFiles.length === files.length;
+    const selectableFiles = filterSelectableFiles(files);
+    const selectableNames = selectableFiles.map((f) => f.name);
+    const allSelected = selectableNames.length > 0 && selectableNames.every((n) => selectedFiles.includes(n));
 
     return (
         <div className='overflow-hidden rounded-3xl border border-gray-200 bg-white backdrop-blur-xl dark:border-white/10 dark:bg-white/5'>
