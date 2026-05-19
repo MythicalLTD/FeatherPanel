@@ -2985,6 +2985,154 @@
 					"maxWorldSize": {
 						"label": "Max World Size",
 						"description": "Maximum world size in blocks"
+					},
+					"serverName": {
+						"label": "Server Name",
+						"description": "Internal server name used for logging"
+					},
+					"serverIp": {
+						"label": "Server IP",
+						"description": "Bind address (leave empty for all interfaces)"
+					},
+					"serverPort": {
+						"label": "Server Port",
+						"description": "Port the Minecraft server listens on"
+					},
+					"networkCompressionThreshold": {
+						"label": "Network Compression Threshold",
+						"description": "Packet size threshold for compression (-1 to disable)"
+					},
+					"rateLimit": {
+						"label": "Rate Limit",
+						"description": "Maximum packets per second (0 to disable)"
+					},
+					"playerIdleTimeout": {
+						"label": "Player Idle Timeout",
+						"description": "Minutes before idle players are kicked (0 to disable)"
+					},
+					"pauseWhenEmptySeconds": {
+						"label": "Pause When Empty (seconds)",
+						"description": "Seconds after last player leaves before pausing (-1 to disable)"
+					},
+					"enableStatus": {
+						"label": "Enable Status",
+						"description": "Respond to server list ping requests"
+					},
+					"preventProxyConnections": {
+						"label": "Prevent Proxy Connections",
+						"description": "Block players if ISP differs from the one used to join"
+					},
+					"logIps": {
+						"label": "Log IPs",
+						"description": "Log player IP addresses in the server log"
+					},
+					"acceptsTransfers": {
+						"label": "Accepts Transfers",
+						"description": "Allow players to transfer to this server from another server"
+					},
+					"enableRcon": {
+						"label": "Enable RCON",
+						"description": "Enable remote console access"
+					},
+					"rconPort": {
+						"label": "RCON Port",
+						"description": "Port used for RCON connections"
+					},
+					"rconPassword": {
+						"label": "RCON Password",
+						"description": "Password required for RCON access"
+					},
+					"broadcastRconToOps": {
+						"label": "Broadcast RCON to OPs",
+						"description": "Send RCON command output to online operators"
+					},
+					"enableQuery": {
+						"label": "Enable Query",
+						"description": "Enable GameSpy4 query protocol"
+					},
+					"queryPort": {
+						"label": "Query Port",
+						"description": "Port used for query protocol responses"
+					},
+					"managementServerEnabled": {
+						"label": "Enable Management Server",
+						"description": "Enable the built-in management server API"
+					},
+					"managementServerHost": {
+						"label": "Management Server Host",
+						"description": "Host address for the management server"
+					},
+					"managementServerPort": {
+						"label": "Management Server Port",
+						"description": "Port for the management server (0 for automatic)"
+					},
+					"managementServerSecret": {
+						"label": "Management Server Secret",
+						"description": "Shared secret for management server authentication"
+					},
+					"managementServerAllowedOrigins": {
+						"label": "Allowed Origins",
+						"description": "Comma-separated list of allowed CORS origins"
+					},
+					"managementServerTlsEnabled": {
+						"label": "Management TLS Enabled",
+						"description": "Use TLS for management server connections"
+					},
+					"managementServerTlsKeystore": {
+						"label": "TLS Keystore Path",
+						"description": "Path to the TLS keystore file"
+					},
+					"managementServerTlsKeystorePassword": {
+						"label": "TLS Keystore Password",
+						"description": "Password for the TLS keystore"
+					},
+					"initialEnabledPacks": {
+						"label": "Initial Enabled Packs",
+						"description": "Comma-separated list of data packs enabled on world creation"
+					},
+					"initialDisabledPacks": {
+						"label": "Initial Disabled Packs",
+						"description": "Comma-separated list of data packs disabled on world creation"
+					},
+					"maxTickTime": {
+						"label": "Max Tick Time",
+						"description": "Maximum milliseconds per tick before watchdog stops the server"
+					},
+					"statusHeartbeatInterval": {
+						"label": "Status Heartbeat Interval",
+						"description": "Interval in seconds for status heartbeats (0 to disable)"
+					},
+					"regionFileCompression": {
+						"label": "Region File Compression",
+						"description": "Compression algorithm used for region files"
+					},
+					"syncChunkWrites": {
+						"label": "Sync Chunk Writes",
+						"description": "Synchronously write chunk data to disk"
+					},
+					"debug": {
+						"label": "Debug Mode",
+						"description": "Enable debug logging"
+					},
+					"enableJmxMonitoring": {
+						"label": "Enable JMX Monitoring",
+						"description": "Expose JMX monitoring beans"
+					},
+					"enableCodeOfConduct": {
+						"label": "Enable Code of Conduct",
+						"description": "Enable the Minecraft code of conduct system"
+					},
+					"bugReportLink": {
+						"label": "Bug Report Link",
+						"description": "URL shown to players for reporting bugs"
+					},
+					"textFilteringConfig": {
+						"label": "Text Filtering Config",
+						"description": "Path or configuration for chat text filtering"
+					},
+					"textFilteringVersion": {
+						"label": "Text Filtering Version",
+						"description": "Text filtering configuration version"
 					}
 				},
 				"sections": {
@@ -2994,7 +3142,10 @@
 					"network": "Network & Security",
 					"performance": "Performance Settings",
 					"resourcePack": "Resource Pack",
-					"advanced": "Advanced Settings"
+					"advanced": "Advanced Settings",
+					"dataPacks": "Data Packs",
+					"rconQuery": "RCON & Query",
+					"managementServer": "Management Server"
 				},
 				"sectionsDescriptions": {
 					"serverInfo": "Basic server configuration",
@@ -3003,7 +3154,10 @@
 					"network": "Network and security settings",
 					"performance": "Server performance and rendering settings",
 					"resourcePack": "Resource pack configuration",
-					"advanced": "Advanced server configuration"
+					"advanced": "Advanced server configuration",
+					"dataPacks": "Initial data pack configuration",
+					"rconQuery": "Remote console and query protocol settings",
+					"managementServer": "Built-in management API settings"
 				},
 				"options": {
 					"gamemode": {
@@ -3024,6 +3178,11 @@
 						"amplified": "Amplified",
 						"largeBiomes": "Large Biomes",
 						"singleBiome": "Single Biome"
+					},
+					"regionFileCompression": {
+						"deflate": "Deflate",
+						"none": "None",
+						"lz4": "LZ4"
 					}
 				}
 			},

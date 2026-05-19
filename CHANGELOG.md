@@ -32,6 +32,7 @@
 - Tickets were pretty cramped and didn't look good on big screens. by @nayskutzu
 - Chatbot now supports the ability to get the article content by its ID. by @nayskutzu
 - Chatbot token usage has been cut in half by @nayskutzu
+- Enhanced Minecraft server compatibility and features to fully support the latest release version. by @nayskutzu
 
 ## v1.3.7.2 STABLE
 
