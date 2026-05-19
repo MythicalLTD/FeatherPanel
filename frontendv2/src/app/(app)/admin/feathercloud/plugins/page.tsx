@@ -60,6 +60,7 @@ import { PageCard } from '@/components/featherui/PageCard';
 import { Badge } from '@/components/ui/badge';
 import { Select } from '@/components/ui/select-native';
 import { cn } from '@/lib/utils';
+import { collectOwnedCloudPackageIds, isCloudPackageOwned } from '@/lib/cloudPackageMatch';
 import { Sheet, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
@@ -76,6 +77,7 @@ interface OnlineAddon {
     premium: number;
     premium_price?: string;
     premium_link?: string;
+    store_slug?: string | null;
     latest_version?: {
         version: string;
         download_url: string;
@@ -129,37 +131,11 @@ interface RequirementsCheckResult {
     };
 }
 
-type UnknownRecord = Record<string, unknown>;
-
-const asRecord = (value: unknown): UnknownRecord | null =>
-    value !== null && typeof value === 'object' && !Array.isArray(value) ? (value as UnknownRecord) : null;
-
-const normalizeCloudPackageId = (value: string) => value.trim().toLowerCase();
-const compactCloudPackageId = (value: string) => normalizeCloudPackageId(value).replace(/[^a-z0-9]/g, '');
-const cloudPackageIdsMatch = (ownedId: string, addonId: string) =>
-    normalizeCloudPackageId(ownedId) === normalizeCloudPackageId(addonId) ||
-    compactCloudPackageId(ownedId) === compactCloudPackageId(addonId);
-
-const collectOwnedCloudPackageIds = (purchase: unknown): string[] => {
-    const ids = new Set<string>();
-    const add = (value: unknown) => {
-        if (typeof value !== 'string') return;
-        const normalized = normalizeCloudPackageId(value);
-        if (normalized !== '') ids.add(normalized);
-    };
-    const addFields = (source: UnknownRecord | null) => {
-        if (!source) return;
-        ['identifier', 'package_identifier', 'product_identifier', 'name', 'slug'].forEach((field) =>
-            add(source[field]),
-        );
-    };
-
-    const root = asRecord(purchase);
-    addFields(root);
-    ['product', 'package', 'addon', 'item'].forEach((field) => addFields(asRecord(root?.[field])));
-
-    return [...ids];
-};
+const addonOwnershipOptions = (addon: Pick<OnlineAddon, 'identifier' | 'premium_link' | 'store_slug' | 'name'>) => ({
+    premiumLink: addon.premium_link,
+    storeSlug: addon.store_slug,
+    displayName: addon.name,
+});
 
 /** Any of these in the search box + Enter toggles UI preview mode. */
 const PLUGIN_UI_PREVIEW_SECRETS = ['testpluginuinow', 'testingpluginui'] as const;
@@ -825,11 +801,14 @@ export default function PluginsPage() {
             if (!row || row.premium !== 1) {
                 return true;
             }
-            const id = identifier.toLowerCase();
-            if (uiPreviewMode && id === 'premiumstorepreview') {
+            if (uiPreviewMode && identifier.toLowerCase() === 'premiumstorepreview') {
                 return true;
             }
-            return ownedCloudPackageIdsRef.current.some((x) => cloudPackageIdsMatch(x, id));
+            return isCloudPackageOwned(
+                ownedCloudPackageIdsRef.current,
+                identifier,
+                addonOwnershipOptions(row),
+            );
         });
         if (toInstall.length < pluginsReady.length) {
             toast.message(t('admin.marketplace.plugins.queue.premium_skipped_not_owned'));
@@ -888,12 +867,16 @@ export default function PluginsPage() {
     };
 
     const isPremiumOwnedForQueue = useCallback(
-        (identifier: string) => {
-            const id = identifier.toLowerCase();
+        (addon: Pick<OnlineAddon, 'identifier' | 'premium_link' | 'store_slug' | 'name'>) => {
+            const id = addon.identifier.toLowerCase();
             if (uiPreviewMode && id === 'premiumstorepreview') {
                 return true;
             }
-            return ownedCloudPackageIdsRef.current.some((x) => cloudPackageIdsMatch(x, id));
+            return isCloudPackageOwned(
+                ownedCloudPackageIdsRef.current,
+                addon.identifier,
+                addonOwnershipOptions(addon),
+            );
         },
         [uiPreviewMode],
     );
@@ -918,7 +901,7 @@ export default function PluginsPage() {
                 if (!row || row.premium !== 1) {
                     return true;
                 }
-                return ownedCloudPackageIds.some((ownedId) => cloudPackageIdsMatch(ownedId, id));
+                return isCloudPackageOwned(ownedCloudPackageIds, id, addonOwnershipOptions(row));
             });
             return next.length === prev.length ? prev : next;
         });
@@ -954,7 +937,7 @@ export default function PluginsPage() {
             }
 
             const row = lookupAddonRow(identifier);
-            if (row?.premium === 1 && !isPremiumOwnedForQueue(identifier)) {
+            if (row?.premium === 1 && !isPremiumOwnedForQueue(row)) {
                 toast.error(t('admin.marketplace.plugins.queue.premium_not_owned'));
                 return prev;
             }
@@ -1332,7 +1315,7 @@ export default function PluginsPage() {
                             const isPremium = addon.premium === 1;
                             const storeUrl = addon.premium_link?.trim() ?? '';
                             const hasStore = Boolean(storeUrl);
-                            const premiumOwned = !isPremium || isPremiumOwnedForQueue(addon.identifier);
+                            const premiumOwned = !isPremium || isPremiumOwnedForQueue(addon);
                             const requiresCloudBlock = isPremium && !hasStore && !cloudAccountConfigured;
                             const premiumNotLicensed = isPremium && cloudAccountConfigured && !premiumOwned;
                             const storePrimary =
@@ -1702,7 +1685,7 @@ export default function PluginsPage() {
                                 const store = sp.premium_link?.trim();
                                 const isPrem = sp.premium === 1;
                                 const installed = installedPluginIds.includes(sp.identifier);
-                                const premiumOwned = !isPrem || isPremiumOwnedForQueue(sp.identifier);
+                                const premiumOwned = !isPrem || isPremiumOwnedForQueue(sp);
                                 const premiumNotLicensed = isPrem && cloudAccountConfigured && !premiumOwned;
                                 const storePrimary =
                                     (isPrem && Boolean(store) && !cloudAccountConfigured) ||

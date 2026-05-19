@@ -1521,9 +1521,12 @@ class CloudPluginsController
             }
         }
 
+        $premiumLink = isset($pkg['premium_link']) && is_string($pkg['premium_link']) ? $pkg['premium_link'] : null;
+
         return [
             'id' => $pkg['id'] ?? null,
             'identifier' => $pkg['name'] ?? '',
+            'store_slug' => self::extractStoreSlugFromPremiumLink($premiumLink),
             'name' => $pkg['display_name'] ?? ($pkg['name'] ?? ''),
             'description' => $pkg['description'] ?? null,
             'icon' => PanelAssetUrl::rewriteCloudStorageIcon(is_string($iconUrl) ? $iconUrl : null),
@@ -1534,13 +1537,32 @@ class CloudPluginsController
             'tags' => $pkg['tags'] ?? [],
             'verified' => isset($pkg['verified']) ? (int) $pkg['verified'] === 1 : false,
             'premium' => isset($pkg['premium']) ? (int) $pkg['premium'] : 0,
-            'premium_link' => $pkg['premium_link'] ?? null,
+            'premium_link' => $premiumLink,
             'premium_price' => $pkg['premium_price'] ?? null,
             'downloads' => $pkg['downloads'] ?? 0,
             'created_at' => $pkg['created_at'] ?? null,
             'updated_at' => $pkg['updated_at'] ?? null,
             'latest_version' => $latestBlock,
         ];
+    }
+
+    /**
+     * Marketplace slug from the premium purchase URL (last path segment).
+     */
+    private static function extractStoreSlugFromPremiumLink(?string $link): ?string
+    {
+        if ($link === null || trim($link) === '') {
+            return null;
+        }
+
+        $path = parse_url($link, PHP_URL_PATH);
+        if (!is_string($path) || $path === '') {
+            return null;
+        }
+
+        $segments = array_values(array_filter(explode('/', $path), static fn (string $s): bool => $s !== ''));
+
+        return $segments !== [] ? (string) end($segments) : null;
     }
 
     /**

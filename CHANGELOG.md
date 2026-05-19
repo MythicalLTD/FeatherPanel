@@ -25,6 +25,7 @@
 - The default theme from admin was not applied if you didn't lock it. by @nayskutzu
 - Buch of timezone issues were fixed. by @nayskutzu
 - Color issues with vds settings page were fixed. by @nayskutzu
+- Further enhanced the plugin installer for improved performance and reliability. by @nayskutzu
 
 ### Improved
 
