@@ -23,6 +23,7 @@ use App\Chat\User;
 use App\Chat\Server;
 use App\Services\Wings\Wings;
 use App\Config\ConfigInterface;
+use App\Helpers\ModerationReasonHelper;
 use App\Mail\templates\ServerBanned;
 use App\Plugins\Events\Events\ServerEvent;
 
@@ -78,7 +79,9 @@ class SuspensionService
             }
 
             // Update server status to suspended
-            $updated = Server::updateServerById($server['id'], ['suspended' => 1]);
+            $reason = ModerationReasonHelper::formatReason('featherzerotrust', "{$detectionsCount} detection(s)");
+            $systemActor = ['uuid' => 'system', 'username' => 'FeatherZeroTrust'];
+            $updated = Server::updateServerById($server['id'], ModerationReasonHelper::suspensionAppliedFields($reason, $systemActor));
 
             if (!$updated) {
                 App::getInstance(true)->getLogger()->error("FeatherZeroTrust: Failed to suspend server {$serverUuid} in database");
@@ -136,6 +139,7 @@ class SuspensionService
                         'uuid' => $user['uuid'],
                         'enabled' => $config->getSetting(ConfigInterface::SMTP_ENABLED, 'false'),
                         'server_name' => $server['name'],
+                        'suspension_reason' => $reason,
                     ]);
                 } catch (\Exception $e) {
                     App::getInstance(true)->getLogger()->error('FeatherZeroTrust: Failed to send server suspended email: ' . $e->getMessage());

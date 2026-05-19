@@ -34,6 +34,15 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+    ModerationReasonFields,
+    ModerationReasonValue,
+    isModerationReasonValid,
+} from '@/components/admin/ModerationReasonFields';
+import {
+    ModerationStatusCard,
+    ModerationStaffActor,
+} from '@/components/admin/ModerationStatusCard';
 import { toast } from 'sonner';
 import { Pause, Play, Trash2, AlertTriangle, ArrowLeftRight, Search, ChevronRight, Loader2 } from 'lucide-react';
 import { ApiNode, ApiAllocation } from '@/types/adminServerTypes';
@@ -42,11 +51,28 @@ interface ActionsTabProps {
     serverId: string;
     serverName: string;
     isSuspended: boolean;
+    suspensionReason?: string | null;
+    suspendedAt?: string | null;
+    suspendedBy?: ModerationStaffActor | null;
     currentNodeId?: number | null;
     onRefresh: () => void;
 }
 
-export function ActionsTab({ serverId, serverName, isSuspended, currentNodeId, onRefresh }: ActionsTabProps) {
+const emptyReason: ModerationReasonValue = {
+    reason_category: '',
+    reason_details: '',
+};
+
+export function ActionsTab({
+    serverId,
+    serverName,
+    isSuspended,
+    suspensionReason,
+    suspendedAt,
+    suspendedBy,
+    currentNodeId,
+    onRefresh,
+}: ActionsTabProps) {
     const { t } = useTranslation();
     const router = useRouter();
     const [suspending, setSuspending] = useState(false);
@@ -66,16 +92,29 @@ export function ActionsTab({ serverId, serverName, isSuspended, currentNodeId, o
     const [loadingAllocations, setLoadingAllocations] = useState(false);
 
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [suspendDialogOpen, setSuspendDialogOpen] = useState(false);
+    const [suspendReason, setSuspendReason] = useState<ModerationReasonValue>(emptyReason);
 
     const handleSuspend = async () => {
+        if (!isModerationReasonValid(suspendReason)) {
+            toast.error(t('admin.moderation.reason_required'));
+            return;
+        }
+
         setSuspending(true);
         try {
-            await axios.post(`/api/admin/servers/${serverId}/suspend`);
+            await axios.post(`/api/admin/servers/${serverId}/suspend`, suspendReason);
             toast.success(t('admin.servers.edit.actions.suspend_success'));
+            setSuspendDialogOpen(false);
+            setSuspendReason(emptyReason);
             onRefresh();
-        } catch (error) {
+        } catch (error: unknown) {
             console.error('Error suspending server:', error);
-            toast.error(t('admin.servers.edit.actions.suspend_failed'));
+            const message =
+                axios.isAxiosError(error) && error.response?.data?.message
+                    ? String(error.response.data.message)
+                    : t('admin.servers.edit.actions.suspend_failed');
+            toast.error(message);
         } finally {
             setSuspending(false);
         }
@@ -178,26 +217,44 @@ export function ActionsTab({ serverId, serverName, isSuspended, currentNodeId, o
                 title={t('admin.servers.edit.actions.suspension_title')}
                 description={t('admin.servers.edit.actions.suspension_description')}
             >
-                <div className='flex items-center justify-between'>
-                    <div className='flex items-center gap-3'>
-                        <span className='text-sm'>{t('admin.servers.edit.actions.status')}:</span>
-                        <Badge variant={isSuspended ? 'destructive' : 'default'}>
-                            {isSuspended
-                                ? t('admin.servers.edit.actions.suspended')
-                                : t('admin.servers.edit.actions.active')}
-                        </Badge>
+                <div className='space-y-4'>
+                    <div className='flex items-center justify-between'>
+                        <div className='flex items-center gap-3'>
+                            <span className='text-sm'>{t('admin.servers.edit.actions.status')}:</span>
+                            <Badge variant={isSuspended ? 'destructive' : 'default'}>
+                                {isSuspended
+                                    ? t('admin.servers.edit.actions.suspended')
+                                    : t('admin.servers.edit.actions.active')}
+                            </Badge>
+                        </div>
+                        {isSuspended ? (
+                            <Button variant='outline' onClick={handleUnsuspend} loading={suspending}>
+                                <Play className='mr-2 h-4 w-4' />
+                                {t('admin.servers.edit.actions.unsuspend')}
+                            </Button>
+                        ) : (
+                            <Button
+                                variant='destructive'
+                                onClick={() => {
+                                    setSuspendReason(emptyReason);
+                                    setSuspendDialogOpen(true);
+                                }}
+                                loading={suspending}
+                            >
+                                <Pause className='mr-2 h-4 w-4' />
+                                {t('admin.servers.edit.actions.suspend')}
+                            </Button>
+                        )}
                     </div>
-                    {isSuspended ? (
-                        <Button variant='outline' onClick={handleUnsuspend} loading={suspending}>
-                            <Play className='mr-2 h-4 w-4' />
-                            {t('admin.servers.edit.actions.unsuspend')}
-                        </Button>
-                    ) : (
-                        <Button variant='destructive' onClick={handleSuspend} loading={suspending}>
-                            <Pause className='mr-2 h-4 w-4' />
-                            {t('admin.servers.edit.actions.suspend')}
-                        </Button>
-                    )}
+
+                    <ModerationStatusCard
+                        active={isSuspended}
+                        reason={suspensionReason}
+                        actedAt={suspendedAt}
+                        actedBy={suspendedBy}
+                        title={t('admin.moderation.server_suspended_title')}
+                        inactiveLabel={t('admin.moderation.server_not_suspended')}
+                    />
                 </div>
             </PageCard>
 
@@ -292,6 +349,34 @@ export function ActionsTab({ serverId, serverName, isSuspended, currentNodeId, o
                     </AlertDialogContent>
                 </AlertDialog>
             </PageCard>
+
+            <AlertDialog open={suspendDialogOpen} onOpenChange={setSuspendDialogOpen}>
+                <AlertDialogContent className='max-w-lg'>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className='flex items-center gap-2'>
+                            <AlertTriangle className='h-5 w-5 text-red-500' />
+                            {t('admin.servers.edit.actions.suspend_confirm_title')}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {t('admin.servers.edit.actions.suspend_confirm_description', { name: serverName })}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <ModerationReasonFields value={suspendReason} onChange={setSuspendReason} disabled={suspending} />
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={suspending}>{t('common.cancel')}</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={(e) => {
+                                e.preventDefault();
+                                void handleSuspend();
+                            }}
+                            className='bg-red-600 hover:bg-red-700'
+                            disabled={suspending || !isModerationReasonValid(suspendReason)}
+                        >
+                            {suspending ? t('common.loading') : t('admin.servers.edit.actions.suspend')}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
 
             <AlertDialog open={transferDialogOpen} onOpenChange={setTransferDialogOpen}>
                 <AlertDialogContent>

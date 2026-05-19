@@ -49,6 +49,22 @@ import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
+    ModerationReasonFields,
+    ModerationReasonValue,
+    isModerationReasonValid,
+} from '@/components/admin/ModerationReasonFields';
+import { ModerationStatusCard } from '@/components/admin/ModerationStatusCard';
 import { copyToClipboard } from '@/lib/utils';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
@@ -72,6 +88,9 @@ interface ApiUser {
     first_ip?: string;
     last_ip?: string;
     banned?: string;
+    ban_reason?: string | null;
+    banned_at?: string | null;
+    banned_by?: { uuid?: string | null; username?: string | null } | null;
     two_fa_enabled?: string;
     two_fa_blocked?: string;
     deleted?: boolean | string;
@@ -157,6 +176,12 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
     const [sendEmailOpen, setSendEmailOpen] = useState(false);
     const [sendingEmail, setSendingEmail] = useState(false);
     const [sendEmailData, setSendEmailData] = useState({ subject: '', body: '' });
+    const [banDialogOpen, setBanDialogOpen] = useState(false);
+    const [banSubmitting, setBanSubmitting] = useState(false);
+    const [banReason, setBanReason] = useState<ModerationReasonValue>({
+        reason_category: '',
+        reason_details: '',
+    });
 
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-users-edit');
 
@@ -279,20 +304,64 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
 
     const toggleBanUser = async () => {
         if (!user) return;
-        if (!confirm(t('admin.users.messages.ban_confirm'))) return;
+
         const currentlyBanned = user.banned === 'true';
+        if (currentlyBanned) {
+            if (!confirm(t('admin.users.messages.unban_confirm'))) return;
+            setBanSubmitting(true);
+            try {
+                const { data } = await axios.patch(`/api/admin/users/${user.uuid}`, {
+                    banned: 'false',
+                });
+                if (data?.success) {
+                    toast.success(t('admin.users.messages.unbanned'));
+                    await fetchUser();
+                } else {
+                    toast.error(data?.message || t('admin.users.messages.ban_failed'));
+                }
+            } catch (error: unknown) {
+                const message =
+                    axios.isAxiosError(error) && error.response?.data?.message
+                        ? String(error.response.data.message)
+                        : t('admin.users.messages.ban_failed');
+                toast.error(message);
+            } finally {
+                setBanSubmitting(false);
+            }
+            return;
+        }
+
+        setBanReason({ reason_category: '', reason_details: '' });
+        setBanDialogOpen(true);
+    };
+
+    const confirmBanUser = async () => {
+        if (!user || !isModerationReasonValid(banReason)) {
+            toast.error(t('admin.moderation.reason_required'));
+            return;
+        }
+
+        setBanSubmitting(true);
         try {
             const { data } = await axios.patch(`/api/admin/users/${user.uuid}`, {
-                banned: currentlyBanned ? 'false' : 'true',
+                banned: 'true',
+                ...banReason,
             });
             if (data?.success) {
-                toast.success(currentlyBanned ? t('admin.users.messages.unbanned') : t('admin.users.messages.banned'));
+                toast.success(t('admin.users.messages.banned'));
+                setBanDialogOpen(false);
                 await fetchUser();
             } else {
                 toast.error(data?.message || t('admin.users.messages.ban_failed'));
             }
-        } catch {
-            toast.error(t('admin.users.messages.ban_failed'));
+        } catch (error: unknown) {
+            const message =
+                axios.isAxiosError(error) && error.response?.data?.message
+                    ? String(error.response.data.message)
+                    : t('admin.users.messages.ban_failed');
+            toast.error(message);
+        } finally {
+            setBanSubmitting(false);
         }
     };
 
@@ -693,11 +762,21 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                     </PageCard>
 
                     <PageCard title={t('admin.users.edit.actions.title')} icon={Shield} variant='default'>
-                        <div className='space-y-3'>
+                        <div className='space-y-4'>
+                            <ModerationStatusCard
+                                active={user.banned === 'true'}
+                                reason={user.ban_reason}
+                                actedAt={user.banned_at}
+                                actedBy={user.banned_by}
+                                title={t('admin.moderation.user_banned_title')}
+                                inactiveLabel={t('admin.moderation.user_not_banned')}
+                            />
+
                             <Button
                                 variant={user.banned === 'true' ? 'default' : 'destructive'}
                                 className='w-full justify-start'
                                 onClick={toggleBanUser}
+                                loading={banSubmitting}
                             >
                                 {user.banned === 'true' ? (
                                     <>
@@ -1182,6 +1261,34 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                     </form>
                 </DialogContent>
             </Dialog>
+
+            <AlertDialog open={banDialogOpen} onOpenChange={setBanDialogOpen}>
+                <AlertDialogContent className='max-w-lg'>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className='flex items-center gap-2'>
+                            <AlertTriangle className='h-5 w-5 text-red-500' />
+                            {t('admin.users.edit.ban_confirm_title')}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {t('admin.users.edit.ban_confirm_description', { username: user.username })}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <ModerationReasonFields value={banReason} onChange={setBanReason} disabled={banSubmitting} />
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={banSubmitting}>{t('common.cancel')}</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={(e) => {
+                                e.preventDefault();
+                                void confirmBanUser();
+                            }}
+                            className='bg-red-600 hover:bg-red-700'
+                            disabled={banSubmitting || !isModerationReasonValid(banReason)}
+                        >
+                            {banSubmitting ? t('common.loading') : t('admin.users.edit.ban_user')}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
 
             <WidgetRenderer widgets={getWidgets('admin-users-edit', 'bottom-of-page')} context={widgetContext} />
         </div>

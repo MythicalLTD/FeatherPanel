@@ -41,6 +41,7 @@ use App\Chat\DatabaseInstance;
 use App\Config\ConfigInterface;
 use App\Chat\ServerCustomVariable;
 use App\CloudFlare\CloudFlareRealIP;
+use App\Helpers\ModerationReasonHelper;
 use App\Mail\templates\ServerBanned;
 use App\Mail\templates\ServerCreated;
 use App\Mail\templates\ServerDeleted;
@@ -581,7 +582,8 @@ class ServersController
             $server['node']['daemonBase']
         );
 
-        $server = TimeHelper::normaliseRow($server, ['installed_at']);
+        $server = ModerationReasonHelper::enrichServerSuspensionMetadata($server);
+        $server = TimeHelper::normaliseRow($server, ['installed_at', 'suspended_at']);
 
         return ApiResponse::success($server, 'Server fetched successfully', 200);
     }
@@ -827,6 +829,9 @@ class ServersController
             $server['node']['daemonSFTP'],
             $server['node']['daemonBase']
         );
+
+        $server = ModerationReasonHelper::enrichServerSuspensionMetadata($server);
+        $server = TimeHelper::normaliseRow($server, ['installed_at', 'suspended_at']);
 
         return ApiResponse::success($server, 'Server fetched successfully', 200);
     }
@@ -2516,7 +2521,18 @@ class ServersController
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
 
-        $ok = Server::updateServerById($id, ['suspended' => 1]);
+        $body = json_decode($request->getContent(), true);
+        if (!is_array($body)) {
+            $body = [];
+        }
+        $parsed = ModerationReasonHelper::parseRequestBody($body);
+        $reasonError = ModerationReasonHelper::validateReason($parsed['reason']);
+        if ($reasonError !== null) {
+            return ApiResponse::error($reasonError, 'MODERATION_REASON_REQUIRED', 400);
+        }
+
+        $staffUser = $request->attributes->get('user');
+        $ok = Server::updateServerById($id, ModerationReasonHelper::suspensionAppliedFields($parsed['reason'], $staffUser));
         if (!$ok) {
             return ApiResponse::error('Failed to suspend server', 'FAILED_TO_SUSPEND', 500);
         }
@@ -2524,9 +2540,9 @@ class ServersController
         $user = User::getUserById($server['owner_id']);
 
         Activity::createActivity([
-            'user_uuid' => $request->attributes->get('user')['uuid'],
+            'user_uuid' => $staffUser['uuid'],
             'name' => 'suspend_server',
-            'context' => 'Suspended server ' . $server['name'],
+            'context' => 'Suspended server ' . $server['name'] . ' — ' . $parsed['reason'],
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
@@ -2592,6 +2608,7 @@ class ServersController
                 'uuid' => $user['uuid'],
                 'enabled' => $config->getSetting(ConfigInterface::SMTP_ENABLED, 'false'),
                 'server_name' => $server['name'],
+                'suspension_reason' => $parsed['reason'],
             ]);
         } catch (\Exception $e) {
             App::getInstance(true)->getLogger()->error('Failed to send server suspended email: ' . $e->getMessage());
@@ -2638,7 +2655,7 @@ class ServersController
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
 
-        $ok = Server::updateServerById($id, ['suspended' => 0]);
+        $ok = Server::updateServerById($id, ModerationReasonHelper::suspensionClearedFields());
         if (!$ok) {
             return ApiResponse::error('Failed to unsuspend server', 'FAILED_TO_UNSUSPEND', 500);
         }

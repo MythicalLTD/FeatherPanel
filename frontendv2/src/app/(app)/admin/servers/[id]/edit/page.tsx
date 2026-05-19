@@ -138,6 +138,9 @@ export default function EditServerPage() {
     const [form, setForm] = useState<ServerFormData>(initialFormData);
     const [selectedEntities, setSelectedEntities] = useState<SelectedEntities>(initialSelectedEntities);
     const [isSuspended, setIsSuspended] = useState(false);
+    const [suspensionReason, setSuspensionReason] = useState<string | null>(null);
+    const [suspendedAt, setSuspendedAt] = useState<string | null>(null);
+    const [suspendedBy, setSuspendedBy] = useState<{ uuid?: string | null; username?: string | null } | null>(null);
 
     const [location, setLocation] = useState<Location | null>(null);
     const [node, setNode] = useState<Node | null>(null);
@@ -423,6 +426,9 @@ export default function EditServerPage() {
                 });
 
                 setIsSuspended(Boolean(server.suspended));
+                setSuspensionReason(server.suspension_reason ?? null);
+                setSuspendedAt(server.suspended_at ?? null);
+                setSuspendedBy(server.suspended_by ?? null);
                 setNode(serverNode || null);
                 setLocation(serverLocation);
 
@@ -1093,6 +1099,9 @@ export default function EditServerPage() {
                             serverId={serverId}
                             serverName={form.name}
                             isSuspended={isSuspended}
+                            suspensionReason={suspensionReason}
+                            suspendedAt={suspendedAt}
+                            suspendedBy={suspendedBy}
                             currentNodeId={node?.id}
                             onRefresh={fetchServerData}
                         />

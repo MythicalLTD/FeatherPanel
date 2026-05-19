@@ -35,6 +35,8 @@ use App\Chat\VmInstanceActivity;
 use App\Mail\templates\VmSuspended;
 use App\Services\Vm\VmInstanceUtil;
 use App\CloudFlare\CloudFlareRealIP;
+use App\Helpers\ModerationReasonHelper;
+use App\Helpers\TimeHelper;
 use App\Mail\templates\VmUnsuspended;
 use App\Plugins\Events\Events\VdsEvent;
 use App\Services\Backup\BackupFifoEviction;
@@ -614,6 +616,9 @@ class VmInstancesController
         }
 
         $assignedIps = VmInstanceIp::getByInstanceId($id);
+
+        $instance = ModerationReasonHelper::enrichServerSuspensionMetadata($instance);
+        $instance = TimeHelper::normaliseRow($instance, ['suspended_at', 'created_at', 'updated_at', 'expires_at']);
 
         return ApiResponse::success(
             ['instance' => array_merge($instance, $extra, ['assigned_ips' => $assignedIps])],
@@ -2550,7 +2555,18 @@ class VmInstancesController
             return ApiResponse::error('VM instance not found', 'VM_INSTANCE_NOT_FOUND', 404);
         }
 
-        $ok = VmInstance::update($id, ['suspended' => 1]);
+        $body = json_decode($request->getContent(), true);
+        if (!is_array($body)) {
+            $body = [];
+        }
+        $parsed = ModerationReasonHelper::parseRequestBody($body);
+        $reasonError = ModerationReasonHelper::validateReason($parsed['reason']);
+        if ($reasonError !== null) {
+            return ApiResponse::error($reasonError, 'MODERATION_REASON_REQUIRED', 400);
+        }
+
+        $admin = $request->attributes->get('user');
+        $ok = VmInstance::update($id, ModerationReasonHelper::suspensionAppliedFields($parsed['reason'], $admin));
         if (!$ok) {
             return ApiResponse::error('Failed to suspend VM instance', 'FAILED_TO_SUSPEND', 500);
         }
@@ -2561,11 +2577,10 @@ class VmInstancesController
             $user = User::getUserByUuid($instance['user_uuid']);
         }
 
-        $admin = $request->attributes->get('user');
         Activity::createActivity([
             'user_uuid' => $admin['uuid'] ?? null,
             'name' => 'vm_instance_suspend',
-            'context' => 'Suspended VM instance ' . ($instance['hostname'] ?? $id),
+            'context' => 'Suspended VM instance ' . ($instance['hostname'] ?? $id) . ' — ' . $parsed['reason'],
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
@@ -2617,6 +2632,7 @@ class VmInstancesController
                     'uuid' => $user['uuid'],
                     'enabled' => $config->getSetting(ConfigInterface::SMTP_ENABLED, 'false'),
                     'vm_hostname' => $instance['hostname'] ?? 'VM-' . $id,
+                    'suspension_reason' => $parsed['reason'],
                 ]);
             } catch (\Exception $e) {
                 App::getInstance(true)->getLogger()->error('Failed to send VM suspended email: ' . $e->getMessage());
@@ -2663,7 +2679,7 @@ class VmInstancesController
             return ApiResponse::error('VM instance not found', 'VM_INSTANCE_NOT_FOUND', 404);
         }
 
-        $ok = VmInstance::update($id, ['suspended' => 0]);
+        $ok = VmInstance::update($id, ModerationReasonHelper::suspensionClearedFields());
         if (!$ok) {
             return ApiResponse::error('Failed to unsuspend VM instance', 'FAILED_TO_UNSUSPEND', 500);
         }

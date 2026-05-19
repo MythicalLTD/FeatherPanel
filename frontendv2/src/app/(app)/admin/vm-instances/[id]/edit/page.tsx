@@ -36,7 +36,24 @@ import {
     Search as SearchIcon,
     Ban,
     ShieldCheck,
+    AlertTriangle,
 } from 'lucide-react';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
+    ModerationReasonFields,
+    ModerationReasonValue,
+    isModerationReasonValid,
+} from '@/components/admin/ModerationReasonFields';
+import { ModerationStatusCard, ModerationStaffActor } from '@/components/admin/ModerationStatusCard';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
@@ -104,6 +121,11 @@ export default function VmInstanceEditPage() {
     const [nodeEfiStorageDefault, setNodeEfiStorageDefault] = useState('');
     const [nodeTpmStorageDefault, setNodeTpmStorageDefault] = useState('');
     const [suspending, setSuspending] = useState(false);
+    const [suspendDialogOpen, setSuspendDialogOpen] = useState(false);
+    const [suspendReason, setSuspendReason] = useState<ModerationReasonValue>({
+        reason_category: '',
+        reason_details: '',
+    });
     const [vmBackupLimit, setVmBackupLimit] = useState(5);
     const [vmBackupRetention, setVmBackupRetention] = useState<'inherit' | 'hard_limit' | 'fifo_rolling'>('inherit');
 
@@ -528,10 +550,17 @@ export default function VmInstanceEditPage() {
     };
 
     const handleSuspend = async () => {
+        if (!isModerationReasonValid(suspendReason)) {
+            toast.error(t('admin.moderation.reason_required'));
+            return;
+        }
+
         setSuspending(true);
         try {
-            await axios.post(`/api/admin/vm-instances/${id}/suspend`);
+            await axios.post(`/api/admin/vm-instances/${id}/suspend`, suspendReason);
             toast.success(t('admin.vmInstances.suspend_success') ?? 'VM instance suspended');
+            setSuspendDialogOpen(false);
+            setSuspendReason({ reason_category: '', reason_details: '' });
             await fetchInstance();
         } catch (err) {
             const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
@@ -646,7 +675,10 @@ export default function VmInstanceEditPage() {
                             <Button
                                 variant='outline'
                                 size='sm'
-                                onClick={handleSuspend}
+                                onClick={() => {
+                                    setSuspendReason({ reason_category: '', reason_details: '' });
+                                    setSuspendDialogOpen(true);
+                                }}
                                 disabled={suspending}
                                 className='border-amber-500/20 text-amber-600 hover:bg-amber-500/10 hover:text-amber-700'
                             >
@@ -664,6 +696,15 @@ export default function VmInstanceEditPage() {
                         </Button>
                     </div>
                 }
+            />
+
+            <ModerationStatusCard
+                active={instance.suspended === 1}
+                reason={instance.suspension_reason as string | null | undefined}
+                actedAt={instance.suspended_at as string | null | undefined}
+                actedBy={instance.suspended_by as ModerationStaffActor | null | undefined}
+                title={t('admin.moderation.vds_suspended_title')}
+                inactiveLabel={t('admin.moderation.vds_not_suspended')}
             />
 
             <Tabs
@@ -851,6 +892,36 @@ export default function VmInstanceEditPage() {
                     </div>
                 </SheetContent>
             </Sheet>
+
+            <AlertDialog open={suspendDialogOpen} onOpenChange={setSuspendDialogOpen}>
+                <AlertDialogContent className='max-w-lg'>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className='flex items-center gap-2'>
+                            <AlertTriangle className='h-5 w-5 text-red-500' />
+                            {t('admin.vmInstances.suspend_confirm_title')}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {t('admin.vmInstances.suspend_confirm_description', {
+                                hostname: String(instance.hostname ?? hostname ?? id),
+                            })}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <ModerationReasonFields value={suspendReason} onChange={setSuspendReason} disabled={suspending} />
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={suspending}>{t('common.cancel')}</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={(e) => {
+                                e.preventDefault();
+                                void handleSuspend();
+                            }}
+                            className='bg-red-600 hover:bg-red-700'
+                            disabled={suspending || !isModerationReasonValid(suspendReason)}
+                        >
+                            {suspending ? t('common.loading') : t('admin.vmInstances.suspend')}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

@@ -14,6 +14,7 @@
 - Server archives can now be opened and even viewed in the file manager. by @nayskutzu
 - Trash bin support in the file manager. by @nayskutzu
 - Preview support for archive contents in the file manager. by @nayskutzu
+- Added detailed ban and suspension reason tracking for both servers and users, providing greater clarity for the staff team. by @nayskutzu
 
 ### Fixed
 
