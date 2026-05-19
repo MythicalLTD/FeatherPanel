@@ -34,6 +34,7 @@ import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.
 import Image from 'next/image';
 import { cn, copyToClipboard } from '@/lib/utils';
 import ThemeCustomizer from '@/components/layout/ThemeCustomizer';
+import { PoweredByFeatherPanel } from '@/components/branding/PoweredByFeatherPanel';
 import type { UserInfo } from '@/contexts/SessionContext';
 
 export type NavbarChromeProps = {
@@ -346,16 +347,7 @@ export function NavbarClassicChrome(props: NavbarChromeProps) {
                                 </div>
 
                                 <div className='border-border/50 bg-card/80 border-t px-3 py-2'>
-                                    <p className='text-center'>
-                                        <a
-                                            href='https://featherpanel.com'
-                                            target='_blank'
-                                            rel='noopener noreferrer'
-                                            className='text-muted-foreground/80 hover:text-primary text-[10px] font-normal tracking-wide lowercase underline-offset-2 transition-colors hover:underline'
-                                        >
-                                            {t('navbar.poweredBy')}
-                                        </a>
-                                    </p>
+                                    <PoweredByFeatherPanel variant='menu' />
                                 </div>
                             </Menu.Items>
                         </Transition>
@@ -652,16 +644,7 @@ export function NavbarModernChrome(props: NavbarChromeProps) {
                                     </div>
 
                                     <div className='border-border/35 border-t px-3 py-2'>
-                                        <p className='text-center'>
-                                            <a
-                                                href='https://featherpanel.com'
-                                                target='_blank'
-                                                rel='noopener noreferrer'
-                                                className='text-muted-foreground/70 hover:text-primary text-[10px] font-normal tracking-wide lowercase underline-offset-2 transition-colors hover:underline'
-                                            >
-                                                {t('navbar.poweredBy')}
-                                            </a>
-                                        </p>
+                                        <PoweredByFeatherPanel variant='menu' />
                                     </div>
                                 </Menu.Items>
                             </Transition>

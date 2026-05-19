@@ -58,6 +58,7 @@ export interface AppSettings {
     reforge_captcha_lang?: string;
     reforge_captcha_min_score?: string;
     app_url: string;
+    branding_show_powered_by?: string;
     app_logo_white: string;
     app_logo_dark: string;
     app_support_url: string;

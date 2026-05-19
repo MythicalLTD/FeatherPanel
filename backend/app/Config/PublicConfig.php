@@ -66,6 +66,9 @@ class PublicConfig extends ConfigFactory
             // background type: aurora, gradient, solid, image, pattern
             ConfigInterface::APP_BACKGROUND_TYPE_DEFAULT => 'pattern',
             ConfigInterface::APP_BACKGROUND_TYPE_LOCK => 'false',
+
+            ConfigInterface::BRANDING_SHOW_POWERED_BY => 'true',
+
             // backdrop blur/darken and image fit defaults + locks
             ConfigInterface::APP_BACKDROP_BLUR_DEFAULT => '0',
             ConfigInterface::APP_BACKDROP_BLUR_LOCK => 'false',

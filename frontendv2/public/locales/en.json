@@ -326,8 +326,9 @@
 		}
 	},
 	"branding": {
-		"running_on": "Running on FeatherPanel {version}",
-		"copyright": "{company}"
+		"running_on": "Running on {name} {version}",
+		"copyright": "{company}",
+		"powered_by": "Powered by FeatherPanel"
 	},
 	"maintenance": {
 		"title": "System Maintenance",

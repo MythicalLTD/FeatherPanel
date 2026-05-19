@@ -36,6 +36,7 @@ import { toast } from 'sonner';
 
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { PoweredByFeatherPanel } from '@/components/branding/PoweredByFeatherPanel';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { formatMemory, formatDisk } from '@/lib/server-utils';
 import { cn } from '@/lib/utils';
@@ -665,6 +666,10 @@ export default function StatusPage() {
             )}
 
             <WidgetRenderer widgets={getWidgets('dashboard-status', 'bottom-of-page')} />
+
+            <div className='flex justify-center pt-2'>
+                <PoweredByFeatherPanel variant={isPublicStatusPage ? 'footer' : 'inline'} />
+            </div>
         </div>
     );
 }

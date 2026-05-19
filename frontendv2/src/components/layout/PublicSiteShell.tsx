@@ -21,6 +21,7 @@ import { usePathname } from 'next/navigation';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { cn } from '@/lib/utils';
+import { PoweredByFeatherPanel } from '@/components/branding/PoweredByFeatherPanel';
 
 interface PublicSiteShellProps {
     children: React.ReactNode;
@@ -133,6 +134,7 @@ export default function PublicSiteShell({ children }: PublicSiteShellProps) {
                             <p className='text-sm font-semibold'>{appName}</p>
                             <p className='text-muted-foreground mt-1 text-xs leading-5'>{appDescription}</p>
                         </div>
+                        <PoweredByFeatherPanel variant='footer' className='md:text-right' />
                     </div>
                 </div>
             </footer>

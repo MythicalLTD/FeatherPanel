@@ -15,6 +15,7 @@
 - Trash bin support in the file manager. by @nayskutzu
 - Preview support for archive contents in the file manager. by @nayskutzu
 - Added detailed ban and suspension reason tracking for both servers and users, providing greater clarity for the staff team. by @nayskutzu
+- Added a copyright notice to acknowledge the creators of the panel. by @nayskutzu
 
 ### Fixed
 

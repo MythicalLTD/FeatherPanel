@@ -47,6 +47,8 @@ interface ConfigInterface
     public const APP_THEME_LOCK = 'app_theme_lock';
     public const APP_BACKGROUND_TYPE_DEFAULT = 'app_background_type_default';
     public const APP_BACKGROUND_TYPE_LOCK = 'app_background_type_lock';
+    /** When false, hide FeatherPanel "powered by" branding across the panel (typically via White Label addon). */
+    public const BRANDING_SHOW_POWERED_BY = 'branding_show_powered_by';
     public const APP_BACKDROP_BLUR_DEFAULT = 'app_backdrop_blur_default';
     public const APP_BACKDROP_BLUR_LOCK = 'app_backdrop_blur_lock';
     public const APP_BACKDROP_DARKEN_DEFAULT = 'app_backdrop_darken_default';

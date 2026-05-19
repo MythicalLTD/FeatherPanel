@@ -32,6 +32,7 @@ import { useNavigation } from '@/hooks/useNavigation';
 import { useTranslation } from '@/contexts/TranslationContext';
 import type { NavigationItem } from '@/types/navigation';
 import { type ChromeLayout, useChromeLayout } from '@/hooks/useChromeLayout';
+import { PoweredByFeatherPanel } from '@/components/branding/PoweredByFeatherPanel';
 
 interface SidebarProps {
     mobileOpen: boolean;
@@ -626,6 +627,7 @@ function SidebarContent({
                             </>
                         )}
                     </button>
+                    {!collapsed && <PoweredByFeatherPanel variant='sidebar' className='mt-2 px-1' />}
                 </div>
             )}
         </div>
