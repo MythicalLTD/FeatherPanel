@@ -8372,6 +8372,15 @@
 			"viewall": "View All Spells",
 			"search_placeholder": "Search by name, description, or author...",
 			"no_results": "No spells found",
+			"order": {
+				"title": "Reorder spells",
+				"subtitle": "Use the arrows to set display order in this realm (shown when creating servers and picking a spell).",
+				"unsaved_changes": "You have unsaved changes",
+				"messages": {
+					"saved": "Spell order saved successfully",
+					"save_failed": "Failed to save spell order"
+				}
+			},
 			"table": {},
 			"tabs": {
 				"general": "General",

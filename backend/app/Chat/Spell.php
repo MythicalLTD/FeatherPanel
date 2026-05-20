@@ -123,6 +123,10 @@ class Spell
         // Handle optional ID for migrations
         $hasId = isset($data['id']) && is_int($data['id']) && $data['id'] > 0;
 
+        if (!isset($data['sort_order'])) {
+            $data['sort_order'] = self::getNextSortOrderForRealm((int) $data['realm_id']);
+        }
+
         $pdo = Database::getPdoConnection();
         $fields = array_keys($data);
         $placeholders = array_map(fn ($f) => ':' . $f, $fields);
@@ -177,7 +181,7 @@ class Spell
             return [];
         }
         $pdo = Database::getPdoConnection();
-        $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE realm_id = :realm_id ORDER BY name ASC');
+        $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE realm_id = :realm_id ORDER BY sort_order ASC, name ASC');
         $stmt->execute(['realm_id' => $realmId]);
 
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
@@ -191,11 +195,29 @@ class Spell
         $pdo = Database::getPdoConnection();
         $sql = 'SELECT * FROM ' . self::$table;
 
-        $sql .= ' ORDER BY name ASC';
+        $sql .= ' ORDER BY realm_id ASC, sort_order ASC, name ASC';
         $stmt = $pdo->prepare($sql);
         $stmt->execute();
 
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Next sort_order value for a new spell in a realm.
+     */
+    public static function getNextSortOrderForRealm(int $realmId): int
+    {
+        if ($realmId <= 0) {
+            return 0;
+        }
+
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare(
+            'SELECT COALESCE(MAX(sort_order), -10) + 10 FROM ' . self::$table . ' WHERE realm_id = :realm_id'
+        );
+        $stmt->execute(['realm_id' => $realmId]);
+
+        return (int) $stmt->fetchColumn();
     }
 
     /**
@@ -206,7 +228,7 @@ class Spell
         int $limit = 10,
         string $search = '',
         array $fields = [],
-        string $sortBy = 'name',
+        string $sortBy = 'sort_order',
         string $sortOrder = 'ASC',
         ?int $realmId = null,
     ): array {
@@ -228,7 +250,16 @@ class Spell
             $params['realm_id'] = $realmId;
         }
 
+        $allowedSort = ['sort_order', 'name', 'created_at', 'id'];
+        if (!in_array($sortBy, $allowedSort, true)) {
+            $sortBy = 'sort_order';
+        }
+        $sortOrder = strtoupper($sortOrder) === 'DESC' ? 'DESC' : 'ASC';
+
         $sql .= ' ORDER BY s.' . $sortBy . ' ' . $sortOrder;
+        if ($sortBy !== 'name') {
+            $sql .= ', s.name ASC';
+        }
         $sql .= ' LIMIT :limit OFFSET :offset';
 
         $stmt = $pdo->prepare($sql);
@@ -495,11 +526,68 @@ class Spell
             SELECT s.*, r.name as realm_name, r.description as realm_description 
             FROM ' . self::$table . ' s 
             LEFT JOIN featherpanel_realms r ON s.realm_id = r.id 
-            ORDER BY s.name ASC
+            ORDER BY s.sort_order ASC, s.name ASC
         ');
         $stmt->execute();
 
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Update sort order for multiple spells (batch reorder within a realm).
+     *
+     * @param array $spells Array of ['id' => int, 'sort_order' => int]
+     * @param int|null $realmId When set, every spell must belong to this realm
+     */
+    public static function updateSortOrders(array $spells, ?int $realmId = null): bool
+    {
+        if (empty($spells)) {
+            return false;
+        }
+
+        $pdo = Database::getPdoConnection();
+
+        try {
+            $pdo->beginTransaction();
+
+            $stmt = $pdo->prepare('UPDATE ' . self::$table . ' SET sort_order = :sort_order WHERE id = :id');
+
+            foreach ($spells as $spell) {
+                if (!isset($spell['id']) || !isset($spell['sort_order'])) {
+                    continue;
+                }
+
+                $id = (int) $spell['id'];
+                $sortOrder = (int) $spell['sort_order'];
+
+                if ($id <= 0) {
+                    continue;
+                }
+
+                if ($realmId !== null) {
+                    $row = self::getSpellById($id);
+                    if (!$row || (int) $row['realm_id'] !== $realmId) {
+                        $pdo->rollBack();
+
+                        return false;
+                    }
+                }
+
+                $stmt->execute([
+                    'id' => $id,
+                    'sort_order' => $sortOrder,
+                ]);
+            }
+
+            $pdo->commit();
+
+            return true;
+        } catch (\PDOException $e) {
+            $pdo->rollBack();
+            App::getInstance(true)->getLogger()->error('Failed to update spell sort orders: ' . $e->getMessage());
+
+            return false;
+        }
     }
 
     public static function count(array $conditions): int

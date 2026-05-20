@@ -831,6 +831,107 @@ class SpellsController
     }
 
     #[OA\Post(
+        path: '/api/admin/spells/reorder',
+        summary: 'Reorder spells within a realm',
+        description: 'Update the display sort order of spells in a realm (e.g. Node.js first, then Python, then Java).',
+        tags: ['Admin - Spells'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['realm_id', 'spells'],
+                properties: [
+                    new OA\Property(property: 'realm_id', type: 'integer', minimum: 1),
+                    new OA\Property(
+                        property: 'spells',
+                        type: 'array',
+                        items: new OA\Items(
+                            properties: [
+                                new OA\Property(property: 'id', type: 'integer'),
+                                new OA\Property(property: 'sort_order', type: 'integer'),
+                            ]
+                        )
+                    ),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Spells reordered successfully'),
+            new OA\Response(response: 400, description: 'Bad request'),
+            new OA\Response(response: 404, description: 'Realm not found'),
+            new OA\Response(response: 500, description: 'Internal server error'),
+        ]
+    )]
+    public function reorder(Request $request): Response
+    {
+        $data = json_decode($request->getContent(), true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
+        }
+
+        if (!isset($data['realm_id']) || !is_numeric($data['realm_id'])) {
+            return ApiResponse::error('realm_id is required', 'INVALID_REALM_ID', 400);
+        }
+
+        $realmId = (int) $data['realm_id'];
+        if ($realmId <= 0) {
+            return ApiResponse::error('Invalid realm_id', 'INVALID_REALM_ID', 400);
+        }
+
+        if (!Realm::getById($realmId)) {
+            return ApiResponse::error('Realm not found', 'REALM_NOT_FOUND', 404);
+        }
+
+        if (!isset($data['spells']) || !is_array($data['spells']) || empty($data['spells'])) {
+            return ApiResponse::error('Spells array is required', 'INVALID_REQUEST', 400);
+        }
+
+        $spells = [];
+        foreach ($data['spells'] as $spell) {
+            if (!isset($spell['id']) || !is_numeric($spell['id'])) {
+                continue;
+            }
+            if (!isset($spell['sort_order']) || !is_numeric($spell['sort_order'])) {
+                continue;
+            }
+
+            $spells[] = [
+                'id' => (int) $spell['id'],
+                'sort_order' => (int) $spell['sort_order'],
+            ];
+        }
+
+        if (empty($spells)) {
+            return ApiResponse::error('No valid spell order data provided', 'INVALID_SPELLS', 400);
+        }
+
+        if (!Spell::updateSortOrders($spells, $realmId)) {
+            return ApiResponse::error('Failed to reorder spells', 'REORDER_FAILED', 500);
+        }
+
+        $admin = $request->attributes->get('user');
+        Activity::createActivity([
+            'user_uuid' => $admin['uuid'] ?? null,
+            'name' => 'reorder_spells',
+            'context' => 'Reordered ' . count($spells) . ' spells in realm ' . $realmId,
+            'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                SpellsEvent::onSpellsReordered(),
+                [
+                    'realm_id' => $realmId,
+                    'spells' => $spells,
+                    'reordered_by' => $admin,
+                ]
+            );
+        }
+
+        return ApiResponse::success([], 'Spells reordered successfully', 200);
+    }
+
+    #[OA\Post(
         path: '/api/admin/spells/import',
         summary: 'Import spell from file',
         description: 'Import a spell from a JSON file with comprehensive validation, variable import, and metadata preservation.',

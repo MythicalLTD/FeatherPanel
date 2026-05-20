@@ -15,7 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import axios, { isAxiosError } from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -45,6 +45,12 @@ import {
     Trash2,
     ChevronLeft,
     ChevronRight,
+    ArrowUp,
+    ArrowDown,
+    Save,
+    X,
+    AlertCircle,
+    GripVertical,
     Download,
     Upload,
     CloudDownload,
@@ -65,6 +71,7 @@ interface Spell {
     uuid: string;
     realm_id: number;
     realm_name?: string;
+    sort_order?: number;
     banner?: string;
     update_url?: string;
     created_at: string;
@@ -112,6 +119,9 @@ export default function SpellsPage() {
     const [importDialogOpen, setImportDialogOpen] = useState(false);
     const [importRealmId, setImportRealmId] = useState('');
     const [importing, setImporting] = useState(false);
+    const [isReorderMode, setIsReorderMode] = useState(false);
+    const [reorderLoading, setReorderLoading] = useState(false);
+    const [hasOrderChanges, setHasOrderChanges] = useState(false);
 
     const realmIdParam = searchParams?.get('realm_id');
 
@@ -275,6 +285,94 @@ export default function SpellsPage() {
         await performImport(file, importRealmId);
     };
 
+    const fetchAllSpellsForReorder = useCallback(async (): Promise<boolean> => {
+        if (!realmIdParam) return false;
+        const pageSize = 100;
+        try {
+            let page = 1;
+            const allSpells: Spell[] = [];
+            let totalRecords = 0;
+            while (true) {
+                const { data } = await axios.get('/api/admin/spells', {
+                    params: {
+                        page,
+                        limit: pageSize,
+                        realm_id: realmIdParam,
+                    },
+                });
+                const pag = data.data.pagination;
+                totalRecords = pag.total_records;
+                const batch = (data.data.spells || []) as Spell[];
+                allSpells.push(...batch);
+                if (allSpells.length >= totalRecords || !pag.has_next) {
+                    break;
+                }
+                page += 1;
+            }
+            const sorted = [...allSpells].sort(
+                (a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0) || a.name.localeCompare(b.name),
+            );
+            setSpells(sorted);
+            return true;
+        } catch {
+            toast.error(t('admin.spells.messages.fetch_failed'));
+            return false;
+        }
+    }, [realmIdParam, t]);
+
+    const moveSpell = (spellId: number, direction: 'up' | 'down') => {
+        const index = spells.findIndex((s) => s.id === spellId);
+        if (index === -1) return;
+        const newIndex = direction === 'up' ? index - 1 : index + 1;
+        if (newIndex < 0 || newIndex >= spells.length) return;
+
+        const next = [...spells];
+        const [moved] = next.splice(index, 1);
+        next.splice(newIndex, 0, moved);
+        setSpells(
+            next.map((spell, idx) => ({
+                ...spell,
+                sort_order: idx * 10,
+            })),
+        );
+        setHasOrderChanges(true);
+    };
+
+    const saveSpellOrder = async () => {
+        if (!realmIdParam) return;
+        setReorderLoading(true);
+        try {
+            await axios.post('/api/admin/spells/reorder', {
+                realm_id: parseInt(realmIdParam, 10),
+                spells: spells.map((spell) => ({
+                    id: spell.id,
+                    sort_order: spell.sort_order ?? 0,
+                })),
+            });
+            toast.success(t('admin.spells.order.messages.saved'));
+            setHasOrderChanges(false);
+            setIsReorderMode(false);
+            setPagination((p) => ({ ...p, page: 1 }));
+            setRefreshKey((prev) => prev + 1);
+        } catch {
+            toast.error(t('admin.spells.order.messages.save_failed'));
+        } finally {
+            setReorderLoading(false);
+        }
+    };
+
+    const toggleReorderMode = async () => {
+        if (!isReorderMode) {
+            const ok = await fetchAllSpellsForReorder();
+            if (!ok) return;
+        } else {
+            setPagination((p) => ({ ...p, page: 1 }));
+            setRefreshKey((prev) => prev + 1);
+            setHasOrderChanges(false);
+        }
+        setIsReorderMode(!isReorderMode);
+    };
+
     const subtitle = currentRealm
         ? t('admin.spells.subtitle_realm', { realm: currentRealm.name })
         : t('admin.spells.subtitle');
@@ -287,23 +385,47 @@ export default function SpellsPage() {
                 description={subtitle}
                 icon={Sparkles}
                 actions={
-                    <div className='flex items-center gap-2'>
-                        {currentRealm && (
-                            <Button variant='outline' onClick={() => router.push('/admin/spells')}>
-                                <FolderTree className='mr-2 h-4 w-4' />
-                                {t('admin.spells.viewall')}
+                    <div className='flex flex-wrap items-center gap-2'>
+                        {currentRealm && !isReorderMode && (
+                            <>
+                                <Button variant='outline' onClick={toggleReorderMode} className='gap-2'>
+                                    <ArrowUp className='h-4 w-4' />
+                                    <ArrowDown className='h-4 w-4' />
+                                    <span className='hidden sm:inline'>{t('admin.spells.order.title')}</span>
+                                </Button>
+                                <Button variant='outline' onClick={() => router.push('/admin/spells')}>
+                                    <FolderTree className='mr-2 h-4 w-4' />
+                                    {t('admin.spells.viewall')}
+                                </Button>
+                            </>
+                        )}
+                        {currentRealm && isReorderMode && (
+                            <>
+                                {hasOrderChanges && (
+                                    <Button onClick={saveSpellOrder} loading={reorderLoading} className='gap-2'>
+                                        <Save className='h-4 w-4' />
+                                        {t('common.save')}
+                                    </Button>
+                                )}
+                                <Button variant='outline' onClick={toggleReorderMode}>
+                                    <X className='mr-2 h-4 w-4' />
+                                    {t('common.cancel')}
+                                </Button>
+                            </>
+                        )}
+                        {!isReorderMode && (
+                            <Button variant='outline' onClick={() => router.push('/admin/feathercloud/spells')}>
+                                <CloudDownload className='mr-2 h-4 w-4' />
+                                {t('admin.spells.browse_marketplace')}
                             </Button>
                         )}
-                        <Button variant='outline' onClick={() => router.push('/admin/feathercloud/spells')}>
-                            <CloudDownload className='mr-2 h-4 w-4' />
-                            {t('admin.spells.browse_marketplace')}
-                        </Button>
                     </div>
                 }
             />
 
             <WidgetRenderer widgets={getWidgets('admin-spells', 'after-header')} />
 
+            {!isReorderMode && (
             <div className='bg-card/40 flex flex-col items-center gap-4 rounded-2xl p-4 shadow-sm backdrop-blur-md sm:flex-row'>
                 <div className='group relative w-full flex-1'>
                     <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
@@ -332,8 +454,9 @@ export default function SpellsPage() {
                     />
                 </div>
             </div>
+            )}
 
-            {pagination.totalPages > 1 && !loading && (
+            {pagination.totalPages > 1 && !loading && !isReorderMode && (
                 <div className='border-border bg-card/50 mb-4 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
                     <Button
                         variant='outline'
@@ -372,6 +495,55 @@ export default function SpellsPage() {
                         <Button onClick={() => router.push('/admin/spells/create')}>{t('admin.spells.create')}</Button>
                     }
                 />
+            ) : isReorderMode ? (
+                <div className='space-y-6'>
+                    {hasOrderChanges && (
+                        <div className='flex items-center gap-2 rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm text-amber-600'>
+                            <AlertCircle className='h-4 w-4' />
+                            {t('admin.spells.order.unsaved_changes')}
+                        </div>
+                    )}
+                    <PageCard title={t('admin.spells.order.subtitle')} icon={GripVertical}>
+                        <div className='divide-border/50 divide-y'>
+                            {spells.map((spell, index) => (
+                                <div
+                                    key={spell.id}
+                                    className='hover:bg-muted/30 flex items-center gap-4 p-4 transition-colors'
+                                >
+                                    <div className='bg-muted text-muted-foreground flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm font-semibold'>
+                                        {index + 1}
+                                    </div>
+                                    <div className='flex flex-col gap-0.5'>
+                                        <Button
+                                            variant='ghost'
+                                            size='icon'
+                                            className='h-6 w-6'
+                                            onClick={() => moveSpell(spell.id, 'up')}
+                                            disabled={index === 0}
+                                        >
+                                            <ArrowUp className='h-3 w-3' />
+                                        </Button>
+                                        <Button
+                                            variant='ghost'
+                                            size='icon'
+                                            className='h-6 w-6'
+                                            onClick={() => moveSpell(spell.id, 'down')}
+                                            disabled={index === spells.length - 1}
+                                        >
+                                            <ArrowDown className='h-3 w-3' />
+                                        </Button>
+                                    </div>
+                                    <div className='min-w-0 flex-1'>
+                                        <p className='truncate font-bold'>{spell.name}</p>
+                                        {spell.author ? (
+                                            <p className='text-muted-foreground truncate text-xs'>{spell.author}</p>
+                                        ) : null}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </PageCard>
+                </div>
             ) : (
                 <div className='grid grid-cols-1 gap-4'>
                     <WidgetRenderer widgets={getWidgets('admin-spells', 'before-list')} />
@@ -423,7 +595,7 @@ export default function SpellsPage() {
                 </div>
             )}
 
-            {pagination.totalPages > 1 && (
+            {pagination.totalPages > 1 && !isReorderMode && (
                 <div className='mt-8 flex items-center justify-center gap-2'>
                     <Button
                         variant='outline'
@@ -447,12 +619,15 @@ export default function SpellsPage() {
                 </div>
             )}
 
+            {!isReorderMode && (
             <PageCard title={t('admin.spells.help.cross_compatible.title')} icon={Sparkles} variant='default'>
                 <p className='text-muted-foreground text-sm leading-relaxed'>
                     {t('admin.spells.help.cross_compatible.description')}
                 </p>
             </PageCard>
+            )}
 
+            {!isReorderMode && (
             <div className='grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4'>
                 <PageCard title={t('admin.spells.help.what_are_spells.title')} icon={BookOpen}>
                     <p className='text-muted-foreground text-sm leading-relaxed'>
@@ -475,6 +650,7 @@ export default function SpellsPage() {
                     </p>
                 </PageCard>
             </div>
+            )}
 
             <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
                 <DialogContent>
