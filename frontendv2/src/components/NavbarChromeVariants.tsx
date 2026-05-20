@@ -15,7 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import type { Dispatch, SetStateAction } from 'react';
+import type { Dispatch, ReactNode, SetStateAction } from 'react';
 import { Fragment } from 'react';
 import { Menu, Transition } from '@headlessui/react';
 import {
@@ -40,6 +40,7 @@ import type { UserInfo } from '@/contexts/SessionContext';
 export type NavbarChromeProps = {
     onMenuClick: () => void;
     headerTitle: string;
+    headerContent?: ReactNode;
     showAdminAreaButton: boolean;
     adminAreaHref: string;
     user: UserInfo | null;
@@ -63,6 +64,7 @@ export function NavbarClassicChrome(props: NavbarChromeProps) {
     const {
         onMenuClick,
         headerTitle,
+        headerContent,
         showAdminAreaButton,
         adminAreaHref,
         user,
@@ -101,12 +103,14 @@ export function NavbarClassicChrome(props: NavbarChromeProps) {
 
             <div className='flex min-w-0 flex-1 gap-x-2 self-stretch sm:gap-x-4 lg:gap-x-6'>
                 <div className='flex min-w-0 flex-1 items-center'>
-                    <h1
-                        className='text-foreground min-w-0 truncate pr-2 text-base font-semibold sm:pr-1 sm:text-lg'
-                        title={headerTitle}
-                    >
-                        {headerTitle}
-                    </h1>
+                    {headerContent ?? (
+                        <h1
+                            className='text-foreground min-w-0 truncate pr-2 text-base font-semibold sm:pr-1 sm:text-lg'
+                            title={headerTitle}
+                        >
+                            {headerTitle}
+                        </h1>
+                    )}
                 </div>
 
                 <div className='flex shrink-0 items-center gap-x-1.5 sm:gap-x-3 lg:gap-x-6'>
@@ -362,6 +366,7 @@ export function NavbarModernChrome(props: NavbarChromeProps) {
     const {
         onMenuClick,
         headerTitle,
+        headerContent,
         showAdminAreaButton,
         adminAreaHref,
         user,
@@ -404,12 +409,14 @@ export function NavbarModernChrome(props: NavbarChromeProps) {
 
                 <div className='flex min-w-0 flex-1 items-stretch gap-x-2 self-stretch sm:gap-x-3'>
                     <div className='flex min-w-0 flex-1 items-center'>
-                        <h1
-                            className='text-foreground truncate text-sm font-semibold tracking-tight sm:text-[0.95rem]'
-                            title={headerTitle}
-                        >
-                            {headerTitle}
-                        </h1>
+                        {headerContent ?? (
+                            <h1
+                                className='text-foreground truncate text-sm font-semibold tracking-tight sm:text-[0.95rem]'
+                                title={headerTitle}
+                            >
+                                {headerTitle}
+                            </h1>
+                        )}
                     </div>
 
                     <div className='flex shrink-0 items-center gap-1 sm:gap-2'>

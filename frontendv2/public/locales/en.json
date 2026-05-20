@@ -1425,9 +1425,35 @@
 		}
 	},
 	"sidebar": {
-		"close": "Close sidebar"
+		"close": "Close sidebar",
+		"server_switcher": {
+			"title": "Switch server",
+			"switch": "Switch server",
+			"current": "Current server",
+			"loading": "Loading servers…",
+			"view_all": "View all servers"
+		}
 	},
 	"navbar": {
+		"server_switcher": {
+			"title": "Switch server",
+			"switch": "Switch server",
+			"current": "Current server",
+			"loading": "Loading servers…",
+			"empty": "No servers found",
+			"empty_favorites": "No favorite servers yet. Star a server in the list to pin it here.",
+			"empty_recent": "No recently viewed servers yet.",
+			"empty_search": "No servers match your search.",
+			"search_placeholder": "Search servers…",
+			"clear_search": "Clear search",
+			"tabs_label": "Server list filters",
+			"tabs": {
+				"all": "All",
+				"favorites": "Favorites",
+				"recent": "Recent"
+			},
+			"view_all": "View all servers"
+		},
 		"profile": "Your Profile",
 		"adminArea": "Admin Area",
 		"adminPanelTooltip": "Admin Panel",
