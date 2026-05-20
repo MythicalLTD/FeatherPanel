@@ -1258,11 +1258,11 @@ public static function processEvents(PluginEvents $evt): void
   <p class="muted"><strong>Callback parameters:</strong> array server data, array source_node, array destination_node, array initiated_by.</p>
 
   <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> destination_node, initiated_by, server, source_node</p>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
 
   <h3>Emitted From</h3>
   <ul>
-<li><code>backend/app/Controllers/Admin/ServersController.php</code></li>
+<li class="muted">No known emission locations.</li>
   </ul>
 
   <h3>Usage Example</h3>
@@ -1271,9 +1271,9 @@ use App\Plugins\Events\Events\ServerEvent;
 
 public static function processEvents(PluginEvents $evt): void
 {
-    $evt->on(ServerEvent::onServerTransferInitiated(), function ($destinationNode, $initiatedBy, $server, $sourceNode) {
+    $evt->on(ServerEvent::onServerTransferInitiated(), function ($data, $source_node, $destination_node, $initiated_by) {
         // Handle featherpanel:server:transfer:initiated
-        // Data keys: destination_node, initiated_by, server, source_node
+        // Parameters: array server data, array source_node, array destination_node, array initiated_by.
     });
 }</code></pre>
 </article>

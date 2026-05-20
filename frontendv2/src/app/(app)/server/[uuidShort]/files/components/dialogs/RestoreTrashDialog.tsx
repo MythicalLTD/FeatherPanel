@@ -34,13 +34,7 @@ interface RestoreTrashDialogProps {
     loading?: boolean;
 }
 
-export function RestoreTrashDialog({
-    open,
-    onOpenChange,
-    count,
-    onConfirm,
-    loading = false,
-}: RestoreTrashDialogProps) {
+export function RestoreTrashDialog({ open, onOpenChange, count, onConfirm, loading = false }: RestoreTrashDialogProps) {
     const { t } = useTranslation();
     const [overwrite, setOverwrite] = useState(false);
 

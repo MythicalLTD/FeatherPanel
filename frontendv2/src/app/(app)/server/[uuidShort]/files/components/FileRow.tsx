@@ -32,7 +32,6 @@ import {
     File as FileIcon,
     Fingerprint,
     PackageSearch,
-    ArchiveRestore,
     type LucideIcon,
 } from 'lucide-react';
 import { isTrashShortcut } from '@/lib/feather-trash';

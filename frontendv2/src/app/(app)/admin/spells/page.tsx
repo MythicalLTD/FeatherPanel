@@ -426,34 +426,34 @@ export default function SpellsPage() {
             <WidgetRenderer widgets={getWidgets('admin-spells', 'after-header')} />
 
             {!isReorderMode && (
-            <div className='bg-card/40 flex flex-col items-center gap-4 rounded-2xl p-4 shadow-sm backdrop-blur-md sm:flex-row'>
-                <div className='group relative w-full flex-1'>
-                    <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
-                    <Input
-                        placeholder={t('admin.spells.search_placeholder')}
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className='h-11 w-full pl-10'
-                    />
+                <div className='bg-card/40 flex flex-col items-center gap-4 rounded-2xl p-4 shadow-sm backdrop-blur-md sm:flex-row'>
+                    <div className='group relative w-full flex-1'>
+                        <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
+                        <Input
+                            placeholder={t('admin.spells.search_placeholder')}
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className='h-11 w-full pl-10'
+                        />
+                    </div>
+                    <div className='flex gap-2'>
+                        <Button onClick={() => router.push('/admin/spells/create')}>
+                            <Plus className='mr-2 h-4 w-4' />
+                            {t('admin.spells.create')}
+                        </Button>
+                        <Button variant='outline' onClick={() => fileInputRef.current?.click()}>
+                            <Upload className='mr-2 h-4 w-4' />
+                            {t('admin.spells.import')}
+                        </Button>
+                        <input
+                            ref={fileInputRef}
+                            type='file'
+                            accept='application/json'
+                            className='hidden'
+                            onChange={handleImport}
+                        />
+                    </div>
                 </div>
-                <div className='flex gap-2'>
-                    <Button onClick={() => router.push('/admin/spells/create')}>
-                        <Plus className='mr-2 h-4 w-4' />
-                        {t('admin.spells.create')}
-                    </Button>
-                    <Button variant='outline' onClick={() => fileInputRef.current?.click()}>
-                        <Upload className='mr-2 h-4 w-4' />
-                        {t('admin.spells.import')}
-                    </Button>
-                    <input
-                        ref={fileInputRef}
-                        type='file'
-                        accept='application/json'
-                        className='hidden'
-                        onChange={handleImport}
-                    />
-                </div>
-            </div>
             )}
 
             {pagination.totalPages > 1 && !loading && !isReorderMode && (
@@ -620,36 +620,36 @@ export default function SpellsPage() {
             )}
 
             {!isReorderMode && (
-            <PageCard title={t('admin.spells.help.cross_compatible.title')} icon={Sparkles} variant='default'>
-                <p className='text-muted-foreground text-sm leading-relaxed'>
-                    {t('admin.spells.help.cross_compatible.description')}
-                </p>
-            </PageCard>
+                <PageCard title={t('admin.spells.help.cross_compatible.title')} icon={Sparkles} variant='default'>
+                    <p className='text-muted-foreground text-sm leading-relaxed'>
+                        {t('admin.spells.help.cross_compatible.description')}
+                    </p>
+                </PageCard>
             )}
 
             {!isReorderMode && (
-            <div className='grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4'>
-                <PageCard title={t('admin.spells.help.what_are_spells.title')} icon={BookOpen}>
-                    <p className='text-muted-foreground text-sm leading-relaxed'>
-                        {t('admin.spells.help.what_are_spells.description')}
-                    </p>
-                </PageCard>
-                <PageCard title={t('admin.spells.help.how_to_use.title')} icon={Box}>
-                    <p className='text-muted-foreground text-sm leading-relaxed'>
-                        {t('admin.spells.help.how_to_use.description')}
-                    </p>
-                </PageCard>
-                <PageCard title={t('admin.spells.help.under_the_hood.title')} icon={Wrench}>
-                    <p className='text-muted-foreground text-sm leading-relaxed'>
-                        {t('admin.spells.help.under_the_hood.description')}
-                    </p>
-                </PageCard>
-                <PageCard title={t('admin.spells.help.sources.title')} icon={GitBranch}>
-                    <p className='text-muted-foreground text-sm leading-relaxed'>
-                        {t('admin.spells.help.sources.description')}
-                    </p>
-                </PageCard>
-            </div>
+                <div className='grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4'>
+                    <PageCard title={t('admin.spells.help.what_are_spells.title')} icon={BookOpen}>
+                        <p className='text-muted-foreground text-sm leading-relaxed'>
+                            {t('admin.spells.help.what_are_spells.description')}
+                        </p>
+                    </PageCard>
+                    <PageCard title={t('admin.spells.help.how_to_use.title')} icon={Box}>
+                        <p className='text-muted-foreground text-sm leading-relaxed'>
+                            {t('admin.spells.help.how_to_use.description')}
+                        </p>
+                    </PageCard>
+                    <PageCard title={t('admin.spells.help.under_the_hood.title')} icon={Wrench}>
+                        <p className='text-muted-foreground text-sm leading-relaxed'>
+                            {t('admin.spells.help.under_the_hood.description')}
+                        </p>
+                    </PageCard>
+                    <PageCard title={t('admin.spells.help.sources.title')} icon={GitBranch}>
+                        <p className='text-muted-foreground text-sm leading-relaxed'>
+                            {t('admin.spells.help.sources.description')}
+                        </p>
+                    </PageCard>
+                </div>
             )}
 
             <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>

@@ -15,7 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSession } from '@/contexts/SessionContext';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -77,7 +77,7 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
 
     const canCreateApiKeys = settings?.user_allow_api_keys_create || hasPermission('admin.api.bypass_restrictions');
 
-    const fetchClients = async () => {
+    const fetchClients = useCallback(async () => {
         setLoading(true);
         try {
             const { data } = await axios.get('/api/user/api-clients');
@@ -90,12 +90,12 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
         } finally {
             setLoading(false);
         }
-    };
+    }, [t]);
 
     useEffect(() => {
         fetchClients();
         fetchWidgets();
-    }, [fetchWidgets]);
+    }, [fetchWidgets, fetchClients]);
 
     const filteredClients = clients.filter(
         (client) =>

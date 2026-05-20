@@ -39,9 +39,7 @@ export function PanelBrandingFooter({ appName, className }: PanelBrandingFooterP
 
     return (
         <div className={cn('text-muted-foreground text-center text-xs transition-all duration-200', className)}>
-            <p className='mb-2 font-medium'>
-                {t('branding.running_on', { name: displayName, version }).trim()}
-            </p>
+            <p className='mb-2 font-medium'>{t('branding.running_on', { name: displayName, version }).trim()}</p>
             <PoweredByFeatherPanel variant='inline' className='mb-2' />
             <a
                 href={FEATHERPANEL_MARKETING_URL}

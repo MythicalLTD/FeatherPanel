@@ -43,14 +43,12 @@ export function ModerationStatusCard({
     const { t } = useTranslation();
 
     if (!active) {
-        return (
-            <p className='text-muted-foreground text-sm'>{inactiveLabel}</p>
-        );
+        return <p className='text-muted-foreground text-sm'>{inactiveLabel}</p>;
     }
 
     return (
         <div className='border-destructive/30 bg-destructive/5 space-y-3 rounded-xl border p-4'>
-            <div className='flex items-center gap-2 text-sm font-semibold text-destructive'>
+            <div className='text-destructive flex items-center gap-2 text-sm font-semibold'>
                 <AlertTriangle className='h-4 w-4' />
                 {title}
             </div>
@@ -59,7 +57,9 @@ export function ModerationStatusCard({
                     <p className='text-muted-foreground text-xs font-semibold tracking-wide uppercase'>
                         {t('admin.moderation.status_reason')}
                     </p>
-                    <p className='mt-1 whitespace-pre-wrap'>{reason?.trim() || t('admin.moderation.no_reason_recorded')}</p>
+                    <p className='mt-1 whitespace-pre-wrap'>
+                        {reason?.trim() || t('admin.moderation.no_reason_recorded')}
+                    </p>
                 </div>
                 <div className='grid gap-2 sm:grid-cols-2'>
                     <div>

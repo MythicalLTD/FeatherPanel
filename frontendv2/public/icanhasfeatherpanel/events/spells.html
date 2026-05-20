@@ -24,7 +24,7 @@
     <a href="/icanhasfeatherpanel/events/index.html" class="back-link">&larr; Back to all event categories</a>
     <header>
       <h1>Spells</h1>
-      <p class="muted">14 events in this category.</p>
+      <p class="muted">15 events in this category.</p>
     </header>
 
 <article class="card">
@@ -231,6 +231,32 @@ public static function processEvents(PluginEvents $evt): void
     $evt->on(SpellsEvent::onSpellsImported(), function ($data, $results) {
         // Handle featherpanel:admin:spells:spells:imported
         // Parameters: array import data, array results.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:admin:spells:reordered</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onSpellsReordered</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> int realm id, array spells, array reordered_by.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> realm_id, reordered_by, spells</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li><code>backend/app/Controllers/Admin/SpellsController.php</code></li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\SpellsEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(SpellsEvent::onSpellsReordered(), function ($realmId, $reorderedBy, $spells) {
+        // Handle featherpanel:admin:spells:reordered
+        // Data keys: realm_id, reordered_by, spells
     });
 }</code></pre>
 </article>

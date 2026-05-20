@@ -44,7 +44,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Sheet, SheetHeader, SheetTitle, SheetDescription, SheetContent } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
-import { HeadlessModal } from '@/components/ui/headless-modal';
 import { toast } from 'sonner';
 import { formatDateTimeInTz, formatRelativeTime } from '@/lib/dateUtils';
 
@@ -766,7 +765,8 @@ export default function EditServerPage() {
                 const available = (availableRes.data?.data?.allocations || []) as Allocation[];
                 const assigned = ((assignedRes.data?.data?.allocations || []) as Allocation[]).filter(
                     (allocation) =>
-                        allocation.node_id === node.id && matchesAllocationSearch(allocation, debouncedAllocationSearch),
+                        allocation.node_id === node.id &&
+                        matchesAllocationSearch(allocation, debouncedAllocationSearch),
                 );
 
                 const merged = new Map<number, Allocation>();

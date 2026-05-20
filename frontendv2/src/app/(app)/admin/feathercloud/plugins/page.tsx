@@ -804,11 +804,7 @@ export default function PluginsPage() {
             if (uiPreviewMode && identifier.toLowerCase() === 'premiumstorepreview') {
                 return true;
             }
-            return isCloudPackageOwned(
-                ownedCloudPackageIdsRef.current,
-                identifier,
-                addonOwnershipOptions(row),
-            );
+            return isCloudPackageOwned(ownedCloudPackageIdsRef.current, identifier, addonOwnershipOptions(row));
         });
         if (toInstall.length < pluginsReady.length) {
             toast.message(t('admin.marketplace.plugins.queue.premium_skipped_not_owned'));
@@ -872,11 +868,7 @@ export default function PluginsPage() {
             if (uiPreviewMode && id === 'premiumstorepreview') {
                 return true;
             }
-            return isCloudPackageOwned(
-                ownedCloudPackageIdsRef.current,
-                addon.identifier,
-                addonOwnershipOptions(addon),
-            );
+            return isCloudPackageOwned(ownedCloudPackageIdsRef.current, addon.identifier, addonOwnershipOptions(addon));
         },
         [uiPreviewMode],
     );

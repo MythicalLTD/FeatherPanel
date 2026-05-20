@@ -151,9 +151,7 @@ export function MassTransferServersDialog({
     const selectedAllocNeeded = useMemo(() => {
         if (!preview) return 0;
         if (moveAll) return preview.allocations_required;
-        return transferable
-            .filter((s) => selectedIds.has(s.id))
-            .reduce((sum, s) => sum + s.allocations_needed, 0);
+        return transferable.filter((s) => selectedIds.has(s.id)).reduce((sum, s) => sum + s.allocations_needed, 0);
     }, [preview, moveAll, transferable, selectedIds]);
 
     const toggleServer = (id: number) => {
@@ -185,8 +183,7 @@ export function MassTransferServersDialog({
         }
     };
 
-    const hasEnoughAllocations =
-        preview !== null && preview.free_allocations_on_destination >= selectedAllocNeeded;
+    const hasEnoughAllocations = preview !== null && preview.free_allocations_on_destination >= selectedAllocNeeded;
 
     const canSubmit =
         preview && selectedNode && selectedCount > 0 && (moveAll || selectedIds.size > 0) && hasEnoughAllocations;
@@ -263,19 +260,27 @@ export function MassTransferServersDialog({
                         <>
                             <div className='bg-muted/30 grid grid-cols-2 gap-3 rounded-xl border p-4 text-sm sm:grid-cols-4'>
                                 <div>
-                                    <p className='text-muted-foreground text-xs'>{t('admin.node.mass_transfer.transferable')}</p>
+                                    <p className='text-muted-foreground text-xs'>
+                                        {t('admin.node.mass_transfer.transferable')}
+                                    </p>
                                     <p className='font-bold'>{transferable.length}</p>
                                 </div>
                                 <div>
-                                    <p className='text-muted-foreground text-xs'>{t('admin.node.mass_transfer.allocations_needed')}</p>
+                                    <p className='text-muted-foreground text-xs'>
+                                        {t('admin.node.mass_transfer.allocations_needed')}
+                                    </p>
                                     <p className='font-bold'>{selectedAllocNeeded}</p>
                                 </div>
                                 <div>
-                                    <p className='text-muted-foreground text-xs'>{t('admin.node.mass_transfer.free_on_destination')}</p>
+                                    <p className='text-muted-foreground text-xs'>
+                                        {t('admin.node.mass_transfer.free_on_destination')}
+                                    </p>
                                     <p className='font-bold'>{preview.free_allocations_on_destination}</p>
                                 </div>
                                 <div>
-                                    <p className='text-muted-foreground text-xs'>{t('admin.node.mass_transfer.batch_limit')}</p>
+                                    <p className='text-muted-foreground text-xs'>
+                                        {t('admin.node.mass_transfer.batch_limit')}
+                                    </p>
                                     <p className='font-bold'>{preview.max_per_request}</p>
                                 </div>
                             </div>
@@ -286,11 +291,16 @@ export function MassTransferServersDialog({
                                 </p>
                             )}
 
-                            <p className='text-muted-foreground text-xs'>{t('admin.node.mass_transfer.auto_allocate_note')}</p>
+                            <p className='text-muted-foreground text-xs'>
+                                {t('admin.node.mass_transfer.auto_allocate_note')}
+                            </p>
 
                             <div className='flex flex-wrap items-center gap-4 border-b pb-3'>
                                 <label className='flex cursor-pointer items-center gap-2 text-sm font-medium'>
-                                    <Checkbox checked={moveAll} onCheckedChange={(v) => handleMoveAllChange(v === true)} />
+                                    <Checkbox
+                                        checked={moveAll}
+                                        onCheckedChange={(v) => handleMoveAllChange(v === true)}
+                                    />
                                     {t('admin.node.mass_transfer.move_all', { count: String(transferable.length) })}
                                 </label>
                                 {!moveAll && transferable.length > 0 && (

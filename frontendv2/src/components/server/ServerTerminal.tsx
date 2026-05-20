@@ -231,7 +231,9 @@ function FilterSettingsPanel({
                                         className='border-border bg-background rounded-md border px-2 py-1 text-xs'
                                         disabled={!onFiltersChange}
                                     >
-                                        <option value='replace'>{t('servers.console.terminal.rule_type_replace')}</option>
+                                        <option value='replace'>
+                                            {t('servers.console.terminal.rule_type_replace')}
+                                        </option>
                                         <option value='hide'>{t('servers.console.terminal.rule_type_hide')}</option>
                                         <option value='color'>{t('servers.console.terminal.rule_type_color')}</option>
                                     </select>
@@ -995,7 +997,9 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                             <SheetContent>
                                 <SheetHeader>
                                     <SheetTitle>{t('servers.console.terminal.quick_rules')}</SheetTitle>
-                                    <SheetDescription>{t('servers.console.terminal.quick_rules_help')}</SheetDescription>
+                                    <SheetDescription>
+                                        {t('servers.console.terminal.quick_rules_help')}
+                                    </SheetDescription>
                                 </SheetHeader>
                                 <QuickRulesList
                                     filters={filters}

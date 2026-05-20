@@ -51,12 +51,7 @@ export function PoweredByFeatherPanel({ variant = 'footer', className }: Powered
 
     return (
         <p className={cn(variant === 'menu' && 'text-center', className)}>
-            <a
-                href={FEATHERPANEL_MARKETING_URL}
-                target='_blank'
-                rel='noopener noreferrer'
-                className={linkClassName}
-            >
+            <a href={FEATHERPANEL_MARKETING_URL} target='_blank' rel='noopener noreferrer' className={linkClassName}>
                 {label}
             </a>
         </p>

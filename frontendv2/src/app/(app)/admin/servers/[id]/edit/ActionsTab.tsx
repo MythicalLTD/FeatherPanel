@@ -40,10 +40,7 @@ import {
     ModerationReasonValue,
     isModerationReasonValid,
 } from '@/components/admin/ModerationReasonFields';
-import {
-    ModerationStatusCard,
-    ModerationStaffActor,
-} from '@/components/admin/ModerationStatusCard';
+import { ModerationStatusCard, ModerationStaffActor } from '@/components/admin/ModerationStatusCard';
 import { toast } from 'sonner';
 import { Pause, Play, Trash2, AlertTriangle, ArrowLeftRight, Search, ChevronRight, Loader2 } from 'lucide-react';
 import { ApiNode, ApiAllocation } from '@/types/adminServerTypes';

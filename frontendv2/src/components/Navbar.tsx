@@ -47,9 +47,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
     const serverName = isOnServerPage ? serverContext?.server?.name : null;
     const isKnowledgeBaseSection = pathname?.startsWith('/dashboard/knowledgebase');
     const headerTitle = isKnowledgeBaseSection ? t('dashboard.knowledgebase.title') : t('dashboard.title');
-    const headerContent = isOnServerPage ? (
-        <ServerSwitcher fallbackTitle={serverName ?? undefined} />
-    ) : undefined;
+    const headerContent = isOnServerPage ? <ServerSwitcher fallbackTitle={serverName ?? undefined} /> : undefined;
 
     const userNavigation = [{ name: t('navbar.profile'), href: '/dashboard/account', icon: CircleUser }];
 

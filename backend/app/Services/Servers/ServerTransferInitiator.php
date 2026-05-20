@@ -23,8 +23,8 @@ use App\Chat\Server;
 use App\Chat\Activity;
 use App\Chat\Allocation;
 use App\Chat\ServerTransfer;
-use App\Config\ConfigInterface;
 use App\Services\Wings\Wings;
+use App\Config\ConfigInterface;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Plugins\Events\Events\ServerEvent;
 
@@ -35,10 +35,10 @@ class ServerTransferInitiator
 {
     /**
      * @param array<string, mixed> $options
-     *                         - destination_node_id (required)
-     *                         - destination_allocation_id (optional)
-     *                         - destination_additional_allocations (optional int[])
-     *                         - auto_allocate (bool, default true when primary allocation omitted)
+     *                                      - destination_node_id (required)
+     *                                      - destination_allocation_id (optional)
+     *                                      - destination_additional_allocations (optional int[])
+     *                                      - auto_allocate (bool, default true when primary allocation omitted)
      *
      * @return array{success: bool, error?: string, code?: string, http_status?: int, transfer_id?: int|false, new_allocation?: int|null, new_additional_allocations?: int[]}
      */

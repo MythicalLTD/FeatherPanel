@@ -50,9 +50,7 @@ export function ModerationReasonFields({ value, onChange, disabled = false }: Mo
     return (
         <div className='space-y-4'>
             <div className='space-y-2'>
-                <label className='text-sm font-medium'>
-                    {t('admin.moderation.reason_category_label')}
-                </label>
+                <label className='text-sm font-medium'>{t('admin.moderation.reason_category_label')}</label>
                 <Select
                     disabled={disabled}
                     value={value.reason_category}

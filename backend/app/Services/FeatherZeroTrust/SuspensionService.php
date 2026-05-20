@@ -23,8 +23,8 @@ use App\Chat\User;
 use App\Chat\Server;
 use App\Services\Wings\Wings;
 use App\Config\ConfigInterface;
-use App\Helpers\ModerationReasonHelper;
 use App\Mail\templates\ServerBanned;
+use App\Helpers\ModerationReasonHelper;
 use App\Plugins\Events\Events\ServerEvent;
 
 /**

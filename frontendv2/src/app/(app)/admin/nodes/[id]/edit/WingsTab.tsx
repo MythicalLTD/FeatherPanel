@@ -62,8 +62,7 @@ function CommandBlock({ command, copyLabel, onCopy, preClassName }: CommandBlock
             </div>
             <pre
                 className={
-                    preClassName ??
-                    'overflow-x-auto p-4 font-mono text-xs break-all whitespace-pre-wrap text-zinc-300'
+                    preClassName ?? 'overflow-x-auto p-4 font-mono text-xs break-all whitespace-pre-wrap text-zinc-300'
                 }
             >
                 {command}

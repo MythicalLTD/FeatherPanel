@@ -23,10 +23,9 @@ use App\Cache\Cache;
 use App\Chat\Server;
 use App\Chat\Activity;
 use App\Chat\Location;
+use GuzzleHttp\Client;
 use App\Chat\Allocation;
 use App\Chat\ServerTransfer;
-use App\Services\Servers\ServerTransferInitiator;
-use GuzzleHttp\Client;
 use App\Helpers\ApiResponse;
 use App\Services\Wings\Wings;
 use OpenApi\Attributes as OA;
@@ -35,6 +34,7 @@ use App\CloudFlare\CloudFlareRealIP;
 use App\Plugins\Events\Events\NodesEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Services\Servers\ServerTransferInitiator;
 
 #[OA\Schema(
     schema: 'Node',
@@ -608,7 +608,7 @@ class NodesController
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
         }
         // Check if the node has any servers assigned before allowing deletion
-        $serversCount = \App\Chat\Server::count(['node_id' => $id]);
+        $serversCount = Server::count(['node_id' => $id]);
         if ($serversCount > 0) {
             return ApiResponse::error('Cannot delete node: there are servers assigned to this node. Please remove or reassign all servers before deleting the node.', 'NODE_HAS_SERVERS', 400);
         }

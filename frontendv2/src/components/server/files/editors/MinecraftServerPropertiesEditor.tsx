@@ -178,12 +178,7 @@ function TextSetting({
                 {label}
             </label>
             {multiline ? (
-                <Textarea
-                    value={value}
-                    onChange={(e) => onChange(e.target.value)}
-                    readOnly={readOnly}
-                    rows={2}
-                />
+                <Textarea value={value} onChange={(e) => onChange(e.target.value)} readOnly={readOnly} rows={2} />
             ) : (
                 <Input
                     type='text'
@@ -876,10 +871,7 @@ export function MinecraftServerPropertiesEditor({
                 <section className='space-y-6'>
                     <SectionHeader
                         icon={Server}
-                        title={tr(
-                            'files.editors.minecraftProperties.sections.managementServer',
-                            'Management Server',
-                        )}
+                        title={tr('files.editors.minecraftProperties.sections.managementServer', 'Management Server')}
                         description={tr(
                             'files.editors.minecraftProperties.sectionsDescriptions.managementServer',
                             'Built-in management API settings',
@@ -1133,10 +1125,7 @@ export function MinecraftServerPropertiesEditor({
                                     )}
                                 </option>
                                 <option value='none'>
-                                    {tr(
-                                        'files.editors.minecraftProperties.options.regionFileCompression.none',
-                                        'None',
-                                    )}
+                                    {tr('files.editors.minecraftProperties.options.regionFileCompression.none', 'None')}
                                 </option>
                                 <option value='lz4'>
                                     {tr('files.editors.minecraftProperties.options.regionFileCompression.lz4', 'LZ4')}
