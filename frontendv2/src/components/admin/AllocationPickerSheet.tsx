@@ -26,7 +26,15 @@ import { Plug, Search as SearchIcon, ChevronLeft, ChevronRight, Plus } from 'luc
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { AllocationCreateForm, type CreatedAllocationRow } from '@/components/admin/AllocationCreateForm';
-import type { Allocation } from '@/app/(app)/admin/servers/create/types';
+
+export interface PickerAllocation {
+    id: number;
+    ip: string;
+    port: number;
+    ip_alias?: string | null;
+    server_id: number | null;
+    node_id: number;
+}
 
 export interface AllocationPaginationState {
     current_page: number;
@@ -41,16 +49,16 @@ interface AllocationPickerSheetProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     nodeId: number;
-    allocations: Allocation[];
+    allocations: PickerAllocation[];
     allocationSearch: string;
     setAllocationSearch: (v: string) => void;
     allocationPagination: AllocationPaginationState | null;
     setAllocationPagination: React.Dispatch<React.SetStateAction<AllocationPaginationState>>;
     fetchAllocations: () => void;
-    onSelectAllocation: (allocation: Allocation) => void;
+    onSelectAllocation: (allocation: PickerAllocation) => void | Promise<void>;
 }
 
-function mapCreatedToAllocation(row: CreatedAllocationRow, nodeId: number): Allocation {
+function mapCreatedToAllocation(row: CreatedAllocationRow, nodeId: number): PickerAllocation {
     return {
         id: row.id,
         ip: row.ip,

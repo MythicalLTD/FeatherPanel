@@ -15,7 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -57,6 +57,7 @@ import { AllocationsTab } from './AllocationsTab';
 import { MountsTab } from './MountsTab';
 import type { AssignableMountRow } from './MountsTab';
 import { ActionsTab } from './ActionsTab';
+import { AllocationPickerSheet } from '@/components/admin/AllocationPickerSheet';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
@@ -202,6 +203,15 @@ export default function EditServerPage() {
     const [debouncedSpellSearch, setDebouncedSpellSearch] = useState('');
 
     const [allocationSearch, setAllocationSearch] = useState('');
+    const [debouncedAllocationSearch, setDebouncedAllocationSearch] = useState('');
+    const [allocationPagination, setAllocationPagination] = useState({
+        current_page: 1,
+        per_page: 20,
+        total_records: 0,
+        total_pages: 0,
+        has_next: false,
+        has_prev: false,
+    });
 
     const tabStorageKey = `featherpanel_admin_server_edit_tab_${serverId}`;
     const isAllowedTab = useCallback(
@@ -256,17 +266,13 @@ export default function EditServerPage() {
         fetchWidgets();
     }, [fetchWidgets]);
 
-    const filteredAllocations = useMemo(() => {
-        if (!allocationSearch) return allocations;
-        const lowerSearch = allocationSearch.toLowerCase();
-        return allocations.filter((a) => {
-            return (
-                a.ip.toLowerCase().includes(lowerSearch) ||
-                String(a.port).includes(lowerSearch) ||
-                (a.ip_alias && a.ip_alias.toLowerCase().includes(lowerSearch))
-            );
-        });
-    }, [allocations, allocationSearch]);
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedAllocationSearch(allocationSearch);
+            setAllocationPagination((prev) => ({ ...prev, current_page: 1 }));
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [allocationSearch]);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -730,49 +736,96 @@ export default function EditServerPage() {
         }
     }, [spellModalOpen, form.realms_id, spellPagination.current_page, debouncedSpellSearch, fetchSpells]);
 
-    const fetchAllocations = async (mode: 'form' | 'primary' | 'assign' = 'form') => {
+    const matchesAllocationSearch = useCallback((allocation: Allocation, search: string) => {
+        if (!search) return true;
+        const lowerSearch = search.toLowerCase();
+        return (
+            allocation.ip.toLowerCase().includes(lowerSearch) ||
+            String(allocation.port).includes(lowerSearch) ||
+            (allocation.ip_alias && allocation.ip_alias.toLowerCase().includes(lowerSearch))
+        );
+    }, []);
+
+    const fetchAllocations = useCallback(async () => {
         if (!node?.id) return;
         try {
-            if (mode === 'primary') {
+            const listParams = {
+                node_id: node.id,
+                not_used: true,
+                search: debouncedAllocationSearch || undefined,
+                page: allocationPagination.current_page,
+                limit: allocationPagination.per_page,
+            };
+
+            if (allocationModalMode === 'primary') {
                 const [availableRes, assignedRes] = await Promise.all([
-                    axios.get('/api/admin/allocations', { params: { not_used: true } }),
+                    axios.get('/api/admin/allocations', { params: listParams }),
                     axios.get(`/api/admin/servers/${serverId}/allocations`),
                 ]);
 
-                const available = (availableRes.data?.data?.allocations || []).filter(
-                    (a: Allocation) => a.node_id === node.id,
+                const available = (availableRes.data?.data?.allocations || []) as Allocation[];
+                const assigned = ((assignedRes.data?.data?.allocations || []) as Allocation[]).filter(
+                    (allocation) =>
+                        allocation.node_id === node.id && matchesAllocationSearch(allocation, debouncedAllocationSearch),
                 );
-                const assigned = assignedRes.data?.data?.allocations || [];
 
                 const merged = new Map<number, Allocation>();
-                [...available, ...assigned].forEach((a: Allocation) => {
-                    merged.set(a.id, a);
+                [...available, ...assigned].forEach((allocation) => {
+                    merged.set(allocation.id, allocation);
                 });
 
                 setAllocations(Array.from(merged.values()));
+                if (availableRes.data?.data?.pagination) {
+                    setAllocationPagination((prev) => ({
+                        ...prev,
+                        ...availableRes.data.data.pagination,
+                    }));
+                }
                 return;
             }
 
-            const { data } = await axios.get('/api/admin/allocations', { params: { not_used: true } });
-            const allAllocations = data.data.allocations || [];
-
-            const filtered = allAllocations.filter((a: Allocation) => a.node_id === node.id);
+            const { data } = await axios.get('/api/admin/allocations', { params: listParams });
+            let nextAllocations = (data.data.allocations || []) as Allocation[];
 
             if (form.allocation_id && selectedEntities.allocation) {
-                if (!filtered.find((a: Allocation) => a.id === form.allocation_id)) {
-                    filtered.push(selectedEntities.allocation);
+                if (!nextAllocations.find((allocation) => allocation.id === form.allocation_id)) {
+                    nextAllocations = [...nextAllocations, selectedEntities.allocation];
                 }
             }
 
-            setAllocations(filtered);
+            setAllocations(nextAllocations);
+            if (data.data.pagination) {
+                setAllocationPagination((prev) => ({
+                    ...prev,
+                    ...data.data.pagination,
+                }));
+            }
         } catch (error) {
             console.error('Error fetching allocations:', error);
         }
-    };
+    }, [
+        node?.id,
+        allocationModalMode,
+        debouncedAllocationSearch,
+        allocationPagination.current_page,
+        allocationPagination.per_page,
+        serverId,
+        form.allocation_id,
+        selectedEntities.allocation,
+        matchesAllocationSearch,
+    ]);
 
-    const openAllocationModal = async (mode: 'form' | 'primary' | 'assign') => {
+    useEffect(() => {
+        if (allocationModalOpen && node?.id) {
+            fetchAllocations();
+        }
+    }, [allocationModalOpen, node?.id, fetchAllocations]);
+
+    const openAllocationModal = (mode: 'form' | 'primary' | 'assign') => {
         setAllocationModalMode(mode);
-        await fetchAllocations(mode);
+        setAllocationSearch('');
+        setDebouncedAllocationSearch('');
+        setAllocationPagination((prev) => ({ ...prev, current_page: 1 }));
         setAllocationModalOpen(true);
     };
 
@@ -1558,80 +1611,22 @@ export default function EditServerPage() {
                 </SheetContent>
             </Sheet>
 
-            <SelectionModal
-                isOpen={allocationModalOpen}
-                onClose={() => setAllocationModalOpen(false)}
-                title={t('admin.servers.form.select_allocation')}
-                items={filteredAllocations}
-                onSelect={handleSelectAllocation}
-                search={allocationSearch}
-                onSearchChange={setAllocationSearch}
-                renderItem={(item: Allocation) => (
-                    <div>
-                        <div className='font-mono font-medium'>
-                            {item.ip}:{item.port}
-                        </div>
-                        {item.ip_alias && <div className='text-muted-foreground text-xs'>{item.ip_alias}</div>}
-                    </div>
-                )}
-            />
+            {node?.id != null && (
+                <AllocationPickerSheet
+                    open={allocationModalOpen}
+                    onOpenChange={setAllocationModalOpen}
+                    nodeId={node.id}
+                    allocations={allocations}
+                    allocationSearch={allocationSearch}
+                    setAllocationSearch={setAllocationSearch}
+                    allocationPagination={allocationPagination}
+                    setAllocationPagination={setAllocationPagination}
+                    fetchAllocations={fetchAllocations}
+                    onSelectAllocation={handleSelectAllocation}
+                />
+            )}
 
             <WidgetRenderer widgets={getWidgets('admin-servers-edit', 'bottom-of-page')} context={{ id: serverId }} />
         </div>
-    );
-}
-
-interface SelectionModalProps<T> {
-    isOpen: boolean;
-    onClose: () => void;
-    title: string;
-    items: T[];
-    onSelect: (item: T) => void;
-    search: string;
-    onSearchChange: (val: string) => void;
-    renderItem: (item: T) => React.ReactNode;
-}
-
-function SelectionModal<T extends { id: number | string }>({
-    isOpen,
-    onClose,
-    title,
-    items,
-    onSelect,
-    search,
-    onSearchChange,
-    renderItem,
-}: SelectionModalProps<T>) {
-    const { t } = useTranslation();
-    return (
-        <HeadlessModal isOpen={isOpen} onClose={onClose} title={title} className='max-w-xl'>
-            <div className='space-y-4'>
-                <div className='group relative'>
-                    <SearchIcon className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
-                    <Input
-                        placeholder={t('common.search')}
-                        value={search}
-                        onChange={(e) => onSearchChange(e.target.value)}
-                        className='h-10 pl-10'
-                    />
-                </div>
-
-                <div className='custom-scrollbar max-h-100 space-y-2 overflow-y-auto pr-1'>
-                    {items.length === 0 ? (
-                        <div className='text-muted-foreground py-8 text-center'>{t('common.no_results')}</div>
-                    ) : (
-                        items.map((item) => (
-                            <div
-                                key={item.id}
-                                className='border-border/50 hover:border-primary hover:bg-primary/5 cursor-pointer rounded-xl border p-3 transition-all'
-                                onClick={() => onSelect(item)}
-                            >
-                                {renderItem(item)}
-                            </div>
-                        ))
-                    )}
-                </div>
-            </div>
-        </HeadlessModal>
     );
 }

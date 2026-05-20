@@ -28,6 +28,7 @@
 - Buch of timezone issues were fixed. by @nayskutzu
 - Color issues with vds settings page were fixed. by @nayskutzu
 - Further enhanced the plugin installer for improved performance and reliability. by @nayskutzu
+- Resolved a significant issue that previously prevented searching for allocations within the admin area. by @nayskutzu
 
 ### Improved
 
