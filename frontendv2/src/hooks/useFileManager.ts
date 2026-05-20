@@ -18,6 +18,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { filesApi } from '@/lib/files-api';
+import { filterFeatherTrashFiles, isFeatherTrashEntry } from '@/lib/feather-trash';
 import { FileObject } from '@/types/server';
 import { toast } from 'sonner';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -26,33 +27,7 @@ function sanitizeDirectoryPath(path: string | null): string | null {
     if (!path) return null;
 
     const normalized = ('/' + path).replace(/\/+/g, '/').replace(/\/+$/, '') || '/';
-    const segments = normalized.split('/').filter(Boolean);
-
-    // Collapse duplicated leading path chunks:
-    // /a/b/c/a/b/c/d -> /a/b/c/d
-    let collapsed = segments;
-    let changed = true;
-    while (changed) {
-        changed = false;
-        const n = collapsed.length;
-        for (let size = Math.floor(n / 2); size >= 1; size--) {
-            let matches = true;
-            for (let i = 0; i < size; i++) {
-                if (collapsed[i] !== collapsed[i + size]) {
-                    matches = false;
-                    break;
-                }
-            }
-            if (matches) {
-                collapsed = collapsed.slice(size);
-                changed = true;
-                break;
-            }
-        }
-    }
-
-    if (collapsed.length === 0) return '/';
-    return '/' + collapsed.join('/');
+    return normalized === '' ? '/' : normalized;
 }
 
 export function useFileManager(serverUuid: string) {
@@ -128,8 +103,8 @@ export function useFileManager(serverUuid: string) {
             }
 
             if (err instanceof Error && err.message === 'Request timeout') {
-                setError('Request timed out');
-                toast.error('File loading timed out. Please try again.');
+                setError(t('files.messages.request_timed_out'));
+                toast.error(t('files.messages.load_timeout_retry'));
             } else {
                 setError(apiMessage || t('files.messages.load_error'));
                 toast.error(apiMessage || t('files.messages.load_error'));
@@ -147,7 +122,7 @@ export function useFileManager(serverUuid: string) {
 
     // Filtering logic
     const filteredFiles = useMemo(() => {
-        let result = files;
+        let result = filterFeatherTrashFiles(files);
 
         // Apply ignored patterns
         if (ignoredPatterns.length > 0) {
@@ -168,6 +143,10 @@ export function useFileManager(serverUuid: string) {
     const navigate = (path: string) => {
         const params = new URLSearchParams(searchParams?.toString() ?? '');
         const sanitizedPath = sanitizeDirectoryPath(path) || '/';
+        const segment = sanitizedPath.split('/').filter(Boolean).pop() ?? '';
+        if (isFeatherTrashEntry(segment) || isFeatherTrashEntry(sanitizedPath.replace(/^\//, ''))) {
+            return;
+        }
         if (sanitizedPath === '/') {
             params.delete('path');
         } else {
@@ -216,10 +195,10 @@ export function useFileManager(serverUuid: string) {
     const cancelPull = async (id: string) => {
         try {
             await filesApi.deletePullFile(serverUuid, id);
-            toast.success('Download cancelled');
+            toast.success(t('files.messages.download_cancelled'));
             refreshPulls();
         } catch {
-            toast.error('Failed to cancel download');
+            toast.error(t('files.messages.cancel_download_failed'));
         }
     };
 

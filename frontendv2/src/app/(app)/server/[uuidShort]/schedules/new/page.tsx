@@ -32,6 +32,8 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { isEnabled } from '@/lib/utils';
+import { listSupportedTimezones } from '@/lib/dateUtils';
+import { useUserTimezone } from '@/contexts/PreferencesContext';
 import type { ScheduleCreateRequest } from '@/types/server';
 
 export default function CreateSchedulePage() {
@@ -42,6 +44,7 @@ export default function CreateSchedulePage() {
     const { hasPermission, loading: permissionsLoading } = useServerPermissions(uuidShort);
 
     const canCreate = hasPermission('schedule.create');
+    const userTimezone = useUserTimezone();
 
     const [saving, setSaving] = React.useState(false);
 
@@ -52,9 +55,23 @@ export default function CreateSchedulePage() {
         cron_day_of_month: '*',
         cron_month: '*',
         cron_day_of_week: '*',
+        timezone: userTimezone || 'UTC',
         only_when_online: 0,
         is_active: 1,
     });
+
+    React.useEffect(() => {
+        // Reflect a late-arriving user preference (PreferencesContext loads
+        // asynchronously on the first paint) into the form's default zone,
+        // but only while the user hasn't manually changed it.
+        setFormData((prev) =>
+            prev.timezone === 'UTC' && userTimezone && userTimezone !== 'UTC'
+                ? { ...prev, timezone: userTimezone }
+                : prev,
+        );
+    }, [userTimezone]);
+
+    const timezoneOptions = React.useMemo(() => listSupportedTimezones().map((tz) => ({ id: tz, name: tz })), []);
 
     const { getWidgets, fetchWidgets } = usePluginWidgets('server-schedules-new');
 
@@ -62,7 +79,7 @@ export default function CreateSchedulePage() {
         e.preventDefault();
 
         if (!formData.name.trim()) {
-            toast.error('Schedule name is required');
+            toast.error(t('serverSchedules.nameRequired'));
             return;
         }
 
@@ -278,6 +295,23 @@ export default function CreateSchedulePage() {
                     </div>
 
                     <p className='text-muted-foreground text-xs'>{t('serverSchedules.cronHelp')}</p>
+
+                    <div className='space-y-2.5'>
+                        <Label
+                            htmlFor='schedule-timezone'
+                            className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'
+                        >
+                            {t('serverSchedules.timezone')}
+                        </Label>
+                        <HeadlessSelect
+                            value={formData.timezone}
+                            onChange={(val) => setFormData({ ...formData, timezone: String(val) })}
+                            options={timezoneOptions}
+                            disabled={saving}
+                            buttonClassName='h-12 bg-secondary/50 border-border/10 focus:border-primary/50 rounded-xl text-sm font-extrabold transition-all'
+                        />
+                        <p className='text-muted-foreground ml-1 text-xs'>{t('serverSchedules.timezoneHelp')}</p>
+                    </div>
                 </div>
 
                 <div className='bg-card/50 border-border/50 space-y-6 rounded-3xl border p-8 backdrop-blur-3xl'>
@@ -286,9 +320,11 @@ export default function CreateSchedulePage() {
                             <Calendar className='text-primary h-5 w-5' />
                         </div>
                         <div className='space-y-0.5'>
-                            <h2 className='text-xl font-black tracking-tight uppercase italic'>Options</h2>
+                            <h2 className='text-xl font-black tracking-tight uppercase italic'>
+                                {t('serverSchedules.options')}
+                            </h2>
                             <p className='text-muted-foreground text-[9px] font-bold tracking-widest uppercase opacity-50'>
-                                Configuration
+                                {t('serverSchedules.configuration')}
                             </p>
                         </div>
                     </div>
@@ -302,8 +338,8 @@ export default function CreateSchedulePage() {
                                 value={String(formData.only_when_online)}
                                 onChange={(val) => setFormData({ ...formData, only_when_online: Number(val) })}
                                 options={[
-                                    { id: '0', name: 'No - Run regardless of server status' },
-                                    { id: '1', name: 'Yes - Only run when server is online' },
+                                    { id: '0', name: t('serverSchedules.runRegardless') },
+                                    { id: '1', name: t('serverSchedules.runOnlyOnline') },
                                 ]}
                                 disabled={saving}
                                 buttonClassName='h-12 bg-secondary/50 border-border/10 focus:border-primary/50 rounded-xl text-sm font-extrabold transition-all'

@@ -228,12 +228,18 @@ class ServerService
 
     /**
      * List items in a directory.
+     *
+     * @param bool $includeDirectorySizes when true, requests Wings recursive per-folder sizes (cached on the daemon)
      */
-    public function listDirectory(string $serverUuid, string $directory = '/'): WingsResponse
+    public function listDirectory(string $serverUuid, string $directory = '/', bool $includeDirectorySizes = false): WingsResponse
     {
         try {
             $encodedDirectory = urlencode($directory);
-            $response = $this->connection->get("/api/servers/{$serverUuid}/files/list-directory?directory={$encodedDirectory}");
+            $query = "directory={$encodedDirectory}";
+            if ($includeDirectorySizes) {
+                $query .= '&directory_sizes=true';
+            }
+            $response = $this->connection->get("/api/servers/{$serverUuid}/files/list-directory?{$query}");
 
             return new WingsResponse($response, 200);
         } catch (\Exception $e) {
@@ -252,6 +258,27 @@ class ServerService
             $query = http_build_query($filters);
             $endpoint = "/api/servers/{$serverUuid}/files/search" . ($query !== '' ? "?{$query}" : '');
             $response = $this->connection->get($endpoint);
+
+            return new WingsResponse($response, 200);
+        } catch (\Exception $e) {
+            return new WingsResponse(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * List one directory inside an on-disk archive without extracting (supported formats only).
+     *
+     * @param string $innerPath Path inside the archive (empty string = root)
+     */
+    public function listArchiveDirectory(string $serverUuid, string $directory, string $file, string $innerPath = ''): WingsResponse
+    {
+        try {
+            $query = http_build_query([
+                'directory' => $directory,
+                'file' => $file,
+                'path' => $innerPath,
+            ]);
+            $response = $this->connection->get("/api/servers/{$serverUuid}/files/archive/list?{$query}");
 
             return new WingsResponse($response, 200);
         } catch (\Exception $e) {
@@ -363,15 +390,93 @@ class ServerService
 
     /**
      * Delete files/directories.
+     *
+     * @param array<string, mixed> $options Optional keys: use_trash (bool), permanent (bool), trash (array{max_size_bytes?: int, retention_days?: int})
      */
-    public function deleteFiles(string $serverUuid, string $root, array $files): WingsResponse
+    public function deleteFiles(string $serverUuid, string $root, array $files, array $options = []): WingsResponse
     {
         try {
             $data = [
                 'root' => $root,
                 'files' => $files,
             ];
+            if (isset($options['use_trash'])) {
+                $data['use_trash'] = (bool) $options['use_trash'];
+            }
+            if (isset($options['permanent'])) {
+                $data['permanent'] = (bool) $options['permanent'];
+            }
+            if (!empty($options['trash']) && is_array($options['trash'])) {
+                $data['trash'] = $options['trash'];
+            }
             $response = $this->connection->post("/api/servers/{$serverUuid}/files/delete", $data);
+
+            return new WingsResponse($response, 204);
+        } catch (\Exception $e) {
+            return new WingsResponse(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * List trashed files for a server.
+     */
+    public function listTrash(string $serverUuid, int $maxSizeBytes = 0, int $retentionDays = 0): WingsResponse
+    {
+        try {
+            $query = http_build_query([
+                'max_size_bytes' => $maxSizeBytes,
+                'retention_days' => $retentionDays,
+            ]);
+            $response = $this->connection->get("/api/servers/{$serverUuid}/files/trash?{$query}");
+
+            return new WingsResponse($response, 200);
+        } catch (\Exception $e) {
+            return new WingsResponse(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Restore files from trash.
+     */
+    public function restoreTrash(string $serverUuid, array $ids, bool $overwrite = false): WingsResponse
+    {
+        try {
+            $this->connection->post("/api/servers/{$serverUuid}/files/trash/restore", [
+                'ids' => $ids,
+                'overwrite' => $overwrite,
+            ]);
+
+            return new WingsResponse([], 204);
+        } catch (WingsRequestException $e) {
+            return new WingsResponse(['error' => $e->getMessage()], $e->getCode());
+        } catch (\Exception $e) {
+            return new WingsResponse(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Permanently delete selected trash entries.
+     */
+    public function deleteTrashEntries(string $serverUuid, array $ids): WingsResponse
+    {
+        try {
+            $response = $this->connection->post("/api/servers/{$serverUuid}/files/trash/delete", [
+                'ids' => $ids,
+            ]);
+
+            return new WingsResponse($response, 204);
+        } catch (\Exception $e) {
+            return new WingsResponse(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Empty the entire trash bin for a server.
+     */
+    public function emptyTrash(string $serverUuid): WingsResponse
+    {
+        try {
+            $response = $this->connection->delete("/api/servers/{$serverUuid}/files/trash");
 
             return new WingsResponse($response, 204);
         } catch (\Exception $e) {
@@ -482,6 +587,36 @@ class ServerService
             // Use 15 minute timeout for archive operations (like pelican) if not specified
             $requestTimeout = $timeout ?? (60 * 15);
             $response = $this->connection->post("/api/servers/{$serverUuid}/files/decompress", $data, [], 3, $requestTimeout);
+
+            return new WingsResponse($response, 204);
+        } catch (\Exception $e) {
+            return new WingsResponse(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Extract selected paths from an on-disk archive without unpacking the whole archive (Wings 204).
+     *
+     * @param array<int, string> $entries Paths inside the archive (files and/or directories)
+     */
+    public function extractArchiveSelection(
+        string $serverUuid,
+        string $root,
+        string $file,
+        string $destination,
+        array $entries,
+        ?int $timeout = null,
+    ): WingsResponse {
+        try {
+            $data = [
+                'root' => $root,
+                'file' => $file,
+                'destination' => $destination,
+                'entries' => array_values($entries),
+            ];
+
+            $requestTimeout = $timeout ?? (60 * 15);
+            $response = $this->connection->post("/api/servers/{$serverUuid}/files/archive/extract", $data, [], 3, $requestTimeout);
 
             return new WingsResponse($response, 204);
         } catch (\Exception $e) {
@@ -619,6 +754,8 @@ class ServerService
             $response = $this->connection->delete("/api/servers/{$serverUuid}/backup/{$backupId}");
 
             return new WingsResponse($response, 204);
+        } catch (WingsAuthenticationException | WingsRequestException $e) {
+            return new WingsResponse(['error' => $e->getMessage()], $e->getCode() > 0 ? $e->getCode() : 500);
         } catch (\Exception $e) {
             return new WingsResponse(['error' => $e->getMessage()], 500);
         }

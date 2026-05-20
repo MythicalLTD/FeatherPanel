@@ -37,6 +37,18 @@ return function (RouteCollection $routes): void {
 
     App::getInstance(true)->registerAuthRoute(
         $routes,
+        'vds-chatbot-chat-stream',
+        '/api/user/vds-chatbot/chat/stream',
+        function (Request $request) {
+            return (new VdsChatbotController())->streamChat($request);
+        },
+        ['POST'],
+        Rate::perMinute(30),
+        'user-vds-chatbot'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
         'vds-chatbot-conversations',
         '/api/user/vds-chatbot/conversations',
         function (Request $request) {

@@ -45,6 +45,8 @@ import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { HeadlessModal } from '@/components/ui/headless-modal';
 import { toast } from 'sonner';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
+import { formatDateTimeInTz } from '@/lib/dateUtils';
+import { useDateFormatOptions } from '@/contexts/PreferencesContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
@@ -64,6 +66,7 @@ export default function ServerSchedulesPage() {
     const canCreate = hasPermission('schedule.create');
     const canUpdate = hasPermission('schedule.update');
     const canDelete = hasPermission('schedule.delete');
+    const dateOpts = useDateFormatOptions();
 
     const [schedules, setSchedules] = React.useState<Schedule[]>([]);
     const [loading, setLoading] = React.useState(true);
@@ -426,16 +429,21 @@ export default function ServerSchedulesPage() {
                                 title={schedule.name}
                                 description={
                                     <div className='flex flex-col gap-1'>
-                                        <div className='text-muted-foreground flex items-center gap-3 text-xs font-medium'>
+                                        <div className='text-muted-foreground flex flex-wrap items-center gap-3 text-xs font-medium'>
                                             <span className='flex items-center gap-1.5 rounded-lg bg-white/5 px-2 py-1 font-mono'>
                                                 <Clock className='h-3 w-3' />
                                                 {formatCronExpression(schedule)}
                                             </span>
+                                            {schedule.timezone && (
+                                                <span className='flex items-center gap-1.5 px-2 py-1 font-mono'>
+                                                    {schedule.timezone}
+                                                </span>
+                                            )}
                                             {schedule.next_run_at && (
                                                 <span className='flex items-center gap-1.5 px-2 py-1'>
                                                     <CalendarClock className='h-3 w-3' />
                                                     {t('serverSchedules.nextRun')}{' '}
-                                                    {new Date(schedule.next_run_at).toLocaleString()}
+                                                    {formatDateTimeInTz(schedule.next_run_at, dateOpts)}
                                                 </span>
                                             )}
                                         </div>

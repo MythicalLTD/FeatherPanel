@@ -75,7 +75,7 @@ export interface Allocation {
     id: number;
     ip: string;
     port: number;
-    ip_alias: string | null;
+    ip_alias?: string | null;
     server_id: number | null;
     node_id: number;
     is_primary?: boolean;
@@ -106,6 +106,18 @@ export interface SpellVariable {
     user_editable: number;
     rules: string;
     field_type: string;
+}
+
+export interface CustomVariable {
+    id: number;
+    server_id: number;
+    user_id: number;
+    name: string;
+    env_variable: string;
+    variable_value: string;
+    is_encrypted: number;
+    created_at?: string;
+    updated_at?: string;
 }
 
 export interface ServerFormData {

@@ -177,6 +177,21 @@ return function (RouteCollection $routes): void {
     );
     App::getInstance(true)->registerAdminRoute(
         $routes,
+        'admin-users-verify-email',
+        '/api/admin/users/{uuid}/verify-email',
+        function (Request $request, array $args) {
+            $uuid = $args['uuid'] ?? null;
+            if (!$uuid || !is_string($uuid)) {
+                return ApiResponse::error('Missing or invalid UUID', 'INVALID_UUID', 400);
+            }
+
+            return (new UsersController())->forceVerifyEmail($request, $uuid);
+        },
+        Permissions::ADMIN_USERS_EDIT,
+        ['POST']
+    );
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
         'admin-users-ban',
         '/api/admin/users/{uuid}/ban',
         function (Request $request, array $args) {

@@ -17,6 +17,7 @@
 
 namespace App\Controllers\User\Vds;
 
+use App\Helpers\TimeHelper;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Chat\VmInstanceActivity;
@@ -105,8 +106,12 @@ class VmUserActivityController
             vmInstanceId: (int) $vmInstance['id'],
         );
 
+        $activities = is_array($result['data'] ?? null)
+            ? TimeHelper::normaliseRows($result['data'], ['timestamp'])
+            : [];
+
         return ApiResponse::success([
-            'activities' => $result['data'],
+            'activities' => $activities,
             'pagination' => $result['pagination'],
         ], 'Activities fetched', 200);
     }

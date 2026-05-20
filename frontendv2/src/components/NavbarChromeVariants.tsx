@@ -15,7 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import type { Dispatch, SetStateAction } from 'react';
+import type { Dispatch, ReactNode, SetStateAction } from 'react';
 import { Fragment } from 'react';
 import { Menu, Transition } from '@headlessui/react';
 import {
@@ -34,11 +34,13 @@ import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.
 import Image from 'next/image';
 import { cn, copyToClipboard } from '@/lib/utils';
 import ThemeCustomizer from '@/components/layout/ThemeCustomizer';
+import { PoweredByFeatherPanel } from '@/components/branding/PoweredByFeatherPanel';
 import type { UserInfo } from '@/contexts/SessionContext';
 
 export type NavbarChromeProps = {
     onMenuClick: () => void;
     headerTitle: string;
+    headerContent?: ReactNode;
     showAdminAreaButton: boolean;
     adminAreaHref: string;
     user: UserInfo | null;
@@ -62,6 +64,7 @@ export function NavbarClassicChrome(props: NavbarChromeProps) {
     const {
         onMenuClick,
         headerTitle,
+        headerContent,
         showAdminAreaButton,
         adminAreaHref,
         user,
@@ -81,7 +84,7 @@ export function NavbarClassicChrome(props: NavbarChromeProps) {
     return (
         <div
             className={cn(
-                'border-border/20 bg-card/78 z-30 flex h-14 shrink-0 items-center gap-x-2 border-b px-2 backdrop-blur-xl sm:h-16 sm:gap-x-4 sm:px-6 lg:px-8',
+                'border-border/50 bg-card z-30 flex h-14 shrink-0 items-center gap-x-2 border-b px-2 sm:h-16 sm:gap-x-4 sm:px-6 lg:px-8',
                 navbarSticky ? 'sticky top-0' : 'relative',
                 desktopHoverDock && 'lg:static lg:top-auto',
             )}
@@ -100,12 +103,14 @@ export function NavbarClassicChrome(props: NavbarChromeProps) {
 
             <div className='flex min-w-0 flex-1 gap-x-2 self-stretch sm:gap-x-4 lg:gap-x-6'>
                 <div className='flex min-w-0 flex-1 items-center'>
-                    <h1
-                        className='text-foreground min-w-0 truncate pr-2 text-base font-semibold sm:pr-1 sm:text-lg'
-                        title={headerTitle}
-                    >
-                        {headerTitle}
-                    </h1>
+                    {headerContent ?? (
+                        <h1
+                            className='text-foreground min-w-0 truncate pr-2 text-base font-semibold sm:pr-1 sm:text-lg'
+                            title={headerTitle}
+                        >
+                            {headerTitle}
+                        </h1>
+                    )}
                 </div>
 
                 <div className='flex shrink-0 items-center gap-x-1.5 sm:gap-x-3 lg:gap-x-6'>
@@ -346,16 +351,7 @@ export function NavbarClassicChrome(props: NavbarChromeProps) {
                                 </div>
 
                                 <div className='border-border/50 bg-card/80 border-t px-3 py-2'>
-                                    <p className='text-center'>
-                                        <a
-                                            href='https://featherpanel.com'
-                                            target='_blank'
-                                            rel='noopener noreferrer'
-                                            className='text-muted-foreground/80 hover:text-primary text-[10px] font-normal tracking-wide lowercase underline-offset-2 transition-colors hover:underline'
-                                        >
-                                            {t('navbar.poweredBy')}
-                                        </a>
-                                    </p>
+                                    <PoweredByFeatherPanel variant='menu' />
                                 </div>
                             </Menu.Items>
                         </Transition>
@@ -370,6 +366,7 @@ export function NavbarModernChrome(props: NavbarChromeProps) {
     const {
         onMenuClick,
         headerTitle,
+        headerContent,
         showAdminAreaButton,
         adminAreaHref,
         user,
@@ -412,12 +409,14 @@ export function NavbarModernChrome(props: NavbarChromeProps) {
 
                 <div className='flex min-w-0 flex-1 items-stretch gap-x-2 self-stretch sm:gap-x-3'>
                     <div className='flex min-w-0 flex-1 items-center'>
-                        <h1
-                            className='text-foreground truncate text-sm font-semibold tracking-tight sm:text-[0.95rem]'
-                            title={headerTitle}
-                        >
-                            {headerTitle}
-                        </h1>
+                        {headerContent ?? (
+                            <h1
+                                className='text-foreground truncate text-sm font-semibold tracking-tight sm:text-[0.95rem]'
+                                title={headerTitle}
+                            >
+                                {headerTitle}
+                            </h1>
+                        )}
                     </div>
 
                     <div className='flex shrink-0 items-center gap-1 sm:gap-2'>
@@ -652,16 +651,7 @@ export function NavbarModernChrome(props: NavbarChromeProps) {
                                     </div>
 
                                     <div className='border-border/35 border-t px-3 py-2'>
-                                        <p className='text-center'>
-                                            <a
-                                                href='https://featherpanel.com'
-                                                target='_blank'
-                                                rel='noopener noreferrer'
-                                                className='text-muted-foreground/70 hover:text-primary text-[10px] font-normal tracking-wide lowercase underline-offset-2 transition-colors hover:underline'
-                                            >
-                                                {t('navbar.poweredBy')}
-                                            </a>
-                                        </p>
+                                        <PoweredByFeatherPanel variant='menu' />
                                     </div>
                                 </Menu.Items>
                             </Transition>

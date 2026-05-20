@@ -30,6 +30,8 @@ import {
 } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSession } from '@/contexts/SessionContext';
+import { useDateFormatOptions } from '@/contexts/PreferencesContext';
+import { formatRelativeTime } from '@/lib/dateUtils';
 import Link from 'next/link';
 import Image from 'next/image';
 import axios from 'axios';
@@ -157,6 +159,7 @@ function DashboardBlockChrome({
 export default function DashboardPage() {
     const { t } = useTranslation();
     const { user } = useSession();
+    const dateOpts = useDateFormatOptions();
     const [allServers, setAllServers] = useState<ServerData[]>([]);
     const [vms, setVms] = useState<VmInstance[]>([]);
     const [serverTotal, setServerTotal] = useState(0);
@@ -318,32 +321,7 @@ export default function DashboardPage() {
         };
     };
 
-    const formatDate = (dateString: string): string => {
-        if (!dateString) return '-';
-        try {
-            const date = new Date(dateString);
-            const now = new Date();
-            const diffInHours = Math.abs(now.getTime() - date.getTime()) / (1000 * 60 * 60);
-
-            if (diffInHours < 1) {
-                return t('common.time.just_now');
-            } else if (diffInHours < 24) {
-                const hours = Math.floor(diffInHours);
-
-                return t('common.time.hours_ago', { count: hours.toString(), s: hours > 1 ? 's' : '' });
-            } else if (diffInHours < 48) {
-                return t('common.time.yesterday');
-            } else {
-                return (
-                    date.toLocaleDateString() +
-                    ' ' +
-                    date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                );
-            }
-        } catch {
-            return dateString;
-        }
-    };
+    const formatDate = (dateString: string): string => formatRelativeTime(dateString, dateOpts);
 
     const BLOCK_LABEL_KEYS: Record<DashboardBlockId, string> = {
         hero: 'dashboard.layout.block_labels.hero',

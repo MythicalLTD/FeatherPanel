@@ -41,7 +41,9 @@ import {
     MapPin,
     ChevronLeft,
     ChevronRight,
+    ArrowLeftRight,
 } from 'lucide-react';
+import { MassTransferServersDialog } from '@/components/admin/MassTransferServersDialog';
 
 import { DetailsTab } from './DetailsTab';
 import { ConfigurationTab } from './ConfigurationTab';
@@ -101,6 +103,7 @@ export default function EditNodePage() {
     const [resetting, setResetting] = useState(false);
     const [activeTab, setActiveTab] = useState(tabFromUrl === 'wings' ? 'wings' : 'details');
     const [locationModalOpen, setLocationModalOpen] = useState(false);
+    const [massTransferOpen, setMassTransferOpen] = useState(false);
 
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-nodes-edit');
 
@@ -501,11 +504,17 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
                 description={t('admin.node.form.edit_description')}
                 icon={Server}
                 actions={
-                    <div className='flex gap-2'>
+                    <div className='flex flex-wrap gap-2'>
                         <Button variant='outline' onClick={() => router.back()}>
                             <ArrowLeft className='mr-2 h-4 w-4' />
                             {t('common.back')}
                         </Button>
+                        {nodeData ? (
+                            <Button variant='outline' onClick={() => setMassTransferOpen(true)}>
+                                <ArrowLeftRight className='mr-2 h-4 w-4' />
+                                {t('admin.node.mass_transfer.button')}
+                            </Button>
+                        ) : null}
                         <Button onClick={() => handleSubmit()} loading={saving}>
                             <Save className='mr-2 h-4 w-4' />
                             {t('admin.node.form.submit_save')}
@@ -825,6 +834,15 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
                 widgets={getWidgets('admin-nodes-edit', 'bottom-of-page')}
                 context={{ id: nodeId as string }}
             />
+
+            {nodeData ? (
+                <MassTransferServersDialog
+                    sourceNodeId={Number(nodeId)}
+                    sourceNodeName={nodeData.name}
+                    open={massTransferOpen}
+                    onOpenChange={setMassTransferOpen}
+                />
+            ) : null}
         </div>
     );
 }

@@ -17,6 +17,8 @@
 
 namespace App\Services\Chatbot\Providers;
 
+use App\Services\Chatbot\TokenUsage;
+
 class BasicProvider implements ProviderInterface
 {
     /**
@@ -33,48 +35,42 @@ class BasicProvider implements ProviderInterface
         $lowerMessage = strtolower($message);
 
         if (strpos($lowerMessage, 'hello') !== false || strpos($lowerMessage, 'hi') !== false) {
-            return [
-                'response' => "Hello! I'm your AI assistant for FeatherPanel. How can I help you today?",
-                'model' => 'FeatherPanel AI',
-            ];
+            return $this->response($message, "Hello! I'm your AI assistant for FeatherPanel. How can I help you today?");
         }
 
         if (strpos($lowerMessage, 'help') !== false) {
-            return [
-                'response' => "I can help you with various FeatherPanel tasks:\n\n" .
-                    "• Server management\n" .
-                    "• Configuration questions\n" .
-                    "• General panel information\n" .
-                    "• Troubleshooting\n\n" .
-                    'What would you like to know?',
-                'model' => 'FeatherPanel AI',
-            ];
+            return $this->response($message, "I can help you with various FeatherPanel tasks:\n\n" .
+                "• Server management\n" .
+                "• Configuration questions\n" .
+                "• General panel information\n" .
+                "• Troubleshooting\n\n" .
+                'What would you like to know?');
         }
 
         if (strpos($lowerMessage, 'server') !== false) {
-            return [
-                'response' => "I can help you with server-related tasks. You can:\n\n" .
-                    "• View server status\n" .
-                    "• Manage server files\n" .
-                    "• Control server power (start/stop/restart)\n" .
-                    "• View server console\n" .
-                    "• Manage databases\n\n" .
-                    'What specific server task do you need help with?',
-                'model' => 'FeatherPanel AI',
-            ];
+            return $this->response($message, "I can help you with server-related tasks. You can:\n\n" .
+                "• View server status\n" .
+                "• Manage server files\n" .
+                "• Control server power (start/stop/restart)\n" .
+                "• View server console\n" .
+                "• Manage databases\n\n" .
+                'What specific server task do you need help with?');
         }
 
         if (strpos($lowerMessage, 'thank') !== false) {
-            return [
-                'response' => "You're welcome! Is there anything else I can help you with?",
-                'model' => 'FeatherPanel AI',
-            ];
+            return $this->response($message, "You're welcome! Is there anything else I can help you with?");
         }
 
+        return $this->response($message, "I understand you're asking about: " . $message . "\n\n" .
+            "I'm a basic assistant. For more advanced responses, please configure Google Gemini, OpenRouter, or OpenAI in admin settings.");
+    }
+
+    private function response(string $input, string $output): array
+    {
         return [
-            'response' => "I understand you're asking about: " . $message . "\n\n" .
-                "I'm a basic assistant. For more advanced responses, please configure Google Gemini, OpenRouter, or OpenAI in admin settings.",
+            'response' => $output,
             'model' => 'FeatherPanel AI',
+            'usage' => TokenUsage::estimate($input, $output),
         ];
     }
 }

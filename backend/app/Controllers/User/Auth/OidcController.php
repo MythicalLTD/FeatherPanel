@@ -20,6 +20,7 @@ namespace App\Controllers\User\Auth;
 use App\App;
 use App\Chat\User;
 use App\Cache\Cache;
+use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
 use App\Helpers\EmailDomainValidator;
@@ -50,53 +51,22 @@ class OidcController
     )]
     public function login(Request $request): RedirectResponse
     {
-        $app = App::getInstance(true);
-        $providerUuid = $request->query->get('provider');
+        return $this->startOidcFlow($request);
+    }
 
-        if (!is_string($providerUuid) || $providerUuid === '') {
-            return new RedirectResponse('/auth/login?error=oidc_provider_missing');
+    /**
+     * Initiate OIDC account linking for an authenticated user.
+     *
+     * GET /api/user/auth/oidc/link.
+     */
+    public function link(Request $request): RedirectResponse
+    {
+        $user = $request->attributes->get('user');
+        if (!$user || empty($user['uuid'])) {
+            return new RedirectResponse('/auth/login?redirect=' . urlencode('/dashboard/account?tab=settings'));
         }
 
-        $provider = \App\Chat\OidcProvider::getProviderByUuid($providerUuid);
-        if (!$provider || ($provider['enabled'] ?? 'true') !== 'true') {
-            return new RedirectResponse('/auth/login?error=oidc_provider_not_found');
-        }
-
-        $issuerUrl = rtrim((string) $provider['issuer_url'], '/');
-        $clientId = (string) $provider['client_id'];
-        $scopes = (string) ($provider['scopes'] ?? 'openid email profile');
-
-        if ($issuerUrl === '' || $clientId === '') {
-            return new RedirectResponse('/auth/login?error=oidc_not_configured');
-        }
-
-        $discoveryUrl = $issuerUrl . '/.well-known/openid-configuration';
-        $discovery = $this->fetchJson($discoveryUrl);
-        if (!is_array($discovery) || !isset($discovery['authorization_endpoint'])) {
-            return new RedirectResponse('/auth/login?error=oidc_discovery_failed');
-        }
-
-        $authEndpoint = $discovery['authorization_endpoint'];
-
-        $state = bin2hex(random_bytes(16));
-        $nonce = bin2hex(random_bytes(16));
-
-        Cache::put('oidc_state_' . $state, [
-            'nonce' => $nonce,
-            'provider_uuid' => $providerUuid,
-        ], 10);
-
-        $redirectUri = $app->getConfig()->getSetting(ConfigInterface::APP_URL, '') . '/api/user/auth/oidc/callback';
-        $query = http_build_query([
-            'client_id' => $clientId,
-            'redirect_uri' => $redirectUri,
-            'response_type' => 'code',
-            'scope' => $scopes,
-            'state' => $state,
-            'nonce' => $nonce,
-        ]);
-
-        return new RedirectResponse($authEndpoint . '?' . $query);
+        return $this->startOidcFlow($request, (string) $user['uuid']);
     }
 
     /**
@@ -134,19 +104,21 @@ class OidcController
             return new RedirectResponse('/auth/login?error=oidc_missing_code');
         }
 
+        $isLinkFlow = isset($cached['link_user_uuid']) && is_string($cached['link_user_uuid']) && $cached['link_user_uuid'] !== '';
+
         Cache::forget('oidc_state_' . $state);
 
         $providerUuid = (string) $cached['provider_uuid'];
         $provider = \App\Chat\OidcProvider::getProviderByUuid($providerUuid);
         if (!$provider || ($provider['enabled'] ?? 'true') !== 'true') {
-            return new RedirectResponse('/auth/login?error=oidc_provider_not_found');
+            return $this->oidcErrorRedirect('oidc_provider_not_found', $isLinkFlow);
         }
 
         $issuerUrl = rtrim((string) $provider['issuer_url'], '/');
         $clientId = (string) $provider['client_id'];
         $clientSecretRaw = $provider['client_secret'] ?? '';
         if ($clientSecretRaw === '') {
-            return new RedirectResponse('/auth/login?error=oidc_not_configured');
+            return $this->oidcErrorRedirect('oidc_not_configured', $isLinkFlow);
         }
         try {
             $clientSecret = $app->decryptValue((string) $clientSecretRaw);
@@ -156,73 +128,120 @@ class OidcController
         }
 
         if ($issuerUrl === '' || $clientId === '' || $clientSecret === '') {
-            return new RedirectResponse('/auth/login?error=oidc_not_configured');
+            return $this->oidcErrorRedirect('oidc_not_configured', $isLinkFlow);
         }
 
         $discoveryUrl = $issuerUrl . '/.well-known/openid-configuration';
         $discovery = $this->fetchJson($discoveryUrl);
         if (!is_array($discovery) || !isset($discovery['token_endpoint'])) {
-            return new RedirectResponse('/auth/login?error=oidc_discovery_failed');
+            return $this->oidcErrorRedirect('oidc_discovery_failed', $isLinkFlow);
         }
 
         $tokenEndpoint = $discovery['token_endpoint'];
         $redirectUri = $app->getConfig()->getSetting(ConfigInterface::APP_URL, '') . '/api/user/auth/oidc/callback';
 
-        $postData = http_build_query([
+        $basePostFields = [
             'grant_type' => 'authorization_code',
             'code' => $code,
             'redirect_uri' => $redirectUri,
-            'client_id' => $clientId,
-            'client_secret' => $clientSecret,
-        ]);
+        ];
 
-        $ch = curl_init($tokenEndpoint);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/x-www-form-urlencoded']);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-        curl_setopt($ch, CURLOPT_FAILONERROR, true);
-        $tokenResponse = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $curlErr = curl_errno($ch);
-        $curlErrMsg = curl_error($ch);
-        curl_close($ch);
+        $supportedTokenAuthMethods = $discovery['token_endpoint_auth_methods_supported'] ?? null;
+        $tokenAuthMethods = ['client_secret_basic'];
+        if (is_array($supportedTokenAuthMethods)) {
+            $tokenAuthMethods = [];
+            foreach (['client_secret_basic', 'client_secret_post'] as $method) {
+                if (in_array($method, $supportedTokenAuthMethods, true)) {
+                    $tokenAuthMethods[] = $method;
+                }
+            }
+            if ($tokenAuthMethods === []) {
+                $tokenAuthMethods = ['client_secret_basic', 'client_secret_post'];
+            }
+        } else {
+            $tokenAuthMethods[] = 'client_secret_post';
+        }
+
+        $tokenResponse = false;
+        $httpCode = 0;
+        $curlErr = 0;
+        $curlErrMsg = '';
+        $tokenAuthMethod = $tokenAuthMethods[0];
+
+        foreach ($tokenAuthMethods as $method) {
+            $postFields = $basePostFields;
+            $headers = ['Content-Type: application/x-www-form-urlencoded'];
+
+            if ($method === 'client_secret_post') {
+                $postFields['client_id'] = $clientId;
+                $postFields['client_secret'] = $clientSecret;
+            } else {
+                $basicCredentials = base64_encode(rawurlencode($clientId) . ':' . rawurlencode($clientSecret));
+                $headers[] = 'Authorization: Basic ' . $basicCredentials;
+            }
+
+            $ch = curl_init($tokenEndpoint);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($postFields));
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+            $tokenResponse = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlErr = curl_errno($ch);
+            $curlErrMsg = curl_error($ch);
+            $ch = null;
+            $tokenAuthMethod = $method;
+
+            if ($curlErr === 0 && $tokenResponse !== false && $httpCode >= 200 && $httpCode < 300) {
+                break;
+            }
+
+            $responseSnippet = substr((string) $tokenResponse, 0, 500);
+            $app->getLogger()->warning(
+                'OIDC token request using ' . $method . ' failed with HTTP ' . $httpCode . '. Response: ' . $responseSnippet
+            );
+        }
         if ($curlErr !== 0 || $tokenResponse === false) {
-            $app->getLogger()->warning('OIDC token request failed: ' . ($curlErrMsg ?: 'Unknown cURL error'));
+            $app->getLogger()->warning(
+                'OIDC token request using ' . $tokenAuthMethod . ' failed: ' . ($curlErrMsg ?: 'Unknown cURL error')
+            );
 
-            return new RedirectResponse('/auth/login?error=oidc_token_failed');
+            return $this->oidcErrorRedirect('oidc_token_failed', $isLinkFlow);
         }
         if ($httpCode < 200 || $httpCode >= 300) {
-            $app->getLogger()->warning('OIDC token endpoint returned HTTP ' . $httpCode);
+            $responseSnippet = substr((string) $tokenResponse, 0, 500);
+            $app->getLogger()->warning(
+                'OIDC token endpoint returned HTTP ' . $httpCode . ' using ' . $tokenAuthMethod . '. Response: ' . $responseSnippet
+            );
 
-            return new RedirectResponse('/auth/login?error=oidc_token_failed');
+            return $this->oidcErrorRedirect('oidc_token_failed', $isLinkFlow);
         }
         $tokenData = json_decode($tokenResponse ?: '', true);
 
         if (!is_array($tokenData) || !isset($tokenData['id_token'])) {
-            return new RedirectResponse('/auth/login?error=oidc_token_failed');
+            return $this->oidcErrorRedirect('oidc_token_failed', $isLinkFlow);
         }
 
         $idToken = $tokenData['id_token'];
         $claims = $this->decodeJwtWithoutVerification($idToken);
         if (!is_array($claims)) {
-            return new RedirectResponse('/auth/login?error=oidc_invalid_id_token');
+            return $this->oidcErrorRedirect('oidc_invalid_id_token', $isLinkFlow);
         }
 
         if (!isset($claims['iss']) || !is_string($claims['iss']) || rtrim($claims['iss'], '/') !== $issuerUrl) {
-            return new RedirectResponse('/auth/login?error=oidc_invalid_issuer');
+            return $this->oidcErrorRedirect('oidc_invalid_issuer', $isLinkFlow);
         }
         if (!isset($claims['aud'])) {
-            return new RedirectResponse('/auth/login?error=oidc_invalid_audience');
+            return $this->oidcErrorRedirect('oidc_invalid_audience', $isLinkFlow);
         }
         $aud = $claims['aud'];
         if (is_string($aud) && $aud !== $clientId) {
-            return new RedirectResponse('/auth/login?error=oidc_invalid_audience');
+            return $this->oidcErrorRedirect('oidc_invalid_audience', $isLinkFlow);
         }
         if (is_array($aud) && !in_array($clientId, $aud, true)) {
-            return new RedirectResponse('/auth/login?error=oidc_invalid_audience');
+            return $this->oidcErrorRedirect('oidc_invalid_audience', $isLinkFlow);
         }
 
         $emailClaimKey = (string) ($provider['email_claim'] ?? 'email');
@@ -233,7 +252,7 @@ class OidcController
 
         $subject = $claims[$subjectClaimKey] ?? null;
         if (!is_string($subject) || $subject === '') {
-            return new RedirectResponse('/auth/login?error=oidc_missing_subject');
+            return $this->oidcErrorRedirect('oidc_missing_subject', $isLinkFlow);
         }
 
         $email = $claims[$emailClaimKey] ?? null;
@@ -244,7 +263,7 @@ class OidcController
         if ($requireEmailVerified) {
             $emailVerified = $claims['email_verified'] ?? null;
             if ($emailVerified !== true && $emailVerified !== 'true') {
-                return new RedirectResponse('/auth/login?error=oidc_email_not_verified');
+                return $this->oidcErrorRedirect('oidc_email_not_verified', $isLinkFlow);
             }
         }
 
@@ -257,7 +276,7 @@ class OidcController
                 $allowed = in_array($requiredGroupValue, $groupClaim, true);
             }
             if (!$allowed) {
-                return new RedirectResponse('/auth/login?error=oidc_access_denied');
+                return $this->oidcErrorRedirect('oidc_access_denied', $isLinkFlow);
             }
         }
 
@@ -265,6 +284,10 @@ class OidcController
         $emailVerifiedStrict = $emailVerified === true || $emailVerified === 'true';
 
         $providerId = $providerUuid;
+
+        if ($isLinkFlow) {
+            return $this->completeAccountLink($cached['link_user_uuid'], $providerId, $subject, $email);
+        }
 
         $user = $this->findUserByOidcSubject($providerId, $subject);
         if (!$user && $email && $emailVerifiedStrict) {
@@ -296,6 +319,116 @@ class OidcController
         $loginController = new LoginController();
 
         return $loginController->completeLogin($user, '/dashboard');
+    }
+
+    /**
+     * Unlink OIDC from the authenticated account.
+     *
+     * DELETE /api/user/auth/oidc/unlink.
+     */
+    public function unlink(Request $request): Response
+    {
+        $user = $request->attributes->get('user');
+        if (!$user || empty($user['uuid'])) {
+            return ApiResponse::error('Unauthorized', 'UNAUTHORIZED', 401);
+        }
+
+        $updated = User::updateUser((string) $user['uuid'], [
+            'oidc_provider' => null,
+            'oidc_subject' => null,
+            'oidc_email' => null,
+        ]);
+
+        if (!$updated) {
+            return ApiResponse::error('Failed to unlink OIDC account', 'OIDC_UNLINK_FAILED', 500);
+        }
+
+        return ApiResponse::success([], 'OIDC account unlinked successfully', 200);
+    }
+
+    private function startOidcFlow(Request $request, ?string $linkUserUuid = null): RedirectResponse
+    {
+        $app = App::getInstance(true);
+        $providerUuid = $request->query->get('provider');
+
+        if (!is_string($providerUuid) || $providerUuid === '') {
+            return $this->oidcErrorRedirect('oidc_provider_missing', $linkUserUuid !== null);
+        }
+
+        $provider = \App\Chat\OidcProvider::getProviderByUuid($providerUuid);
+        if (!$provider || ($provider['enabled'] ?? 'true') !== 'true') {
+            return $this->oidcErrorRedirect('oidc_provider_not_found', $linkUserUuid !== null);
+        }
+
+        $issuerUrl = rtrim((string) $provider['issuer_url'], '/');
+        $clientId = (string) $provider['client_id'];
+        $scopes = (string) ($provider['scopes'] ?? 'openid email profile');
+
+        if ($issuerUrl === '' || $clientId === '') {
+            return $this->oidcErrorRedirect('oidc_not_configured', $linkUserUuid !== null);
+        }
+
+        $discoveryUrl = $issuerUrl . '/.well-known/openid-configuration';
+        $discovery = $this->fetchJson($discoveryUrl);
+        if (!is_array($discovery) || !isset($discovery['authorization_endpoint'])) {
+            return $this->oidcErrorRedirect('oidc_discovery_failed', $linkUserUuid !== null);
+        }
+
+        $state = bin2hex(random_bytes(16));
+        $nonce = bin2hex(random_bytes(16));
+        $stateData = [
+            'nonce' => $nonce,
+            'provider_uuid' => $providerUuid,
+        ];
+        if ($linkUserUuid !== null) {
+            $stateData['link_user_uuid'] = $linkUserUuid;
+        }
+
+        Cache::put('oidc_state_' . $state, $stateData, 10);
+
+        $redirectUri = $app->getConfig()->getSetting(ConfigInterface::APP_URL, '') . '/api/user/auth/oidc/callback';
+        $query = http_build_query([
+            'client_id' => $clientId,
+            'redirect_uri' => $redirectUri,
+            'response_type' => 'code',
+            'scope' => $scopes,
+            'state' => $state,
+            'nonce' => $nonce,
+        ]);
+
+        return new RedirectResponse($discovery['authorization_endpoint'] . '?' . $query);
+    }
+
+    private function oidcErrorRedirect(string $errorCode, bool $accountSettings): RedirectResponse
+    {
+        $target = $accountSettings ? '/dashboard/account?tab=settings&error=' : '/auth/login?error=';
+
+        return new RedirectResponse($target . urlencode($errorCode));
+    }
+
+    private function completeAccountLink(string $userUuid, string $providerId, string $subject, ?string $email): RedirectResponse
+    {
+        $user = User::getUserByUuid($userUuid);
+        if (!$user) {
+            return new RedirectResponse('/dashboard/account?tab=settings&error=oidc_user_not_found');
+        }
+
+        $existingLinkedUser = $this->findUserByOidcSubject($providerId, $subject);
+        if ($existingLinkedUser && $existingLinkedUser['uuid'] !== $userUuid) {
+            return new RedirectResponse('/dashboard/account?tab=settings&error=oidc_already_linked');
+        }
+
+        $updated = User::updateUser($userUuid, [
+            'oidc_provider' => $providerId,
+            'oidc_subject' => $subject,
+            'oidc_email' => $email,
+        ]);
+
+        if (!$updated) {
+            return new RedirectResponse('/dashboard/account?tab=settings&error=oidc_link_failed');
+        }
+
+        return new RedirectResponse('/dashboard/account?tab=settings&linked=oidc');
     }
 
     /**
@@ -426,7 +559,7 @@ class OidcController
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $curlErr = curl_errno($ch);
-        curl_close($ch);
+        $ch = null;
         if ($curlErr !== 0 || $response === false || $httpCode < 200 || $httpCode >= 300) {
             return null;
         }

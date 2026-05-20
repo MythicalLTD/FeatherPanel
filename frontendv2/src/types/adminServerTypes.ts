@@ -48,6 +48,8 @@ export interface ApiServer {
         username: string;
         email: string;
         avatar?: string;
+        last_seen?: string | null;
+        first_seen?: string | null;
     };
     node?: {
         id: number;

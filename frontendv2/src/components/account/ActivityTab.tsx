@@ -17,12 +17,14 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { useDateFormatOptions } from '@/contexts/PreferencesContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/featherui/Input';
 import { Clock, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { ActivityFeed } from '@/components/dashboard/ActivityFeed';
+import { formatRelativeTime } from '@/lib/dateUtils';
 import type { Activity } from '@/types/activity';
 
 interface PaginationInfo {
@@ -38,6 +40,7 @@ interface PaginationInfo {
 
 export default function ActivityTab() {
     const { t } = useTranslation();
+    const dateOpts = useDateFormatOptions();
     const [activities, setActivities] = useState<Activity[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
@@ -64,12 +67,12 @@ export default function ActivityTab() {
                 }
             } catch (error) {
                 console.error('Error fetching activities:', error);
-                toast.error('Failed to load activity log');
+                toast.error(t('account.activity.loadFailed'));
             } finally {
                 setLoading(false);
             }
         },
-        [searchQuery],
+        [searchQuery, t],
     );
 
     useEffect(() => {
@@ -85,31 +88,7 @@ export default function ActivityTab() {
         return () => clearTimeout(timeout);
     }, [searchQuery, fetchActivities]);
 
-    const formatDate = (dateString: string): string => {
-        if (!dateString) return '-';
-        try {
-            const date = new Date(dateString);
-            const now = new Date();
-            const diffInHours = Math.abs(now.getTime() - date.getTime()) / (1000 * 60 * 60);
-
-            if (diffInHours < 1) {
-                return t('common.time.just_now');
-            } else if (diffInHours < 24) {
-                const hours = Math.floor(diffInHours);
-                return t('common.time.hours_ago', { count: hours.toString(), s: hours > 1 ? 's' : '' });
-            } else if (diffInHours < 48) {
-                return t('common.time.yesterday');
-            } else {
-                return (
-                    date.toLocaleDateString() +
-                    ' ' +
-                    date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                );
-            }
-        } catch {
-            return dateString;
-        }
-    };
+    const formatDate = (dateString: string): string => formatRelativeTime(dateString, dateOpts);
 
     const visiblePages = () => {
         if (!pagination) return [];
@@ -158,10 +137,14 @@ export default function ActivityTab() {
                 <p className='text-muted-foreground text-sm'>
                     {pagination ? (
                         <span>
-                            Showing {pagination.from} to {pagination.to} of {pagination.total_records} activities
+                            {t('account.activity.showingActivities', {
+                                from: pagination.from.toString(),
+                                to: pagination.to.toString(),
+                                total: pagination.total_records.toString(),
+                            })}
                         </span>
                     ) : (
-                        <span>{activities.length} activities</span>
+                        <span>{t('account.activity.totalActivities', { count: activities.length.toString() })}</span>
                     )}
                 </p>
                 <Button variant='outline' size='sm' onClick={() => fetchActivities(currentPage)}>
@@ -204,10 +187,12 @@ export default function ActivityTab() {
                 <div className='py-12 text-center'>
                     <Clock className='text-muted-foreground mx-auto mb-4 h-12 w-12' />
                     <h4 className='text-foreground mb-2 text-sm font-semibold'>
-                        {searchQuery ? 'No search results' : t('account.activity.noActivities')}
+                        {searchQuery ? t('account.activity.noSearchResults') : t('account.activity.noActivities')}
                     </h4>
                     <p className='text-muted-foreground text-sm'>
-                        {searchQuery ? 'Try a different search term' : 'Your recent activity will appear here'}
+                        {searchQuery
+                            ? t('account.activity.tryDifferentSearch')
+                            : t('account.activity.emptyDescription')}
                     </p>
                 </div>
             )}

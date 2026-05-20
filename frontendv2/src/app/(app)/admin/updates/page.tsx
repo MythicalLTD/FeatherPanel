@@ -248,7 +248,7 @@ export default function AdminUpdatesPage() {
     const handleBulkUpdate = async () => {
         if (selectedNodes.size === 0 && selectedPlugins.size === 0) return;
         setIsBulkUpdating(true);
-        const toastId = toast.loading('Starting bulk updates...');
+        const toastId = toast.loading(t('admin_updates.messages.bulk_starting'));
 
         try {
             const nodeUpdates = Array.from(selectedNodes).map((id) =>
@@ -261,13 +261,13 @@ export default function AdminUpdatesPage() {
 
             await Promise.allSettled([...nodeUpdates, ...pluginUpdatesReq]);
 
-            toast.success('Bulk update process initiated!', { id: toastId });
+            toast.success(t('admin_updates.messages.bulk_started'), { id: toastId });
             setSelectedNodes(new Set());
             setSelectedPlugins(new Set());
             checkAllUpdates();
         } catch (error) {
             console.error(error);
-            toast.error('Some updates failed to start.', { id: toastId });
+            toast.error(t('admin_updates.messages.bulk_failed'), { id: toastId });
         } finally {
             setIsBulkUpdating(false);
         }

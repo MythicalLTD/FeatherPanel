@@ -315,9 +315,11 @@ const LogsTab = () => {
             <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
                 <SheetContent side='right' className='overflow-y-auto sm:max-w-2xl'>
                     <SheetHeader>
-                        <SheetTitle>Execution Details</SheetTitle>
+                        <SheetTitle>{t('admin.featherzerotrust.logs.executionDetails')}</SheetTitle>
                         <SheetDescription>
-                            Detailed scan results for execution ID: {executionLog?.execution_id}
+                            {t('admin.featherzerotrust.logs.executionDetailsDescription', {
+                                id: executionLog?.execution_id ?? '',
+                            })}
                         </SheetDescription>
                     </SheetHeader>
 
@@ -331,7 +333,9 @@ const LogsTab = () => {
                                 <div className='grid grid-cols-2 gap-4'>
                                     <Card className='bg-muted/30 border-border/50'>
                                         <CardContent className='p-4'>
-                                            <div className='text-muted-foreground text-xs'>Total Servers</div>
+                                            <div className='text-muted-foreground text-xs'>
+                                                {t('admin.featherzerotrust.logs.totalServers')}
+                                            </div>
                                             <div className='text-2xl font-bold'>
                                                 {executionLog.total_servers_scanned}
                                             </div>
@@ -345,7 +349,9 @@ const LogsTab = () => {
                                         )}
                                     >
                                         <CardContent className='p-4'>
-                                            <div className='text-muted-foreground text-xs'>Total Detections</div>
+                                            <div className='text-muted-foreground text-xs'>
+                                                {t('admin.featherzerotrust.logs.totalDetections')}
+                                            </div>
                                             <div
                                                 className={cn(
                                                     'text-2xl font-bold',

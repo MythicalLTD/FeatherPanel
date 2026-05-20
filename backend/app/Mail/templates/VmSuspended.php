@@ -36,6 +36,7 @@ class VmSuspended
                 'dashboard_url' => $data['app_url'] . '/dashboard',
                 'support_url' => $data['app_support_url'],
                 'vm_hostname' => $data['vm_hostname'],
+                'suspension_reason' => $data['suspension_reason'] ?? '',
             ]);
         }
 
@@ -53,6 +54,7 @@ class VmSuspended
         $template = str_replace('{dashboard_url}', $data['dashboard_url'], $template);
         $template = str_replace('{support_url}', $data['support_url'], $template);
         $template = str_replace('{vm_hostname}', $data['vm_hostname'], $template);
+        $template = str_replace('{suspension_reason}', $data['suspension_reason'] ?? '', $template);
 
         return $template;
     }
@@ -125,6 +127,7 @@ class VmSuspended
             'dashboard_url' => $data['app_url'] . '/dashboard',
             'support_url' => $data['app_support_url'],
             'vm_hostname' => $data['vm_hostname'],
+            'suspension_reason' => $data['suspension_reason'] ?? '',
         ]);
     }
 }

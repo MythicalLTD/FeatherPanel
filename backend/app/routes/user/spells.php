@@ -69,7 +69,17 @@ return function (RouteCollection $routes): void {
                 });
             }
 
-            return ApiResponse::success(['spells' => array_values($spells)], 'Spells fetched successfully', 200);
+            $spells = array_values($spells);
+            usort($spells, static function (array $a, array $b): int {
+                $order = ($a['sort_order'] ?? 0) <=> ($b['sort_order'] ?? 0);
+                if ($order !== 0) {
+                    return $order;
+                }
+
+                return strcasecmp($a['name'] ?? '', $b['name'] ?? '');
+            });
+
+            return ApiResponse::success(['spells' => $spells], 'Spells fetched successfully', 200);
         },
         ['GET'],
         Rate::perMinute(60), // Default: Admin can override in ratelimit.json

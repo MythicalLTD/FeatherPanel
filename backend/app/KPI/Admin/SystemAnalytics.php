@@ -18,6 +18,7 @@
 namespace App\KPI\Admin;
 
 use App\Chat\Database;
+use App\Helpers\TimeHelper;
 
 /**
  * System Analytics and KPI service for mail, API keys, SSH keys, plugins, and system features.
@@ -90,6 +91,7 @@ class SystemAnalytics
             LIMIT 10
         ");
         $recentQueued = $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+        $recentQueued = TimeHelper::normaliseRows($recentQueued);
 
         return [
             'total_queued' => $pending,

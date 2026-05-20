@@ -15,10 +15,11 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, type ReactNode, type ElementType } from 'react';
 import { useRouter } from 'next/navigation';
 import axios, { isAxiosError } from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { useDateFormatOptions } from '@/contexts/PreferencesContext';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
@@ -52,9 +53,11 @@ import {
     AlertTriangle,
     Network,
     Terminal,
+    Clock,
 } from 'lucide-react';
 import { StatusBadge } from '@/components/servers/StatusBadge';
 import { displayStatus } from '@/lib/server-utils';
+import { formatDateTimeInTz, formatRelativeTime } from '@/lib/dateUtils';
 import { ApiServer, Pagination, ApiNode, ApiAllocation } from '@/types/adminServerTypes';
 import type { Server as ServerType } from '@/types/server';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
@@ -75,6 +78,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 
 export default function ServersPage() {
     const { t } = useTranslation();
+    const dateOpts = useDateFormatOptions();
     const router = useRouter();
 
     const [loading, setLoading] = useState(true);
@@ -97,6 +101,7 @@ export default function ServersPage() {
     const [isAllocationModalOpen, setIsAllocationModalOpen] = useState(false);
     const [selectedNode, setSelectedNode] = useState<ApiNode | null>(null);
     const [selectedAllocation, setSelectedAllocation] = useState<ApiAllocation | null>(null);
+    const [transferAutoAllocate, setTransferAutoAllocate] = useState(true);
     const [nodesList, setNodesList] = useState<ApiNode[]>([]);
     const [allocationsList, setAllocationsList] = useState<ApiAllocation[]>([]);
     const [loadingNodes, setLoadingNodes] = useState(false);
@@ -342,6 +347,7 @@ export default function ServersPage() {
         setTransferServer(server);
         setSelectedNode(null);
         setSelectedAllocation(null);
+        setTransferAutoAllocate(true);
         setIsTransferDialogOpen(true);
     };
 
@@ -386,14 +392,22 @@ export default function ServersPage() {
     };
 
     const initiateTransfer = async () => {
-        if (!transferServer || !selectedNode || !selectedAllocation) return;
+        if (!transferServer || !selectedNode || (!transferAutoAllocate && !selectedAllocation)) return;
 
         setIsInitiatingTransfer(true);
         try {
-            await axios.post(`/api/admin/servers/${transferServer.id}/transfer`, {
+            const payload: {
+                destination_node_id: number;
+                destination_allocation_id?: number;
+                auto_allocate?: boolean;
+            } = {
                 destination_node_id: selectedNode.id,
-                destination_allocation_id: selectedAllocation.id,
-            });
+                auto_allocate: transferAutoAllocate,
+            };
+            if (!transferAutoAllocate && selectedAllocation) {
+                payload.destination_allocation_id = selectedAllocation.id;
+            }
+            await axios.post(`/api/admin/servers/${transferServer.id}/transfer`, payload);
             toast.success(t('admin.servers.messages.transfer_initiated'));
             setIsTransferDialogOpen(false);
             setRefreshKey((prev) => prev + 1);
@@ -787,6 +801,26 @@ export default function ServersPage() {
                                                 <HardDrive className='h-3.5 w-3.5' />
                                                 <span>{formatDisk(server.disk)}</span>
                                             </div>
+                                            {server.owner?.last_seen && (
+                                                <div className='text-muted-foreground flex items-center gap-1.5 text-xs'>
+                                                    <Clock className='h-3.5 w-3.5' />
+                                                    <span>
+                                                        {t('admin.servers.owner_last_seen')}:{' '}
+                                                        <span
+                                                            title={
+                                                                server.owner.last_seen
+                                                                    ? formatDateTimeInTz(
+                                                                          server.owner.last_seen,
+                                                                          dateOpts,
+                                                                      )
+                                                                    : undefined
+                                                            }
+                                                        >
+                                                            {formatRelativeTime(server.owner.last_seen, dateOpts)}
+                                                        </span>
+                                                    </span>
+                                                </div>
+                                            )}
                                         </div>
                                     }
                                     actions={
@@ -983,17 +1017,41 @@ export default function ServersPage() {
                                                     <DetailItem
                                                         label={t('admin.servers.details.labels.created')}
                                                         value={
-                                                            selectedServer?.created_at
-                                                                ? new Date(selectedServer.created_at).toLocaleString()
-                                                                : 'N/A'
+                                                            selectedServer?.created_at ? (
+                                                                <span
+                                                                    title={formatDateTimeInTz(
+                                                                        selectedServer.created_at,
+                                                                        dateOpts,
+                                                                    )}
+                                                                >
+                                                                    {formatRelativeTime(
+                                                                        selectedServer.created_at,
+                                                                        dateOpts,
+                                                                    )}
+                                                                </span>
+                                                            ) : (
+                                                                'N/A'
+                                                            )
                                                         }
                                                     />
                                                     <DetailItem
                                                         label={t('admin.servers.details.labels.updated')}
                                                         value={
-                                                            selectedServer?.updated_at
-                                                                ? new Date(selectedServer.updated_at).toLocaleString()
-                                                                : 'N/A'
+                                                            selectedServer?.updated_at ? (
+                                                                <span
+                                                                    title={formatDateTimeInTz(
+                                                                        selectedServer.updated_at,
+                                                                        dateOpts,
+                                                                    )}
+                                                                >
+                                                                    {formatRelativeTime(
+                                                                        selectedServer.updated_at,
+                                                                        dateOpts,
+                                                                    )}
+                                                                </span>
+                                                            ) : (
+                                                                'N/A'
+                                                            )
                                                         }
                                                     />
                                                 </div>
@@ -1095,6 +1153,16 @@ export default function ServersPage() {
                                                 title={t('admin.servers.details.labels.owner')}
                                                 name={selectedServer?.owner?.username}
                                                 detail={selectedServer?.owner?.email}
+                                                secondary={
+                                                    selectedServer?.owner?.last_seen
+                                                        ? `${t('admin.users.last_seen')}: ${formatRelativeTime(selectedServer.owner.last_seen, dateOpts)}`
+                                                        : undefined
+                                                }
+                                                secondaryTitle={
+                                                    selectedServer?.owner?.last_seen
+                                                        ? formatDateTimeInTz(selectedServer.owner.last_seen, dateOpts)
+                                                        : undefined
+                                                }
                                             />
                                             <RelationCard
                                                 icon={Network}
@@ -1647,35 +1715,57 @@ export default function ServersPage() {
                                 </Button>
                             </div>
 
-                            <div className='space-y-2'>
-                                <label className='text-sm font-bold'>
-                                    {t('admin.servers.transfer.destination_allocation')}
-                                </label>
-                                <Button
-                                    variant='outline'
-                                    className='border-border bg-background/50 h-12 w-full justify-between rounded-xl border px-4'
-                                    onClick={() => {
-                                        if (selectedNode) {
-                                            fetchAllocations(selectedNode.id);
-                                            setIsAllocationModalOpen(true);
-                                        } else {
-                                            toast.error(t('admin.servers.transfer.select_node'));
-                                        }
+                            <label className='flex cursor-pointer items-start gap-3 rounded-xl border p-4'>
+                                <Checkbox
+                                    checked={transferAutoAllocate}
+                                    onCheckedChange={(v) => {
+                                        const enabled = v === true;
+                                        setTransferAutoAllocate(enabled);
+                                        if (enabled) setSelectedAllocation(null);
                                     }}
-                                    disabled={isInitiatingTransfer || !selectedNode}
-                                >
-                                    <span
-                                        className={
-                                            selectedAllocation ? 'text-foreground font-medium' : 'text-muted-foreground'
-                                        }
+                                    disabled={isInitiatingTransfer}
+                                />
+                                <div>
+                                    <p className='text-sm font-bold'>{t('admin.servers.transfer.auto_allocate')}</p>
+                                    <p className='text-muted-foreground text-xs'>
+                                        {t('admin.servers.transfer.auto_allocate_help')}
+                                    </p>
+                                </div>
+                            </label>
+
+                            {!transferAutoAllocate ? (
+                                <div className='space-y-2'>
+                                    <label className='text-sm font-bold'>
+                                        {t('admin.servers.transfer.destination_allocation')}
+                                    </label>
+                                    <Button
+                                        variant='outline'
+                                        className='border-border bg-background/50 h-12 w-full justify-between rounded-xl border px-4'
+                                        onClick={() => {
+                                            if (selectedNode) {
+                                                fetchAllocations(selectedNode.id);
+                                                setIsAllocationModalOpen(true);
+                                            } else {
+                                                toast.error(t('admin.servers.transfer.select_node'));
+                                            }
+                                        }}
+                                        disabled={isInitiatingTransfer || !selectedNode}
                                     >
-                                        {selectedAllocation
-                                            ? `${selectedAllocation.ip}:${selectedAllocation.port}`
-                                            : t('admin.servers.transfer.select_allocation')}
-                                    </span>
-                                    <ChevronRight className='text-muted-foreground h-4 w-4' />
-                                </Button>
-                            </div>
+                                        <span
+                                            className={
+                                                selectedAllocation
+                                                    ? 'text-foreground font-medium'
+                                                    : 'text-muted-foreground'
+                                            }
+                                        >
+                                            {selectedAllocation
+                                                ? `${selectedAllocation.ip}:${selectedAllocation.port}`
+                                                : t('admin.servers.transfer.select_allocation')}
+                                        </span>
+                                        <ChevronRight className='text-muted-foreground h-4 w-4' />
+                                    </Button>
+                                </div>
+                            ) : null}
                         </div>
 
                         <div className='space-y-4'>
@@ -1709,7 +1799,9 @@ export default function ServersPage() {
                         </AlertDialogCancel>
                         <Button
                             onClick={initiateTransfer}
-                            disabled={!selectedNode || !selectedAllocation || isInitiatingTransfer}
+                            disabled={
+                                !selectedNode || (!transferAutoAllocate && !selectedAllocation) || isInitiatingTransfer
+                            }
                             className='h-11 rounded-xl bg-amber-500 px-6 text-white hover:bg-amber-600'
                         >
                             {isInitiatingTransfer ? (
@@ -1734,7 +1826,7 @@ export default function ServersPage() {
                     <div className='relative'>
                         <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
                         <Input
-                            placeholder='Search nodes...'
+                            placeholder={t('admin.servers.transfer.search_nodes')}
                             value={nodeSearch}
                             onChange={(e) => {
                                 setNodeSearch(e.target.value);
@@ -1749,7 +1841,7 @@ export default function ServersPage() {
                                 <Loader2 className='text-primary h-6 w-6 animate-spin' />
                             </div>
                         ) : nodesList.length === 0 ? (
-                            <div className='text-muted-foreground py-10 text-center'>No results found</div>
+                            <div className='text-muted-foreground py-10 text-center'>{t('common.no_results')}</div>
                         ) : (
                             nodesList.map((node) => (
                                 <button
@@ -1786,7 +1878,7 @@ export default function ServersPage() {
                     <div className='relative'>
                         <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
                         <Input
-                            placeholder='Search allocations...'
+                            placeholder={t('admin.servers.transfer.search_allocations')}
                             value={allocationSearch}
                             onChange={(e) => {
                                 setAllocationSearch(e.target.value);
@@ -1801,7 +1893,9 @@ export default function ServersPage() {
                                 <Loader2 className='text-primary h-6 w-6 animate-spin' />
                             </div>
                         ) : allocationsList.length === 0 ? (
-                            <div className='text-muted-foreground py-10 text-center'>No free allocations found</div>
+                            <div className='text-muted-foreground py-10 text-center'>
+                                {t('admin.servers.transfer.no_free_allocations')}
+                            </div>
                         ) : (
                             allocationsList.map((allc) => (
                                 <button
@@ -1842,7 +1936,7 @@ function DetailItem({
     truncate = false,
 }: {
     label: string;
-    value: React.ReactNode;
+    value: ReactNode;
     isMono?: boolean;
     truncate?: boolean;
 }) {
@@ -1861,11 +1955,15 @@ function RelationCard({
     title,
     name,
     detail,
+    secondary,
+    secondaryTitle,
 }: {
-    icon: React.ElementType;
+    icon: ElementType;
     title: string;
     name: string | undefined;
     detail?: string;
+    secondary?: ReactNode;
+    secondaryTitle?: string;
 }) {
     return (
         <div className='bg-muted/30 border-border/50 group hover:border-primary/30 rounded-2xl border p-4 transition-all'>
@@ -1879,6 +1977,11 @@ function RelationCard({
             </div>
             <p className='truncate text-sm font-bold'>{name || 'N/A'}</p>
             {detail && <p className='text-muted-foreground truncate text-xs'>{detail}</p>}
+            {secondary && (
+                <p className='text-muted-foreground mt-1 truncate text-xs' title={secondaryTitle}>
+                    {secondary}
+                </p>
+            )}
         </div>
     );
 }

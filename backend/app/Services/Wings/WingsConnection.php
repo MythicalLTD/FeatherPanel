@@ -632,7 +632,7 @@ class WingsConnection
             case 403:
                 throw new WingsAuthenticationException("Access forbidden: {$errorDetails}", 403);
             case 404:
-                throw new WingsRequestException("Endpoint not found: {$endpoint}", 404);
+                throw new WingsRequestException("Wings request failed (404) for {$endpoint}: {$errorDetails}", 404);
             case 429:
                 throw new WingsRequestException("Rate limit exceeded: {$errorDetails}", 429);
             case 500:

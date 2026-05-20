@@ -335,7 +335,7 @@ class VmInstance
      */
     public static function update(int $id, array $data): bool
     {
-        $allowed = ['hostname', 'notes', 'user_uuid', 'vm_ip_id', 'memory', 'cpus', 'cores', 'disk_gb', 'on_boot', 'suspended', 'backup_limit', 'backup_retention_mode'];
+        $allowed = ['hostname', 'notes', 'user_uuid', 'vm_ip_id', 'memory', 'cpus', 'cores', 'disk_gb', 'on_boot', 'suspended', 'suspension_reason', 'suspended_at', 'suspended_by_uuid', 'backup_limit', 'backup_retention_mode'];
         $updates = [];
         $params = ['id' => $id];
 
@@ -418,6 +418,18 @@ class VmInstance
             if ($key === 'suspended') {
                 $updates[] = 'suspended = :suspended';
                 $params['suspended'] = (int) (bool) $data['suspended'];
+
+                continue;
+            }
+            if ($key === 'suspension_reason' || $key === 'suspended_by_uuid') {
+                $updates[] = $key . ' = :' . $key;
+                $params[$key] = $data[$key] === null ? null : (is_string($data[$key]) ? trim($data[$key]) : $data[$key]);
+
+                continue;
+            }
+            if ($key === 'suspended_at') {
+                $updates[] = 'suspended_at = :suspended_at';
+                $params['suspended_at'] = $data['suspended_at'] === null ? null : $data['suspended_at'];
             }
         }
 

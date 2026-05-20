@@ -16,7 +16,6 @@
  */
 
 use App\Plugins\PluginManager;
-use App\Config\ConfigInterface;
 
 define('APP_STARTUP', microtime(true));
 define('APP_START', microtime(true));
@@ -58,13 +57,15 @@ $app = new NormalApp(false, true);
 App::sendOutputWithNewLine('&7Starting App cron runner.');
 
 /**
- * Ensure the correct timezone is set for the cron runner.
+ * Force PHP's default timezone to UTC for the cron runner.
+ *
+ * Cron jobs use `date('Y-m-d H:i:s')` (and friends) to generate timestamps
+ * that are stored in DATETIME columns — those columns are interpreted as
+ * UTC by the frontend, so the cron context must also be UTC, regardless of
+ * the admin-configured `app_timezone` panel setting (which is a display
+ * preference, not a storage policy).
  */
-$timezone = $app->getConfig()->getSetting(ConfigInterface::APP_TIMEZONE, 'UTC');
-if (!@date_default_timezone_set($timezone)) {
-    $app->getLogger()->warning("Invalid timezone '$timezone', falling back to UTC.");
-    date_default_timezone_set('UTC');
-}
+date_default_timezone_set('UTC');
 
 // Run main cronjobs
 foreach (glob(__DIR__ . '/php/*.php') as $file) {

@@ -135,7 +135,7 @@ export default function ProfileTab() {
 
         try {
             if (isEnabled(settings?.turnstile_enabled) && !turnstileToken) {
-                toast.error('Please complete the CAPTCHA verification');
+                toast.error(t('validation.captcha_required'));
                 return;
             }
 

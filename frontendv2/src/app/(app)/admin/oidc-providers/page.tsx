@@ -57,7 +57,7 @@ export default function OidcProvidersPage() {
 
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text);
-        toast.success('Copied to clipboard');
+        toast.success(t('common.copiedToClipboard'));
     };
 
     const fetchProviders = useCallback(async () => {

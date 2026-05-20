@@ -163,15 +163,15 @@ export default function ActivityAnalyticsPage() {
                         />
                         <ResourceCard
                             title={stats.total.toString()}
-                            subtitle='Total activities'
-                            description='All-time platform activity events'
+                            subtitle={t('admin.analytics.activity.total_activities')}
+                            description={t('admin.analytics.activity.all_time_activity_events')}
                             icon={TrendingUp}
                             className='bg-card/50 shadow-none! backdrop-blur-sm'
                         />
                         <ResourceCard
                             title={(topActivities[0]?.count ?? 0).toString()}
-                            subtitle='Top activity type'
-                            description={topActivities[0]?.name ?? 'No activity data'}
+                            subtitle={t('admin.analytics.activity.top_activity_type')}
+                            description={topActivities[0]?.name ?? t('admin.analytics.activity.no_activity_data')}
                             icon={List}
                             className='bg-card/50 shadow-none! backdrop-blur-sm'
                         />

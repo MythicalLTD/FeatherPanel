@@ -87,8 +87,8 @@ export function PageCard({
                 className,
             )}
         >
-            <div className='border-border/10 relative z-10 flex items-center justify-between border-b pb-6'>
-                <div className='flex items-center gap-4'>
+            <div className='border-border/10 relative z-10 flex min-w-0 items-start justify-between gap-4 border-b pb-6'>
+                <div className='flex min-w-0 flex-1 items-center gap-4'>
                     {(Icon || iconSrc) && (
                         <div
                             className={cn(
@@ -116,13 +116,13 @@ export function PageCard({
                             {title}
                         </h2>
                         {description && (
-                            <p className='text-muted-foreground line-clamp-2 text-[9px] font-bold tracking-widest uppercase opacity-50'>
+                            <p className='text-muted-foreground line-clamp-3 text-[9px] leading-relaxed font-bold tracking-widest break-words uppercase opacity-50'>
                                 {description}
                             </p>
                         )}
                     </div>
                 </div>
-                {action && <div>{action}</div>}
+                {action && <div className='shrink-0'>{action}</div>}
             </div>
 
             <div className='relative z-10'>{children}</div>

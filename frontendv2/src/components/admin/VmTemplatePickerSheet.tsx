@@ -316,9 +316,11 @@ export function VmTemplatePickerSheet({
                             {createForm.guest_type === 'lxc' && (
                                 <Alert variant='warning' className='px-3 py-2'>
                                     <ShieldAlert className='h-4 w-4' />
-                                    <AlertTitle className='text-xs'>Security Recommendation</AlertTitle>
+                                    <AlertTitle className='text-xs'>
+                                        {t('admin.vdsNodes.templates.security_recommendation')}
+                                    </AlertTitle>
                                     <AlertDescription className='text-[10px] leading-tight'>
-                                        LXC is not recommended for public hosting due to security risks.
+                                        {t('admin.vdsNodes.templates.lxc_security_warning')}
                                     </AlertDescription>
                                 </Alert>
                             )}
@@ -327,7 +329,7 @@ export function VmTemplatePickerSheet({
                                 <Input
                                     value={createForm.description}
                                     onChange={(e) => setCreateForm((f) => ({ ...f, description: e.target.value }))}
-                                    placeholder='Optional'
+                                    placeholder={t('common.optional')}
                                 />
                             </div>
                             {createForm.guest_type === 'lxc' && (

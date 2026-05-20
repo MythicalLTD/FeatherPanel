@@ -19,6 +19,7 @@ import { Input } from '@/components/ui/input';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
+import { ARCHIVE_EXTRACT_DRAG_MIME } from '@/lib/files-api';
 
 interface FileBreadcrumbsProps {
     currentDirectory: string;
@@ -45,32 +46,34 @@ interface CrumbButtonProps {
 function CrumbButton({ path, isCurrent, onDropFilesToPath, onClick, className, title, children }: CrumbButtonProps) {
     const [isDropTarget, setIsDropTarget] = useState(false);
     const dragCounterRef = useRef(0);
-    const canAccept = !!onDropFilesToPath && !isCurrent;
+    const canAccept = !!onDropFilesToPath;
 
-    const isInternal = (e: React.DragEvent) => e.dataTransfer.types.includes(DRAG_MIME);
+    const isPanelFileDrag = (e: React.DragEvent) =>
+        e.dataTransfer.types.includes(DRAG_MIME) || e.dataTransfer.types.includes(ARCHIVE_EXTRACT_DRAG_MIME);
 
     const handleDragEnter = (e: React.DragEvent) => {
-        if (!canAccept || !isInternal(e)) return;
+        if (!canAccept || !isPanelFileDrag(e)) return;
         e.preventDefault();
         e.stopPropagation();
         dragCounterRef.current += 1;
         setIsDropTarget(true);
     };
     const handleDragOver = (e: React.DragEvent) => {
-        if (!canAccept || !isInternal(e)) return;
+        if (!canAccept || !isPanelFileDrag(e)) return;
         e.preventDefault();
         e.stopPropagation();
-        e.dataTransfer.dropEffect = 'move';
+        const copy = e.dataTransfer.types.includes(ARCHIVE_EXTRACT_DRAG_MIME);
+        e.dataTransfer.dropEffect = copy ? 'copy' : 'move';
     };
     const handleDragLeave = (e: React.DragEvent) => {
-        if (!canAccept || !isInternal(e)) return;
+        if (!canAccept || !isPanelFileDrag(e)) return;
         e.preventDefault();
         e.stopPropagation();
         dragCounterRef.current = Math.max(0, dragCounterRef.current - 1);
         if (dragCounterRef.current === 0) setIsDropTarget(false);
     };
     const handleDrop = (e: React.DragEvent) => {
-        if (!canAccept || !isInternal(e)) return;
+        if (!canAccept || !isPanelFileDrag(e)) return;
         e.preventDefault();
         e.stopPropagation();
         dragCounterRef.current = 0;
@@ -82,11 +85,10 @@ function CrumbButton({ path, isCurrent, onDropFilesToPath, onClick, className, t
         <Button
             variant='ghost'
             size='sm'
-            className={cn(
-                className,
-                isDropTarget && !isCurrent && 'bg-primary/15 text-primary ring-primary/70 ring-2 ring-inset',
-            )}
-            onClick={onClick}
+            className={cn(className, isDropTarget && 'bg-primary/15 text-primary ring-primary/70 ring-2 ring-inset')}
+            onClick={() => {
+                if (!isCurrent) onClick();
+            }}
             title={title}
             onDragEnter={handleDragEnter}
             onDragOver={handleDragOver}
@@ -142,7 +144,7 @@ export function FileBreadcrumbs({
                                 className={cn(
                                     'h-8 px-2 whitespace-nowrap transition-colors',
                                     isCurrent
-                                        ? 'text-foreground pointer-events-none bg-white/5 font-bold'
+                                        ? 'text-foreground cursor-default bg-white/5 font-bold'
                                         : 'text-muted-foreground hover:text-foreground hover:bg-white/5',
                                 )}
                                 onClick={() => onNavigate(path)}

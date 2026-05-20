@@ -142,6 +142,7 @@ class CreateDatabaseTool implements ToolInterface
         if (!$databaseName) {
             $databaseName = 'db_' . time();
         }
+        $databaseName = $this->normalizeDatabaseName((string) $databaseName, (int) $server['id']);
 
         // Generate full database name: s{server_id}_{database_name}
         $fullDatabaseName = 's' . $server['id'] . '_' . $databaseName;
@@ -242,6 +243,17 @@ class CreateDatabaseTool implements ToolInterface
         }
 
         return $randomString;
+    }
+
+    private function normalizeDatabaseName(string $databaseName, int $serverId): string
+    {
+        $databaseName = trim($databaseName);
+        $databaseName = preg_replace('/^s' . preg_quote((string) $serverId, '/') . '_/i', '', $databaseName) ?? $databaseName;
+        $databaseName = preg_replace('/\s+/', '_', $databaseName) ?? $databaseName;
+        $databaseName = preg_replace('/[^a-zA-Z0-9_]/', '_', $databaseName) ?? $databaseName;
+        $databaseName = trim($databaseName, '_');
+
+        return $databaseName !== '' ? $databaseName : 'db_' . time();
     }
 
     /**

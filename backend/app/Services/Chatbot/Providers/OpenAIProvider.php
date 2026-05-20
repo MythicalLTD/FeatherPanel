@@ -20,6 +20,7 @@ namespace App\Services\Chatbot\Providers;
 use App\App;
 use GuzzleHttp\Client;
 use App\Config\ConfigInterface;
+use App\Services\Chatbot\TokenUsage;
 use GuzzleHttp\Exception\GuzzleException;
 
 class OpenAIProvider implements ProviderInterface
@@ -138,6 +139,7 @@ class OpenAIProvider implements ProviderInterface
             return [
                 'response' => $responseText,
                 'model' => "OpenAI {$this->model}",
+                'usage' => TokenUsage::fromOpenAiUsage($data['usage'] ?? null, $message, $responseText),
             ];
         } catch (GuzzleException $e) {
             $this->app->getLogger()->error('OpenAI API exception: ' . $e->getMessage());

@@ -31,4 +31,24 @@ return function (RouteCollection $routes): void {
         },
         ['PUT']
     );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-ldap-link',
+        '/api/user/auth/ldap/link',
+        function (Request $request) {
+            return (new LdapController())->link($request);
+        },
+        ['PUT']
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-ldap-unlink',
+        '/api/user/auth/ldap/unlink',
+        function (Request $request) {
+            return (new LdapController())->unlink($request);
+        },
+        ['DELETE']
+    );
 };

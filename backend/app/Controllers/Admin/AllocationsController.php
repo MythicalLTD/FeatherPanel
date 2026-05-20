@@ -908,6 +908,167 @@ class AllocationsController
         ], 'Available allocations fetched successfully', 200);
     }
 
+    #[OA\Patch(
+        path: '/api/admin/allocations/bulk-address',
+        summary: 'Bulk update allocation IP or alias',
+        description: 'Update the IP address and/or IP alias for every allocation on a node that currently uses a specific IP address.',
+        tags: ['Admin - Allocations'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['node_id', 'from_ip'],
+                properties: [
+                    new OA\Property(property: 'node_id', type: 'integer', description: 'Node ID containing the allocations', minimum: 1),
+                    new OA\Property(property: 'from_ip', type: 'string', description: 'Current allocation IP address', example: '0.0.0.0'),
+                    new OA\Property(property: 'to_ip', type: 'string', nullable: true, description: 'New allocation IP address', example: '6.6.6.6'),
+                    new OA\Property(property: 'ip_alias', type: 'string', nullable: true, description: 'New IP alias. Send null or an empty string to clear it.'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Allocations updated successfully'),
+            new OA\Response(response: 400, description: 'Bad request - Invalid data'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
+            new OA\Response(response: 404, description: 'Node or matching allocations not found'),
+            new OA\Response(response: 409, description: 'Target IP has ports already assigned to another server'),
+        ]
+    )]
+    public function bulkUpdateAddress(Request $request): Response
+    {
+        $admin = $request->attributes->get('user');
+        $data = json_decode($request->getContent(), true);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
+        }
+
+        if (!is_array($data)) {
+            return ApiResponse::error('Request body must be a JSON object', 'INVALID_JSON_OBJECT', 400);
+        }
+
+        $allowedFields = ['node_id', 'from_ip', 'to_ip', 'ip_alias'];
+        $invalidFields = array_diff(array_keys($data), $allowedFields);
+        if (!empty($invalidFields)) {
+            return ApiResponse::error(
+                'Invalid fields provided: ' . implode(', ', $invalidFields) . '. Allowed fields: ' . implode(', ', $allowedFields),
+                'INVALID_FIELDS',
+                400
+            );
+        }
+
+        $missingFields = [];
+        foreach (['node_id', 'from_ip'] as $field) {
+            if (!isset($data[$field]) || trim((string) $data[$field]) === '') {
+                $missingFields[] = $field;
+            }
+        }
+
+        if (!empty($missingFields)) {
+            return ApiResponse::error('Missing required fields: ' . implode(', ', $missingFields), 'MISSING_REQUIRED_FIELDS', 400);
+        }
+
+        if (!is_numeric($data['node_id']) || (int) $data['node_id'] <= 0) {
+            return ApiResponse::error('Node ID must be a positive number', 'INVALID_NODE_ID', 400);
+        }
+
+        $nodeId = (int) $data['node_id'];
+        if (!Node::getNodeById($nodeId)) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+
+        $fromIp = trim((string) $data['from_ip']);
+        if (!filter_var($fromIp, FILTER_VALIDATE_IP)) {
+            return ApiResponse::error('Invalid source IP address format', 'INVALID_FROM_IP_FORMAT', 400);
+        }
+
+        $toIp = null;
+        if (array_key_exists('to_ip', $data) && trim((string) $data['to_ip']) !== '') {
+            $toIp = trim((string) $data['to_ip']);
+            if (!filter_var($toIp, FILTER_VALIDATE_IP)) {
+                return ApiResponse::error('Invalid target IP address format', 'INVALID_TO_IP_FORMAT', 400);
+            }
+        }
+
+        $updateAlias = array_key_exists('ip_alias', $data);
+        $ipAlias = null;
+        if ($updateAlias) {
+            if ($data['ip_alias'] !== null && !is_string($data['ip_alias'])) {
+                return ApiResponse::error('IP alias must be a string or null', 'INVALID_IP_ALIAS', 400);
+            }
+            $ipAlias = isset($data['ip_alias']) ? trim($data['ip_alias']) : null;
+            if ($ipAlias === '') {
+                $ipAlias = null;
+            }
+        }
+
+        if ($toIp === null && !$updateAlias) {
+            return ApiResponse::error('Provide a target IP address, an IP alias, or both', 'NO_CHANGES_PROVIDED', 400);
+        }
+
+        $matchedCount = Allocation::countByNodeAndIp($nodeId, $fromIp);
+        if ($matchedCount === 0) {
+            return ApiResponse::error('No allocations found for this node and IP address', 'ALLOCATIONS_NOT_FOUND', 404);
+        }
+
+        $result = Allocation::updateAddressByNodeAndIp($nodeId, $fromIp, $toIp, $ipAlias, $updateAlias);
+        if ($result === false) {
+            return ApiResponse::error('Failed to update allocations', 'ALLOCATION_UPDATE_FAILED', 400);
+        }
+
+        if (($result['assigned_conflict_count'] ?? 0) > 0) {
+            return ApiResponse::error(
+                "Cannot merge {$result['assigned_conflict_count']} port(s) because both the source and target allocation are assigned to servers",
+                'ASSIGNED_IP_PORT_CONFLICT',
+                409
+            );
+        }
+
+        $updatedCount = (int) ($result['updated_count'] ?? 0);
+        $deletedTargetConflicts = (int) ($result['deleted_target_conflicts'] ?? 0);
+        $deletedSourceConflicts = (int) ($result['deleted_source_conflicts'] ?? 0);
+
+        $changes = [];
+        if ($toIp !== null) {
+            $changes[] = "IP {$fromIp} to {$toIp}";
+        }
+        if ($updateAlias) {
+            $changes[] = $ipAlias === null ? 'cleared IP alias' : "IP alias to {$ipAlias}";
+        }
+
+        Activity::createActivity([
+            'user_uuid' => $admin['uuid'] ?? null,
+            'name' => 'allocations_address_updated',
+            'context' => 'Updated ' . implode(' and ', $changes) . " for {$matchedCount} allocation(s) on node ID {$nodeId}. Merged {$deletedTargetConflicts} target conflict(s) and {$deletedSourceConflicts} source conflict(s).",
+            'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                AllocationsEvent::onAllocationUpdated(),
+                [
+                    'node_id' => $nodeId,
+                    'from_ip' => $fromIp,
+                    'to_ip' => $toIp,
+                    'ip_alias' => $ipAlias,
+                    'matched_count' => $matchedCount,
+                    'updated_count' => $updatedCount,
+                    'deleted_target_conflicts' => $deletedTargetConflicts,
+                    'deleted_source_conflicts' => $deletedSourceConflicts,
+                    'updated_by' => $admin,
+                ]
+            );
+        }
+
+        return ApiResponse::success([
+            'matched_count' => $matchedCount,
+            'updated_count' => $updatedCount,
+            'deleted_target_conflicts' => $deletedTargetConflicts,
+            'deleted_source_conflicts' => $deletedSourceConflicts,
+        ], "Updated {$matchedCount} allocation(s)", 200);
+    }
+
     #[OA\Delete(
         path: '/api/admin/allocations/bulk-delete',
         summary: 'Bulk delete allocations',

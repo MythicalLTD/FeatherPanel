@@ -20,9 +20,9 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/contexts/ThemeContext';
 import { backgroundFitToCssSize } from '@/lib/backgroundImageFit';
-import { useSettings } from '@/contexts/SettingsContext';
 import { useTranslation } from '@/contexts/TranslationContext';
 import ThemeCustomizer from '@/components/layout/ThemeCustomizer';
+import { PanelBrandingFooter } from '@/components/branding/PanelBrandingFooter';
 import { Home, RefreshCw } from 'lucide-react';
 
 /** Detect errors caused by stale cached assets after a new deploy (chunk load failures). */
@@ -55,7 +55,6 @@ function hardRefresh(): void {
 
 export default function Error({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
     const { backgroundType, backgroundImage, backdropBlur, backdropDarken, backgroundImageFit } = useTheme();
-    const { core } = useSettings();
     const { t } = useTranslation();
     const staleVersion = isStaleVersionError(error);
 
@@ -203,27 +202,7 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
                 </div>
             </div>
 
-            <div className='text-muted-foreground relative z-10 mt-8 text-center text-xs'>
-                <p className='mb-2 font-medium'>
-                    {t('branding.running_on', { name: 'FeatherPanel', version: core?.version || '' }).trim()}
-                </p>
-                <a
-                    href='https://featherpanel.com'
-                    target='_blank'
-                    rel='noopener noreferrer'
-                    className='text-primary hover:text-primary/80 inline-flex items-center gap-1.5 font-medium underline-offset-4 transition-all duration-200 hover:underline'
-                >
-                    {t('branding.copyright', { company: 'MythicalSystems' })}
-                    <svg className='h-3.5 w-3.5' fill='none' viewBox='0 0 24 24' stroke='currentColor'>
-                        <path
-                            strokeLinecap='round'
-                            strokeLinejoin='round'
-                            strokeWidth={2}
-                            d='M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14'
-                        />
-                    </svg>
-                </a>
-            </div>
+            <PanelBrandingFooter className='relative z-10 mt-8' />
         </div>
     );
 }

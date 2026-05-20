@@ -154,7 +154,7 @@ export default function VdsNetworkingPage() {
                 actions={
                     <div className='flex w-full sm:w-auto sm:justify-end'>
                         <Button
-                            variant='glass'
+                            variant='outline'
                             size='sm'
                             onClick={fetchNetworking}
                             disabled={loading}
@@ -287,7 +287,7 @@ export default function VdsNetworkingPage() {
 
                         {canSettings ? (
                             <div className='flex justify-end pt-2'>
-                                <Button variant='glass' disabled={saving} onClick={handleApplyDns}>
+                                <Button variant='default' disabled={saving} onClick={handleApplyDns}>
                                     {saving && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
                                     {t('vds.networking.dns.apply_button') ?? 'Apply'}
                                 </Button>

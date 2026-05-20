@@ -15,10 +15,11 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { useDateFormatOptions } from '@/contexts/PreferencesContext';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/ui/input';
 import { PageHeader } from '@/components/featherui/PageHeader';
@@ -43,8 +44,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Sheet, SheetHeader, SheetTitle, SheetDescription, SheetContent } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
-import { HeadlessModal } from '@/components/ui/headless-modal';
 import { toast } from 'sonner';
+import { formatDateTimeInTz, formatRelativeTime } from '@/lib/dateUtils';
 
 import { DetailsTab } from './DetailsTab';
 import { ResourcesTab } from './ResourcesTab';
@@ -55,6 +56,7 @@ import { AllocationsTab } from './AllocationsTab';
 import { MountsTab } from './MountsTab';
 import type { AssignableMountRow } from './MountsTab';
 import { ActionsTab } from './ActionsTab';
+import { AllocationPickerSheet } from '@/components/admin/AllocationPickerSheet';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
@@ -68,6 +70,7 @@ import {
     Realm,
     Spell,
     SpellVariable,
+    CustomVariable,
 } from './types';
 
 const initialFormData: ServerFormData = {
@@ -120,6 +123,7 @@ interface ServerVariableResponse {
 
 export default function EditServerPage() {
     const { t } = useTranslation();
+    const dateOpts = useDateFormatOptions();
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
@@ -134,12 +138,23 @@ export default function EditServerPage() {
     const [form, setForm] = useState<ServerFormData>(initialFormData);
     const [selectedEntities, setSelectedEntities] = useState<SelectedEntities>(initialSelectedEntities);
     const [isSuspended, setIsSuspended] = useState(false);
+    const [suspensionReason, setSuspensionReason] = useState<string | null>(null);
+    const [suspendedAt, setSuspendedAt] = useState<string | null>(null);
+    const [suspendedBy, setSuspendedBy] = useState<{ uuid?: string | null; username?: string | null } | null>(null);
 
     const [location, setLocation] = useState<Location | null>(null);
     const [node, setNode] = useState<Node | null>(null);
 
     const [spellDetails, setSpellDetails] = useState<Spell | null>(null);
     const [spellVariables, setSpellVariables] = useState<SpellVariable[]>([]);
+    const [customVariables, setCustomVariables] = useState<CustomVariable[]>([]);
+    const [customVariableSaving, setCustomVariableSaving] = useState(false);
+    const [customVariableForm, setCustomVariableForm] = useState({
+        name: '',
+        env_variable: '',
+        variable_value: '',
+        is_encrypted: false,
+    });
     const [dockerImages, setDockerImages] = useState<string[]>([]);
 
     const [ownerModalOpen, setOwnerModalOpen] = useState(false);
@@ -187,6 +202,15 @@ export default function EditServerPage() {
     const [debouncedSpellSearch, setDebouncedSpellSearch] = useState('');
 
     const [allocationSearch, setAllocationSearch] = useState('');
+    const [debouncedAllocationSearch, setDebouncedAllocationSearch] = useState('');
+    const [allocationPagination, setAllocationPagination] = useState({
+        current_page: 1,
+        per_page: 20,
+        total_records: 0,
+        total_pages: 0,
+        has_next: false,
+        has_prev: false,
+    });
 
     const tabStorageKey = `featherpanel_admin_server_edit_tab_${serverId}`;
     const isAllowedTab = useCallback(
@@ -241,17 +265,13 @@ export default function EditServerPage() {
         fetchWidgets();
     }, [fetchWidgets]);
 
-    const filteredAllocations = useMemo(() => {
-        if (!allocationSearch) return allocations;
-        const lowerSearch = allocationSearch.toLowerCase();
-        return allocations.filter((a) => {
-            return (
-                a.ip.toLowerCase().includes(lowerSearch) ||
-                String(a.port).includes(lowerSearch) ||
-                (a.ip_alias && a.ip_alias.toLowerCase().includes(lowerSearch))
-            );
-        });
-    }, [allocations, allocationSearch]);
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedAllocationSearch(allocationSearch);
+            setAllocationPagination((prev) => ({ ...prev, current_page: 1 }));
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [allocationSearch]);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -322,6 +342,7 @@ export default function EditServerPage() {
                 }
 
                 const variablesList = (server.variables || []) as ServerVariableResponse[];
+                setCustomVariables((server.custom_variables || []) as CustomVariable[]);
                 const mappedVariables: SpellVariable[] = variablesList.map((v) => ({
                     id: v.variable_id,
                     name: v.name,
@@ -410,6 +431,9 @@ export default function EditServerPage() {
                 });
 
                 setIsSuspended(Boolean(server.suspended));
+                setSuspensionReason(server.suspension_reason ?? null);
+                setSuspendedAt(server.suspended_at ?? null);
+                setSuspendedBy(server.suspended_by ?? null);
                 setNode(serverNode || null);
                 setLocation(serverLocation);
 
@@ -481,6 +505,79 @@ export default function EditServerPage() {
     useEffect(() => {
         fetchServerData();
     }, [fetchServerData]);
+
+    const handleAddCustomVariable = useCallback(async () => {
+        const name = customVariableForm.name.trim();
+        const envVariable = customVariableForm.env_variable.trim().toUpperCase();
+
+        if (!name || !envVariable) {
+            toast.error('Name and environment variable are required');
+            return;
+        }
+
+        if (!/^[A-Z_][A-Z0-9_]*$/.test(envVariable)) {
+            toast.error(
+                'Env variable must use uppercase letters, numbers, and underscores, and cannot start with a number',
+            );
+            return;
+        }
+
+        setCustomVariableSaving(true);
+        try {
+            const { data } = await axios.post<{ success: boolean; message?: string }>(
+                `/api/admin/servers/${serverId}/custom-variables`,
+                {
+                    name,
+                    env_variable: envVariable,
+                    variable_value: customVariableForm.variable_value,
+                    is_encrypted: customVariableForm.is_encrypted,
+                },
+            );
+
+            if (data.success) {
+                toast.success('Custom variable added');
+                setCustomVariableForm({ name: '', env_variable: '', variable_value: '', is_encrypted: false });
+                await fetchServerData();
+            } else {
+                toast.error(data.message || 'Failed to add custom variable');
+            }
+        } catch (error) {
+            toast.error(
+                axios.isAxiosError(error)
+                    ? error.response?.data?.message || 'Failed to add custom variable'
+                    : 'Failed to add custom variable',
+            );
+        } finally {
+            setCustomVariableSaving(false);
+        }
+    }, [customVariableForm, fetchServerData, serverId]);
+
+    const handleDeleteCustomVariable = useCallback(
+        async (variable: CustomVariable) => {
+            setCustomVariableSaving(true);
+            try {
+                const { data } = await axios.delete<{ success: boolean; message?: string }>(
+                    `/api/admin/servers/${serverId}/custom-variables/${variable.id}`,
+                );
+
+                if (data.success) {
+                    toast.success('Custom variable deleted');
+                    await fetchServerData();
+                } else {
+                    toast.error(data.message || 'Failed to delete custom variable');
+                }
+            } catch (error) {
+                toast.error(
+                    axios.isAxiosError(error)
+                        ? error.response?.data?.message || 'Failed to delete custom variable'
+                        : 'Failed to delete custom variable',
+                );
+            } finally {
+                setCustomVariableSaving(false);
+            }
+        },
+        [fetchServerData, serverId],
+    );
 
     useEffect(() => {
         if (!form.spell_id) {
@@ -638,49 +735,97 @@ export default function EditServerPage() {
         }
     }, [spellModalOpen, form.realms_id, spellPagination.current_page, debouncedSpellSearch, fetchSpells]);
 
-    const fetchAllocations = async (mode: 'form' | 'primary' | 'assign' = 'form') => {
+    const matchesAllocationSearch = useCallback((allocation: Allocation, search: string) => {
+        if (!search) return true;
+        const lowerSearch = search.toLowerCase();
+        return (
+            allocation.ip.toLowerCase().includes(lowerSearch) ||
+            String(allocation.port).includes(lowerSearch) ||
+            (allocation.ip_alias && allocation.ip_alias.toLowerCase().includes(lowerSearch))
+        );
+    }, []);
+
+    const fetchAllocations = useCallback(async () => {
         if (!node?.id) return;
         try {
-            if (mode === 'primary') {
+            const listParams = {
+                node_id: node.id,
+                not_used: true,
+                search: debouncedAllocationSearch || undefined,
+                page: allocationPagination.current_page,
+                limit: allocationPagination.per_page,
+            };
+
+            if (allocationModalMode === 'primary') {
                 const [availableRes, assignedRes] = await Promise.all([
-                    axios.get('/api/admin/allocations', { params: { not_used: true } }),
+                    axios.get('/api/admin/allocations', { params: listParams }),
                     axios.get(`/api/admin/servers/${serverId}/allocations`),
                 ]);
 
-                const available = (availableRes.data?.data?.allocations || []).filter(
-                    (a: Allocation) => a.node_id === node.id,
+                const available = (availableRes.data?.data?.allocations || []) as Allocation[];
+                const assigned = ((assignedRes.data?.data?.allocations || []) as Allocation[]).filter(
+                    (allocation) =>
+                        allocation.node_id === node.id &&
+                        matchesAllocationSearch(allocation, debouncedAllocationSearch),
                 );
-                const assigned = assignedRes.data?.data?.allocations || [];
 
                 const merged = new Map<number, Allocation>();
-                [...available, ...assigned].forEach((a: Allocation) => {
-                    merged.set(a.id, a);
+                [...available, ...assigned].forEach((allocation) => {
+                    merged.set(allocation.id, allocation);
                 });
 
                 setAllocations(Array.from(merged.values()));
+                if (availableRes.data?.data?.pagination) {
+                    setAllocationPagination((prev) => ({
+                        ...prev,
+                        ...availableRes.data.data.pagination,
+                    }));
+                }
                 return;
             }
 
-            const { data } = await axios.get('/api/admin/allocations', { params: { not_used: true } });
-            const allAllocations = data.data.allocations || [];
-
-            const filtered = allAllocations.filter((a: Allocation) => a.node_id === node.id);
+            const { data } = await axios.get('/api/admin/allocations', { params: listParams });
+            let nextAllocations = (data.data.allocations || []) as Allocation[];
 
             if (form.allocation_id && selectedEntities.allocation) {
-                if (!filtered.find((a: Allocation) => a.id === form.allocation_id)) {
-                    filtered.push(selectedEntities.allocation);
+                if (!nextAllocations.find((allocation) => allocation.id === form.allocation_id)) {
+                    nextAllocations = [...nextAllocations, selectedEntities.allocation];
                 }
             }
 
-            setAllocations(filtered);
+            setAllocations(nextAllocations);
+            if (data.data.pagination) {
+                setAllocationPagination((prev) => ({
+                    ...prev,
+                    ...data.data.pagination,
+                }));
+            }
         } catch (error) {
             console.error('Error fetching allocations:', error);
         }
-    };
+    }, [
+        node?.id,
+        allocationModalMode,
+        debouncedAllocationSearch,
+        allocationPagination.current_page,
+        allocationPagination.per_page,
+        serverId,
+        form.allocation_id,
+        selectedEntities.allocation,
+        matchesAllocationSearch,
+    ]);
 
-    const openAllocationModal = async (mode: 'form' | 'primary' | 'assign') => {
+    useEffect(() => {
+        if (allocationModalOpen && node?.id) {
+            fetchAllocations();
+        }
+    }, [allocationModalOpen, node?.id, fetchAllocations]);
+
+    const openAllocationModal = (mode: 'form' | 'primary' | 'assign') => {
         setAllocationModalMode(mode);
-        await fetchAllocations(mode);
+        setAllocationSearch('');
+        setDebouncedAllocationSearch('');
+        setAllocationPagination((prev) => ({ ...prev, current_page: 1 }));
         setAllocationModalOpen(true);
     };
 
@@ -971,7 +1116,17 @@ export default function EditServerPage() {
                     </TabsContent>
 
                     <TabsContent value='startup' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
-                        <StartupTab form={form} setForm={setForm} errors={errors} />
+                        <StartupTab
+                            form={form}
+                            setForm={setForm}
+                            errors={errors}
+                            customVariables={customVariables}
+                            customVariableForm={customVariableForm}
+                            customVariableSaving={customVariableSaving}
+                            setCustomVariableForm={setCustomVariableForm}
+                            onAddCustomVariable={handleAddCustomVariable}
+                            onDeleteCustomVariable={handleDeleteCustomVariable}
+                        />
                     </TabsContent>
 
                     <TabsContent value='mounts' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
@@ -997,6 +1152,9 @@ export default function EditServerPage() {
                             serverId={serverId}
                             serverName={form.name}
                             isSuspended={isSuspended}
+                            suspensionReason={suspensionReason}
+                            suspendedAt={suspendedAt}
+                            suspendedBy={suspendedBy}
                             currentNodeId={node?.id}
                             onRefresh={fetchServerData}
                         />
@@ -1105,7 +1263,9 @@ export default function EditServerPage() {
                                                 {user.last_seen && (
                                                     <div className='text-muted-foreground mt-1 text-xs'>
                                                         {t('admin.users.last_seen')}:{' '}
-                                                        {new Date(user.last_seen).toLocaleDateString()}
+                                                        <span title={formatDateTimeInTz(user.last_seen, dateOpts)}>
+                                                            {formatRelativeTime(user.last_seen, dateOpts)}
+                                                        </span>
                                                     </div>
                                                 )}
                                             </div>
@@ -1451,80 +1611,22 @@ export default function EditServerPage() {
                 </SheetContent>
             </Sheet>
 
-            <SelectionModal
-                isOpen={allocationModalOpen}
-                onClose={() => setAllocationModalOpen(false)}
-                title={t('admin.servers.form.select_allocation')}
-                items={filteredAllocations}
-                onSelect={handleSelectAllocation}
-                search={allocationSearch}
-                onSearchChange={setAllocationSearch}
-                renderItem={(item: Allocation) => (
-                    <div>
-                        <div className='font-mono font-medium'>
-                            {item.ip}:{item.port}
-                        </div>
-                        {item.ip_alias && <div className='text-muted-foreground text-xs'>{item.ip_alias}</div>}
-                    </div>
-                )}
-            />
+            {node?.id != null && (
+                <AllocationPickerSheet
+                    open={allocationModalOpen}
+                    onOpenChange={setAllocationModalOpen}
+                    nodeId={node.id}
+                    allocations={allocations}
+                    allocationSearch={allocationSearch}
+                    setAllocationSearch={setAllocationSearch}
+                    allocationPagination={allocationPagination}
+                    setAllocationPagination={setAllocationPagination}
+                    fetchAllocations={fetchAllocations}
+                    onSelectAllocation={handleSelectAllocation}
+                />
+            )}
 
             <WidgetRenderer widgets={getWidgets('admin-servers-edit', 'bottom-of-page')} context={{ id: serverId }} />
         </div>
-    );
-}
-
-interface SelectionModalProps<T> {
-    isOpen: boolean;
-    onClose: () => void;
-    title: string;
-    items: T[];
-    onSelect: (item: T) => void;
-    search: string;
-    onSearchChange: (val: string) => void;
-    renderItem: (item: T) => React.ReactNode;
-}
-
-function SelectionModal<T extends { id: number | string }>({
-    isOpen,
-    onClose,
-    title,
-    items,
-    onSelect,
-    search,
-    onSearchChange,
-    renderItem,
-}: SelectionModalProps<T>) {
-    const { t } = useTranslation();
-    return (
-        <HeadlessModal isOpen={isOpen} onClose={onClose} title={title} className='max-w-xl'>
-            <div className='space-y-4'>
-                <div className='group relative'>
-                    <SearchIcon className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
-                    <Input
-                        placeholder={t('common.search')}
-                        value={search}
-                        onChange={(e) => onSearchChange(e.target.value)}
-                        className='h-10 pl-10'
-                    />
-                </div>
-
-                <div className='custom-scrollbar max-h-100 space-y-2 overflow-y-auto pr-1'>
-                    {items.length === 0 ? (
-                        <div className='text-muted-foreground py-8 text-center'>{t('common.no_results')}</div>
-                    ) : (
-                        items.map((item) => (
-                            <div
-                                key={item.id}
-                                className='border-border/50 hover:border-primary hover:bg-primary/5 cursor-pointer rounded-xl border p-3 transition-all'
-                                onClick={() => onSelect(item)}
-                            >
-                                {renderItem(item)}
-                            </div>
-                        ))
-                    )}
-                </div>
-            </div>
-        </HeadlessModal>
     );
 }

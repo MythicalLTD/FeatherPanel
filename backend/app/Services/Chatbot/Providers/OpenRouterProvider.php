@@ -19,6 +19,7 @@ namespace App\Services\Chatbot\Providers;
 
 use App\App;
 use GuzzleHttp\Client;
+use App\Services\Chatbot\TokenUsage;
 use GuzzleHttp\Exception\GuzzleException;
 
 class OpenRouterProvider implements ProviderInterface
@@ -137,6 +138,7 @@ class OpenRouterProvider implements ProviderInterface
             return [
                 'response' => $responseText,
                 'model' => "OpenRouter {$modelName}",
+                'usage' => TokenUsage::fromOpenAiUsage($data['usage'] ?? null, $message, $responseText),
             ];
         } catch (GuzzleException $e) {
             $this->app->getLogger()->error('OpenRouter API exception: ' . $e->getMessage());

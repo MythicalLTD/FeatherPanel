@@ -39,6 +39,7 @@ class AccountBanned
                 'dashboard_url' => $data['app_url'] . '/dashboard',
                 'support_url' => $data['app_support_url'],
                 'suspension_time' => $data['suspension_time'],
+                'suspension_reason' => $data['suspension_reason'] ?? '',
             ]);
         }
 
@@ -59,6 +60,7 @@ class AccountBanned
         $template = str_replace('{dashboard_url}', $data['dashboard_url'], $template);
         $template = str_replace('{support_url}', $data['support_url'], $template);
         $template = str_replace('{suspension_time}', $data['suspension_time'], $template);
+        $template = str_replace('{suspension_reason}', $data['suspension_reason'] ?? '', $template);
 
         return $template;
     }
@@ -130,6 +132,7 @@ class AccountBanned
             'dashboard_url' => $data['app_url'] . '/dashboard',
             'support_url' => $data['app_support_url'],
             'suspension_time' => $data['suspension_time'],
+            'suspension_reason' => $data['suspension_reason'] ?? '',
         ]);
     }
 }

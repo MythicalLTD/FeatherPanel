@@ -37,6 +37,18 @@ return function (RouteCollection $routes): void {
 
     App::getInstance(true)->registerAuthRoute(
         $routes,
+        'user-chatbot-chat-stream',
+        '/api/user/chatbot/chat/stream',
+        function (Request $request) {
+            return (new ChatbotController())->streamChat($request);
+        },
+        ['POST'],
+        Rate::perMinute(30),
+        'user-chatbot'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
         'chatbot-conversations',
         '/api/user/chatbot/conversations',
         function (Request $request) {

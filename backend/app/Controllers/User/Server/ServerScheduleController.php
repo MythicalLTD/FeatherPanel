@@ -44,6 +44,7 @@ use App\Plugins\Events\Events\ServerScheduleEvent;
         new OA\Property(property: 'cron_day_of_month', type: 'string', description: 'Cron day of month expression'),
         new OA\Property(property: 'cron_hour', type: 'string', description: 'Cron hour expression'),
         new OA\Property(property: 'cron_minute', type: 'string', description: 'Cron minute expression'),
+        new OA\Property(property: 'timezone', type: 'string', description: 'IANA timezone the cron expression is authored in (e.g. "Europe/Paris", "UTC")'),
         new OA\Property(property: 'is_active', type: 'boolean', description: 'Whether schedule is active'),
         new OA\Property(property: 'is_processing', type: 'boolean', description: 'Whether schedule is currently processing'),
         new OA\Property(property: 'only_when_online', type: 'boolean', description: 'Whether to run only when server is online'),
@@ -75,6 +76,7 @@ use App\Plugins\Events\Events\ServerScheduleEvent;
         new OA\Property(property: 'cron_day_of_month', type: 'string', description: 'Cron day of month expression'),
         new OA\Property(property: 'cron_hour', type: 'string', description: 'Cron hour expression'),
         new OA\Property(property: 'cron_minute', type: 'string', description: 'Cron minute expression'),
+        new OA\Property(property: 'timezone', type: 'string', nullable: true, description: 'IANA timezone the cron expression is authored in (default: "UTC")', default: 'UTC'),
         new OA\Property(property: 'is_active', type: 'boolean', nullable: true, description: 'Whether schedule is active', default: true),
         new OA\Property(property: 'only_when_online', type: 'boolean', nullable: true, description: 'Whether to run only when server is online', default: false),
     ]
@@ -98,6 +100,7 @@ use App\Plugins\Events\Events\ServerScheduleEvent;
         new OA\Property(property: 'cron_day_of_month', type: 'string', nullable: true, description: 'Cron day of month expression'),
         new OA\Property(property: 'cron_hour', type: 'string', nullable: true, description: 'Cron hour expression'),
         new OA\Property(property: 'cron_minute', type: 'string', nullable: true, description: 'Cron minute expression'),
+        new OA\Property(property: 'timezone', type: 'string', nullable: true, description: 'IANA timezone the cron expression is authored in'),
         new OA\Property(property: 'is_active', type: 'boolean', nullable: true, description: 'Whether schedule is active'),
         new OA\Property(property: 'only_when_online', type: 'boolean', nullable: true, description: 'Whether to run only when server is online'),
     ]
@@ -371,13 +374,23 @@ class ServerScheduleController
             return ApiResponse::error('Invalid cron expression', 'INVALID_CRON_EXPRESSION', 400);
         }
 
-        // Calculate next run time
+        // Resolve & validate timezone (default UTC for backwards compat).
+        $timezone = isset($body['timezone']) && is_string($body['timezone']) && $body['timezone'] !== ''
+            ? $body['timezone']
+            : 'UTC';
+        if (!ServerSchedule::isValidTimezone($timezone)) {
+            return ApiResponse::error('Invalid timezone identifier', 'INVALID_TIMEZONE', 400);
+        }
+
+        // Calculate next run time in the schedule's authoring timezone, persisted as UTC.
         $nextRunAt = ServerSchedule::calculateNextRunTime(
             $body['cron_day_of_week'],
             $body['cron_month'],
             $body['cron_day_of_month'],
             $body['cron_hour'],
-            $body['cron_minute']
+            $body['cron_minute'],
+            null,
+            $timezone
         );
 
         // Create schedule data
@@ -389,6 +402,7 @@ class ServerScheduleController
             'cron_day_of_month' => $body['cron_day_of_month'],
             'cron_hour' => $body['cron_hour'],
             'cron_minute' => $body['cron_minute'],
+            'timezone' => $timezone,
             'is_active' => $body['is_active'] ?? 1,
             'is_processing' => 0,
             'only_when_online' => $body['only_when_online'] ?? 0,
@@ -504,20 +518,28 @@ class ServerScheduleController
             return ApiResponse::error('Invalid request body', 'INVALID_REQUEST_BODY', 400);
         }
 
+        // If a timezone was supplied, validate it up-front (and recompute next_run_at below).
+        if (isset($body['timezone'])) {
+            if (!is_string($body['timezone']) || !ServerSchedule::isValidTimezone($body['timezone'])) {
+                return ApiResponse::error('Invalid timezone identifier', 'INVALID_TIMEZONE', 400);
+            }
+        }
+
         // Validate cron expression components if provided
-        if (isset($body['cron_day_of_week']) || isset($body['cron_month']) || isset($body['cron_day_of_month']) || isset($body['cron_hour']) || isset($body['cron_minute'])) {
+        if (isset($body['cron_day_of_week']) || isset($body['cron_month']) || isset($body['cron_day_of_month']) || isset($body['cron_hour']) || isset($body['cron_minute']) || isset($body['timezone'])) {
             $dayOfWeek = $body['cron_day_of_week'] ?? $schedule['cron_day_of_week'];
             $month = $body['cron_month'] ?? $schedule['cron_month'];
             $dayOfMonth = $body['cron_day_of_month'] ?? $schedule['cron_day_of_month'];
             $hour = $body['cron_hour'] ?? $schedule['cron_hour'];
             $minute = $body['cron_minute'] ?? $schedule['cron_minute'];
+            $timezone = $body['timezone'] ?? ($schedule['timezone'] ?? 'UTC');
 
             if (!ServerSchedule::validateCronExpression($dayOfWeek, $month, $dayOfMonth, $hour, $minute)) {
                 return ApiResponse::error('Invalid cron expression', 'INVALID_CRON_EXPRESSION', 400);
             }
 
-            // Calculate new next run time if cron expression changed
-            $body['next_run_at'] = ServerSchedule::calculateNextRunTime($dayOfWeek, $month, $dayOfMonth, $hour, $minute);
+            // Recompute next_run_at in the (possibly new) timezone, persist as UTC.
+            $body['next_run_at'] = ServerSchedule::calculateNextRunTime($dayOfWeek, $month, $dayOfMonth, $hour, $minute, null, $timezone);
         }
 
         // Update schedule
@@ -1092,6 +1114,7 @@ class ServerScheduleController
             'cron_day_of_month' => $schedule['cron_day_of_month'],
             'cron_month' => $schedule['cron_month'],
             'cron_day_of_week' => $schedule['cron_day_of_week'],
+            'timezone' => $schedule['timezone'] ?? 'UTC',
             'is_active' => (bool) $schedule['is_active'],
             'only_when_online' => (bool) $schedule['only_when_online'],
             'tasks' => $exportedTasks,
@@ -1206,12 +1229,21 @@ class ServerScheduleController
             }
         }
 
+        $timezone = isset($body['timezone']) && is_string($body['timezone']) && $body['timezone'] !== ''
+            ? $body['timezone']
+            : 'UTC';
+        if (!ServerSchedule::isValidTimezone($timezone)) {
+            return ApiResponse::error('Invalid timezone identifier', 'INVALID_TIMEZONE', 400);
+        }
+
         $nextRunAt = ServerSchedule::calculateNextRunTime(
             $body['cron_day_of_week'],
             $body['cron_month'],
             $body['cron_day_of_month'],
             $body['cron_hour'],
-            $body['cron_minute']
+            $body['cron_minute'],
+            null,
+            $timezone
         );
 
         $scheduleId = ServerSchedule::createSchedule([
@@ -1222,6 +1254,7 @@ class ServerScheduleController
             'cron_day_of_month' => $body['cron_day_of_month'],
             'cron_hour' => $body['cron_hour'],
             'cron_minute' => $body['cron_minute'],
+            'timezone' => $timezone,
             'is_active' => isset($body['is_active']) ? (int) $body['is_active'] : 1,
             'is_processing' => 0,
             'only_when_online' => isset($body['only_when_online']) ? (int) $body['only_when_online'] : 0,

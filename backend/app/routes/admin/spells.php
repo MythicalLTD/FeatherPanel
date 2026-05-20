@@ -88,6 +88,16 @@ return function (RouteCollection $routes): void {
     );
     App::getInstance(true)->registerAdminRoute(
         $routes,
+        'admin-spells-reorder',
+        '/api/admin/spells/reorder',
+        function (Request $request) {
+            return (new SpellsController())->reorder($request);
+        },
+        Permissions::ADMIN_SPELLS_EDIT,
+        ['POST']
+    );
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
         'admin-spells-by-realm',
         '/api/admin/spells/realm/{realmId}',
         function (Request $request, array $args) {

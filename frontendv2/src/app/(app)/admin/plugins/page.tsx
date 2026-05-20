@@ -149,6 +149,7 @@ export default function PluginsPage() {
     const [updateRequirements, setUpdateRequirements] = useState<UpdateRequirements | null>(null);
     const [installingUpdateId, setInstallingUpdateId] = useState<string | null>(null);
     const [pluginsWithUpdates, setPluginsWithUpdates] = useState<Plugin[]>([]);
+    const [bulkUpdatingPlugins, setBulkUpdatingPlugins] = useState(false);
 
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-plugins');
 
@@ -557,6 +558,57 @@ export default function PluginsPage() {
         }
     };
 
+    const installAllUpdates = async () => {
+        if (bulkUpdatingPlugins || pluginsWithUpdates.length === 0) return;
+
+        setBulkUpdatingPlugins(true);
+        const queuedIdentifiers = pluginsWithUpdates.map((plugin) => plugin.identifier);
+        const failures: string[] = [];
+        let updatedCount = 0;
+
+        try {
+            for (const plugin of pluginsWithUpdates) {
+                setInstallingUpdateId(plugin.identifier);
+                try {
+                    await axios.post('/api/admin/plugins/online/install', {
+                        identifier: plugin.identifier,
+                        queued_identifiers: queuedIdentifiers,
+                    });
+                    updatedCount += 1;
+                } catch (error) {
+                    const message = axios.isAxiosError(error)
+                        ? error.response?.data?.message || t('admin.plugins.messages.update_failed')
+                        : t('admin.plugins.messages.update_failed');
+                    failures.push(`${plugin.name || plugin.identifier}: ${message}`);
+                }
+            }
+
+            if (failures.length === 0) {
+                toast.success(t('admin.plugins.messages.bulk_update_success', { count: String(updatedCount) }));
+            } else if (updatedCount > 0) {
+                toast.error(
+                    t('admin.plugins.messages.bulk_update_partial', {
+                        success: String(updatedCount),
+                        failed: String(failures.length),
+                    }),
+                );
+                console.error('Some plugin updates failed:', failures);
+            } else {
+                toast.error(t('admin.plugins.messages.bulk_update_failed'));
+                console.error('Plugin updates failed:', failures);
+            }
+
+            if (updatedCount > 0) {
+                fetchPlugins();
+                checkAllUpdates();
+                setTimeout(() => window.location.reload(), 1500);
+            }
+        } finally {
+            setInstallingUpdateId(null);
+            setBulkUpdatingPlugins(false);
+        }
+    };
+
     const configFields = useMemo(() => pluginConfig?.configSchema || [], [pluginConfig]);
     const hasConfigSchema = configFields.length > 0;
 
@@ -577,6 +629,16 @@ export default function PluginsPage() {
                             <RefreshCw className={`mr-2 h-4 w-4 ${updateCheckLoading ? 'animate-spin' : ''}`} />
                             {t('admin.plugins.actions.check_updates')}
                         </Button>
+                        {pluginsWithUpdates.length > 0 && (
+                            <Button
+                                variant='outline'
+                                onClick={installAllUpdates}
+                                disabled={bulkUpdatingPlugins || !!installingUpdateId}
+                            >
+                                <RefreshCw className={`mr-2 h-4 w-4 ${bulkUpdatingPlugins ? 'animate-spin' : ''}`} />
+                                {t('admin.plugins.actions.update_all', { count: String(pluginsWithUpdates.length) })}
+                            </Button>
+                        )}
                         <Button variant='outline' asChild>
                             <label className='cursor-pointer'>
                                 <Upload className='mr-2 h-4 w-4' />
@@ -614,6 +676,14 @@ export default function PluginsPage() {
                                     </Badge>
                                 ))}
                             </div>
+                            <Button
+                                size='sm'
+                                onClick={installAllUpdates}
+                                disabled={bulkUpdatingPlugins || !!installingUpdateId}
+                            >
+                                <RefreshCw className={`mr-2 h-4 w-4 ${bulkUpdatingPlugins ? 'animate-spin' : ''}`} />
+                                {t('admin.plugins.actions.update_all', { count: String(pluginsWithUpdates.length) })}
+                            </Button>
                         </div>
                     </div>
                 </div>

@@ -20,9 +20,12 @@ namespace App\Controllers\Admin;
 use App\App;
 use App\Chat\Node;
 use App\Cache\Cache;
+use App\Chat\Server;
 use App\Chat\Activity;
 use App\Chat\Location;
 use GuzzleHttp\Client;
+use App\Chat\Allocation;
+use App\Chat\ServerTransfer;
 use App\Helpers\ApiResponse;
 use App\Services\Wings\Wings;
 use OpenApi\Attributes as OA;
@@ -31,6 +34,7 @@ use App\CloudFlare\CloudFlareRealIP;
 use App\Plugins\Events\Events\NodesEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Services\Servers\ServerTransferInitiator;
 
 #[OA\Schema(
     schema: 'Node',
@@ -604,7 +608,7 @@ class NodesController
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
         }
         // Check if the node has any servers assigned before allowing deletion
-        $serversCount = \App\Chat\Server::count(['node_id' => $id]);
+        $serversCount = Server::count(['node_id' => $id]);
         if ($serversCount > 0) {
             return ApiResponse::error('Cannot delete node: there are servers assigned to this node. Please remove or reassign all servers before deleting the node.', 'NODE_HAS_SERVERS', 400);
         }
@@ -1631,5 +1635,180 @@ class NodesController
 
             return ApiResponse::error('Failed to check version status', 'VERSION_CHECK_FAILED', 500);
         }
+    }
+
+    #[OA\Get(
+        path: '/api/admin/nodes/{id}/mass-transfer/preview',
+        summary: 'Preview mass server transfer from a node',
+        description: 'Lists transferable servers on the source node and free allocation capacity on a destination node.',
+        tags: ['Admin - Nodes'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', description: 'Source node ID', required: true, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'destination_node_id', in: 'query', description: 'Destination node ID', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Preview retrieved successfully'),
+            new OA\Response(response: 400, description: 'Bad request'),
+            new OA\Response(response: 404, description: 'Node not found'),
+        ]
+    )]
+    public function previewMassTransfer(Request $request, int $id): Response
+    {
+        $sourceNode = Node::getNodeById($id);
+        if (!$sourceNode) {
+            return ApiResponse::error('Source node not found', 'NODE_NOT_FOUND', 404);
+        }
+
+        $destinationNodeId = (int) $request->query->get('destination_node_id', 0);
+        if ($destinationNodeId <= 0) {
+            return ApiResponse::error('Invalid or missing destination_node_id', 'INVALID_DESTINATION_NODE', 400);
+        }
+
+        if ($id === $destinationNodeId) {
+            return ApiResponse::error('Cannot transfer to the same node', 'SAME_SOURCE_DESTINATION', 400);
+        }
+
+        $destinationNode = Node::getNodeById($destinationNodeId);
+        if (!$destinationNode) {
+            return ApiResponse::error('Destination node not found', 'DESTINATION_NODE_NOT_FOUND', 404);
+        }
+
+        $servers = Server::getServersByNodeId($id);
+        $transferable = [];
+        $skipped = [];
+        $allocationsRequired = 0;
+
+        foreach ($servers as $server) {
+            $serverId = (int) $server['id'];
+            if ($server['status'] === 'transferring' || ServerTransfer::hasActiveTransfer($serverId)) {
+                $skipped[] = [
+                    'id' => $serverId,
+                    'name' => $server['name'],
+                    'reason' => 'already_transferring',
+                ];
+                continue;
+            }
+            if ($server['status'] === 'installing' || $server['status'] === 'restoring') {
+                $skipped[] = [
+                    'id' => $serverId,
+                    'name' => $server['name'],
+                    'reason' => 'not_transferable',
+                ];
+                continue;
+            }
+
+            $allocationCount = count(Allocation::getByServerId($serverId));
+            $needed = max(1, $allocationCount);
+            $allocationsRequired += $needed;
+
+            $transferable[] = [
+                'id' => $serverId,
+                'name' => $server['name'],
+                'uuid' => $server['uuid'],
+                'status' => $server['status'],
+                'allocations_needed' => $needed,
+            ];
+        }
+
+        $freeOnDestination = Allocation::getFreeCountByNodeId($destinationNodeId);
+
+        return ApiResponse::success([
+            'source_node' => ['id' => $id, 'name' => $sourceNode['name']],
+            'destination_node' => ['id' => $destinationNodeId, 'name' => $destinationNode['name']],
+            'transferable_servers' => $transferable,
+            'skipped_servers' => $skipped,
+            'allocations_required' => $allocationsRequired,
+            'free_allocations_on_destination' => $freeOnDestination,
+            'has_enough_allocations' => $freeOnDestination >= $allocationsRequired,
+            'max_per_request' => 100,
+        ], 'Mass transfer preview', 200);
+    }
+
+    #[OA\Post(
+        path: '/api/admin/nodes/{id}/mass-transfer',
+        summary: 'Mass transfer servers from a node',
+        description: 'Transfer selected servers (or all transferable servers) from this node to another. Free allocations on the destination node are assigned automatically.',
+        tags: ['Admin - Nodes'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', description: 'Source node ID', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['destination_node_id'],
+                properties: [
+                    new OA\Property(property: 'destination_node_id', type: 'integer', minimum: 1),
+                    new OA\Property(property: 'server_ids', type: 'array', items: new OA\Items(type: 'integer'), description: 'Server IDs to move (ignored when move_all is true)'),
+                    new OA\Property(property: 'move_all', type: 'boolean', description: 'Move every transferable server on this node'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Mass transfer processed'),
+            new OA\Response(response: 400, description: 'Bad request'),
+            new OA\Response(response: 404, description: 'Node not found'),
+        ]
+    )]
+    public function massTransfer(Request $request, int $id): Response
+    {
+        $sourceNode = Node::getNodeById($id);
+        if (!$sourceNode) {
+            return ApiResponse::error('Source node not found', 'NODE_NOT_FOUND', 404);
+        }
+
+        $data = json_decode($request->getContent(), true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
+        }
+
+        if (!isset($data['destination_node_id']) || !is_numeric($data['destination_node_id'])) {
+            return ApiResponse::error('Invalid or missing destination_node_id', 'INVALID_DESTINATION_NODE', 400);
+        }
+
+        $destinationNodeId = (int) $data['destination_node_id'];
+        $moveAll = !empty($data['move_all']);
+        $serverIds = isset($data['server_ids']) && is_array($data['server_ids'])
+            ? array_map('intval', $data['server_ids'])
+            : [];
+
+        if (!$moveAll && empty($serverIds)) {
+            return ApiResponse::error('Provide server_ids or set move_all to true', 'NO_SERVERS_SELECTED', 400);
+        }
+
+        if ($id === $destinationNodeId) {
+            return ApiResponse::error('Cannot transfer to the same node', 'SAME_SOURCE_DESTINATION', 400);
+        }
+
+        if (!Node::getNodeById($destinationNodeId)) {
+            return ApiResponse::error('Destination node not found', 'DESTINATION_NODE_NOT_FOUND', 404);
+        }
+
+        $initiator = new ServerTransferInitiator();
+        $results = $initiator->massTransfer(
+            $id,
+            $destinationNodeId,
+            $serverIds,
+            $moveAll,
+            $request->attributes->get('user')
+        );
+
+        Activity::createActivity([
+            'user_uuid' => $request->attributes->get('user')['uuid'],
+            'name' => 'mass_transfer_servers',
+            'context' => 'Mass transfer from node ' . $sourceNode['name'] . ': '
+                . count($results['initiated']) . ' initiated, '
+                . count($results['failed']) . ' failed, '
+                . count($results['skipped']) . ' skipped',
+            'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        return ApiResponse::success([
+            'initiated' => $results['initiated'],
+            'failed' => $results['failed'],
+            'skipped' => $results['skipped'],
+            'initiated_count' => count($results['initiated']),
+            'failed_count' => count($results['failed']),
+            'skipped_count' => count($results['skipped']),
+        ], 'Mass transfer processed', 200);
     }
 }

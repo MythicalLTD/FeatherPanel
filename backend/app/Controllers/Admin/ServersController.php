@@ -29,6 +29,7 @@ use App\Chat\Database;
 use App\Chat\Allocation;
 use App\Helpers\UUIDUtils;
 use App\Chat\SpellVariable;
+use App\Helpers\TimeHelper;
 use App\Chat\ServerActivity;
 use App\Chat\ServerDatabase;
 use App\Chat\ServerTransfer;
@@ -38,11 +39,13 @@ use App\Services\Wings\Wings;
 use OpenApi\Attributes as OA;
 use App\Chat\DatabaseInstance;
 use App\Config\ConfigInterface;
+use App\Chat\ServerCustomVariable;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Mail\templates\ServerBanned;
 use App\Mail\templates\ServerCreated;
 use App\Mail\templates\ServerDeleted;
 use App\Mail\templates\ServerUnbanned;
+use App\Helpers\ModerationReasonHelper;
 use App\Plugins\Events\Events\ServerEvent;
 use App\Services\Backup\BackupFifoEviction;
 use Symfony\Component\HttpFoundation\Request;
@@ -386,6 +389,7 @@ class ServersController
             // Remove sensitive data from owner
             if ($server['owner']) {
                 unset($server['owner']['password'], $server['owner']['remember_token'], $server['owner']['two_fa_key']);
+                $server['owner'] = TimeHelper::normaliseRow($server['owner'], ['last_seen', 'first_seen']);
             }
 
             // Remove sensitive node data
@@ -403,6 +407,8 @@ class ServersController
                     $server['node']['daemonBase']
                 );
             }
+
+            $server = TimeHelper::normaliseRow($server, ['installed_at']);
         }
 
         $total = Server::getCount(
@@ -539,6 +545,7 @@ class ServersController
         }
 
         $server['variables'] = $mergedVariables;
+        $server['custom_variables'] = ServerCustomVariable::getCustomVariablesByServerId((int) $server['id']);
 
         $attachedMounts = Mount::getMountsAttachedToServer((int) $server['id']);
         $server['mounts'] = $attachedMounts;
@@ -558,6 +565,7 @@ class ServersController
         // Remove sensitive data from related objects
         if ($server['owner']) {
             unset($server['owner']['password'], $server['owner']['remember_token'], $server['owner']['two_fa_key']);
+            $server['owner'] = TimeHelper::normaliseRow($server['owner'], ['last_seen', 'first_seen']);
         }
 
         // Remove sensitive node data
@@ -574,7 +582,114 @@ class ServersController
             $server['node']['daemonBase']
         );
 
+        $server = ModerationReasonHelper::enrichServerSuspensionMetadata($server);
+        $server = TimeHelper::normaliseRow($server, ['installed_at', 'suspended_at']);
+
         return ApiResponse::success($server, 'Server fetched successfully', 200);
+    }
+
+    public function createCustomVariable(Request $request, int $id): Response
+    {
+        $server = Server::getServerById($id);
+        if (!$server) {
+            return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+        }
+
+        $data = json_decode($request->getContent(), true);
+        if (!is_array($data)) {
+            return ApiResponse::error('Invalid request data', 'INVALID_REQUEST', 400);
+        }
+
+        $name = trim((string) ($data['name'] ?? ''));
+        $envVariable = strtoupper(trim((string) ($data['env_variable'] ?? '')));
+        $value = (string) ($data['variable_value'] ?? '');
+        $isEncrypted = isset($data['is_encrypted']) && filter_var($data['is_encrypted'], FILTER_VALIDATE_BOOLEAN);
+
+        if ($name === '' || strlen($name) > 191) {
+            return ApiResponse::error('Variable name is required and must be less than 191 characters', 'INVALID_NAME', 400);
+        }
+
+        if (!ServerCustomVariable::isValidEnvVariable($envVariable) || strlen($envVariable) > 191) {
+            return ApiResponse::error('Environment variable must use only uppercase letters, numbers, and underscores, and cannot start with a number', 'INVALID_ENV_VARIABLE', 400);
+        }
+
+        $reservedVariables = [
+            'P_SERVER_LOCATION',
+            'P_SERVER_UUID',
+            'P_SERVER_ALLOCATION_LIMIT',
+            'SERVER_MEMORY',
+            'SERVER_IP',
+            'SERVER_PORT',
+        ];
+        if (in_array($envVariable, $reservedVariables, true) || str_starts_with($envVariable, 'P_SERVER_')) {
+            return ApiResponse::error('This environment variable name is reserved', 'RESERVED_ENV_VARIABLE', 400);
+        }
+
+        if (ServerCustomVariable::envVariableExists((int) $server['id'], $envVariable)) {
+            return ApiResponse::error('An environment variable with this name already exists', 'ENV_VARIABLE_EXISTS', 409);
+        }
+
+        $user = $request->attributes->get('user');
+        $variableId = ServerCustomVariable::createCustomVariable([
+            'server_id' => (int) $server['id'],
+            'user_id' => (int) ($user['id'] ?? $server['owner_id']),
+            'name' => $name,
+            'env_variable' => $envVariable,
+            'variable_value' => $value,
+            'is_encrypted' => $isEncrypted ? 1 : 0,
+        ]);
+
+        if (!$variableId) {
+            return ApiResponse::error('Failed to create custom variable', 'CUSTOM_VARIABLE_CREATE_FAILED', 500);
+        }
+
+        $syncError = $this->syncServerConfiguration($server);
+        if ($syncError !== null) {
+            return $syncError;
+        }
+
+        Activity::createActivity([
+            'user_uuid' => $user['uuid'] ?? null,
+            'name' => 'create_server_custom_variable',
+            'context' => 'Created custom variable ' . $envVariable . ' for server ' . $server['name'],
+            'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        return ApiResponse::success([
+            'custom_variable' => ServerCustomVariable::getCustomVariableById((int) $variableId),
+        ], 'Custom variable created successfully', 201);
+    }
+
+    public function deleteCustomVariable(Request $request, int $id, int $variableId): Response
+    {
+        $server = Server::getServerById($id);
+        if (!$server) {
+            return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+        }
+
+        $customVariable = ServerCustomVariable::getCustomVariableById($variableId);
+        if (!$customVariable || (int) $customVariable['server_id'] !== (int) $server['id']) {
+            return ApiResponse::error('Custom variable not found', 'CUSTOM_VARIABLE_NOT_FOUND', 404);
+        }
+
+        if (!ServerCustomVariable::deleteCustomVariableForServer($variableId, (int) $server['id'])) {
+            return ApiResponse::error('Failed to delete custom variable', 'CUSTOM_VARIABLE_DELETE_FAILED', 500);
+        }
+
+        $syncError = $this->syncServerConfiguration($server);
+        if ($syncError !== null) {
+            return $syncError;
+        }
+
+        $user = $request->attributes->get('user');
+        Activity::createActivity([
+            'user_uuid' => $user['uuid'] ?? null,
+            'name' => 'delete_server_custom_variable',
+            'context' => 'Deleted custom variable ' . $customVariable['env_variable'] . ' from server ' . $server['name'],
+            'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        return ApiResponse::success([], 'Custom variable deleted successfully', 200);
     }
 
     #[OA\Get(
@@ -714,6 +829,9 @@ class ServersController
             $server['node']['daemonSFTP'],
             $server['node']['daemonBase']
         );
+
+        $server = ModerationReasonHelper::enrichServerSuspensionMetadata($server);
+        $server = TimeHelper::normaliseRow($server, ['installed_at', 'suspended_at']);
 
         return ApiResponse::success($server, 'Server fetched successfully', 200);
     }
@@ -2403,7 +2521,18 @@ class ServersController
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
 
-        $ok = Server::updateServerById($id, ['suspended' => 1]);
+        $body = json_decode($request->getContent(), true);
+        if (!is_array($body)) {
+            $body = [];
+        }
+        $parsed = ModerationReasonHelper::parseRequestBody($body);
+        $reasonError = ModerationReasonHelper::validateReason($parsed['reason']);
+        if ($reasonError !== null) {
+            return ApiResponse::error($reasonError, 'MODERATION_REASON_REQUIRED', 400);
+        }
+
+        $staffUser = $request->attributes->get('user');
+        $ok = Server::updateServerById($id, ModerationReasonHelper::suspensionAppliedFields($parsed['reason'], $staffUser));
         if (!$ok) {
             return ApiResponse::error('Failed to suspend server', 'FAILED_TO_SUSPEND', 500);
         }
@@ -2411,9 +2540,9 @@ class ServersController
         $user = User::getUserById($server['owner_id']);
 
         Activity::createActivity([
-            'user_uuid' => $request->attributes->get('user')['uuid'],
+            'user_uuid' => $staffUser['uuid'],
             'name' => 'suspend_server',
-            'context' => 'Suspended server ' . $server['name'],
+            'context' => 'Suspended server ' . $server['name'] . ' — ' . $parsed['reason'],
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
@@ -2479,6 +2608,7 @@ class ServersController
                 'uuid' => $user['uuid'],
                 'enabled' => $config->getSetting(ConfigInterface::SMTP_ENABLED, 'false'),
                 'server_name' => $server['name'],
+                'suspension_reason' => $parsed['reason'],
             ]);
         } catch (\Exception $e) {
             App::getInstance(true)->getLogger()->error('Failed to send server suspended email: ' . $e->getMessage());
@@ -2525,7 +2655,7 @@ class ServersController
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
 
-        $ok = Server::updateServerById($id, ['suspended' => 0]);
+        $ok = Server::updateServerById($id, ModerationReasonHelper::suspensionClearedFields());
         if (!$ok) {
             return ApiResponse::error('Failed to unsuspend server', 'FAILED_TO_UNSUSPEND', 500);
         }
@@ -2617,218 +2747,36 @@ class ServersController
     )]
     public function initiateTransfer(Request $request, int $id): Response
     {
-        $server = Server::getServerById($id);
-        if (!$server) {
-            return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
-        }
-
         $data = json_decode($request->getContent(), true);
         if (json_last_error() !== JSON_ERROR_NONE) {
             return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
         }
 
-        if (!isset($data['destination_node_id']) || !is_numeric($data['destination_node_id'])) {
-            return ApiResponse::error('Invalid or missing destination_node_id', 'INVALID_DESTINATION_NODE', 400);
+        $options = $data;
+        if (!array_key_exists('auto_allocate', $options)) {
+            $options['auto_allocate'] = !isset($data['destination_allocation_id']);
         }
 
-        $destinationNodeId = (int) $data['destination_node_id'];
-
-        // Prevent transferring to the same node
-        if ($server['node_id'] === $destinationNodeId) {
-            return ApiResponse::error('Cannot transfer server to the same node', 'SAME_SOURCE_DESTINATION', 400);
-        }
-
-        // Check if server is already transferring or has an active transfer
-        if ($server['status'] === 'transferring' || ServerTransfer::hasActiveTransfer($id)) {
-            return ApiResponse::error('Server is already being transferred', 'ALREADY_TRANSFERRING', 400);
-        }
-
-        // Check if server is in a transferable state (installed, not restoring backup)
-        if ($server['status'] === 'installing' || $server['status'] === 'restoring') {
-            return ApiResponse::error('Server cannot be transferred while installing or restoring', 'SERVER_NOT_TRANSFERABLE', 400);
-        }
-
-        // Get destination node
-        $destinationNode = Node::getNodeById($destinationNodeId);
-        if (!$destinationNode) {
-            return ApiResponse::error('Destination node not found', 'DESTINATION_NODE_NOT_FOUND', 404);
-        }
-
-        // Get source node for Wings connection
-        $sourceNode = Node::getNodeById($server['node_id']);
-        if (!$sourceNode) {
-            return ApiResponse::error('Source node not found', 'SOURCE_NODE_NOT_FOUND', 404);
-        }
-
-        // Store original values in case we need to revert
-        $originalNodeId = $server['node_id'];
-        $originalAllocationId = $server['allocation_id'];
-
-        // Get server's current allocations (primary + additional)
-        $currentAllocations = Allocation::getByServerId($id);
-        $oldAdditionalAllocations = array_filter(
-            array_column($currentAllocations, 'id'),
-            fn ($allocId) => $allocId != $originalAllocationId
+        $result = (new \App\Services\Servers\ServerTransferInitiator())->initiate(
+            $id,
+            $options,
+            $request->attributes->get('user')
         );
 
-        // Validate and get destination allocation
-        $newAllocationId = null;
-        if (isset($data['destination_allocation_id'])) {
-            $destinationAllocation = Allocation::getAllocationById($data['destination_allocation_id']);
-            if (!$destinationAllocation) {
-                return ApiResponse::error('Destination allocation not found', 'DESTINATION_ALLOCATION_NOT_FOUND', 404);
-            }
-            if ($destinationAllocation['node_id'] !== $destinationNodeId) {
-                return ApiResponse::error('Destination allocation does not belong to destination node', 'ALLOCATION_NODE_MISMATCH', 400);
-            }
-            if ($destinationAllocation['server_id'] !== null) {
-                return ApiResponse::error('Destination allocation is already assigned to another server', 'ALLOCATION_IN_USE', 400);
-            }
-            $newAllocationId = $destinationAllocation['id'];
+        if (!$result['success']) {
+            return ApiResponse::error(
+                $result['error'] ?? 'Transfer failed',
+                $result['code'] ?? 'TRANSFER_FAILED',
+                $result['http_status'] ?? 500
+            );
         }
 
-        // Get additional allocations for destination (optional)
-        $newAdditionalAllocations = [];
-        if (isset($data['destination_additional_allocations']) && is_array($data['destination_additional_allocations'])) {
-            foreach ($data['destination_additional_allocations'] as $allocId) {
-                $alloc = Allocation::getAllocationById((int) $allocId);
-                if ($alloc && $alloc['node_id'] === $destinationNodeId && $alloc['server_id'] === null) {
-                    $newAdditionalAllocations[] = (int) $allocId;
-                }
-            }
-        }
-
-        // Generate transfer JWT token (subject is the destination server UUID)
-        $config = App::getInstance(true)->getConfig();
-        $panelUrl = $config->getSetting(ConfigInterface::APP_URL, 'https://featherpanel.mythical.systems');
-        $destinationUrl = $destinationNode['scheme'] . '://' . $destinationNode['fqdn'] . ':' . $destinationNode['daemonListen'];
-
-        try {
-            // Temporarily assign new allocations to the server (so they can't be taken during transfer)
-            if ($newAllocationId) {
-                $allocationsToAssign = [$newAllocationId];
-                if (!empty($newAdditionalAllocations)) {
-                    $allocationsToAssign = array_merge($allocationsToAssign, $newAdditionalAllocations);
-                }
-                Allocation::assignMultipleToServer($id, $allocationsToAssign);
-            }
-
-            // Update server status to transferring AND update node_id to destination
-            // This allows destination Wings to query Panel for server configuration
-            $updated = Server::updateServerById($id, [
-                'status' => 'transferring',
-                'node_id' => $destinationNodeId,
-            ]);
-            if (!$updated) {
-                // Revert allocation assignment
-                if ($newAllocationId) {
-                    $allocationsToRevert = [$newAllocationId];
-                    if (!empty($newAdditionalAllocations)) {
-                        $allocationsToRevert = array_merge($allocationsToRevert, $newAdditionalAllocations);
-                    }
-                    Allocation::unassignMultiple($allocationsToRevert);
-                }
-
-                return ApiResponse::error('Failed to update server status', 'UPDATE_FAILED', 500);
-            }
-
-            $wings = new Wings(
-                $sourceNode['fqdn'],
-                $sourceNode['daemonListen'],
-                $sourceNode['scheme'],
-                $sourceNode['daemon_token'],
-                30
-            );
-
-            // Get JWT service and generate transfer token
-            $jwtService = new \App\Services\Wings\Services\JwtService(
-                $destinationNode['daemon_token'],
-                $panelUrl,
-                $destinationUrl,
-                3600 // 1 hour expiration for transfers
-            );
-
-            $transferToken = $jwtService->generateTransferToken(
-                $server['uuid'],
-                $request->attributes->get('user')['uuid'],
-                ['*'] // Full permissions for transfer
-            );
-
-            // Prepare transfer request data for source node
-            // Wings will extract server UUID from JWT's 'sub' claim
-            $transferData = [
-                'url' => $destinationUrl . '/api/transfers',
-                'token' => 'Bearer ' . $transferToken,
-            ];
-
-            // Initiate transfer on source node
-            $response = $wings->getTransfer()->startTransfer($server['uuid'], $transferData);
-
-            // Create transfer record in database with full allocation tracking
-            $transferId = ServerTransfer::create([
-                'server_id' => $id,
-                'source_node_id' => $originalNodeId,
-                'destination_node_id' => $destinationNodeId,
-                'old_allocation' => $originalAllocationId,
-                'new_allocation' => $newAllocationId,
-                'old_additional_allocations' => $oldAdditionalAllocations,
-                'new_additional_allocations' => $newAdditionalAllocations,
-                'status' => 'in_progress',
-                'progress' => 0.0,
-                'started_at' => date('Y-m-d H:i:s'),
-            ]);
-
-            if (!$transferId) {
-                App::getInstance(true)->getLogger()->error('Failed to create server transfer record');
-                // Don't fail the transfer if database insert fails, but log it
-            }
-
-            // Log activity
-            Activity::createActivity([
-                'user_uuid' => $request->attributes->get('user')['uuid'],
-                'name' => 'initiate_server_transfer',
-                'context' => 'Initiated transfer of server ' . $server['name'] . ' from node ' . $sourceNode['name'] . ' to node ' . $destinationNode['name'],
-                'ip_address' => CloudFlareRealIP::getRealIP(),
-            ]);
-
-            // Emit event
-            global $eventManager;
-            if (isset($eventManager) && $eventManager !== null) {
-                $eventManager->emit(
-                    ServerEvent::onServerTransferInitiated(),
-                    [
-                        'server' => $server,
-                        'source_node' => $sourceNode,
-                        'destination_node' => $destinationNode,
-                        'initiated_by' => $request->attributes->get('user'),
-                    ]
-                );
-            }
-
-            return ApiResponse::success([
-                'message' => 'Server transfer initiated successfully',
-                'transfer_id' => $transferId,
-            ], 'Server transfer initiated', 200);
-        } catch (\Exception $e) {
-            // Revert server status AND node_id if transfer initiation fails
-            Server::updateServerById($id, [
-                'status' => $server['status'],
-                'node_id' => $originalNodeId,
-            ]);
-
-            // Revert allocation assignment
-            if ($newAllocationId) {
-                $allocationsToRevert = [$newAllocationId];
-                if (!empty($newAdditionalAllocations)) {
-                    $allocationsToRevert = array_merge($allocationsToRevert, $newAdditionalAllocations);
-                }
-                Allocation::unassignMultiple($allocationsToRevert);
-            }
-
-            App::getInstance(true)->getLogger()->error('Failed to initiate server transfer: ' . $e->getMessage());
-
-            return ApiResponse::error('Failed to initiate server transfer: ' . $e->getMessage(), 'TRANSFER_INITIATION_FAILED', 500);
-        }
+        return ApiResponse::success([
+            'message' => 'Server transfer initiated successfully',
+            'transfer_id' => $result['transfer_id'] ?? null,
+            'new_allocation' => $result['new_allocation'] ?? null,
+            'new_additional_allocations' => $result['new_additional_allocations'] ?? [],
+        ], 'Server transfer initiated', 200);
     }
 
     #[OA\Get(
@@ -3042,6 +2990,34 @@ class ServersController
 
             return ApiResponse::error('Failed to cancel transfer: ' . $e->getMessage(), 'CANCEL_FAILED', 500);
         }
+    }
+
+    private function syncServerConfiguration(array $server): ?Response
+    {
+        $node = Node::getNodeById((int) $server['node_id']);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+
+        try {
+            $wings = new Wings(
+                $node['fqdn'],
+                $node['daemonListen'],
+                $node['scheme'],
+                $node['daemon_token'],
+                30
+            );
+            $response = $wings->getServer()->syncServer($server['uuid']);
+            if (!$response->isSuccessful()) {
+                return ApiResponse::error('Failed to sync server configuration: ' . $response->getError(), 'WINGS_ERROR', $response->getStatusCode());
+            }
+        } catch (\Exception $e) {
+            App::getInstance(true)->getLogger()->error('Failed to sync server configuration: ' . $e->getMessage());
+
+            return ApiResponse::error('Failed to sync server configuration: ' . $e->getMessage(), 'SERVER_SYNC_FAILED', 500);
+        }
+
+        return null;
     }
 
     /**

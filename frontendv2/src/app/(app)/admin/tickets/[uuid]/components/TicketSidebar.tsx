@@ -377,18 +377,22 @@ export function TicketSidebar({
             ) : (
                 <Card className='text-muted-foreground border-border/10 bg-card/30 p-8 text-center'>
                     <User className='mx-auto mb-3 h-10 w-10 opacity-20' />
-                    <p className='text-sm'>User info unavailable</p>
+                    <p className='text-sm'>{t('admin.tickets.sidebar.user_info_unavailable')}</p>
                 </Card>
             )}
 
             <Card className='bg-card/50 border-border/10 space-y-3 p-4 shadow-sm backdrop-blur-sm'>
                 <div className='border-border/5 flex items-center gap-2 border-b pb-2'>
                     <Info className='text-primary h-3.5 w-3.5' />
-                    <h4 className='text-foreground text-[10px] font-black tracking-widest uppercase'>Ticket Info</h4>
+                    <h4 className='text-foreground text-[10px] font-black tracking-widest uppercase'>
+                        {t('admin.tickets.sidebar.ticket_info')}
+                    </h4>
                 </div>
                 <div className='space-y-3'>
                     <div className='flex items-center justify-between'>
-                        <span className='text-muted-foreground text-xs font-medium'>Status</span>
+                        <span className='text-muted-foreground text-xs font-medium'>
+                            {t('admin.tickets.sidebar.meta.status')}
+                        </span>
                         <div className='flex items-center gap-2'>
                             <div
                                 className='h-2 w-2 animate-pulse rounded-full'
@@ -400,7 +404,9 @@ export function TicketSidebar({
                         </div>
                     </div>
                     <div className='flex items-center justify-between'>
-                        <span className='text-muted-foreground text-xs font-medium'>Priority</span>
+                        <span className='text-muted-foreground text-xs font-medium'>
+                            {t('admin.tickets.sidebar.meta.priority')}
+                        </span>
                         <div className='flex items-center gap-2'>
                             <div
                                 className='h-2 w-2 rotate-45 rounded-full'
@@ -412,11 +418,15 @@ export function TicketSidebar({
                         </div>
                     </div>
                     <div className='flex items-center justify-between'>
-                        <span className='text-muted-foreground text-xs font-medium'>Category</span>
+                        <span className='text-muted-foreground text-xs font-medium'>
+                            {t('admin.tickets.sidebar.meta.category')}
+                        </span>
                         <span className='text-xs font-bold'>{ticket.category?.name}</span>
                     </div>
                     <div className='flex items-center justify-between'>
-                        <span className='text-muted-foreground text-xs font-medium'>Created</span>
+                        <span className='text-muted-foreground text-xs font-medium'>
+                            {t('admin.tickets.sidebar.meta.created')}
+                        </span>
                         <span className='text-xs font-bold'>{new Date(ticket.created_at).toLocaleDateString()}</span>
                     </div>
                 </div>

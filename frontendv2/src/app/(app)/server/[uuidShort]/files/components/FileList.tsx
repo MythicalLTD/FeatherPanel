@@ -14,6 +14,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
 import { FileObject } from '@/types/server';
+import { filterSelectableFiles } from '@/lib/feather-trash';
 import { FileRow } from './FileRow';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2, FolderOpen, Sparkles } from 'lucide-react';
@@ -35,6 +36,7 @@ interface FileListProps {
     canEdit: boolean;
     canDelete: boolean;
     canDownload: boolean;
+    acceptArchiveExtract?: boolean;
     serverUuid: string;
     currentDirectory: string;
     anchorName?: string | null;
@@ -56,6 +58,7 @@ export function FileList({
     canEdit,
     canDelete,
     canDownload,
+    acceptArchiveExtract = false,
     serverUuid,
     currentDirectory,
     anchorName = null,
@@ -111,7 +114,9 @@ export function FileList({
         );
     }
 
-    const allSelected = files.length > 0 && selectedFiles.length === files.length;
+    const selectableFiles = filterSelectableFiles(files);
+    const selectableNames = selectableFiles.map((f) => f.name);
+    const allSelected = selectableNames.length > 0 && selectableNames.every((n) => selectedFiles.includes(n));
 
     return (
         <div className='overflow-hidden rounded-3xl border border-gray-200 bg-white backdrop-blur-xl dark:border-white/10 dark:bg-white/5'>
@@ -119,17 +124,22 @@ export function FileList({
                 className='text-foreground/60 flex items-center gap-3 border-b border-gray-200 bg-gray-50/50 px-4 py-4 text-[10px] font-bold tracking-[0.2em] uppercase dark:border-white/10 dark:bg-white/5 dark:text-white/40'
                 style={{ color: 'hsl(var(--foreground))', opacity: 0.6 }}
             >
-                <div className='flex flex-1 items-center gap-3'>
+                <div className='flex shrink-0 items-center'>
                     <Checkbox
                         checked={allSelected}
                         onCheckedChange={onSelectAll}
                         className='border-primary/50 data-[state=checked]:bg-primary data-[state=checked]:border-primary transition-colors'
                     />
-                    <span>{t('files.list.header_name')}</span>
                 </div>
-                <div className='hidden w-32 text-right sm:block'>{t('files.list.header_size')}</div>
-                <div className='hidden w-40 text-right sm:block'>{t('files.list.header_modified')}</div>
-                <div className='w-10'></div>
+                <div className='w-9 shrink-0' aria-hidden />
+                <div className='min-w-0 flex-1 truncate'>{t('files.list.header_name')}</div>
+                <div className='hidden w-[5.5rem] shrink-0 text-right sm:block'>{t('files.list.header_size')}</div>
+                <div className='hidden w-[9rem] shrink-0 truncate text-right sm:block'>
+                    {t('files.list.header_modified')}
+                </div>
+                <div className='w-9 shrink-0 text-center'>
+                    <span className='hidden sm:block'>{t('files.list.header_actions')}</span>
+                </div>
             </div>
 
             <div className='divide-y divide-gray-200 dark:divide-white/5'>
@@ -150,6 +160,7 @@ export function FileList({
                         canEdit={canEdit}
                         canDelete={canDelete}
                         canDownload={canDownload}
+                        acceptArchiveExtract={acceptArchiveExtract}
                         serverUuid={serverUuid}
                         currentDirectory={currentDirectory}
                     />

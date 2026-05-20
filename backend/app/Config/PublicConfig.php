@@ -66,6 +66,9 @@ class PublicConfig extends ConfigFactory
             // background type: aurora, gradient, solid, image, pattern
             ConfigInterface::APP_BACKGROUND_TYPE_DEFAULT => 'pattern',
             ConfigInterface::APP_BACKGROUND_TYPE_LOCK => 'false',
+
+            ConfigInterface::BRANDING_SHOW_POWERED_BY => 'true',
+
             // backdrop blur/darken and image fit defaults + locks
             ConfigInterface::APP_BACKDROP_BLUR_DEFAULT => '0',
             ConfigInterface::APP_BACKDROP_BLUR_LOCK => 'false',
@@ -163,6 +166,9 @@ class PublicConfig extends ConfigFactory
             ConfigInterface::SERVER_ALLOW_USER_MADE_FASTDL => 'false',
             ConfigInterface::SERVER_ALLOW_USER_MADE_SUBDOMAINS => 'false',
             ConfigInterface::SERVER_HIDE_IPS => 'false',
+            ConfigInterface::FILE_TRASH_ENABLED => 'false',
+            ConfigInterface::FILE_TRASH_MAX_SIZE_MB => '512',
+            ConfigInterface::FILE_TRASH_RETENTION_DAYS => '30',
 
             // User related settings
             ConfigInterface::USER_ALLOW_AVATAR_CHANGE => 'true',

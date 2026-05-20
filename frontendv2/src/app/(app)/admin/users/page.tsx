@@ -18,6 +18,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { useDateFormatOptions } from '@/contexts/PreferencesContext';
 import axios from 'axios';
 import {
     Users as UsersIcon,
@@ -30,6 +31,7 @@ import {
     ChevronRight,
     AlertCircle,
     UserPlus,
+    CheckCircle2,
 } from 'lucide-react';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { ResourceCard, type ResourceBadge } from '@/components/featherui/ResourceCard';
@@ -43,6 +45,7 @@ import { Select } from '@/components/ui/select-native';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { toast } from 'sonner';
+import { formatDateTimeInTz, formatRelativeTime } from '@/lib/dateUtils';
 
 interface UserRole {
     name: string;
@@ -56,6 +59,7 @@ interface ApiUser {
     avatar: string;
     username: string;
     email: string;
+    email_verified?: boolean;
     role?: UserRole;
     banned?: string;
     two_fa_enabled?: string;
@@ -90,6 +94,7 @@ interface AvailableRole {
 
 export default function UsersPage() {
     const { t } = useTranslation();
+    const dateOpts = useDateFormatOptions();
     const router = useRouter();
 
     const [users, setUsers] = useState<ApiUser[]>([]);
@@ -210,6 +215,27 @@ export default function UsersPage() {
             const errorMessage =
                 (error as { response?: { data?: { message?: string } } })?.response?.data?.message ||
                 t('admin.users.messages.delete_failed');
+            toast.error(errorMessage);
+        }
+    };
+
+    const handleForceVerifyEmail = async (user: ApiUser) => {
+        if (!confirm(t('admin.users.messages.force_verify_email_confirm', { username: user.username }))) {
+            return;
+        }
+
+        try {
+            const { data } = await axios.post(`/api/admin/users/${user.uuid}/verify-email`);
+            if (data?.success) {
+                toast.success(t('admin.users.messages.force_verify_email_success'));
+                setRefreshKey((prev) => prev + 1);
+            } else {
+                toast.error(data?.message || t('admin.users.messages.force_verify_email_failed'));
+            }
+        } catch (error: unknown) {
+            const errorMessage =
+                (error as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+                t('admin.users.messages.force_verify_email_failed');
             toast.error(errorMessage);
         }
     };
@@ -371,6 +397,14 @@ export default function UsersPage() {
                             });
                         }
 
+                        const isEmailUnverified = user.email_verified === false;
+                        if (isEmailUnverified) {
+                            badges.push({
+                                label: t('admin.users.badges.email_unverified'),
+                                className: 'bg-yellow-500/10 text-yellow-700 border-yellow-500/20',
+                            });
+                        }
+
                         if (user.discord_oauth2_linked === 'true') {
                             badges.push({
                                 label: t('admin.users.badges.discord_linked'),
@@ -409,13 +443,17 @@ export default function UsersPage() {
                                             {user.last_seen && (
                                                 <div className='flex items-center gap-1.5'>
                                                     <span className='font-semibold'>{t('admin.users.last_seen')}:</span>
-                                                    {user.last_seen}
+                                                    <span title={formatDateTimeInTz(user.last_seen, dateOpts)}>
+                                                        {formatRelativeTime(user.last_seen, dateOpts)}
+                                                    </span>
                                                 </div>
                                             )}
                                             {user.created_at && (
                                                 <div className='flex items-center gap-1.5'>
                                                     <span className='font-semibold'>{t('admin.users.created')}:</span>
-                                                    {user.created_at}
+                                                    <span title={formatDateTimeInTz(user.created_at, dateOpts)}>
+                                                        {formatRelativeTime(user.created_at, dateOpts)}
+                                                    </span>
                                                 </div>
                                             )}
                                             {user.last_ip && (
@@ -449,6 +487,19 @@ export default function UsersPage() {
                                         >
                                             <Eye className='h-4 w-4' />
                                         </Button>
+                                        {isEmailUnverified && (
+                                            <Button
+                                                variant='outline'
+                                                size='sm'
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleForceVerifyEmail(user);
+                                                }}
+                                                title={t('admin.users.actions.force_verify_email')}
+                                            >
+                                                <CheckCircle2 className='h-4 w-4' />
+                                            </Button>
+                                        )}
                                         <Button
                                             variant='destructive'
                                             size='sm'

@@ -192,6 +192,94 @@ class LdapController
     }
 
     /**
+     * Link an LDAP directory identity to the authenticated account.
+     */
+    public function link(Request $request): Response
+    {
+        $currentUser = $request->attributes->get('user');
+        if (!$currentUser || empty($currentUser['uuid'])) {
+            return ApiResponse::error('Unauthorized', 'UNAUTHORIZED', 401);
+        }
+
+        $data = json_decode($request->getContent(), true);
+        if (!is_array($data)) {
+            return ApiResponse::error('Invalid request data', 'INVALID_REQUEST_DATA', 400);
+        }
+
+        $providerUuid = isset($data['provider_uuid']) ? trim((string) $data['provider_uuid']) : '';
+        $username = isset($data['username']) ? trim((string) $data['username']) : '';
+        $password = isset($data['password']) ? (string) $data['password'] : '';
+
+        if ($providerUuid === '' || $username === '' || $password === '') {
+            return ApiResponse::error(
+                'Provider UUID, username, and password are required',
+                'MISSING_REQUIRED_FIELDS',
+                400
+            );
+        }
+
+        $provider = LdapProvider::getProviderByUuid($providerUuid);
+        if (!$provider) {
+            return ApiResponse::error('LDAP provider not found', 'PROVIDER_NOT_FOUND', 404);
+        }
+
+        if (($provider['enabled'] ?? 'false') !== 'true') {
+            return ApiResponse::error('LDAP provider is disabled', 'PROVIDER_DISABLED', 403);
+        }
+
+        $ldap = new LdapAuthenticator($provider);
+        $ldapUser = $ldap->authenticate($username, $password);
+        if (!$ldapUser) {
+            return ApiResponse::error(
+                'LDAP authentication failed: ' . ($ldap->getLastError() ?? 'Unknown error'),
+                'LDAP_AUTH_FAILED',
+                401
+            );
+        }
+
+        $linkedUser = User::getUserByLdapProviderAndDn($providerUuid, $ldapUser['dn']);
+        if ($linkedUser && $linkedUser['uuid'] !== $currentUser['uuid']) {
+            return ApiResponse::error('LDAP account is already linked to another user', 'LDAP_ALREADY_LINKED', 409);
+        }
+
+        $updated = User::updateUser($currentUser['uuid'], [
+            'ldap_provider_uuid' => $providerUuid,
+            'ldap_dn' => $ldapUser['dn'],
+        ]);
+
+        if (!$updated) {
+            return ApiResponse::error('Failed to link LDAP account', 'LDAP_LINK_FAILED', 500);
+        }
+
+        return ApiResponse::success([
+            'provider_uuid' => $providerUuid,
+            'dn' => $ldapUser['dn'],
+        ], 'LDAP account linked successfully', 200);
+    }
+
+    /**
+     * Unlink LDAP from the authenticated account.
+     */
+    public function unlink(Request $request): Response
+    {
+        $currentUser = $request->attributes->get('user');
+        if (!$currentUser || empty($currentUser['uuid'])) {
+            return ApiResponse::error('Unauthorized', 'UNAUTHORIZED', 401);
+        }
+
+        $updated = User::updateUser($currentUser['uuid'], [
+            'ldap_provider_uuid' => null,
+            'ldap_dn' => null,
+        ]);
+
+        if (!$updated) {
+            return ApiResponse::error('Failed to unlink LDAP account', 'LDAP_UNLINK_FAILED', 500);
+        }
+
+        return ApiResponse::success([], 'LDAP account unlinked successfully', 200);
+    }
+
+    /**
      * Provision a new user from LDAP data.
      */
     private function provisionUser(array $ldapUser, array $provider): ?array

@@ -71,6 +71,14 @@ class SpellsEvent implements PluginEvent
     }
 
     /**
+     * Callback: int realm id, array spells, array reordered_by.
+     */
+    public static function onSpellsReordered(): string
+    {
+        return 'featherpanel:admin:spells:reordered';
+    }
+
+    /**
      * Callback: array import data, array results.
      */
     public static function onSpellsImported(): string

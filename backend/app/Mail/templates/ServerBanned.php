@@ -39,6 +39,7 @@ class ServerBanned
                 'dashboard_url' => $data['app_url'] . '/dashboard',
                 'support_url' => $data['app_support_url'],
                 'server_name' => $data['server_name'],
+                'suspension_reason' => $data['suspension_reason'] ?? '',
             ]);
         }
 
@@ -59,6 +60,7 @@ class ServerBanned
         $template = str_replace('{dashboard_url}', $data['dashboard_url'], $template);
         $template = str_replace('{support_url}', $data['support_url'], $template);
         $template = str_replace('{server_name}', $data['server_name'], $template);
+        $template = str_replace('{suspension_reason}', $data['suspension_reason'] ?? '', $template);
 
         return $template;
     }
@@ -134,6 +136,7 @@ class ServerBanned
             'dashboard_url' => $data['app_url'] . '/dashboard',
             'support_url' => $data['app_support_url'],
             'server_name' => $data['server_name'],
+            'suspension_reason' => $data['suspension_reason'] ?? '',
         ]);
     }
 }

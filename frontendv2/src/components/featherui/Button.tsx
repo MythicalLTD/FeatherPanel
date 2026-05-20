@@ -28,7 +28,7 @@ const variants = {
     ghost: 'hover:bg-accent hover:text-accent-foreground',
     link: 'text-primary underline-offset-4 hover:underline',
     warning: 'bg-orange-500/10 text-orange-500 border border-orange-500/20 hover:bg-orange-500/20 active:scale-[0.98]',
-    glass: 'bg-background/50 backdrop-blur-md border border-border/40 hover:bg-background/80',
+    glass: 'border border-border/70 bg-background/70 text-foreground shadow-sm backdrop-blur-md hover:border-primary/40 hover:bg-background/90',
     plain: 'bg-transparent text-foreground hover:bg-accent hover:text-accent-foreground',
 };
 

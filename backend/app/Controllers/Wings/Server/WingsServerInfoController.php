@@ -26,6 +26,8 @@ use App\Chat\Allocation;
 use App\Chat\ServerVariable;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
+use App\Chat\ServerCustomVariable;
+use App\Helpers\WingsFileTrashConfig;
 use App\Plugins\Events\Events\WingsEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -179,6 +181,10 @@ class WingsServerInfoController
         // Build environment variables from server variables
         foreach ($serverVariables as $variable) {
             $environment[$variable['env_variable']] = $variable['variable_value'];
+        }
+
+        foreach (ServerCustomVariable::getEnvironmentVariablesByServerId((int) $server['id']) as $envVariable => $value) {
+            $environment[$envVariable] = $value;
         }
 
         // Add default environment variables based on database fields
@@ -476,6 +482,7 @@ class WingsServerInfoController
                 'oom_disabled' => (bool) $server['oom_disabled'],
                 'requires_rebuild' => false,
             ],
+            'file_trash' => WingsFileTrashConfig::forWings(),
         ];
         $wingsMounts = Mount::getWingsMountsForServer((int) $server['id']);
         if ($wingsMounts !== []) {

@@ -29,6 +29,7 @@ import {
     CreateFolderDialog,
     CreateFileDialog,
     DeleteDialog,
+    EmptyTrashDialog,
     RenameDialog,
     ImagePreviewDialog,
     PermissionsDialog,
@@ -38,12 +39,23 @@ import {
     IgnoredContentDialog,
     CompressDialog,
     FileHashDialog,
+    ArchiveBrowsePanel,
 } from './components/dialogs';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { useSettings } from '@/contexts/SettingsContext';
+import { isEnabled } from '@/lib/utils';
 import { toast } from 'sonner';
-import { filesApi } from '@/lib/files-api';
+import { filesApi, ARCHIVE_EXTRACT_DRAG_MIME } from '@/lib/files-api';
 import { isBinaryLikeFileName } from '@/lib/binary-like-file-names';
 import { FileObject } from '@/types/server';
+import {
+    createTrashFolderEntry,
+    FEATHER_TRASH_DIR,
+    filterSelectableFiles,
+    isTrashShortcut,
+    trashStatsFromList,
+    type TrashFolderStats,
+} from '@/lib/feather-trash';
 import { Download, X, Upload, CheckCircle2, AlertCircle } from 'lucide-react';
 import React, { use } from 'react';
 import { Button } from '@/components/featherui/Button';
@@ -67,6 +79,13 @@ function resolveDirectoryTarget(currentDirectory: string, nameOrPath: string): s
     if (!nameOrPath) return normalizePath(currentDirectory || '/');
     if (nameOrPath.startsWith('/')) return normalizePath(nameOrPath);
     return joinPath(currentDirectory || '/', nameOrPath);
+}
+
+/** Server-relative destination for Wings archive/extract (no leading slash; empty = server root). */
+function toDestinationRelative(absoluteDir: string): string {
+    const n = normalizePath(absoluteDir || '/');
+    if (n === '/') return '';
+    return n.replace(/^\//, '');
 }
 
 async function collectFilesFromDataTransfer(dt: DataTransfer): Promise<FileWithPath[]> {
@@ -142,6 +161,8 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
     const router = useRouter();
     const { uuidShort } = use(params);
     const { t } = useTranslation();
+    const { settings } = useSettings();
+    const trashEnabled = isEnabled(settings?.file_trash_enabled);
 
     const {
         files,
@@ -175,6 +196,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
     const canCreate = hasPermission('file.create');
     const canUpdate = hasPermission('file.update');
     const canDelete = hasPermission('file.delete');
+    const canArchive = hasPermission('file.archive');
 
     const [createFolderOpen, setCreateFolderOpen] = useState(false);
     const [createFileOpen, setCreateFileOpen] = useState(false);
@@ -188,6 +210,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
     const [permissionsOpen, setPermissionsOpen] = useState(false);
     const [compressOpen, setCompressOpen] = useState(false);
     const [fileHashOpen, setFileHashOpen] = useState(false);
+    const [archiveBrowseOpen, setArchiveBrowseOpen] = useState(false);
     const [filesToCompress, setFilesToCompress] = useState<string[]>([]);
     const [moveCopyAction, setMoveCopyAction] = useState<'move' | 'copy'>('move');
     const [uploadQueue, setUploadQueue] = useState<UploadQueueItem[]>([]);
@@ -203,6 +226,9 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
     const [searchFiltersOpen, setSearchFiltersOpen] = useState(false);
     const [searchLoading, setSearchLoading] = useState(false);
     const [searchResults, setSearchResults] = useState<FileObject[] | null>(null);
+    const [trashStats, setTrashStats] = useState<TrashFolderStats | null>(null);
+    const [emptyTrashOpen, setEmptyTrashOpen] = useState(false);
+    const [emptyTrashBusy, setEmptyTrashBusy] = useState(false);
     const [includePattern, setIncludePattern] = useState('');
     const [excludePattern, setExcludePattern] = useState('');
     const [searchCaseInsensitive, setSearchCaseInsensitive] = useState(true);
@@ -236,7 +262,53 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
         maxSizeBytes,
     ]);
     const hasAdvancedFilters = activeAdvancedFiltersCount > 0;
-    const visibleFiles = searchResults ?? files;
+    const refreshTrashStats = useCallback(async () => {
+        if (!trashEnabled || !uuidShort) return;
+        try {
+            const data = await filesApi.listTrash(uuidShort);
+            setTrashStats(trashStatsFromList(data));
+        } catch {
+            setTrashStats({ totalSize: 0, lastModified: null, itemCount: 0 });
+        }
+    }, [trashEnabled, uuidShort]);
+
+    useEffect(() => {
+        void refreshTrashStats();
+    }, [refreshTrashStats]);
+
+    const baseFiles = searchResults ?? files;
+    const visibleFiles = useMemo(() => {
+        if (!trashEnabled || searchResults !== null) return baseFiles;
+        return [createTrashFolderEntry(trashStats ?? undefined), ...baseFiles];
+    }, [baseFiles, trashEnabled, searchResults, trashStats]);
+    const selectableFiles = useMemo(() => filterSelectableFiles(visibleFiles), [visibleFiles]);
+    const previousDirectoryRef = useRef(currentDirectory || '/');
+
+    const closeArchiveBrowse = useCallback(() => {
+        setArchiveBrowseOpen(false);
+        setActionFile((file) => (file && archiveBrowseOpen ? null : file));
+    }, [archiveBrowseOpen]);
+
+    const handleArchiveBrowseOpenChange = useCallback((open: boolean) => {
+        setArchiveBrowseOpen(open);
+        if (!open) setActionFile(null);
+    }, []);
+
+    const navigateAndCloseArchive = useCallback(
+        (path: string) => {
+            closeArchiveBrowse();
+            navigate(path);
+        },
+        [closeArchiveBrowse, navigate],
+    );
+
+    useEffect(() => {
+        const nextDirectory = currentDirectory || '/';
+        if (previousDirectoryRef.current !== nextDirectory) {
+            previousDirectoryRef.current = nextDirectory;
+            closeArchiveBrowse();
+        }
+    }, [closeArchiveBrowse, currentDirectory]);
 
     useEffect(() => {
         if (anchorName && !visibleFiles.some((f) => f.name === anchorName)) {
@@ -274,7 +346,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 }
             } catch {
                 if (!cancelled) {
-                    toast.error('Failed to search files');
+                    toast.error(t('files.search.search_failed'));
                     setSearchResults([]);
                 }
             } finally {
@@ -302,29 +374,35 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
         maxFileSizeMiB,
         includeOversized,
         hasAdvancedFilters,
+        t,
     ]);
 
     const handleSelectToggle = useCallback(
         (name: string) => {
+            const entry = visibleFiles.find((f) => f.name === name);
+            if (entry && isTrashShortcut(entry)) return;
             toggleSelect(name);
             setAnchorName(name);
             shiftPivotRef.current = null;
         },
-        [toggleSelect],
+        [toggleSelect, visibleFiles],
     );
 
     const handleSelectAllToggle = useCallback(() => {
-        if (visibleFiles.length === 0) return;
-        if (selectedFiles.length === visibleFiles.length) {
+        if (selectableFiles.length === 0) return;
+        const selectableNames = selectableFiles.map((f) => f.name);
+        const allSelected = selectableNames.length > 0 && selectableNames.every((n) => selectedFiles.includes(n));
+        if (allSelected) {
             setSelectedFiles([]);
         } else {
-            setSelectedFiles(visibleFiles.map((f) => f.name));
+            setSelectedFiles(selectableNames);
         }
         shiftPivotRef.current = null;
-    }, [visibleFiles, selectedFiles, setSelectedFiles]);
+    }, [selectableFiles, selectedFiles, setSelectedFiles]);
 
     const handleModifierClick = useCallback(
         (file: FileObject, event: React.MouseEvent) => {
+            if (isTrashShortcut(file)) return;
             const isCtrlLike = event.ctrlKey || event.metaKey;
             const isShift = event.shiftKey;
             const clickedIdx = visibleFiles.findIndex((f) => f.name === file.name);
@@ -339,7 +417,10 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 const effectivePivotIdx = pivotIdx !== -1 ? pivotIdx : clickedIdx;
                 const [s, e] =
                     effectivePivotIdx <= clickedIdx ? [effectivePivotIdx, clickedIdx] : [clickedIdx, effectivePivotIdx];
-                const range = visibleFiles.slice(s, e + 1).map((f) => f.name);
+                const range = visibleFiles
+                    .slice(s, e + 1)
+                    .filter((f) => !isTrashShortcut(f))
+                    .map((f) => f.name);
                 if (isCtrlLike) {
                     setSelectedFiles(Array.from(new Set([...selectedFiles, ...range])));
                 } else {
@@ -355,8 +436,35 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
         [visibleFiles, anchorName, selectedFiles, setSelectedFiles, toggleSelect],
     );
 
+    const performArchiveExtract = useCallback(
+        async (payload: { root: string; file: string; entries: string[] }, destinationRelative: string) => {
+            const toastId = toast.loading(t('files.messages.archive_members_extracting'));
+            try {
+                await filesApi.extractArchiveSelection(
+                    uuidShort,
+                    payload.root,
+                    payload.file,
+                    destinationRelative,
+                    payload.entries,
+                );
+                toast.success(t('files.messages.archive_members_extracted'), { id: toastId });
+                closeArchiveBrowse();
+                refresh();
+            } catch (error) {
+                const err = error as { response?: { data?: { error?: string } } };
+                const msg = err.response?.data?.error || t('files.messages.archive_members_extract_failed');
+                toast.error(msg, { id: toastId });
+            }
+        },
+        [closeArchiveBrowse, refresh, t, uuidShort],
+    );
+
     const handleRowDragStart = useCallback(
         (file: FileObject, event: React.DragEvent) => {
+            if (isTrashShortcut(file)) {
+                event.preventDefault();
+                return;
+            }
             if (!canUpdate) {
                 event.preventDefault();
                 return;
@@ -420,6 +528,26 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
     const handleDropOnFolder = useCallback(
         (destinationFolder: FileObject, event: React.DragEvent) => {
             try {
+                const archiveRaw = event.dataTransfer.getData(ARCHIVE_EXTRACT_DRAG_MIME);
+                if (archiveRaw) {
+                    if (!canArchive) return;
+                    const payload = JSON.parse(archiveRaw) as { root?: string; file?: string; entries?: string[] };
+                    if (
+                        typeof payload.root !== 'string' ||
+                        typeof payload.file !== 'string' ||
+                        !Array.isArray(payload.entries) ||
+                        payload.entries.length === 0
+                    ) {
+                        return;
+                    }
+                    const destAbs = joinPath(currentDirectory || '/', destinationFolder.name);
+                    const destRel = toDestinationRelative(destAbs);
+                    void performArchiveExtract(
+                        { root: payload.root, file: payload.file, entries: payload.entries as string[] },
+                        destRel,
+                    );
+                    return;
+                }
                 const raw = event.dataTransfer.getData(DRAG_MIME);
                 if (!raw) return;
                 const payload = JSON.parse(raw) as { sourceRoot?: string; files?: string[] };
@@ -434,12 +562,31 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 setDraggingFileNames([]);
             }
         },
-        [currentDirectory, performMoveFiles],
+        [canArchive, currentDirectory, performArchiveExtract, performMoveFiles],
     );
 
     const handleDropOnPath = useCallback(
         (destinationPath: string, event: React.DragEvent) => {
             try {
+                const archiveRaw = event.dataTransfer.getData(ARCHIVE_EXTRACT_DRAG_MIME);
+                if (archiveRaw) {
+                    if (!canArchive) return;
+                    const payload = JSON.parse(archiveRaw) as { root?: string; file?: string; entries?: string[] };
+                    if (
+                        typeof payload.root !== 'string' ||
+                        typeof payload.file !== 'string' ||
+                        !Array.isArray(payload.entries) ||
+                        payload.entries.length === 0
+                    ) {
+                        return;
+                    }
+                    const destRel = toDestinationRelative(destinationPath);
+                    void performArchiveExtract(
+                        { root: payload.root, file: payload.file, entries: payload.entries as string[] },
+                        destRel,
+                    );
+                    return;
+                }
                 const raw = event.dataTransfer.getData(DRAG_MIME);
                 if (!raw) return;
                 const payload = JSON.parse(raw) as { sourceRoot?: string; files?: string[] };
@@ -452,10 +599,37 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 setDraggingFileNames([]);
             }
         },
-        [currentDirectory, performMoveFiles],
+        [canArchive, currentDirectory, performArchiveExtract, performMoveFiles],
     );
 
+    const handleEmptyTrash = async () => {
+        setEmptyTrashBusy(true);
+        try {
+            await filesApi.emptyTrash(uuidShort);
+            toast.success(t('files.trash.messages.emptied'));
+            setEmptyTrashOpen(false);
+            await refreshTrashStats();
+            refresh();
+        } catch {
+            toast.error(t('files.trash.messages.empty_error'));
+        } finally {
+            setEmptyTrashBusy(false);
+        }
+    };
+
     const handleAction = (action: string, file: FileObject) => {
+        if (isTrashShortcut(file)) {
+            switch (action) {
+                case 'trash-open':
+                    router.push(`/server/${uuidShort}/files/trash`);
+                    return;
+                case 'trash-empty':
+                    setEmptyTrashOpen(true);
+                    return;
+            }
+            return;
+        }
+
         const usesSelection =
             selectedFiles.length > 1 &&
             selectedFiles.includes(file.name) &&
@@ -498,6 +672,9 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 break;
             case 'decompress':
                 handleDecompress(file.name);
+                break;
+            case 'browse-archive':
+                setArchiveBrowseOpen(true);
                 break;
             case 'copy':
                 setMoveCopyAction('copy');
@@ -562,9 +739,13 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
             size < 1024 * 1024 * 5 && !isBinaryLikeFileName(name) && !isImage(name);
 
         const openFile = (file: FileObject) => {
+            if (isTrashShortcut(file)) {
+                router.push(`/server/${uuidShort}/files/trash`);
+                return;
+            }
             if (!file.isFile) {
                 const nextDir = resolveDirectoryTarget(currentDirectory || '/', file.name);
-                navigate(nextDir);
+                navigateAndCloseArchive(nextDir);
             } else if (isEditableFile(file.size, file.name) && canUpdate) {
                 const editPath = `/server/${uuidShort}/files/edit?file=${encodeURIComponent(
                     file.name,
@@ -601,7 +782,12 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 const effectivePivotIdx = pivotIdx !== -1 ? pivotIdx : nextIdx;
                 const [start, end] =
                     effectivePivotIdx <= nextIdx ? [effectivePivotIdx, nextIdx] : [nextIdx, effectivePivotIdx];
-                setSelectedFiles(visibleFiles.slice(start, end + 1).map((f) => f.name));
+                setSelectedFiles(
+                    visibleFiles
+                        .slice(start, end + 1)
+                        .filter((f) => !isTrashShortcut(f))
+                        .map((f) => f.name),
+                );
                 setAnchorName(nextName);
             } else {
                 shiftPivotRef.current = null;
@@ -629,12 +815,14 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
             if (isEditableTarget(e.target)) return;
 
             if (modifier && e.key.toLowerCase() === 'a') {
-                if (visibleFiles.length === 0) return;
+                if (selectableFiles.length === 0) return;
                 e.preventDefault();
-                if (selectedFiles.length === visibleFiles.length) {
+                const selectableNames = selectableFiles.map((f) => f.name);
+                const allSelected = selectableNames.every((n) => selectedFiles.includes(n));
+                if (allSelected) {
                     setSelectedFiles([]);
                 } else {
-                    setSelectedFiles(visibleFiles.map((f) => f.name));
+                    setSelectedFiles(selectableNames);
                 }
                 shiftPivotRef.current = null;
                 return;
@@ -660,6 +848,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 if (!canUpdate || selectedFiles.length !== 1) return;
                 e.preventDefault();
                 const file = visibleFiles.find((f) => f.name === selectedFiles[0]);
+                if (file && isTrashShortcut(file)) return;
                 if (file) {
                     setActionFile(file);
                     setRenameOpen(true);
@@ -687,7 +876,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 if (current === '/' || current === '') return;
                 e.preventDefault();
                 const parent = current.replace(/\/+$/, '').split('/').slice(0, -1).join('/') || '/';
-                navigate(parent);
+                navigateAndCloseArchive(parent);
                 return;
             }
 
@@ -721,6 +910,8 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
 
             if (e.key === ' ' && !modifier && !e.shiftKey && !e.altKey) {
                 if (!anchorName) return;
+                const anchorFile = visibleFiles.find((f) => f.name === anchorName);
+                if (anchorFile && isTrashShortcut(anchorFile)) return;
                 e.preventDefault();
                 toggleSelect(anchorName);
                 shiftPivotRef.current = null;
@@ -737,13 +928,14 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [
         visibleFiles,
+        selectableFiles,
         selectedFiles,
         canDelete,
         canUpdate,
         setSelectedFiles,
         anchorName,
         currentDirectory,
-        navigate,
+        navigateAndCloseArchive,
         refresh,
         toggleSelect,
         uuidShort,
@@ -991,8 +1183,11 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
     };
 
     useEffect(() => {
-        const isInternal = (e: DragEvent) =>
-            e.dataTransfer?.types?.includes('application/x-featherpanel-files') ?? false;
+        const isInternal = (e: DragEvent) => {
+            const types = e.dataTransfer?.types;
+            if (!types) return false;
+            return types.includes(DRAG_MIME) || types.includes(ARCHIVE_EXTRACT_DRAG_MIME);
+        };
 
         const handleDragOver = (e: DragEvent) => {
             if (isInternal(e)) return;
@@ -1046,7 +1241,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                         onNavigate={navigate}
                         searchQuery={searchQuery}
                         onSearchChange={setSearchQuery}
-                        onDropFilesToPath={canUpdate ? handleDropOnPath : undefined}
+                        onDropFilesToPath={canUpdate || canArchive ? handleDropOnPath : undefined}
                         onToggleFilters={() => setSearchFiltersOpen(true)}
                         activeFiltersCount={activeAdvancedFiltersCount}
                     />
@@ -1353,6 +1548,29 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
 
                         <WidgetRenderer widgets={getWidgets('server-files', 'before-files-list')} />
 
+                        <ArchiveBrowsePanel
+                            open={archiveBrowseOpen}
+                            onOpenChange={handleArchiveBrowseOpenChange}
+                            uuid={uuidShort}
+                            serverDirectory={currentDirectory || '/'}
+                            archiveFileName={actionFile?.name ?? ''}
+                            canExtract={canArchive}
+                            onExtractEntries={(entries, destinationPath) => {
+                                if (!actionFile) return;
+                                void performArchiveExtract(
+                                    {
+                                        root: currentDirectory || '/',
+                                        file: actionFile.name,
+                                        entries,
+                                    },
+                                    toDestinationRelative(destinationPath),
+                                );
+                            }}
+                            onExtractComplete={() => {
+                                refresh();
+                            }}
+                        />
+
                         <FileList
                             files={visibleFiles}
                             loading={loading || searchLoading}
@@ -1361,15 +1579,22 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                             onSelectAll={handleSelectAllToggle}
                             onModifierClick={handleModifierClick}
                             anchorName={anchorName}
-                            onNavigate={(name) => navigate(resolveDirectoryTarget(currentDirectory || '/', name))}
+                            onNavigate={(name) => {
+                                if (name === FEATHER_TRASH_DIR) {
+                                    router.push(`/server/${uuidShort}/files/trash`);
+                                    return;
+                                }
+                                navigateAndCloseArchive(resolveDirectoryTarget(currentDirectory || '/', name));
+                            }}
                             onAction={handleAction}
                             onRowDragStart={canUpdate ? handleRowDragStart : undefined}
                             onRowDragEnd={canUpdate ? handleRowDragEnd : undefined}
-                            onDropFiles={canUpdate ? handleDropOnFolder : undefined}
+                            onDropFiles={canUpdate || canArchive ? handleDropOnFolder : undefined}
                             draggingFileNames={draggingFileNames}
                             canEdit={canUpdate}
                             canDelete={canDelete}
                             canDownload={canRead}
+                            acceptArchiveExtract={canArchive}
                             serverUuid={uuidShort}
                             currentDirectory={currentDirectory || '/'}
                         />
@@ -1429,8 +1654,16 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 files={actionFile ? [actionFile.name] : selectedFiles}
                 onSuccess={() => {
                     refresh();
+                    void refreshTrashStats();
                     setSelectedFiles([]);
                 }}
+            />
+            <EmptyTrashDialog
+                open={emptyTrashOpen}
+                onOpenChange={setEmptyTrashOpen}
+                onConfirm={handleEmptyTrash}
+                loading={emptyTrashBusy}
+                disabled={(trashStats?.itemCount ?? 0) === 0}
             />
             <PullFileDialog
                 open={pullFileOpen}

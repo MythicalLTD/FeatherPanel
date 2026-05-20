@@ -179,11 +179,11 @@ export default function VdsSettingsPage() {
 
     const handleReinstall = async () => {
         if (!selectedTemplate) {
-            toast.error('Please select a template first.');
+            toast.error(t('vds.settings.reinstall.select_template_first'));
             return;
         }
         setReinstalling(true);
-        const toastId = toast.loading('Initiating reinstall…');
+        const toastId = toast.loading(t('vds.settings.reinstall.initiating'));
         try {
             const payload: Record<string, unknown> = { template_id: selectedTemplate };
             if (isQemu) {
@@ -193,19 +193,19 @@ export default function VdsSettingsPage() {
             }
             const { data } = await axios.post(`/api/user/vm-instances/${id}/reinstall`, payload);
             if (!data.success) {
-                toast.error(data.message || 'Failed to start reinstall.', { id: toastId });
+                toast.error(data.message || t('vds.settings.reinstall.start_failed'), { id: toastId });
                 setReinstalling(false);
                 return;
             }
 
             const reinstallId: string | undefined = data.data?.reinstall_id;
             if (!reinstallId) {
-                toast.error('Reinstall did not return a reinstall_id', { id: toastId });
+                toast.error(t('vds.settings.reinstall.missing_id'), { id: toastId });
                 setReinstalling(false);
                 return;
             }
 
-            toast.loading(data.message || 'Reinstall initiated. This may take several minutes.', { id: toastId });
+            toast.loading(data.message || t('vds.settings.reinstall.started'), { id: toastId });
             setReinstallOpen(false);
 
             // Poll reinstall status until active or failed (mirrors admin VM flow).
@@ -213,7 +213,7 @@ export default function VdsSettingsPage() {
             let polls = 0;
             const poll = async (): Promise<void> => {
                 if (polls >= MAX_POLLS) {
-                    toast.error('Reinstall timed out waiting for completion', { id: toastId });
+                    toast.error(t('vds.settings.reinstall.timeout'), { id: toastId });
                     setReinstalling(false);
                     return;
                 }
@@ -223,14 +223,14 @@ export default function VdsSettingsPage() {
                     const s = statusRes.data?.data;
 
                     if (s?.status === 'completed' || s?.status === 'active') {
-                        toast.success('VDS reinstalled successfully.', { id: toastId });
+                        toast.success(t('vds.settings.reinstall.success'), { id: toastId });
                         await refreshInstance();
                         setReinstalling(false);
                         return;
                     }
 
                     if (s?.status === 'failed') {
-                        toast.error(s?.error ?? 'Reinstall failed', { id: toastId });
+                        toast.error(s?.error ?? t('vds.settings.reinstall.failed'), { id: toastId });
                         setReinstalling(false);
                         return;
                     }
@@ -263,12 +263,12 @@ export default function VdsSettingsPage() {
                 tpm_enabled: tpmEnabled,
                 serial0_enabled: serial0Enabled,
             });
-            toast.success(t('vds.settings.hardware.apply_success') ?? 'Hardware updated.');
+            toast.success(t('vds.settings.hardware.apply_success'));
             await refreshInstance();
             await fetchQemuHardware();
         } catch (err) {
             const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
-            toast.error(msg || (t('vds.settings.hardware.apply_failed') ?? 'Failed to update hardware.'));
+            toast.error(msg || t('vds.settings.hardware.apply_failed'));
         } finally {
             setQemuHardwareSaving(false);
         }
@@ -281,16 +281,16 @@ export default function VdsSettingsPage() {
         try {
             const { data } = await axios.post(`/api/user/vm-instances/${id}/iso-unmount`);
             if (!data?.success) {
-                toast.error(data?.message ?? 'Failed to unmount ISO');
+                toast.error(data?.message ?? t('vds.settings.iso.toast_unmount_failed'));
                 return;
             }
 
-            toast.success(t('vds.settings.iso.toast_unmounted') ?? 'ISO unmounted successfully');
+            toast.success(t('vds.settings.iso.toast_unmounted'));
             await fetchIsoCurrent();
             await refreshInstance();
         } catch (err) {
             const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
-            toast.error(msg || (t('vds.settings.iso.toast_unmount_failed') ?? 'Failed to unmount ISO'));
+            toast.error(msg || t('vds.settings.iso.toast_unmount_failed'));
         } finally {
             setIsoUninstalling(false);
         }
@@ -299,11 +299,11 @@ export default function VdsSettingsPage() {
     const handleFetchAndMountIsoFromUrl = async () => {
         const url = isoUrl.trim();
         if (!url) {
-            toast.error(t('vds.settings.iso.errors.url_required') ?? 'Enter an ISO URL');
+            toast.error(t('vds.settings.iso.errors.url_required'));
             return;
         }
         if (!isoStorage) {
-            toast.error(t('vds.settings.iso.errors.storage_required') ?? 'Select an ISO storage');
+            toast.error(t('vds.settings.iso.errors.storage_required'));
             return;
         }
 
@@ -312,17 +312,17 @@ export default function VdsSettingsPage() {
             const payload = { storage: isoStorage, url };
             const { data } = await axios.post(`/api/user/vm-instances/${id}/iso-fetch-and-mount`, payload);
             if (!data?.success) {
-                toast.error(data?.message ?? 'Failed to fetch & mount ISO');
+                toast.error(data?.message ?? t('vds.settings.iso.toast_fetch_failed'));
                 return;
             }
 
             const taskId = data?.data?.task_id as string | undefined;
             if (!taskId) {
-                toast.error(data?.message ?? 'Failed to queue ISO task');
+                toast.error(data?.message ?? t('vds.settings.iso.toast_queue_failed'));
                 return;
             }
 
-            toast.info(data?.message ?? 'ISO fetch queued');
+            toast.info(data?.message ?? t('vds.settings.iso.toast_fetch_queued'));
 
             // Poll until the Rust runner completes the task.
             const MAX_POLLS = 180; // ~9 minutes @ 3s
@@ -330,7 +330,7 @@ export default function VdsSettingsPage() {
 
             const poll = async () => {
                 if (polls >= MAX_POLLS) {
-                    toast.error('ISO fetch timed out');
+                    toast.error(t('vds.settings.iso.fetch_timeout'));
                     setIsoFetchingFromUrl(false);
                     return;
                 }
@@ -340,9 +340,8 @@ export default function VdsSettingsPage() {
                     const s = statusRes.data?.data;
 
                     if (s?.status === 'completed') {
-                        const mountedMsg = t('vds.settings.iso.toast_mounted') ?? 'ISO mounted successfully';
-                        const rebootHint =
-                            t('vds.settings.iso.toast_reboot_hint') ?? 'Reboot the VM to boot from the ISO.';
+                        const mountedMsg = t('vds.settings.iso.toast_mounted');
+                        const rebootHint = t('vds.settings.iso.toast_reboot_hint');
                         toast.success(`${mountedMsg} ${rebootHint}`);
 
                         setIsoUrl('');
@@ -353,7 +352,7 @@ export default function VdsSettingsPage() {
                     }
 
                     if (s?.status === 'failed') {
-                        toast.error(s?.error ?? t('vds.settings.iso.toast_fetch_failed') ?? 'Failed to fetch ISO');
+                        toast.error(s?.error ?? t('vds.settings.iso.toast_fetch_failed'));
                         setIsoFetchingFromUrl(false);
                         return;
                     }
@@ -369,7 +368,7 @@ export default function VdsSettingsPage() {
             void poll();
         } catch (err) {
             const msg = axios.isAxiosError(err) ? (err.response?.data?.message ?? err.message) : String(err);
-            toast.error(msg || (t('vds.settings.iso.toast_fetch_failed') ?? 'Failed to fetch ISO'));
+            toast.error(msg || t('vds.settings.iso.toast_fetch_failed'));
             setIsoFetchingFromUrl(false);
         }
     };
@@ -379,7 +378,7 @@ export default function VdsSettingsPage() {
             <div className='flex min-h-[60vh] items-center justify-center'>
                 <div className='flex flex-col items-center gap-4'>
                     <Loader2 className='text-primary h-10 w-10 animate-spin' />
-                    <p className='text-muted-foreground animate-pulse font-medium'>Loading VDS settings…</p>
+                    <p className='text-muted-foreground animate-pulse font-medium'>{t('vds.settings.loading')}</p>
                 </div>
             </div>
         );
@@ -392,9 +391,9 @@ export default function VdsSettingsPage() {
                     <div className='bg-destructive/10 mx-auto flex h-20 w-20 items-center justify-center rounded-3xl'>
                         <AlertTriangle className='text-destructive h-10 w-10' />
                     </div>
-                    <h2 className='text-2xl font-black'>VDS Not Found</h2>
+                    <h2 className='text-2xl font-black'>{t('vds.console.not_found_title')}</h2>
                     <Button variant='outline' onClick={() => router.push('/dashboard')}>
-                        Go Back
+                        {t('common.goBack')}
                     </Button>
                 </div>
             </div>
@@ -411,11 +410,13 @@ export default function VdsSettingsPage() {
                     <Lock className='h-10 w-10 text-red-400' />
                 </div>
                 <div>
-                    <h2 className='font-header text-2xl font-black tracking-tighter uppercase italic'>Access Denied</h2>
-                    <p className='text-muted-foreground mt-2'>You do not have permission to access VDS settings.</p>
+                    <h2 className='font-header text-2xl font-black tracking-tighter uppercase italic'>
+                        {t('common.accessDenied')}
+                    </h2>
+                    <p className='text-muted-foreground mt-2'>{t('vds.settings.access_denied')}</p>
                 </div>
                 <Button variant='outline' onClick={() => router.push(`/vds/${id}`)}>
-                    Go Back
+                    {t('common.goBack')}
                 </Button>
             </div>
         );
@@ -426,19 +427,19 @@ export default function VdsSettingsPage() {
             <WidgetRenderer widgets={getWidgets('vds-settings', 'top-of-page')} />
 
             <PageHeader
-                title='VDS Settings'
-                description='Manage your VDS instance settings and reinstall options.'
+                title={t('vds.settings.title')}
+                description={t('vds.settings.description')}
                 actions={
                     <div className='flex w-full sm:w-auto sm:justify-end'>
                         <Button
-                            variant='glass'
+                            variant='outline'
                             size='sm'
                             onClick={fetchTemplates}
                             disabled={templatesLoading}
-                            aria-label='Refresh'
+                            aria-label={t('common.refresh')}
                         >
                             <RefreshCw className={cn('h-4 w-4 sm:mr-1.5', templatesLoading && 'animate-spin')} />
-                            <span className='hidden sm:inline'>Refresh</span>
+                            <span className='hidden sm:inline'>{t('common.refresh')}</span>
                         </Button>
                     </div>
                 }
@@ -449,15 +450,21 @@ export default function VdsSettingsPage() {
                 <CardHeader>
                     <CardTitle className='flex items-center gap-2 text-sm font-black tracking-widest uppercase'>
                         <Server className='text-primary h-4 w-4' />
-                        Instance Info
+                        {t('vds.settings.instance_info.title')}
                     </CardTitle>
                 </CardHeader>
                 <CardContent className='grid grid-cols-2 gap-4 md:grid-cols-4'>
                     {[
-                        { label: 'Hostname', value: instance.hostname ?? '—' },
-                        { label: 'VMID', value: String(instance.vmid) },
-                        { label: 'Type', value: instance.vm_type?.toUpperCase() ?? 'QEMU' },
-                        { label: 'Node', value: instance.node_name ?? instance.pve_node ?? '—' },
+                        { label: t('vds.settings.instance_info.hostname'), value: instance.hostname ?? '—' },
+                        { label: t('vds.settings.instance_info.vmid'), value: String(instance.vmid) },
+                        {
+                            label: t('vds.settings.instance_info.type'),
+                            value: instance.vm_type?.toUpperCase() ?? 'QEMU',
+                        },
+                        {
+                            label: t('vds.settings.instance_info.node'),
+                            value: instance.node_name ?? instance.pve_node ?? '—',
+                        },
                     ].map(({ label, value }) => (
                         <div key={label} className='flex flex-col gap-1'>
                             <span className='text-muted-foreground/50 text-[10px] font-black tracking-widest uppercase'>
@@ -475,24 +482,23 @@ export default function VdsSettingsPage() {
                     <CardHeader>
                         <CardTitle className='flex items-center gap-2 text-sm font-black tracking-widest uppercase'>
                             <Server className='text-primary h-4 w-4' />
-                            {t('vds.settings.hardware.title') ?? 'QEMU Hardware (EFI / TPM)'}
+                            {t('vds.settings.hardware.title')}
                         </CardTitle>
                         <CardDescription className='text-muted-foreground'>
-                            {t('vds.settings.hardware.description') ??
-                                'Enable UEFI (EFI disk) and TPM 2.0 state disk for this QEMU VM.'}
+                            {t('vds.settings.hardware.description')}
                         </CardDescription>
                     </CardHeader>
                     <CardContent className='space-y-5'>
                         {qemuHardwareLoading ? (
                             <div className='text-muted-foreground flex items-center gap-2'>
                                 <Loader2 className='h-4 w-4 animate-spin' />
-                                {t('vds.settings.hardware.loading') ?? 'Loading hardware…'}
+                                {t('vds.settings.hardware.loading')}
                             </div>
                         ) : (
                             <div className='space-y-4'>
                                 <div className='space-y-2'>
                                     <div className='text-muted-foreground text-xs font-semibold'>
-                                        {t('vds.settings.hardware.bios_label') ?? 'BIOS / Firmware'}
+                                        {t('vds.settings.hardware.bios_label')}
                                     </div>
                                     <select
                                         value={biosMode}
@@ -507,12 +513,8 @@ export default function VdsSettingsPage() {
                                         }
                                         className='bg-muted/30 border-border/30 h-11 w-full rounded-xl border px-3'
                                     >
-                                        <option value='seabios'>
-                                            {t('vds.settings.hardware.bios_seabios') ?? 'Legacy (SeaBIOS)'}
-                                        </option>
-                                        <option value='ovmf'>
-                                            {t('vds.settings.hardware.bios_ovmf') ?? 'UEFI (OVMF)'}
-                                        </option>
+                                        <option value='seabios'>{t('vds.settings.hardware.bios_seabios')}</option>
+                                        <option value='ovmf'>{t('vds.settings.hardware.bios_ovmf')}</option>
                                     </select>
                                 </div>
 
@@ -527,11 +529,10 @@ export default function VdsSettingsPage() {
                                                 if (next) setBiosMode('ovmf');
                                             }}
                                         />
-                                        {t('vds.settings.hardware.efi_label') ?? 'Enable EFI disk'}
+                                        {t('vds.settings.hardware.efi_label')}
                                     </label>
                                     <p className='text-muted-foreground text-xs'>
-                                        {t('vds.settings.hardware.efi_help') ??
-                                            'Adds efidisk0 (UEFI firmware required for TPM).'}
+                                        {t('vds.settings.hardware.efi_help')}
                                     </p>
                                 </div>
 
@@ -549,11 +550,10 @@ export default function VdsSettingsPage() {
                                                 }
                                             }}
                                         />
-                                        {t('vds.settings.hardware.tpm_label') ?? 'Enable TPM 2.0'}
+                                        {t('vds.settings.hardware.tpm_label')}
                                     </label>
                                     <p className='text-muted-foreground text-xs'>
-                                        {t('vds.settings.hardware.tpm_help') ??
-                                            'Adds tpmstate0 (v2.0). Usually requires EFI/OVMF.'}
+                                        {t('vds.settings.hardware.tpm_help')}
                                     </p>
                                 </div>
 
@@ -567,23 +567,21 @@ export default function VdsSettingsPage() {
                                                 setSerial0Enabled(!disable);
                                             }}
                                         />
-                                        {t('vds.settings.hardware.disable_serial_label') ??
-                                            'Disable serial port (Windows)'}
+                                        {t('vds.settings.hardware.disable_serial_label')}
                                     </label>
                                     <p className='text-muted-foreground text-xs'>
-                                        {t('vds.settings.hardware.disable_serial_help') ??
-                                            'Removes `serial0` so the console renders graphical output instead of serial.'}
+                                        {t('vds.settings.hardware.disable_serial_help')}
                                     </p>
                                 </div>
 
                                 <div className='flex justify-end pt-2'>
                                     <Button
-                                        variant='glass'
+                                        variant='default'
                                         disabled={qemuHardwareSaving || qemuHardwareLoading}
                                         onClick={handleApplyQemuHardware}
                                     >
                                         {qemuHardwareSaving && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
-                                        {t('vds.settings.hardware.apply_button') ?? 'Apply'}
+                                        {t('vds.settings.hardware.apply_button')}
                                     </Button>
                                 </div>
                             </div>
@@ -598,21 +596,21 @@ export default function VdsSettingsPage() {
                     <CardHeader>
                         <CardTitle className='flex items-center gap-2 text-sm font-black tracking-widest uppercase'>
                             <Server className='text-primary h-4 w-4' />
-                            {t('vds.settings.iso.title') ?? 'ISO Mount'}
+                            {t('vds.settings.iso.title')}
                         </CardTitle>
                         <CardDescription className='text-muted-foreground'>
-                            {t('vds.settings.iso.description') ?? 'Use ISO URL to boot this VM from it.'}
+                            {t('vds.settings.iso.description')}
                         </CardDescription>
                     </CardHeader>
                     <CardContent className='space-y-5'>
                         <div className='space-y-2'>
                             <div className='text-muted-foreground text-xs font-semibold'>
-                                {t('vds.settings.iso.current_label') ?? 'Current ISO'}
+                                {t('vds.settings.iso.current_label')}
                             </div>
                             {isoCurrentLoading ? (
                                 <div className='text-muted-foreground flex items-center gap-2'>
                                     <Loader2 className='h-4 w-4 animate-spin' />
-                                    {t('vds.settings.iso.loading') ?? 'Loading…'}
+                                    {t('vds.settings.iso.loading')}
                                 </div>
                             ) : mountedIso ? (
                                 <div className='border-border/50 bg-muted/20 flex flex-col gap-1 rounded-xl border px-3 py-2'>
@@ -620,40 +618,38 @@ export default function VdsSettingsPage() {
                                         {mountedIso.filename ?? mountedIso.volid}
                                     </div>
                                     <div className='text-muted-foreground text-xs'>
-                                        {t('vds.settings.iso.mounted_as') ?? 'Mounted as'}{' '}
+                                        {t('vds.settings.iso.mounted_as')}{' '}
                                         <span className='font-mono'>{mountedIso.slot ?? 'ide2'}</span>
                                     </div>
                                 </div>
                             ) : (
-                                <p className='text-muted-foreground text-sm italic'>
-                                    {t('vds.settings.iso.none') ?? 'No ISO mounted.'}
-                                </p>
+                                <p className='text-muted-foreground text-sm italic'>{t('vds.settings.iso.none')}</p>
                             )}
 
                             <div className='flex justify-end pt-3'>
                                 <Button
-                                    variant='glass'
+                                    variant='default'
                                     disabled={!mountedIso || isoUninstalling}
                                     onClick={handleUnmountIso}
                                 >
                                     {isoUninstalling && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
-                                    {t('vds.settings.iso.unmount_button') ?? 'Unmount ISO'}
+                                    {t('vds.settings.iso.unmount_button')}
                                 </Button>
                             </div>
                         </div>
 
                         <div className='space-y-2'>
                             <div className='text-muted-foreground text-xs font-semibold'>
-                                {t('vds.settings.iso.storage_label') ?? 'ISO Storage'}
+                                {t('vds.settings.iso.storage_label')}
                             </div>
                             {isoStoragesLoading ? (
                                 <div className='text-muted-foreground flex items-center gap-2'>
                                     <Loader2 className='h-4 w-4 animate-spin' />
-                                    {t('vds.settings.iso.loading') ?? 'Loading…'}
+                                    {t('vds.settings.iso.loading')}
                                 </div>
                             ) : isoStorages.length === 0 ? (
                                 <p className='text-muted-foreground text-sm italic'>
-                                    {t('vds.settings.iso.no_storages') ?? 'No ISO storage available'}
+                                    {t('vds.settings.iso.no_storages')}
                                 </p>
                             ) : (
                                 <div className='bg-muted/30 border-border/30 flex h-11 w-full items-center rounded-xl border px-4 font-mono text-sm'>
@@ -665,12 +661,12 @@ export default function VdsSettingsPage() {
                         <div className='space-y-3'>
                             <div className='space-y-2'>
                                 <div className='text-muted-foreground text-xs font-semibold'>
-                                    {t('vds.settings.iso.url_label') ?? 'ISO URL'}
+                                    {t('vds.settings.iso.url_label')}
                                 </div>
                                 <Input
                                     value={isoUrl}
                                     onChange={(e) => setIsoUrl(e.target.value)}
-                                    placeholder={t('vds.settings.iso.url_placeholder') ?? 'https://example.com/my.iso'}
+                                    placeholder={t('vds.settings.iso.url_placeholder')}
                                     disabled={isoUninstalling || isoFetchingFromUrl}
                                     className='bg-muted/30'
                                 />
@@ -678,12 +674,12 @@ export default function VdsSettingsPage() {
 
                             <div className='flex justify-end pt-2'>
                                 <Button
-                                    variant='glass'
+                                    variant='default'
                                     disabled={isoUninstalling || isoFetchingFromUrl || !isoStorage || !isoUrl.trim()}
                                     onClick={handleFetchAndMountIsoFromUrl}
                                 >
                                     {isoFetchingFromUrl && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
-                                    {t('vds.settings.iso.fetch_button') ?? 'Fetch & Mount'}
+                                    {t('vds.settings.iso.fetch_button')}
                                 </Button>
                             </div>
                         </div>
@@ -697,10 +693,10 @@ export default function VdsSettingsPage() {
                     <CardHeader>
                         <CardTitle className='flex items-center gap-2 text-sm font-black tracking-widest uppercase'>
                             <RotateCcw className='text-primary h-4 w-4' />
-                            {t('vds.settings.reinstall.title') ?? 'Reinstall Operating System'}
+                            {t('vds.settings.reinstall.title')}
                         </CardTitle>
                         <CardDescription className='text-muted-foreground'>
-                            {t('vds.settings.reinstall.description') ?? 'Permanently wipe and reinstall your VDS.'}
+                            {t('vds.settings.reinstall.description')}
                         </CardDescription>
                     </CardHeader>
                     <CardContent className='space-y-4'>
@@ -736,7 +732,7 @@ export default function VdsSettingsPage() {
                         )}
 
                         <Button
-                            variant='destructive'
+                            variant='default'
                             size='default'
                             disabled={!selectedTemplate || templatesLoading}
                             onClick={() => setReinstallOpen(true)}
@@ -843,7 +839,7 @@ export default function VdsSettingsPage() {
                         {t('vds.settings.reinstall.cancel_button')}
                     </Button>
                     <Button
-                        variant='destructive'
+                        variant='default'
                         size='default'
                         onClick={handleReinstall}
                         disabled={reinstalling}

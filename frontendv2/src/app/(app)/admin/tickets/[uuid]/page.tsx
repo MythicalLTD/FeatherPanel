@@ -373,7 +373,7 @@ export default function TicketViewPage() {
     if (!ticket) return null;
 
     return (
-        <div className='mx-auto flex h-[calc(100vh-6rem)] max-w-[1600px] flex-col pt-2 pb-6'>
+        <div className='mx-auto flex h-[calc(100vh-6rem)] max-w-[1800px] flex-col px-2 pt-2 pb-6 sm:px-4'>
             <WidgetRenderer widgets={getWidgets('admin-tickets-view', 'top-of-page')} />
 
             <div className='mb-4 flex shrink-0 items-center justify-between px-1'>
@@ -396,7 +396,7 @@ export default function TicketViewPage() {
                 </div>
 
                 <div className='flex items-center gap-2'>
-                    <div className='lg:hidden'>
+                    <div className='xl:hidden'>
                         <Button
                             variant='ghost'
                             size='icon'
@@ -466,14 +466,17 @@ export default function TicketViewPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-tickets-view', 'after-header')} />
 
-            <div className='grid min-h-0 flex-1 grid-cols-1 gap-6 lg:grid-cols-12'>
-                <div className='bg-card border-border/50 flex h-full flex-col overflow-hidden rounded-2xl border shadow-sm lg:col-span-8'>
-                    <div className='custom-scrollbar flex-1 space-y-6 overflow-y-auto p-4 sm:p-6' ref={scrollRef}>
+            <div className='grid min-h-0 flex-1 grid-cols-1 gap-4 xl:grid-cols-12 xl:gap-6'>
+                <div className='bg-card border-border/50 flex h-full flex-col overflow-hidden rounded-2xl border shadow-sm xl:col-span-9 2xl:col-span-10'>
+                    <div
+                        className='custom-scrollbar flex-1 space-y-7 overflow-y-auto p-4 sm:p-6 lg:p-8'
+                        ref={scrollRef}
+                    >
                         <div className='group flex gap-4'>
                             <Avatar className='ring-border/50 mt-1 h-10 w-10 ring-2'>
                                 <AvatarImage src={ticket.user.avatar} />
                             </Avatar>
-                            <div className='max-w-[85%] flex-1 space-y-1'>
+                            <div className='max-w-[92%] flex-1 space-y-1 lg:max-w-[88%]'>
                                 <div className='flex items-center gap-2'>
                                     <span className='text-sm font-bold'>
                                         {t('admin.tickets.view.original_request')}
@@ -513,7 +516,7 @@ export default function TicketViewPage() {
 
                                     <div
                                         className={cn(
-                                            'flex max-w-[85%] flex-col lg:max-w-[75%]',
+                                            'flex max-w-[92%] flex-col lg:max-w-[84%] 2xl:max-w-[78%]',
                                             isStaff ? 'items-end' : 'items-start',
                                         )}
                                     >
@@ -764,7 +767,7 @@ export default function TicketViewPage() {
                     <WidgetRenderer widgets={getWidgets('admin-tickets-view', 'after-messages')} />
                 </div>
 
-                <div className='hidden h-full overflow-hidden lg:col-span-4 lg:block'>
+                <div className='hidden h-full overflow-hidden xl:col-span-3 xl:block 2xl:col-span-2'>
                     <TicketSidebar
                         ticket={ticket}
                         userDetails={userDetails}
@@ -868,16 +871,16 @@ export default function TicketViewPage() {
             >
                 <div>
                     <SheetHeader>
-                        <SheetTitle>{mailPreview?.subject || 'Email Preview'}</SheetTitle>
+                        <SheetTitle>{mailPreview?.subject || t('admin.tickets.view.mail_preview_title')}</SheetTitle>
                         <SheetDescription>
                             {mailPreview?.created_at && new Date(mailPreview.created_at).toLocaleString()}
                         </SheetDescription>
                     </SheetHeader>
                     <div className='mt-6 h-[calc(100vh-140px)] overflow-hidden rounded-xl border p-0'>
                         <iframe
-                            srcDoc={mailPreview?.body || 'No content'}
+                            srcDoc={mailPreview?.body || t('common.no_content')}
                             className='h-full w-full bg-white text-black'
-                            title='Email Body'
+                            title={t('admin.tickets.view.email_body')}
                         />
                     </div>
                 </div>

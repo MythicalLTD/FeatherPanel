@@ -98,7 +98,7 @@ export default function VdsBackupsPage() {
         try {
             const { data } = await axios.get<ListBackupsResponse>(`/api/user/vm-instances/${id}/backups`);
             if (!data.success) {
-                toast.error(data.message || 'Failed to fetch backups');
+                toast.error(data.message || t('serverBackups.failedToFetch'));
                 return;
             }
             setBackups(data.data.backups || []);
@@ -111,7 +111,7 @@ export default function VdsBackupsPage() {
         } finally {
             setLoading(false);
         }
-    }, [id]);
+    }, [id, t]);
 
     useEffect(() => {
         if (!instanceLoading && !instance) {
@@ -160,10 +160,10 @@ export default function VdsBackupsPage() {
                 // Storage is enforced server-side from the VDS node default.
             });
             if (!data.success) {
-                toast.error(data.message || 'Failed to start backup');
+                toast.error(data.message || t('serverBackups.startFailed'));
                 return;
             }
-            toast.success('Backup started. This may take a few minutes.');
+            toast.success(t('serverBackups.startSuccess'));
             setConfirmCreateOpen(false);
             fetchBackups();
         } catch (err) {
@@ -185,10 +185,10 @@ export default function VdsBackupsPage() {
                 },
             });
             if (!data.success) {
-                toast.error(data.message || 'Failed to delete backup');
+                toast.error(data.message || t('serverBackups.deleteFailed'));
                 return;
             }
-            toast.success('Backup deleted');
+            toast.success(t('serverBackups.deleteSuccessShort'));
             setConfirmDeleteOpen(false);
             setSelectedForDelete(null);
             fetchBackups();
@@ -209,11 +209,11 @@ export default function VdsBackupsPage() {
                 storage: selectedForRestore.storage,
             });
             if (!data.success) {
-                toast.error(data.message || 'Failed to start restore');
+                toast.error(data.message || t('serverBackups.restoreStartFailed'));
                 return;
             }
             const restoreId = data.data?.restore_id;
-            toast.success('Restore started. This may take several minutes.');
+            toast.success(t('serverBackups.restoreStarted'));
             setConfirmRestoreOpen(false);
             setSelectedForRestore(null);
 
@@ -235,7 +235,7 @@ export default function VdsBackupsPage() {
 
         const poll = async () => {
             if (attempts >= maxAttempts) {
-                toast.error('Restore is taking longer than expected. Please check manually.');
+                toast.error(t('serverBackups.restoreTakingLong'));
                 return;
             }
 
@@ -245,11 +245,11 @@ export default function VdsBackupsPage() {
 
                 const status = data.data?.status;
                 if (status === 'active') {
-                    toast.success('Restore completed successfully!');
+                    toast.success(t('serverBackups.restoreCompleted'));
                     fetchBackups();
                     return;
                 } else if (status === 'failed') {
-                    toast.error(data.data?.error || 'Restore failed');
+                    toast.error(data.data?.error || t('serverBackups.restoreFailed'));
                     return;
                 }
 

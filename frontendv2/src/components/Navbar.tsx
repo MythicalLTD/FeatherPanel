@@ -28,6 +28,7 @@ import { useNavbarHoverReveal } from '@/hooks/useNavbarHoverReveal';
 import { useNavbarSticky } from '@/hooks/useNavbarSticky';
 import { useChromeLayout } from '@/hooks/useChromeLayout';
 import { NavbarClassicChrome, NavbarModernChrome } from '@/components/NavbarChromeVariants';
+import { ServerSwitcher } from '@/components/server/ServerSwitcher';
 
 interface NavbarProps {
     onMenuClick: () => void;
@@ -45,8 +46,8 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
     const isOnAdminPage = pathname?.startsWith('/admin');
     const serverName = isOnServerPage ? serverContext?.server?.name : null;
     const isKnowledgeBaseSection = pathname?.startsWith('/dashboard/knowledgebase');
-    const headerTitle =
-        serverName ?? (isKnowledgeBaseSection ? t('dashboard.knowledgebase.title') : t('dashboard.title'));
+    const headerTitle = isKnowledgeBaseSection ? t('dashboard.knowledgebase.title') : t('dashboard.title');
+    const headerContent = isOnServerPage ? <ServerSwitcher fallbackTitle={serverName ?? undefined} /> : undefined;
 
     const userNavigation = [{ name: t('navbar.profile'), href: '/dashboard/account', icon: CircleUser }];
 
@@ -91,6 +92,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
     const chromeProps = {
         onMenuClick,
         headerTitle,
+        headerContent,
         showAdminAreaButton,
         adminAreaHref,
         user,

@@ -189,7 +189,7 @@ public static function processEvents(PluginEvents $evt): void
   <p class="muted"><strong>Callback parameters:</strong> int allocation id, array old data, array new data.</p>
 
   <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> allocation, updated_by, updated_data</p>
+  <p class="muted"><strong>Data keys:</strong> allocation, deleted_source_conflicts, deleted_target_conflicts, from_ip, ip_alias, matched_count, node_id, to_ip, updated_by, updated_count, updated_data</p>
 
   <h3>Emitted From</h3>
   <ul>
@@ -202,9 +202,9 @@ use App\Plugins\Events\Events\AllocationsEvent;
 
 public static function processEvents(PluginEvents $evt): void
 {
-    $evt->on(AllocationsEvent::onAllocationUpdated(), function ($allocation, $updatedBy, $updatedData) {
+    $evt->on(AllocationsEvent::onAllocationUpdated(), function ($allocation, $deletedSourceConflicts, $deletedTargetConflicts, $fromIp, $ipAlias, $matchedCount, $nodeId, $toIp, $updatedBy, $updatedCount, $updatedData) {
         // Handle featherpanel:admin:allocations:allocation:updated
-        // Data keys: allocation, updated_by, updated_data
+        // Data keys: allocation, deleted_source_conflicts, deleted_target_conflicts, from_ip, ip_alias, matched_count, node_id, to_ip, updated_by, updated_count, updated_data
     });
 }</code></pre>
 </article>

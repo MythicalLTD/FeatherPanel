@@ -46,6 +46,20 @@ class Database
         try {
             $this->pdo = new \PDO($dsn, $username, $password);
             $this->pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+
+            // Force the MySQL session timezone to UTC so that CURRENT_TIMESTAMP / NOW()
+            // and other server-side time functions are deterministic regardless of the
+            // operating system or container default. All datetime columns in the schema
+            // are stored as UTC and converted to the user's preferred timezone at
+            // display time on the frontend.
+            try {
+                $this->pdo->exec("SET time_zone = '+00:00'");
+            } catch (\PDOException $tzException) {
+                // Non-fatal: log and continue. Some constrained MySQL deployments may
+                // not allow SET time_zone; behaviour falls back to the previous (buggy)
+                // semantics in that case rather than refusing to boot.
+                error_log('Failed to set MySQL session timezone to UTC: ' . $tzException->getMessage());
+            }
         } catch (\PDOException $e) {
             throw new \Exception('Connection failed: ' . $e->getMessage());
         }

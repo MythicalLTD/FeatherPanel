@@ -31,6 +31,8 @@ import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { useSettings } from '@/contexts/SettingsContext';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { listSupportedTimezones } from '@/lib/dateUtils';
+import { useUserTimezone } from '@/contexts/PreferencesContext';
 import type { Schedule, ScheduleUpdateRequest } from '@/types/server';
 
 export default function EditSchedulePage() {
@@ -41,6 +43,7 @@ export default function EditSchedulePage() {
     const { hasPermission, loading: permissionsLoading } = useServerPermissions(uuidShort);
 
     const canUpdate = hasPermission('schedule.update');
+    const userTimezone = useUserTimezone();
 
     const [loading, setLoading] = React.useState(true);
     const [saving, setSaving] = React.useState(false);
@@ -53,9 +56,12 @@ export default function EditSchedulePage() {
         cron_day_of_month: '*',
         cron_month: '*',
         cron_day_of_week: '*',
+        timezone: userTimezone || 'UTC',
         only_when_online: 0,
         is_active: 1,
     });
+
+    const timezoneOptions = React.useMemo(() => listSupportedTimezones().map((tz) => ({ id: tz, name: tz })), []);
 
     const { getWidgets, fetchWidgets } = usePluginWidgets('server-schedules-edit');
 
@@ -77,13 +83,14 @@ export default function EditSchedulePage() {
                         cron_day_of_month: scheduleData.cron_day_of_month,
                         cron_month: scheduleData.cron_month,
                         cron_day_of_week: scheduleData.cron_day_of_week,
+                        timezone: scheduleData.timezone || 'UTC',
                         only_when_online: scheduleData.only_when_online,
                         is_active: scheduleData.is_active,
                     });
                 }
             } catch (error) {
                 console.error('Failed to fetch schedule:', error);
-                toast.error('Failed to load schedule');
+                toast.error(t('serverSchedules.loadFailed'));
                 router.push(`/server/${uuidShort}/schedules`);
             } finally {
                 setLoading(false);
@@ -95,7 +102,7 @@ export default function EditSchedulePage() {
         } else if (!permissionsLoading && !canUpdate) {
             router.push(`/server/${uuidShort}/schedules`);
         }
-    }, [uuidShort, id, canUpdate, permissionsLoading, router, settings?.server_allow_schedules]);
+    }, [uuidShort, id, canUpdate, permissionsLoading, router, settings?.server_allow_schedules, t]);
 
     React.useEffect(() => {
         fetchWidgets();
@@ -105,7 +112,7 @@ export default function EditSchedulePage() {
         e.preventDefault();
 
         if (!formData.name.trim()) {
-            toast.error('Schedule name is required');
+            toast.error(t('serverSchedules.nameRequired'));
             return;
         }
 
@@ -316,6 +323,23 @@ export default function EditSchedulePage() {
                     </div>
 
                     <p className='text-muted-foreground text-xs'>{t('serverSchedules.cronHelp')}</p>
+
+                    <div className='space-y-2.5'>
+                        <Label
+                            htmlFor='schedule-timezone'
+                            className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'
+                        >
+                            {t('serverSchedules.timezone')}
+                        </Label>
+                        <HeadlessSelect
+                            value={formData.timezone}
+                            onChange={(val) => setFormData({ ...formData, timezone: String(val) })}
+                            options={timezoneOptions}
+                            disabled={saving}
+                            buttonClassName='h-12 bg-secondary/50 border-border/10 focus:border-primary/50 rounded-xl text-sm font-extrabold transition-all'
+                        />
+                        <p className='text-muted-foreground ml-1 text-xs'>{t('serverSchedules.timezoneHelp')}</p>
+                    </div>
                 </div>
 
                 <div className='bg-card/50 border-border/50 space-y-6 rounded-3xl border p-8 backdrop-blur-3xl'>
@@ -324,9 +348,11 @@ export default function EditSchedulePage() {
                             <Calendar className='text-primary h-5 w-5' />
                         </div>
                         <div className='space-y-0.5'>
-                            <h2 className='text-xl font-black tracking-tight uppercase italic'>Options</h2>
+                            <h2 className='text-xl font-black tracking-tight uppercase italic'>
+                                {t('serverSchedules.options')}
+                            </h2>
                             <p className='text-muted-foreground text-[9px] font-bold tracking-widest uppercase opacity-50'>
-                                Configuration
+                                {t('serverSchedules.configuration')}
                             </p>
                         </div>
                     </div>
@@ -340,8 +366,8 @@ export default function EditSchedulePage() {
                                 value={String(formData.only_when_online)}
                                 onChange={(val) => setFormData({ ...formData, only_when_online: Number(val) })}
                                 options={[
-                                    { id: '0', name: 'No - Run regardless of server status' },
-                                    { id: '1', name: 'Yes - Only run when server is online' },
+                                    { id: '0', name: t('serverSchedules.runRegardless') },
+                                    { id: '1', name: t('serverSchedules.runOnlyOnline') },
                                 ]}
                                 disabled={saving}
                                 buttonClassName='h-12 bg-secondary/50 border-border/10 focus:border-primary/50 rounded-xl text-sm font-extrabold transition-all'

@@ -1,5 +1,47 @@
 # Changelog
 
+## v1.3.7.3 STABLE
+
+### Added
+
+- Plugin sidebar priority system by to control the order of the sidebar items. by @nayskutzu
+- Verify button on the admin user edit page to force verify the user's email by @nayskutzu
+- Verification email resend system in case the user didn't receive the email by @nayskutzu
+- Custom server variables system so users can set variables for their servers and also encrypt them. by @nayskutzu
+- GDPR compliance system for user data export by @nayskutzu
+- Per-user timezone preference in account settings, with browser auto-detection on first visit, so all dates and "X ago" labels render in each user's preferred zone. by @nayskutzu
+- Per-server-schedule timezone selector. Each cron schedule now stores its own IANA timezone by @nayskutzu
+- Server archives can now be opened and even viewed in the file manager. by @nayskutzu
+- Trash bin support in the file manager. by @nayskutzu
+- Preview support for archive contents in the file manager. by @nayskutzu
+- Added detailed ban and suspension reason tracking for both servers and users, providing greater clarity for the staff team. by @nayskutzu
+- Added a copyright notice to acknowledge the creators of the panel. by @nayskutzu
+- Introduced a sleek and intuitive server switcher for seamless navigation between servers. by @nayskutzu
+- Mass move servers from a node to another with automatic allocation assignment, selectable servers or move-all, and a per-request batch limit for large fleets. by @nayskutzu
+- Custom sort order for spells within a realm so admins can control display order (e.g. Node.js before Python before Java). by @nayskutzu
+
+### Fixed
+
+- FIFO (First In, First Out) rotation scheme for log file rotation and cleanup. by @nayskutzu
+- Resolved an issue where your avatar would reload 100 times when you type in the chat box. by @nayskutzu
+- Admins with admin.dashboard.view permission can now view the dashboard. by @nayskutzu
+- Fixed an issue where the chatbot would sometimes get stuck in a loop when trying to do stuff. by @nayskutzu
+- Added missing translations to the translations file. by @nayskutzu
+- The default theme from admin was not applied if you didn't lock it. by @nayskutzu
+- Buch of timezone issues were fixed. by @nayskutzu
+- Color issues with vds settings page were fixed. by @nayskutzu
+- Further enhanced the plugin installer for improved performance and reliability. by @nayskutzu
+- Resolved a significant issue that previously prevented searching for allocations within the admin area. by @nayskutzu
+
+### Improved
+
+- Tickets were pretty cramped and didn't look good on big screens. by @nayskutzu
+- Chatbot now supports the ability to get the article content by its ID. by @nayskutzu
+- Chatbot token usage has been cut in half by @nayskutzu
+- Enhanced Minecraft server compatibility and features to fully support the latest release version. by @nayskutzu
+- Added a white (light) mode option for Wings server configuration files, enhancing visibility and user experience in brighter environments. by @nayskutzu
+- Enhanced the console layout for mobile devices, offering a smoother and more intuitive user experience. by @nayskutzu
+
 ## v1.3.7.2 STABLE
 
 ### Fixed

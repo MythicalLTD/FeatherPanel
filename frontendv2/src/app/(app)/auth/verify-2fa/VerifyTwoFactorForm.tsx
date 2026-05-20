@@ -55,12 +55,12 @@ export default function VerifyTwoFactorForm() {
         }
 
         if (code.length !== 6) {
-            setError('Verification code must be 6 digits');
+            setError(t('validation.verification_code_6_digits'));
             return;
         }
 
         if (!email) {
-            setError('Email is required');
+            setError(t('validation.email_required'));
             return;
         }
 

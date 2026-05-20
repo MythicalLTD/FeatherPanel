@@ -19,6 +19,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { useDateFormatOptions } from '@/contexts/PreferencesContext';
+import { formatDateTimeInTz, formatRelativeTime } from '@/lib/dateUtils';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { Dialog, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import {
@@ -156,6 +158,7 @@ export default function ServerActivityPage() {
     const uuidShort = params.uuidShort as string;
     const router = useRouter();
     const { t } = useTranslation();
+    const dateOpts = useDateFormatOptions();
     const { hasPermission, loading: permissionsLoading } = useServerPermissions(uuidShort);
 
     const [loading, setLoading] = useState(true);
@@ -353,26 +356,9 @@ export default function ServerActivityPage() {
         return formatEvent(item.event);
     }
 
-    function formatRelativeTime(timestamp?: string) {
+    function formatItemTime(timestamp?: string) {
         if (!timestamp) return '';
-        const now = new Date();
-        const date = new Date(timestamp);
-        const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-
-        if (diffInSeconds < 60) return t('serverActivities.justNow');
-        if (diffInSeconds < 3600) {
-            const minutes = Math.floor(diffInSeconds / 60);
-            return t('serverActivities.minutesAgo', { minutes: String(minutes) });
-        }
-        if (diffInSeconds < 86400) {
-            const hours = Math.floor(diffInSeconds / 3600);
-            return t('serverActivities.hoursAgo', { hours: String(hours) });
-        }
-        if (diffInSeconds < 604800) {
-            const days = Math.floor(diffInSeconds / 86400);
-            return t('serverActivities.daysAgo', { days: String(days) });
-        }
-        return date.toLocaleDateString();
+        return formatRelativeTime(timestamp, dateOpts);
     }
 
     const detailsPairs =
@@ -601,9 +587,7 @@ export default function ServerActivityPage() {
                                                 <div className='text-muted-foreground flex items-center gap-2'>
                                                     <Clock className='h-4 w-4 opacity-50' />
                                                     <span className='text-sm font-semibold'>
-                                                        {activity.timestamp
-                                                            ? formatRelativeTime(activity.timestamp)
-                                                            : '-'}
+                                                        {activity.timestamp ? formatItemTime(activity.timestamp) : '-'}
                                                     </span>
                                                 </div>
                                                 {activity.ip && (
@@ -739,7 +723,7 @@ export default function ServerActivityPage() {
                                             <Clock className='text-muted-foreground h-4 w-4 shrink-0' />
                                             <span>
                                                 {selectedItem.timestamp
-                                                    ? new Date(selectedItem.timestamp).toLocaleString()
+                                                    ? formatDateTimeInTz(selectedItem.timestamp, dateOpts)
                                                     : '—'}
                                             </span>
                                         </dd>

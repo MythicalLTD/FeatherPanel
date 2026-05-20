@@ -104,6 +104,46 @@ return function (RouteCollection $routes): void {
         'user-server-update'
     );
 
+    App::getInstance(true)->registerServerRoute(
+        $routes,
+        'session-server-custom-variable-create',
+        '/api/user/servers/{uuidShort}/custom-variables',
+        function (Request $request, array $args) {
+            $uuidShort = $args['uuidShort'] ?? null;
+            if (!$uuidShort) {
+                return ApiResponse::error('Missing or invalid UUID short', 'INVALID_UUID_SHORT', 400);
+            }
+
+            return (new ServerUserController())->createCustomVariable($request, $uuidShort);
+        },
+        'uuidShort',
+        ['POST'],
+        Rate::perMinute(10),
+        'user-server-custom-variable-create'
+    );
+
+    App::getInstance(true)->registerServerRoute(
+        $routes,
+        'session-server-custom-variable-delete',
+        '/api/user/servers/{uuidShort}/custom-variables/{variableId}',
+        function (Request $request, array $args) {
+            $uuidShort = $args['uuidShort'] ?? null;
+            $variableId = $args['variableId'] ?? null;
+            if (!$uuidShort) {
+                return ApiResponse::error('Missing or invalid UUID short', 'INVALID_UUID_SHORT', 400);
+            }
+            if (!$variableId || !is_numeric($variableId)) {
+                return ApiResponse::error('Missing or invalid variable ID', 'INVALID_VARIABLE_ID', 400);
+            }
+
+            return (new ServerUserController())->deleteCustomVariable($request, $uuidShort, (int) $variableId);
+        },
+        'uuidShort',
+        ['DELETE'],
+        Rate::perMinute(10),
+        'user-server-custom-variable-delete'
+    );
+
     // Rate limit: Admin can override in ratelimit.json, default is 1 per hour (very restrictive for deletion)
     App::getInstance(true)->registerServerRoute(
         $routes,

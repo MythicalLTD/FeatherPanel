@@ -53,7 +53,7 @@ class VdsChatbotService
      *
      * @return array Response with 'response', 'model', and 'tool_executions' keys
      */
-    public function processMessage(string $message, array $history, array $user, array $pageContext = []): array
+    public function processMessage(string $message, array $history, array $user, array $pageContext = [], ?callable $emit = null): array
     {
         // Check if chatbot is enabled
         $enabled = $this->config->getSetting(ConfigInterface::CHATBOT_ENABLED, 'true');
@@ -69,7 +69,9 @@ class VdsChatbotService
         // Get chatbot configuration
         $temperature = (float) $this->config->getSetting(ConfigInterface::CHATBOT_TEMPERATURE, '0.7');
         $maxTokens   = (int) $this->config->getSetting(ConfigInterface::CHATBOT_MAX_TOKENS, '2048');
-        $maxHistory  = (int) $this->config->getSetting(ConfigInterface::CHATBOT_MAX_HISTORY, '10');
+        $maxHistory  = min((int) $this->config->getSetting(ConfigInterface::CHATBOT_MAX_HISTORY, '4'), 6);
+
+        ChatbotRuntime::emit($emit, 'status', ['message' => 'Preparing VDS chat context']);
 
         // Limit history to configured max
         $history = array_slice($history, -$maxHistory);
@@ -98,7 +100,8 @@ class VdsChatbotService
 
         // Add conversation memory if available
         if (!empty($conversationMemory)) {
-            $systemPrompt .= "\n\n## Conversation Memory\n{$conversationMemory}";
+            $systemPrompt .= "\n\n## Compact Conversation Memory\n{$conversationMemory}";
+            $systemPrompt .= "\n\nUse this compact memory only as background. Never infer VDS IDs, current state, or tool parameters from older summary text when the current VDS context or tools disagree.";
         }
 
         // Get admin-configured user prompt (optional)
@@ -106,6 +109,9 @@ class VdsChatbotService
 
         // Prepend user prompt to message if configured
         $fullMessage = $message;
+        $fullMessage .= "\n\n[Current Turn Protocol: Treat this latest user message as the primary task. Use older conversation only as background. Do not bring up previous actions, previous questions, or unfinished older topics unless this latest message explicitly asks about them or clearly depends on them.]";
+        $fullMessage .= "\n\n[Response Language Protocol: Reply in the same natural language as this latest user message. If this message is English, reply in English only, regardless of older conversation history. If earlier replies used the wrong language, acknowledge that plainly instead of denying it.]";
+        $fullMessage .= "\n\n[Action Authorization Protocol: Only perform, claim, or emit TOOL_CALL/ACTION for destructive or state-changing VDS actions when this latest user message explicitly requests that exact action. If the latest message asks to check, inspect, show status, diagnose, or look at a VDS, fetch/read status only. Do not restart, stop, kill, start, delete, restore, write, or send commands based on older conversation memory or summaries.]";
         if (!empty($userPrompt)) {
             $fullMessage = "{$fullMessage}\n\n[User Context: {$userPrompt}]";
         }
@@ -145,22 +151,52 @@ class VdsChatbotService
         $toolsInfo = $this->formatToolsForPrompt($toolHandler);
         $systemPrompt .= "\n\n## Available Tools\n{$toolsInfo}";
 
-        // Process message with tool calling support (max 3 iterations to avoid loops)
-        $maxToolIterations = 3;
+        // Process message with tool calling support.
+        $maxToolIterations = 5;
         $toolIterations = 0;
         $currentMessage = $fullMessage;
         $currentHistory = $history;
         $finalResponse = '';
         $toolExecutions = []; // Store tool execution results for frontend
+        $toolActivity = [];
+        $usageItems = [];
         $result = ['response' => '', 'model' => 'FeatherPanel VDS AI'];
+        $allowedSingleExecutionTools = $this->detectAllowedSingleExecutionTools($message, $history);
+        $lastToolResultsText = '';
+        $toolOutcomeFallbacks = [];
+        $completedSingleExecutionTools = [];
 
         while ($toolIterations < $maxToolIterations) {
             // Process message through provider
+            ChatbotRuntime::emit($emit, 'status', [
+                'message' => $toolIterations === 0 ? 'Calling AI model' : 'Calling AI model with VDS tool results',
+                'iteration' => $toolIterations + 1,
+            ]);
             $result = $providerInstance->processMessage($currentMessage, $currentHistory, $systemPrompt);
             $response = $result['response'];
+            if (isset($result['usage']) && is_array($result['usage'])) {
+                $usageItems[] = $result['usage'];
+                ChatbotRuntime::emit($emit, 'usage', ['usage' => TokenUsage::aggregate($usageItems)]);
+            }
 
             // Check for tool calls
+            ChatbotRuntime::emit($emit, 'status', ['message' => 'Checking for VDS tool calls']);
             $toolCalls = $toolHandler->parseToolCalls($response);
+
+            if (empty($toolCalls) && $toolHandler->hasMalformedToolCall($response)) {
+                $currentHistory[] = [
+                    'role'    => 'assistant',
+                    'content' => $toolHandler->removeToolCalls($response),
+                ];
+                $currentMessage = $this->buildMalformedToolCorrection($toolHandler);
+                $currentHistory[] = [
+                    'role'    => 'user',
+                    'content' => $currentMessage,
+                ];
+                ++$toolIterations;
+                $finalResponse = $toolHandler->removeToolCalls($response);
+                continue;
+            }
 
             if (empty($toolCalls)) {
                 // No tool calls, return final response
@@ -171,6 +207,27 @@ class VdsChatbotService
             // Execute tool calls
             $toolResults = [];
             foreach ($toolCalls as $toolCall) {
+                if (!$this->isToolAllowedForLatestIntent($toolCall, $allowedSingleExecutionTools)) {
+                    $toolResults[] = [
+                        'tool'   => $toolCall['tool'],
+                        'result' => "Skipped {$toolCall['tool']} because it does not match the latest user request. Do not use tools from older conversation context; answer using only the tools that were actually run for this message.",
+                    ];
+                    continue;
+                }
+
+                if ($this->shouldSkipDuplicateToolCall($toolCall, $completedSingleExecutionTools)) {
+                    $toolResults[] = [
+                        'tool'   => $toolCall['tool'],
+                        'result' => "Skipped duplicate {$toolCall['tool']} call because that action already completed during this message. Do not call it again; summarize the completed result.",
+                    ];
+                    continue;
+                }
+
+                ChatbotRuntime::emit($emit, 'tool_call', [
+                    'tool' => $toolCall['tool'],
+                    'params' => ChatbotRuntime::sanitizeValue($toolCall['params']),
+                    'iteration' => $toolIterations + 1,
+                ]);
                 $toolResult = $toolHandler->executeTool(
                     $toolCall['tool'],
                     $toolCall['params'],
@@ -182,10 +239,24 @@ class VdsChatbotService
                 if (is_array($toolResult['data']) && isset($toolResult['data']['action_type'])) {
                     $toolExecutions[] = $toolResult['data'];
                 }
+                $activity = ChatbotRuntime::toolActivity($toolCall, $toolResult, $toolIterations + 1);
+                $toolActivity[] = $activity;
+                ChatbotRuntime::emit($emit, 'tool_result', $activity);
+
+                $formattedToolResult = $toolHandler->formatToolResult($toolCall['tool'], $toolResult);
+                if ($this->shouldGuaranteeToolOutcome($toolResult)) {
+                    $toolOutcomeFallbacks[] = [
+                        'tool'    => $toolCall['tool'],
+                        'summary' => $formattedToolResult,
+                    ];
+                }
+                if (($toolResult['success'] ?? false) && $this->isSingleExecutionTool($toolCall['tool'])) {
+                    $completedSingleExecutionTools[$toolCall['tool']] = true;
+                }
 
                 $toolResults[] = [
                     'tool'   => $toolCall['tool'],
-                    'result' => $toolHandler->formatToolResult($toolCall['tool'], $toolResult),
+                    'result' => $formattedToolResult,
                 ];
             }
 
@@ -201,6 +272,7 @@ class VdsChatbotService
             $toolResultsText .= "- If an action failed, explain the error clearly\n";
             $toolResultsText .= "- Never just say 'I'll do that' or 'done' without explaining what actually happened\n";
             $toolResultsText .= '- Be conversational and helpful - the user wants to know what you did for them';
+            $lastToolResultsText = $toolResultsText;
 
             // Remove tool calls from response and add to history
             $cleanResponse = $toolHandler->removeToolCalls($response);
@@ -220,18 +292,37 @@ class VdsChatbotService
             $finalResponse = $cleanResponse; // Store in case we hit max iterations
         }
 
-        // If we still have tool calls after max iterations, append a note
+        // If the last model turn still tried to call a tool, force one final synthesis pass
+        // so successful tool output is translated into a clean answer for the user.
         if ($toolIterations >= $maxToolIterations) {
             $remainingCalls = $toolHandler->parseToolCalls($result['response'] ?? '');
             if (!empty($remainingCalls)) {
-                $finalResponse .= "\n\n[Note: Maximum tool call iterations reached. Some tools may not have been executed.]";
+                if ($lastToolResultsText !== '') {
+                    ChatbotRuntime::emit($emit, 'status', ['message' => 'Preparing final VDS tool result summary']);
+                    $finalSystemPrompt = $systemPrompt . "\n\n## Final Tool Result Synthesis\n"
+                        . 'Do not call any tools in this pass. Use only the supplied tool results and write the final user-facing answer.';
+                    $finalMessage = $lastToolResultsText . "\n\nNo more tools may be called. Summarize the completed tool results for the user now.";
+                    $synthesisResult = $providerInstance->processMessage($finalMessage, $currentHistory, $finalSystemPrompt);
+                    if (isset($synthesisResult['usage']) && is_array($synthesisResult['usage'])) {
+                        $usageItems[] = $synthesisResult['usage'];
+                        ChatbotRuntime::emit($emit, 'usage', ['usage' => TokenUsage::aggregate($usageItems)]);
+                    }
+                    $finalResponse = $toolHandler->removeToolCalls($synthesisResult['response'] ?? $finalResponse);
+                    $result = $synthesisResult + $result;
+                } else {
+                    $finalResponse .= "\n\n[Note: Maximum tool call iterations reached. Some tools may not have been executed.]";
+                }
             }
         }
+
+        $finalResponse = $this->appendMissingToolOutcomes($finalResponse, $toolOutcomeFallbacks);
 
         return [
             'response'        => trim($finalResponse),
             'model'           => $result['model'] ?? 'FeatherPanel VDS AI',
             'tool_executions' => $toolExecutions,
+            'tool_activity'   => $toolActivity,
+            'usage'           => TokenUsage::aggregate($usageItems),
         ];
     }
 
@@ -245,28 +336,158 @@ class VdsChatbotService
     private function formatToolsForPrompt(VdsToolHandler $toolHandler): string
     {
         $tools = $toolHandler->getAvailableTools();
-        $text = "You have access to the following tools to retrieve real-time VDS data and initiate actions:\n\n";
+        $text = "Use TOOL_CALL only when real-time VDS data or an action is needed. Available tools:\n\n";
 
         foreach ($tools as $tool) {
-            $text .= "### {$tool['name']}\n";
-            $text .= "Description: {$tool['description']}\n";
-            $text .= "Parameters:\n";
-            foreach ($tool['parameters'] as $param => $desc) {
-                $text .= "  - {$param}: {$desc}\n";
+            $parameters = [];
+            foreach ($tool['parameters'] as $param => $description) {
+                $parameters[] = "{$param}: {$description}";
             }
-            $text .= "\n";
-            $text .= "To use this tool, include in your response:\n";
-            $text .= "TOOL_CALL: {$tool['name']} {\"param1\": \"value1\", \"param2\": \"value2\"}\n\n";
+            $text .= "- {$tool['name']}(" . implode('; ', $parameters) . ")\n";
         }
 
-        $text .= "IMPORTANT:\n";
-        $text .= "- Use tools when you need real-time data (e.g., VDS status, backups, activities)\n";
-        $text .= "- Do NOT include all data in your initial response - use tools to fetch what's needed\n";
-        $text .= "- You can call multiple tools in one response\n";
-        $text .= "- Tool results will be provided in your next context\n";
-        $text .= "- Always provide a natural language response along with tool calls\n";
+        $text .= "\nFormat: TOOL_CALL: tool_name {\"param\": \"value\"}\n";
+        $text .= "TOOL_CALL always requires a valid JSON object after the tool name. Never write TOOL_CALL for navigation.\n";
+        $text .= "For navigation, use ACTION: navigate vds [id] to [page].\n";
+        $text .= "Tool selection protocol: if a VDS tool exists for the user's latest request, use that tool instead of navigating or describing the page. Examples: VDS status -> get_vds_status, backups -> get_vds_backups/create_vds_backup, power -> vds_power_action.\n";
+        $text .= "You may call multiple tools. Always include a short natural language response with tool calls.\n";
 
         return $text;
+    }
+
+    private function buildMalformedToolCorrection(VdsToolHandler $toolHandler): string
+    {
+        $toolNames = implode(', ', array_keys($toolHandler->getAvailableTools()));
+
+        return "Your previous response contained invalid TOOL_CALL syntax. Regenerate the answer now.\n"
+            . "Rules:\n"
+            . "- TOOL_CALL format is exactly: TOOL_CALL: tool_name {\"param\":\"value\"}\n"
+            . "- TOOL_CALL must use one of these tool names: {$toolNames}\n"
+            . "- Never use TOOL_CALL for navigation. Navigation uses ACTION: navigate vds [id] to [page]\n"
+            . "- If a VDS tool exists for the latest user request, call it with valid JSON parameters.\n"
+            . '- Do not expose TOOL_CALL text unless it is valid and intended for execution.';
+    }
+
+    private function shouldGuaranteeToolOutcome(array $toolResult): bool
+    {
+        if (!($toolResult['success'] ?? false)) {
+            return true;
+        }
+
+        $data = $toolResult['data'] ?? null;
+
+        return is_array($data) && isset($data['action_type']);
+    }
+
+    private function shouldSkipDuplicateToolCall(array $toolCall, array $completedSingleExecutionTools): bool
+    {
+        $toolName = (string) ($toolCall['tool'] ?? '');
+
+        return $this->isSingleExecutionTool($toolName) && isset($completedSingleExecutionTools[$toolName]);
+    }
+
+    private function isToolAllowedForLatestIntent(array $toolCall, array $allowedSingleExecutionTools): bool
+    {
+        $toolName = (string) ($toolCall['tool'] ?? '');
+
+        if (!$this->isSingleExecutionTool($toolName) || empty($allowedSingleExecutionTools)) {
+            return true;
+        }
+
+        return in_array($toolName, $allowedSingleExecutionTools, true);
+    }
+
+    private function detectAllowedSingleExecutionTools(string $message, array $history): array
+    {
+        $message = mb_strtolower($message);
+        $historyText = mb_strtolower(json_encode(array_slice($history, -6), JSON_UNESCAPED_SLASHES) ?: '');
+        $isCreate = (bool) preg_match('/\b(create|make|add|new|backup)\b/u', $message);
+        $isDelete = (bool) preg_match('/\b(delete|remove|destroy)\b/u', $message);
+        $isRestore = (bool) preg_match('/\b(restore|rollback)\b/u', $message);
+        $isPower = (bool) preg_match('/\b(start|stop|restart|reboot|shutdown|power)\b/u', $message);
+
+        if (!$isCreate && !$isDelete && !$isRestore && !$isPower) {
+            return [];
+        }
+
+        $hasBackupContext = (bool) preg_match('/\b(backups?|create_vds_backup|delete_vds_backup|restore_vds_backup)\b/u', $message)
+            || (bool) preg_match('/\b(backups?|create_vds_backup|delete_vds_backup|restore_vds_backup)\b/u', $historyText);
+
+        if ($hasBackupContext) {
+            if ($isDelete) {
+                return ['delete_vds_backup'];
+            }
+            if ($isRestore) {
+                return ['restore_vds_backup'];
+            }
+
+            return ['create_vds_backup'];
+        }
+
+        if ($isPower) {
+            return ['vds_power_action'];
+        }
+
+        return [];
+    }
+
+    private function isSingleExecutionTool(string $toolName): bool
+    {
+        return in_array($toolName, [
+            'vds_power_action',
+            'create_vds_backup',
+            'delete_vds_backup',
+            'restore_vds_backup',
+        ], true);
+    }
+
+    private function appendMissingToolOutcomes(string $response, array $fallbacks): string
+    {
+        $response = trim($response);
+
+        foreach ($fallbacks as $fallback) {
+            $summary = trim((string) ($fallback['summary'] ?? ''));
+            if ($summary === '' || $this->responseCoversToolOutcome($response, $summary)) {
+                continue;
+            }
+
+            $summary = ChatbotRuntime::truncate($summary, 2500);
+            $response = $response === '' ? $summary : $response . "\n\n" . $summary;
+        }
+
+        return $response;
+    }
+
+    private function responseCoversToolOutcome(string $response, string $summary): bool
+    {
+        if ($response === '') {
+            return false;
+        }
+
+        $outcomeValues = $this->extractOutcomeValues($summary);
+        foreach ($outcomeValues as $value) {
+            if (mb_strlen($value) >= 3 && str_contains(mb_strtolower($response), mb_strtolower($value))) {
+                return true;
+            }
+        }
+
+        if (!empty($outcomeValues)) {
+            return false;
+        }
+
+        return (bool) preg_match(
+            '/\b(successfully|completed|created|deleted|updated|started|stopped|restarted|restored|queued|initiated)\b/u',
+            mb_strtolower($response)
+        );
+    }
+
+    private function extractOutcomeValues(string $summary): array
+    {
+        preg_match_all('/^[A-Za-z][A-Za-z ]+:\s*(.+)$/m', $summary, $matches);
+
+        return array_values(array_filter(array_map(static function (string $value): string {
+            return trim($value);
+        }, $matches[1] ?? [])));
     }
 
     /**

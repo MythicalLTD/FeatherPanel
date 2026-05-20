@@ -21,6 +21,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import React, { useEffect, useState } from 'react';
 import api from '@/lib/api';
+import { useTranslation } from '@/contexts/TranslationContext';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
@@ -41,6 +42,7 @@ interface Data {
 }
 
 export default function TicketsAnalyticsPage() {
+    const { t } = useTranslation();
     const [data, setData] = useState<Data | null>(null);
     const { getWidgets } = usePluginWidgets('admin-analytics-tickets');
     const [loading, setLoading] = useState(true);
@@ -51,21 +53,21 @@ export default function TicketsAnalyticsPage() {
             .finally(() => setLoading(false));
     }, []);
 
-    if (loading) return <div className='flex min-h-[300px] items-center justify-center'>Loading...</div>;
-    if (!data) return <div className='flex min-h-[300px] items-center justify-center'>No data</div>;
+    if (loading) return <div className='flex min-h-[300px] items-center justify-center'>{t('common.loading')}</div>;
+    if (!data) return <div className='flex min-h-[300px] items-center justify-center'>{t('common.no_data')}</div>;
 
     const breakdown = [
-        { name: 'Tickets', value: data.tickets.tickets ?? 0 },
-        { name: 'Messages', value: data.tickets.messages ?? 0 },
-        { name: 'Attachments', value: data.tickets.attachments ?? 0 },
-        { name: 'Categories', value: data.tickets.categories ?? 0 },
-        { name: 'Priorities', value: data.tickets.priorities ?? 0 },
-        { name: 'Statuses', value: data.tickets.statuses ?? 0 },
+        { name: t('admin.analytics.tickets.tickets'), value: data.tickets.tickets ?? 0 },
+        { name: t('admin.analytics.tickets.messages'), value: data.tickets.messages ?? 0 },
+        { name: t('admin.analytics.tickets.attachments'), value: data.tickets.attachments ?? 0 },
+        { name: t('admin.analytics.tickets.categories'), value: data.tickets.categories ?? 0 },
+        { name: t('admin.analytics.tickets.priorities'), value: data.tickets.priorities ?? 0 },
+        { name: t('admin.analytics.tickets.statuses'), value: data.tickets.statuses ?? 0 },
     ];
     const weeklyBars = [
-        { name: 'Today', value: data.velocity.today ?? 0 },
-        { name: 'This Week', value: data.velocity.this_week ?? 0 },
-        { name: 'Last Week', value: data.velocity.last_week ?? 0 },
+        { name: t('admin.analytics.tickets.today'), value: data.velocity.today ?? 0 },
+        { name: t('admin.analytics.tickets.this_week'), value: data.velocity.this_week ?? 0 },
+        { name: t('admin.analytics.tickets.last_week'), value: data.velocity.last_week ?? 0 },
     ];
     const trendBars = (data.trend_42d || []).slice(-14).map((p) => ({ name: p.date.slice(5), value: p.count }));
 
@@ -73,49 +75,56 @@ export default function TicketsAnalyticsPage() {
         <>
             <WidgetRenderer widgets={getWidgets('admin-analytics-tickets', 'top-of-page')} />
             <div className='space-y-6'>
-                <PageHeader title='Tickets Analytics' description='Ticketing KPIs and usage metrics.' icon={Ticket} />
+                <PageHeader
+                    title={t('admin.analytics.tickets.title')}
+                    description={t('admin.analytics.tickets.subtitle')}
+                    icon={Ticket}
+                />
                 <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-4'>
                     <ResourceCard
                         title={String(data.tickets.tickets ?? 0)}
-                        subtitle='Tickets'
-                        description='Total tickets'
+                        subtitle={t('admin.analytics.tickets.tickets')}
+                        description={t('admin.analytics.tickets.total_tickets')}
                         icon={Ticket}
                     />
                     <ResourceCard
                         title={String(data.tickets.messages ?? 0)}
-                        subtitle='Ticket Messages'
-                        description='Conversation volume'
+                        subtitle={t('admin.analytics.tickets.ticket_messages')}
+                        description={t('admin.analytics.tickets.conversation_volume')}
                         icon={MessageSquare}
                     />
                     <ResourceCard
                         title={String(data.tickets.attachments ?? 0)}
-                        subtitle='Ticket Attachments'
-                        description='Uploaded files'
+                        subtitle={t('admin.analytics.tickets.ticket_attachments')}
+                        description={t('admin.analytics.tickets.uploaded_files')}
                         icon={Paperclip}
                     />
                     <ResourceCard
                         title={`${data.velocity.weekly_growth_percent > 0 ? '+' : ''}${data.velocity.weekly_growth_percent}%`}
-                        subtitle='Weekly Growth'
-                        description={`${data.velocity.this_week} this week vs ${data.velocity.last_week} last week`}
+                        subtitle={t('admin.analytics.tickets.weekly_growth')}
+                        description={t('admin.analytics.tickets.weekly_comparison', {
+                            thisWeek: String(data.velocity.this_week),
+                            lastWeek: String(data.velocity.last_week),
+                        })}
                         icon={TrendingUp}
                     />
                 </div>
                 <div className='grid gap-4 md:grid-cols-2'>
                     <SimplePieChart
-                        title='Ticket Breakdown'
-                        description='Distribution by entity type'
+                        title={t('admin.analytics.tickets.breakdown')}
+                        description={t('admin.analytics.tickets.breakdown_desc')}
                         data={breakdown}
                     />
                     <SimpleBarChart
-                        title='Ticket Creation Velocity'
-                        description='Today and week-over-week ticket volume'
+                        title={t('admin.analytics.tickets.creation_velocity')}
+                        description={t('admin.analytics.tickets.creation_velocity_desc')}
                         data={weeklyBars}
                     />
                 </div>
                 <div className='grid gap-4 md:grid-cols-1'>
                     <SimpleBarChart
-                        title='Recent Ticket Trend (14d)'
-                        description='Tickets created per day over the most recent 14 days'
+                        title={t('admin.analytics.tickets.recent_trend')}
+                        description={t('admin.analytics.tickets.recent_trend_desc')}
                         data={trendBars}
                     />
                 </div>

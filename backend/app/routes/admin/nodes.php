@@ -290,4 +290,36 @@ return function (RouteCollection $routes): void {
         Permissions::ADMIN_NODES_EDIT,
         ['PUT', 'POST']
     );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-nodes-mass-transfer-preview',
+        '/api/admin/nodes/{id}/mass-transfer/preview',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
+
+            return (new NodesController())->previewMassTransfer($request, (int) $id);
+        },
+        Permissions::ADMIN_SERVERS_EDIT,
+        ['GET']
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-nodes-mass-transfer',
+        '/api/admin/nodes/{id}/mass-transfer',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
+
+            return (new NodesController())->massTransfer($request, (int) $id);
+        },
+        Permissions::ADMIN_SERVERS_EDIT,
+        ['POST']
+    );
 };

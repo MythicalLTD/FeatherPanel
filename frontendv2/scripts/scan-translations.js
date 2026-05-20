@@ -77,8 +77,8 @@ function scanTranslations() {
     const files = getAllFiles(SRC_DIR);
     console.log(`${colors.green}✓ Found ${files.length} source files to scan.${colors.reset}\n`);
 
-    // Regex to find t('key')
-    const SIMPLE_REGEX = /[^a-zA-Z]t\s*\(\s*['"]([^'"]+)['"]/g;
+    // Regex to find t('key') and tr('key')
+    const SIMPLE_REGEX = /[^a-zA-Z]t(?:r)?\s*\(\s*['"]([^'"]+)['"]/g;
     // Regex to find t(cond ? 'key1' : 'key2')
     // Supports multiline matching because we scan file content, not just lines
     const TERNARY_REGEX = /[^a-zA-Z]t\s*\(\s*[^,)]+\s*\?\s*['"]([^'"]+)['"]\s*:\s*['"]([^'"]+)['"]/g;

@@ -29,6 +29,7 @@ use App\App;
 use App\Chat\Server;
 use App\Chat\Database;
 use App\Chat\VmInstance;
+use App\Helpers\ModerationReasonHelper;
 use App\Cli\Utils\MinecraftColorCodeSupport;
 
 class ZCheckExpiredServers implements TimeTask
@@ -161,7 +162,11 @@ class ZCheckExpiredServers implements TimeTask
         foreach ($expiredVms as $vm) {
             try {
                 // Suspend the VM instance
-                $success = VmInstance::update((int) $vm['id'], ['suspended' => 1]);
+                $reason = ModerationReasonHelper::formatReason('payment_overdue', 'Service expired on ' . ($vm['expires_at'] ?? ''));
+                $success = VmInstance::update((int) $vm['id'], ModerationReasonHelper::suspensionAppliedFields($reason, [
+                    'uuid' => 'system',
+                    'username' => 'System',
+                ]));
 
                 if ($success) {
                     ++$suspendedCount;

@@ -19,6 +19,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter, usePathname } from 'next/navigation';
 import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { useDateFormatOptions } from '@/contexts/PreferencesContext';
+import { formatDateTimeInTz, formatRelativeTime } from '@/lib/dateUtils';
 import { useVmInstance } from '@/contexts/VmInstanceContext';
 import { Dialog, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import {
@@ -109,41 +111,12 @@ function getEventIconClass(event: string) {
     return 'text-primary bg-primary/10 border-primary/20';
 }
 
-function formatRelativeTime(timestamp?: string, t?: (key: string, vars?: Record<string, string>) => string): string {
-    if (!timestamp) return '';
-    const now = new Date();
-    const date = new Date(timestamp);
-    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-
-    if (!t) {
-        if (diffInSeconds < 60) return 'Just now';
-        if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-        if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
-        if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
-        return date.toLocaleDateString();
-    }
-
-    if (diffInSeconds < 60) return t('serverActivities.justNow');
-    if (diffInSeconds < 3600) {
-        const minutes = Math.floor(diffInSeconds / 60);
-        return t('serverActivities.minutesAgo', { minutes: String(minutes) });
-    }
-    if (diffInSeconds < 86400) {
-        const hours = Math.floor(diffInSeconds / 3600);
-        return t('serverActivities.hoursAgo', { hours: String(hours) });
-    }
-    if (diffInSeconds < 604800) {
-        const days = Math.floor(diffInSeconds / 86400);
-        return t('serverActivities.daysAgo', { days: String(days) });
-    }
-    return date.toLocaleDateString();
-}
-
 export default function VdsActivitiesPage() {
     const { id } = useParams() as { id: string };
     const router = useRouter();
     const pathname = usePathname();
     const { t } = useTranslation();
+    const dateOpts = useDateFormatOptions();
     const { instance, loading: instanceLoading, hasPermission } = useVmInstance();
     const { fetchWidgets, getWidgets } = usePluginWidgets('vds-activities');
 
@@ -242,18 +215,18 @@ export default function VdsActivitiesPage() {
                     to: p.to || 0,
                 });
             } catch {
-                toast.error('Failed to fetch activity log');
+                toast.error(t('vds.activities.fetch_failed'));
             } finally {
                 setLoading(false);
             }
         },
-        [id, searchQuery, selectedEventFilter],
+        [id, searchQuery, selectedEventFilter, t],
     );
 
     useEffect(() => {
         if (!instanceLoading) {
             if (!hasPermission('activity.read')) {
-                toast.error('You do not have permission to view this activity log');
+                toast.error(t('vds.activities.permission_denied'));
                 router.push(`/vds/${id}`);
                 return;
             }
@@ -323,7 +296,7 @@ export default function VdsActivitiesPage() {
         return (
             <div className='flex flex-col items-center justify-center py-24 text-center'>
                 <AlertTriangle className='text-destructive mb-4 h-12 w-12' />
-                <h2 className='text-xl font-black'>Instance Not Found</h2>
+                <h2 className='text-xl font-black'>{t('vds.console.not_found_title')}</h2>
             </div>
         );
     }
@@ -488,7 +461,9 @@ export default function VdsActivitiesPage() {
                                         <div className='text-muted-foreground flex items-center gap-2'>
                                             <Clock className='h-4 w-4 opacity-50' />
                                             <span className='text-sm font-semibold'>
-                                                {activity.timestamp ? formatRelativeTime(activity.timestamp, t) : '—'}
+                                                {activity.timestamp
+                                                    ? formatRelativeTime(activity.timestamp, dateOpts)
+                                                    : '—'}
                                             </span>
                                         </div>
                                         {activity.ip && (
@@ -619,7 +594,7 @@ export default function VdsActivitiesPage() {
                                     <DialogDescription className='text-xl font-medium opacity-70'>
                                         VDS Activity —{' '}
                                         {selectedItem.timestamp
-                                            ? new Date(selectedItem.timestamp).toLocaleString()
+                                            ? formatDateTimeInTz(selectedItem.timestamp, dateOpts)
                                             : '—'}
                                     </DialogDescription>
                                 </div>
@@ -649,7 +624,7 @@ export default function VdsActivitiesPage() {
                                         </span>
                                         <span className='text-lg font-bold'>
                                             {selectedItem.timestamp
-                                                ? new Date(selectedItem.timestamp).toLocaleString()
+                                                ? formatDateTimeInTz(selectedItem.timestamp, dateOpts)
                                                 : '—'}
                                         </span>
                                     </div>
@@ -690,7 +665,7 @@ export default function VdsActivitiesPage() {
                                         className='h-8 border-white/5 px-4 font-black tracking-wider uppercase opacity-40 hover:opacity-100'
                                         onClick={() => {
                                             navigator.clipboard.writeText(rawJson);
-                                            toast.success('Payload copied');
+                                            toast.success(t('vds.activities.payload_copied'));
                                         }}
                                     >
                                         <Copy className='mr-2 h-3.5 w-3.5' />

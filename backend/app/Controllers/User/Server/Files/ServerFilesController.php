@@ -24,6 +24,7 @@ use App\Chat\ServerActivity;
 use App\Helpers\ApiResponse;
 use App\Services\Wings\Wings;
 use OpenApi\Attributes as OA;
+use App\Config\ConfigInterface;
 use App\Plugins\Events\Events\ServerEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -36,7 +37,8 @@ use App\Controllers\User\Server\CheckSubuserPermissionsTrait;
     properties: [
         new OA\Property(property: 'name', type: 'string', description: 'File or directory name'),
         new OA\Property(property: 'type', type: 'string', enum: ['file', 'directory'], description: 'Item type'),
-        new OA\Property(property: 'size', type: 'integer', nullable: true, description: 'File size in bytes'),
+        new OA\Property(property: 'size', type: 'integer', nullable: true, description: 'File size in bytes (directory entry size for folders)'),
+        new OA\Property(property: 'directory_size', type: 'integer', nullable: true, description: 'Recursive size of folder contents in bytes (only when requested from Wings)'),
         new OA\Property(property: 'permissions', type: 'string', nullable: true, description: 'File permissions'),
         new OA\Property(property: 'modified_at', type: 'string', format: 'date-time', nullable: true, description: 'Last modified timestamp'),
         new OA\Property(property: 'path', type: 'string', description: 'Full file path'),
@@ -184,7 +186,7 @@ class ServerFilesController
             $path = $this->getPathFromQuery();
 
             $wings = $this->createWingsConnection($node);
-            $response = $wings->getServer()->listDirectory($server['uuid'], $path);
+            $response = $wings->getServer()->listDirectory($server['uuid'], $path, true);
 
             if (!$response->isSuccessful()) {
                 $error = $response->getError();
@@ -219,6 +221,69 @@ class ServerFilesController
             ], 'Files fetched successfully');
         } catch (\Exception $e) {
             return $this->handleWingsError($e, 'fetch files');
+        }
+    }
+
+    #[OA\Get(
+        path: '/api/user/servers/{uuidShort}/archive-list',
+        summary: 'List directory inside an archive',
+        description: 'Browse supported archives (zip, tar, …) on the server without extracting them.',
+        tags: ['User - Server Files'],
+        parameters: [
+            new OA\Parameter(name: 'uuidShort', in: 'path', required: true, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'path', in: 'query', required: false, schema: new OA\Schema(type: 'string', default: '/')),
+            new OA\Parameter(name: 'file', in: 'query', required: true, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'archive_path', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Archive listing retrieved'),
+            new OA\Response(response: 400, description: 'Bad request'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 500, description: 'Internal server error'),
+        ]
+    )]
+    public function listArchiveDirectory(Request $request, string $serverUuid): Response
+    {
+        try {
+            $user = $this->validateUser($request);
+            $server = $this->validateServer($serverUuid);
+            $node = $this->validateNode($server['node_id']);
+
+            $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::FILE_READ);
+            if ($permissionCheck !== null) {
+                return $permissionCheck;
+            }
+
+            $directory = $this->getPathFromQuery('/');
+            $file = $_GET['file'] ?? '';
+            if ($file === '' || !is_string($file)) {
+                return ApiResponse::error('Missing file parameter (archive path relative to path).', 'MISSING_FILE', 400);
+            }
+            $innerPath = isset($_GET['archive_path']) && is_string($_GET['archive_path']) ? $_GET['archive_path'] : '';
+
+            $wings = $this->createWingsConnection($node);
+            $response = $wings->getServer()->listArchiveDirectory($server['uuid'], $directory, $file, $innerPath);
+            if (!$response->isSuccessful()) {
+                $error = $response->getError();
+                if ($this->isWingsConnectionUnavailableError($error)) {
+                    return ApiResponse::error(
+                        'Wings Connection Unavailable. Please contact the support team. Technical details: ' . $error,
+                        'WINGS_CONNECTION_UNAVAILABLE',
+                        503
+                    );
+                }
+
+                return ApiResponse::error('Failed to list archive: ' . $error, 'WINGS_ERROR', $response->getStatusCode());
+            }
+
+            $data = $response->getData();
+            if (!is_array($data)) {
+                $data = ['contents' => [], 'truncated' => false];
+            }
+
+            return ApiResponse::success($data, 'Archive listing retrieved successfully');
+        } catch (\Exception $e) {
+            return $this->handleWingsError($e, 'list archive');
         }
     }
 
@@ -738,9 +803,11 @@ class ServerFilesController
             }
 
             $data = $this->validateJsonBody($request, ['files', 'root']);
+            $permanent = !empty($data['permanent']);
+            $deleteOptions = $this->buildTrashDeleteOptions($permanent);
 
             $wings = $this->createWingsConnection($node);
-            $response = $wings->getServer()->deleteFiles($server['uuid'], $data['root'], $data['files']);
+            $response = $wings->getServer()->deleteFiles($server['uuid'], $data['root'], $data['files'], $deleteOptions);
 
             if (!$response->isSuccessful()) {
                 $error = $response->getError();
@@ -748,12 +815,15 @@ class ServerFilesController
                 return ApiResponse::error('Failed to delete files: ' . $error, 'WINGS_ERROR', $response->getStatusCode());
             }
 
+            $usedTrash = !empty($deleteOptions['use_trash']) && empty($deleteOptions['permanent']);
+
             // Log activity
-            $this->logActivity($server, $node, 'files_deleted', [
+            $this->logActivity($server, $node, $usedTrash ? 'files_trashed' : 'files_deleted', [
                 'root' => $data['root'],
                 'files' => $data['files'],
 
                 'file_count' => count($data['files']),
+                'trash' => $usedTrash,
             ], $user);
 
             // Emit event
@@ -768,9 +838,149 @@ class ServerFilesController
                 );
             }
 
-            return ApiResponse::success($response->getData(), 'Files deleted successfully');
+            $message = $usedTrash ? 'Files moved to trash successfully' : 'Files deleted successfully';
+
+            return ApiResponse::success($response->getData(), $message);
         } catch (\Exception $e) {
             return $this->handleWingsError($e, 'delete files');
+        }
+    }
+
+    public function listTrash(Request $request, string $serverUuid): Response
+    {
+        try {
+            $user = $this->validateUser($request);
+            $server = $this->validateServer($serverUuid);
+            $node = $this->validateNode($server['node_id']);
+
+            $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::FILE_READ);
+            if ($permissionCheck !== null) {
+                return $permissionCheck;
+            }
+
+            if (!$this->isFileTrashEnabled()) {
+                return ApiResponse::error('File trash is disabled on this panel', 'TRASH_DISABLED', 403);
+            }
+
+            $limits = $this->getTrashLimits();
+            $wings = $this->createWingsConnection($node);
+            $response = $wings->getServer()->listTrash(
+                $server['uuid'],
+                (int) $limits['max_size_bytes'],
+                (int) $limits['retention_days']
+            );
+
+            if (!$response->isSuccessful()) {
+                return ApiResponse::error('Failed to list trash: ' . $response->getError(), 'WINGS_ERROR', $response->getStatusCode());
+            }
+
+            $this->logActivity($server, $node, 'trash_listed', [], $user);
+
+            return ApiResponse::success($response->getData(), 'Trash listed successfully');
+        } catch (\Exception $e) {
+            return $this->handleWingsError($e, 'list trash');
+        }
+    }
+
+    public function restoreTrash(Request $request, string $serverUuid): Response
+    {
+        try {
+            $user = $this->validateUser($request);
+            $server = $this->validateServer($serverUuid);
+            $node = $this->validateNode($server['node_id']);
+
+            $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::FILE_UPDATE);
+            if ($permissionCheck !== null) {
+                return $permissionCheck;
+            }
+
+            if (!$this->isFileTrashEnabled()) {
+                return ApiResponse::error('File trash is disabled on this panel', 'TRASH_DISABLED', 403);
+            }
+
+            $data = $this->validateJsonBody($request, ['ids']);
+            $overwrite = isset($data['overwrite']) && (bool) $data['overwrite'];
+            $wings = $this->createWingsConnection($node);
+            $response = $wings->getServer()->restoreTrash($server['uuid'], $data['ids'], $overwrite);
+
+            if (!$response->isSuccessful()) {
+                return ApiResponse::error('Failed to restore files: ' . $response->getError(), 'WINGS_ERROR', $response->getStatusCode());
+            }
+
+            $this->logActivity($server, $node, 'trash_restored', [
+                'ids' => $data['ids'],
+                'count' => count($data['ids']),
+            ], $user);
+
+            return ApiResponse::success($response->getData(), 'Files restored successfully');
+        } catch (\Exception $e) {
+            return $this->handleWingsError($e, 'restore trash');
+        }
+    }
+
+    public function deleteTrashEntries(Request $request, string $serverUuid): Response
+    {
+        try {
+            $user = $this->validateUser($request);
+            $server = $this->validateServer($serverUuid);
+            $node = $this->validateNode($server['node_id']);
+
+            $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::FILE_DELETE);
+            if ($permissionCheck !== null) {
+                return $permissionCheck;
+            }
+
+            if (!$this->isFileTrashEnabled()) {
+                return ApiResponse::error('File trash is disabled on this panel', 'TRASH_DISABLED', 403);
+            }
+
+            $data = $this->validateJsonBody($request, ['ids']);
+            $wings = $this->createWingsConnection($node);
+            $response = $wings->getServer()->deleteTrashEntries($server['uuid'], $data['ids']);
+
+            if (!$response->isSuccessful()) {
+                return ApiResponse::error('Failed to delete trash entries: ' . $response->getError(), 'WINGS_ERROR', $response->getStatusCode());
+            }
+
+            $this->logActivity($server, $node, 'trash_deleted', [
+                'ids' => $data['ids'],
+                'count' => count($data['ids']),
+            ], $user);
+
+            return ApiResponse::success($response->getData(), 'Trash entries deleted permanently');
+        } catch (\Exception $e) {
+            return $this->handleWingsError($e, 'delete trash entries');
+        }
+    }
+
+    public function emptyTrash(Request $request, string $serverUuid): Response
+    {
+        try {
+            $user = $this->validateUser($request);
+            $server = $this->validateServer($serverUuid);
+            $node = $this->validateNode($server['node_id']);
+
+            $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::FILE_DELETE);
+            if ($permissionCheck !== null) {
+                return $permissionCheck;
+            }
+
+            if (!$this->isFileTrashEnabled()) {
+                return ApiResponse::error('File trash is disabled on this panel', 'TRASH_DISABLED', 403);
+            }
+
+            $wings = $this->createWingsConnection($node);
+            $response = $wings->getServer()->emptyTrash($server['uuid']);
+
+            if (!$response->isSuccessful()) {
+                return ApiResponse::error('Failed to empty trash: ' . $response->getError(), 'WINGS_ERROR', $response->getStatusCode());
+            }
+
+            $this->logActivity($server, $node, 'trash_emptied', [], $user);
+
+            return ApiResponse::success($response->getData(), 'Trash emptied successfully');
+        } catch (\Exception $e) {
+            return $this->handleWingsError($e, 'empty trash');
         }
     }
 
@@ -1330,6 +1540,123 @@ class ServerFilesController
             return $this->handleWingsError($e, 'decompress archive');
         } catch (\Exception $e) {
             return $this->handleWingsError($e, 'decompress archive');
+        }
+    }
+
+    #[OA\Post(
+        path: '/api/user/servers/{uuidShort}/extract-archive-selection',
+        summary: 'Extract selected paths from an archive',
+        description: 'Extract specific files or directories from an on-disk archive into a destination folder without unpacking the whole archive.',
+        tags: ['User - Server Files'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['root', 'file', 'destination', 'entries'],
+                properties: [
+                    new OA\Property(property: 'root', type: 'string', description: 'Directory on the server that contains the archive'),
+                    new OA\Property(property: 'file', type: 'string', description: 'Archive file name relative to root'),
+                    new OA\Property(
+                        property: 'destination',
+                        type: 'string',
+                        description: 'Destination directory relative to server root (use empty string for /)'
+                    ),
+                    new OA\Property(
+                        property: 'entries',
+                        type: 'array',
+                        items: new OA\Items(type: 'string'),
+                        description: 'Paths inside the archive to extract'
+                    ),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Extraction started or completed successfully'),
+            new OA\Response(response: 400, description: 'Bad request'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 500, description: 'Internal server error'),
+        ]
+    )]
+    public function extractArchiveSelection(Request $request, string $serverUuid): Response
+    {
+        try {
+            $user = $this->validateUser($request);
+            $server = $this->validateServer($serverUuid);
+            $node = $this->validateNode($server['node_id']);
+
+            $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::FILE_ARCHIVE);
+            if ($permissionCheck !== null) {
+                return $permissionCheck;
+            }
+
+            $data = $this->validateJsonBody($request, ['root', 'file', 'destination', 'entries']);
+            if (!is_array($data['entries'])) {
+                return ApiResponse::error('Field entries must be an array of strings.', 'INVALID_ENTRIES', 400);
+            }
+            $entries = [];
+            foreach ($data['entries'] as $entry) {
+                if (is_string($entry) && $entry !== '') {
+                    $entries[] = $entry;
+                }
+            }
+            if ($entries === []) {
+                return ApiResponse::error('At least one non-empty archive entry path is required.', 'INVALID_ENTRIES', 400);
+            }
+
+            $root = $this->normalizeDirectoryPath((string) $data['root']);
+            $file = (string) $data['file'];
+
+            $destRaw = $data['destination'];
+            if (!is_string($destRaw)) {
+                return ApiResponse::error('Field destination must be a string.', 'INVALID_DESTINATION', 400);
+            }
+            $destination = ($destRaw === '' || $destRaw === '/') ? '' : ltrim($this->normalizeDirectoryPath($destRaw), '/');
+
+            $wings = $this->createWingsConnection($node);
+            $response = $wings->getServer()->extractArchiveSelection($server['uuid'], $root, $file, $destination, $entries);
+
+            if (!$response->isSuccessful()) {
+                $error = $response->getError();
+                if (strpos(strtolower($error), 'timeout') !== false || strpos(strtolower($error), 'timed out') !== false) {
+                    return ApiResponse::error(
+                        'Archive extraction timed out. Try a smaller selection or extract the full archive instead.',
+                        'ARCHIVE_TIMEOUT',
+                        $response->getStatusCode()
+                    );
+                }
+
+                return ApiResponse::error('Failed to extract from archive: ' . $error, 'WINGS_ERROR', $response->getStatusCode());
+            }
+
+            $this->logActivity($server, $node, 'archive_selection_extracted', [
+                'root' => $root,
+                'file' => $file,
+                'destination' => $destination,
+                'entry_count' => count($entries),
+            ], $user);
+
+            return ApiResponse::success($response->getData(), 'Archive selection extracted successfully');
+        } catch (\App\Services\Wings\Exceptions\WingsConnectionException $e) {
+            $errorMessage = $e->getMessage();
+            if (strpos(strtolower($errorMessage), 'timeout') !== false || strpos(strtolower($errorMessage), 'timed out') !== false) {
+                return ApiResponse::error(
+                    'Archive extraction timed out. Try a smaller selection or extract the full archive instead.',
+                    'ARCHIVE_TIMEOUT',
+                    504
+                );
+            }
+
+            return $this->handleWingsError($e, 'extract archive selection');
+        } catch (\Exception $e) {
+            return $this->handleWingsError($e, 'extract archive selection');
         }
     }
 
@@ -2221,5 +2548,43 @@ class ServerFilesController
         ];
 
         return $mimeTypes[$extension] ?? 'text/plain';
+    }
+
+    private function isFileTrashEnabled(): bool
+    {
+        return App::getInstance(true)->getConfig()->getSetting(ConfigInterface::FILE_TRASH_ENABLED, 'false') === 'true';
+    }
+
+    /**
+     * @return array{max_size_bytes: int, retention_days: int}
+     */
+    private function getTrashLimits(): array
+    {
+        $config = App::getInstance(true)->getConfig();
+        $maxMb = (int) $config->getSetting(ConfigInterface::FILE_TRASH_MAX_SIZE_MB, '512');
+        $retentionDays = (int) $config->getSetting(ConfigInterface::FILE_TRASH_RETENTION_DAYS, '30');
+
+        return [
+            'max_size_bytes' => $maxMb > 0 ? $maxMb * 1024 * 1024 : 0,
+            'retention_days' => $retentionDays,
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildTrashDeleteOptions(bool $permanent): array
+    {
+        if ($permanent || !$this->isFileTrashEnabled()) {
+            return ['permanent' => true];
+        }
+
+        $limits = $this->getTrashLimits();
+
+        return [
+            'use_trash' => true,
+            'permanent' => false,
+            'trash' => $limits,
+        ];
     }
 }

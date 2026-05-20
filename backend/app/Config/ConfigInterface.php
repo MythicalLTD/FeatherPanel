@@ -47,6 +47,8 @@ interface ConfigInterface
     public const APP_THEME_LOCK = 'app_theme_lock';
     public const APP_BACKGROUND_TYPE_DEFAULT = 'app_background_type_default';
     public const APP_BACKGROUND_TYPE_LOCK = 'app_background_type_lock';
+    /** When false, hide FeatherPanel "powered by" branding across the panel (typically via White Label addon). */
+    public const BRANDING_SHOW_POWERED_BY = 'branding_show_powered_by';
     public const APP_BACKDROP_BLUR_DEFAULT = 'app_backdrop_blur_default';
     public const APP_BACKDROP_BLUR_LOCK = 'app_backdrop_blur_lock';
     public const APP_BACKDROP_DARKEN_DEFAULT = 'app_backdrop_darken_default';
@@ -201,6 +203,15 @@ interface ConfigInterface
     public const SERVER_HIDE_IPS = 'server_hide_ips';
     /** When false, lifecycle hook UI and execution are disabled (default off until enabled by an administrator). */
     public const SERVER_LIFECYCLE_HOOKS_ENABLED = 'server_lifecycle_hooks_enabled';
+
+    /**
+     * File trash bin (soft-delete via FeatherWings).
+     */
+    public const FILE_TRASH_ENABLED = 'file_trash_enabled';
+    /** Maximum total size of trashed files per server, in megabytes (0 = unlimited). */
+    public const FILE_TRASH_MAX_SIZE_MB = 'file_trash_max_size_mb';
+    /** Automatically purge trashed files older than this many days (0 = never by age). */
+    public const FILE_TRASH_RETENTION_DAYS = 'file_trash_retention_days';
 
     /**
      * User Related Configs.

@@ -20,18 +20,27 @@ namespace App\Controllers\User\User;
 use App\App;
 use App\Chat\Role;
 use App\Chat\User;
+use App\Chat\Ticket;
 use App\Chat\Activity;
 use App\Chat\MailList;
 use App\Chat\ApiClient;
 use App\Chat\Permission;
+use App\Chat\TicketStatus;
+use App\Chat\TicketMessage;
+use App\Helpers\TimeHelper;
+use App\Chat\TicketCategory;
+use App\Chat\TicketPriority;
+use App\Chat\UserDataExport;
 use App\Chat\UserPreference;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
+use App\Helpers\CaptchaHelper;
 use App\Config\ConfigInterface;
 use App\Middleware\AuthMiddleware;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Helpers\EmailDomainValidator;
 use App\Plugins\Events\Events\UserEvent;
+use App\Plugins\Events\Events\TicketEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -125,7 +134,7 @@ class SessionController
             if (!isset($data['turnstile_token']) || trim($data['turnstile_token']) === '') {
                 return ApiResponse::error('Captcha token is required', 'CAPTCHA_TOKEN_REQUIRED');
             }
-            if (!\App\Helpers\CaptchaHelper::validate($data['turnstile_token'], CloudFlareRealIP::getRealIP())) {
+            if (!CaptchaHelper::validate($data['turnstile_token'], CloudFlareRealIP::getRealIP())) {
                 return ApiResponse::error('Captcha validation failed', 'CAPTCHA_VALIDATION_FAILED');
             }
             // Remove turnstile_token from data after validation (it's not a user field)
@@ -344,6 +353,187 @@ class SessionController
             'permissions' => $permissions,
             'preferences' => [],
         ], 'Session retrieved', 200);
+    }
+
+    #[OA\Post(
+        path: '/api/user/data-request',
+        summary: 'Request account data export',
+        description: 'Create a support ticket requesting a personal data export for the authenticated user.',
+        tags: ['User - Session'],
+        responses: [
+            new OA\Response(response: 201, description: 'Data request ticket created successfully'),
+            new OA\Response(response: 400, description: 'Bad request - Missing ticket configuration'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Ticket system disabled or open ticket limit reached'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to create request'),
+        ]
+    )]
+    public function requestDataExport(Request $request): Response
+    {
+        $app = App::getInstance(true);
+        $config = $app->getConfig();
+        $data = json_decode($request->getContent(), true);
+        if (!is_array($data)) {
+            $data = [];
+        }
+
+        if ($config->getSetting(ConfigInterface::TICKET_SYSTEM_ENABLED, 'true') !== 'true') {
+            return ApiResponse::error('Ticket system is disabled', 'TICKET_SYSTEM_DISABLED', 403);
+        }
+
+        if ($config->getSetting(ConfigInterface::TURNSTILE_ENABLED, 'false') === 'true') {
+            if (!isset($data['turnstile_token']) || trim((string) $data['turnstile_token']) === '') {
+                return ApiResponse::error('Captcha token is required', 'CAPTCHA_TOKEN_REQUIRED', 400);
+            }
+            if (!CaptchaHelper::validate((string) $data['turnstile_token'], CloudFlareRealIP::getRealIP())) {
+                return ApiResponse::error('Captcha validation failed', 'CAPTCHA_VALIDATION_FAILED', 400);
+            }
+        }
+
+        $user = AuthMiddleware::getCurrentUser($request);
+        if ($user == null) {
+            return ApiResponse::error('You are not allowed to access this resource!', 'INVALID_ACCOUNT_TOKEN', 400, []);
+        }
+
+        if (UserDataExport::hasRecentRequestForUser((string) $user['uuid'], 24)) {
+            return ApiResponse::error(
+                'You can request your personal data once every 24 hours. Please try again later.',
+                'DATA_EXPORT_RATE_LIMITED',
+                429
+            );
+        }
+
+        $maxOpenTickets = (int) $config->getSetting(ConfigInterface::TICKET_SYSTEM_MAX_OPEN_TICKETS, '10');
+        if ($maxOpenTickets > 0 && Ticket::getOpenTicketsCount($user['uuid']) >= $maxOpenTickets) {
+            return ApiResponse::error(
+                "You have reached the maximum number of open tickets ({$maxOpenTickets}). Please close or wait for resolution of existing tickets before creating a new one.",
+                'MAX_OPEN_TICKETS_REACHED',
+                403
+            );
+        }
+
+        $categories = TicketCategory::getAll('privacy', 1, 0);
+        if (empty($categories)) {
+            $categories = TicketCategory::getAll('data', 1, 0);
+        }
+        if (empty($categories)) {
+            $categories = TicketCategory::getAll(null, 1, 0);
+        }
+        if (empty($categories)) {
+            return ApiResponse::error('No ticket categories configured', 'NO_CATEGORIES', 500);
+        }
+
+        $priorities = TicketPriority::getAll('normal', 1, 0);
+        if (empty($priorities)) {
+            $priorities = TicketPriority::getAll('medium', 1, 0);
+        }
+        if (empty($priorities)) {
+            $priorities = TicketPriority::getAll('low', 1, 0);
+        }
+        if (empty($priorities)) {
+            $priorities = TicketPriority::getAll(null, 1, 0);
+        }
+        if (empty($priorities)) {
+            return ApiResponse::error('No ticket priorities configured', 'NO_PRIORITIES', 500);
+        }
+
+        $statuses = TicketStatus::getAll(null, 100, 0);
+        $openStatus = null;
+        foreach ($statuses as $status) {
+            if (strtolower($status['name']) === 'open') {
+                $openStatus = $status;
+                break;
+            }
+        }
+        if (!$openStatus && !empty($statuses)) {
+            $openStatus = $statuses[0];
+        }
+        if (!$openStatus) {
+            return ApiResponse::error('No ticket statuses configured', 'NO_STATUSES', 500);
+        }
+
+        $title = 'Personal data request';
+        $description = implode("\n", [
+            'I am requesting a copy of my personal data under UK GDPR.',
+            '',
+            'Account details:',
+            '- User UUID: ' . $user['uuid'],
+            '- Username: ' . $user['username'],
+            '- Email: ' . $user['email'],
+            '',
+            'Please provide the data export or advise on any identity verification and fulfilment timeline.',
+        ]);
+
+        $ticketData = [
+            'uuid' => Ticket::generateUuid(),
+            'user_uuid' => $user['uuid'],
+            'server_id' => null,
+            'category_id' => (int) $categories[0]['id'],
+            'priority_id' => (int) $priorities[0]['id'],
+            'status_id' => (int) $openStatus['id'],
+            'title' => $title,
+            'description' => $description,
+        ];
+
+        $ticketId = Ticket::create($ticketData);
+        if (!$ticketId) {
+            return ApiResponse::error('Failed to create data request', 'CREATE_FAILED', 500);
+        }
+
+        $messageId = TicketMessage::create([
+            'ticket_id' => $ticketId,
+            'user_uuid' => $user['uuid'],
+            'message' => $description,
+            'is_internal' => false,
+        ]);
+
+        if (!$messageId) {
+            $app->getLogger()->warning('Failed to create initial message for data request ticket: ' . $ticketId);
+        }
+
+        $exportUuid = UserDataExport::generateUuid();
+        $exportId = UserDataExport::create([
+            'uuid' => $exportUuid,
+            'user_uuid' => $user['uuid'],
+            'ticket_id' => $ticketId,
+        ]);
+
+        if (!$exportId) {
+            $app->getLogger()->error('Failed to queue data export for ticket: ' . $ticketId);
+
+            return ApiResponse::error('Data request ticket was created, but the export could not be queued. Please contact support.', 'EXPORT_QUEUE_FAILED', 500);
+        }
+
+        $ticket = Ticket::getById($ticketId);
+
+        Activity::createActivity([
+            'user_uuid' => $user['uuid'],
+            'name' => 'request_data_export',
+            'context' => 'Requested personal data export',
+            'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                TicketEvent::onTicketCreated(),
+                [
+                    'ticket' => $ticket,
+                    'ticket_id' => $ticketId,
+                    'user_uuid' => $user['uuid'],
+                ]
+            );
+        }
+
+        return ApiResponse::success([
+            'ticket' => $ticket,
+            'message_id' => $messageId,
+            'export' => [
+                'id' => $exportId,
+                'uuid' => $exportUuid,
+                'status' => 'pending',
+            ],
+        ], 'Data request created successfully', 201);
     }
 
     #[OA\Post(
@@ -605,6 +795,15 @@ class SessionController
             $data['favorite_server_uuids'] = $cleanFavorites;
         }
 
+        if (array_key_exists('timezone', $data)) {
+            if ($data['timezone'] === null || $data['timezone'] === '') {
+                // Treat empty value as "clear preference, fall back to browser/global default"
+                $data['timezone'] = null;
+            } elseif (!is_string($data['timezone']) || !TimeHelper::isValidTimezone($data['timezone'])) {
+                return ApiResponse::error('Invalid timezone identifier', 'INVALID_TIMEZONE', 400, []);
+            }
+        }
+
         // Update preferences (merges with existing)
         $success = UserPreference::updatePreferences($user['uuid'], $data);
 
@@ -715,7 +914,7 @@ class SessionController
                 'subject' => $mail['subject'] ?? '',
                 'body' => $mail['body'] ?? '',
                 'status' => $mail['status'] ?? 'pending',
-                'created_at' => $mail['created_at'] ?? '',
+                'created_at' => TimeHelper::toIso8601($mail['created_at'] ?? null),
             ];
             $mails[] = $mailData;
         }
@@ -849,8 +1048,8 @@ class SessionController
                 'name' => $activity['name'] ?? '',
                 'context' => $activity['context'] ?? null,
                 'ip_address' => $ipAddress,
-                'created_at' => $activity['created_at'] ?? '',
-                'updated_at' => $activity['updated_at'] ?? '',
+                'created_at' => TimeHelper::toIso8601($activity['created_at'] ?? null),
+                'updated_at' => TimeHelper::toIso8601($activity['updated_at'] ?? null),
             ];
             $formattedActivities[] = $activityData;
         }

@@ -99,11 +99,11 @@ export function ModulesTab({ node }: ModulesTabProps) {
             if (data.success) {
                 setConfigData(JSON.stringify(data.data.config || {}, null, 4));
             } else {
-                toast.error(data.message || 'Failed to fetch module configuration');
+                toast.error(data.message || t('admin.node.view.modules.config_fetch_failed'));
                 setConfigModalOpen(false);
             }
         } catch (err: unknown) {
-            let msg = 'Failed to fetch module configuration';
+            let msg = t('admin.node.view.modules.config_fetch_failed');
             if (axios.isAxiosError(err)) {
                 msg = err.response?.data?.message || err.message;
             }
@@ -122,7 +122,7 @@ export function ModulesTab({ node }: ModulesTabProps) {
             try {
                 parsedConfig = JSON.parse(configData);
             } catch {
-                toast.error('Invalid JSON configuration');
+                toast.error(t('admin.node.view.modules.invalid_json_config'));
                 setSavingConfig(false);
                 return;
             }

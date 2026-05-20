@@ -19,6 +19,7 @@ import { ThemeProvider } from '@/contexts/ThemeContext';
 import { SettingsProvider } from '@/contexts/SettingsContext';
 import { TranslationProvider } from '@/contexts/TranslationContext';
 import { SessionProvider } from '@/contexts/SessionContext';
+import { PreferencesProvider } from '@/contexts/PreferencesContext';
 import { NotificationProvider } from '@/contexts/NotificationContext';
 import AppContent from '@/components/common/AppContent';
 import { Toaster } from 'sonner';
@@ -149,9 +150,18 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                     rose: '347 77% 50%',
                     slate: '215 20% 45%',
                   };
+                  var foregrounds = {
+                    orange: '0 0% 9%',
+                    teal: '0 0% 9%',
+                    yellow: '0 0% 9%',
+                    cyan: '0 0% 9%',
+                    lime: '0 0% 9%',
+                    amber: '0 0% 9%'
+                  };
                   document.documentElement.classList.add(theme);
                   document.documentElement.style.setProperty('--primary', colors[accentColor] || colors.purple);
                   document.documentElement.style.setProperty('--ring', colors[accentColor] || colors.purple);
+                  document.documentElement.style.setProperty('--primary-foreground', foregrounds[accentColor] || '0 0% 98%');
                   // Initialize motion preference for app-wide transitions.
                   const savedMotion = localStorage.getItem('motionLevel');
                   const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -279,14 +289,16 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                     <ThemeProvider>
                         <TranslationProvider>
                             <SessionProvider>
-                                <NotificationProvider>
-                                    <PluginAssets />
-                                    <ChunkLoadErrorHandler />
-                                    <SystemHealthCheck />
-                                    <PwaInstaller />
-                                    <AppContent>{children}</AppContent>
-                                    <Toaster richColors position='top-right' />
-                                </NotificationProvider>
+                                <PreferencesProvider>
+                                    <NotificationProvider>
+                                        <PluginAssets />
+                                        <ChunkLoadErrorHandler />
+                                        <SystemHealthCheck />
+                                        <PwaInstaller />
+                                        <AppContent>{children}</AppContent>
+                                        <Toaster richColors position='top-right' />
+                                    </NotificationProvider>
+                                </PreferencesProvider>
                             </SessionProvider>
                         </TranslationProvider>
                     </ThemeProvider>

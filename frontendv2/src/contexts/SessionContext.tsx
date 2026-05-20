@@ -41,6 +41,11 @@ export interface UserInfo {
     ticket_signature?: string;
     discord_oauth2_linked?: string;
     discord_oauth2_name?: string;
+    oidc_provider?: string | null;
+    oidc_subject?: string | null;
+    oidc_email?: string | null;
+    ldap_provider_uuid?: string | null;
+    ldap_dn?: string | null;
 }
 
 export type PermissionsList = string[];

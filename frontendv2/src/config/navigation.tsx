@@ -678,6 +678,7 @@ export const getServerNavigationItems = (
             category: 'server',
             group: 'files',
             permission: 'file.read',
+            priority: 100,
         },
         {
             id: 'server-databases',
@@ -689,6 +690,7 @@ export const getServerNavigationItems = (
             category: 'server',
             group: 'files',
             permission: 'database.read',
+            priority: 200,
         },
         {
             id: 'server-backups',
@@ -700,6 +702,7 @@ export const getServerNavigationItems = (
             category: 'server',
             group: 'files',
             permission: 'backup.read',
+            priority: 300,
         },
     ];
 
@@ -714,6 +717,7 @@ export const getServerNavigationItems = (
             category: 'server',
             group: 'files',
             permission: 'import.read',
+            priority: 400,
         });
     }
 

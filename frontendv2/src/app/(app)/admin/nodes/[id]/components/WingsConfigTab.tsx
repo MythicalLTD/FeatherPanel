@@ -136,10 +136,12 @@ export function WingsConfigTab({ node }: WingsConfigTabProps) {
                     {error ? (
                         <div className='border-destructive/20 bg-destructive/5 rounded-2xl border p-6 text-center'>
                             <AlertTriangle className='text-destructive mx-auto mb-3 h-8 w-8' />
-                            <h3 className='text-destructive mb-1 text-sm font-bold'>Failed to Load Configuration</h3>
+                            <h3 className='text-destructive mb-1 text-sm font-bold'>
+                                {t('admin.node.view.config.load_failed_title')}
+                            </h3>
                             <p className='text-destructive/80 mb-4 text-xs'>{error}</p>
                             <Button variant='outline' size='sm' onClick={fetchConfig} className='rounded-xl'>
-                                Try Again
+                                {t('common.retry')}
                             </Button>
                         </div>
                     ) : (

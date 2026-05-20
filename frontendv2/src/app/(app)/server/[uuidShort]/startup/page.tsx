@@ -21,7 +21,19 @@ import axios, { AxiosError } from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
-import { Zap, ChevronRight, RefreshCw, Save, Terminal, Container, Settings, Loader2, Lock } from 'lucide-react';
+import {
+    Zap,
+    ChevronRight,
+    RefreshCw,
+    Save,
+    Terminal,
+    Container,
+    Settings,
+    Loader2,
+    Lock,
+    Plus,
+    Trash2,
+} from 'lucide-react';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Textarea } from '@/components/featherui/Textarea';
@@ -31,12 +43,13 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { cn, isEnabled } from '@/lib/utils';
-import type { Variable, Server } from '@/types/server';
+import type { Variable, Server, CustomVariable } from '@/types/server';
 
 interface ServerResponse {
     success: boolean;
     data: Server & {
         variables: Variable[];
+        custom_variables?: CustomVariable[];
         image?: string;
     };
 }
@@ -53,12 +66,15 @@ export default function ServerStartupPage() {
     const canRead = hasPermission('startup.read');
     const canUpdateStartup = hasPermission('startup.update') && isEnabled(settings?.server_allow_startup_change);
     const canUpdateDockerImage = hasPermission('startup.docker-image');
+    const canManageCustomVariables = hasPermission('startup.update');
     const canChangeSpell = isEnabled(settings?.server_allow_egg_change);
 
     const [server, setServer] = React.useState<(Server & { variables: Variable[] }) | null>(null);
     const [loading, setLoading] = React.useState(true);
     const [saving, setSaving] = React.useState(false);
     const [variables, setVariables] = React.useState<Variable[]>([]);
+    const [customVariables, setCustomVariables] = React.useState<CustomVariable[]>([]);
+    const [customVariableSaving, setCustomVariableSaving] = React.useState(false);
     const [availableDockerImages, setAvailableDockerImages] = React.useState<string[]>([]);
     const [defaultStartupCommand, setDefaultStartupCommand] = React.useState('');
 
@@ -69,13 +85,19 @@ export default function ServerStartupPage() {
 
     const [variableValues, setVariableValues] = React.useState<Record<number, string>>({});
     const [variableErrors, setVariableErrors] = React.useState<Record<number, string>>({});
+    const [customVariableForm, setCustomVariableForm] = React.useState({
+        name: '',
+        env_variable: '',
+        variable_value: '',
+        is_encrypted: false,
+    });
 
     const parseRules = React.useCallback((rules: string) => {
         if (!rules) return [];
         const parts = rules.split('|');
         const parsed: Array<{ type: string; value?: number | string }> = [];
         for (const part of parts) {
-            if (['required', 'nullable', 'string', 'numeric', 'integer'].includes(part)) {
+            if (['required', 'nullable', 'string', 'numeric', 'integer', 'int'].includes(part)) {
                 parsed.push({ type: part });
                 continue;
             }
@@ -111,7 +133,7 @@ export default function ServerStartupPage() {
             const parsed = parseRules(rules || '');
             const hasNullable = parsed.some((r) => r.type === 'nullable');
             const isRequired = parsed.some((r) => r.type === 'required');
-            const isNumeric = parsed.some((r) => r.type === 'numeric' || r.type === 'integer');
+            const isNumeric = parsed.some((r) => r.type === 'numeric' || r.type === 'integer' || r.type === 'int');
 
             const val = value ?? '';
             const trimmedForEmptyCheck = val.trim();
@@ -206,6 +228,7 @@ export default function ServerStartupPage() {
                 setDefaultStartupCommand(s.spell?.startup || '');
                 const vars = s.variables || [];
                 setVariables(vars);
+                setCustomVariables(s.custom_variables || []);
                 const values: Record<number, string> = {};
                 vars.forEach((v) => {
                     values[v.variable_id] = v.variable_value ?? '';
@@ -319,7 +342,72 @@ export default function ServerStartupPage() {
         }
     };
 
+    const handleAddCustomVariable = async () => {
+        const name = customVariableForm.name.trim();
+        const envVariable = customVariableForm.env_variable.trim().toUpperCase();
+
+        if (!name || !envVariable) {
+            toast.error('Name and environment variable are required');
+            return;
+        }
+
+        if (!/^[A-Z_][A-Z0-9_]*$/.test(envVariable)) {
+            toast.error(
+                'Env variable must use uppercase letters, numbers, and underscores, and cannot start with a number',
+            );
+            return;
+        }
+
+        setCustomVariableSaving(true);
+        try {
+            const { data } = await axios.post<{ success: boolean; message?: string }>(
+                `/api/user/servers/${uuidShort}/custom-variables`,
+                {
+                    name,
+                    env_variable: envVariable,
+                    variable_value: customVariableForm.variable_value,
+                    is_encrypted: customVariableForm.is_encrypted,
+                },
+            );
+
+            if (data.success) {
+                toast.success('Custom variable added');
+                setCustomVariableForm({ name: '', env_variable: '', variable_value: '', is_encrypted: false });
+                await fetchData();
+            } else {
+                toast.error(data.message || 'Failed to add custom variable');
+            }
+        } catch (error) {
+            const axiosError = error as AxiosError<{ message?: string }>;
+            toast.error(axiosError.response?.data?.message || 'Failed to add custom variable');
+        } finally {
+            setCustomVariableSaving(false);
+        }
+    };
+
+    const handleDeleteCustomVariable = async (variable: CustomVariable) => {
+        setCustomVariableSaving(true);
+        try {
+            const { data } = await axios.delete<{ success: boolean; message?: string }>(
+                `/api/user/servers/${uuidShort}/custom-variables/${variable.id}`,
+            );
+
+            if (data.success) {
+                toast.success('Custom variable deleted');
+                await fetchData();
+            } else {
+                toast.error(data.message || 'Failed to delete custom variable');
+            }
+        } catch (error) {
+            const axiosError = error as AxiosError<{ message?: string }>;
+            toast.error(axiosError.response?.data?.message || 'Failed to delete custom variable');
+        } finally {
+            setCustomVariableSaving(false);
+        }
+    };
+
     const viewableVariables = variables.filter((v) => isEnabled(v.user_viewable) || canUpdateStartup);
+    const variableCount = viewableVariables.length + customVariables.length;
     const hasChanges = () => {
         if (!server) return false;
         const startupChanged = form.startup !== (server.startup || '');
@@ -443,14 +531,14 @@ export default function ServerStartupPage() {
                         icon={Settings}
                         action={
                             <div className='bg-secondary/50 border-border/10 text-muted-foreground/60 rounded-2xl border px-5 py-2 text-[10px] font-black tracking-widest uppercase'>
-                                {viewableVariables.length}{' '}
-                                {viewableVariables.length === 1
+                                {variableCount}{' '}
+                                {variableCount === 1
                                     ? t('serverStartup.variableSingular')
                                     : t('serverStartup.variablePlural')}
                             </div>
                         }
                     >
-                        {viewableVariables.length === 0 ? (
+                        {viewableVariables.length === 0 && customVariables.length === 0 ? (
                             <div className='flex flex-col items-center justify-center space-y-4 py-16 text-center'>
                                 <Settings className='text-muted-foreground/10 h-16 w-16' />
                                 <p className='text-muted-foreground leading-none font-black uppercase'>
@@ -515,6 +603,116 @@ export default function ServerStartupPage() {
                                 ))}
                             </div>
                         )}
+
+                        <div className='mt-10 space-y-6 border-t border-white/5 pt-8'>
+                            <div className='flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between'>
+                                <div>
+                                    <h3 className='text-sm font-black tracking-widest uppercase'>
+                                        Custom environment variables
+                                    </h3>
+                                    <p className='text-muted-foreground/50 mt-1 text-xs font-medium'>
+                                        Added directly to this server and synced without a transfer.
+                                    </p>
+                                </div>
+                            </div>
+
+                            {customVariables.length > 0 && (
+                                <div className='grid grid-cols-1 gap-3 md:grid-cols-2'>
+                                    {customVariables.map((variable) => (
+                                        <div
+                                            key={variable.id}
+                                            className='bg-card/50 border-border/10 flex items-center justify-between gap-3 rounded-2xl border p-4'
+                                        >
+                                            <div className='min-w-0'>
+                                                <p className='truncate text-xs font-black tracking-widest uppercase'>
+                                                    {variable.name}
+                                                </p>
+                                                <p className='text-muted-foreground/50 mt-1 truncate font-mono text-[10px]'>
+                                                    {variable.env_variable}={variable.variable_value}
+                                                </p>
+                                            </div>
+                                            {Number(variable.is_encrypted) === 1 && (
+                                                <Lock className='text-muted-foreground/50 h-3.5 w-3.5 shrink-0' />
+                                            )}
+                                            <Button
+                                                variant='outline'
+                                                size='sm'
+                                                onClick={() => handleDeleteCustomVariable(variable)}
+                                                disabled={!canManageCustomVariables || customVariableSaving}
+                                                className='shrink-0'
+                                                aria-label={`Delete ${variable.env_variable}`}
+                                            >
+                                                <Trash2 className='h-3.5 w-3.5' />
+                                            </Button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {canManageCustomVariables && (
+                                <div className='bg-secondary/20 border-border/10 grid grid-cols-1 gap-3 rounded-3xl border p-4 md:grid-cols-3'>
+                                    <Input
+                                        value={customVariableForm.name}
+                                        onChange={(e) =>
+                                            setCustomVariableForm((prev) => ({ ...prev, name: e.target.value }))
+                                        }
+                                        disabled={customVariableSaving}
+                                        placeholder='Display name'
+                                    />
+                                    <Input
+                                        value={customVariableForm.env_variable}
+                                        onChange={(e) =>
+                                            setCustomVariableForm((prev) => ({
+                                                ...prev,
+                                                env_variable: e.target.value.toUpperCase(),
+                                            }))
+                                        }
+                                        disabled={customVariableSaving}
+                                        placeholder='ENV_NAME'
+                                        className='font-mono text-xs'
+                                    />
+                                    <div className='flex gap-3'>
+                                        <Input
+                                            value={customVariableForm.variable_value}
+                                            onChange={(e) =>
+                                                setCustomVariableForm((prev) => ({
+                                                    ...prev,
+                                                    variable_value: e.target.value,
+                                                }))
+                                            }
+                                            disabled={customVariableSaving}
+                                            placeholder='Value'
+                                            className='font-mono text-xs'
+                                        />
+                                        <Button
+                                            variant='default'
+                                            size='default'
+                                            onClick={handleAddCustomVariable}
+                                            disabled={customVariableSaving}
+                                            loading={customVariableSaving}
+                                            className='shrink-0'
+                                        >
+                                            <Plus className='h-4 w-4' />
+                                        </Button>
+                                    </div>
+                                    <label className='text-muted-foreground/70 flex items-start gap-2 text-xs md:col-span-3'>
+                                        <input
+                                            type='checkbox'
+                                            checked={customVariableForm.is_encrypted}
+                                            onChange={(e) =>
+                                                setCustomVariableForm((prev) => ({
+                                                    ...prev,
+                                                    is_encrypted: e.target.checked,
+                                                }))
+                                            }
+                                            disabled={customVariableSaving}
+                                            className='mt-0.5 h-4 w-4 rounded border-white/20 bg-white/5'
+                                        />
+                                        <span>Encrypt this value and hide it after save</span>
+                                    </label>
+                                </div>
+                            )}
+                        </div>
                     </PageCard>
                     <WidgetRenderer widgets={getWidgets('server-startup', 'after-variables')} />
                 </div>

@@ -13,14 +13,18 @@ by the Free Software Foundation, either version 3 of the License, or
 See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
+'use client';
+
 import { X, Megaphone, CheckCircle, AlertTriangle, AlertOctagon } from 'lucide-react';
 import { useNotifications } from '@/contexts/NotificationContext';
+import { useTranslation } from '@/contexts/TranslationContext';
 import type { Notification } from '@/types/notification';
 import { cn } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
 
 export function AnnouncementBanner() {
     const { notifications, dismissNotification } = useNotifications();
+    const { t } = useTranslation();
 
     if (notifications.length === 0) return null;
 
@@ -85,7 +89,7 @@ export function AnnouncementBanner() {
                                 <button
                                     onClick={() => dismissNotification(notification.id)}
                                     className='shrink-0 rounded-lg p-1 transition-colors hover:bg-black/5 dark:hover:bg-white/10'
-                                    aria-label='Dismiss'
+                                    aria-label={t('common.dismiss')}
                                 >
                                     <X className='h-4 w-4 opacity-70' />
                                 </button>

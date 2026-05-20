@@ -103,7 +103,7 @@ export default function SetupTwoFactorForm() {
         }
 
         if (code.length !== 6) {
-            setError('Verification code must be 6 digits');
+            setError(t('validation.verification_code_6_digits'));
             return;
         }
 
@@ -213,7 +213,7 @@ export default function SetupTwoFactorForm() {
                             variant='outline'
                             size='icon'
                             onClick={copySecret}
-                            title='Copy to clipboard'
+                            title={t('common.copy_to_clipboard')}
                         >
                             <Clipboard className='h-4 w-4' />
                         </Button>

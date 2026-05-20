@@ -154,9 +154,14 @@ class VdsToolHandler
      */
     public function removeToolCalls(string $response): string
     {
-        $pattern = '/TOOL_CALL:\s*\w+\s*\{[^}]*\}/s';
+        $pattern = '/TOOL_CALL:\s*\w+\s*\{[^}]*\}|TOOL_CALL:\s*[^\n]+/s';
 
         return preg_replace($pattern, '', $response);
+    }
+
+    public function hasMalformedToolCall(string $response): bool
+    {
+        return str_contains($response, 'TOOL_CALL:') && empty($this->parseToolCalls($response));
     }
 
     /**

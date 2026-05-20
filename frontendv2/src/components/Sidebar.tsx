@@ -32,6 +32,7 @@ import { useNavigation } from '@/hooks/useNavigation';
 import { useTranslation } from '@/contexts/TranslationContext';
 import type { NavigationItem } from '@/types/navigation';
 import { type ChromeLayout, useChromeLayout } from '@/hooks/useChromeLayout';
+import { PoweredByFeatherPanel } from '@/components/branding/PoweredByFeatherPanel';
 
 interface SidebarProps {
     mobileOpen: boolean;
@@ -204,13 +205,13 @@ function SidebarContent({
     const isClassicChrome = chromeLayout === 'classic';
 
     const navItemBase = isClassicChrome
-        ? 'group flex items-center w-full rounded-lg text-sm font-medium transition-all'
+        ? 'group flex items-center w-full rounded-md text-sm font-medium transition-colors'
         : 'group flex items-center w-full rounded-xl text-sm font-medium transition-[background-color,box-shadow,color,transform] duration-200';
     const navItemIdle = isClassicChrome
-        ? 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+        ? 'text-muted-foreground hover:bg-muted hover:text-foreground'
         : 'text-muted-foreground hover:bg-muted/55 hover:text-foreground dark:hover:bg-muted/20';
     const navItemActive = isClassicChrome
-        ? 'bg-primary text-primary-foreground'
+        ? 'bg-accent text-accent-foreground font-semibold ring-1 ring-border/50'
         : 'bg-primary/12 text-primary font-semibold shadow-sm ring-1 ring-inset ring-primary/15 dark:bg-primary/[0.14] dark:ring-primary/28';
 
     const badgeClass = isClassicChrome
@@ -386,7 +387,7 @@ function SidebarContent({
             <nav
                 className={cn(
                     isClassicChrome
-                        ? 'custom-scrollbar flex-1 space-y-6 overflow-y-auto px-2 py-4'
+                        ? 'custom-scrollbar flex-1 space-y-4 overflow-y-auto px-3 py-3'
                         : 'custom-scrollbar flex-1 space-y-4 overflow-y-auto py-3 sm:space-y-5',
                     !isClassicChrome && (collapsed && !mobile ? 'px-1.5' : 'px-2'),
                 )}
@@ -626,6 +627,7 @@ function SidebarContent({
                             </>
                         )}
                     </button>
+                    {!collapsed && <PoweredByFeatherPanel variant='sidebar' className='mt-2 px-1' />}
                 </div>
             )}
         </div>
@@ -640,6 +642,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen, pluginFullBleed = f
     const { settings } = useSettings();
     const { navigationItems } = useNavigation();
     const { chromeLayout } = useChromeLayout();
+    const { t } = useTranslation();
     const [collapsed, setCollapsed] = useState(() => {
         if (typeof window !== 'undefined') {
             try {
@@ -652,7 +655,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen, pluginFullBleed = f
     });
 
     const groupedItems = useMemo(() => {
-        return navigationItems.reduce(
+        const grouped = navigationItems.reduce(
             (acc, item) => {
                 const group = item.group || 'Other';
                 if (!acc[group]) acc[group] = [];
@@ -661,6 +664,12 @@ export default function Sidebar({ mobileOpen, setMobileOpen, pluginFullBleed = f
             },
             {} as Record<string, NavigationItem[]>,
         );
+
+        Object.values(grouped).forEach((items) => {
+            items.sort((a, b) => (a.priority ?? Number.MAX_SAFE_INTEGER) - (b.priority ?? Number.MAX_SAFE_INTEGER));
+        });
+
+        return grouped;
     }, [navigationItems]);
 
     useEffect(() => {
@@ -726,7 +735,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen, pluginFullBleed = f
                                             className='border-border/50 bg-card/90 text-muted-foreground hover:bg-muted hover:text-foreground rounded-full border p-2.5 shadow-lg backdrop-blur-md transition-colors'
                                             onClick={() => setMobileOpen(false)}
                                         >
-                                            <span className='sr-only'>Close sidebar</span>
+                                            <span className='sr-only'>{t('sidebar.close')}</span>
                                             <X className='h-5 w-5' aria-hidden='true' />
                                         </button>
                                     </div>
@@ -735,8 +744,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen, pluginFullBleed = f
                                 <div
                                     className={cn(
                                         'flex h-full min-h-0 grow flex-col gap-y-5 overflow-y-auto',
-                                        chromeLayout === 'classic' &&
-                                            'bg-card/70 border-border/80 border-r backdrop-blur-xl',
+                                        chromeLayout === 'classic' && 'bg-card border-border/80 border-r',
                                     )}
                                 >
                                     <SidebarContent
@@ -769,7 +777,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen, pluginFullBleed = f
                         'flex h-full min-h-0 grow flex-col gap-y-5 overflow-y-auto transition-[width] duration-300 ease-out',
                         chromeLayout === 'classic'
                             ? cn(
-                                  'bg-card/70 lg:border-border/80 backdrop-blur-xl transition-all duration-300 lg:border-r',
+                                  'bg-card lg:border-border/80 transition-all duration-300 lg:border-r',
                                   collapsed ? 'w-16' : 'w-64',
                               )
                             : collapsed

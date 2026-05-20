@@ -55,7 +55,7 @@ export interface Allocation {
     id: number;
     ip: string;
     port: number;
-    ip_alias?: string;
+    ip_alias?: string | null;
     server_id: number | null;
     node_id: number;
 }

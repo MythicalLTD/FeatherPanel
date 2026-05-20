@@ -75,12 +75,18 @@ class NodeStatusController
         $allowIframe = $config->getSetting(ConfigInterface::STATUS_PAGE_ALLOW_IFRAME, 'false') === 'true';
         $showRawValues = $config->getSetting(ConfigInterface::STATUS_PAGE_SHOW_RAW_VALUES, 'false') === 'true';
         $showPlayerCount = $config->getSetting(ConfigInterface::STATUS_PAGE_SHOW_PLAYER_COUNT, 'false') === 'true';
+        $showPoweredBy = $config->getSetting(ConfigInterface::BRANDING_SHOW_POWERED_BY, 'true') === 'true';
 
         $responseData = [
             'enabled' => true,
             'allow_iframe' => $allowIframe,
             'show_raw_values' => $showRawValues,
             'show_player_count' => $showPlayerCount,
+            'powered_by' => [
+                'show' => $showPoweredBy,
+                'label' => 'FeatherPanel',
+                'url' => 'https://featherpanel.com',
+            ],
         ];
 
         // Get node status if enabled

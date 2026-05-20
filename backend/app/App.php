@@ -161,11 +161,20 @@ class App
             return;
         }
 
-        $timezone = $this->getConfig()->getSetting(ConfigInterface::APP_TIMEZONE, 'UTC');
-        if (!@date_default_timezone_set($timezone)) {
-            self::getLogger()->warning("Invalid timezone '$timezone', falling back to UTC.");
-            date_default_timezone_set('UTC');
-        }
+        // Force PHP's default timezone to UTC for the entire request.
+        //
+        // Every datetime that gets persisted to the database is generated from
+        // PHP's `date()`/`DateTime`/`->format(...)` family of helpers, all of
+        // which honour `date_default_timezone_set`. If we leave this on the
+        // admin-configured panel timezone (e.g. Europe/Paris), those helpers
+        // emit local-time literals, MySQL stores them verbatim into DATETIME
+        // columns, and the frontend — which now correctly interprets every API
+        // datetime as UTC — ends up displaying them shifted by the panel
+        // offset (e.g. a row created "now" gets labelled "in 2 hours").
+        //
+        // The `app_timezone` setting is retained as a display fallback in the
+        // frontend, where it belongs. Storage is always UTC.
+        date_default_timezone_set('UTC');
 
         $this->routes = new RouteCollection();
         $this->registerApiRoutes($this->routes);

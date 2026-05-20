@@ -44,6 +44,24 @@ return function (RouteCollection $routes): void {
 
     App::getInstance(true)->registerServerRoute(
         $routes,
+        'session-server-archive-list',
+        '/api/user/servers/{uuidShort}/archive-list',
+        function (Request $request, array $args) {
+            $uuidShort = $args['uuidShort'] ?? null;
+            if (!$uuidShort) {
+                return ApiResponse::error('Missing or invalid UUID short', 'INVALID_UUID_SHORT', 400);
+            }
+
+            return (new ServerFilesController())->listArchiveDirectory($request, $uuidShort);
+        },
+        'uuidShort',
+        ['GET'],
+        Rate::perMinute(60),
+        'user-server-files'
+    );
+
+    App::getInstance(true)->registerServerRoute(
+        $routes,
         'session-server-search-files',
         '/api/user/servers/{uuidShort}/search-files',
         function (Request $request, array $args) {
@@ -141,6 +159,66 @@ return function (RouteCollection $routes): void {
 
     App::getInstance(true)->registerServerRoute(
         $routes,
+        'session-server-trash-list',
+        '/api/user/servers/{uuidShort}/trash',
+        function (Request $request, array $args) {
+            $uuidShort = $args['uuidShort'] ?? null;
+
+            return (new ServerFilesController())->listTrash($request, $uuidShort);
+        },
+        'uuidShort',
+        ['GET'],
+        Rate::perMinute(60),
+        'user-server-files'
+    );
+
+    App::getInstance(true)->registerServerRoute(
+        $routes,
+        'session-server-trash-restore',
+        '/api/user/servers/{uuidShort}/trash/restore',
+        function (Request $request, array $args) {
+            $uuidShort = $args['uuidShort'] ?? null;
+
+            return (new ServerFilesController())->restoreTrash($request, $uuidShort);
+        },
+        'uuidShort',
+        ['POST'],
+        Rate::perMinute(20),
+        'user-server-files'
+    );
+
+    App::getInstance(true)->registerServerRoute(
+        $routes,
+        'session-server-trash-delete',
+        '/api/user/servers/{uuidShort}/trash/delete',
+        function (Request $request, array $args) {
+            $uuidShort = $args['uuidShort'] ?? null;
+
+            return (new ServerFilesController())->deleteTrashEntries($request, $uuidShort);
+        },
+        'uuidShort',
+        ['POST'],
+        Rate::perMinute(10),
+        'user-server-files'
+    );
+
+    App::getInstance(true)->registerServerRoute(
+        $routes,
+        'session-server-trash-empty',
+        '/api/user/servers/{uuidShort}/trash/empty',
+        function (Request $request, array $args) {
+            $uuidShort = $args['uuidShort'] ?? null;
+
+            return (new ServerFilesController())->emptyTrash($request, $uuidShort);
+        },
+        'uuidShort',
+        ['POST'],
+        Rate::perMinute(5),
+        'user-server-files'
+    );
+
+    App::getInstance(true)->registerServerRoute(
+        $routes,
         'session-server-wipe-all-files',
         '/api/user/servers/{uuidShort}/wipe-all-files',
         function (Request $request, array $args) {
@@ -209,6 +287,21 @@ return function (RouteCollection $routes): void {
         'uuidShort', // Pass the server UUID for middleware
         ['POST'],
         Rate::perMinute(20), // Default: Admin can override in ratelimit.json
+        'user-server-files'
+    );
+
+    App::getInstance(true)->registerServerRoute(
+        $routes,
+        'session-server-extract-archive-selection',
+        '/api/user/servers/{uuidShort}/extract-archive-selection',
+        function (Request $request, array $args) {
+            $uuidShort = $args['uuidShort'] ?? null;
+
+            return (new ServerFilesController())->extractArchiveSelection($request, $uuidShort);
+        },
+        'uuidShort',
+        ['POST'],
+        Rate::perMinute(20),
         'user-server-files'
     );
 

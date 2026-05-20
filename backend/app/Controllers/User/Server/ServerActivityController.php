@@ -20,6 +20,7 @@ namespace App\Controllers\User\Server;
 use App\App;
 use App\Chat\User;
 use App\Chat\Server;
+use App\Helpers\TimeHelper;
 use App\SubuserPermissions;
 use App\Chat\ServerActivity;
 use App\Helpers\ApiResponse;
@@ -171,11 +172,12 @@ class ServerActivityController
         // Mask IPs if the setting is enabled
         $app = App::getInstance(true);
         $hideIps = $app->getConfig()->getSetting(ConfigInterface::SERVER_HIDE_IPS, 'false') === 'true';
-        if ($hideIps && isset($result['data'])) {
+        if (isset($result['data'])) {
             foreach ($result['data'] as &$activity) {
-                if (!empty($activity['ip'])) {
+                if ($hideIps && !empty($activity['ip'])) {
                     $activity['ip'] = '***.***.***.***';
                 }
+                $activity = TimeHelper::normaliseRow($activity, ['timestamp']);
             }
             unset($activity);
         }

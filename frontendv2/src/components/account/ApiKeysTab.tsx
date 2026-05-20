@@ -15,7 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSession } from '@/contexts/SessionContext';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -77,7 +77,7 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
 
     const canCreateApiKeys = settings?.user_allow_api_keys_create || hasPermission('admin.api.bypass_restrictions');
 
-    const fetchClients = async () => {
+    const fetchClients = useCallback(async () => {
         setLoading(true);
         try {
             const { data } = await axios.get('/api/user/api-clients');
@@ -86,16 +86,16 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
             }
         } catch (error) {
             console.error('Error fetching API clients:', error);
-            toast.error('Failed to load API clients');
+            toast.error(t('account.apiKeys.loadClientsFailed'));
         } finally {
             setLoading(false);
         }
-    };
+    }, [t]);
 
     useEffect(() => {
         fetchClients();
         fetchWidgets();
-    }, [fetchWidgets]);
+    }, [fetchWidgets, fetchClients]);
 
     const filteredClients = clients.filter(
         (client) =>
@@ -146,7 +146,7 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
             }
         } catch (error) {
             console.error('Error updating API client:', error);
-            toast.error('Failed to update API client');
+            toast.error(t('account.apiKeys.updateClientFailed'));
         }
     };
 
@@ -159,7 +159,7 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
             }
         } catch (error) {
             console.error('Error loading API client:', error);
-            toast.error('Failed to load API client');
+            toast.error(t('account.apiKeys.loadClientFailed'));
         }
     };
 
@@ -175,7 +175,7 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
             }
         } catch (error) {
             console.error('Error loading API client:', error);
-            toast.error('Failed to load API client');
+            toast.error(t('account.apiKeys.loadClientFailed'));
         }
     };
 
@@ -209,7 +209,7 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
             }
         } catch (error) {
             console.error('Error regenerating API keys:', error);
-            toast.error('Failed to regenerate API keys');
+            toast.error(t('account.apiKeys.regenerateFailed'));
         }
     };
 

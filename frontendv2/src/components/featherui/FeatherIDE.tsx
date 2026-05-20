@@ -18,6 +18,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import React, { useRef } from 'react';
 import { Editor, EditorProps, OnMount } from '@monaco-editor/react';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useTranslation } from '@/contexts/TranslationContext';
 import { cn } from '@/lib/utils';
 import { Loader2, AlignLeft } from 'lucide-react';
 import { Button } from './Button';
@@ -30,6 +31,7 @@ interface FeatherIDEProps extends Omit<EditorProps, 'theme'> {
 
 export function FeatherIDE({ className, containerClassName, options, title, ...props }: FeatherIDEProps) {
     const { theme } = useTheme();
+    const { t } = useTranslation();
     const editorRef = useRef<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
 
     const handleEditorDidMount: OnMount = (editor, monaco) => {
@@ -70,10 +72,10 @@ export function FeatherIDE({ className, containerClassName, options, title, ...p
                     size='sm'
                     onClick={formatDocument}
                     className='h-8 rounded-lg px-2 text-xs'
-                    title='Format Document'
+                    title={t('common.format_document')}
                 >
                     <AlignLeft className='mr-1.5 h-3.5 w-3.5' />
-                    Format
+                    {t('common.format')}
                 </Button>
             </div>
             <div className='relative flex-1'>

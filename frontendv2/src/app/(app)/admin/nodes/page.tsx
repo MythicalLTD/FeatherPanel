@@ -42,7 +42,9 @@ import {
     MapPin,
     Shield,
     Network,
+    ArrowLeftRight,
 } from 'lucide-react';
+import { MassTransferServersDialog } from '@/components/admin/MassTransferServersDialog';
 
 interface Node {
     id: number;
@@ -97,6 +99,7 @@ export default function NodesPage() {
     const [refreshKey, setRefreshKey] = useState(0);
     const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
     const [deleting, setDeleting] = useState(false);
+    const [massTransferNode, setMassTransferNode] = useState<Node | null>(null);
 
     const [pagination, setPagination] = useState<Pagination>({
         page: 1,
@@ -375,6 +378,14 @@ export default function NodesPage() {
                                         <Button
                                             size='sm'
                                             variant='ghost'
+                                            onClick={() => setMassTransferNode(node)}
+                                            title={t('admin.node.mass_transfer.button')}
+                                        >
+                                            <ArrowLeftRight className='h-4 w-4' />
+                                        </Button>
+                                        <Button
+                                            size='sm'
+                                            variant='ghost'
                                             onClick={() => router.push(`/admin/nodes/${node.id}/edit`)}
                                             title={t('admin.node.actions.edit')}
                                         >
@@ -471,6 +482,18 @@ export default function NodesPage() {
             </PageCard>
 
             <WidgetRenderer widgets={getWidgets('admin-nodes', 'bottom-of-page')} />
+
+            {massTransferNode ? (
+                <MassTransferServersDialog
+                    sourceNodeId={massTransferNode.id}
+                    sourceNodeName={massTransferNode.name}
+                    open={!!massTransferNode}
+                    onOpenChange={(open) => {
+                        if (!open) setMassTransferNode(null);
+                    }}
+                    onCompleted={() => setRefreshKey((prev) => prev + 1)}
+                />
+            ) : null}
         </div>
     );
 }

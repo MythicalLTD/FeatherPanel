@@ -249,14 +249,14 @@ export default function PterodactylImporterPage() {
 
             if (buffer === cheatCode) {
                 setBypassPrerequisites(true);
-                toast.success('Cheat code activated: Prerequisites bypassed!');
+                toast.success(t('admin.pterodactyl_importer.toasts.cheat_code_activated'));
                 buffer = '';
             }
         };
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, []);
+    }, [t]);
 
     return (
         <div className='space-y-6'>

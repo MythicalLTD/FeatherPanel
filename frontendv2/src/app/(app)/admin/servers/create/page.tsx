@@ -290,12 +290,12 @@ export default function CreateServerPage() {
                 }
             } catch (error) {
                 console.error('Error fetching spell details:', error);
-                toast.error('Failed to fetch spell details');
+                toast.error(t('admin.servers.form.messages.spell_details_failed'));
             }
         };
 
         fetchSpellDetails();
-    }, [formData.spellId]);
+    }, [formData.spellId, t]);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -614,16 +614,16 @@ export default function CreateServerPage() {
             const { data } = await axios.put('/api/admin/servers', payload);
 
             if (data.success) {
-                toast.success('Server created successfully!');
+                toast.success(t('admin.servers.form.messages.created'));
                 router.push('/admin/servers');
             } else {
-                toast.error(data.message || 'Failed to create server');
+                toast.error(data.message || t('admin.servers.form.messages.create_failed'));
             }
         } catch (error) {
             if (isAxiosError(error)) {
-                toast.error(error.response?.data?.message || 'Failed to create server');
+                toast.error(error.response?.data?.message || t('admin.servers.form.messages.create_failed'));
             } else {
-                toast.error('An unexpected error occurred');
+                toast.error(t('account.unexpectedError'));
             }
         } finally {
             setSubmitting(false);

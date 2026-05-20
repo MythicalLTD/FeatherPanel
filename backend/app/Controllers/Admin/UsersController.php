@@ -32,6 +32,7 @@ use App\Chat\MailQueue;
 use App\Chat\Allocation;
 use App\Chat\VmInstance;
 use App\Helpers\UUIDUtils;
+use App\Helpers\TimeHelper;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
@@ -40,6 +41,7 @@ use App\CloudFlare\CloudFlareRealIP;
 use App\Helpers\EmailDomainValidator;
 use App\Mail\templates\AccountBanned;
 use App\Mail\templates\AccountDeleted;
+use App\Helpers\ModerationReasonHelper;
 use App\Mail\templates\AccountUnBanned;
 use App\Plugins\Events\Events\UserEvent;
 use Symfony\Component\HttpFoundation\Request;
@@ -55,6 +57,7 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'first_name', type: 'string', description: 'First name'),
         new OA\Property(property: 'last_name', type: 'string', description: 'Last name'),
         new OA\Property(property: 'email', type: 'string', format: 'email', description: 'Email address'),
+        new OA\Property(property: 'email_verified', type: 'boolean', description: 'Whether the user email is verified'),
         new OA\Property(property: 'avatar', type: 'string', format: 'uri', description: 'Avatar URL'),
         new OA\Property(property: 'last_seen', type: 'string', format: 'date-time', nullable: true, description: 'Last seen timestamp'),
         new OA\Property(property: 'banned', type: 'boolean', description: 'Banned status'),
@@ -307,6 +310,7 @@ class UsersController
                 'avatar',
                 'last_seen',
                 'email',
+                'mail_verify',
                 'oidc_provider',
                 'oidc_subject',
                 'ldap_provider_uuid',
@@ -332,22 +336,26 @@ class UsersController
         }
 
         foreach ($users as &$user) {
-            $roleId = $user['role_id'];
-            if (isset($rolesMap[$roleId])) {
-                $user['role']['name'] = $rolesMap[$roleId]['name'];
-                $user['role']['display_name'] = $rolesMap[$roleId]['display_name'];
-                $user['role']['color'] = $rolesMap[$roleId]['color'];
+            $userRoleId = $user['role_id'];
+            if (isset($rolesMap[$userRoleId])) {
+                $user['role']['name'] = $rolesMap[$userRoleId]['name'];
+                $user['role']['display_name'] = $rolesMap[$userRoleId]['display_name'];
+                $user['role']['color'] = $rolesMap[$userRoleId]['color'];
             } else {
-                $user['role']['name'] = $roleId;
+                $user['role']['name'] = $userRoleId;
                 $user['role']['display_name'] = 'User';
                 $user['role']['color'] = '#666666';
             }
+            $user['email_verified'] = !isset($user['mail_verify']) || trim((string) $user['mail_verify']) === '';
             if ($app->isDemoMode()) {
                 $user['first_ip'] = $app->getIPIntoFBIFormat();
                 $user['last_ip'] = $app->getIPIntoFBIFormat();
             }
-            unset($user['role_id']);
+            unset($user['role_id'], $user['mail_verify']);
         }
+        unset($user);
+
+        $users = TimeHelper::normaliseRows($users, ['last_seen', 'first_seen']);
 
         $total = User::getCount(
             $search,
@@ -435,7 +443,8 @@ class UsersController
             'color' => $rolesMap[$roleId]['color'] ?? '#666666',
         ];
 
-        unset($user['password']);
+        $user['email_verified'] = !isset($user['mail_verify']) || trim((string) $user['mail_verify']) === '';
+        unset($user['password'], $user['mail_verify']);
 
         $user['activities'] = array_map(function ($activity) use ($app) {
             unset($activity['user_uuid'], $activity['id'], $activity['updated_at']);
@@ -462,6 +471,9 @@ class UsersController
             $user['first_ip'] = $app->getIPIntoFBIFormat();
             $user['last_ip'] = $app->getIPIntoFBIFormat();
         }
+
+        $user = ModerationReasonHelper::enrichUserBanMetadata($user);
+        $user = TimeHelper::normaliseRow($user, ['last_seen', 'first_seen', 'banned_at']);
 
         return ApiResponse::success(['user' => $user, 'roles' => $rolesMap], 'User fetched successfully', 200);
     }
@@ -525,7 +537,8 @@ class UsersController
             'color' => $rolesMap[$roleId]['color'] ?? '#666666',
         ];
 
-        unset($user['password']);
+        $user['email_verified'] = !isset($user['mail_verify']) || trim((string) $user['mail_verify']) === '';
+        unset($user['password'], $user['mail_verify']);
 
         $user['activities'] = array_map(function ($activity) use ($app) {
             unset($activity['user_uuid'], $activity['id'], $activity['updated_at']);
@@ -553,6 +566,9 @@ class UsersController
             $user['first_ip'] = $app->getIPIntoFBIFormat();
             $user['last_ip'] = $app->getIPIntoFBIFormat();
         }
+
+        $user = ModerationReasonHelper::enrichUserBanMetadata($user);
+        $user = TimeHelper::normaliseRow($user, ['last_seen', 'first_seen', 'banned_at']);
 
         return ApiResponse::success(['user' => $user, 'roles' => $rolesMap], 'User fetched successfully', 200);
     }
@@ -822,6 +838,34 @@ class UsersController
             $data['password'] = password_hash($data['password'], PASSWORD_BCRYPT);
             $data['remember_token'] = User::generateAccountToken();
         }
+
+        $staffUser = $request->attributes->get('user');
+        $wasBanned = $user['banned'] === 'true';
+        $becameBanned = false;
+        $becameUnbanned = false;
+        $banReasonForEmail = '';
+
+        if (array_key_exists('banned', $data)) {
+            $wantsBanned = $data['banned'] === 'true' || $data['banned'] === true;
+            unset($data['reason_category'], $data['reason_details'], $data['reason']);
+
+            if ($wantsBanned && !$wasBanned) {
+                $parsed = ModerationReasonHelper::parseRequestBody(json_decode($request->getContent(), true) ?: []);
+                $reasonError = ModerationReasonHelper::validateReason($parsed['reason']);
+                if ($reasonError !== null) {
+                    return ApiResponse::error($reasonError, 'MODERATION_REASON_REQUIRED', 400);
+                }
+                $data = array_merge($data, ModerationReasonHelper::banAppliedFields($parsed['reason'], $staffUser));
+                $banReasonForEmail = $parsed['reason'];
+                $becameBanned = true;
+            } elseif (!$wantsBanned && $wasBanned) {
+                $data = array_merge($data, ModerationReasonHelper::banClearedFields());
+                $becameUnbanned = true;
+            } elseif ($wantsBanned && $wasBanned) {
+                unset($data['banned']);
+            }
+        }
+
         $updated = User::updateUser($user['uuid'], $data);
         if (!$updated) {
             return ApiResponse::error('Failed to update user', 'FAILED_TO_UPDATE_USER', 500, [
@@ -843,36 +887,35 @@ class UsersController
             );
         }
 
-        if (isset($data['banned'])) {
-            if ($data['banned'] == 'true') {
-                AccountBanned::send([
-                    'email' => $user['email'],
-                    'subject' => 'Your account has been suspended on ' . $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
-                    'app_name' => $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
-                    'app_url' => $config->getSetting(ConfigInterface::APP_URL, 'https://featherpanel.mythical.systems'),
-                    'first_name' => $user['first_name'],
-                    'last_name' => $user['last_name'],
-                    'username' => $user['username'],
-                    'app_support_url' => $config->getSetting(ConfigInterface::APP_SUPPORT_URL, 'https://discord.mythical.systems'),
-                    'uuid' => $user['uuid'],
-                    'enabled' => $config->getSetting(ConfigInterface::SMTP_ENABLED, 'false'),
-                    'suspension_time' => date('Y-m-d H:i:s'),
-                ]);
-            } else {
-                AccountUnBanned::send([
-                    'email' => $user['email'],
-                    'subject' => 'Your account has been unsuspended on ' . $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
-                    'app_name' => $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
-                    'app_url' => $config->getSetting(ConfigInterface::APP_URL, 'https://featherpanel.mythical.systems'),
-                    'first_name' => $user['first_name'],
-                    'last_name' => $user['last_name'],
-                    'username' => $user['username'],
-                    'app_support_url' => $config->getSetting(ConfigInterface::APP_SUPPORT_URL, 'https://discord.mythical.systems'),
-                    'uuid' => $user['uuid'],
-                    'enabled' => $config->getSetting(ConfigInterface::SMTP_ENABLED, 'false'),
-                    'unsuspension_time' => date('Y-m-d H:i:s'),
-                ]);
-            }
+        if ($becameBanned) {
+            AccountBanned::send([
+                'email' => $user['email'],
+                'subject' => 'Your account has been suspended on ' . $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
+                'app_name' => $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
+                'app_url' => $config->getSetting(ConfigInterface::APP_URL, 'https://featherpanel.mythical.systems'),
+                'first_name' => $user['first_name'],
+                'last_name' => $user['last_name'],
+                'username' => $user['username'],
+                'app_support_url' => $config->getSetting(ConfigInterface::APP_SUPPORT_URL, 'https://discord.mythical.systems'),
+                'uuid' => $user['uuid'],
+                'enabled' => $config->getSetting(ConfigInterface::SMTP_ENABLED, 'false'),
+                'suspension_time' => date('Y-m-d H:i:s'),
+                'suspension_reason' => $banReasonForEmail,
+            ]);
+        } elseif ($becameUnbanned) {
+            AccountUnBanned::send([
+                'email' => $user['email'],
+                'subject' => 'Your account has been unsuspended on ' . $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
+                'app_name' => $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
+                'app_url' => $config->getSetting(ConfigInterface::APP_URL, 'https://featherpanel.mythical.systems'),
+                'first_name' => $user['first_name'],
+                'last_name' => $user['last_name'],
+                'username' => $user['username'],
+                'app_support_url' => $config->getSetting(ConfigInterface::APP_SUPPORT_URL, 'https://discord.mythical.systems'),
+                'uuid' => $user['uuid'],
+                'enabled' => $config->getSetting(ConfigInterface::SMTP_ENABLED, 'false'),
+                'unsuspension_time' => date('Y-m-d H:i:s'),
+            ]);
         }
 
         return ApiResponse::success([], 'User updated successfully', 200);
@@ -1392,6 +1435,74 @@ class UsersController
     }
 
     #[OA\Post(
+        path: '/api/admin/users/{uuid}/verify-email',
+        summary: 'Force verify user email',
+        description: 'Mark a user email address as verified by clearing their pending email verification token.',
+        tags: ['Admin - Users'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuid',
+                in: 'path',
+                description: 'User UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string', format: 'uuid')
+            ),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'User email verified successfully'),
+            new OA\Response(response: 400, description: 'Bad request - User is already verified or demo mode restriction'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
+            new OA\Response(response: 404, description: 'User not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to verify email'),
+        ]
+    )]
+    public function forceVerifyEmail(Request $request, string $uuid): Response
+    {
+        $user = User::getUserByUuid($uuid);
+        if (!$user) {
+            return ApiResponse::error('User not found', 'USER_NOT_FOUND', 404);
+        }
+
+        $app = App::getInstance(true);
+        if ($app->isDemoMode() && in_array((int) $user['id'], [1, 2], true)) {
+            return ApiResponse::error('Unmanaged actions are not permitted in demo mode', 'UNMANAGED_ACTIONS_NOT_PERMITTED', 400);
+        }
+
+        if (!isset($user['mail_verify']) || trim((string) $user['mail_verify']) === '') {
+            return ApiResponse::error('User email is already verified', 'EMAIL_ALREADY_VERIFIED', 400);
+        }
+
+        $updated = User::updateUser($user['uuid'], ['mail_verify' => null]);
+        if (!$updated) {
+            return ApiResponse::error('Failed to verify user email', 'FAILED_TO_VERIFY_EMAIL', 500);
+        }
+
+        Activity::createActivity([
+            'user_uuid' => $request->attributes->get('user')['uuid'] ?? null,
+            'name' => 'force_verify_user_email',
+            'context' => 'Force verified email for user ' . ($user['username'] ?? $user['uuid']),
+            'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                UserEvent::onUserUpdated(),
+                [
+                    'user' => $user,
+                    'updated_data' => ['mail_verify' => null],
+                    'updated_by' => $request->attributes->get('user'),
+                ]
+            );
+        }
+
+        $app->getLogger()->info('User ' . $user['uuid'] . ' email force verified by ' . ($request->attributes->get('user')['uuid'] ?? 'unknown'));
+
+        return ApiResponse::success([], 'User email verified successfully', 200);
+    }
+
+    #[OA\Post(
         path: '/api/admin/users/{uuid}/ban',
         summary: 'Ban a user',
         description: 'Ban a user account. The user will be immediately blocked from all authenticated endpoints and receive a suspension email notification.',
@@ -1432,7 +1543,18 @@ class UsersController
             }
         }
 
-        $updated = User::updateUser($user['uuid'], ['banned' => 'true']);
+        $body = json_decode($request->getContent(), true);
+        if (!is_array($body)) {
+            $body = [];
+        }
+        $parsed = ModerationReasonHelper::parseRequestBody($body);
+        $reasonError = ModerationReasonHelper::validateReason($parsed['reason']);
+        if ($reasonError !== null) {
+            return ApiResponse::error($reasonError, 'MODERATION_REASON_REQUIRED', 400);
+        }
+
+        $staffUser = $request->attributes->get('user');
+        $updated = User::updateUser($user['uuid'], ModerationReasonHelper::banAppliedFields($parsed['reason'], $staffUser));
         if (!$updated) {
             return ApiResponse::error('Failed to ban user', 'FAILED_TO_BAN_USER', 500);
         }
@@ -1443,8 +1565,8 @@ class UsersController
                 UserEvent::onUserUpdated(),
                 [
                     'user' => $user,
-                    'updated_data' => ['banned' => 'true'],
-                    'updated_by' => $request->attributes->get('user'),
+                    'updated_data' => array_merge(ModerationReasonHelper::banAppliedFields($parsed['reason'], $staffUser), ['ban_reason' => $parsed['reason']]),
+                    'updated_by' => $staffUser,
                 ]
             );
         }
@@ -1462,6 +1584,7 @@ class UsersController
             'uuid' => $user['uuid'],
             'enabled' => $config->getSetting(ConfigInterface::SMTP_ENABLED, 'false'),
             'suspension_time' => date('Y-m-d H:i:s'),
+            'suspension_reason' => $parsed['reason'],
         ]);
 
         $app->getLogger()->info('User ' . $user['uuid'] . ' banned by ' . ($request->attributes->get('user')['uuid'] ?? 'unknown'));
@@ -1510,7 +1633,7 @@ class UsersController
             }
         }
 
-        $updated = User::updateUser($user['uuid'], ['banned' => 'false']);
+        $updated = User::updateUser($user['uuid'], ModerationReasonHelper::banClearedFields());
         if (!$updated) {
             return ApiResponse::error('Failed to unban user', 'FAILED_TO_UNBAN_USER', 500);
         }
@@ -1521,7 +1644,7 @@ class UsersController
                 UserEvent::onUserUpdated(),
                 [
                     'user' => $user,
-                    'updated_data' => ['banned' => 'false'],
+                    'updated_data' => ModerationReasonHelper::banClearedFields(),
                     'updated_by' => $request->attributes->get('user'),
                 ]
             );

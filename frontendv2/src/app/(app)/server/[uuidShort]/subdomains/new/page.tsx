@@ -301,13 +301,12 @@ export default function CreateSubdomainPage() {
                             <li className='text-muted-foreground flex gap-3 text-xs'>
                                 <span className='bg-primary mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full' />
                                 <span>
-                                    Subdomains allow you to give your server a custom address, like{' '}
-                                    <code>play.example.com</code>.
+                                    {t('serverSubdomains.guide_custom_address')} <code>play.example.com</code>.
                                 </span>
                             </li>
                             <li className='text-muted-foreground flex gap-3 text-xs'>
                                 <span className='bg-primary mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full' />
-                                <span>You can create multiple subdomains for different purposes.</span>
+                                <span>{t('serverSubdomains.guide_multiple')}</span>
                             </li>
                         </ul>
                     </div>

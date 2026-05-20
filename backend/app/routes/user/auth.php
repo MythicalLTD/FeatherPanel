@@ -96,6 +96,19 @@ return function (RouteCollection $routes): void {
         'user-auth'
     );
 
+    // POST (resend verification email)
+    App::getInstance(true)->registerApiRoute(
+        $routes,
+        'verify-email-resend',
+        '/api/user/auth/verify-email/resend',
+        function (Request $request) {
+            return (new VerifyEmailController())->resend($request);
+        },
+        ['POST'],
+        Rate::perMinute(3),
+        'user-auth-verify-email'
+    );
+
     // PUT (reset password)
     App::getInstance(true)->registerApiRoute(
         $routes,
@@ -238,6 +251,30 @@ return function (RouteCollection $routes): void {
         },
         ['GET'],
         Rate::perMinute(10), // Default: Admin can override in ratelimit.json
+        'user-auth-oidc'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'oidc-link',
+        '/api/user/auth/oidc/link',
+        function (Request $request) {
+            return (new OidcController())->link($request);
+        },
+        ['GET'],
+        Rate::perMinute(5),
+        'user-auth-oidc'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'oidc-unlink',
+        '/api/user/auth/oidc/unlink',
+        function (Request $request) {
+            return (new OidcController())->unlink($request);
+        },
+        ['DELETE'],
+        Rate::perMinute(5),
         'user-auth-oidc'
     );
 

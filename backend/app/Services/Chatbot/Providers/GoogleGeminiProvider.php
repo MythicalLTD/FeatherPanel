@@ -19,6 +19,7 @@ namespace App\Services\Chatbot\Providers;
 
 use App\App;
 use GuzzleHttp\Client;
+use App\Services\Chatbot\TokenUsage;
 use GuzzleHttp\Exception\GuzzleException;
 
 class GoogleGeminiProvider implements ProviderInterface
@@ -155,6 +156,7 @@ class GoogleGeminiProvider implements ProviderInterface
             return [
                 'response' => $responseText,
                 'model' => "Google Gemini {$this->model}",
+                'usage' => TokenUsage::fromGeminiUsage($data['usageMetadata'] ?? null, $message, $responseText),
             ];
         } catch (GuzzleException $e) {
             $this->app->getLogger()->error('Google Gemini API exception: ' . $e->getMessage());

@@ -156,29 +156,35 @@ export default function SystemAnalyticsPage() {
                             <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-4'>
                                 <ResourceCard
                                     title={featureStats.chatbot_conversations.toString()}
-                                    subtitle='Chat conversations'
-                                    description={`Messages: ${featureStats.chatbot_messages}`}
+                                    subtitle={t('admin.analytics.system.chat_conversations')}
+                                    description={t('admin.analytics.system.messages_count', {
+                                        count: featureStats.chatbot_messages.toString(),
+                                    })}
                                     icon={Bot}
                                     className='bg-card/50 shadow-none! backdrop-blur-sm'
                                 />
                                 <ResourceCard
                                     title={featureStats.chatbot_active_users_30d.toString()}
-                                    subtitle='Chat users (30d)'
-                                    description={`Avg msgs/conversation: ${featureStats.avg_messages_per_conversation}`}
+                                    subtitle={t('admin.analytics.system.chat_users_30d')}
+                                    description={t('admin.analytics.system.avg_messages_per_conversation', {
+                                        count: featureStats.avg_messages_per_conversation.toString(),
+                                    })}
                                     icon={UserCircle}
                                     className='bg-card/50 shadow-none! backdrop-blur-sm'
                                 />
                                 <ResourceCard
                                     title={featureStats.api_clients.toString()}
-                                    subtitle='API clients'
-                                    description={`OAuth2 authorizations: ${featureStats.oauth2_authorizations}`}
+                                    subtitle={t('admin.analytics.system.api_clients')}
+                                    description={t('admin.analytics.system.oauth2_authorizations', {
+                                        count: featureStats.oauth2_authorizations.toString(),
+                                    })}
                                     icon={KeyRound}
                                     className='bg-card/50 shadow-none! backdrop-blur-sm'
                                 />
                                 <ResourceCard
                                     title={featureStats.oidc_enabled_providers.toString()}
-                                    subtitle='Enabled OIDC providers'
-                                    description='Identity providers configured'
+                                    subtitle={t('admin.analytics.system.enabled_oidc_providers')}
+                                    description={t('admin.analytics.system.identity_providers_configured')}
                                     icon={ShieldCheck}
                                     className='bg-card/50 shadow-none! backdrop-blur-sm'
                                 />

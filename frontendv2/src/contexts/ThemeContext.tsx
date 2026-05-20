@@ -88,6 +88,28 @@ const ACCENT_COLORS = {
     slate: '215 20% 45%',
 };
 
+const ACCENT_FOREGROUNDS: Partial<Record<keyof typeof ACCENT_COLORS, string>> = {
+    orange: '0 0% 9%',
+    teal: '0 0% 9%',
+    yellow: '0 0% 9%',
+    cyan: '0 0% 9%',
+    lime: '0 0% 9%',
+    amber: '0 0% 9%',
+};
+
+const USER_OVERRIDE_KEYS = {
+    theme: 'themeUserOverride',
+    accentColor: 'accentColorUserOverride',
+    backgroundType: 'backgroundTypeUserOverride',
+    backdropBlur: 'backdropBlurUserOverride',
+    backdropDarken: 'backdropDarkenUserOverride',
+    backgroundImageFit: 'backgroundImageFitUserOverride',
+};
+
+function hasUserOverride(key: keyof typeof USER_OVERRIDE_KEYS): boolean {
+    return localStorage.getItem(USER_OVERRIDE_KEYS[key]) === 'true';
+}
+
 export function ThemeProvider({ children }: { children: ReactNode }) {
     const [mounted, setMounted] = useState(false);
     const [theme, setThemeState] = useState<Theme>('dark');
@@ -120,7 +142,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-        // Load initial values from localStorage (will be overridden by admin settings if locked)
+        // Load initial values from localStorage until public admin settings are available.
         setThemeState(saved || (prefersDark ? 'dark' : 'light'));
         setAccentColorState(savedAccent && savedAccent in ACCENT_COLORS ? savedAccent : 'purple');
         setBackgroundTypeState(
@@ -162,7 +184,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         localStorage.setItem('fontFamily', initialFont);
     }, []);
 
-    // Enforce admin settings on load and when settings change
+    // Apply admin defaults on load and when settings change.
     useEffect(() => {
         if (!mounted || !settings) return;
 
@@ -176,30 +198,38 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         const rawFit = (settings.app_background_image_fit_default ?? 'cover').toLowerCase();
         const forcedFit: BackgroundImageFit =
             rawFit === 'contain' || rawFit === 'fill' ? (rawFit as BackgroundImageFit) : 'cover';
+        const validThemes: Theme[] = ['light', 'dark'];
+        const validBgTypes: BackgroundType[] = ['aurora', 'gradient', 'solid', 'image', 'pattern'];
 
-        // Enforce theme lock - use admin's default theme
-        if (settings.app_theme_lock === 'true' && forcedTheme && theme !== forcedTheme) {
+        // Locked settings always win; unlocked settings use admin defaults until the user chooses otherwise.
+        const shouldUseThemeDefault = settings.app_theme_lock === 'true' || !hasUserOverride('theme');
+        const shouldUseAccentDefault = settings.app_accent_color_lock === 'true' || !hasUserOverride('accentColor');
+        const shouldUseBackgroundTypeDefault =
+            settings.app_background_type_lock === 'true' || !hasUserOverride('backgroundType');
+        const shouldUseBlurDefault = settings.app_backdrop_blur_lock === 'true' || !hasUserOverride('backdropBlur');
+        const shouldUseDarkenDefault =
+            settings.app_backdrop_darken_lock === 'true' || !hasUserOverride('backdropDarken');
+        const shouldUseFitDefault =
+            settings.app_background_image_fit_lock === 'true' || !hasUserOverride('backgroundImageFit');
+
+        if (shouldUseThemeDefault && forcedTheme && validThemes.includes(forcedTheme) && theme !== forcedTheme) {
             setThemeState(forcedTheme);
             localStorage.setItem('theme', forcedTheme);
         }
 
-        // Enforce accent color lock - use admin's default accent color
-        if (settings.app_accent_color_lock === 'true' && forcedAccent && forcedAccent in ACCENT_COLORS) {
-            if (accentColor !== forcedAccent) {
-                setAccentColorState(forcedAccent);
-                localStorage.setItem('accentColor', forcedAccent);
-            }
+        if (shouldUseAccentDefault && forcedAccent && forcedAccent in ACCENT_COLORS && accentColor !== forcedAccent) {
+            setAccentColorState(forcedAccent);
+            localStorage.setItem('accentColor', forcedAccent);
         }
 
-        // Enforce background type: light mode limits, admin lock, forced image when background URL is locked
-        const validBgTypes: BackgroundType[] = ['aurora', 'gradient', 'solid', 'image', 'pattern'];
+        // Enforce background type: light mode limits and forced image when background URL is locked.
         const mustUseImageForLockedBg = imageLock && adminBgUrl !== '';
         if (theme === 'light') {
             if (backgroundType !== 'pattern' && backgroundType !== 'solid') {
                 setBackgroundTypeState('pattern');
                 localStorage.setItem('backgroundType', 'pattern');
             }
-        } else if (settings.app_background_type_lock === 'true' || mustUseImageForLockedBg) {
+        } else if (shouldUseBackgroundTypeDefault || mustUseImageForLockedBg) {
             const targetType: BackgroundType | null = mustUseImageForLockedBg
                 ? 'image'
                 : forcedBgType && validBgTypes.includes(forcedBgType)
@@ -209,42 +239,19 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
                 setBackgroundTypeState(targetType);
                 localStorage.setItem('backgroundType', targetType);
             }
-        } else if (localStorage.getItem('backgroundType') === null) {
-            if (forcedBgType && validBgTypes.includes(forcedBgType) && backgroundType !== forcedBgType) {
-                setBackgroundTypeState(forcedBgType);
-                localStorage.setItem('backgroundType', forcedBgType);
-            }
         }
 
-        // Blur: locked always uses admin default; otherwise seed from admin default when user has not stored a value
-        if (settings.app_backdrop_blur_lock === 'true') {
-            if (backdropBlur !== forcedBlur) {
-                setBackdropBlurState(forcedBlur);
-                localStorage.setItem('backdropBlur', String(forcedBlur));
-            }
-        } else if (localStorage.getItem('backdropBlur') === null && backdropBlur !== forcedBlur) {
+        if (shouldUseBlurDefault && backdropBlur !== forcedBlur) {
             setBackdropBlurState(forcedBlur);
             localStorage.setItem('backdropBlur', String(forcedBlur));
         }
 
-        // Darken: same pattern as blur
-        if (settings.app_backdrop_darken_lock === 'true') {
-            if (backdropDarken !== forcedDarken) {
-                setBackdropDarkenState(forcedDarken);
-                localStorage.setItem('backdropDarken', String(forcedDarken));
-            }
-        } else if (localStorage.getItem('backdropDarken') === null && backdropDarken !== forcedDarken) {
+        if (shouldUseDarkenDefault && backdropDarken !== forcedDarken) {
             setBackdropDarkenState(forcedDarken);
             localStorage.setItem('backdropDarken', String(forcedDarken));
         }
 
-        // Background image fit: locked or first-time default from admin
-        if (settings.app_background_image_fit_lock === 'true') {
-            if (backgroundImageFit !== forcedFit) {
-                setBackgroundImageFitState(forcedFit);
-                localStorage.setItem('backgroundImageFit', forcedFit);
-            }
-        } else if (localStorage.getItem('backgroundImageFit') === null && backgroundImageFit !== forcedFit) {
+        if (shouldUseFitDefault && backgroundImageFit !== forcedFit) {
             setBackgroundImageFitState(forcedFit);
             localStorage.setItem('backgroundImageFit', forcedFit);
         }
@@ -259,8 +266,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         localStorage.setItem('theme', theme);
 
         const accentHSL = ACCENT_COLORS[accentColor as keyof typeof ACCENT_COLORS] || ACCENT_COLORS.purple;
+        const primaryForeground = ACCENT_FOREGROUNDS[accentColor as keyof typeof ACCENT_FOREGROUNDS] || '0 0% 98%';
         root.style.setProperty('--color-primary', `hsl(${accentHSL})`);
         root.style.setProperty('--primary', accentHSL);
+        root.style.setProperty('--color-primary-foreground', `hsl(${primaryForeground})`);
+        root.style.setProperty('--primary-foreground', primaryForeground);
         localStorage.setItem('accentColor', accentColor);
 
         const fontStacks: Record<FontFamily, string> = {
@@ -273,9 +283,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         localStorage.setItem('fontFamily', fontFamily);
     }, [theme, accentColor, fontFamily, mounted]);
 
-    // Apply admin-enforced defaults/locks from public settings (if present).
-    // Note: we now enforce locks inside setter functions and initial state;
-    // this effect only ensures settings are loaded before user interaction.
+    // Locks are still enforced inside setter functions so user controls cannot
+    // move away from admin-restricted values between settings refreshes.
 
     useEffect(() => {
         if (!mounted || typeof document === 'undefined') return;
@@ -287,6 +296,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         if (settings?.app_theme_lock === 'true') return;
         setThemeState(newTheme);
         localStorage.setItem('theme', newTheme);
+        localStorage.setItem(USER_OVERRIDE_KEYS.theme, 'true');
     };
 
     const setAccentColor = (color: string) => {
@@ -294,6 +304,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         if (settings?.app_accent_color_lock === 'true') return;
         setAccentColorState(color);
         localStorage.setItem('accentColor', color);
+        localStorage.setItem(USER_OVERRIDE_KEYS.accentColor, 'true');
     };
 
     const setBackgroundType = (type: BackgroundType) => {
@@ -314,6 +325,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         }
         setBackgroundTypeState(type);
         localStorage.setItem('backgroundType', type);
+        localStorage.setItem(USER_OVERRIDE_KEYS.backgroundType, 'true');
     };
 
     const setBackgroundAnimatedVariant = (variant: BackgroundAnimatedVariant) => {
@@ -345,6 +357,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         const value = Math.min(24, Math.max(0, px));
         setBackdropBlurState(value);
         localStorage.setItem('backdropBlur', String(value));
+        localStorage.setItem(USER_OVERRIDE_KEYS.backdropBlur, 'true');
     };
 
     const setBackdropDarken = (percent: number) => {
@@ -353,6 +366,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         const value = Math.min(100, Math.max(0, percent));
         setBackdropDarkenState(value);
         localStorage.setItem('backdropDarken', String(value));
+        localStorage.setItem(USER_OVERRIDE_KEYS.backdropDarken, 'true');
     };
 
     const setBackgroundImageFit = (fit: BackgroundImageFit) => {
@@ -364,6 +378,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         }
         setBackgroundImageFitState(fit);
         localStorage.setItem('backgroundImageFit', fit);
+        localStorage.setItem(USER_OVERRIDE_KEYS.backgroundImageFit, 'true');
     };
 
     const setMotionLevel = (level: MotionLevel) => {

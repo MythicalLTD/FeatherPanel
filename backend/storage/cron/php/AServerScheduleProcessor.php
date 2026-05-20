@@ -133,14 +133,17 @@ class AServerScheduleProcessor implements TimeTask
             if (!$this->isServerOnline($server)) {
                 MinecraftColorCodeSupport::sendOutputWithNewLine('&eServer is offline, skipping schedule: ' . $schedule['name']);
 
-                // Calculate next run time and update schedule
+                // Calculate next run time and update schedule, honouring the
+                // schedule's authoring timezone so e.g. "0 3 * * *" still means
+                // 03:00 local even after PHP's default zone was pinned to UTC.
                 $nextRunAt = ServerSchedule::calculateNextRunTime(
                     $schedule['cron_day_of_week'],
                     $schedule['cron_month'],
                     $schedule['cron_day_of_month'],
                     $schedule['cron_hour'],
                     $schedule['cron_minute'],
-                    $schedule['next_run_at'] ?? null
+                    $schedule['next_run_at'] ?? null,
+                    $schedule['timezone'] ?? 'UTC'
                 );
 
                 ServerSchedule::updateSchedule($schedule['id'], [
@@ -168,21 +171,24 @@ class AServerScheduleProcessor implements TimeTask
         // Execute the schedule
         $this->executeSchedule($schedule, $server);
 
-        // Calculate next run time
+        // Calculate next run time in the schedule's authoring timezone.
         $nextRunAt = ServerSchedule::calculateNextRunTime(
             $schedule['cron_day_of_week'],
             $schedule['cron_month'],
             $schedule['cron_day_of_month'],
             $schedule['cron_hour'],
             $schedule['cron_minute'],
-            $schedule['next_run_at'] ?? null
+            $schedule['next_run_at'] ?? null,
+            $schedule['timezone'] ?? 'UTC'
         );
 
-        // Update schedule with next run time and mark as not processing
+        // Update schedule with next run time and mark as not processing.
+        // `last_run_at` is a TIMESTAMP and PHP runs in UTC, so gmdate is
+        // explicit about intent.
         ServerSchedule::updateSchedule($schedule['id'], [
             'is_processing' => 0,
             'next_run_at' => $nextRunAt,
-            'last_run_at' => date('Y-m-d H:i:s'),
+            'last_run_at' => gmdate('Y-m-d H:i:s'),
         ]);
 
         MinecraftColorCodeSupport::sendOutputWithNewLine('&aSchedule processed successfully: ' . $schedule['name'] . ' (Next run: ' . $nextRunAt . ')');

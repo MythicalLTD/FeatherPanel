@@ -43,10 +43,11 @@ class ContextBuilder
      *
      * @param array $user Current user data
      * @param array $pageContext Current page context (route, server, etc.)
+     * @param bool $includeLogs Whether server logs should be included in context
      *
      * @return string Formatted context string
      */
-    public function buildContext(array $user, array $pageContext = []): string
+    public function buildContext(array $user, array $pageContext = [], bool $includeLogs = false): string
     {
         $context = [];
 
@@ -67,27 +68,11 @@ class ContextBuilder
         $context[] = "User UUID: {$user['uuid']}";
         $context[] = "User ID: {$user['id']}";
 
-        if (isset($user['email'])) {
-            $context[] = "Email: {$user['email']}";
-        }
-
         if (isset($user['first_name']) || isset($user['last_name'])) {
             $name = trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? ''));
             if (!empty($name)) {
                 $context[] = "Name: {$name}";
             }
-        }
-
-        if (isset($user['avatar']) && !empty($user['avatar'])) {
-            $context[] = "Avatar: {$user['avatar']}";
-        }
-
-        if (isset($user['two_fa_enabled'])) {
-            $context[] = '2FA Enabled: ' . ($user['two_fa_enabled'] === 'true' ? 'Yes' : 'No');
-        }
-
-        if (isset($user['last_seen'])) {
-            $context[] = "Last Seen: {$user['last_seen']}";
         }
 
         // User Role/Permissions
@@ -120,78 +105,12 @@ class ContextBuilder
                 $context[] = "- UUID: {$server['uuidShort']}";
                 $context[] = '- Status: ' . ($server['status'] ?? 'unknown');
 
-                if (isset($server['description']) && !empty($server['description'])) {
-                    $context[] = "- Description: {$server['description']}";
-                }
-
-                // Only include node/realm/spell info if user is admin or has access
-                if ($isAdmin || isset($server['node']['name'])) {
-                    if (isset($server['node']['name'])) {
-                        $context[] = "- Node: {$server['node']['name']}";
-                    }
-                }
-
-                if (isset($server['realm']['name'])) {
-                    $context[] = "- Realm: {$server['realm']['name']}";
-                }
-
                 if (isset($server['spell']['name'])) {
                     $context[] = "- Spell/Type: {$server['spell']['name']}";
                 }
 
-                // Server Resource Limits
-                if (isset($server['memory'])) {
-                    $memoryMB = (int) $server['memory'];
-                    $memoryGB = round($memoryMB / 1024, 2);
-                    $context[] = "- Memory Limit: {$memoryMB} MB ({$memoryGB} GB)";
-                }
-
-                if (isset($server['swap'])) {
-                    $swapMB = (int) $server['swap'];
-                    $swapGB = round($swapMB / 1024, 2);
-                    $context[] = "- Swap Limit: {$swapMB} MB ({$swapGB} GB)";
-                }
-
-                if (isset($server['disk'])) {
-                    $diskMB = (int) $server['disk'];
-                    $diskGB = round($diskMB / 1024, 2);
-                    $context[] = "- Disk Limit: {$diskMB} MB ({$diskGB} GB)";
-                }
-
-                if (isset($server['cpu'])) {
-                    $context[] = "- CPU Limit: {$server['cpu']}%";
-                }
-
-                if (isset($server['io'])) {
-                    $context[] = "- IO Limit: {$server['io']}";
-                }
-
-                // Allocation Information (IP and Port)
-                if (isset($server['allocation'])) {
-                    $allocation = $server['allocation'];
-                    if (isset($allocation['ip'])) {
-                        $ipInfo = $allocation['ip'];
-                        if (isset($allocation['ip_alias']) && !empty($allocation['ip_alias'])) {
-                            $ipInfo .= " (Alias: {$allocation['ip_alias']})";
-                        }
-                        $context[] = "- IP Address: {$ipInfo}";
-                    }
-                    if (isset($allocation['port'])) {
-                        $context[] = "- Port: {$allocation['port']}";
-                        // Show connection info if both IP and port are available
-                        if (isset($allocation['ip'])) {
-                            $context[] = "- Connection: {$allocation['ip']}:{$allocation['port']}";
-                        }
-                    }
-                }
-
                 if (isset($server['is_subuser']) && $server['is_subuser']) {
                     $context[] = '- Access: Subuser (Limited Permissions)';
-                    // Only include specific permissions if user is admin
-                    if ($isAdmin && isset($server['subuser_permissions']) && !empty($server['subuser_permissions'])) {
-                        $perms = implode(', ', array_slice($server['subuser_permissions'], 0, 5)); // Limit to 5
-                        $context[] = "- Permissions: {$perms}";
-                    }
                 } else {
                     $context[] = '- Access: Owner (Full Control)';
                 }
@@ -323,24 +242,16 @@ class ContextBuilder
                         $context[] = "Docker Image: {$serverData['image']}";
                     }
 
-                    // Fetch server logs if:
-                    // 1. Server is running or starting (to see current activity)
-                    // 2. User is on logs page (to see logs regardless of status)
-                    // 3. User is on console page (to see console output)
-                    $shouldFetchLogs = in_array(strtolower($serverStatus), ['running', 'starting', 'stopping', 'stopped']);
-                    $isOnLogsPage = isset($pageContext['page']) && in_array(strtolower($pageContext['page']), ['logs', 'console']);
-
-                    if ($shouldFetchLogs || $isOnLogsPage) {
+                    if ($includeLogs) {
                         $serverLogs = $this->getServerLogs($serverData);
                         if (!empty($serverLogs)) {
                             $context[] = '';
                             $context[] = '### Recent Server Logs';
-                            $context[] = 'The following are the most recent server logs (last 50 lines):';
+                            $context[] = 'The following are the most recent server logs (last 20 lines):';
                             $context[] = '';
                             $context[] = '```';
-                            // Limit to last 50 lines to avoid token limits
-                            $logLines = is_array($serverLogs) ? array_slice($serverLogs, -50) : explode("\n", $serverLogs);
-                            $logLines = array_slice($logLines, -50);
+                            $logLines = is_array($serverLogs) ? array_slice($serverLogs, -20) : explode("\n", $serverLogs);
+                            $logLines = array_slice($logLines, -20);
                             $context[] = implode("\n", $logLines);
                             $context[] = '```';
                         }
@@ -409,8 +320,8 @@ class ContextBuilder
             // Combine and enrich with related data
             $allServers = array_merge($ownedServers, $subuserServers);
 
-            // Limit to 20 most recent to avoid token limits
-            $allServers = array_slice($allServers, 0, 20);
+            // Keep context compact; tools can fetch deeper data on demand.
+            $allServers = array_slice($allServers, 0, 8);
 
             foreach ($allServers as &$server) {
                 // Check if subuser

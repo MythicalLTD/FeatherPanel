@@ -21,12 +21,11 @@ import ThemeCustomizer from '@/components/layout/ThemeCustomizer';
 import BackgroundWrapper from '@/components/theme/BackgroundWrapper';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useSettings } from '@/contexts/SettingsContext';
-import { useTranslation } from '@/contexts/TranslationContext';
+import { PanelBrandingFooter } from '@/components/branding/PanelBrandingFooter';
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
     const { theme } = useTheme();
-    const { core, settings } = useSettings();
-    const { t } = useTranslation();
+    const { settings } = useSettings();
 
     const appName = settings?.app_name || 'FeatherPanel';
     const logoUrl =
@@ -68,27 +67,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
                         </div>
                     </div>
 
-                    <div className='text-muted-foreground mt-8 text-center text-xs transition-all duration-200'>
-                        <p className='mb-2 font-medium'>
-                            {t('branding.running_on', { name: appName, version: core?.version || '' }).trim()}
-                        </p>
-                        <a
-                            href='https://featherpanel.com'
-                            target='_blank'
-                            rel='noopener noreferrer'
-                            className='text-primary hover:text-primary/80 inline-flex items-center gap-1.5 font-medium underline-offset-4 transition-all duration-200 hover:underline'
-                        >
-                            {t('branding.copyright', { company: 'MythicalSystems' })}
-                            <svg className='h-3.5 w-3.5' fill='none' viewBox='0 0 24 24' stroke='currentColor'>
-                                <path
-                                    strokeLinecap='round'
-                                    strokeLinejoin='round'
-                                    strokeWidth={2}
-                                    d='M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14'
-                                />
-                            </svg>
-                        </a>
-                    </div>
+                    <PanelBrandingFooter appName={appName} className='mt-8' />
                 </div>
             </div>
         </BackgroundWrapper>

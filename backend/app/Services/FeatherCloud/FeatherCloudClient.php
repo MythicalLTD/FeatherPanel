@@ -27,8 +27,8 @@ class FeatherCloudClient
 {
     private Client $client;
     private string $baseUrl;
-    private string $publicKey;
-    private string $privateKey;
+    private string $panelPublicKey;
+    private string $panelPrivateKey;
     private App $app;
 
     public function __construct(?string $baseUrl = null)
@@ -36,9 +36,9 @@ class FeatherCloudClient
         $this->app = App::getInstance(true);
         $config = $this->app->getConfig();
 
-        // Get credentials from config
-        $this->publicKey = $config->getSetting(ConfigInterface::FEATHERCLOUD_CLOUD_PUBLIC_KEY, '');
-        $this->privateKey = $config->getSetting(ConfigInterface::FEATHERCLOUD_CLOUD_PRIVATE_KEY, '');
+        // The FeatherCloud panel API authenticates this panel by its panel identity keys.
+        $this->panelPublicKey = trim((string) ($config->getSetting(ConfigInterface::FEATHERCLOUD_CLOUD_PUBLIC_KEY, '') ?? ''));
+        $this->panelPrivateKey = trim((string) ($config->getSetting(ConfigInterface::FEATHERCLOUD_CLOUD_PRIVATE_KEY, '') ?? ''));
 
         // Set base URL (default to cloud.mythical.systems if not provided)
         $this->baseUrl = rtrim($baseUrl ?? 'https://api.featherpanel.com', '/');
@@ -46,8 +46,8 @@ class FeatherCloudClient
             'base_uri' => $this->baseUrl,
             'timeout' => 30,
             'headers' => [
-                'X-Panel-Public-Key' => $this->publicKey,
-                'X-Panel-Private-Key' => $this->privateKey,
+                'X-Panel-Public-Key' => $this->panelPublicKey,
+                'X-Panel-Private-Key' => $this->panelPrivateKey,
                 'Content-Type' => 'application/json',
                 'Accept' => 'application/json',
             ],
@@ -59,7 +59,7 @@ class FeatherCloudClient
      */
     public function isConfigured(): bool
     {
-        return !empty($this->publicKey) && !empty($this->privateKey);
+        return $this->panelPublicKey !== '' && $this->panelPrivateKey !== '';
     }
 
     /**
@@ -160,8 +160,8 @@ class FeatherCloudClient
                 'base_uri' => $this->baseUrl,
                 'timeout' => 60, // Longer timeout for file downloads
                 'headers' => [
-                    'X-Panel-Public-Key' => $this->publicKey,
-                    'X-Panel-Private-Key' => $this->privateKey,
+                    'X-Panel-Public-Key' => $this->panelPublicKey,
+                    'X-Panel-Private-Key' => $this->panelPrivateKey,
                     'Accept' => '*/*', // Accept any content type for binary downloads
                 ],
             ]);
@@ -241,7 +241,7 @@ class FeatherCloudClient
             }
 
             // Log request (use error level to ensure it's always logged)
-            $this->app->getLogger()->error('[FeatherCloud Request] ' . $method . ' /panel' . $endpoint . ' | Public Key: ' . substr($this->publicKey, 0, 20) . '...');
+            $this->app->getLogger()->error('[FeatherCloud Request] ' . $method . ' /panel' . $endpoint . ' | Public Key: ' . substr($this->panelPublicKey, 0, 20) . '...');
 
             $response = $this->client->request($method, '/panel' . $endpoint, $options);
             $statusCode = $response->getStatusCode();

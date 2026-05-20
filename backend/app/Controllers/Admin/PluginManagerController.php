@@ -1719,7 +1719,8 @@ class {$className}CronExample implements TimeTask
                     'component' => 'serverui.html',
                     'description' => 'View server logs related to the plugin',
                     'category' => 'server',
-                    'group' => 'Minecraft Java Edition',
+                    'group' => 'files',
+                    'priority' => 350,
                 ],
             ],
         ], JSON_PRETTY_PRINT);
@@ -2303,6 +2304,7 @@ A comprehensive example plugin created with FeatherPanel Plugin Manager that dem
 ### Server Section
 - **Server Logs**: View plugin-related logs
 - **Scheduled Tasks**: Manage cron jobs and tasks
+- **Sidebar Priority**: Use `group: files` and `priority: 350` to place an item between Backups (300) and Import (400)
 
 ### Routes & Controllers
 - **Routes**: Files in `Routes/` directory are automatically registered

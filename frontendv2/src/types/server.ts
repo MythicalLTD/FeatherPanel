@@ -93,6 +93,18 @@ export interface Variable {
     field_type: string;
 }
 
+export interface CustomVariable {
+    id: number;
+    server_id: number;
+    user_id: number;
+    name: string;
+    env_variable: string;
+    variable_value: string;
+    is_encrypted: number;
+    created_at?: string;
+    updated_at?: string;
+}
+
 export interface ServerStats {
     memory_bytes: number;
     memory_limit_bytes: number;
@@ -491,6 +503,7 @@ export interface Schedule {
     cron_day_of_month: string;
     cron_hour: string;
     cron_minute: string;
+    timezone: string;
     is_active: number;
     is_processing: number;
     only_when_online: number;
@@ -507,6 +520,7 @@ export interface ScheduleCreateRequest {
     cron_day_of_month: string;
     cron_month: string;
     cron_day_of_week: string;
+    timezone: string;
     only_when_online: number;
     is_active: number;
 }
@@ -645,6 +659,12 @@ export interface FileObject {
     mimetype: string;
     created_at: string;
     modified_at: string;
+    /** Recursive byte size of directory contents (FeatherWings when directory_sizes is enabled). */
+    directory_size?: number;
+    /** Virtual row in the file manager that opens the trash UI instead of the real folder. */
+    isTrashShortcut?: boolean;
+    /** Item count in trash (virtual folder row only). */
+    trashItemCount?: number;
     // API Response raw fields
     created?: string;
     modified?: string;

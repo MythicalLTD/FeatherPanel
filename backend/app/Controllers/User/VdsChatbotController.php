@@ -22,10 +22,12 @@ use App\Chat\ChatMessage;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Chat\ChatConversation;
+use App\Services\Chatbot\TokenUsage;
 use App\Plugins\Events\Events\ChatbotEvent;
 use App\Services\Chatbot\VdsChatbotService;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 #[OA\Schema(
     schema: 'VdsChatbotRequest',
@@ -70,105 +72,28 @@ class VdsChatbotController
     )]
     public function chat(Request $request): Response
     {
-        $currentUser = $request->attributes->get('user');
-
-        if (!$currentUser || !isset($currentUser['id'])) {
-            return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
-        }
-
-        // Check if chatbot is enabled
-        $app = App::getInstance(true);
-        $config = $app->getConfig();
-        $enabled = $config->getSetting(\App\Config\ConfigInterface::CHATBOT_ENABLED, 'true');
-        if ($enabled !== 'true') {
-            return ApiResponse::error('The AI chatbot is currently disabled by the administrator.', 'CHATBOT_DISABLED', 403);
-        }
-
-        $data = json_decode($request->getContent(), true);
-
-        if (!isset($data['message']) || empty(trim($data['message']))) {
-            return ApiResponse::error('Message is required', 'INVALID_REQUEST', 400);
-        }
-
-        $message        = trim($data['message']);
-        $history        = $data['history'] ?? [];
-        $pageContext     = $data['pageContext'] ?? [];
-        $conversationId = $data['conversation_id'] ?? null;
-
         try {
-            // Get or create conversation
-            $conversation = null;
-            if ($conversationId) {
-                $conversation = ChatConversation::getConversationById((int) $conversationId);
-                // Verify conversation belongs to user
-                if ($conversation && $conversation['user_uuid'] !== $currentUser['uuid']) {
-                    return ApiResponse::error('Conversation not found', 'NOT_FOUND', 404);
-                }
-            }
-
-            // Create new conversation if needed
-            if (!$conversation) {
-                $conversationId = ChatConversation::createConversation([
-                    'user_uuid' => $currentUser['uuid'],
-                    'title'     => substr($message, 0, 255),
-                ]);
-                if (!$conversationId) {
-                    return ApiResponse::error('Failed to create conversation', 'SERVER_ERROR', 500);
-                }
-                $conversation = ChatConversation::getConversationById($conversationId);
-            }
-
-            // Load conversation history from database if not provided
-            if (empty($history) && $conversation) {
-                $dbMessages = ChatMessage::getMessagesByConversation($conversation['id'], 50);
-                $history = array_map(function ($msg) {
-                    return [
-                        'role'    => $msg['role'],
-                        'content' => $msg['content'],
-                    ];
-                }, $dbMessages);
-            }
-
-            // Save user message to database
-            ChatMessage::createMessage([
-                'conversation_id' => $conversation['id'],
-                'role'            => 'user',
-                'content'         => $message,
-            ]);
-
-            // Get conversation memory
-            $conversationMemory = $conversation['memory'] ?? '';
-            $pageContext['conversation_memory'] = $conversationMemory;
-
-            // Process message through VDS AI
-            $chatbotService = new VdsChatbotService();
-            $result = $chatbotService->processMessage($message, $history, $currentUser, $pageContext);
-
-            // Update message count
-            $messageCount = ChatMessage::getMessageCount($conversation['id']);
-            ChatConversation::updateConversation($conversation['id'], [
-                'message_count' => $messageCount,
-            ]);
-
-            // Save AI response to database
-            ChatMessage::createMessage([
-                'conversation_id' => $conversation['id'],
-                'role'            => 'assistant',
-                'content'         => $result['response'],
-                'model'           => $result['model'] ?? null,
-            ]);
-
-            // Update conversation timestamp
-            ChatConversation::updateConversation($conversation['id'], [
-                'updated_at' => date('Y-m-d H:i:s'),
-            ]);
+            $payload = $this->processChatRequest($request);
 
             return ApiResponse::success([
-                'response'        => $result['response'],
-                'model'           => $result['model'] ?? 'FeatherPanel VDS AI',
-                'conversation_id' => $conversation['id'],
-                'tool_executions' => $result['tool_executions'] ?? [],
+                'response' => $payload['response'],
+                'model' => $payload['model'],
+                'conversation_id' => $payload['conversation_id'],
+                'message_id' => $payload['assistant_message_id'],
+                'user_message_id' => $payload['user_message_id'],
+                'usage' => $payload['usage'],
+                'user_usage' => $payload['user_usage'],
+                'tool_executions' => $payload['tool_executions'],
+                'tool_activity' => $payload['tool_activity'],
             ], 'Message processed successfully');
+        } catch (\InvalidArgumentException $e) {
+            return ApiResponse::error($e->getMessage(), 'INVALID_REQUEST', 400);
+        } catch (\RuntimeException $e) {
+            $message = $e->getMessage();
+            $code = $message === 'User not authenticated' ? 401 : ($message === 'Conversation not found' ? 404 : (str_contains($message, 'disabled') ? 403 : 500));
+            $errorCode = $code === 401 ? 'UNAUTHORIZED' : ($code === 404 ? 'NOT_FOUND' : ($code === 403 ? 'CHATBOT_DISABLED' : 'CHATBOT_ERROR'));
+
+            return ApiResponse::error($message, $errorCode, $code);
         } catch (\Exception $e) {
             App::getInstance(true)->getLogger()->error('VDS Chatbot error: ' . $e->getMessage());
 
@@ -178,6 +103,32 @@ class VdsChatbotController
                 500
             );
         }
+    }
+
+    public function streamChat(Request $request): Response
+    {
+        return new StreamedResponse(function () use ($request): void {
+            $emit = function (string $type, array $payload = []): void {
+                echo "event: {$type}\n";
+                echo 'data: ' . json_encode($payload, JSON_UNESCAPED_SLASHES) . "\n\n";
+                @ob_flush();
+                flush();
+            };
+
+            try {
+                $payload = $this->processChatRequest($request, $emit);
+                $emit('final', $payload);
+            } catch (\Exception $e) {
+                App::getInstance(true)->getLogger()->error('VDS Chatbot stream error: ' . $e->getMessage());
+                $emit('error', [
+                    'message' => 'Failed to process message. Please try again.',
+                ]);
+            }
+        }, 200, [
+            'Content-Type' => 'text/event-stream',
+            'Cache-Control' => 'no-cache',
+            'X-Accel-Buffering' => 'no',
+        ]);
     }
 
     #[OA\Get(
@@ -412,6 +363,192 @@ class VdsChatbotController
 
             return ApiResponse::error('Failed to update memory', 'SERVER_ERROR', 500);
         }
+    }
+
+    private function processChatRequest(Request $request, ?callable $emit = null): array
+    {
+        $currentUser = $request->attributes->get('user');
+
+        if (!$currentUser || !isset($currentUser['id'])) {
+            throw new \RuntimeException('User not authenticated');
+        }
+
+        $app = App::getInstance(true);
+        $config = $app->getConfig();
+        $enabled = $config->getSetting(\App\Config\ConfigInterface::CHATBOT_ENABLED, 'true');
+        if ($enabled !== 'true') {
+            throw new \RuntimeException('The AI chatbot is currently disabled by the administrator.');
+        }
+
+        $data = json_decode($request->getContent(), true) ?: [];
+        if (!isset($data['message']) || empty(trim($data['message']))) {
+            throw new \InvalidArgumentException('Message is required');
+        }
+
+        $message = trim($data['message']);
+        $history = $data['history'] ?? [];
+        $pageContext = $data['pageContext'] ?? [];
+        $conversationId = $data['conversation_id'] ?? null;
+
+        $conversation = null;
+        if ($conversationId) {
+            $conversation = ChatConversation::getConversationById((int) $conversationId);
+            if ($conversation && $conversation['user_uuid'] !== $currentUser['uuid']) {
+                throw new \RuntimeException('Conversation not found');
+            }
+        }
+
+        if (!$conversation) {
+            $conversationId = ChatConversation::createConversation([
+                'user_uuid' => $currentUser['uuid'],
+                'title' => substr($message, 0, 255),
+            ]);
+            if (!$conversationId) {
+                throw new \RuntimeException('Failed to create conversation');
+            }
+            $conversation = ChatConversation::getConversationById($conversationId);
+        }
+
+        $dbMessages = ChatMessage::getMessagesByConversation($conversation['id'], 50);
+        if (empty($history) && $conversation) {
+            $history = $this->buildCompactHistory($dbMessages, $conversation);
+        } else {
+            $history = array_slice($history, -6);
+        }
+
+        $userUsage = TokenUsage::estimate($message);
+        $userMessageId = ChatMessage::createMessage([
+            'conversation_id' => $conversation['id'],
+            'role' => 'user',
+            'content' => $message,
+            'input_tokens' => $userUsage['input_tokens'],
+            'total_tokens' => $userUsage['total_tokens'],
+            'token_source' => $userUsage['source'],
+        ]);
+
+        if ($emit !== null) {
+            $emit('conversation', [
+                'conversation_id' => $conversation['id'],
+                'user_message_id' => $userMessageId,
+                'user_usage' => $userUsage,
+            ]);
+        }
+
+        $summary = $this->refreshContextSummary($conversation, $dbMessages, $message);
+        if ($emit !== null && $summary !== '') {
+            $emit('status', ['message' => 'Compacting conversation context']);
+        }
+        $pageContext['conversation_memory'] = trim(($conversation['memory'] ?? '') . "\n\n" . $summary);
+
+        $chatbotService = new VdsChatbotService();
+        $result = $chatbotService->processMessage($message, $history, $currentUser, $pageContext, $emit);
+        $usage = $result['usage'] ?? TokenUsage::estimate($message, $result['response'] ?? '');
+        $toolActivity = $result['tool_activity'] ?? [];
+
+        $assistantMessageId = ChatMessage::createMessage([
+            'conversation_id' => $conversation['id'],
+            'role' => 'assistant',
+            'content' => $result['response'],
+            'model' => $result['model'] ?? null,
+            'input_tokens' => $usage['input_tokens'] ?? null,
+            'output_tokens' => $usage['output_tokens'] ?? null,
+            'total_tokens' => $usage['total_tokens'] ?? null,
+            'token_source' => $usage['source'] ?? null,
+            'tool_activity' => $toolActivity,
+            'usage_json' => $usage,
+        ]);
+
+        $messageCount = ChatMessage::getMessageCount($conversation['id']);
+        ChatConversation::updateConversation($conversation['id'], [
+            'message_count' => $messageCount,
+            'updated_at' => date('Y-m-d H:i:s'),
+        ]);
+
+        return [
+            'response' => $result['response'],
+            'model' => $result['model'] ?? 'FeatherPanel VDS AI',
+            'conversation_id' => $conversation['id'],
+            'user_message_id' => $userMessageId,
+            'assistant_message_id' => $assistantMessageId,
+            'usage' => $usage,
+            'user_usage' => $userUsage,
+            'tool_executions' => $result['tool_executions'] ?? [],
+            'tool_activity' => $toolActivity,
+        ];
+    }
+
+    private function buildCompactHistory(array $dbMessages, array $conversation): array
+    {
+        $summary = $conversation['context_summary'] ?? '';
+        $recentMessages = array_slice($dbMessages, -6);
+        $history = [];
+
+        if ($summary !== '') {
+            $history[] = [
+                'role' => 'assistant',
+                'content' => "Conversation context summary:\n{$summary}",
+            ];
+        }
+
+        foreach ($recentMessages as $msg) {
+            $content = $msg['content'];
+            if (!empty($msg['tool_activity']) && is_array($msg['tool_activity'])) {
+                $content .= "\n\n[Tool/activity results from this assistant turn]\n" . $this->formatToolActivityForHistory($msg['tool_activity']);
+            }
+            $history[] = [
+                'role' => $msg['role'],
+                'content' => $content,
+            ];
+        }
+
+        return $history;
+    }
+
+    private function refreshContextSummary(array $conversation, array $dbMessages, string $latestMessage): string
+    {
+        $existing = trim((string) ($conversation['context_summary'] ?? ''));
+        if (count($dbMessages) < 10 || !ChatConversation::hasColumn('context_summary')) {
+            return $existing;
+        }
+
+        $olderMessages = array_slice($dbMessages, 0, -6);
+        $lines = [];
+        foreach ($olderMessages as $message) {
+            $content = trim(preg_replace('/\s+/', ' ', (string) $message['content']));
+            if (!empty($message['tool_activity']) && is_array($message['tool_activity'])) {
+                $content .= ' Tool/activity: ' . preg_replace('/\s+/', ' ', $this->formatToolActivityForHistory($message['tool_activity']));
+            }
+            if ($content === '') {
+                continue;
+            }
+            $lines[] = strtoupper((string) $message['role']) . ': ' . mb_substr($content, 0, 220);
+        }
+
+        $summary = trim($existing . "\n" . implode("\n", array_slice($lines, -12)));
+        $summary = mb_substr($summary, -3500);
+        $summary .= "\nLatest user message: " . mb_substr($latestMessage, 0, 300);
+
+        ChatConversation::updateConversation((int) $conversation['id'], [
+            'context_summary' => $summary,
+            'context_summary_updated_at' => date('Y-m-d H:i:s'),
+        ]);
+
+        return $summary;
+    }
+
+    private function formatToolActivityForHistory(array $toolActivity): string
+    {
+        $lines = [];
+        foreach ($toolActivity as $activity) {
+            if (!is_array($activity)) {
+                continue;
+            }
+            $status = ($activity['success'] ?? null) === false ? 'failed' : (($activity['success'] ?? null) ? 'completed' : 'planned');
+            $summary = isset($activity['summary']) ? ' - ' . $activity['summary'] : '';
+            $lines[] = ($activity['tool'] ?? 'unknown_tool') . ": {$status}{$summary}";
+        }
+
+        return implode("\n", $lines);
     }
 
     private static function emitEvent(string $eventName, array $payload): void

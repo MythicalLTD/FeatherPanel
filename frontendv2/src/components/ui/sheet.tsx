@@ -19,6 +19,7 @@ import * as React from 'react';
 import { Dialog as HeadlessDialog, DialogPanel, Transition, TransitionChild } from '@headlessui/react';
 import { cn } from '@/lib/utils';
 import { X } from 'lucide-react';
+import { useTranslation } from '@/contexts/TranslationContext';
 
 interface SheetProps {
     open: boolean;
@@ -28,6 +29,8 @@ interface SheetProps {
 }
 
 export function Sheet({ open, onOpenChange, children, className }: SheetProps) {
+    const { t } = useTranslation();
+
     return (
         <Transition show={open} as={React.Fragment}>
             <HeadlessDialog as='div' className='relative z-50' onClose={() => onOpenChange(false)}>
@@ -71,7 +74,7 @@ export function Sheet({ open, onOpenChange, children, className }: SheetProps) {
                                                         onClick={() => onOpenChange(false)}
                                                     >
                                                         <span className='absolute -inset-2.5' />
-                                                        <span className='sr-only'>Close panel</span>
+                                                        <span className='sr-only'>{t('common.closePanel')}</span>
                                                         <X className='h-5 w-5' aria-hidden='true' />
                                                     </button>
                                                 </div>

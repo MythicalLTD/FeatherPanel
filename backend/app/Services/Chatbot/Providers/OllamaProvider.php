@@ -19,6 +19,7 @@ namespace App\Services\Chatbot\Providers;
 
 use App\App;
 use GuzzleHttp\Client;
+use App\Services\Chatbot\TokenUsage;
 use GuzzleHttp\Exception\GuzzleException;
 
 class OllamaProvider implements ProviderInterface
@@ -134,10 +135,21 @@ class OllamaProvider implements ProviderInterface
             }
 
             $responseText = $data['response'];
+            $usage = [
+                'input_tokens' => isset($data['prompt_eval_count']) ? (int) $data['prompt_eval_count'] : TokenUsage::estimateTextTokens($prompt),
+                'output_tokens' => isset($data['eval_count']) ? (int) $data['eval_count'] : TokenUsage::estimateTextTokens($responseText),
+                'source' => isset($data['prompt_eval_count'], $data['eval_count']) ? 'provider' : 'estimated',
+                'raw' => [
+                    'prompt_eval_count' => $data['prompt_eval_count'] ?? null,
+                    'eval_count' => $data['eval_count'] ?? null,
+                ],
+            ];
+            $usage['total_tokens'] = $usage['input_tokens'] + $usage['output_tokens'];
 
             return [
                 'response' => $responseText,
                 'model' => "Ollama {$this->model}",
+                'usage' => $usage,
             ];
         } catch (GuzzleException $e) {
             $this->app->getLogger()->error('Ollama API exception: ' . $e->getMessage());

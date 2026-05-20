@@ -302,15 +302,16 @@ class CloudManagementController
             $privateKey = 'FCPRIV-' . base64_encode(random_bytes(48));
             $timestamp = gmdate('c');
 
-            // Rotate FeatherCloud → Panel keys
-            $config->setSetting(ConfigInterface::FEATHERCLOUD_ACCESS_PUBLIC_KEY, $publicKey);
-            $config->setSetting(ConfigInterface::FEATHERCLOUD_ACCESS_PRIVATE_KEY, $privateKey);
-            $config->setSetting(ConfigInterface::FEATHERCLOUD_ACCESS_LAST_ROTATED, $timestamp);
+            // Panel identity keys used during OAuth (`public_identity_key` / `private_key`).
+            $config->setSetting(ConfigInterface::FEATHERCLOUD_CLOUD_PUBLIC_KEY, $publicKey);
+            $config->setSetting(ConfigInterface::FEATHERCLOUD_CLOUD_PRIVATE_KEY, $privateKey);
+            $config->setSetting(ConfigInterface::FEATHERCLOUD_CLOUD_LAST_ROTATED, $timestamp);
 
-            // Clear Panel → FeatherCloud keys (they need to be regenerated)
-            $config->setSetting(ConfigInterface::FEATHERCLOUD_CLOUD_PUBLIC_KEY, null);
-            $config->setSetting(ConfigInterface::FEATHERCLOUD_CLOUD_PRIVATE_KEY, null);
-            $config->setSetting(ConfigInterface::FEATHERCLOUD_CLOUD_LAST_ROTATED, null);
+            // FeatherCloud-issued API keys must come from OAuth; never substitute random values here
+            // or api.featherpanel.com responds with "Invalid panel public key".
+            $config->setSetting(ConfigInterface::FEATHERCLOUD_ACCESS_PUBLIC_KEY, null);
+            $config->setSetting(ConfigInterface::FEATHERCLOUD_ACCESS_PRIVATE_KEY, null);
+            $config->setSetting(ConfigInterface::FEATHERCLOUD_ACCESS_LAST_ROTATED, null);
 
             $user = $request->attributes->get('user');
             $userUuid = $user['uuid'] ?? null;
@@ -318,7 +319,7 @@ class CloudManagementController
             Activity::createActivity([
                 'user_uuid' => $userUuid,
                 'name' => 'rotate_cloud_credentials',
-                'context' => 'FeatherCloud → Panel credentials were rotated, Panel → FeatherCloud keys cleared',
+                'context' => 'Panel FeatherCloud identity keys rotated; FeatherCloud-issued credentials cleared - OAuth link required again',
                 'ip_address' => CloudFlareRealIP::getRealIP(),
             ]);
 

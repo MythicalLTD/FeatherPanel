@@ -15,7 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useState, useEffect, useRef, useContext } from 'react';
+import { memo, useState, useEffect, useRef, useContext } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Send, Loader2, X, Bot, MessageSquare, Clock, Trash2, Plus, AlertTriangle, Menu } from 'lucide-react';
@@ -31,6 +31,7 @@ import {
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { useTranslation } from '@/contexts/TranslationContext';
 import {
     sendChatMessage,
@@ -80,9 +81,45 @@ interface ChatbotInterfaceProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     isDialog?: boolean;
-    mode?: 'server' | 'vds';
+    mode?: 'server' | 'vds' | 'dashboard';
     vdsInstance?: VmInstance | null;
 }
+
+interface UserAvatarProps {
+    avatar?: string | null;
+    username?: string | null;
+    firstName?: string | null;
+    size?: 'sm' | 'md' | 'lg';
+}
+
+const UserAvatar = memo(function UserAvatar({ avatar, username, firstName, size = 'md' }: UserAvatarProps) {
+    const sizeClasses = {
+        sm: 'h-8 w-8 text-xs',
+        md: 'h-10 w-10 text-sm',
+        lg: 'h-12 w-12 text-base',
+    };
+
+    if (avatar) {
+        return (
+            <Image
+                src={avatar}
+                alt={username || 'User'}
+                width={size === 'sm' ? 32 : size === 'md' ? 40 : 48}
+                height={size === 'sm' ? 32 : size === 'md' ? 40 : 48}
+                unoptimized
+                className={`${sizeClasses[size]} rounded-full object-cover`}
+            />
+        );
+    }
+
+    return (
+        <div
+            className={`${sizeClasses[size]} bg-primary text-primary-foreground flex items-center justify-center rounded-full font-semibold`}
+        >
+            {firstName?.charAt(0) || username?.charAt(0)}
+        </div>
+    );
+});
 
 export default function ChatbotInterface({
     open,
@@ -118,6 +155,7 @@ export default function ChatbotInterface({
     const serverCtx = useContext(ServerContext);
     const server = serverCtx?.server ?? null;
     const { user } = useSession();
+    const lastConversationStorageKey = `featherpanel_chatbot_last_conversation_${mode}`;
 
     const scrollToBottom = () => {
         setTimeout(() => {
@@ -130,19 +168,32 @@ export default function ChatbotInterface({
     }, [messages]);
 
     const getWelcomeMessage = (userName: string) => {
+        if (mode === 'dashboard') {
+            return t('chatbot.welcomeDashboard', { name: userName });
+        }
+
         if (mode === 'vds') {
-            return (
-                t('chatbot.welcomeVds', { name: userName }) ||
-                `Hi ${userName}! I'm FeatherPanel VDS AI. I can help you manage your virtual servers - check status, manage backups, control power, and more!`
-            );
+            return t('chatbot.welcomeVds', { name: userName });
         }
         return t('chatbot.welcome', { name: userName });
     };
 
     useEffect(() => {
         if (open) {
-            loadConversationsList();
-            if (!currentConversationId && messages.length === 0) {
+            loadConversationsList().then((convs) => {
+                if (currentConversationId || messages.length > 0) return;
+
+                const storedConversationId =
+                    typeof window !== 'undefined' ? window.localStorage.getItem(lastConversationStorageKey) : null;
+                const conversationToRestore =
+                    (storedConversationId && convs.find((conv) => conv.id === Number(storedConversationId))) ||
+                    convs[0];
+
+                if (conversationToRestore) {
+                    loadConversation(conversationToRestore.id);
+                    return;
+                }
+
                 const userName = user?.first_name || user?.username || 'there';
                 setMessages([
                     {
@@ -152,7 +203,7 @@ export default function ChatbotInterface({
                         timestamp: new Date(),
                     },
                 ]);
-            }
+            });
             setTimeout(() => {
                 textareaRef.current?.focus();
             }, 100);
@@ -165,9 +216,11 @@ export default function ChatbotInterface({
         try {
             const convs = mode === 'vds' ? await getVdsConversations() : await getConversations();
             setConversations(convs);
+            return convs;
         } catch (error) {
             console.error('Failed to load conversations:', error);
             toast.error(t('chatbot.failedToLoadConversations'));
+            return [];
         } finally {
             setLoadingConversations(false);
         }
@@ -175,6 +228,9 @@ export default function ChatbotInterface({
 
     const createNewConversation = () => {
         setCurrentConversationId(null);
+        if (typeof window !== 'undefined') {
+            window.localStorage.removeItem(lastConversationStorageKey);
+        }
         const userName = user?.first_name || user?.username || 'there';
         setMessages([
             {
@@ -206,6 +262,9 @@ export default function ChatbotInterface({
                     timestamp: new Date(msg.created_at),
                 })),
             );
+            if (typeof window !== 'undefined') {
+                window.localStorage.setItem(lastConversationStorageKey, String(conversationId));
+            }
             if (data.messages.length > 0) {
                 const lastMessage = data.messages[data.messages.length - 1];
                 if (lastMessage?.model) {
@@ -232,6 +291,11 @@ export default function ChatbotInterface({
             }
             if (currentConversationId === conversationId) {
                 createNewConversation();
+            } else if (
+                typeof window !== 'undefined' &&
+                window.localStorage.getItem(lastConversationStorageKey) === String(conversationId)
+            ) {
+                window.localStorage.removeItem(lastConversationStorageKey);
             }
             await loadConversationsList();
             toast.success(t('chatbot.conversationDeleted'));
@@ -529,6 +593,7 @@ export default function ChatbotInterface({
 
         try {
             const pageContext: PageContext = {
+                mode,
                 route: pathname || '',
                 routeName: pathname || '',
                 page: pathname || '',
@@ -581,6 +646,9 @@ export default function ChatbotInterface({
 
             if (result.conversationId && !currentConversationId) {
                 setCurrentConversationId(result.conversationId);
+                if (typeof window !== 'undefined') {
+                    window.localStorage.setItem(lastConversationStorageKey, String(result.conversationId));
+                }
                 await loadConversationsList();
             }
 
@@ -671,35 +739,6 @@ export default function ChatbotInterface({
         }
     };
 
-    const UserAvatar = ({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) => {
-        const sizeClasses = {
-            sm: 'h-8 w-8 text-xs',
-            md: 'h-10 w-10 text-sm',
-            lg: 'h-12 w-12 text-base',
-        };
-
-        if (user?.avatar) {
-            return (
-                <Image
-                    src={user.avatar}
-                    alt={user.username}
-                    width={size === 'sm' ? 32 : size === 'md' ? 40 : 48}
-                    height={size === 'sm' ? 32 : size === 'md' ? 40 : 48}
-                    unoptimized
-                    className={`${sizeClasses[size]} rounded-full object-cover`}
-                />
-            );
-        }
-
-        return (
-            <div
-                className={`${sizeClasses[size]} bg-primary text-primary-foreground flex items-center justify-center rounded-full font-semibold`}
-            >
-                {user?.first_name?.charAt(0) || user?.username?.charAt(0)}
-            </div>
-        );
-    };
-
     const content = (
         <div className='flex h-full flex-col md:flex-row'>
             {showConversationsSidebar && (
@@ -709,8 +748,8 @@ export default function ChatbotInterface({
                         onClick={() => setShowConversationsSidebar(false)}
                     />
 
-                    <div className='border-border bg-background fixed inset-y-0 left-0 z-50 flex w-72 shrink-0 flex-col border-r md:relative md:z-0 md:w-64'>
-                        <div className='border-border flex items-center justify-between border-b px-3 py-3'>
+                    <div className='border-border/70 bg-card fixed inset-y-0 left-0 z-50 flex w-72 shrink-0 flex-col border-r shadow-xl md:relative md:z-0 md:w-64 md:shadow-none'>
+                        <div className='border-border/70 flex items-center justify-between border-b px-3 py-3'>
                             <h3 className='text-sm font-semibold'>{t('chatbot.conversations')}</h3>
                             <Button
                                 variant='ghost'
@@ -722,7 +761,7 @@ export default function ChatbotInterface({
                             </Button>
                         </div>
 
-                        <div className='border-border border-b px-3 py-2'>
+                        <div className='border-border/70 bg-muted/20 border-b px-3 py-2'>
                             <Button variant='default' size='sm' className='w-full' onClick={createNewConversation}>
                                 <Plus className='mr-2 h-4 w-4' />
                                 {t('chatbot.newChat')}
@@ -752,10 +791,10 @@ export default function ChatbotInterface({
                                             key={conv.id}
                                             role='button'
                                             tabIndex={0}
-                                            className={`group relative flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm transition-colors ${
+                                            className={`group relative flex w-full cursor-pointer items-center gap-2.5 rounded-xl border px-3 py-2.5 text-sm transition-colors ${
                                                 currentConversationId === conv.id
-                                                    ? 'bg-primary/10 text-primary'
-                                                    : 'hover:bg-muted text-foreground'
+                                                    ? 'border-primary/25 bg-primary/10 text-primary shadow-sm'
+                                                    : 'text-foreground hover:border-border/70 hover:bg-muted/60 border-transparent'
                                             }`}
                                             onClick={() => loadConversation(conv.id)}
                                             onKeyDown={(e) => e.key === 'Enter' && loadConversation(conv.id)}
@@ -769,7 +808,7 @@ export default function ChatbotInterface({
                                                     <Clock className='h-3 w-3 shrink-0' />
                                                     <span className='truncate'>{formatDate(conv.updated_at)}</span>
                                                     {conv.message_count && conv.message_count > 0 && (
-                                                        <span className='bg-muted ml-auto rounded px-1.5 py-0.5 text-[10px] font-medium'>
+                                                        <span className='bg-background text-muted-foreground ml-auto rounded-md px-1.5 py-0.5 text-[10px] font-medium shadow-sm'>
                                                             {conv.message_count}
                                                         </span>
                                                     )}
@@ -793,7 +832,7 @@ export default function ChatbotInterface({
             )}
 
             <div className='flex min-w-0 flex-1 flex-col'>
-                <div className='border-border bg-background/95 supports-backdrop-filter:bg-background/60 sticky top-0 z-10 flex items-center justify-between border-b px-4 py-3 backdrop-blur'>
+                <div className='border-border/70 bg-card/95 supports-backdrop-filter:bg-card/85 sticky top-0 z-10 flex items-center justify-between border-b px-4 py-3 shadow-sm backdrop-blur'>
                     <div className='flex min-w-0 flex-1 items-center gap-3'>
                         <Button
                             variant='ghost'
@@ -823,7 +862,7 @@ export default function ChatbotInterface({
                     )}
                 </div>
 
-                <div className='flex-1 space-y-4 overflow-y-auto px-4 py-4'>
+                <div className='bg-muted/20 flex-1 space-y-4 overflow-y-auto px-4 py-4 dark:bg-transparent'>
                     {pendingActions.length > 0 && (
                         <div className='space-y-2'>
                             {pendingActions.map((action) => (
@@ -872,7 +911,12 @@ export default function ChatbotInterface({
                                             <Bot className='text-primary-foreground h-4 w-4 md:h-5 md:w-5' />
                                         </div>
                                     ) : (
-                                        <UserAvatar size='md' />
+                                        <UserAvatar
+                                            avatar={user?.avatar}
+                                            username={user?.username}
+                                            firstName={user?.first_name}
+                                            size='md'
+                                        />
                                     )}
 
                                     <div className='max-w-[85%] min-w-0 flex-1 md:max-w-[75%]'>
@@ -884,15 +928,77 @@ export default function ChatbotInterface({
                                             </span>
                                         </div>
                                         <div
-                                            className={`rounded-2xl px-4 py-2.5 ${
+                                            className={`rounded-2xl px-4 py-2.5 shadow-sm ${
                                                 message.role === 'user'
-                                                    ? 'bg-primary text-primary-foreground'
-                                                    : 'bg-muted text-foreground'
+                                                    ? 'bg-primary text-primary-foreground shadow-primary/20'
+                                                    : 'border-border/70 bg-card text-foreground border'
                                             }`}
                                         >
                                             {message.content ? (
-                                                <div className='prose prose-sm dark:prose-invert max-w-none text-sm leading-relaxed [&>*:first-child]:mt-0 [&>*:last-child]:mb-0'>
-                                                    <ReactMarkdown>{message.content}</ReactMarkdown>
+                                                <div
+                                                    className={`prose prose-sm dark:prose-invert max-w-none text-sm leading-relaxed [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 ${
+                                                        message.role === 'user'
+                                                            ? 'prose-p:text-primary-foreground prose-li:text-primary-foreground prose-strong:text-primary-foreground prose-a:text-primary-foreground prose-headings:text-primary-foreground'
+                                                            : 'prose-p:text-foreground prose-li:text-foreground prose-strong:text-foreground prose-a:text-primary prose-headings:text-foreground'
+                                                    }`}
+                                                >
+                                                    <ReactMarkdown
+                                                        remarkPlugins={[remarkGfm]}
+                                                        components={{
+                                                            pre: ({ children }) => (
+                                                                <pre className='my-3 overflow-x-auto rounded-xl border border-slate-800 bg-slate-950 p-4 text-sm text-slate-100 shadow-inner'>
+                                                                    {children}
+                                                                </pre>
+                                                            ),
+                                                            code: ({ className, children, ...props }) => {
+                                                                const isBlock = className?.startsWith('language-');
+
+                                                                return (
+                                                                    <code
+                                                                        className={
+                                                                            isBlock
+                                                                                ? `font-mono text-slate-100 ${className ?? ''}`
+                                                                                : `rounded-md px-1.5 py-0.5 font-mono text-[0.9em] ${
+                                                                                      message.role === 'user'
+                                                                                          ? 'text-primary-foreground bg-white/15'
+                                                                                          : 'bg-muted text-foreground'
+                                                                                  }`
+                                                                        }
+                                                                        {...props}
+                                                                    >
+                                                                        {children}
+                                                                    </code>
+                                                                );
+                                                            },
+                                                            table: ({ children }) => (
+                                                                <div className='border-border/70 my-3 overflow-x-auto rounded-xl border'>
+                                                                    <table className='w-full border-collapse text-sm'>
+                                                                        {children}
+                                                                    </table>
+                                                                </div>
+                                                            ),
+                                                            thead: ({ children }) => (
+                                                                <thead className='bg-muted/70'>{children}</thead>
+                                                            ),
+                                                            tbody: ({ children }) => (
+                                                                <tbody className='divide-border/70 divide-y'>
+                                                                    {children}
+                                                                </tbody>
+                                                            ),
+                                                            th: ({ children }) => (
+                                                                <th className='text-foreground px-3 py-2 text-left font-semibold'>
+                                                                    {children}
+                                                                </th>
+                                                            ),
+                                                            td: ({ children }) => (
+                                                                <td className='text-foreground px-3 py-2'>
+                                                                    {children}
+                                                                </td>
+                                                            ),
+                                                        }}
+                                                    >
+                                                        {message.content}
+                                                    </ReactMarkdown>
                                                 </div>
                                             ) : (
                                                 <div className='flex items-center gap-2'>
@@ -909,7 +1015,7 @@ export default function ChatbotInterface({
                     <div ref={messagesEndRef} />
                 </div>
 
-                <div className='border-border bg-background sticky bottom-0 border-t p-4'>
+                <div className='border-border/70 bg-card sticky bottom-0 border-t p-4 shadow-[0_-8px_24px_-20px_rgba(0,0,0,0.35)]'>
                     <div className='mx-auto flex max-w-4xl items-end gap-2'>
                         <textarea
                             ref={textareaRef}
@@ -919,7 +1025,7 @@ export default function ChatbotInterface({
                             placeholder={t('chatbot.placeholder')}
                             disabled={isLoading}
                             rows={1}
-                            className='border-input bg-background text-foreground placeholder:text-muted-foreground focus-visible:ring-primary max-h-11 max-h-32 flex-1 resize-none rounded-2xl border px-4 py-3 text-sm focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50'
+                            className='border-border/70 bg-background text-foreground placeholder:text-muted-foreground focus-visible:ring-primary max-h-11 max-h-32 flex-1 resize-none rounded-2xl border px-4 py-3 text-sm shadow-sm focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50'
                             style={{
                                 height: 'auto',
                                 minHeight: '44px',

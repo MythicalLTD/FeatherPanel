@@ -428,15 +428,15 @@ export default function SettingsPage() {
         try {
             const response = await axios.post('/api/admin/settings/email/test');
             if (response.data.success) {
-                toast.success(response.data.message || 'Test email sent successfully! Please check your inbox.');
+                toast.success(response.data.message || t('admin.settings.email_test.success'));
             } else {
-                toast.error(response.data.message || 'Failed to send test email');
+                toast.error(response.data.message || t('admin.settings.email_test.failed_short'));
             }
         } catch (error: unknown) {
             if (axios.isAxiosError(error) && error.response?.data?.message) {
                 toast.error(error.response.data.message);
             } else {
-                toast.error('Failed to send test email. Please check your SMTP settings.');
+                toast.error(t('admin.settings.email_test.failed'));
             }
         } finally {
             setSendingTestEmail(false);
