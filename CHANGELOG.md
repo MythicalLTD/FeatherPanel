@@ -17,6 +17,7 @@
 - Added detailed ban and suspension reason tracking for both servers and users, providing greater clarity for the staff team. by @nayskutzu
 - Added a copyright notice to acknowledge the creators of the panel. by @nayskutzu
 - Introduced a sleek and intuitive server switcher for seamless navigation between servers. by @nayskutzu
+- Mass move servers from a node to another with automatic allocation assignment, selectable servers or move-all, and a per-request batch limit for large fleets. by @nayskutzu
 
 ### Fixed
 

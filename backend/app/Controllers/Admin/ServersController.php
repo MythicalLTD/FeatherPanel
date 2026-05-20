@@ -2747,218 +2747,36 @@ class ServersController
     )]
     public function initiateTransfer(Request $request, int $id): Response
     {
-        $server = Server::getServerById($id);
-        if (!$server) {
-            return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
-        }
-
         $data = json_decode($request->getContent(), true);
         if (json_last_error() !== JSON_ERROR_NONE) {
             return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
         }
 
-        if (!isset($data['destination_node_id']) || !is_numeric($data['destination_node_id'])) {
-            return ApiResponse::error('Invalid or missing destination_node_id', 'INVALID_DESTINATION_NODE', 400);
+        $options = $data;
+        if (!array_key_exists('auto_allocate', $options)) {
+            $options['auto_allocate'] = !isset($data['destination_allocation_id']);
         }
 
-        $destinationNodeId = (int) $data['destination_node_id'];
-
-        // Prevent transferring to the same node
-        if ($server['node_id'] === $destinationNodeId) {
-            return ApiResponse::error('Cannot transfer server to the same node', 'SAME_SOURCE_DESTINATION', 400);
-        }
-
-        // Check if server is already transferring or has an active transfer
-        if ($server['status'] === 'transferring' || ServerTransfer::hasActiveTransfer($id)) {
-            return ApiResponse::error('Server is already being transferred', 'ALREADY_TRANSFERRING', 400);
-        }
-
-        // Check if server is in a transferable state (installed, not restoring backup)
-        if ($server['status'] === 'installing' || $server['status'] === 'restoring') {
-            return ApiResponse::error('Server cannot be transferred while installing or restoring', 'SERVER_NOT_TRANSFERABLE', 400);
-        }
-
-        // Get destination node
-        $destinationNode = Node::getNodeById($destinationNodeId);
-        if (!$destinationNode) {
-            return ApiResponse::error('Destination node not found', 'DESTINATION_NODE_NOT_FOUND', 404);
-        }
-
-        // Get source node for Wings connection
-        $sourceNode = Node::getNodeById($server['node_id']);
-        if (!$sourceNode) {
-            return ApiResponse::error('Source node not found', 'SOURCE_NODE_NOT_FOUND', 404);
-        }
-
-        // Store original values in case we need to revert
-        $originalNodeId = $server['node_id'];
-        $originalAllocationId = $server['allocation_id'];
-
-        // Get server's current allocations (primary + additional)
-        $currentAllocations = Allocation::getByServerId($id);
-        $oldAdditionalAllocations = array_filter(
-            array_column($currentAllocations, 'id'),
-            fn ($allocId) => $allocId != $originalAllocationId
+        $result = (new \App\Services\Servers\ServerTransferInitiator())->initiate(
+            $id,
+            $options,
+            $request->attributes->get('user')
         );
 
-        // Validate and get destination allocation
-        $newAllocationId = null;
-        if (isset($data['destination_allocation_id'])) {
-            $destinationAllocation = Allocation::getAllocationById($data['destination_allocation_id']);
-            if (!$destinationAllocation) {
-                return ApiResponse::error('Destination allocation not found', 'DESTINATION_ALLOCATION_NOT_FOUND', 404);
-            }
-            if ($destinationAllocation['node_id'] !== $destinationNodeId) {
-                return ApiResponse::error('Destination allocation does not belong to destination node', 'ALLOCATION_NODE_MISMATCH', 400);
-            }
-            if ($destinationAllocation['server_id'] !== null) {
-                return ApiResponse::error('Destination allocation is already assigned to another server', 'ALLOCATION_IN_USE', 400);
-            }
-            $newAllocationId = $destinationAllocation['id'];
+        if (!$result['success']) {
+            return ApiResponse::error(
+                $result['error'] ?? 'Transfer failed',
+                $result['code'] ?? 'TRANSFER_FAILED',
+                $result['http_status'] ?? 500
+            );
         }
 
-        // Get additional allocations for destination (optional)
-        $newAdditionalAllocations = [];
-        if (isset($data['destination_additional_allocations']) && is_array($data['destination_additional_allocations'])) {
-            foreach ($data['destination_additional_allocations'] as $allocId) {
-                $alloc = Allocation::getAllocationById((int) $allocId);
-                if ($alloc && $alloc['node_id'] === $destinationNodeId && $alloc['server_id'] === null) {
-                    $newAdditionalAllocations[] = (int) $allocId;
-                }
-            }
-        }
-
-        // Generate transfer JWT token (subject is the destination server UUID)
-        $config = App::getInstance(true)->getConfig();
-        $panelUrl = $config->getSetting(ConfigInterface::APP_URL, 'https://featherpanel.mythical.systems');
-        $destinationUrl = $destinationNode['scheme'] . '://' . $destinationNode['fqdn'] . ':' . $destinationNode['daemonListen'];
-
-        try {
-            // Temporarily assign new allocations to the server (so they can't be taken during transfer)
-            if ($newAllocationId) {
-                $allocationsToAssign = [$newAllocationId];
-                if (!empty($newAdditionalAllocations)) {
-                    $allocationsToAssign = array_merge($allocationsToAssign, $newAdditionalAllocations);
-                }
-                Allocation::assignMultipleToServer($id, $allocationsToAssign);
-            }
-
-            // Update server status to transferring AND update node_id to destination
-            // This allows destination Wings to query Panel for server configuration
-            $updated = Server::updateServerById($id, [
-                'status' => 'transferring',
-                'node_id' => $destinationNodeId,
-            ]);
-            if (!$updated) {
-                // Revert allocation assignment
-                if ($newAllocationId) {
-                    $allocationsToRevert = [$newAllocationId];
-                    if (!empty($newAdditionalAllocations)) {
-                        $allocationsToRevert = array_merge($allocationsToRevert, $newAdditionalAllocations);
-                    }
-                    Allocation::unassignMultiple($allocationsToRevert);
-                }
-
-                return ApiResponse::error('Failed to update server status', 'UPDATE_FAILED', 500);
-            }
-
-            $wings = new Wings(
-                $sourceNode['fqdn'],
-                $sourceNode['daemonListen'],
-                $sourceNode['scheme'],
-                $sourceNode['daemon_token'],
-                30
-            );
-
-            // Get JWT service and generate transfer token
-            $jwtService = new \App\Services\Wings\Services\JwtService(
-                $destinationNode['daemon_token'],
-                $panelUrl,
-                $destinationUrl,
-                3600 // 1 hour expiration for transfers
-            );
-
-            $transferToken = $jwtService->generateTransferToken(
-                $server['uuid'],
-                $request->attributes->get('user')['uuid'],
-                ['*'] // Full permissions for transfer
-            );
-
-            // Prepare transfer request data for source node
-            // Wings will extract server UUID from JWT's 'sub' claim
-            $transferData = [
-                'url' => $destinationUrl . '/api/transfers',
-                'token' => 'Bearer ' . $transferToken,
-            ];
-
-            // Initiate transfer on source node
-            $response = $wings->getTransfer()->startTransfer($server['uuid'], $transferData);
-
-            // Create transfer record in database with full allocation tracking
-            $transferId = ServerTransfer::create([
-                'server_id' => $id,
-                'source_node_id' => $originalNodeId,
-                'destination_node_id' => $destinationNodeId,
-                'old_allocation' => $originalAllocationId,
-                'new_allocation' => $newAllocationId,
-                'old_additional_allocations' => $oldAdditionalAllocations,
-                'new_additional_allocations' => $newAdditionalAllocations,
-                'status' => 'in_progress',
-                'progress' => 0.0,
-                'started_at' => date('Y-m-d H:i:s'),
-            ]);
-
-            if (!$transferId) {
-                App::getInstance(true)->getLogger()->error('Failed to create server transfer record');
-                // Don't fail the transfer if database insert fails, but log it
-            }
-
-            // Log activity
-            Activity::createActivity([
-                'user_uuid' => $request->attributes->get('user')['uuid'],
-                'name' => 'initiate_server_transfer',
-                'context' => 'Initiated transfer of server ' . $server['name'] . ' from node ' . $sourceNode['name'] . ' to node ' . $destinationNode['name'],
-                'ip_address' => CloudFlareRealIP::getRealIP(),
-            ]);
-
-            // Emit event
-            global $eventManager;
-            if (isset($eventManager) && $eventManager !== null) {
-                $eventManager->emit(
-                    ServerEvent::onServerTransferInitiated(),
-                    [
-                        'server' => $server,
-                        'source_node' => $sourceNode,
-                        'destination_node' => $destinationNode,
-                        'initiated_by' => $request->attributes->get('user'),
-                    ]
-                );
-            }
-
-            return ApiResponse::success([
-                'message' => 'Server transfer initiated successfully',
-                'transfer_id' => $transferId,
-            ], 'Server transfer initiated', 200);
-        } catch (\Exception $e) {
-            // Revert server status AND node_id if transfer initiation fails
-            Server::updateServerById($id, [
-                'status' => $server['status'],
-                'node_id' => $originalNodeId,
-            ]);
-
-            // Revert allocation assignment
-            if ($newAllocationId) {
-                $allocationsToRevert = [$newAllocationId];
-                if (!empty($newAdditionalAllocations)) {
-                    $allocationsToRevert = array_merge($allocationsToRevert, $newAdditionalAllocations);
-                }
-                Allocation::unassignMultiple($allocationsToRevert);
-            }
-
-            App::getInstance(true)->getLogger()->error('Failed to initiate server transfer: ' . $e->getMessage());
-
-            return ApiResponse::error('Failed to initiate server transfer: ' . $e->getMessage(), 'TRANSFER_INITIATION_FAILED', 500);
-        }
+        return ApiResponse::success([
+            'message' => 'Server transfer initiated successfully',
+            'transfer_id' => $result['transfer_id'] ?? null,
+            'new_allocation' => $result['new_allocation'] ?? null,
+            'new_additional_allocations' => $result['new_additional_allocations'] ?? [],
+        ], 'Server transfer initiated', 200);
     }
 
     #[OA\Get(

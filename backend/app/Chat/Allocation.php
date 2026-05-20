@@ -216,6 +216,65 @@ class Allocation
     }
 
     /**
+     * Count free (unassigned) allocations on a specific node.
+     */
+    public static function getFreeCountByNodeId(int $nodeId): int
+    {
+        if ($nodeId <= 0) {
+            return 0;
+        }
+
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare('SELECT COUNT(*) FROM ' . self::$table . ' WHERE node_id = :node_id AND server_id IS NULL');
+        $stmt->execute(['node_id' => $nodeId]);
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    /**
+     * Pick free allocation IDs on a node for assignment (e.g. server transfers).
+     *
+     * @param array<int> $excludeIds Allocation IDs to skip (already reserved in the same batch)
+     *
+     * @return array<int>
+     */
+    public static function pickFreeAllocationIdsForNode(int $nodeId, int $count, array $excludeIds = []): array
+    {
+        if ($nodeId <= 0 || $count <= 0) {
+            return [];
+        }
+
+        $pdo = Database::getPdoConnection();
+        $sql = 'SELECT id FROM ' . self::$table . ' WHERE node_id = :node_id AND server_id IS NULL';
+        $params = ['node_id' => $nodeId];
+
+        $excludeIds = array_values(array_filter(
+            array_map('intval', $excludeIds),
+            fn (int $id) => $id > 0
+        ));
+
+        if (!empty($excludeIds)) {
+            $placeholders = implode(',', array_fill(0, count($excludeIds), '?'));
+            $sql .= ' AND id NOT IN (' . $placeholders . ')';
+        }
+
+        $sql .= ' ORDER BY ip ASC, port ASC LIMIT ' . (int) $count;
+
+        $stmt = $pdo->prepare($sql);
+        $stmt->bindValue('node_id', $nodeId, \PDO::PARAM_INT);
+
+        $paramIndex = 1;
+        foreach ($excludeIds as $excludeId) {
+            $stmt->bindValue($paramIndex, $excludeId, \PDO::PARAM_INT);
+            ++$paramIndex;
+        }
+
+        $stmt->execute();
+
+        return array_map('intval', $stmt->fetchAll(\PDO::FETCH_COLUMN));
+    }
+
+    /**
      * Create a new allocation.
      */
     public static function create(array $data): int | false

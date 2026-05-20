@@ -24,6 +24,7 @@ import { Button } from '@/components/featherui/Button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/featherui/Input';
 import { HeadlessModal } from '@/components/ui/headless-modal';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -84,6 +85,7 @@ export function ActionsTab({
     const [allocationModalOpen, setAllocationModalOpen] = useState(false);
     const [selectedNode, setSelectedNode] = useState<ApiNode | null>(null);
     const [selectedAllocation, setSelectedAllocation] = useState<ApiAllocation | null>(null);
+    const [autoAllocate, setAutoAllocate] = useState(true);
     const [nodes, setNodes] = useState<ApiNode[]>([]);
     const [allocations, setAllocations] = useState<ApiAllocation[]>([]);
     const [nodeSearch, setNodeSearch] = useState('');
@@ -193,13 +195,21 @@ export function ActionsTab({
     };
 
     const handleTransfer = async () => {
-        if (!selectedNode || !selectedAllocation) return;
+        if (!selectedNode || (!autoAllocate && !selectedAllocation)) return;
         setTransferring(true);
         try {
-            await axios.post(`/api/admin/servers/${serverId}/transfer`, {
+            const payload: {
+                destination_node_id: number;
+                destination_allocation_id?: number;
+                auto_allocate?: boolean;
+            } = {
                 destination_node_id: selectedNode.id,
-                destination_allocation_id: selectedAllocation.id,
-            });
+                auto_allocate: autoAllocate,
+            };
+            if (!autoAllocate && selectedAllocation) {
+                payload.destination_allocation_id = selectedAllocation.id;
+            }
+            await axios.post(`/api/admin/servers/${serverId}/transfer`, payload);
             toast.success(t('admin.servers.messages.transfer_initiated'));
             setTransferDialogOpen(false);
             onRefresh();
@@ -293,6 +303,7 @@ export function ActionsTab({
                     onClick={() => {
                         setSelectedNode(null);
                         setSelectedAllocation(null);
+                        setAutoAllocate(true);
                         setTransferDialogOpen(true);
                     }}
                 >
@@ -400,29 +411,47 @@ export function ActionsTab({
                             </span>
                             <ChevronRight className='h-4 w-4' />
                         </Button>
-                        <Button
-                            variant='outline'
-                            className='w-full justify-between'
-                            disabled={!selectedNode}
-                            onClick={() => {
-                                if (!selectedNode) return;
-                                fetchAllocations(selectedNode.id);
-                                setAllocationModalOpen(true);
-                            }}
-                        >
-                            <span>
-                                {selectedAllocation
-                                    ? `${selectedAllocation.ip}:${selectedAllocation.port}`
-                                    : t('admin.servers.transfer.select_allocation')}
-                            </span>
-                            <ChevronRight className='h-4 w-4' />
-                        </Button>
+                        <label className='flex cursor-pointer items-start gap-3 rounded-xl border p-3'>
+                            <Checkbox
+                                checked={autoAllocate}
+                                onCheckedChange={(v) => {
+                                    const enabled = v === true;
+                                    setAutoAllocate(enabled);
+                                    if (enabled) setSelectedAllocation(null);
+                                }}
+                            />
+                            <div>
+                                <p className='text-sm font-medium'>{t('admin.servers.transfer.auto_allocate')}</p>
+                                <p className='text-muted-foreground text-xs'>
+                                    {t('admin.servers.transfer.auto_allocate_help')}
+                                </p>
+                            </div>
+                        </label>
+                        {!autoAllocate ? (
+                            <Button
+                                variant='outline'
+                                className='w-full justify-between'
+                                disabled={!selectedNode}
+                                onClick={() => {
+                                    if (!selectedNode) return;
+                                    fetchAllocations(selectedNode.id);
+                                    setAllocationModalOpen(true);
+                                }}
+                            >
+                                <span>
+                                    {selectedAllocation
+                                        ? `${selectedAllocation.ip}:${selectedAllocation.port}`
+                                        : t('admin.servers.transfer.select_allocation')}
+                                </span>
+                                <ChevronRight className='h-4 w-4' />
+                            </Button>
+                        ) : null}
                     </div>
                     <AlertDialogFooter>
                         <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={handleTransfer}
-                            disabled={!selectedNode || !selectedAllocation || transferring}
+                            disabled={!selectedNode || (!autoAllocate && !selectedAllocation) || transferring}
                         >
                             {transferring ? <Loader2 className='mr-2 h-4 w-4 animate-spin' /> : null}
                             {t('admin.servers.transfer.submit')}

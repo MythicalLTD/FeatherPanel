@@ -101,6 +101,7 @@ export default function ServersPage() {
     const [isAllocationModalOpen, setIsAllocationModalOpen] = useState(false);
     const [selectedNode, setSelectedNode] = useState<ApiNode | null>(null);
     const [selectedAllocation, setSelectedAllocation] = useState<ApiAllocation | null>(null);
+    const [transferAutoAllocate, setTransferAutoAllocate] = useState(true);
     const [nodesList, setNodesList] = useState<ApiNode[]>([]);
     const [allocationsList, setAllocationsList] = useState<ApiAllocation[]>([]);
     const [loadingNodes, setLoadingNodes] = useState(false);
@@ -346,6 +347,7 @@ export default function ServersPage() {
         setTransferServer(server);
         setSelectedNode(null);
         setSelectedAllocation(null);
+        setTransferAutoAllocate(true);
         setIsTransferDialogOpen(true);
     };
 
@@ -390,14 +392,22 @@ export default function ServersPage() {
     };
 
     const initiateTransfer = async () => {
-        if (!transferServer || !selectedNode || !selectedAllocation) return;
+        if (!transferServer || !selectedNode || (!transferAutoAllocate && !selectedAllocation)) return;
 
         setIsInitiatingTransfer(true);
         try {
-            await axios.post(`/api/admin/servers/${transferServer.id}/transfer`, {
+            const payload: {
+                destination_node_id: number;
+                destination_allocation_id?: number;
+                auto_allocate?: boolean;
+            } = {
                 destination_node_id: selectedNode.id,
-                destination_allocation_id: selectedAllocation.id,
-            });
+                auto_allocate: transferAutoAllocate,
+            };
+            if (!transferAutoAllocate && selectedAllocation) {
+                payload.destination_allocation_id = selectedAllocation.id;
+            }
+            await axios.post(`/api/admin/servers/${transferServer.id}/transfer`, payload);
             toast.success(t('admin.servers.messages.transfer_initiated'));
             setIsTransferDialogOpen(false);
             setRefreshKey((prev) => prev + 1);
@@ -1705,35 +1715,57 @@ export default function ServersPage() {
                                 </Button>
                             </div>
 
-                            <div className='space-y-2'>
-                                <label className='text-sm font-bold'>
-                                    {t('admin.servers.transfer.destination_allocation')}
-                                </label>
-                                <Button
-                                    variant='outline'
-                                    className='border-border bg-background/50 h-12 w-full justify-between rounded-xl border px-4'
-                                    onClick={() => {
-                                        if (selectedNode) {
-                                            fetchAllocations(selectedNode.id);
-                                            setIsAllocationModalOpen(true);
-                                        } else {
-                                            toast.error(t('admin.servers.transfer.select_node'));
-                                        }
+                            <label className='flex cursor-pointer items-start gap-3 rounded-xl border p-4'>
+                                <Checkbox
+                                    checked={transferAutoAllocate}
+                                    onCheckedChange={(v) => {
+                                        const enabled = v === true;
+                                        setTransferAutoAllocate(enabled);
+                                        if (enabled) setSelectedAllocation(null);
                                     }}
-                                    disabled={isInitiatingTransfer || !selectedNode}
-                                >
-                                    <span
-                                        className={
-                                            selectedAllocation ? 'text-foreground font-medium' : 'text-muted-foreground'
-                                        }
+                                    disabled={isInitiatingTransfer}
+                                />
+                                <div>
+                                    <p className='text-sm font-bold'>{t('admin.servers.transfer.auto_allocate')}</p>
+                                    <p className='text-muted-foreground text-xs'>
+                                        {t('admin.servers.transfer.auto_allocate_help')}
+                                    </p>
+                                </div>
+                            </label>
+
+                            {!transferAutoAllocate ? (
+                                <div className='space-y-2'>
+                                    <label className='text-sm font-bold'>
+                                        {t('admin.servers.transfer.destination_allocation')}
+                                    </label>
+                                    <Button
+                                        variant='outline'
+                                        className='border-border bg-background/50 h-12 w-full justify-between rounded-xl border px-4'
+                                        onClick={() => {
+                                            if (selectedNode) {
+                                                fetchAllocations(selectedNode.id);
+                                                setIsAllocationModalOpen(true);
+                                            } else {
+                                                toast.error(t('admin.servers.transfer.select_node'));
+                                            }
+                                        }}
+                                        disabled={isInitiatingTransfer || !selectedNode}
                                     >
-                                        {selectedAllocation
-                                            ? `${selectedAllocation.ip}:${selectedAllocation.port}`
-                                            : t('admin.servers.transfer.select_allocation')}
-                                    </span>
-                                    <ChevronRight className='text-muted-foreground h-4 w-4' />
-                                </Button>
-                            </div>
+                                        <span
+                                            className={
+                                                selectedAllocation
+                                                    ? 'text-foreground font-medium'
+                                                    : 'text-muted-foreground'
+                                            }
+                                        >
+                                            {selectedAllocation
+                                                ? `${selectedAllocation.ip}:${selectedAllocation.port}`
+                                                : t('admin.servers.transfer.select_allocation')}
+                                        </span>
+                                        <ChevronRight className='text-muted-foreground h-4 w-4' />
+                                    </Button>
+                                </div>
+                            ) : null}
                         </div>
 
                         <div className='space-y-4'>
@@ -1767,7 +1799,9 @@ export default function ServersPage() {
                         </AlertDialogCancel>
                         <Button
                             onClick={initiateTransfer}
-                            disabled={!selectedNode || !selectedAllocation || isInitiatingTransfer}
+                            disabled={
+                                !selectedNode || (!transferAutoAllocate && !selectedAllocation) || isInitiatingTransfer
+                            }
                             className='h-11 rounded-xl bg-amber-500 px-6 text-white hover:bg-amber-600'
                         >
                             {isInitiatingTransfer ? (
