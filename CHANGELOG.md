@@ -2,8 +2,13 @@
 
 ## v1.4.0 STABLE
 
+### Added
+
+- Admin settings to configure the login page default sign-in method, display order of authentication options, and hidden methods (local, LDAP, passkey, email code, Discord, OIDC). by @nayskutzu
+
 ### Improved
 
+- Login page CAPTCHA is shown after username/password (before Sign in), full-width in a bordered block, instead of between the two fields. by @nayskutzu
 - Styles for the auth LDAP button were improved. by @nayskutzu
 
 

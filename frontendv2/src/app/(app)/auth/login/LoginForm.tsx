@@ -15,7 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -31,6 +31,14 @@ import { startAuthentication } from '@simplewebauthn/browser';
 import { authApi } from '@/lib/api/auth';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import {
+    buildLoginMethodAvailability,
+    buildLoginPageLayout,
+    parseLoginDefaultMethod,
+    parseLoginHiddenMethods,
+    parseLoginMethodsOrder,
+    type LoginMethodId,
+} from '@/lib/loginPageConfig';
 
 /** Reject protocol-relative URLs (e.g. `//evil.com`) while allowing same-origin paths. */
 function isSafeInternalRedirectPath(redirect: string | null): redirect is string {
@@ -717,7 +725,8 @@ export default function LoginForm() {
     const [oidcProviders, setOidcProviders] = useState<{ uuid: string; name: string }[]>([]);
     const [ldapProviders, setLdapProviders] = useState<{ uuid: string; name: string }[]>([]);
     const [selectedLdapProvider, setSelectedLdapProvider] = useState<string>('');
-    const [showLdapLogin, setShowLdapLogin] = useState(false);
+    const [activePrimary, setActivePrimary] = useState<LoginMethodId>('local');
+    const userChangedPrimary = useRef(false);
 
     useEffect(() => {
         const fetchOidcProviders = async () => {
@@ -757,20 +766,75 @@ export default function LoginForm() {
     const emailLoginEnabled = settings?.email_login_enabled === 'true';
     const oidcEnabled = oidcProviders.length > 0;
     const ldapEnabled = ldapProviders.length > 0;
-    const showLocalLogin = !showLdapLogin && !showEmailLogin;
 
-    const isMultiStepEmailLoginFlow = emailLoginEnabled && !showLdapLogin;
+    const loginPageLayout = useMemo(() => {
+        const hidden = parseLoginHiddenMethods(settings?.login_hidden_methods);
+        const order = parseLoginMethodsOrder(settings?.login_methods_order);
+        const defaultMethod = parseLoginDefaultMethod(settings?.login_default_method);
+        const availability = buildLoginMethodAvailability({
+            ldapEnabled,
+            emailLoginEnabled,
+            discordEnabled,
+            oidcEnabled,
+            hidePasskey: hidden.has('passkey'),
+        });
+        return buildLoginPageLayout(order, hidden, defaultMethod, availability);
+    }, [settings, ldapEnabled, emailLoginEnabled, discordEnabled, oidcEnabled]);
+
+    useEffect(() => {
+        if (userChangedPrimary.current) {
+            return;
+        }
+        setActivePrimary(loginPageLayout.primary);
+    }, [loginPageLayout.primary]);
+
+    const setPrimaryPanel = (method: LoginMethodId) => {
+        userChangedPrimary.current = true;
+        setActivePrimary(method);
+        if (method !== 'email_code') {
+            setShowEmailLogin(false);
+        }
+        if (method === 'email_code' && emailLoginEnabled) {
+            setLoginStep('identifier');
+        }
+    };
+
+    const showLdapLogin = activePrimary === 'ldap';
+    const showLocalLogin = activePrimary === 'local' && !showEmailLogin;
+
+    const isMultiStepEmailLoginFlow = emailLoginEnabled && activePrimary === 'email_code';
     const isLoginMethodStep = isMultiStepEmailLoginFlow && loginStep === 'method';
     const isLoginMethodPasswordStep = isLoginMethodStep && !showEmailLogin;
     const isEmailLoginVerifyStep = showEmailLogin && emailLoginStep === 'code';
     const emailForLoginCodeSubtitle = emailLoginForm.email || identifierValue;
+    const renderLoginCaptchaField = () => {
+        if (!showCaptcha) {
+            return null;
+        }
+        return (
+            <div className='border-border/60 bg-muted/15 w-full rounded-xl border px-4 py-3'>
+                <Captcha
+                    layout='auth'
+                    refreshKey={turnstileKey}
+                    onVerify={handleTurnstileSuccess}
+                    onError={() => {
+                        setForm((prev) => ({ ...prev, turnstile_token: '' }));
+                    }}
+                    onExpire={() => {
+                        setForm((prev) => ({ ...prev, turnstile_token: '' }));
+                    }}
+                />
+            </div>
+        );
+    };
+
     const renderLdapLoginButton = (className = '') => (
         <Button
             type='button'
             variant='outline'
             className={`group h-auto w-full !justify-between px-3 py-3 text-left ${className}`}
             disabled={loading}
-            onClick={() => setShowLdapLogin(true)}
+            onClick={() => setPrimaryPanel('ldap')}
         >
             <span className='flex min-w-0 items-center gap-3'>
                 <span className='bg-primary/10 text-primary flex h-9 w-9 shrink-0 items-center justify-center rounded-lg'>
@@ -785,6 +849,274 @@ export default function LoginForm() {
             </span>
             <ArrowRight className='text-muted-foreground group-hover:text-primary h-4 w-4 shrink-0 transition-colors' />
         </Button>
+    );
+
+    const renderSwitchToLocalButton = () => (
+        <Button
+            type='button'
+            variant='outline'
+            className='group h-auto w-full !justify-between px-3 py-3 text-left'
+            disabled={loading}
+            onClick={() => setPrimaryPanel('local')}
+        >
+            <span className='flex min-w-0 items-center gap-3'>
+                <span className='bg-primary/10 text-primary flex h-9 w-9 shrink-0 items-center justify-center rounded-lg'>
+                    <Lock className='h-4 w-4' />
+                </span>
+                <span className='min-w-0 text-left'>
+                    <span className='text-foreground block text-sm font-semibold'>{t('auth.login.passwordLogin')}</span>
+                    <span className='text-muted-foreground block truncate text-xs font-normal'>
+                        {t('auth.login.continue_with_password')}
+                    </span>
+                </span>
+            </span>
+            <ArrowRight className='text-muted-foreground group-hover:text-primary h-4 w-4 shrink-0 transition-colors' />
+        </Button>
+    );
+
+    const renderSwitchToEmailCodeButton = (emailHint?: string) => (
+        <Button
+            type='button'
+            variant='outline'
+            className='group h-auto w-full !justify-between px-3 py-3 text-left'
+            disabled={loading}
+            onClick={() => {
+                if (showCaptcha && !isRecaptchaV3Configured(settings) && !form.turnstile_token.trim()) {
+                    setError(t('validation.captcha_required'));
+                    return;
+                }
+                setEmailLoginForm((prev) => ({
+                    ...prev,
+                    email: emailHint ?? prev.email ?? identifierValue,
+                }));
+                setPrimaryPanel('email_code');
+                setShowEmailLogin(true);
+            }}
+        >
+            <span className='flex min-w-0 items-center gap-3'>
+                <span className='bg-primary/10 text-primary flex h-9 w-9 shrink-0 items-center justify-center rounded-lg'>
+                    <KeyRound className='h-4 w-4' />
+                </span>
+                <span className='min-w-0 text-left'>
+                    <span className='text-foreground block text-sm font-semibold'>
+                        {t('auth.login.requestLoginCode')}
+                    </span>
+                    <span className='text-muted-foreground block truncate text-xs font-normal'>
+                        {t('auth.emailLogin.title')}
+                    </span>
+                </span>
+            </span>
+            <ArrowRight className='text-muted-foreground group-hover:text-primary h-4 w-4 shrink-0 transition-colors' />
+        </Button>
+    );
+
+    const renderAltLoginMethod = (
+        methodId: LoginMethodId,
+        options?: { compact?: boolean; passkeyUsername?: string; showEmailCode?: boolean },
+    ) => {
+        switch (methodId) {
+            case 'ldap':
+                return <div key='ldap'>{renderLdapLoginButton()}</div>;
+            case 'local':
+                return <div key='local'>{renderSwitchToLocalButton()}</div>;
+            case 'passkey':
+                if (options?.compact) {
+                    if (!hasPasskeys) {
+                        return null;
+                    }
+                    return (
+                        <Button
+                            key='passkey'
+                            type='button'
+                            variant='outline'
+                            size='sm'
+                            className='min-w-36'
+                            disabled={loading}
+                            onClick={() => void runPasskeyAuthentication(options.passkeyUsername ?? identifierValue)}
+                        >
+                            <Fingerprint className='mr-2 h-4 w-4' />
+                            {t('auth.passkey.signIn')}
+                        </Button>
+                    );
+                }
+                return (
+                    <Button
+                        key='passkey'
+                        type='button'
+                        variant='outline'
+                        className='group h-auto w-full !justify-between px-3 py-3 text-left'
+                        disabled={loading}
+                        onClick={() => {
+                            const u = (options?.passkeyUsername ?? form.username_or_email ?? '').trim();
+                            void runPasskeyAuthentication(u || undefined);
+                        }}
+                    >
+                        <span className='flex min-w-0 items-center gap-3'>
+                            <span className='bg-primary/10 text-primary flex h-9 w-9 shrink-0 items-center justify-center rounded-lg'>
+                                <Fingerprint className='h-4 w-4' />
+                            </span>
+                            <span className='min-w-0 text-left'>
+                                <span className='text-foreground block text-sm font-semibold'>
+                                    {t('auth.passkey.signIn')}
+                                </span>
+                                <span className='text-muted-foreground block truncate text-xs font-normal'>
+                                    {t('auth.passkey.description')}
+                                </span>
+                            </span>
+                        </span>
+                        <ArrowRight className='text-muted-foreground group-hover:text-primary h-4 w-4 shrink-0 transition-colors' />
+                    </Button>
+                );
+            case 'email_code':
+                if (!emailLoginEnabled) {
+                    return null;
+                }
+                if (options?.compact) {
+                    if (!options.showEmailCode) {
+                        return null;
+                    }
+                    return (
+                        <Button
+                            key='email_code'
+                            type='button'
+                            variant='outline'
+                            size='sm'
+                            className='min-w-36'
+                            disabled={loading}
+                            onClick={() => {
+                                if (
+                                    showCaptcha &&
+                                    !isRecaptchaV3Configured(settings) &&
+                                    !form.turnstile_token.trim()
+                                ) {
+                                    setError(t('validation.captcha_required'));
+                                    return;
+                                }
+                                setEmailLoginForm((prev) => ({
+                                    ...prev,
+                                    email: identifierValue,
+                                }));
+                                setShowEmailLogin(true);
+                            }}
+                        >
+                            <KeyRound className='mr-2 h-4 w-4' />
+                            {t('auth.login.requestLoginCode')}
+                        </Button>
+                    );
+                }
+                return <div key='email_code'>{renderSwitchToEmailCodeButton()}</div>;
+            case 'discord':
+                if (!discordEnabled) {
+                    return null;
+                }
+                return (
+                    <Button
+                        key='discord'
+                        type='button'
+                        variant='outline'
+                        className='w-full'
+                        disabled={loading}
+                        onClick={handleDiscordLogin}
+                    >
+                        <svg className='mr-2 h-5 w-5' viewBox='0 0 24 24' fill='currentColor'>
+                            <path d='M20.317 4.369a19.791 19.791 0 00-4.885-1.515.07.07 0 00-.075.035 13.812 13.812 0 00-.605 1.246 18.016 18.016 0 00-5.427 0 12.217 12.217 0 00-.617-1.246.064.064 0 00-.075-.035c-1.724.285-3.362.83-4.885 1.515a.06.06 0 00-.024.022C.533 8.059-.32 11.591.099 15.08a.078.078 0 00.028.055 20.53 20.53 0 006.104 3.108.073.073 0 00.078-.023c.472-.651.889-1.341 1.246-2.065a.07.07 0 00-.038-.094 13.235 13.235 0 01-1.885-.884.07.07 0 01-.007-.117c.126-.094.252-.192.374-.291a.06.06 0 01.061-.011c3.927 1.792 8.18 1.792 12.061 0a.062.062 0 01.063.008c.122.099.248.197.374.291a.07.07 0 01-.006.117 12.298 12.298 0 01-1.885.883.07.07 0 00-.038.095c.36.723.777 1.413 1.246 2.064a.073.073 0 00.078.023 20.477 20.477 0 006.105-3.107.075.075 0 00.028-.055c.5-4.101-.838-7.597-3.548-10.692a.061.061 0 00-.024-.023zM8.02 15.331c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.949-2.418 2.157-2.418 1.222 0 2.172 1.101 2.157 2.418 0 1.334-.949 2.419-2.157 2.419zm7.974 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.948-2.418 2.157-2.418 1.221 0 2.171 1.101 2.157 2.418 0 1.334-.936 2.419-2.157 2.419z' />
+                        </svg>
+                        {t('auth.login.discord')}
+                    </Button>
+                );
+            case 'oidc':
+                if (!oidcEnabled) {
+                    return null;
+                }
+                return (
+                    <div key='oidc' className='flex flex-col gap-2'>
+                        {oidcProviders.map((provider) => (
+                            <Button
+                                key={provider.uuid}
+                                type='button'
+                                variant='outline'
+                                className='w-full'
+                                disabled={loading}
+                                onClick={() => handleOidcLogin(provider.uuid)}
+                            >
+                                {provider.name}
+                            </Button>
+                        ))}
+                    </div>
+                );
+            default:
+                return null;
+        }
+    };
+
+    const renderLoginSecondarySection = (options?: {
+        filter?: (id: LoginMethodId) => boolean;
+        compact?: boolean;
+        passkeyUsername?: string;
+        showEmailCode?: boolean;
+    }) => {
+        const methods = loginPageLayout.secondary.filter(options?.filter ?? (() => true));
+        const nodes = methods
+            .map((id) =>
+                renderAltLoginMethod(id, {
+                    compact: options?.compact,
+                    passkeyUsername: options?.passkeyUsername,
+                    showEmailCode: options?.showEmailCode,
+                }),
+            )
+            .filter((node) => node !== null);
+
+        if (nodes.length === 0) {
+            return null;
+        }
+
+        return (
+            <div className='border-border/70 flex flex-col gap-2 border-t pt-3'>
+                <p className='text-muted-foreground text-center text-[11px] font-medium tracking-wide'>
+                    {t('auth.login.or')}
+                </p>
+                <div
+                    className={
+                        options?.compact ? 'flex flex-wrap justify-center gap-2' : 'flex flex-col gap-2'
+                    }
+                >
+                    {nodes}
+                </div>
+            </div>
+        );
+    };
+
+    const renderOidcPrimaryPanel = () => (
+        <div className='space-y-4'>
+            <div className='border-primary/20 bg-primary/5 rounded-2xl border p-4'>
+                <p className='text-muted-foreground text-sm'>{t('auth.login.sso')}</p>
+            </div>
+            {oidcProviders.map((provider) => (
+                <Button
+                    key={provider.uuid}
+                    type='button'
+                    variant='outline'
+                    className='w-full'
+                    disabled={loading}
+                    onClick={() => handleOidcLogin(provider.uuid)}
+                >
+                    {provider.name}
+                </Button>
+            ))}
+            {renderLoginSecondarySection()}
+        </div>
+    );
+
+    const renderDiscordPrimaryPanel = () => (
+        <div className='space-y-4'>
+            <Button type='button' variant='outline' className='w-full' disabled={loading} onClick={handleDiscordLogin}>
+                <svg className='mr-2 h-5 w-5' viewBox='0 0 24 24' fill='currentColor'>
+                    <path d='M20.317 4.369a19.791 19.791 0 00-4.885-1.515.07.07 0 00-.075.035 13.812 13.812 0 00-.605 1.246 18.016 18.016 0 00-5.427 0 12.217 12.217 0 00-.617-1.246.064.064 0 00-.075-.035c-1.724.285-3.362.83-4.885 1.515a.06.06 0 00-.024.022C.533 8.059-.32 11.591.099 15.08a.078.078 0 00.028.055 20.53 20.53 0 006.104 3.108.073.073 0 00.078-.023c.472-.651.889-1.341 1.246-2.065a.07.07 0 00-.038-.094 13.235 13.235 0 01-1.885-.884.07.07 0 01-.007-.117c.126-.094.252-.192.374-.291a.06.06 0 01.061-.011c3.927 1.792 8.18 1.792 12.061 0a.062.062 0 01.063.008c.122.099.248.197.374.291a.07.07 0 01-.006.117 12.298 12.298 0 01-1.885.883.07.07 0 00-.038.095c.36.723.777 1.413 1.246 2.064a.073.073 0 00.078.023 20.477 20.477 0 006.105-3.107.075.075 0 00.028-.055c.5-4.101-.838-7.597-3.548-10.692a.061.061 0 00-.024-.023zM8.02 15.331c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.949-2.418 2.157-2.418 1.222 0 2.172 1.101 2.157 2.418 0 1.334-.949 2.419-2.157 2.419zm7.974 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.948-2.418 2.157-2.418 1.221 0 2.171 1.101 2.157 2.418 0 1.334-.936 2.419-2.157 2.419z' />
+                </svg>
+                {t('auth.login.discord')}
+            </Button>
+            {renderLoginSecondarySection()}
+        </div>
     );
 
     return (
@@ -905,7 +1237,7 @@ export default function LoginForm() {
                     <WidgetRenderer widgets={getWidgets('auth-login', 'auth-login-before-form')} />
 
                     {/* Multi-step login flow when email login is enabled */}
-                    {emailLoginEnabled && !showLdapLogin ? (
+                    {isMultiStepEmailLoginFlow ? (
                         loginStep === 'identifier' ? (
                             // Step 1: Enter email/username
                             <form onSubmit={handleIdentifierSubmit} className='space-y-4'>
@@ -939,7 +1271,7 @@ export default function LoginForm() {
                                     </div>
                                 )}
 
-                                {ldapEnabled && renderLdapLoginButton()}
+                                {renderLoginSecondarySection()}
                             </form>
                         ) : showEmailLogin ? (
                             // Email code login flow (when user clicked "Request Login Code")
@@ -1051,23 +1383,6 @@ export default function LoginForm() {
                         ) : (
                             // Step 2: Password (+ captcha) then sign-in, passkey, or email code
                             <form onSubmit={handlePasswordLoginFromMethod} className='space-y-4'>
-                                {showCaptcha && (
-                                    <div className='flex justify-center'>
-                                        <Captcha
-                                            refreshKey={turnstileKey}
-                                            onVerify={(token) =>
-                                                setForm((prev) => ({ ...prev, turnstile_token: token }))
-                                            }
-                                            onError={() => {
-                                                setForm((prev) => ({ ...prev, turnstile_token: '' }));
-                                            }}
-                                            onExpire={() => {
-                                                setForm((prev) => ({ ...prev, turnstile_token: '' }));
-                                            }}
-                                        />
-                                    </div>
-                                )}
-
                                 <Input
                                     label={t('auth.login.password')}
                                     type='password'
@@ -1089,6 +1404,8 @@ export default function LoginForm() {
                                     </Link>
                                 </div>
 
+                                {renderLoginCaptchaField()}
+
                                 <Button type='submit' className='group w-full' loading={loading}>
                                     {!loading && (
                                         <>
@@ -1098,55 +1415,11 @@ export default function LoginForm() {
                                     )}
                                 </Button>
 
-                                {(hasPasskeys || isEmail) && (
-                                    <div className='border-border/70 flex flex-col gap-2 border-t pt-3'>
-                                        <p className='text-muted-foreground text-center text-[11px] font-medium tracking-wide'>
-                                            {t('auth.login.or')}
-                                        </p>
-                                        <div className='flex flex-wrap justify-center gap-2'>
-                                            {hasPasskeys && (
-                                                <Button
-                                                    type='button'
-                                                    variant='outline'
-                                                    size='sm'
-                                                    className='min-w-36'
-                                                    disabled={loading}
-                                                    onClick={() => void runPasskeyAuthentication(identifierValue)}
-                                                >
-                                                    <Fingerprint className='mr-2 h-4 w-4' />
-                                                    {t('auth.passkey.signIn')}
-                                                </Button>
-                                            )}
-                                            {isEmail && (
-                                                <Button
-                                                    type='button'
-                                                    variant='outline'
-                                                    size='sm'
-                                                    className='min-w-36'
-                                                    disabled={loading}
-                                                    onClick={() => {
-                                                        if (
-                                                            showCaptcha &&
-                                                            !isRecaptchaV3Configured(settings) &&
-                                                            !form.turnstile_token.trim()
-                                                        ) {
-                                                            setError(t('validation.captcha_required'));
-                                                            return;
-                                                        }
-                                                        setEmailLoginForm((prev) => ({
-                                                            ...prev,
-                                                            email: identifierValue,
-                                                        }));
-                                                        setShowEmailLogin(true);
-                                                    }}
-                                                >
-                                                    <KeyRound className='mr-2 h-4 w-4' />
-                                                    {t('auth.login.requestLoginCode')}
-                                                </Button>
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
+                                {renderLoginSecondarySection({
+                                    compact: true,
+                                    passkeyUsername: identifierValue,
+                                    showEmailCode: isEmail,
+                                })}
 
                                 <Button
                                     type='button'
@@ -1167,6 +1440,10 @@ export default function LoginForm() {
                                 )}
                             </form>
                         )
+                    ) : activePrimary === 'oidc' && oidcEnabled ? (
+                        renderOidcPrimaryPanel()
+                    ) : activePrimary === 'discord' && discordEnabled ? (
+                        renderDiscordPrimaryPanel()
                     ) : showLdapLogin && ldapEnabled ? (
                         <form onSubmit={handleLdapLogin} className='space-y-5'>
                             <div className='border-primary/20 bg-primary/5 rounded-2xl border p-4'>
@@ -1209,21 +1486,6 @@ export default function LoginForm() {
                                 placeholder={t('auth.login.ldapUsernamePlaceholder')}
                             />
 
-                            {showCaptcha && (
-                                <div className='flex justify-center'>
-                                    <Captcha
-                                        refreshKey={turnstileKey}
-                                        onVerify={handleTurnstileSuccess}
-                                        onError={() => {
-                                            setForm((prev) => ({ ...prev, turnstile_token: '' }));
-                                        }}
-                                        onExpire={() => {
-                                            setForm((prev) => ({ ...prev, turnstile_token: '' }));
-                                        }}
-                                    />
-                                </div>
-                            )}
-
                             <Input
                                 label={t('auth.login.password')}
                                 type='password'
@@ -1235,6 +1497,8 @@ export default function LoginForm() {
                                 placeholder={t('auth.login.password')}
                             />
 
+                            {renderLoginCaptchaField()}
+
                             <Button type='submit' className='group w-full' loading={loading}>
                                 {!loading && (
                                     <>
@@ -1244,16 +1508,20 @@ export default function LoginForm() {
                                 )}
                             </Button>
 
-                            <Button
-                                type='button'
-                                variant='ghost'
-                                size='sm'
-                                className='text-muted-foreground hover:text-foreground h-8 w-full text-xs'
-                                onClick={() => setShowLdapLogin(false)}
-                            >
-                                <ArrowLeft className='mr-1 h-3.5 w-3.5' />
-                                {t('common.back')}
-                            </Button>
+                            {renderLoginSecondarySection({ filter: (id) => id !== 'ldap' })}
+
+                            {loginPageLayout.ordered.includes('local') && (
+                                <Button
+                                    type='button'
+                                    variant='ghost'
+                                    size='sm'
+                                    className='text-muted-foreground hover:text-foreground h-8 w-full text-xs'
+                                    onClick={() => setPrimaryPanel('local')}
+                                >
+                                    <ArrowLeft className='mr-1 h-3.5 w-3.5' />
+                                    {t('auth.login.use_password_instead')}
+                                </Button>
+                            )}
 
                             {renderLoginError()}
                             {success && (
@@ -1270,23 +1538,6 @@ export default function LoginForm() {
                                     <p className='text-muted-foreground text-sm'>{t('auth.emailLogin.subtitle')}</p>
                                 </div>
 
-                                {showCaptcha && (
-                                    <div className='flex justify-center'>
-                                        <Captcha
-                                            refreshKey={turnstileKey}
-                                            onVerify={(token) =>
-                                                setForm((prev) => ({ ...prev, turnstile_token: token }))
-                                            }
-                                            onError={() => {
-                                                setForm((prev) => ({ ...prev, turnstile_token: '' }));
-                                            }}
-                                            onExpire={() => {
-                                                setForm((prev) => ({ ...prev, turnstile_token: '' }));
-                                            }}
-                                        />
-                                    </div>
-                                )}
-
                                 <Input
                                     label={t('auth.login.email')}
                                     type='email'
@@ -1297,6 +1548,8 @@ export default function LoginForm() {
                                     icon={<Mail className='h-5 w-5' />}
                                     placeholder={t('auth.login.email')}
                                 />
+
+                                {renderLoginCaptchaField()}
 
                                 <Button type='submit' className='group w-full' loading={loading}>
                                     {!loading && (
@@ -1408,21 +1661,6 @@ export default function LoginForm() {
                                 placeholder={t('auth.login.username')}
                             />
 
-                            {showCaptcha && (
-                                <div className='flex justify-center'>
-                                    <Captcha
-                                        refreshKey={turnstileKey}
-                                        onVerify={handleTurnstileSuccess}
-                                        onError={() => {
-                                            setForm((prev) => ({ ...prev, turnstile_token: '' }));
-                                        }}
-                                        onExpire={() => {
-                                            setForm((prev) => ({ ...prev, turnstile_token: '' }));
-                                        }}
-                                    />
-                                </div>
-                            )}
-
                             <Input
                                 label={t('auth.login.password')}
                                 type='password'
@@ -1443,6 +1681,8 @@ export default function LoginForm() {
                                 </Link>
                             </div>
 
+                            {renderLoginCaptchaField()}
+
                             <Button type='submit' className='group w-full' loading={loading}>
                                 {!loading && (
                                     <>
@@ -1452,39 +1692,7 @@ export default function LoginForm() {
                                 )}
                             </Button>
 
-                            <div className='border-border/70 flex flex-col gap-2 border-t pt-3'>
-                                <p className='text-muted-foreground text-center text-[11px] font-medium tracking-wide'>
-                                    {t('auth.login.or')}
-                                </p>
-                                <div className='flex flex-col gap-2'>
-                                    <Button
-                                        type='button'
-                                        variant='outline'
-                                        className='group h-auto w-full !justify-between px-3 py-3 text-left'
-                                        disabled={loading}
-                                        onClick={() => {
-                                            const u = (form.username_or_email || '').trim();
-                                            void runPasskeyAuthentication(u || undefined);
-                                        }}
-                                    >
-                                        <span className='flex min-w-0 items-center gap-3'>
-                                            <span className='bg-primary/10 text-primary flex h-9 w-9 shrink-0 items-center justify-center rounded-lg'>
-                                                <Fingerprint className='h-4 w-4' />
-                                            </span>
-                                            <span className='min-w-0 text-left'>
-                                                <span className='text-foreground block text-sm font-semibold'>
-                                                    {t('auth.passkey.signIn')}
-                                                </span>
-                                                <span className='text-muted-foreground block truncate text-xs font-normal'>
-                                                    {t('auth.passkey.description')}
-                                                </span>
-                                            </span>
-                                        </span>
-                                        <ArrowRight className='text-muted-foreground group-hover:text-primary h-4 w-4 shrink-0 transition-colors' />
-                                    </Button>
-                                    {ldapEnabled && renderLdapLoginButton()}
-                                </div>
-                            </div>
+                            {renderLoginSecondarySection()}
 
                             {error && (
                                 <div className='bg-destructive/10 border-destructive/20 text-destructive animate-fade-in rounded-xl border p-4 text-sm'>
@@ -1501,49 +1709,6 @@ export default function LoginForm() {
 
                     <WidgetRenderer widgets={getWidgets('auth-login', 'auth-login-after-form')} />
 
-                    {(discordEnabled || oidcEnabled) && !isLoginMethodStep && (
-                        <>
-                            <div className='relative'>
-                                <div className='absolute inset-0 flex items-center'>
-                                    <div className='border-border w-full border-t' />
-                                </div>
-                                <div className='relative flex justify-center text-xs uppercase'>
-                                    <span className='bg-card text-muted-foreground px-2'>
-                                        {t('auth.login.or_continue')}
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div className='flex flex-col gap-3'>
-                                {oidcEnabled &&
-                                    oidcProviders.map((provider) => (
-                                        <Button
-                                            key={provider.uuid}
-                                            type='button'
-                                            variant='outline'
-                                            className='w-full'
-                                            onClick={() => handleOidcLogin(provider.uuid)}
-                                        >
-                                            {provider.name}
-                                        </Button>
-                                    ))}
-
-                                {discordEnabled && (
-                                    <Button
-                                        type='button'
-                                        variant='outline'
-                                        className='w-full'
-                                        onClick={handleDiscordLogin}
-                                    >
-                                        <svg className='mr-2 h-5 w-5' viewBox='0 0 24 24' fill='currentColor'>
-                                            <path d='M20.317 4.369a19.791 19.791 0 00-4.885-1.515.07.07 0 00-.075.035 13.812 13.812 0 00-.605 1.246 18.016 18.016 0 00-5.427 0 12.217 12.217 0 00-.617-1.246.064.064 0 00-.075-.035c-1.724.285-3.362.83-4.885 1.515a.06.06 0 00-.024.022C.533 8.059-.32 11.591.099 15.08a.078.078 0 00.028.055 20.53 20.53 0 006.104 3.108.073.073 0 00.078-.023c.472-.651.889-1.341 1.246-2.065a.07.07 0 00-.038-.094 13.235 13.235 0 01-1.885-.884.07.07 0 01-.007-.117c.126-.094.252-.192.374-.291a.06.06 0 01.061-.011c3.927 1.792 8.18 1.792 12.061 0 a.062.062 0 01.063.008c.122.099.248.197.374.291a.07.07 0 01-.006.117 12.298 12.298 0 01-1.885.883.07.07 0 00-.038.095c.36.723.777 1.413 1.246 2.064a.073.073 0 00.078.023 20.477 20.477 0 006.105-3.107.075.075 0 00.028-.055c.5-4.101-.838-7.597-3.548-10.692a.061.061 0 00-.024-.023zM8.02 15.331c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.949-2.418 2.157-2.418 1.222 0 2.172 1.101 2.157 2.418 0 1.334-.949 2.419-2.157 2.419zm7.974 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.948-2.418 2.157-2.418 1.221 0 2.171 1.101 2.157 2.418 0 1.334-.936 2.419-2.157 2.419z' />
-                                        </svg>
-                                        {t('auth.login.discord')}
-                                    </Button>
-                                )}
-                            </div>
-                        </>
-                    )}
 
                     {!isLoginMethodStep && (
                         <div className='text-muted-foreground text-center text-sm'>

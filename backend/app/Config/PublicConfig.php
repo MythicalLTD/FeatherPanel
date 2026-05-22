@@ -215,6 +215,10 @@ class PublicConfig extends ConfigFactory
             // Demo mode settings
             ConfigInterface::APP_DEMO_YES => 'false',
             ConfigInterface::EMAIL_LOGIN_ENABLED => 'false',
+
+            ConfigInterface::LOGIN_DEFAULT_METHOD => 'local',
+            ConfigInterface::LOGIN_METHODS_ORDER => 'local,passkey,ldap,email_code,discord,oidc',
+            ConfigInterface::LOGIN_HIDDEN_METHODS => '',
         ];
     }
 }

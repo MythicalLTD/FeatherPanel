@@ -150,6 +150,12 @@ export interface AppSettings {
     server_allow_user_backup_policy_edit: string;
     /** When 'true', enable passwordless email login with 6-digit OTP codes. */
     email_login_enabled?: string;
+    /** Default login panel: local, ldap, email_code, discord, or oidc */
+    login_default_method?: string;
+    /** Comma-separated login method display order */
+    login_methods_order?: string;
+    /** Comma-separated login method ids to hide on the login page */
+    login_hidden_methods?: string;
 }
 
 export interface CoreInfo {

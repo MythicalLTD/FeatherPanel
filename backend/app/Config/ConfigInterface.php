@@ -129,6 +129,17 @@ interface ConfigInterface
     public const EMAIL_LOGIN_ENABLED = 'email_login_enabled';
 
     /**
+     * Login page layout (public settings exposed via PublicConfig).
+     *
+     * login_default_method: local | ldap | email_code | discord | oidc
+     * login_methods_order: comma-separated method ids (see frontend loginPageConfig)
+     * login_hidden_methods: comma-separated method ids to hide on the login page
+     */
+    public const LOGIN_DEFAULT_METHOD = 'login_default_method';
+    public const LOGIN_METHODS_ORDER = 'login_methods_order';
+    public const LOGIN_HIDDEN_METHODS = 'login_hidden_methods';
+
+    /**
      * Telemetry.
      */
     public const TELEMETRY = 'telemetry';

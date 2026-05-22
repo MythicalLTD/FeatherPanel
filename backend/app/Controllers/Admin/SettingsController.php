@@ -204,6 +204,9 @@ class SettingsController
             'icon' => 'shield',
             'settings' => [
                 ConfigInterface::EMAIL_LOGIN_ENABLED,
+                ConfigInterface::LOGIN_DEFAULT_METHOD,
+                ConfigInterface::LOGIN_METHODS_ORDER,
+                ConfigInterface::LOGIN_HIDDEN_METHODS,
                 ConfigInterface::CAPTCHA_PROVIDER,
                 ConfigInterface::TURNSTILE_ENABLED,
                 ConfigInterface::TURNSTILE_KEY_PUB,
@@ -1238,6 +1241,45 @@ class SettingsController
                 'placeholder' => 'false',
                 'validation' => 'required|string|max:255',
                 'options' => ['true', 'false'],
+                'category' => 'security',
+            ],
+            ConfigInterface::LOGIN_DEFAULT_METHOD => [
+                'name' => ConfigInterface::LOGIN_DEFAULT_METHOD,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::LOGIN_DEFAULT_METHOD, 'local'),
+                'description' => 'Default sign-in panel on the login page (local, ldap, email_code, discord, or oidc). Falls back to the first available method if the choice is hidden or unavailable.',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'local',
+                'validation' => 'required|string|max:64',
+                'options' => ['local', 'ldap', 'email_code', 'discord', 'oidc'],
+                'category' => 'security',
+            ],
+            ConfigInterface::LOGIN_METHODS_ORDER => [
+                'name' => ConfigInterface::LOGIN_METHODS_ORDER,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::LOGIN_METHODS_ORDER, 'local,passkey,ldap,email_code,discord,oidc'),
+                'description' => 'Comma-separated order of login methods on the page. Valid ids: local, passkey, ldap, email_code, discord, oidc',
+                'type' => 'text',
+                'required' => true,
+                'placeholder' => 'local,passkey,ldap,email_code,discord,oidc',
+                'validation' => 'required|string|max:255',
+                'options' => [],
+                'category' => 'security',
+            ],
+            ConfigInterface::LOGIN_HIDDEN_METHODS => [
+                'name' => ConfigInterface::LOGIN_HIDDEN_METHODS,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::LOGIN_HIDDEN_METHODS, ''),
+                'description' => 'Comma-separated login method ids to hide on the login page (e.g. passkey, local, ldap, email_code, discord, oidc). Leave empty to show all configured methods.',
+                'type' => 'text',
+                'required' => false,
+                'placeholder' => 'passkey',
+                'validation' => 'nullable|string|max:255',
+                'options' => [],
                 'category' => 'security',
             ],
             ConfigInterface::LEGAL_TOS => [
