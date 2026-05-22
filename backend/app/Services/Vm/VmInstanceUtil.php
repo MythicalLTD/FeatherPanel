@@ -42,6 +42,9 @@ use App\Services\Backup\BackupFifoEviction;
 
 final class VmInstanceUtil
 {
+    /** Prefix for short-lived Proxmox users created for VNC console access. */
+    public const FP_CONSOLE_USER_PREFIX = 'fp-console-';
+
     /**
      * Build a Proxmox client for the given VM node (shared by admin and user controllers).
      *
@@ -822,9 +825,6 @@ final class VmInstanceUtil
 
         return ['ok' => true, 'payload' => $payload];
     }
-
-    /** Prefix for short-lived Proxmox users created for VNC console access. */
-    public const FP_CONSOLE_USER_PREFIX = 'fp-console-';
 
     /**
      * Delete expired temporary console users (fp-console-*) on a Proxmox node.

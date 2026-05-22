@@ -44,13 +44,7 @@ export function StatusBadge({ status, t, liveConnected }: StatusBadgeProps) {
             )}
             title={showLivePulse && t ? t('servers.liveConnected') : undefined}
         >
-            <span
-                className={cn(
-                    'h-2 w-2 rounded-full',
-                    getStatusDotColor(status),
-                    showLivePulse && 'animate-pulse',
-                )}
-            />
+            <span className={cn('h-2 w-2 rounded-full', getStatusDotColor(status), showLivePulse && 'animate-pulse')} />
             {displayStatus}
         </span>
     );

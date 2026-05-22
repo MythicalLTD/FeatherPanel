@@ -27,10 +27,10 @@ namespace App\Cron;
  */
 
 use App\App;
-use App\Chat\TimedTask;
 use App\Chat\VmNode;
-use App\Cli\Utils\MinecraftColorCodeSupport;
+use App\Chat\TimedTask;
 use App\Services\Vm\VmInstanceUtil;
+use App\Cli\Utils\MinecraftColorCodeSupport;
 
 class ZProxmoxConsoleUserCleanup implements TimeTask
 {

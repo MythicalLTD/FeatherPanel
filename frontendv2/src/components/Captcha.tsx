@@ -260,7 +260,12 @@ function FriendlyCaptchaInner({
         };
     }, [sitekey, theme]);
 
-    return <div ref={elRef} className='frc-captcha-host flex w-full min-w-0 justify-center [&_.frc-captcha]:w-full [&_.frc-captcha]:max-w-full' />;
+    return (
+        <div
+            ref={elRef}
+            className='frc-captcha-host flex w-full min-w-0 justify-center [&_.frc-captcha]:w-full [&_.frc-captcha]:max-w-full'
+        />
+    );
 }
 
 /** Supported reForge widget types (invisible / managed are not supported). */
@@ -341,13 +346,7 @@ function ReforgeCaptchaInner({
     );
 }
 
-export const Captcha: React.FC<CaptchaProps> = ({
-    onVerify,
-    onExpire,
-    onError,
-    refreshKey,
-    layout = 'default',
-}) => {
+export const Captcha: React.FC<CaptchaProps> = ({ onVerify, onExpire, onError, refreshKey, layout = 'default' }) => {
     const { settings } = useSettings();
 
     const captchaEnabled = settings?.turnstile_enabled === 'true';

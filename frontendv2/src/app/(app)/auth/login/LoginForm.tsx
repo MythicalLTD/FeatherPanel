@@ -984,11 +984,7 @@ export default function LoginForm() {
                             className='min-w-36'
                             disabled={loading}
                             onClick={() => {
-                                if (
-                                    showCaptcha &&
-                                    !isRecaptchaV3Configured(settings) &&
-                                    !form.turnstile_token.trim()
-                                ) {
+                                if (showCaptcha && !isRecaptchaV3Configured(settings) && !form.turnstile_token.trim()) {
                                     setError(t('validation.captcha_required'));
                                     return;
                                 }
@@ -1075,11 +1071,7 @@ export default function LoginForm() {
                 <p className='text-muted-foreground text-center text-[11px] font-medium tracking-wide'>
                     {t('auth.login.or')}
                 </p>
-                <div
-                    className={
-                        options?.compact ? 'flex flex-wrap justify-center gap-2' : 'flex flex-col gap-2'
-                    }
-                >
+                <div className={options?.compact ? 'flex flex-wrap justify-center gap-2' : 'flex flex-col gap-2'}>
                     {nodes}
                 </div>
             </div>
@@ -1708,7 +1700,6 @@ export default function LoginForm() {
                     ) : null}
 
                     <WidgetRenderer widgets={getWidgets('auth-login', 'auth-login-after-form')} />
-
 
                     {!isLoginMethodStep && (
                         <div className='text-muted-foreground text-center text-sm'>

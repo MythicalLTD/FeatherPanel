@@ -122,11 +122,7 @@ export function ServerCard({
                                         {t('servers.status.suspended')}
                                     </span>
                                 ) : (
-                                    <StatusBadge
-                                        status={status}
-                                        t={t}
-                                        liveConnected={isConnected && !isSuspended}
-                                    />
+                                    <StatusBadge status={status} t={t} liveConnected={isConnected && !isSuspended} />
                                 )}
                             </div>
                         </div>

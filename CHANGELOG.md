@@ -17,7 +17,6 @@
 - Admin Updates page plugin bulk updates now call the correct online install API (`/api/admin/plugins/online/install`) instead of a non-existent route. by @nayskutzu
 
 
-
 ## v1.3.7.3 STABLE
 
 ### Added

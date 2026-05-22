@@ -16,14 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 /** Login method ids used in admin settings and the login page layout. */
 export type LoginMethodId = 'local' | 'ldap' | 'passkey' | 'email_code' | 'discord' | 'oidc';
 
-export const ALL_LOGIN_METHOD_IDS: LoginMethodId[] = [
-    'local',
-    'passkey',
-    'ldap',
-    'email_code',
-    'discord',
-    'oidc',
-];
+export const ALL_LOGIN_METHOD_IDS: LoginMethodId[] = ['local', 'passkey', 'ldap', 'email_code', 'discord', 'oidc'];
 
 export const DEFAULT_LOGIN_METHODS_ORDER: LoginMethodId[] = [
     'local',
