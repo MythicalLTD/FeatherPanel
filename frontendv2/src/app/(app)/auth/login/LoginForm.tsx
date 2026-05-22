@@ -768,14 +768,15 @@ export default function LoginForm() {
         <Button
             type='button'
             variant='outline'
-            className={`group border-primary/20 bg-primary/5 hover:border-primary/50 hover:bg-primary/10 h-auto w-full justify-between px-3 py-3 text-left ${className}`}
+            className={`group h-auto w-full !justify-between px-3 py-3 text-left ${className}`}
+            disabled={loading}
             onClick={() => setShowLdapLogin(true)}
         >
             <span className='flex min-w-0 items-center gap-3'>
-                <span className='bg-primary/15 text-primary flex h-9 w-9 shrink-0 items-center justify-center rounded-lg'>
+                <span className='bg-primary/10 text-primary flex h-9 w-9 shrink-0 items-center justify-center rounded-lg'>
                     <Network className='h-4 w-4' />
                 </span>
-                <span className='min-w-0'>
+                <span className='min-w-0 text-left'>
                     <span className='text-foreground block text-sm font-semibold'>{t('auth.login.ldapLogin')}</span>
                     <span className='text-muted-foreground block truncate text-xs font-normal'>
                         {t('auth.login.ldapLoginDescription')}
@@ -1459,7 +1460,7 @@ export default function LoginForm() {
                                     <Button
                                         type='button'
                                         variant='outline'
-                                        className='group h-auto w-full justify-between px-3 py-3 text-left'
+                                        className='group h-auto w-full !justify-between px-3 py-3 text-left'
                                         disabled={loading}
                                         onClick={() => {
                                             const u = (form.username_or_email || '').trim();
@@ -1470,7 +1471,7 @@ export default function LoginForm() {
                                             <span className='bg-primary/10 text-primary flex h-9 w-9 shrink-0 items-center justify-center rounded-lg'>
                                                 <Fingerprint className='h-4 w-4' />
                                             </span>
-                                            <span className='min-w-0'>
+                                            <span className='min-w-0 text-left'>
                                                 <span className='text-foreground block text-sm font-semibold'>
                                                     {t('auth.passkey.signIn')}
                                                 </span>

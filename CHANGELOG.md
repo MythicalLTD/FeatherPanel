@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.4.0 STABLE
+
+### Improved
+
+- Styles for the auth LDAP button were improved. by @nayskutzu
+
+
+
 ## v1.3.7.3 STABLE
 
 ### Added
