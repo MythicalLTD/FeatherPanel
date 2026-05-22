@@ -12,6 +12,11 @@
 - Styles for the auth LDAP button were improved. by @nayskutzu
 
 
+### Fixed
+
+- Admin Updates page plugin bulk updates now call the correct online install API (`/api/admin/plugins/online/install`) instead of a non-existent route. by @nayskutzu
+
+
 
 ## v1.3.7.3 STABLE
 
@@ -45,6 +50,7 @@
 - Color issues with vds settings page were fixed. by @nayskutzu
 - Further enhanced the plugin installer for improved performance and reliability. by @nayskutzu
 - Resolved a significant issue that previously prevented searching for allocations within the admin area. by @nayskutzu
+
 
 ### Improved
 
