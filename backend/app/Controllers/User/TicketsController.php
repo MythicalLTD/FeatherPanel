@@ -18,6 +18,7 @@
 namespace App\Controllers\User;
 
 use App\App;
+use App\Permissions;
 use App\Chat\User;
 use App\Chat\Server;
 use App\Chat\Ticket;
@@ -30,9 +31,11 @@ use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Chat\TicketAttachment;
 use App\Config\ConfigInterface;
+use App\Helpers\PermissionHelper;
 use App\Middleware\AuthMiddleware;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Plugins\Events\Events\TicketEvent;
+use App\Services\Tickets\TicketAdminNotifier;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -110,6 +113,8 @@ class TicketsController
         $search = $request->query->get('search', '');
         $statusId = $request->query->get('status_id');
         $categoryId = $request->query->get('category_id');
+        $isAdminViewer = PermissionHelper::hasPermission($user['uuid'], Permissions::ADMIN_TICKETS_VIEW);
+        $scope = $request->query->get('scope', $isAdminViewer ? 'all_open' : 'mine');
 
         if ($page < 1) {
             $page = 1;
@@ -124,13 +129,40 @@ class TicketsController
         $offset = ($page - 1) * $limit;
         $searchQuery = $search && trim($search) !== '' ? trim($search) : null;
 
-        // Get tickets for this user
-        $tickets = Ticket::getAll($searchQuery, $limit, $offset, $user['uuid'], null, $categoryId, $statusId);
-        $total = Ticket::getCount($searchQuery, $user['uuid'], null, $categoryId, $statusId);
+        $filterUserUuid = $user['uuid'];
+        $openOnly = false;
+        $isAdminView = false;
+
+        if ($isAdminViewer && in_array($scope, ['all_open', 'all'], true)) {
+            $isAdminView = true;
+            $filterUserUuid = null;
+            if ($scope === 'all_open' && ($statusId === null || $statusId === '')) {
+                $openOnly = true;
+            }
+        }
+
+        $tickets = Ticket::getAll(
+            $searchQuery,
+            $limit,
+            $offset,
+            $filterUserUuid,
+            null,
+            $categoryId ? (int) $categoryId : null,
+            $statusId ? (int) $statusId : null,
+            $openOnly
+        );
+        $total = Ticket::getCount(
+            $searchQuery,
+            $filterUserUuid,
+            null,
+            $categoryId ? (int) $categoryId : null,
+            $statusId ? (int) $statusId : null,
+            $openOnly
+        );
 
         // Enrich tickets with related data
         foreach ($tickets as &$ticket) {
-            $ticket = $this->enrichTicketData($ticket);
+            $ticket = $this->enrichTicketData($ticket, $isAdminView);
             $unreadMeta = TicketMessage::getUnreadSinceLastReply((int) $ticket['id'], $user['uuid']);
             $ticket['unread_count'] = $unreadMeta['unread_count'];
             $ticket['has_unread_messages_since_last_reply'] = $unreadMeta['has_unread'];
@@ -140,7 +172,7 @@ class TicketsController
         $from = $total > 0 ? $offset + 1 : 0;
         $to = min($offset + $limit, $total);
 
-        return ApiResponse::success([
+        $responseData = [
             'tickets' => $tickets,
             'pagination' => [
                 'current_page' => $page,
@@ -152,7 +184,15 @@ class TicketsController
                 'from' => $from,
                 'to' => $to,
             ],
-        ], 'Tickets retrieved successfully', 200);
+        ];
+
+        if ($isAdminViewer) {
+            $responseData['is_admin_view'] = $isAdminView;
+            $responseData['scope'] = $scope;
+            $responseData['open_tickets_count'] = Ticket::getGlobalOpenTicketsCount();
+        }
+
+        return ApiResponse::success($responseData, 'Tickets retrieved successfully', 200);
     }
 
     #[OA\Get(
@@ -191,13 +231,15 @@ class TicketsController
             return ApiResponse::error('Ticket not found', 'TICKET_NOT_FOUND', 404);
         }
 
-        // Verify ticket belongs to user
-        if ($ticket['user_uuid'] !== $user['uuid']) {
+        $isAdminViewer = PermissionHelper::hasPermission($user['uuid'], Permissions::ADMIN_TICKETS_VIEW);
+
+        // Verify ticket belongs to user unless staff can view all tickets
+        if ($ticket['user_uuid'] !== $user['uuid'] && !$isAdminViewer) {
             return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
         }
 
         // Enrich ticket data
-        $ticket = $this->enrichTicketData($ticket);
+        $ticket = $this->enrichTicketData($ticket, $isAdminViewer && $ticket['user_uuid'] !== $user['uuid']);
 
         // Get messages for this ticket (exclude internal notes from regular users)
         $messages = array_values(array_filter(
@@ -395,6 +437,8 @@ class TicketsController
             );
         }
 
+        TicketAdminNotifier::notify($ticket, 'new_ticket', $user['uuid']);
+
         return ApiResponse::success([
             'ticket' => $ticket,
             'message_id' => $messageId,
@@ -500,6 +544,8 @@ class TicketsController
                 ]
             );
         }
+
+        TicketAdminNotifier::notify($ticket, 'user_reply', $user['uuid']);
 
         return ApiResponse::success([
             'message' => $message,
@@ -1070,7 +1116,7 @@ class TicketsController
     /**
      * Enrich ticket data with related information.
      */
-    private function enrichTicketData(array $ticket): array
+    private function enrichTicketData(array $ticket, bool $includeUser = false): array
     {
         // Add category
         if (isset($ticket['category_id'])) {
@@ -1114,6 +1160,16 @@ class TicketsController
             ] : null;
         } else {
             $ticket['server'] = null;
+        }
+
+        if ($includeUser && !empty($ticket['user_uuid'])) {
+            $ticketUser = User::getUserByUuid((string) $ticket['user_uuid']);
+            $ticket['user'] = $ticketUser ? [
+                'uuid' => $ticketUser['uuid'],
+                'username' => $ticketUser['username'],
+                'email' => $ticketUser['email'],
+                'avatar' => $ticketUser['avatar'] ?? null,
+            ] : null;
         }
 
         return $ticket;

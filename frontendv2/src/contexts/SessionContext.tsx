@@ -50,9 +50,15 @@ export interface UserInfo {
 
 export type PermissionsList = string[];
 
+export interface AdminTicketStats {
+    open_count: number;
+    has_open_tickets: boolean;
+}
+
 interface SessionContextType {
     user: UserInfo | null;
     permissions: PermissionsList;
+    adminTicketStats: AdminTicketStats | null;
     isLoading: boolean;
     isSessionChecked: boolean;
     fetchSession: (force?: boolean) => Promise<boolean>;
@@ -67,6 +73,7 @@ const SessionContext = createContext<SessionContextType | undefined>(undefined);
 export function SessionProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<UserInfo | null>(null);
     const [permissions, setPermissions] = useState<PermissionsList>([]);
+    const [adminTicketStats, setAdminTicketStats] = useState<AdminTicketStats | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isSessionChecked, setIsSessionChecked] = useState(false);
     const router = useRouter();
@@ -107,6 +114,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
                 ) {
                     setUser(res.data.data.user_info as UserInfo);
                     setPermissions((res.data.data.permissions as PermissionsList) || []);
+                    setAdminTicketStats(
+                        (res.data.data.admin_ticket_stats as AdminTicketStats | undefined) ?? null,
+                    );
                     setIsSessionChecked(true);
                     setIsLoading(false);
                     return true;
@@ -158,6 +168,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         setUser(null);
         setIsSessionChecked(false);
         setPermissions([]);
+        setAdminTicketStats(null);
     };
 
     const logout = async () => {
@@ -196,6 +207,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
             value={{
                 user,
                 permissions,
+                adminTicketStats,
                 isLoading,
                 isSessionChecked,
                 fetchSession,

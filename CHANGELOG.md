@@ -1,15 +1,20 @@
 # Changelog
 
-## v1.4.0 STABLE
+## v1.3.7.4 STABLE
 
 ### Added
 
 - Admin settings to configure the login page default sign-in method, display order of authentication options, and hidden methods (local, LDAP, passkey, email code, Discord, OIDC). by @nayskutzu
+- Admins now get clearer notifications (including email notifications) when there are open support tickets; the ticket section can show all open tickets if the user is an admin. by @nayskutzu
+- Users now receive an email notification when their support ticket is replied to, closed, or reopened. by @nayskutzu
+- Added Discord to the links section in settings. displaying these links in a visible area, such as a footer, so users can easily access them.
+
 
 ### Improved
 
 - Login page CAPTCHA is shown after username/password (before Sign in), full-width in a bordered block, instead of between the two fields. by @nayskutzu
 - Styles for the auth LDAP button were improved. by @nayskutzu
+- Timezones were missmatched into the server backups page. by @nayskutzu
 
 ### Fixed
 

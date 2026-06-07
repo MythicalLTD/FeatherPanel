@@ -101,6 +101,7 @@ class PublicConfig extends ConfigFactory
             ConfigInterface::TWITTER_URL => '',
             ConfigInterface::WHATSAPP_URL => '',
             ConfigInterface::YOUTUBE_URL => '',
+            ConfigInterface::DISCORD_URL => '',
             ConfigInterface::WEBSITE_URL => '',
             ConfigInterface::STATUS_PAGE_URL => '',
 

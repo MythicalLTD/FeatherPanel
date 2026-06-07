@@ -46,6 +46,7 @@ class Ticket
         ?int $serverId = null,
         ?int $categoryId = null,
         ?int $statusId = null,
+        bool $openOnly = false,
     ): array {
         $pdo = Database::getPdoConnection();
         $sql = 'SELECT * FROM ' . self::$table;
@@ -75,6 +76,10 @@ class Ticket
         if ($statusId !== null) {
             $where[] = 'status_id = :status_id';
             $params['status_id'] = $statusId;
+        }
+
+        if ($openOnly) {
+            $where[] = 'closed_at IS NULL';
         }
 
         if (!empty($where)) {
@@ -153,6 +158,7 @@ class Ticket
         ?int $serverId = null,
         ?int $categoryId = null,
         ?int $statusId = null,
+        bool $openOnly = false,
     ): int {
         $pdo = Database::getPdoConnection();
         $sql = 'SELECT COUNT(*) FROM ' . self::$table;
@@ -184,6 +190,10 @@ class Ticket
             $params['status_id'] = $statusId;
         }
 
+        if ($openOnly) {
+            $where[] = 'closed_at IS NULL';
+        }
+
         if (!empty($where)) {
             $sql .= ' WHERE ' . implode(' AND ', $where);
         }
@@ -194,6 +204,19 @@ class Ticket
         } else {
             $stmt->execute();
         }
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    /**
+     * Get count of all open tickets (where closed_at IS NULL).
+     */
+    public static function getGlobalOpenTicketsCount(): int
+    {
+        $pdo = Database::getPdoConnection();
+        $sql = 'SELECT COUNT(*) FROM ' . self::$table . ' WHERE closed_at IS NULL';
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute();
 
         return (int) $stmt->fetchColumn();
     }

@@ -33,6 +33,8 @@ use App\Chat\TicketPriority;
 use App\Chat\UserDataExport;
 use App\Chat\UserPreference;
 use App\Helpers\ApiResponse;
+use App\Helpers\PermissionHelper;
+use App\Permissions;
 use OpenApi\Attributes as OA;
 use App\Helpers\CaptchaHelper;
 use App\Config\ConfigInterface;
@@ -348,11 +350,24 @@ class SessionController
             $user['last_ip'] = $app->getIPIntoFBIFormat();
         }
 
-        return ApiResponse::success([
+        $sessionData = [
             'user_info' => $user,
             'permissions' => $permissions,
             'preferences' => [],
-        ], 'Session retrieved', 200);
+        ];
+
+        if (
+            PermissionHelper::hasPermission($user['uuid'], Permissions::ADMIN_TICKETS_VIEW)
+            && $app->getConfig()->getSetting(ConfigInterface::TICKET_SYSTEM_ENABLED, 'false') === 'true'
+        ) {
+            $openCount = Ticket::getGlobalOpenTicketsCount();
+            $sessionData['admin_ticket_stats'] = [
+                'open_count' => $openCount,
+                'has_open_tickets' => $openCount > 0,
+            ];
+        }
+
+        return ApiResponse::success($sessionData, 'Session retrieved', 200);
     }
 
     #[OA\Post(

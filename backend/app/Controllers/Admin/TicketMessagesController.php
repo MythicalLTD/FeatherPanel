@@ -25,6 +25,7 @@ use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Plugins\Events\Events\TicketEvent;
+use App\Services\Tickets\TicketNotificationService;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -291,6 +292,10 @@ class TicketMessagesController
                     'user_uuid' => $currentUser['uuid'],
                 ]
             );
+        }
+
+        if ($createdMessage) {
+            TicketNotificationService::notifyReply($ticket, $createdMessage, $currentUser['uuid'] ?? null);
         }
 
         return ApiResponse::success(['message_id' => $messageId], 'Message created successfully', 201);

@@ -64,6 +64,7 @@ interface ConfigInterface
     public const TWITTER_URL = 'twitter_url';
     public const WHATSAPP_URL = 'whatsapp_url';
     public const YOUTUBE_URL = 'youtube_url';
+    public const DISCORD_URL = 'discord_url';
     public const WEBSITE_URL = 'website_url';
     public const STATUS_PAGE_URL = 'status_page_url';
     /**

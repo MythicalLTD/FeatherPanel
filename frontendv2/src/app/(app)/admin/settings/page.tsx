@@ -47,6 +47,7 @@ import {
     Search,
     X,
     Send,
+    Link2,
 } from 'lucide-react';
 import { copyToClipboard, cn } from '@/lib/utils';
 
@@ -448,6 +449,8 @@ export default function SettingsPage() {
             case 'general':
             case 'app':
                 return Settings;
+            case 'links':
+                return Link2;
             case 'mail':
                 return Mail;
             case 'security':

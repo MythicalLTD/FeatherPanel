@@ -32,6 +32,7 @@ use App\Chat\TicketAttachment;
 use App\Config\ConfigInterface;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Plugins\Events\Events\TicketEvent;
+use App\Services\Tickets\TicketNotificationService;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -708,6 +709,7 @@ class TicketsController
                             'user_uuid' => $currentUser['uuid'],
                         ]
                     );
+                    TicketNotificationService::notifyClosed($updatedTicket);
                 } elseif ($oldStatusName === 'closed' && $newStatusName === 'open') {
                     $eventManager->emit(
                         TicketEvent::onTicketReopened(),
@@ -716,6 +718,7 @@ class TicketsController
                             'user_uuid' => $currentUser['uuid'],
                         ]
                     );
+                    TicketNotificationService::notifyReopened($updatedTicket);
                 }
             }
         }
@@ -878,6 +881,8 @@ class TicketsController
             );
         }
 
+        TicketNotificationService::notifyClosed($updatedTicket);
+
         return ApiResponse::success([], 'Ticket closed successfully', 200);
     }
 
@@ -962,6 +967,8 @@ class TicketsController
                 ]
             );
         }
+
+        TicketNotificationService::notifyReopened($updatedTicket);
 
         return ApiResponse::success([], 'Ticket reopened successfully', 200);
     }
@@ -1071,6 +1078,10 @@ class TicketsController
                     'user_uuid' => $currentUser['uuid'],
                 ]
             );
+        }
+
+        if ($message !== null) {
+            TicketNotificationService::notifyReply($ticket, $message, $currentUser['uuid'] ?? null);
         }
 
         return ApiResponse::success([

@@ -182,6 +182,30 @@ class User
     }
 
     /**
+     * Get active (non-deleted, non-banned) users for the given role IDs.
+     *
+     * @param int[] $roleIds
+     *
+     * @return array<int, array>
+     */
+    public static function getActiveUsersByRoleIds(array $roleIds): array
+    {
+        $roleIds = array_values(array_filter(array_map(static fn ($id) => (int) $id, $roleIds), static fn (int $id) => $id > 0));
+        if ($roleIds === []) {
+            return [];
+        }
+
+        $pdo = Database::getPdoConnection();
+        $placeholders = implode(',', array_fill(0, count($roleIds), '?'));
+        $sql = 'SELECT uuid, email, first_name, last_name, username, role_id FROM ' . self::$table
+            . " WHERE role_id IN ($placeholders) AND deleted = 'false' AND banned = 'false'";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($roleIds);
+
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
+    /**
      * Search users with pagination, filtering, and field selection.
      *
      * @param int $page Page number (1-based)

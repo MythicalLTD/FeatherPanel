@@ -24,6 +24,8 @@ import { useNavbarHoverReveal } from '@/hooks/useNavbarHoverReveal';
 import { useChromeLayout } from '@/hooks/useChromeLayout';
 import { NavbarHoverDock } from '@/components/layout/NavbarHoverDock';
 import BackgroundWrapper from '@/components/theme/BackgroundWrapper';
+import { ConfiguredLinks } from '@/components/branding/ConfiguredLinks';
+import { AdminOpenTicketsBanner } from '@/components/dashboard/AdminOpenTicketsBanner';
 
 import { usePluginRoutes, getPluginPaths } from '@/hooks/usePluginRoutes';
 
@@ -185,7 +187,13 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                                           : 'mx-auto w-full max-w-7xl'),
                             )}
                         >
+                            {!isFullWidthMode && <AdminOpenTicketsBanner className='mb-5' />}
                             {children}
+                            {!isFullWidthMode ? (
+                                <footer className='border-border/40 mt-6 border-t pt-4 pb-2'>
+                                    <ConfiguredLinks variant='compact' />
+                                </footer>
+                            ) : null}
                         </div>
                     </main>
                 </div>

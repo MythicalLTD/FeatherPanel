@@ -330,6 +330,21 @@
 		"copyright": "{company}",
 		"powered_by": "Powered by FeatherPanel"
 	},
+	"links": {
+		"aria_label": "Panel links",
+		"website": "Website",
+		"support": "Support",
+		"discord": "Discord",
+		"linkedin": "LinkedIn",
+		"telegram": "Telegram",
+		"tiktok": "TikTok",
+		"twitter": "X / Twitter",
+		"whatsapp": "WhatsApp",
+		"youtube": "YouTube",
+		"status": "Status",
+		"terms": "Terms of Service",
+		"privacy": "Privacy Policy"
+	},
 	"maintenance": {
 		"title": "System Maintenance",
 		"message": "We are currently upgrading our systems to provide you with a better experience. We'll be back shortly.",
@@ -1134,7 +1149,17 @@
 		"priority": "Priority",
 		"server": "Server",
 		"serverId": "ID",
-		"attachFiles": "Attach Files"
+		"attachFiles": "Attach Files",
+		"adminOpenTicketsTitle": "Open support tickets",
+		"adminOpenTicketsDescription": "There are {count} open ticket(s) waiting for staff. Please review them in the admin panel.",
+		"adminViewOpenTickets": "View open tickets",
+		"adminManageTickets": "Manage in admin",
+		"adminViewAndManage": "Review all open support tickets as staff",
+		"adminOpenTicketsInline": "{count} open ticket(s) system-wide",
+		"adminScopeOpen": "All open",
+		"adminScopeAll": "All tickets",
+		"adminScopeMine": "My tickets",
+		"adminDismissOpenTicketsBanner": "Dismiss for now"
 	},
 	"vms": {
 		"title": "Virtual Machines",
@@ -7385,6 +7410,10 @@
 				}
 			},
 			"fields": {
+				"discord_url": {
+					"label": "Discord URL",
+					"description": "Discord invite or community server URL shown in the panel footer."
+				},
 				"captcha_provider": {
 					"label": "Captcha Provider",
 					"description": "Choose which captcha service to use: Cloudflare Turnstile, hCaptcha, Google reCAPTCHA, Friendly Captcha, or reForge Captcha.",

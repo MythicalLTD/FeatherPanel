@@ -26,6 +26,7 @@ import NextImage from 'next/image';
 import Link from 'next/link';
 import axios from 'axios';
 import { useSettings } from '@/contexts/SettingsContext';
+import { useSession } from '@/contexts/SessionContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { cn } from '@/lib/utils';
 import { useNavigation } from '@/hooks/useNavigation';
@@ -85,11 +86,13 @@ function SidebarContent({
 }) {
     const { theme } = useTheme();
     const { t } = useTranslation();
+    const { adminTicketStats } = useSession();
 
     const [collapsedGroups, setCollapsedGroups] = useState<string[]>([]);
 
     const [collapsedSubmenus, setCollapsedSubmenus] = useState<string[]>([]);
     const [unreadTicketCount, setUnreadTicketCount] = useState(0);
+    const adminOpenTicketCount = adminTicketStats?.open_count ?? 0;
 
     useEffect(() => {
         const saved = localStorage.getItem('featherpanel_collapsed_groups');
@@ -435,6 +438,7 @@ function SidebarContent({
                                     const hasChildren = item.children && item.children.length > 0;
                                     const isSubmenuCollapsed = collapsedSubmenus.includes(item.id);
                                     const isTicketsItem = item.url === '/dashboard/tickets';
+                                    const isAdminTicketsItem = item.url === '/admin/tickets';
 
                                     if (hasChildren) {
                                         return (
@@ -542,6 +546,13 @@ function SidebarContent({
                                                         {unreadTicketCount}
                                                     </span>
                                                 )}
+                                                {isAdminTicketsItem &&
+                                                    adminOpenTicketCount > 0 &&
+                                                    (!collapsed || mobile) && (
+                                                        <span className='ml-2 inline-flex items-center rounded-full border border-amber-500/25 bg-amber-500/10 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:text-amber-300'>
+                                                            {adminOpenTicketCount}
+                                                        </span>
+                                                    )}
                                                 {renderCollapsedLabel(item.name)}
                                             </button>
                                         );
@@ -578,6 +589,13 @@ function SidebarContent({
                                                     {unreadTicketCount}
                                                 </span>
                                             )}
+                                            {isAdminTicketsItem &&
+                                                adminOpenTicketCount > 0 &&
+                                                (!collapsed || mobile) && (
+                                                    <span className='ml-2 inline-flex items-center rounded-full border border-amber-500/25 bg-amber-500/10 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:text-amber-300'>
+                                                        {adminOpenTicketCount}
+                                                    </span>
+                                                )}
                                             {renderCollapsedLabel(item.name)}
                                         </Link>
                                     );

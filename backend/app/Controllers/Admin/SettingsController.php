@@ -173,7 +173,6 @@ class SettingsController
                 ConfigInterface::APP_LOGO_DARK,
                 ConfigInterface::APP_TIMEZONE,
                 ConfigInterface::APP_SSO_REDIRECT_PATH,
-                ConfigInterface::APP_SUPPORT_URL,
                 ConfigInterface::APP_BACKGROUND_IMAGE_URL,
                 ConfigInterface::APP_BACKGROUND_LOCK,
                 ConfigInterface::APP_ACCENT_COLOR_DEFAULT,
@@ -188,14 +187,25 @@ class SettingsController
                 ConfigInterface::APP_BACKDROP_DARKEN_LOCK,
                 ConfigInterface::APP_BACKGROUND_IMAGE_FIT_DEFAULT,
                 ConfigInterface::APP_BACKGROUND_IMAGE_FIT_LOCK,
+            ],
+        ],
+        'links' => [
+            'name' => 'Links',
+            'description' => 'Public links shown across the panel footer (support, social media, legal)',
+            'icon' => 'link',
+            'settings' => [
+                ConfigInterface::APP_SUPPORT_URL,
+                ConfigInterface::WEBSITE_URL,
+                ConfigInterface::DISCORD_URL,
                 ConfigInterface::LINKEDIN_URL,
                 ConfigInterface::TELEGRAM_URL,
                 ConfigInterface::TIKTOK_URL,
                 ConfigInterface::TWITTER_URL,
                 ConfigInterface::WHATSAPP_URL,
                 ConfigInterface::YOUTUBE_URL,
-                ConfigInterface::WEBSITE_URL,
                 ConfigInterface::STATUS_PAGE_URL,
+                ConfigInterface::LEGAL_TOS,
+                ConfigInterface::LEGAL_PRIVACY,
             ],
         ],
         'security' => [
@@ -387,8 +397,6 @@ class SettingsController
             'description' => 'Other configuration settings',
             'icon' => 'settings',
             'settings' => [
-                ConfigInterface::LEGAL_TOS,
-                ConfigInterface::LEGAL_PRIVACY,
                 ConfigInterface::APP_DEVELOPER_MODE,
                 ConfigInterface::CUSTOM_JS,
                 ConfigInterface::CUSTOM_CSS,
@@ -749,7 +757,20 @@ class SettingsController
                 'placeholder' => 'https://mythical.systems',
                 'validation' => 'required|string|max:255',
                 'options' => [],
-                'category' => 'app',
+                'category' => 'links',
+            ],
+            ConfigInterface::DISCORD_URL => [
+                'name' => ConfigInterface::DISCORD_URL,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::DISCORD_URL, ''),
+                'description' => 'Discord invite or community server URL',
+                'type' => 'text',
+                'required' => false,
+                'placeholder' => 'https://discord.gg/example',
+                'validation' => 'string|max:255',
+                'options' => [],
+                'category' => 'links',
             ],
             ConfigInterface::LINKEDIN_URL => [
                 'name' => ConfigInterface::LINKEDIN_URL,
@@ -762,7 +783,7 @@ class SettingsController
                 'placeholder' => 'https://linkedin.com/company/example',
                 'validation' => 'string|max:255',
                 'options' => [],
-                'category' => 'app',
+                'category' => 'links',
             ],
             ConfigInterface::TELEGRAM_URL => [
                 'name' => ConfigInterface::TELEGRAM_URL,
@@ -775,7 +796,7 @@ class SettingsController
                 'placeholder' => 'https://t.me/example',
                 'validation' => 'string|max:255',
                 'options' => [],
-                'category' => 'app',
+                'category' => 'links',
             ],
             ConfigInterface::TIKTOK_URL => [
                 'name' => ConfigInterface::TIKTOK_URL,
@@ -788,7 +809,7 @@ class SettingsController
                 'placeholder' => 'https://tiktok.com/@example',
                 'validation' => 'string|max:255',
                 'options' => [],
-                'category' => 'app',
+                'category' => 'links',
             ],
             ConfigInterface::TWITTER_URL => [
                 'name' => ConfigInterface::TWITTER_URL,
@@ -801,7 +822,7 @@ class SettingsController
                 'placeholder' => 'https://twitter.com/example',
                 'validation' => 'string|max:255',
                 'options' => [],
-                'category' => 'app',
+                'category' => 'links',
             ],
             ConfigInterface::WHATSAPP_URL => [
                 'name' => ConfigInterface::WHATSAPP_URL,
@@ -814,7 +835,7 @@ class SettingsController
                 'placeholder' => 'https://wa.me/1234567890',
                 'validation' => 'string|max:255',
                 'options' => [],
-                'category' => 'app',
+                'category' => 'links',
             ],
             ConfigInterface::YOUTUBE_URL => [
                 'name' => ConfigInterface::YOUTUBE_URL,
@@ -827,7 +848,7 @@ class SettingsController
                 'placeholder' => 'https://youtube.com/@example',
                 'validation' => 'string|max:255',
                 'options' => [],
-                'category' => 'app',
+                'category' => 'links',
             ],
             ConfigInterface::WEBSITE_URL => [
                 'name' => ConfigInterface::WEBSITE_URL,
@@ -840,7 +861,7 @@ class SettingsController
                 'placeholder' => 'https://example.com',
                 'validation' => 'string|max:255',
                 'options' => [],
-                'category' => 'app',
+                'category' => 'links',
             ],
             ConfigInterface::STATUS_PAGE_URL => [
                 'name' => ConfigInterface::STATUS_PAGE_URL,
@@ -1293,7 +1314,7 @@ class SettingsController
                 'placeholder' => '/tos',
                 'validation' => 'required|string|max:255',
                 'options' => [],
-                'category' => 'other',
+                'category' => 'links',
             ],
             ConfigInterface::LEGAL_PRIVACY => [
                 'name' => ConfigInterface::LEGAL_PRIVACY,
@@ -1306,7 +1327,7 @@ class SettingsController
                 'placeholder' => '/privacy',
                 'validation' => 'required|string|max:255',
                 'options' => [],
-                'category' => 'other',
+                'category' => 'links',
             ],
             ConfigInterface::REGISTRATION_ENABLED => [
                 'name' => ConfigInterface::REGISTRATION_ENABLED,

@@ -23,6 +23,7 @@ use App\Chat\VmTask;
 use App\Chat\VmInstance;
 use App\Helpers\VmGateway;
 use App\Helpers\ApiResponse;
+use App\Helpers\TimeHelper;
 use OpenApi\Attributes as OA;
 use App\Chat\VmInstanceBackup;
 use App\Chat\VmInstanceActivity;
@@ -78,6 +79,7 @@ class VmUserBackupController
         }
 
         $backups = VmInstanceBackup::getBackupsByInstanceId((int) $vmInstance['id']);
+        $backups = TimeHelper::normaliseRows($backups);
         $storages = [];
         $vmNode = VmNode::getVmNodeById((int) $vmInstance['vm_node_id']);
         if ($vmNode) {

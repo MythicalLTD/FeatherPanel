@@ -32,7 +32,9 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { useDateFormatOptions } from '@/contexts/PreferencesContext';
 import { useVmInstance } from '@/contexts/VmInstanceContext';
+import { formatDateTimeInTz } from '@/lib/dateUtils';
 import { cn, formatMib } from '@/lib/utils';
 
 import { Button } from '@/components/featherui/Button';
@@ -52,6 +54,7 @@ type VmBackup = {
     volid: string;
     size_bytes: number;
     ctime: number;
+    created_at?: string | null;
     format?: string | null;
     status?: string;
 };
@@ -73,6 +76,7 @@ export default function VdsBackupsPage() {
     const { id } = useParams() as { id: string };
     const router = useRouter();
     const { t } = useTranslation();
+    const dateOpts = useDateFormatOptions();
     const { instance, loading: instanceLoading } = useVmInstance();
     const { fetchWidgets, getWidgets } = usePluginWidgets('vds-backups');
 
@@ -91,6 +95,11 @@ export default function VdsBackupsPage() {
     const [confirmRestoreOpen, setConfirmRestoreOpen] = useState(false);
     const [selectedForDelete, setSelectedForDelete] = useState<VmBackup | null>(null);
     const [selectedForRestore, setSelectedForRestore] = useState<VmBackup | null>(null);
+
+    const backupDisplayTime = (backup: VmBackup) => {
+        const ts = backup.ctime > 0 ? backup.ctime : backup.created_at;
+        return ts ? formatDateTimeInTz(ts, dateOpts) : '—';
+    };
 
     const fetchBackups = useCallback(async () => {
         if (!id) return;
@@ -444,9 +453,7 @@ export default function VdsBackupsPage() {
                                                     <div className='text-muted-foreground flex items-center gap-2'>
                                                         <Calendar className='h-4 w-4 opacity-50' />
                                                         <span className='text-sm font-semibold'>
-                                                            {backup.ctime
-                                                                ? new Date(backup.ctime * 1000).toLocaleString()
-                                                                : '—'}
+                                                            {backupDisplayTime(backup)}
                                                         </span>
                                                     </div>
                                                 </>
@@ -602,9 +609,7 @@ export default function VdsBackupsPage() {
                                             {selectedForRestore.volid}
                                         </p>
                                         <p className='text-muted-foreground mt-1 text-xs'>
-                                            {selectedForRestore.ctime
-                                                ? new Date(selectedForRestore.ctime * 1000).toLocaleString()
-                                                : '—'}
+                                            {backupDisplayTime(selectedForRestore)}
                                         </p>
                                     </div>
                                 )}

@@ -22,6 +22,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { cn } from '@/lib/utils';
 import { PoweredByFeatherPanel } from '@/components/branding/PoweredByFeatherPanel';
+import { ConfiguredLinks } from '@/components/branding/ConfiguredLinks';
 
 interface PublicSiteShellProps {
     children: React.ReactNode;
@@ -134,7 +135,10 @@ export default function PublicSiteShell({ children }: PublicSiteShellProps) {
                             <p className='text-sm font-semibold'>{appName}</p>
                             <p className='text-muted-foreground mt-1 text-xs leading-5'>{appDescription}</p>
                         </div>
-                        <PoweredByFeatherPanel variant='footer' className='md:text-right' />
+                        <div className='flex flex-col items-start gap-3 md:items-end'>
+                            <ConfiguredLinks variant='footer' />
+                            <PoweredByFeatherPanel variant='footer' className='md:text-right' />
+                        </div>
                     </div>
                 </div>
             </footer>

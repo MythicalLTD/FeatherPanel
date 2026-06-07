@@ -24,6 +24,7 @@ use App\Chat\Server;
 use App\SubuserPermissions;
 use App\Chat\ServerActivity;
 use App\Helpers\ApiResponse;
+use App\Helpers\TimeHelper;
 use App\Services\Wings\Wings;
 use OpenApi\Attributes as OA;
 use App\Plugins\Events\Events\ServerEvent;
@@ -181,6 +182,7 @@ class ServerBackupController
         $total = count($backups);
         $offset = ($page - 1) * $perPage;
         $paginatedBackups = array_slice($backups, $offset, $perPage);
+        $paginatedBackups = TimeHelper::normaliseRows($paginatedBackups, ['completed_at', 'deleted_at']);
 
         $retention = BackupFifoEviction::retentionMetaForServer($server);
 
@@ -268,7 +270,7 @@ class ServerBackupController
             return ApiResponse::error('Backup not found', 'BACKUP_NOT_FOUND', 404);
         }
 
-        return ApiResponse::success($backup);
+        return ApiResponse::success(TimeHelper::normaliseRow($backup, ['completed_at', 'deleted_at']));
     }
 
     /**

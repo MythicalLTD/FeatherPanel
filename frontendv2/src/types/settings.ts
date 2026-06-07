@@ -69,6 +69,7 @@ export interface AppSettings {
     twitter_url: string;
     whatsapp_url: string;
     youtube_url: string;
+    discord_url: string;
     website_url: string;
     status_page_url: string;
     legal_tos: string;
