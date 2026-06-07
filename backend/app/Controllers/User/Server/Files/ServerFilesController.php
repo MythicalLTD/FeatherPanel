@@ -2291,12 +2291,7 @@ class ServerFilesController
      */
     private function createWingsConnection(array $node, int $timeout = 30): Wings
     {
-        $scheme = $node['scheme'];
-        $host = $node['fqdn'];
-        $port = $node['daemonListen'];
-        $token = $node['daemon_token'];
-
-        return new Wings($host, $port, $scheme, $token, $timeout);
+        return Wings::fromNode($node, $timeout);
     }
 
     /**

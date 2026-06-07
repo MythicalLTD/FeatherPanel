@@ -17,6 +17,7 @@
 
 namespace App\Services\Wings;
 
+use App\Helpers\WingsUrlHelper;
 use App\Services\Wings\Services\JwtService;
 use App\Services\Wings\Services\ConfigService;
 use App\Services\Wings\Services\DockerService;
@@ -50,6 +51,7 @@ class Wings
      * @param string $protocol The protocol to use (http/https)
      * @param string $authToken The authentication token for Wings
      * @param int $timeout Request timeout in seconds (default: 30)
+     * @param bool $behindProxy Whether Wings is accessed through a reverse proxy
      */
     public function __construct(
         string $host,
@@ -57,8 +59,9 @@ class Wings
         string $protocol = 'http',
         string $authToken = '',
         int $timeout = 30,
+        bool $behindProxy = false,
     ) {
-        $this->connection = new WingsConnection($host, $port, $protocol, $authToken, $timeout);
+        $this->connection = new WingsConnection($host, $port, $protocol, $authToken, $timeout, $behindProxy);
 
         // Initialize service classes
         $this->system = new SystemService($this->connection);
@@ -70,6 +73,21 @@ class Wings
 
         // Initialize JWT service with node secret
         $this->jwt = new JwtService($authToken, '', $this->connection->getBaseUrl());
+    }
+
+    /**
+     * Create a Wings client from a node database row.
+     */
+    public static function fromNode(array $node, int $timeout = 30): self
+    {
+        return new self(
+            (string) ($node['fqdn'] ?? 'localhost'),
+            (int) ($node['daemonListen'] ?? 8443),
+            (string) ($node['scheme'] ?? 'http'),
+            (string) ($node['daemon_token'] ?? ''),
+            $timeout,
+            WingsUrlHelper::isBehindProxy($node),
+        );
     }
 
     /**

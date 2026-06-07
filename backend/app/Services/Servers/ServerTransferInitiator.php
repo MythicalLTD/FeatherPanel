@@ -23,6 +23,7 @@ use App\Chat\Server;
 use App\Chat\Activity;
 use App\Chat\Allocation;
 use App\Chat\ServerTransfer;
+use App\Helpers\WingsUrlHelper;
 use App\Services\Wings\Wings;
 use App\Config\ConfigInterface;
 use App\CloudFlare\CloudFlareRealIP;
@@ -161,7 +162,7 @@ class ServerTransferInitiator
 
         $config = App::getInstance(true)->getConfig();
         $panelUrl = $config->getSetting(ConfigInterface::APP_URL, 'https://featherpanel.mythical.systems');
-        $destinationUrl = $destinationNode['scheme'] . '://' . $destinationNode['fqdn'] . ':' . $destinationNode['daemonListen'];
+        $destinationUrl = WingsUrlHelper::buildFromNode($destinationNode);
 
         try {
             if ($newAllocationId) {
@@ -181,13 +182,7 @@ class ServerTransferInitiator
                 return ['success' => false, 'error' => 'Failed to update server status', 'code' => 'UPDATE_FAILED', 'http_status' => 500];
             }
 
-            $wings = new Wings(
-                $sourceNode['fqdn'],
-                $sourceNode['daemonListen'],
-                $sourceNode['scheme'],
-                $sourceNode['daemon_token'],
-                30
-            );
+            $wings = Wings::fromNode($sourceNode, 30);
 
             $jwtService = new \App\Services\Wings\Services\JwtService(
                 $destinationNode['daemon_token'],

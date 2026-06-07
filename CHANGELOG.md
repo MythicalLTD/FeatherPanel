@@ -37,6 +37,9 @@
 - Admin Updates page plugin bulk updates now call the correct online install API (`/api/admin/plugins/online/install`) instead of a non-existent route. by @nayskutzu
 - Issues related to Discord OAuth2 account linking and registration were fixed. by @nayskutzu
 - Small issues regarding spells export behavior were fixed. by @nayskutzu
+- Node connections now actually respect the behind proxy setting. by @nayskutzu
+- Timezones were missmatched into the admin pages.by @nayskutzu
+
 
 ## v1.3.7.3 STABLE
 

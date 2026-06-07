@@ -71,6 +71,8 @@ import { copyToClipboard } from '@/lib/utils';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { useSettings } from '@/contexts/SettingsContext';
+import { useDateFormatOptions } from '@/contexts/PreferencesContext';
+import { formatDateTimeInTz, formatRelativeTime } from '@/lib/dateUtils';
 
 interface UserRole {
     name: string;
@@ -176,6 +178,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
     const router = useRouter();
     const resolvedParams = use(params);
     const { settings } = useSettings();
+    const dateOpts = useDateFormatOptions();
 
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
@@ -806,13 +809,22 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                 <span className='text-muted-foreground'>
                                     {t('admin.users.edit.account_info.created')}
                                 </span>
-                                <span>{user.created_at || user.first_seen}</span>
+                                <span
+                                    title={formatDateTimeInTz(
+                                        user.created_at || user.first_seen,
+                                        dateOpts,
+                                    )}
+                                >
+                                    {formatDateTimeInTz(user.created_at || user.first_seen, dateOpts)}
+                                </span>
                             </div>
                             <div className='flex justify-between'>
                                 <span className='text-muted-foreground'>
                                     {t('admin.users.edit.account_info.last_seen')}
                                 </span>
-                                <span>{user.last_seen || '-'}</span>
+                                <span title={user.last_seen ? formatDateTimeInTz(user.last_seen, dateOpts) : undefined}>
+                                    {user.last_seen ? formatRelativeTime(user.last_seen, dateOpts) : '-'}
+                                </span>
                             </div>
                             {user.last_ip && (
                                 <div className='flex justify-between'>
@@ -1024,7 +1036,9 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                                         {server.status || t('admin.users.edit.servers.offline')}
                                                     </Badge>
                                                 </td>
-                                                <td className='text-muted-foreground p-4'>{server.created_at}</td>
+                                                <td className='text-muted-foreground p-4'>
+                                                    {formatDateTimeInTz(server.created_at, dateOpts)}
+                                                </td>
                                                 <td className='p-4 text-right'>
                                                     <div className='flex justify-end gap-2'>
                                                         <Button
@@ -1092,7 +1106,9 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                                 <td className='p-4 font-medium'>{activity.name}</td>
                                                 <td className='text-muted-foreground p-4'>{activity.context}</td>
                                                 <td className='p-4 font-mono text-xs'>{activity.ip_address}</td>
-                                                <td className='text-muted-foreground p-4'>{activity.created_at}</td>
+                                                <td className='text-muted-foreground p-4'>
+                                                    {formatDateTimeInTz(activity.created_at, dateOpts)}
+                                                </td>
                                             </tr>
                                         ))
                                     )}
@@ -1290,7 +1306,11 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                                         {t('admin.users.edit.potential_alts.match_total')}
                                                     </div>
                                                 </td>
-                                                <td className='text-muted-foreground p-4'>{alt.last_seen || '—'}</td>
+                                                <td className='text-muted-foreground p-4'>
+                                                    <span title={alt.last_seen ? formatDateTimeInTz(alt.last_seen, dateOpts) : undefined}>
+                                                        {alt.last_seen ? formatRelativeTime(alt.last_seen, dateOpts) : '—'}
+                                                    </span>
+                                                </td>
                                                 <td className='p-4 text-right'>
                                                     <Button
                                                         size='sm'
@@ -1458,7 +1478,9 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                                         {mail.status}
                                                     </Badge>
                                                 </td>
-                                                <td className='text-muted-foreground p-4'>{mail.created_at}</td>
+                                                <td className='text-muted-foreground p-4'>
+                                                    {formatDateTimeInTz(mail.created_at, dateOpts)}
+                                                </td>
                                                 <td className='p-4 text-right'>
                                                     <div className='flex justify-end gap-2'>
                                                         <Button
@@ -1498,7 +1520,10 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                     <DialogHeader>
                         <DialogTitle>{mailPreview?.subject}</DialogTitle>
                         <DialogDescription>
-                            {mailPreview?.created_at} | {mailPreview?.status}
+                            {mailPreview?.created_at
+                                ? formatDateTimeInTz(mailPreview.created_at, dateOpts)
+                                : '—'}{' '}
+                            | {mailPreview?.status}
                         </DialogDescription>
                     </DialogHeader>
                     <div className='bg-muted/50 mt-4 max-h-[60vh] overflow-auto rounded-xl border p-4'>

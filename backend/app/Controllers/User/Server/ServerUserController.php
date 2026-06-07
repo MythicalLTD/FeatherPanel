@@ -33,6 +33,7 @@ use App\Chat\ServerActivity;
 use App\Chat\ServerDatabase;
 use App\Chat\ServerVariable;
 use App\Helpers\ApiResponse;
+use App\Helpers\WingsUrlHelper;
 use App\Chat\SubdomainDomain;
 use OpenApi\Attributes as OA;
 use App\Chat\DatabaseInstance;
@@ -899,16 +900,14 @@ class ServerUserController
         }
 
         try {
-            $scheme = $node['scheme'];
-            $host = $node['fqdn'];
-            $port = $node['daemonListen'];
             $token = $node['daemon_token'];
+            $wingsBaseUrl = WingsUrlHelper::buildFromNode($node);
 
             // Create JWT service instance
             $jwtService = new JwtService(
                 $token, // Node secret
                 App::getInstance(true)->getConfig()->getSetting(ConfigInterface::APP_URL, 'https://featherpanel.mythical.systems'), // Panel URL
-                $scheme . '://' . $host . ':' . $port // Wings URL
+                $wingsBaseUrl // Wings URL
             );
 
             // Get user permissions
@@ -921,19 +920,13 @@ class ServerUserController
                 $permissions
             );
 
-            if ($scheme == 'http') {
-                $scheme = 'ws';
-            } else {
-                $scheme = 'wss';
-            }
-
             return ApiResponse::success([
                 'token' => $token,
                 'expires_at' => time() + 600, // 10 minutes from now
                 'server_uuid' => $server['uuid'],
                 'user_uuid' => $user['uuid'],
                 'permissions' => $permissions,
-                'connection_string' => $scheme . '://' . $host . ':' . $port . '/api/servers/' . $server['uuid'] . '/ws',
+                'connection_string' => WingsUrlHelper::toWebSocketBaseUrl($wingsBaseUrl) . '/api/servers/' . $server['uuid'] . '/ws',
             ], 'JWT token generated successfully', 200);
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to generate JWT token: ' . $e->getMessage(), 'JWT_GENERATION_FAILED', 500);

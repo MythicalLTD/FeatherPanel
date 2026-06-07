@@ -680,13 +680,7 @@ class AServerScheduleProcessor implements TimeTask
             throw new \Exception('Node not found for server: ' . $server['name']);
         }
 
-        $scheme = $node['scheme'];
-        $host = $node['fqdn'];
-        $port = $node['daemonListen'];
-        $token = $node['daemon_token'];
-        $timeout = 30;
-
-        return new Wings($host, $port, $scheme, $token, $timeout);
+        return Wings::fromNode($node, 30);
     }
 
     /**
