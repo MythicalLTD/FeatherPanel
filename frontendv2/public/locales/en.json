@@ -1,5 +1,10 @@
 {
 	"auth": {
+		"legal": {
+			"login_prefix": "By continuing, you agree to our",
+			"register_prefix": "By creating an account, you agree to our",
+			"and": "and"
+		},
 		"login": {
 			"title": "Welcome back",
 			"subtitle": "Enter your credentials to access your account",

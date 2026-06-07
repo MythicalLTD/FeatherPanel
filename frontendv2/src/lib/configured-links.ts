@@ -91,3 +91,14 @@ export function getConfiguredLinks(
 
     return links;
 }
+
+export function getLegalLinks(
+    settings: Partial<AppSettings> | null | undefined,
+    t: (key: string) => string,
+): { terms: ConfiguredLink | null; privacy: ConfiguredLink | null } {
+    const links = getConfiguredLinks(settings, t);
+    return {
+        terms: links.find((link) => link.id === 'terms') ?? null,
+        privacy: links.find((link) => link.id === 'privacy') ?? null,
+    };
+}

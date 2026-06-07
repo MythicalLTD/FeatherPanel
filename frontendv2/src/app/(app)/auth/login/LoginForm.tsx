@@ -31,6 +31,7 @@ import { startAuthentication } from '@simplewebauthn/browser';
 import { authApi } from '@/lib/api/auth';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { AuthLegalNotice } from '@/components/auth/AuthLegalNotice';
 import {
     buildLoginMethodAvailability,
     buildLoginPageLayout,
@@ -1700,6 +1701,8 @@ export default function LoginForm() {
                     ) : null}
 
                     <WidgetRenderer widgets={getWidgets('auth-login', 'auth-login-after-form')} />
+
+                    {!isSsoLogin && !isDiscordLogin && <AuthLegalNotice variant='login' />}
 
                     {!isLoginMethodStep && (
                         <div className='text-muted-foreground text-center text-sm'>

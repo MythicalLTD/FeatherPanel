@@ -29,6 +29,7 @@ import { authApi } from '@/lib/api/auth';
 import { isCaptchaConfigured, obtainCaptchaResponseToken } from '@/lib/captchaGate';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { AuthLegalNotice } from '@/components/auth/AuthLegalNotice';
 
 export default function RegisterForm() {
     const router = useRouter();
@@ -215,6 +216,8 @@ export default function RegisterForm() {
                 {error && <div className='bg-destructive/15 text-destructive rounded-lg p-3 text-sm'>{error}</div>}
                 {success && <div className='bg-primary/15 text-primary rounded-lg p-3 text-sm'>{success}</div>}
 
+                <AuthLegalNotice variant='register' />
+
                 <div className='flex flex-col gap-3'>
                     <Button onClick={handleDiscordRegister} disabled={loading} className='w-full'>
                         {loading ? t('common.loading') : t('auth.discordRegistration.submit')}
@@ -341,6 +344,8 @@ export default function RegisterForm() {
                         setForm((prev) => ({ ...prev, turnstile_token: '' }));
                     }}
                 />
+
+                <AuthLegalNotice variant='register' />
 
                 <Button type='submit' className='group w-full' loading={loading}>
                     {!loading && (
