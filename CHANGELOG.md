@@ -14,6 +14,7 @@
 
 - Login page CAPTCHA is shown after username/password (before Sign in), full-width in a bordered block, instead of between the two fields. by @nayskutzu
 - Styles for the auth LDAP button were improved. by @nayskutzu
+- Improved the amazing new role editor page that allows you to edit roles and permissions and thats idiot proof (I HOPE). by @nayskutzu
 - Timezones were missmatched into the server backups page. by @nayskutzu
 
 ### Fixed

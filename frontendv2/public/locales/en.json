@@ -4156,28 +4156,62 @@
 				"delete_failed": "Failed to delete role",
 				"permission_added": "Permission added successfully",
 				"permission_removed": "Permission removed successfully",
-				"permission_failed": "Failed to update permissions"
+				"permission_failed": "Failed to update permissions",
+				"cannot_remove_own_admin_root": "You cannot remove admin.root from your own role — that would lock you out of the panel.",
+				"duplicated": "Role duplicated successfully",
+				"duplicate_failed": "Failed to duplicate role"
 			},
 			"form": {
 				"create_title": "Create Role",
 				"edit_title": "Edit Role",
-				"name": "Name",
+				"name": "Internal Name",
 				"display_name": "Display Name",
 				"color": "Color",
 				"submit_create": "Create Role",
-				"submit_update": "Update Role",
+				"submit_update": "Save Changes",
 				"permissions": "Permissions",
-				"no_permissions": "No permissions assigned"
+				"no_permissions": "No permissions assigned",
+				"auto_name_hint": "Auto-generated from the display name. Edit only if you need a custom slug.",
+				"random_color": "Random"
+			},
+			"tabs": {
+				"details": "Details",
+				"permissions": "Permissions"
+			},
+			"filters": {
+				"all": "All",
+				"granted": "Granted",
+				"missing": "Not granted"
+			},
+			"stats": {
+				"assigned": "Granted",
+				"total": "Available",
+				"coverage": "Coverage",
+				"role_count": "{count} roles",
+				"permission_count": "{count} permissions"
+			},
+			"actions": {
+				"duplicate": "Duplicate"
 			},
 			"permissions": {
-				"title": "Manage Permissions",
-				"description": "Add or remove permissions for this role.",
+				"title": "Permissions",
+				"description": "Toggle permissions on or off for this role.",
 				"search": "Search permissions...",
-				"syncing": "Syncing..."
+				"syncing": "Syncing...",
+				"create_first_hint": "Save the role first, then assign permissions.",
+				"admin_root_locked": "Locked on your role so you cannot remove your own full admin access.",
+				"locked": "Locked",
+				"in_category": "granted",
+				"expand_all": "Expand all",
+				"collapse_all": "Collapse all",
+				"enable_category": "Enable all",
+				"disable_category": "Disable all"
 			},
 			"pagination": {},
 			"labels": {
-				"created": "Created"
+				"created": "Created",
+				"your_role": "Your role",
+				"preview": "Preview"
 			},
 			"help": {
 				"managing": {

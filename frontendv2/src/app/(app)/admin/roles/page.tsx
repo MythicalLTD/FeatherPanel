@@ -15,51 +15,36 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import axios, { isAxiosError } from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { useSession } from '@/contexts/SessionContext';
 import {
     Shield,
     Plus,
-    Pencil,
     Trash2,
     Search,
-    RefreshCw,
-    X,
     ChevronLeft,
     ChevronRight,
     KeyRound,
     AlertCircle,
+    Copy,
+    Users,
+    Pencil,
 } from 'lucide-react';
 import { PageHeader } from '@/components/featherui/PageHeader';
-import { ResourceCard, type ResourceBadge } from '@/components/featherui/ResourceCard';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { PageCard } from '@/components/featherui/PageCard';
-import { Sheet, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
 import { toast } from 'sonner';
-import { Label } from '@/components/ui/label';
-import Permissions from '@/lib/permissions';
 import { Badge } from '@/components/ui/badge';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
-
-interface Role {
-    id: number;
-    name: string;
-    display_name: string;
-    color: string;
-    created_at: string;
-    updated_at: string;
-}
-
-interface Permission {
-    id: number;
-    role_id: number;
-    permission: string;
-}
+import { cn } from '@/lib/utils';
+import { isDefaultRole, type Role } from '@/lib/role-utils';
 
 interface Pagination {
     page: number;
@@ -72,43 +57,26 @@ interface Pagination {
 
 export default function RolesPage() {
     const { t } = useTranslation();
+    const { user } = useSession();
+    const router = useRouter();
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-roles');
     const [roles, setRoles] = useState<Role[]>([]);
+    const [permissionCounts, setPermissionCounts] = useState<Record<number, number>>({});
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const [pagination, setPagination] = useState<Pagination>({
         page: 1,
-        pageSize: 10,
+        pageSize: 12,
         total: 0,
         totalPages: 0,
         hasNext: false,
         hasPrev: false,
     });
 
-    const [createOpen, setCreateOpen] = useState(false);
-    const [editOpen, setEditOpen] = useState(false);
-    const [permissionsOpen, setPermissionsOpen] = useState(false);
-
-    const [editingRole, setEditingRole] = useState<Role | null>(null);
-    const [permissionsRole, setPermissionsRole] = useState<Role | null>(null);
-    const [rolePermissions, setRolePermissions] = useState<Permission[]>([]);
-    const [loadingPermissions, setLoadingPermissions] = useState(false);
-
-    const [newRole, setNewRole] = useState({
-        name: '',
-        display_name: '',
-        color: '#5B8DEF',
-    });
-    const [roleColorHex, setRoleColorHex] = useState('#5B8DEF');
-
-    const [isSubmitting, setIsSubmitting] = useState(false);
-
     const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
     const [refreshKey, setRefreshKey] = useState(0);
-
-    const [permissionSearch, setPermissionSearch] = useState('');
-    const allPermissions = useMemo(() => Permissions.getAll(), []);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -135,7 +103,8 @@ export default function RolesPage() {
                     signal: controller.signal,
                 });
 
-                setRoles(data.data.roles || []);
+                const fetchedRoles: Role[] = data.data.roles || [];
+                setRoles(fetchedRoles);
                 const apiPagination = data.data.pagination;
                 setPagination((prev) => ({
                     ...prev,
@@ -146,6 +115,28 @@ export default function RolesPage() {
                     hasNext: apiPagination.has_next,
                     hasPrev: apiPagination.has_prev,
                 }));
+
+                if (fetchedRoles.length > 0) {
+                    const counts = await Promise.all(
+                        fetchedRoles.map(async (role) => {
+                            try {
+                                const permRes = await axios.get('/api/admin/permissions', {
+                                    params: { role_id: role.id, limit: 1 },
+                                    signal: controller.signal,
+                                });
+                                return {
+                                    id: role.id,
+                                    count: permRes.data.data.pagination?.total_records ?? 0,
+                                };
+                            } catch {
+                                return { id: role.id, count: 0 };
+                            }
+                        }),
+                    );
+                    setPermissionCounts(Object.fromEntries(counts.map((entry) => [entry.id, entry.count])));
+                } else {
+                    setPermissionCounts({});
+                }
             } catch (error) {
                 if (!axios.isCancel(error)) {
                     console.error('Error fetching roles:', error);
@@ -164,56 +155,6 @@ export default function RolesPage() {
             controller.abort();
         };
     }, [pagination.page, pagination.pageSize, debouncedSearchQuery, refreshKey, t, fetchWidgets]);
-
-    const handleCreate = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsSubmitting(true);
-        try {
-            await axios.put('/api/admin/roles', newRole);
-            toast.success(t('admin.roles.messages.created'));
-            setCreateOpen(false);
-            resetNewRole();
-            setRefreshKey((prev) => prev + 1);
-        } catch (error: unknown) {
-            console.error('Error creating role:', error);
-            let errorMessage = t('admin.roles.messages.create_failed');
-            if (isAxiosError(error) && error.response?.data?.message) {
-                errorMessage = error.response.data.message;
-            }
-            toast.error(errorMessage);
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
-    const handleUpdate = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!editingRole) return;
-
-        setIsSubmitting(true);
-        try {
-            const payload = {
-                name: editingRole.name,
-                display_name: editingRole.display_name,
-                color: editingRole.color,
-            };
-
-            await axios.patch(`/api/admin/roles/${editingRole.id}`, payload);
-            toast.success(t('admin.roles.messages.updated'));
-            setEditOpen(false);
-            setEditingRole(null);
-            setRefreshKey((prev) => prev + 1);
-        } catch (error: unknown) {
-            console.error('Error updating role:', error);
-            let errorMessage = t('admin.roles.messages.update_failed');
-            if (isAxiosError(error) && error.response?.data?.message) {
-                errorMessage = error.response.data.message;
-            }
-            toast.error(errorMessage);
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
 
     const handleDelete = async (id: number) => {
         if (!confirm(t('admin.roles.delete_confirm'))) return;
@@ -235,92 +176,43 @@ export default function RolesPage() {
         }
     };
 
-    const fetchPermissions = async (roleId: number) => {
-        setLoadingPermissions(true);
+    const handleDuplicate = async (role: Role) => {
+        setIsSubmitting(true);
         try {
-            const { data } = await axios.get('/api/admin/permissions', {
-                // Fetch the full role permission set for the sidebar list.
-                params: { role_id: roleId, limit: 100 },
+            const { data: createData } = await axios.put('/api/admin/roles', {
+                name: `${role.name}_copy`,
+                display_name: `${role.display_name} (Copy)`,
+                color: role.color,
             });
-            setRolePermissions(data.data.permissions || []);
-        } catch (error) {
-            console.error('Error fetching permissions:', error);
+            const newRole = createData.data.role as Role;
+
+            const { data: permData } = await axios.get('/api/admin/permissions', {
+                params: { role_id: role.id, limit: 500 },
+            });
+            const sourcePermissions = permData.data.permissions || [];
+
+            await Promise.all(
+                sourcePermissions.map((perm: { permission: string }) =>
+                    axios.put('/api/admin/permissions', {
+                        role_id: newRole.id,
+                        permission: perm.permission,
+                    }),
+                ),
+            );
+
+            toast.success(t('admin.roles.messages.duplicated'));
+            router.push(`/admin/roles/${newRole.id}/edit`);
+        } catch (error: unknown) {
+            console.error('Error duplicating role:', error);
+            let errorMessage = t('admin.roles.messages.duplicate_failed');
+            if (isAxiosError(error) && error.response?.data?.message) {
+                errorMessage = error.response.data.message;
+            }
+            toast.error(errorMessage);
         } finally {
-            setLoadingPermissions(false);
+            setIsSubmitting(false);
         }
     };
-
-    const handleAddPermission = async (permissionValue: string) => {
-        if (!permissionsRole) return;
-        try {
-            const { data } = await axios.put('/api/admin/permissions', {
-                role_id: permissionsRole.id,
-                permission: permissionValue,
-            });
-            if (data.success) {
-                toast.success(t('admin.roles.messages.permission_added'));
-                await fetchPermissions(permissionsRole.id);
-            }
-        } catch (error: unknown) {
-            let errorMessage = t('admin.roles.messages.permission_failed');
-            if (isAxiosError(error) && error.response?.data?.message) {
-                errorMessage = error.response.data.message;
-            }
-            toast.error(errorMessage);
-        }
-    };
-
-    const handleDeletePermission = async (permissionId: number) => {
-        if (!permissionsRole) return;
-        try {
-            const { data } = await axios.delete(`/api/admin/permissions/${permissionId}`);
-            if (data.success) {
-                toast.success(t('admin.roles.messages.permission_removed'));
-                await fetchPermissions(permissionsRole.id);
-            }
-        } catch (error: unknown) {
-            let errorMessage = t('admin.roles.messages.permission_failed');
-            if (isAxiosError(error) && error.response?.data?.message) {
-                errorMessage = error.response.data.message;
-            }
-            toast.error(errorMessage);
-        }
-    };
-
-    const resetNewRole = () => {
-        setNewRole({
-            name: '',
-            display_name: '',
-            color: '#5B8DEF',
-        });
-        setRoleColorHex('#5B8DEF');
-    };
-
-    const openEdit = (role: Role) => {
-        setEditingRole({ ...role });
-        setEditOpen(true);
-    };
-
-    const openPermissions = (role: Role) => {
-        setPermissionsRole(role);
-        fetchPermissions(role.id);
-        setPermissionsOpen(true);
-        setPermissionSearch('');
-    };
-
-    const filteredAvailablePermissions = useMemo(() => {
-        const assigned = new Set(rolePermissions.map((p) => p.permission));
-        const search = permissionSearch.toLowerCase();
-
-        return allPermissions.filter((p) => {
-            const isAssigned = assigned.has(p.value);
-            const matchesSearch =
-                p.value.toLowerCase().includes(search) ||
-                p.description.toLowerCase().includes(search) ||
-                p.category.toLowerCase().includes(search);
-            return !isAssigned && matchesSearch;
-        });
-    }, [rolePermissions, allPermissions, permissionSearch]);
 
     return (
         <div className='space-y-6'>
@@ -330,12 +222,7 @@ export default function RolesPage() {
                 description={t('admin.roles.subtitle')}
                 icon={Shield}
                 actions={
-                    <Button
-                        onClick={() => {
-                            resetNewRole();
-                            setCreateOpen(true);
-                        }}
-                    >
+                    <Button onClick={() => router.push('/admin/roles/create')}>
                         <Plus className='mr-2 h-4 w-4' />
                         {t('admin.roles.create')}
                     </Button>
@@ -354,6 +241,12 @@ export default function RolesPage() {
                         className='h-11 w-full pl-10'
                     />
                 </div>
+                {!loading && (
+                    <div className='text-muted-foreground flex items-center gap-2 text-sm whitespace-nowrap'>
+                        <Users className='h-4 w-4' />
+                        {t('admin.roles.stats.role_count', { count: String(pagination.total) })}
+                    </div>
+                )}
             </div>
 
             {pagination.totalPages > 1 && !loading && (
@@ -385,87 +278,103 @@ export default function RolesPage() {
             )}
 
             {loading ? (
-                <TableSkeleton count={3} />
+                <TableSkeleton count={6} />
             ) : roles.length === 0 ? (
                 <EmptyState
                     icon={Shield}
                     title={t('admin.roles.no_results')}
                     description={t('admin.roles.search_placeholder')}
                     action={
-                        <Button
-                            onClick={() => {
-                                resetNewRole();
-                                setCreateOpen(true);
-                            }}
-                        >
-                            {t('admin.roles.create')}
-                        </Button>
+                        <Button onClick={() => router.push('/admin/roles/create')}>{t('admin.roles.create')}</Button>
                     }
                 />
             ) : (
-                <div className='grid grid-cols-1 gap-4'>
+                <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3'>
                     <WidgetRenderer widgets={getWidgets('admin-roles', 'before-list')} />
                     {roles.map((role) => {
-                        const badges: ResourceBadge[] = [
-                            {
-                                label: role.name,
-                                className: 'bg-secondary text-secondary-foreground font-mono',
-                            },
-                        ];
+                        const permCount = permissionCounts[role.id];
+                        const isYours = user?.role_id === role.id;
 
                         return (
-                            <ResourceCard
+                            <div
                                 key={role.id}
-                                icon={Shield}
-                                title={role.display_name}
-                                subtitle={`${t('admin.roles.form.color')}: ${role.color}`}
-                                badges={badges}
-                                iconClassName='text-primary'
-                                style={{
-                                    borderColor: role.color,
-                                    boxShadow: `0 0 10px -5px ${role.color}`,
-                                }}
-                                description={
-                                    <div className='mt-2 flex items-center gap-2'>
+                                className={cn(
+                                    'group bg-card/50 border-border/70 relative flex flex-col overflow-hidden rounded-2xl border shadow-sm backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:shadow-md',
+                                    isYours && 'ring-primary/30 ring-2',
+                                )}
+                                style={{ borderColor: `${role.color}44` }}
+                            >
+                                <div className='h-1.5 w-full' style={{ backgroundColor: role.color }} />
+
+                                <button
+                                    type='button'
+                                    onClick={() => router.push(`/admin/roles/${role.id}/edit`)}
+                                    className='flex flex-1 flex-col p-5 text-left'
+                                >
+                                    <div className='flex items-start gap-3'>
                                         <div
-                                            className='border-border h-6 w-6 rounded-md border'
+                                            className='flex h-11 w-11 shrink-0 items-center justify-center rounded-xl shadow-sm'
                                             style={{ backgroundColor: role.color }}
-                                        />
-                                        <span className='text-muted-foreground text-sm'>
-                                            {t('admin.roles.labels.created')}:{' '}
-                                            {new Date(role.created_at).toLocaleDateString(undefined, {
-                                                year: 'numeric',
-                                                month: 'long',
-                                                day: 'numeric',
-                                            })}
+                                        >
+                                            <Shield className='h-5 w-5 text-white' />
+                                        </div>
+                                        <div className='min-w-0 flex-1'>
+                                            <div className='flex flex-wrap items-center gap-2'>
+                                                <h3 className='truncate text-base font-semibold'>{role.display_name}</h3>
+                                                {isYours && (
+                                                    <Badge variant='secondary' className='text-[10px]'>
+                                                        {t('admin.roles.labels.your_role')}
+                                                    </Badge>
+                                                )}
+                                            </div>
+                                            <p className='text-muted-foreground mt-0.5 font-mono text-xs'>{role.name}</p>
+                                        </div>
+                                    </div>
+
+                                    <div className='mt-4 flex flex-wrap items-center gap-2'>
+                                        <Badge variant='outline' className='gap-1 font-normal'>
+                                            <KeyRound className='h-3 w-3' />
+                                            {permCount !== undefined
+                                                ? t('admin.roles.stats.permission_count', { count: String(permCount) })
+                                                : '...'}
+                                        </Badge>
+                                        <span className='text-muted-foreground text-xs'>
+                                            {new Date(role.created_at).toLocaleDateString()}
                                         </span>
                                     </div>
-                                }
-                                actions={
-                                    <div className='flex items-center gap-2'>
-                                        <Button size='sm' variant='outline' onClick={() => openPermissions(role)}>
-                                            <Shield className='mr-2 h-4 w-4' />
-                                            {t('admin.roles.form.permissions')}
-                                        </Button>
-                                        <Button size='sm' variant='ghost' onClick={() => openEdit(role)}>
-                                            <Pencil className='h-4 w-4' />
-                                        </Button>
-                                        <Button
-                                            size='sm'
-                                            variant='ghost'
-                                            className='text-destructive hover:text-destructive hover:bg-destructive/10'
-                                            onClick={() => handleDelete(role.id)}
-                                            disabled={isSubmitting}
-                                        >
-                                            {isSubmitting ? (
-                                                <RefreshCw className='h-4 w-4 animate-spin' />
-                                            ) : (
-                                                <Trash2 className='h-4 w-4' />
-                                            )}
-                                        </Button>
-                                    </div>
-                                }
-                            />
+                                </button>
+
+                                <div className='border-border/50 flex items-center gap-1 border-t px-3 py-2'>
+                                    <Button
+                                        size='sm'
+                                        variant='ghost'
+                                        className='h-8 flex-1 text-xs'
+                                        onClick={() => router.push(`/admin/roles/${role.id}/edit`)}
+                                    >
+                                        <Pencil className='mr-1.5 h-3.5 w-3.5' />
+                                        {t('common.edit')}
+                                    </Button>
+                                    <Button
+                                        size='sm'
+                                        variant='ghost'
+                                        className='h-8 flex-1 text-xs'
+                                        onClick={() => handleDuplicate(role)}
+                                        disabled={isSubmitting}
+                                    >
+                                        <Copy className='mr-1.5 h-3.5 w-3.5' />
+                                        {t('admin.roles.actions.duplicate')}
+                                    </Button>
+                                    <Button
+                                        size='sm'
+                                        variant='ghost'
+                                        className='text-destructive hover:text-destructive hover:bg-destructive/10 h-8 px-2'
+                                        onClick={() => handleDelete(role.id)}
+                                        disabled={isSubmitting || isDefaultRole(role.id)}
+                                    >
+                                        <Trash2 className='h-3.5 w-3.5' />
+                                    </Button>
+                                </div>
+                            </div>
                         );
                     })}
                 </div>
@@ -481,11 +390,9 @@ export default function RolesPage() {
                     >
                         <ChevronLeft className='h-4 w-4' />
                     </Button>
-                    <div className='flex items-center gap-2'>
-                        <span className='text-sm font-medium'>
-                            {pagination.page} / {pagination.totalPages}
-                        </span>
-                    </div>
+                    <span className='text-sm font-medium'>
+                        {pagination.page} / {pagination.totalPages}
+                    </span>
                     <Button
                         variant='outline'
                         size='icon'
@@ -497,7 +404,7 @@ export default function RolesPage() {
                 </div>
             )}
 
-            <div className='grid grid-cols-1 gap-6 pt-10 md:grid-cols-2 lg:grid-cols-3'>
+            <div className='grid grid-cols-1 gap-6 pt-6 md:grid-cols-2 lg:grid-cols-3'>
                 <PageCard title={t('admin.roles.help.managing.title')} icon={Shield}>
                     <p className='text-muted-foreground text-sm leading-relaxed'>
                         {t('admin.roles.help.managing.description')}
@@ -517,240 +424,6 @@ export default function RolesPage() {
                 </PageCard>
             </div>
 
-            <Sheet open={createOpen} onOpenChange={setCreateOpen}>
-                <div className='space-y-6'>
-                    <SheetHeader>
-                        <SheetTitle>{t('admin.roles.form.create_title')}</SheetTitle>
-                        <SheetDescription>{t('admin.roles.create_description')}</SheetDescription>
-                    </SheetHeader>
-
-                    <form onSubmit={handleCreate} className='space-y-4'>
-                        <div className='space-y-2'>
-                            <Label htmlFor='create-name'>{t('admin.roles.form.name')}</Label>
-                            <Input
-                                id='create-name'
-                                value={newRole.name}
-                                onChange={(e) => setNewRole({ ...newRole, name: e.target.value })}
-                                required
-                                placeholder='admin'
-                            />
-                        </div>
-
-                        <div className='space-y-2'>
-                            <Label htmlFor='create-display-name'>{t('admin.roles.form.display_name')}</Label>
-                            <Input
-                                id='create-display-name'
-                                value={newRole.display_name}
-                                onChange={(e) => setNewRole({ ...newRole, display_name: e.target.value })}
-                                required
-                                placeholder='Administrator'
-                            />
-                        </div>
-
-                        <div className='space-y-2'>
-                            <Label htmlFor='create-color'>{t('admin.roles.form.color')}</Label>
-                            <div className='flex items-center gap-2'>
-                                <Input
-                                    type='color'
-                                    id='create-color-picker'
-                                    value={newRole.color}
-                                    onChange={(e) => {
-                                        setNewRole({ ...newRole, color: e.target.value });
-                                        setRoleColorHex(e.target.value.toUpperCase());
-                                    }}
-                                    className='h-10 w-12 cursor-pointer p-1'
-                                />
-                                <Input
-                                    id='create-color'
-                                    value={roleColorHex}
-                                    onChange={(e) => {
-                                        setRoleColorHex(e.target.value);
-                                        if (/^#[0-9A-F]{6}$/i.test(e.target.value)) {
-                                            setNewRole({ ...newRole, color: e.target.value });
-                                        }
-                                    }}
-                                    required
-                                    placeholder='#5B8DEF'
-                                    className='flex-1'
-                                />
-                            </div>
-                        </div>
-
-                        <SheetFooter>
-                            <Button type='submit' loading={isSubmitting}>
-                                {t('admin.roles.form.submit_create')}
-                            </Button>
-                        </SheetFooter>
-                    </form>
-                </div>
-            </Sheet>
-
-            <Sheet open={editOpen} onOpenChange={setEditOpen}>
-                <div className='space-y-6'>
-                    <SheetHeader>
-                        <SheetTitle>{t('admin.roles.form.edit_title')}</SheetTitle>
-                        <SheetDescription>{t('admin.roles.edit_description')}</SheetDescription>
-                    </SheetHeader>
-
-                    {editingRole && (
-                        <form onSubmit={handleUpdate} className='space-y-4'>
-                            <div className='space-y-2'>
-                                <Label htmlFor='edit-name'>{t('admin.roles.form.name')}</Label>
-                                <Input
-                                    id='edit-name'
-                                    value={editingRole.name}
-                                    onChange={(e) => setEditingRole({ ...editingRole, name: e.target.value })}
-                                    required
-                                />
-                            </div>
-
-                            <div className='space-y-2'>
-                                <Label htmlFor='edit-display-name'>{t('admin.roles.form.display_name')}</Label>
-                                <Input
-                                    id='edit-display-name'
-                                    value={editingRole.display_name}
-                                    onChange={(e) => setEditingRole({ ...editingRole, display_name: e.target.value })}
-                                    required
-                                />
-                            </div>
-
-                            <div className='space-y-2'>
-                                <Label htmlFor='edit-color'>{t('admin.roles.form.color')}</Label>
-                                <div className='flex items-center gap-2'>
-                                    <Input
-                                        type='color'
-                                        id='edit-color-picker'
-                                        value={editingRole.color}
-                                        onChange={(e) => setEditingRole({ ...editingRole, color: e.target.value })}
-                                        className='h-10 w-12 cursor-pointer p-1'
-                                    />
-                                    <Input
-                                        id='edit-color'
-                                        value={editingRole.color}
-                                        onChange={(e) => setEditingRole({ ...editingRole, color: e.target.value })}
-                                        required
-                                        className='flex-1'
-                                    />
-                                </div>
-                            </div>
-
-                            <SheetFooter>
-                                <Button type='submit' loading={isSubmitting}>
-                                    {t('admin.roles.form.submit_update')}
-                                </Button>
-                            </SheetFooter>
-                        </form>
-                    )}
-                </div>
-            </Sheet>
-
-            <Sheet open={permissionsOpen} onOpenChange={setPermissionsOpen}>
-                <div className='flex h-full flex-col'>
-                    <SheetHeader>
-                        <SheetTitle className='flex items-center gap-2'>
-                            {t('admin.roles.permissions.title')}
-                            {permissionsRole && (
-                                <Badge
-                                    className='font-mono text-xs'
-                                    style={{ backgroundColor: permissionsRole.color, color: '#fff' }}
-                                >
-                                    {permissionsRole.display_name}
-                                </Badge>
-                            )}
-                        </SheetTitle>
-                        <SheetDescription>{t('admin.roles.permissions.description')}</SheetDescription>
-                    </SheetHeader>
-
-                    <div className='mt-6 flex flex-1 flex-col gap-4 overflow-hidden'>
-                        <div className='group relative'>
-                            <Search className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors' />
-                            <Input
-                                placeholder={t('admin.roles.permissions.search')}
-                                value={permissionSearch}
-                                onChange={(e) => setPermissionSearch(e.target.value)}
-                                className='bg-background/20 focus-visible:ring-primary/30 h-11 border-none pl-10 focus-visible:ring-1'
-                            />
-
-                            {permissionSearch && (
-                                <div className='bg-popover absolute top-[calc(100%+4px)] right-0 left-0 z-50 max-h-[280px] overflow-auto rounded-xl border-none p-1'>
-                                    {filteredAvailablePermissions.length === 0 ? (
-                                        <div className='text-muted-foreground p-4 text-center text-sm'>
-                                            {t('admin.roles.no_results')}
-                                        </div>
-                                    ) : (
-                                        <div className='space-y-0.5'>
-                                            {filteredAvailablePermissions.map((perm) => (
-                                                <div
-                                                    key={perm.value}
-                                                    className='hover:bg-accent hover:text-accent-foreground group/item flex cursor-pointer flex-col rounded-lg p-2 transition-colors'
-                                                    onClick={() => {
-                                                        handleAddPermission(perm.value);
-                                                        setPermissionSearch('');
-                                                    }}
-                                                >
-                                                    <div className='flex items-center justify-between'>
-                                                        <span className='font-mono text-sm font-bold'>
-                                                            {perm.value}
-                                                        </span>
-                                                        <Plus className='h-3 w-3 opacity-0 transition-opacity group-hover/item:opacity-100' />
-                                                    </div>
-                                                    <span className='text-muted-foreground line-clamp-1 text-xs'>
-                                                        {perm.description}
-                                                    </span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                        </div>
-
-                        <div className='bg-card/20 flex-1 overflow-y-auto rounded-xl'>
-                            {loadingPermissions ? (
-                                <div className='flex h-full flex-col items-center justify-center gap-2 p-4'>
-                                    <RefreshCw className='text-muted-foreground h-5 w-5 animate-spin' />
-                                    <span className='text-muted-foreground text-xs'>
-                                        {t('admin.roles.permissions.syncing')}
-                                    </span>
-                                </div>
-                            ) : rolePermissions.length === 0 ? (
-                                <div className='text-muted-foreground flex h-full items-center justify-center p-8 text-center text-sm'>
-                                    {t('admin.roles.form.no_permissions')}
-                                </div>
-                            ) : (
-                                <div className='divide-border/20 divide-y'>
-                                    {rolePermissions.map((perm) => (
-                                        <div
-                                            key={perm.id}
-                                            className='hover:bg-muted/30 group/row flex items-center justify-between p-3 transition-colors'
-                                        >
-                                            <div className='flex min-w-0 flex-col pr-2'>
-                                                <span className='truncate font-mono text-sm font-medium'>
-                                                    {perm.permission}
-                                                </span>
-                                            </div>
-                                            <Button
-                                                size='sm'
-                                                variant='ghost'
-                                                className='text-destructive/50 hover:text-destructive hover:bg-destructive/10 h-8 w-8 p-0'
-                                                onClick={() => handleDeletePermission(perm.id)}
-                                            >
-                                                <X className='h-4 w-4' />
-                                            </Button>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    <SheetFooter className='pt-6'>
-                        <Button variant='secondary' onClick={() => setPermissionsOpen(false)} className='w-full'>
-                            {t('common.close')}
-                        </Button>
-                    </SheetFooter>
-                </div>
-            </Sheet>
             <WidgetRenderer widgets={getWidgets('admin-roles', 'bottom-of-page')} />
         </div>
     );

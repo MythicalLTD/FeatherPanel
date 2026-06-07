@@ -20,6 +20,7 @@ namespace App\Controllers\Admin;
 use App\Chat\Activity;
 use App\Chat\Permission;
 use App\Helpers\ApiResponse;
+use App\Permissions;
 use OpenApi\Attributes as OA;
 use App\CloudFlare\CloudFlareRealIP;
 use Symfony\Component\HttpFoundation\Request;
@@ -355,6 +356,24 @@ class PermissionsController
                 return ApiResponse::error('Permission must be between 2 and 255 characters', 'INVALID_DATA_LENGTH');
             }
         }
+
+        $admin = $request->attributes->get('user');
+        if (
+            $permission['permission'] === Permissions::ADMIN_ROOT
+            && isset($admin['role_id'])
+            && (int) $permission['role_id'] === (int) $admin['role_id']
+            && (
+                (isset($data['permission']) && $data['permission'] !== Permissions::ADMIN_ROOT)
+                || (isset($data['role_id']) && (int) $data['role_id'] !== (int) $admin['role_id'])
+            )
+        ) {
+            return ApiResponse::error(
+                'You cannot remove admin.root from your own role',
+                'CANNOT_REMOVE_OWN_ADMIN_ROOT',
+                403
+            );
+        }
+
         $success = Permission::updatePermission($id, $data);
         if (!$success) {
             return ApiResponse::error('Failed to update permission', 'PERMISSION_UPDATE_FAILED', 400);
@@ -422,6 +441,20 @@ class PermissionsController
         if (!$permission) {
             return ApiResponse::error('Permission not found', 'PERMISSION_NOT_FOUND', 404);
         }
+
+        $admin = $request->attributes->get('user');
+        if (
+            $permission['permission'] === Permissions::ADMIN_ROOT
+            && isset($admin['role_id'])
+            && (int) $permission['role_id'] === (int) $admin['role_id']
+        ) {
+            return ApiResponse::error(
+                'You cannot remove admin.root from your own role',
+                'CANNOT_REMOVE_OWN_ADMIN_ROOT',
+                403
+            );
+        }
+
         $success = Permission::deletePermission($id);
         if (!$success) {
             return ApiResponse::error('Failed to delete permission', 'PERMISSION_DELETE_FAILED', 400);

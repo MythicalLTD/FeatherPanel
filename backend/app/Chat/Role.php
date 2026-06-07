@@ -32,7 +32,7 @@ class Role
             $params['search'] = '%' . $search . '%';
         }
 
-        $sql .= ' LIMIT :limit OFFSET :offset';
+        $sql .= ' ORDER BY id DESC LIMIT :limit OFFSET :offset';
         $stmt = $pdo->prepare($sql);
         if (!empty($params)) {
             foreach ($params as $key => $value) {
