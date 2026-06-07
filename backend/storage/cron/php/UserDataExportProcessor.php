@@ -29,8 +29,8 @@ use App\Services\Wings\Wings;
 use App\Chat\TicketAttachment;
 use App\Config\ConfigInterface;
 use App\Cli\Utils\MinecraftColorCodeSupport;
-use App\Services\UserDataExport\UserDataExportService;
 use App\Services\Tickets\TicketNotificationService;
+use App\Services\UserDataExport\UserDataExportService;
 
 /**
  * Processes queued user data export requests.

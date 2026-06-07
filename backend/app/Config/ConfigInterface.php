@@ -30,6 +30,8 @@ interface ConfigInterface
     public const APP_LOGO_DARK = 'app_logo_dark';
     public const APP_SUPPORT_URL = 'app_support_url';
     public const APP_SSO_REDIRECT_PATH = 'app_sso_redirect_path';
+    /** Default SSO login token lifetime in minutes (admin-generated tokens). */
+    public const APP_SSO_TOKEN_LIFETIME_MINUTES = 'app_sso_token_lifetime_minutes';
     /** When true, VNC wss_url is built from APP_URL so the browser connects to the panel; reverse proxy must forward /vnc-proxy/ to Proxmox. */
     public const VNC_PROXY_VIA_PANEL = 'vnc_proxy_via_panel';
     /** When true, create a short-lived PVE user, grant console ACL, get ticket and return pve_redirect_url so the frontend can open Proxmox noVNC in the browser. */
@@ -120,6 +122,9 @@ interface ConfigInterface
      */
     public const REGISTRATION_ENABLED = 'registration_enabled';
     public const REGISTRATION_REQUIRE_EMAIL_VERIFICATION = 'registration_require_email_verification';
+    /** Limit how many panel accounts may register from the same browser/device fingerprint. */
+    public const REGISTRATION_DEVICE_LIMIT_ENABLED = 'registration_device_limit_enabled';
+    public const REGISTRATION_DEVICE_MAX_ACCOUNTS = 'registration_device_max_accounts';
     /** When true, reject registration/email changes whose domain matches featherpanel_blocked_email_domains (admin-managed). */
     public const EMAIL_DOMAIN_BLOCKING_ENABLED = 'email_domain_blocking_enabled';
     public const REQUIRE_TWO_FA_ADMINS = 'require_two_fa_admins';
@@ -195,6 +200,8 @@ interface ConfigInterface
     public const SERVER_ALLOW_EGG_CHANGE = 'server_allow_egg_change';
     public const SERVER_ALLOW_USER_SERVER_DELETION = 'server_allow_user_server_deletion';
     public const SERVER_ALLOW_STARTUP_CHANGE = 'server_allow_startup_change';
+    /** When true, users may enter a custom Docker image string; otherwise only spell-listed images are allowed. */
+    public const SERVER_ALLOW_CUSTOM_DOCKER_IMAGE = 'server_allow_custom_docker_image';
     public const SERVER_ALLOW_SUBUSERS = 'server_allow_subusers';
     public const SERVER_ALLOW_SCHEDULES = 'server_allow_schedules';
     /**
@@ -228,6 +235,10 @@ interface ConfigInterface
     /**
      * User Related Configs.
      */
+    /** Default avatar provider: gravatar, panel_logo, ui_avatars, robohash, dicebear, custom */
+    public const AVATAR_PROVIDER = 'avatar_provider';
+    /** Custom avatar URL template (only when avatar_provider is custom). Placeholders: {email}, {username}, {name}, {hash}, {app_url} */
+    public const AVATAR_CUSTOM_URL = 'avatar_custom_url';
     public const USER_ALLOW_AVATAR_CHANGE = 'user_allow_avatar_change';
     public const USER_ALLOW_USERNAME_CHANGE = 'user_allow_username_change';
     public const USER_ALLOW_EMAIL_CHANGE = 'user_allow_email_change';

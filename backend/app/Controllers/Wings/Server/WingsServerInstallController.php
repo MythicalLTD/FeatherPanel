@@ -115,14 +115,9 @@ class WingsServerInstallController
         } elseif (!empty($spell['script_container'])) {
             $containerImage = $spell['script_container'];
         } elseif (!empty($spell['docker_images'])) {
-            try {
-                $dockerImages = json_decode($spell['docker_images'], true);
-                if (is_array($dockerImages) && !empty($dockerImages)) {
-                    // Use the first available image from spell or fallback to server image
-                    $containerImage = $dockerImages[0] ?? $server['image'];
-                }
-            } catch (\Exception $e) {
-                // If docker images parsing fails, use server image
+            $resolvedImage = Spell::resolveDefaultDockerImage($spell);
+            if ($resolvedImage !== null) {
+                $containerImage = $resolvedImage;
             }
         }
 

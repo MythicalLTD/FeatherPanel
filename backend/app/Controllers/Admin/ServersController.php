@@ -1640,16 +1640,9 @@ class ServersController
                     $serverUpdateData['startup'] = $newSpell['startup'];
                 }
                 if (!isset($data['image']) && !empty($newSpell['docker_images'])) {
-                    try {
-                        $dockerImages = json_decode($newSpell['docker_images'], true);
-                        if (is_array($dockerImages) && $dockerImages !== []) {
-                            $imageArray = array_values($dockerImages);
-                            if (!empty($imageArray[0])) {
-                                $serverUpdateData['image'] = $imageArray[0];
-                            }
-                        }
-                    } catch (\Exception $e) {
-                        App::getInstance(true)->getLogger()->warning('Failed to parse docker_images for auto-selection: ' . $e->getMessage());
+                    $resolvedImage = Spell::resolveDefaultDockerImage($newSpell);
+                    if ($resolvedImage !== null) {
+                        $serverUpdateData['image'] = $resolvedImage;
                     }
                 }
             }

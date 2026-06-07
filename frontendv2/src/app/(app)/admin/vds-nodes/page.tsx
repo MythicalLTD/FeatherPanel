@@ -27,6 +27,7 @@ import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { PageCard } from '@/components/featherui/PageCard';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { toast } from 'sonner';
 import {
@@ -77,28 +78,46 @@ interface Pagination {
     hasPrev: boolean;
 }
 
+const VDS_NODES_LIST_FILTERS_KEY = 'featherpanel_admin_vds_nodes_filters_v1';
+const VDS_NODES_LIST_FILTERS_DEFAULTS = {
+    searchQuery: '',
+    locationId: '',
+    page: 1,
+    pageSize: 10,
+};
+
 type ConnectionStatus = 'unknown' | 'online' | 'offline';
 
 export default function VdsNodesPage() {
     const { t } = useTranslation();
     const router = useRouter();
     const searchParams = useSearchParams();
-    const locationIdFilter = searchParams.get('location_id');
+    const urlLocationId = searchParams.get('location_id') ?? '';
+
+    const { filters, patchFilters, hydrated } = usePersistedListFilters(
+        VDS_NODES_LIST_FILTERS_KEY,
+        VDS_NODES_LIST_FILTERS_DEFAULTS,
+    );
+    const { searchQuery, page, pageSize } = filters;
+    const locationIdFilter = urlLocationId || filters.locationId || '';
+
+    useEffect(() => {
+        if (urlLocationId && urlLocationId !== filters.locationId) {
+            patchFilters({ locationId: urlLocationId, page: 1 });
+        }
+    }, [urlLocationId, filters.locationId, patchFilters]);
 
     const [loading, setLoading] = useState(true);
     const [vmNodes, setVmNodes] = useState<VmNode[]>([]);
     const [locations, setLocations] = useState<Location[]>([]);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
+    const [searchQueryDebounced, setDebouncedSearchQuery] = useState('');
     const [connectionStatus, setConnectionStatus] = useState<Record<number, ConnectionStatus>>({});
     const [isCheckingConnections, setIsCheckingConnections] = useState(false);
     const [refreshKey, setRefreshKey] = useState(0);
     const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
     const [deleting, setDeleting] = useState(false);
 
-    const [pagination, setPagination] = useState<Pagination>({
-        page: 1,
-        pageSize: 10,
+    const [pagination, setPagination] = useState<Omit<Pagination, 'page' | 'pageSize'>>({
         total: 0,
         totalPages: 0,
         hasNext: false,
@@ -114,12 +133,12 @@ export default function VdsNodesPage() {
     useEffect(() => {
         const timer = setTimeout(() => {
             setDebouncedSearchQuery(searchQuery);
-            if (searchQuery !== debouncedSearchQuery) {
-                setPagination((p) => ({ ...p, page: 1 }));
+            if (searchQuery !== searchQueryDebounced) {
+                patchFilters({ page: 1 });
             }
         }, 500);
         return () => clearTimeout(timer);
-    }, [searchQuery, debouncedSearchQuery]);
+    }, [searchQuery, searchQueryDebounced, patchFilters]);
 
     useEffect(() => {
         const fetchLocations = async () => {
@@ -173,13 +192,17 @@ export default function VdsNodesPage() {
     );
 
     const fetchVmNodes = useCallback(async () => {
+        if (!hydrated) {
+            return;
+        }
+
         setLoading(true);
         try {
             const { data } = await axios.get('/api/admin/vm-nodes', {
                 params: {
-                    page: pagination.page,
-                    limit: pagination.pageSize,
-                    search: debouncedSearchQuery || undefined,
+                    page,
+                    limit: pageSize,
+                    search: searchQueryDebounced || undefined,
                     location_id: locationIdFilter || undefined,
                 },
             });
@@ -188,8 +211,6 @@ export default function VdsNodesPage() {
             setVmNodes(fetchedNodes);
             const apiPagination = data.data.pagination;
             setPagination({
-                page: apiPagination.current_page,
-                pageSize: apiPagination.per_page,
                 total: apiPagination.total_records,
                 totalPages: Math.ceil(apiPagination.total_records / apiPagination.per_page),
                 hasNext: apiPagination.has_next,
@@ -206,7 +227,7 @@ export default function VdsNodesPage() {
         } finally {
             setLoading(false);
         }
-    }, [pagination.page, pagination.pageSize, debouncedSearchQuery, locationIdFilter, t, testAllConnections]);
+    }, [page, pageSize, searchQueryDebounced, locationIdFilter, t, testAllConnections, hydrated]);
 
     useEffect(() => {
         fetchVmNodes();
@@ -284,7 +305,7 @@ export default function VdsNodesPage() {
                     <Input
                         placeholder={t('admin.vdsNodes.search_placeholder')}
                         value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onChange={(e) => patchFilters({ searchQuery: e.target.value })}
                         className='h-11 w-full pl-10'
                     />
                 </div>
@@ -297,21 +318,21 @@ export default function VdsNodesPage() {
                     <Button
                         variant='outline'
                         size='sm'
-                        disabled={!pagination.hasPrev}
-                        onClick={() => setPagination((p) => ({ ...p, page: p.page - 1 }))}
+                        disabled={page === 1}
+                        onClick={() => patchFilters({ page: page - 1 })}
                         className='gap-1.5'
                     >
                         <ChevronLeft className='h-4 w-4' />
                         {t('common.previous')}
                     </Button>
                     <span className='text-sm font-medium'>
-                        {pagination.page} / {pagination.totalPages}
+                        {page} / {pagination.totalPages}
                     </span>
                     <Button
                         variant='outline'
                         size='sm'
-                        disabled={!pagination.hasNext}
-                        onClick={() => setPagination((p) => ({ ...p, page: p.page + 1 }))}
+                        disabled={page === pagination.totalPages}
+                        onClick={() => patchFilters({ page: page + 1 })}
                         className='gap-1.5'
                     >
                         {t('common.next')}
@@ -421,19 +442,19 @@ export default function VdsNodesPage() {
                     <Button
                         variant='outline'
                         size='icon'
-                        disabled={!pagination.hasPrev}
-                        onClick={() => setPagination((p) => ({ ...p, page: p.page - 1 }))}
+                        disabled={page === 1}
+                        onClick={() => patchFilters({ page: page - 1 })}
                     >
                         <ChevronLeft className='h-4 w-4' />
                     </Button>
                     <span className='text-sm font-medium'>
-                        {pagination.page} / {pagination.totalPages}
+                        {page} / {pagination.totalPages}
                     </span>
                     <Button
                         variant='outline'
                         size='icon'
-                        disabled={!pagination.hasNext}
-                        onClick={() => setPagination((p) => ({ ...p, page: p.page + 1 }))}
+                        disabled={page === pagination.totalPages}
+                        onClick={() => patchFilters({ page: page + 1 })}
                     >
                         <ChevronRight className='h-4 w-4' />
                     </Button>

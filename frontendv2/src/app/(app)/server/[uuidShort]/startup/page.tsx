@@ -43,6 +43,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { cn, isEnabled } from '@/lib/utils';
+import { buildSpellDockerImageOptions, resolveSpellDefaultDockerImage } from '@/lib/spellDockerImages';
 import type { Variable, Server, CustomVariable } from '@/types/server';
 
 interface ServerResponse {
@@ -66,6 +67,7 @@ export default function ServerStartupPage() {
     const canRead = hasPermission('startup.read');
     const canUpdateStartup = hasPermission('startup.update') && isEnabled(settings?.server_allow_startup_change);
     const canUpdateDockerImage = hasPermission('startup.docker-image');
+    const allowCustomDockerImage = isEnabled(settings?.server_allow_custom_docker_image);
     const canManageCustomVariables = hasPermission('startup.update');
     const canChangeSpell = isEnabled(settings?.server_allow_egg_change);
 
@@ -75,7 +77,8 @@ export default function ServerStartupPage() {
     const [variables, setVariables] = React.useState<Variable[]>([]);
     const [customVariables, setCustomVariables] = React.useState<CustomVariable[]>([]);
     const [customVariableSaving, setCustomVariableSaving] = React.useState(false);
-    const [availableDockerImages, setAvailableDockerImages] = React.useState<string[]>([]);
+    const [availableDockerImages, setAvailableDockerImages] = React.useState<{ name: string; value: string }[]>([]);
+    const [spellDefaultDockerImage, setSpellDefaultDockerImage] = React.useState('');
     const [defaultStartupCommand, setDefaultStartupCommand] = React.useState('');
 
     const [form, setForm] = React.useState({
@@ -236,26 +239,29 @@ export default function ServerStartupPage() {
                 setVariableValues(values);
 
                 try {
-                    const dockerImages = s.spell?.docker_images;
-                    let images: string[] = [];
-                    if (dockerImages) {
-                        if (typeof dockerImages === 'string') {
-                            const parsed = JSON.parse(dockerImages);
-                            images = Object.values(parsed);
-                        } else {
-                            images = Object.values(dockerImages);
-                        }
-                    }
-                    setAvailableDockerImages(images);
+                    const currentImage = (s.image || s.docker_image || '').trim();
+                    const imageOptions = s.spell
+                        ? buildSpellDockerImageOptions(s.spell, currentImage)
+                        : currentImage
+                          ? [{ name: currentImage, value: currentImage }]
+                          : [];
+                    setAvailableDockerImages(imageOptions);
 
-                    const currentImage = s.image || s.docker_image;
-                    if (currentImage && images.includes(currentImage)) {
+                    const defaultImage = s.spell ? resolveSpellDefaultDockerImage(s.spell) : '';
+                    setSpellDefaultDockerImage(defaultImage);
+
+                    const allowedValues = imageOptions.map((img) => img.value);
+
+                    if (currentImage && allowedValues.includes(currentImage)) {
                         setForm((prev) => ({ ...prev, image: currentImage }));
-                    } else if (images.length > 0) {
-                        setForm((prev) => ({ ...prev, image: images[0] }));
+                    } else if (defaultImage) {
+                        setForm((prev) => ({ ...prev, image: defaultImage }));
+                    } else if (allowedValues.length > 0) {
+                        setForm((prev) => ({ ...prev, image: allowedValues[0] }));
                     }
                 } catch {
                     setAvailableDockerImages([]);
+                    setSpellDefaultDockerImage('');
                 }
             }
         } catch (error) {
@@ -311,9 +317,12 @@ export default function ServerStartupPage() {
         }
 
         try {
-            const payload = {
+            const payload: {
+                startup: string;
+                image?: string;
+                variables: { variable_id: number; variable_value: string }[];
+            } = {
                 startup: form.startup,
-                image: form.image,
                 variables: variables
                     .filter((v) => isEnabled(v.user_editable))
                     .map((v) => ({
@@ -321,6 +330,16 @@ export default function ServerStartupPage() {
                         variable_value: variableValues[v.variable_id] || '',
                     })),
             };
+
+            if (canUpdateDockerImage) {
+                const allowedValues = availableDockerImages.map((img) => img.value);
+                if (!allowCustomDockerImage && allowedValues.length > 0 && !allowedValues.includes(form.image)) {
+                    toast.error(t('serverStartup.dockerImageMustBeFromList'));
+                    setSaving(false);
+                    return;
+                }
+                payload.image = form.image;
+            }
 
             const { data } = await axios.put<{ success: boolean; message?: string }>(
                 `/api/user/servers/${uuidShort}`,
@@ -406,12 +425,14 @@ export default function ServerStartupPage() {
         }
     };
 
+    const selectedDockerImageLabel = availableDockerImages.find((img) => img.value === form.image)?.name || form.image;
+
     const viewableVariables = variables.filter((v) => isEnabled(v.user_viewable) || canUpdateStartup);
     const variableCount = viewableVariables.length + customVariables.length;
     const hasChanges = () => {
         if (!server) return false;
         const startupChanged = form.startup !== (server.startup || '');
-        const imageChanged = form.image !== (server.image || server.docker_image || '');
+        const imageChanged = canUpdateDockerImage && form.image !== (server.image || server.docker_image || '');
         const variablesChanged = variables
             .filter((v) => isEnabled(v.user_editable))
             .some((v) => variableValues[v.variable_id] !== (v.variable_value ?? ''));
@@ -720,57 +741,97 @@ export default function ServerStartupPage() {
                 <div className='space-y-8 lg:col-span-4'>
                     <PageCard title={t('serverStartup.dockerImage')} description='Containerization' icon={Container}>
                         <div className='space-y-6'>
-                            <div className='space-y-2.5'>
-                                <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
-                                    {t('serverStartup.dockerImage')}
-                                </label>
-                                <Input
-                                    value={form.image}
-                                    onChange={(e) => setForm((prev) => ({ ...prev, image: e.target.value }))}
-                                    disabled={!canUpdateDockerImage || saving}
-                                    placeholder='ghcr.io/...'
-                                    className='font-mono text-xs'
-                                />
-                            </div>
+                            {allowCustomDockerImage ? (
+                                <div className='space-y-2.5'>
+                                    <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
+                                        {t('serverStartup.dockerImage')}
+                                    </label>
+                                    <Input
+                                        value={form.image}
+                                        onChange={(e) => setForm((prev) => ({ ...prev, image: e.target.value }))}
+                                        disabled={!canUpdateDockerImage || saving}
+                                        placeholder='ghcr.io/...'
+                                        className='font-mono text-xs'
+                                    />
+                                </div>
+                            ) : (
+                                <div className='space-y-2.5'>
+                                    <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
+                                        {t('serverStartup.dockerImage')}
+                                    </label>
+                                    <div className='bg-muted/30 border-border/50 rounded-xl border px-3 py-2.5 text-xs'>
+                                        <p className='font-medium'>
+                                            {selectedDockerImageLabel || t('serverStartup.noDockerImageSelected')}
+                                        </p>
+                                        {form.image && selectedDockerImageLabel !== form.image && (
+                                            <p className='text-muted-foreground mt-1 truncate font-mono text-[10px]'>
+                                                {form.image}
+                                            </p>
+                                        )}
+                                    </div>
+                                    <p className='text-muted-foreground text-xs'>
+                                        {t('serverStartup.dockerImageListOnlyHelp')}
+                                    </p>
+                                </div>
+                            )}
 
                             <div className='space-y-3'>
                                 <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
                                     {t('serverStartup.availableImages')}
                                 </label>
-                                <div className='scrollbar-hide max-h-50 space-y-2 overflow-y-auto pr-2'>
-                                    {availableDockerImages.map((image) => (
-                                        <div
-                                            key={image}
-                                            onClick={() =>
-                                                canUpdateDockerImage &&
-                                                !saving &&
-                                                setForm((prev) => ({ ...prev, image }))
-                                            }
-                                            className={cn(
-                                                'group/img relative cursor-pointer overflow-hidden rounded-xl border p-3 transition-all duration-300',
-                                                form.image === image
-                                                    ? 'border-blue-500/40 bg-blue-500/10'
-                                                    : 'bg-card/50 border-border/5 hover:border-border/20',
-                                            )}
-                                        >
-                                            <div className='relative z-10 flex items-center justify-between gap-3'>
-                                                <p
-                                                    className={cn(
-                                                        'truncate font-mono text-[10px] font-bold transition-colors',
-                                                        form.image === image
-                                                            ? 'text-blue-500'
-                                                            : 'text-muted-foreground group-hover/img:text-foreground',
-                                                    )}
-                                                >
-                                                    {image}
-                                                </p>
-                                                {form.image === image && (
-                                                    <div className='h-1.5 w-1.5 rounded-full bg-blue-500' />
+                                {availableDockerImages.length === 0 ? (
+                                    <p className='text-muted-foreground text-xs'>
+                                        {t('serverStartup.noDockerImagesConfigured')}
+                                    </p>
+                                ) : (
+                                    <div className='scrollbar-hide max-h-50 space-y-2 overflow-y-auto pr-2'>
+                                        {availableDockerImages.map((image) => (
+                                            <div
+                                                key={image.value}
+                                                onClick={() =>
+                                                    canUpdateDockerImage &&
+                                                    !saving &&
+                                                    setForm((prev) => ({ ...prev, image: image.value }))
+                                                }
+                                                className={cn(
+                                                    'group/img relative overflow-hidden rounded-xl border p-3 transition-all duration-300',
+                                                    canUpdateDockerImage
+                                                        ? 'cursor-pointer'
+                                                        : 'cursor-default opacity-80',
+                                                    form.image === image.value
+                                                        ? 'border-blue-500/40 bg-blue-500/10'
+                                                        : 'bg-card/50 border-border/5 hover:border-border/20',
                                                 )}
+                                            >
+                                                <div className='relative z-10 flex items-center justify-between gap-3'>
+                                                    <div className='min-w-0'>
+                                                        <p
+                                                            className={cn(
+                                                                'truncate text-sm font-medium transition-colors',
+                                                                form.image === image.value
+                                                                    ? 'text-blue-500'
+                                                                    : 'text-foreground group-hover/img:text-foreground',
+                                                            )}
+                                                        >
+                                                            {image.name}
+                                                            {image.value === spellDefaultDockerImage && (
+                                                                <span className='text-muted-foreground ml-2 text-xs font-normal'>
+                                                                    ({t('serverStartup.spellDefaultDockerImage')})
+                                                                </span>
+                                                            )}
+                                                        </p>
+                                                        <p className='text-muted-foreground truncate font-mono text-[10px]'>
+                                                            {image.value}
+                                                        </p>
+                                                    </div>
+                                                    {form.image === image.value && (
+                                                        <div className='h-1.5 w-1.5 shrink-0 rounded-full bg-blue-500' />
+                                                    )}
+                                                </div>
                                             </div>
-                                        </div>
-                                    ))}
-                                </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </PageCard>

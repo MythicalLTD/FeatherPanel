@@ -22,9 +22,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/featherui/Button';
 import { Plus, Trash2, Lock } from 'lucide-react';
+import { DockerImageField, DockerImageOption } from '@/components/admin/DockerImageField';
 import { CustomVariable, TabProps } from './types';
 
 interface StartupTabProps extends TabProps {
+    dockerImages: DockerImageOption[];
+    spellDefaultDockerImage: string;
     customVariables: CustomVariable[];
     customVariableForm: {
         name: string;
@@ -49,6 +52,8 @@ export function StartupTab({
     form,
     setForm,
     errors,
+    dockerImages,
+    spellDefaultDockerImage,
     customVariables,
     customVariableForm,
     customVariableSaving,
@@ -59,42 +64,56 @@ export function StartupTab({
     const { t } = useTranslation();
 
     return (
-        <PageCard
-            title={t('admin.servers.edit.startup.title')}
-            description={t('admin.servers.edit.startup.description')}
-        >
-            <div className='space-y-3'>
-                <Label className='flex items-center gap-1.5'>
-                    {t('admin.servers.form.startup')}
-                    <span className='font-bold text-red-500'>*</span>
-                </Label>
-                <Input
-                    value={form.startup}
-                    onChange={(e) => setForm((prev) => ({ ...prev, startup: e.target.value }))}
-                    placeholder={t('admin.servers.form.startup_placeholder')}
-                    className={`bg-muted/30 h-11 font-mono ${errors.startup ? 'border-red-500' : ''}`}
-                />
-                {errors.startup && <p className='text-xs text-red-500'>{errors.startup}</p>}
-                <p className='text-muted-foreground text-xs'>{t('admin.servers.form.startup_help')}</p>
+        <div className='space-y-6'>
+            <PageCard
+                title={t('admin.servers.edit.startup.title')}
+                description={t('admin.servers.edit.startup.description')}
+            >
+                <div className='space-y-3'>
+                    <Label className='flex items-center gap-1.5'>
+                        {t('admin.servers.form.startup')}
+                        <span className='font-bold text-red-500'>*</span>
+                    </Label>
+                    <Input
+                        value={form.startup}
+                        onChange={(e) => setForm((prev) => ({ ...prev, startup: e.target.value }))}
+                        placeholder={t('admin.servers.form.startup_placeholder')}
+                        className={`bg-muted/30 h-11 font-mono ${errors.startup ? 'border-red-500' : ''}`}
+                    />
+                    {errors.startup && <p className='text-xs text-red-500'>{errors.startup}</p>}
+                    <p className='text-muted-foreground text-xs'>{t('admin.servers.form.startup_help')}</p>
 
-                <div className='bg-muted/20 border-border/50 mt-4 rounded-xl border p-4'>
-                    <p className='mb-2 text-sm font-medium'>{t('admin.servers.edit.startup.available_variables')}</p>
-                    <div className='flex flex-wrap gap-2'>
-                        <code className='bg-muted rounded px-2 py-1 text-xs'>{'{{SERVER_MEMORY}}'}</code>
-                        <code className='bg-muted rounded px-2 py-1 text-xs'>{'{{SERVER_IP}}'}</code>
-                        <code className='bg-muted rounded px-2 py-1 text-xs'>{'{{SERVER_PORT}}'}</code>
+                    <div className='bg-muted/20 border-border/50 mt-4 rounded-xl border p-4'>
+                        <p className='mb-2 text-sm font-medium'>
+                            {t('admin.servers.edit.startup.available_variables')}
+                        </p>
+                        <div className='flex flex-wrap gap-2'>
+                            <code className='bg-muted rounded px-2 py-1 text-xs'>{'{{SERVER_MEMORY}}'}</code>
+                            <code className='bg-muted rounded px-2 py-1 text-xs'>{'{{SERVER_IP}}'}</code>
+                            <code className='bg-muted rounded px-2 py-1 text-xs'>{'{{SERVER_PORT}}'}</code>
+                        </div>
                     </div>
                 </div>
+            </PageCard>
 
-                <div className='border-border/50 bg-muted/20 mt-6 space-y-4 rounded-xl border p-4'>
-                    <div>
-                        <p className='text-sm font-medium'>Custom environment variables</p>
-                        <p className='text-muted-foreground mt-1 text-xs'>
-                            These are synced to Wings without a server transfer. Encrypted values are hidden after
-                            creation.
-                        </p>
-                    </div>
+            <PageCard
+                title={t('admin.servers.form.docker_image')}
+                description={t('admin.servers.edit.startup.docker_image_description')}
+            >
+                <DockerImageField
+                    value={form.image}
+                    onChange={(image) => setForm((prev) => ({ ...prev, image }))}
+                    images={dockerImages}
+                    defaultImage={spellDefaultDockerImage}
+                    error={errors.image}
+                />
+            </PageCard>
 
+            <PageCard
+                title='Custom environment variables'
+                description='Server-specific variables synced to Wings without a transfer.'
+            >
+                <div className='space-y-4'>
                     {customVariables.length > 0 && (
                         <div className='grid grid-cols-1 gap-3 md:grid-cols-2'>
                             {customVariables.map((variable) => (
@@ -188,7 +207,7 @@ export function StartupTab({
                         <span>Encrypt this value and hide it after save</span>
                     </label>
                 </div>
-            </div>
-        </PageCard>
+            </PageCard>
+        </div>
     );
 }

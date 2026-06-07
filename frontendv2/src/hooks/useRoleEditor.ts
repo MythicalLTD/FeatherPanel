@@ -22,13 +22,7 @@ import { toast } from 'sonner';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSession } from '@/contexts/SessionContext';
 import Permissions from '@/lib/permissions';
-import {
-    pickDefaultRoleColor,
-    slugifyRoleName,
-    type Role,
-    type RoleForm,
-    type RolePermission,
-} from '@/lib/role-utils';
+import { pickDefaultRoleColor, slugifyRoleName, type Role, type RoleForm, type RolePermission } from '@/lib/role-utils';
 
 interface UseRoleEditorOptions {
     mode: 'create' | 'edit';
@@ -71,20 +65,23 @@ export function useRoleEditor({ mode, roleId, defaultRoleCount = 0, initialTab =
         }
     }, [defaultRoleCount, mode, form.display_name, form.name]);
 
-    const fetchPermissions = useCallback(async (targetRoleId: number) => {
-        setLoadingPermissions(true);
-        try {
-            const { data } = await axios.get('/api/admin/permissions', {
-                params: { role_id: targetRoleId, limit: 500 },
-            });
-            setRolePermissions(data.data.permissions || []);
-        } catch (error) {
-            console.error('Error fetching permissions:', error);
-            toast.error(t('admin.roles.messages.permission_failed'));
-        } finally {
-            setLoadingPermissions(false);
-        }
-    }, [t]);
+    const fetchPermissions = useCallback(
+        async (targetRoleId: number) => {
+            setLoadingPermissions(true);
+            try {
+                const { data } = await axios.get('/api/admin/permissions', {
+                    params: { role_id: targetRoleId, limit: 500 },
+                });
+                setRolePermissions(data.data.permissions || []);
+            } catch (error) {
+                console.error('Error fetching permissions:', error);
+                toast.error(t('admin.roles.messages.permission_failed'));
+            } finally {
+                setLoadingPermissions(false);
+            }
+        },
+        [t],
+    );
 
     useEffect(() => {
         if (mode !== 'edit' || !roleId) return;

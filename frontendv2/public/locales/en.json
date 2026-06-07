@@ -102,7 +102,9 @@
 			"last_name_placeholder": "Doe",
 			"email_placeholder": "john@example.com",
 			"username_placeholder": "johndoe",
-			"password_placeholder": "Create a strong password"
+			"password_placeholder": "Create a strong password",
+			"device_limit": "Too many accounts on this device. Please use your main account: {{username}}, or contact support.",
+			"device_limit_generic": "Too many accounts on this device. Please use your main account or contact support."
 		},
 		"forgot_password": {
 			"title": "Reset your password",
@@ -2467,6 +2469,11 @@
 		"startupHelp": "Edit the command that will be used to start the server.",
 		"dockerImage": "Docker Image",
 		"availableImages": "Available Docker Images",
+		"spellDefaultDockerImage": "spell default",
+		"dockerImageListOnlyHelp": "Select one of the images below. Custom Docker images are disabled by your administrator.",
+		"dockerImageMustBeFromList": "Docker image must be selected from the list configured for this spell.",
+		"noDockerImageSelected": "No Docker image selected",
+		"noDockerImagesConfigured": "No Docker images are configured for this spell.",
 		"variables": "Startup Variables",
 		"variablesHelp": "Configure environmental variables for your server.",
 		"restoreDefault": "Restore Default",
@@ -5745,6 +5752,7 @@
 				"docker_image_help": "Select or enter the Docker image for this spell. This will be used to deploy the server.",
 				"select_docker_image": "Select Docker image...",
 				"available_docker_images": "Available from spell",
+				"spell_default_docker_image": "spell default",
 				"memory": "Memory (MiB)",
 				"memory_help": "The maximum amount of memory allowed for this container. Setting this to 0 will allow unlimited memory usage.",
 				"swap": "Swap (MiB)",
@@ -5891,6 +5899,7 @@
 				"startup": {
 					"title": "Startup Configuration",
 					"description": "Configure the startup command for this server",
+					"docker_image_description": "Select the Docker image used when this server installs and runs. The starred spell default is applied for new servers.",
 					"available_variables": "Available Variables:"
 				},
 				"mounts": {
@@ -6973,6 +6982,10 @@
 			"subtitle": "Manage all users in your system",
 			"search_placeholder": "Search by username, email, or role...",
 			"last_seen": "Last seen",
+			"clear_all_devices": "Clear all device fingerprints",
+			"clear_all_devices_confirm": "Clear every browser/device fingerprint record in the panel? This resets alt detection and registration device limits until users browse again.",
+			"clear_all_devices_success": "All device fingerprint records cleared",
+			"clear_all_devices_failed": "Failed to clear device fingerprint records",
 			"table": {},
 			"actions": {
 				"force_verify_email": "Force verify email"
@@ -7019,6 +7032,18 @@
 				"status_active": "Only active users",
 				"status_banned": "Only banned users"
 			},
+			"sort": {
+				"created_desc": "Recently created",
+				"created_asc": "Oldest created",
+				"last_active_desc": "Recently active",
+				"last_active_asc": "Least recently active",
+				"newest": "Newest first",
+				"oldest": "Oldest first",
+				"username_asc": "Username A–Z",
+				"username_desc": "Username Z–A",
+				"email_asc": "Email A–Z",
+				"email_desc": "Email Z–A"
+			},
 			"common": {},
 			"badges": {
 				"active": "Active",
@@ -7064,6 +7089,7 @@
 					"servers": "Servers",
 					"vds": "VDS",
 					"activities": "Activities",
+					"potential_alts": "Potential Alts",
 					"mails": "Mails"
 				},
 				"form": {
@@ -7136,6 +7162,38 @@
 					"ip": "IP Address",
 					"created": "Created At",
 					"no_activities": "No activity logs found."
+				},
+				"potential_alts": {
+					"title": "Potential Alt Accounts",
+					"description": "These users may be alternate accounts based on shared IP addresses (panel activity, server activity, first/last IP) and browser sync identifiers collected across the panel. Matches are indicative only — shared networks, VPNs, and family devices can produce false positives.",
+					"source_ips": "IPs used by this account",
+					"source_devices": "Browser sync IDs seen for this account",
+					"user": "User",
+					"role": "Role",
+					"shared_ips": "Shared IPs",
+					"signals": "Matched signals",
+					"confidence": "Confidence",
+					"confidence_high": "High",
+					"confidence_medium": "Medium",
+					"confidence_low": "Low",
+					"matches": "Matches",
+					"match_total": "signals",
+					"match_ip": "Shared IP address",
+					"match_device": "Shared browser/device sync ID",
+					"last_seen": "Last Seen",
+					"actions": "Actions",
+					"empty": "No other users share IP addresses or browser sync IDs with this account.",
+					"reasons": {
+						"panel_activity": "Panel activity IP",
+						"server_activity": "Server activity IP",
+						"user_ip": "Account IP",
+						"device_sync": "Browser sync ID",
+						"device_profile": "Browser profile"
+					},
+					"clear_user": "Clear device fingerprints",
+					"clear_user_confirm": "Clear all browser/device fingerprint records for {{username}}? They can register again from the same device after this.",
+					"clear_user_success": "Device fingerprints cleared for this user",
+					"clear_failed": "Failed to clear device fingerprints"
 				},
 				"mails": {
 					"title": "Mails",
@@ -7573,6 +7631,22 @@
 				"require_two_fa_admins": {
 					"label": "Require 2FA for Admins",
 					"description": "Force all administrators to enable Two-Factor Authentication."
+				},
+				"avatar_provider": {
+					"label": "Default Avatar Provider",
+					"description": "Choose which service generates profile pictures for users without a custom avatar.",
+					"options": {
+						"gravatar": "Gravatar (WordPress-style)",
+						"panel_logo": "Panel logo",
+						"ui_avatars": "UI Avatars (initials)",
+						"robohash": "RoboHash",
+						"dicebear": "DiceBear (initials)",
+						"custom": "Custom URL template"
+					}
+				},
+				"avatar_custom_url": {
+					"label": "Custom Avatar URL Template",
+					"description": "Only used when the avatar provider is Custom. Placeholders: {email}, {username}, {name}, {hash}, {app_url}."
 				},
 				"user_allow_avatar_change": {
 					"label": "Allow Avatar Change",
@@ -8492,6 +8566,8 @@
 				"server_configuration": "Server Configuration",
 				"installation_startup_scripts": "Installation & Startup Scripts",
 				"docker_images": "Docker Images",
+				"default_docker_image_help": "Click the star on the image that should be selected by default when creating new servers. Update this when game runtimes change (e.g. newer Java versions).",
+				"set_default_docker_image": "Set as default install image",
 				"add_docker_image": "Add Docker Image",
 				"script_container": "Script Container",
 				"script_entry": "Script Entry",

@@ -30,6 +30,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFo
 import { Select } from '@/components/ui/select-native';
 import { Label } from '@/components/ui/label';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -76,6 +77,13 @@ interface Pagination {
 
 /** Set to false to allow selecting VPS and Web hosting (Proxmox / FeatherFly). */
 const NO_WEBHOSTING = true;
+
+const LOCATIONS_LIST_FILTERS_KEY = 'featherpanel_admin_locations_filters_v1';
+const LOCATIONS_LIST_FILTERS_DEFAULTS = {
+    searchQuery: '',
+    page: 1,
+    pageSize: 10,
+};
 
 const LOCATION_TYPES: {
     value: LocationType;
@@ -235,12 +243,14 @@ export default function LocationsPage() {
     const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [locations, setLocations] = useState<Location[]>([]);
-    const [searchQuery, setSearchQuery] = useState('');
+    const { filters, patchFilters, hydrated } = usePersistedListFilters(
+        LOCATIONS_LIST_FILTERS_KEY,
+        LOCATIONS_LIST_FILTERS_DEFAULTS,
+    );
+    const { searchQuery, page, pageSize } = filters;
     const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
 
-    const [pagination, setPagination] = useState<Pagination>({
-        page: 1,
-        pageSize: 10,
+    const [pagination, setPagination] = useState<Omit<Pagination, 'page' | 'pageSize'>>({
         total: 0,
         totalPages: 0,
         hasNext: false,
@@ -281,11 +291,11 @@ export default function LocationsPage() {
         const timer = setTimeout(() => {
             setDebouncedSearchQuery(searchQuery);
             if (searchQuery !== debouncedSearchQuery) {
-                setPagination((p) => ({ ...p, page: 1 }));
+                patchFilters({ page: 1 });
             }
         }, 500);
         return () => clearTimeout(timer);
-    }, [searchQuery, debouncedSearchQuery]);
+    }, [searchQuery, debouncedSearchQuery, patchFilters]);
 
     useEffect(() => {
         const fetchCountryCodes = async () => {
@@ -305,21 +315,23 @@ export default function LocationsPage() {
     }, [t]);
 
     useEffect(() => {
+        if (!hydrated) {
+            return;
+        }
+
         const fetchLocations = async () => {
             setLoading(true);
             try {
                 const { data } = await axios.get('/api/admin/locations', {
                     params: {
-                        page: pagination.page,
-                        limit: pagination.pageSize,
+                        page,
+                        limit: pageSize,
                         search: debouncedSearchQuery || undefined,
                     },
                 });
                 setLocations(data.data.locations || []);
                 const p = data.data.pagination;
                 setPagination({
-                    page: p.current_page,
-                    pageSize: p.per_page,
                     total: p.total_records,
                     totalPages: Math.ceil(p.total_records / p.per_page),
                     hasNext: p.has_next,
@@ -332,7 +344,7 @@ export default function LocationsPage() {
             }
         };
         fetchLocations();
-    }, [pagination.page, pagination.pageSize, debouncedSearchQuery, refreshKey, t]);
+    }, [page, pageSize, debouncedSearchQuery, refreshKey, t, hydrated]);
 
     const handleEdit = async (location: Location) => {
         try {
@@ -450,7 +462,7 @@ export default function LocationsPage() {
                     <Input
                         placeholder={t('admin.locations.search_placeholder')}
                         value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onChange={(e) => patchFilters({ searchQuery: e.target.value })}
                         className='h-11 w-full pl-10'
                     />
                 </div>
@@ -463,21 +475,21 @@ export default function LocationsPage() {
                     <Button
                         variant='outline'
                         size='sm'
-                        disabled={!pagination.hasPrev}
-                        onClick={() => setPagination((p) => ({ ...p, page: p.page - 1 }))}
+                        disabled={page === 1}
+                        onClick={() => patchFilters({ page: page - 1 })}
                         className='gap-1.5'
                     >
                         <ChevronLeft className='h-4 w-4' />
                         {t('common.previous')}
                     </Button>
                     <span className='text-sm font-medium'>
-                        {pagination.page} / {pagination.totalPages}
+                        {page} / {pagination.totalPages}
                     </span>
                     <Button
                         variant='outline'
                         size='sm'
-                        disabled={!pagination.hasNext}
-                        onClick={() => setPagination((p) => ({ ...p, page: p.page + 1 }))}
+                        disabled={page === pagination.totalPages}
+                        onClick={() => patchFilters({ page: page + 1 })}
                         className='gap-1.5'
                     >
                         {t('common.next')}
@@ -586,19 +598,19 @@ export default function LocationsPage() {
                     <Button
                         variant='outline'
                         size='icon'
-                        disabled={!pagination.hasPrev}
-                        onClick={() => setPagination((p) => ({ ...p, page: p.page - 1 }))}
+                        disabled={page === 1}
+                        onClick={() => patchFilters({ page: page - 1 })}
                     >
                         <ChevronLeft className='h-4 w-4' />
                     </Button>
                     <span className='text-sm font-medium'>
-                        {pagination.page} / {pagination.totalPages}
+                        {page} / {pagination.totalPages}
                     </span>
                     <Button
                         variant='outline'
                         size='icon'
-                        disabled={!pagination.hasNext}
-                        onClick={() => setPagination((p) => ({ ...p, page: p.page + 1 }))}
+                        disabled={page === pagination.totalPages}
+                        onClick={() => patchFilters({ page: page + 1 })}
                     >
                         <ChevronRight className='h-4 w-4' />
                     </Button>

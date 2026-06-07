@@ -23,7 +23,6 @@ use App\Chat\Database;
 use App\Helpers\UUIDUtils;
 use App\Cli\CommandBuilder;
 use App\Config\ConfigFactory;
-use App\Config\ConfigInterface;
 use App\Helpers\EmailDomainValidator;
 
 class Saas extends App implements CommandBuilder
@@ -196,8 +195,6 @@ class Saas extends App implements CommandBuilder
         }
 
         $uuid = UUIDUtils::generateV4();
-        $config = self::$app->getConfig();
-        $avatar = $config->getSetting(ConfigInterface::APP_LOGO_WHITE, 'https://github.com/featherpanel-com.png');
 
         $data = [
             'username' => $username,
@@ -207,7 +204,6 @@ class Saas extends App implements CommandBuilder
             'password' => password_hash($password, PASSWORD_BCRYPT),
             'uuid' => $uuid,
             'remember_token' => User::generateAccountToken(),
-            'avatar' => $avatar,
             'role_id' => $roleId,
         ];
 

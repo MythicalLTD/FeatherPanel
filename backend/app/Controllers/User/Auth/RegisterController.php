@@ -26,10 +26,12 @@ use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
 use App\Mail\templates\Welcome;
+use App\Helpers\UserDeviceTracker;
 use App\Mail\templates\VerifyEmail;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Helpers\EmailDomainValidator;
 use App\Plugins\Events\Events\AuthEvent;
+use App\Helpers\UserDeviceRegistrationGuard;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -204,6 +206,24 @@ class RegisterController
             return ApiResponse::error('Email already exists', 'EMAIL_ALREADY_EXISTS');
         }
 
+        $deviceLimitResponse = UserDeviceRegistrationGuard::assertRegistrationAllowed($request, $config);
+        if ($deviceLimitResponse !== null) {
+            global $eventManager;
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    AuthEvent::onAuthRegistrationFailed(),
+                    [
+                        'email' => $data['email'],
+                        'username' => $data['username'],
+                        'reason' => 'DEVICE_ACCOUNT_LIMIT',
+                        'ip_address' => CloudFlareRealIP::getRealIP(),
+                    ]
+                );
+            }
+
+            return $deviceLimitResponse;
+        }
+
         $tempPassword = $data['password'];
         $emailVerificationToken = $requiresEmailVerification ? bin2hex(random_bytes(32)) : null;
         // Create user
@@ -288,6 +308,8 @@ class RegisterController
             'context' => 'User registered',
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
+
+        UserDeviceTracker::trackFromRequest($request, $createdUser);
 
         if (!$requiresEmailVerification) {
             // Automatically log in the user after registration

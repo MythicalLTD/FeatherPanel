@@ -46,6 +46,7 @@ import {
 import axios, { isAxiosError } from 'axios';
 import { toast } from 'sonner';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
 interface MailTemplate {
@@ -67,20 +68,29 @@ interface Pagination {
     to: number;
 }
 
+const MAIL_TEMPLATES_LIST_FILTERS_KEY = 'featherpanel_admin_mail_templates_filters_v1';
+const MAIL_TEMPLATES_LIST_FILTERS_DEFAULTS = {
+    searchQuery: '',
+    page: 1,
+    pageSize: 10,
+};
+
 export default function MailTemplatesPage() {
     const { t } = useTranslation();
     const [loading, setLoading] = useState(true);
     const [templates, setTemplates] = useState<MailTemplate[]>([]);
-    const [pagination, setPagination] = useState<Pagination>({
-        page: 1,
-        pageSize: 10,
+    const { filters, patchFilters, hydrated } = usePersistedListFilters(
+        MAIL_TEMPLATES_LIST_FILTERS_KEY,
+        MAIL_TEMPLATES_LIST_FILTERS_DEFAULTS,
+    );
+    const { searchQuery, page, pageSize } = filters;
+    const [pagination, setPagination] = useState<Omit<Pagination, 'page' | 'pageSize'>>({
         total: 0,
         hasNext: false,
         hasPrev: false,
         from: 0,
         to: 0,
     });
-    const [searchQuery, setSearchQuery] = useState('');
     const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
 
     const [createOpen, setCreateOpen] = useState(false);
@@ -103,19 +113,25 @@ export default function MailTemplatesPage() {
         const timer = setTimeout(() => {
             setDebouncedSearchQuery(searchQuery);
             if (searchQuery !== debouncedSearchQuery) {
-                setPagination((p) => ({ ...p, page: 1 }));
+                patchFilters({ page: 1 });
             }
         }, 500);
         return () => clearTimeout(timer);
-    }, [searchQuery, debouncedSearchQuery]);
+    }, [searchQuery, debouncedSearchQuery, patchFilters]);
+
+    const totalPages = Math.ceil(pagination.total / pageSize) || 1;
 
     const fetchTemplates = useCallback(async () => {
+        if (!hydrated) {
+            return;
+        }
+
         setLoading(true);
         try {
             const { data } = await axios.get('/api/admin/mail-templates', {
                 params: {
-                    page: pagination.page,
-                    limit: pagination.pageSize,
+                    page,
+                    limit: pageSize,
                     search: debouncedSearchQuery || undefined,
                 },
             });
@@ -123,8 +139,6 @@ export default function MailTemplatesPage() {
                 setTemplates(data.data.templates || []);
                 const apiPag = data.data.pagination;
                 setPagination({
-                    page: apiPag.current_page,
-                    pageSize: apiPag.per_page,
                     total: apiPag.total_records,
                     hasNext: apiPag.has_next,
                     hasPrev: apiPag.has_prev,
@@ -140,7 +154,7 @@ export default function MailTemplatesPage() {
         } finally {
             setLoading(false);
         }
-    }, [pagination.page, pagination.pageSize, debouncedSearchQuery, t]);
+    }, [page, pageSize, debouncedSearchQuery, t, hydrated]);
 
     useEffect(() => {
         fetchTemplates();
@@ -298,33 +312,33 @@ export default function MailTemplatesPage() {
                         className='h-11 w-full pl-10'
                         placeholder={t('admin.mail_templates.search_placeholder')}
                         value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onChange={(e) => patchFilters({ searchQuery: e.target.value })}
                     />
                 </div>
             </div>
 
             <WidgetRenderer widgets={getWidgets('admin-mail-templates', 'before-list')} />
 
-            {pagination.total > pagination.pageSize && !loading && (
+            {pagination.total > pageSize && !loading && (
                 <div className='border-border bg-card/50 mb-4 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
                     <Button
                         variant='outline'
                         size='sm'
-                        disabled={!pagination.hasPrev}
-                        onClick={() => setPagination((p) => ({ ...p, page: p.page - 1 }))}
+                        disabled={page === 1}
+                        onClick={() => patchFilters({ page: page - 1 })}
                         className='gap-1.5'
                     >
                         <ChevronLeft className='h-4 w-4' />
                         {t('common.previous')}
                     </Button>
                     <span className='text-sm font-medium'>
-                        {pagination.page} / {Math.ceil(pagination.total / pagination.pageSize)}
+                        {page} / {totalPages}
                     </span>
                     <Button
                         variant='outline'
                         size='sm'
-                        disabled={!pagination.hasNext}
-                        onClick={() => setPagination((p) => ({ ...p, page: p.page + 1 }))}
+                        disabled={page === totalPages}
+                        onClick={() => patchFilters({ page: page + 1 })}
                         className='gap-1.5'
                     >
                         {t('common.next')}
@@ -398,24 +412,24 @@ export default function MailTemplatesPage() {
                         ))}
                     </div>
 
-                    {pagination.total > pagination.pageSize && (
+                    {pagination.total > pageSize && (
                         <div className='mt-8 flex items-center justify-center gap-2'>
                             <Button
                                 variant='outline'
                                 size='icon'
-                                disabled={!pagination.hasPrev}
-                                onClick={() => setPagination((p) => ({ ...p, page: p.page - 1 }))}
+                                disabled={page === 1}
+                                onClick={() => patchFilters({ page: page - 1 })}
                             >
                                 <ChevronLeft className='h-4 w-4' />
                             </Button>
                             <span className='text-sm font-medium'>
-                                {pagination.page} / {Math.ceil(pagination.total / pagination.pageSize)}
+                                {page} / {totalPages}
                             </span>
                             <Button
                                 variant='outline'
                                 size='icon'
-                                disabled={!pagination.hasNext}
-                                onClick={() => setPagination((p) => ({ ...p, page: p.page + 1 }))}
+                                disabled={page === totalPages}
+                                onClick={() => patchFilters({ page: page + 1 })}
                             >
                                 <ChevronRight className='h-4 w-4' />
                             </Button>

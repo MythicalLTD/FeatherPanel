@@ -58,11 +58,9 @@ export function AuthLegalNotice({ variant = 'login', className }: AuthLegalNotic
 
     return (
         <p className={cn('text-muted-foreground text-center text-xs leading-relaxed', className)}>
-            {prefix}{' '}
-            {terms ? <LegalLink link={terms} /> : null}
+            {prefix} {terms ? <LegalLink link={terms} /> : null}
             {terms && privacy ? ` ${t('auth.legal.and')} ` : null}
-            {privacy ? <LegalLink link={privacy} /> : null}
-            .
+            {privacy ? <LegalLink link={privacy} /> : null}.
         </p>
     );
 }

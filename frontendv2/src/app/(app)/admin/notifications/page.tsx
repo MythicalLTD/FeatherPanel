@@ -49,6 +49,7 @@ import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
 interface Notification {
@@ -72,16 +73,25 @@ interface Pagination {
     hasPrev: boolean;
 }
 
+const NOTIFICATIONS_LIST_FILTERS_KEY = 'featherpanel_admin_notifications_filters_v1';
+const NOTIFICATIONS_LIST_FILTERS_DEFAULTS = {
+    searchQuery: '',
+    page: 1,
+    pageSize: 10,
+};
+
 export default function NotificationsPage() {
     const { t } = useTranslation();
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-notifications');
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [loading, setLoading] = useState(true);
-    const [searchQuery, setSearchQuery] = useState('');
+    const { filters, patchFilters, hydrated } = usePersistedListFilters(
+        NOTIFICATIONS_LIST_FILTERS_KEY,
+        NOTIFICATIONS_LIST_FILTERS_DEFAULTS,
+    );
+    const { searchQuery, page, pageSize } = filters;
 
-    const [pagination, setPagination] = useState<Pagination>({
-        page: 1,
-        pageSize: 10,
+    const [pagination, setPagination] = useState<Omit<Pagination, 'page' | 'pageSize'>>({
         total: 0,
         totalPages: 0,
         hasNext: false,
@@ -112,22 +122,26 @@ export default function NotificationsPage() {
         const timer = setTimeout(() => {
             setDebouncedSearchQuery(searchQuery);
             if (searchQuery !== debouncedSearchQuery) {
-                setPagination((prev) => ({ ...prev, page: 1 }));
+                patchFilters({ page: 1 });
             }
         }, 500);
 
         return () => clearTimeout(timer);
-    }, [debouncedSearchQuery, searchQuery]);
+    }, [debouncedSearchQuery, patchFilters, searchQuery]);
 
     useEffect(() => {
+        if (!hydrated) {
+            return;
+        }
+
         const controller = new AbortController();
         const fetchNotifications = async () => {
             setLoading(true);
             try {
                 const { data } = await axios.get('/api/admin/notifications', {
                     params: {
-                        page: pagination.page,
-                        limit: pagination.pageSize,
+                        page,
+                        limit: pageSize,
                         search: debouncedSearchQuery || undefined,
                     },
                     signal: controller.signal,
@@ -135,15 +149,12 @@ export default function NotificationsPage() {
 
                 setNotifications(data.data.notifications || []);
                 const apiPagination = data.data.pagination;
-                setPagination((prev) => ({
-                    ...prev,
-                    page: apiPagination.current_page,
-                    pageSize: apiPagination.per_page,
+                setPagination({
                     total: apiPagination.total_records,
                     totalPages: Math.ceil(apiPagination.total_records / apiPagination.per_page),
                     hasNext: apiPagination.has_next,
                     hasPrev: apiPagination.has_prev,
-                }));
+                });
             } catch (error) {
                 if (!axios.isCancel(error)) {
                     console.error('Error fetching notifications:', error);
@@ -161,7 +172,7 @@ export default function NotificationsPage() {
         return () => {
             controller.abort();
         };
-    }, [pagination.page, pagination.pageSize, debouncedSearchQuery, refreshKey, t, fetchWidgets]);
+    }, [page, pageSize, debouncedSearchQuery, refreshKey, t, fetchWidgets, hydrated]);
 
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -317,7 +328,7 @@ export default function NotificationsPage() {
                     <Input
                         placeholder={t('admin.notifications.search_placeholder')}
                         value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onChange={(e) => patchFilters({ searchQuery: e.target.value })}
                         className='h-11 w-full pl-10'
                     />
                 </div>
@@ -328,21 +339,21 @@ export default function NotificationsPage() {
                     <Button
                         variant='outline'
                         size='sm'
-                        disabled={!pagination.hasPrev}
-                        onClick={() => setPagination((p) => ({ ...p, page: p.page - 1 }))}
+                        disabled={page === 1}
+                        onClick={() => patchFilters({ page: page - 1 })}
                         className='gap-1.5'
                     >
                         <ChevronLeft className='h-4 w-4' />
                         {t('common.previous')}
                     </Button>
                     <span className='text-sm font-medium'>
-                        {pagination.page} / {pagination.totalPages}
+                        {page} / {pagination.totalPages}
                     </span>
                     <Button
                         variant='outline'
                         size='sm'
-                        disabled={!pagination.hasNext}
-                        onClick={() => setPagination((p) => ({ ...p, page: p.page + 1 }))}
+                        disabled={page === pagination.totalPages}
+                        onClick={() => patchFilters({ page: page + 1 })}
                         className='gap-1.5'
                     >
                         {t('common.next')}
@@ -442,21 +453,21 @@ export default function NotificationsPage() {
                     <Button
                         variant='outline'
                         size='icon'
-                        disabled={!pagination.hasPrev}
-                        onClick={() => setPagination((p) => ({ ...p, page: p.page - 1 }))}
+                        disabled={page === 1}
+                        onClick={() => patchFilters({ page: page - 1 })}
                     >
                         <ChevronLeft className='h-4 w-4' />
                     </Button>
                     <div className='flex items-center gap-2'>
                         <span className='text-sm font-medium'>
-                            {pagination.page} / {pagination.totalPages}
+                            {page} / {pagination.totalPages}
                         </span>
                     </div>
                     <Button
                         variant='outline'
                         size='icon'
-                        disabled={!pagination.hasNext}
-                        onClick={() => setPagination((p) => ({ ...p, page: p.page + 1 }))}
+                        disabled={page === pagination.totalPages}
+                        onClick={() => patchFilters({ page: page + 1 })}
                     >
                         <ChevronRight className='h-4 w-4' />
                     </Button>

@@ -63,6 +63,7 @@ export interface AppSettings {
     app_logo_dark: string;
     app_support_url: string;
     app_sso_redirect_path?: string;
+    app_sso_token_lifetime_minutes?: string;
     linkedin_url: string;
     telegram_url: string;
     tiktok_url: string;
@@ -84,6 +85,7 @@ export interface AppSettings {
     oidc_enabled: string;
     oidc_provider_name?: string;
     server_allow_startup_change: string;
+    server_allow_custom_docker_image: string;
     server_allow_subusers: string;
     server_allow_schedules: string;
     /** Admin-only: gates lifecycle hooks UI + execution (sidebar entry hidden when false). */
@@ -93,6 +95,8 @@ export interface AppSettings {
     file_trash_retention_days: string;
     server_proxy_max_per_server: string;
     server_allow_cross_realm_spell_change: string;
+    avatar_provider: 'gravatar' | 'panel_logo' | 'ui_avatars' | 'robohash' | 'dicebear' | 'custom';
+    avatar_custom_url?: string;
     user_allow_avatar_change: string;
     user_allow_username_change: string;
     user_allow_email_change: string;

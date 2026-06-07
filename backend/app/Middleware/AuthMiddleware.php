@@ -21,6 +21,7 @@ use App\Chat\User;
 use App\Chat\ApiClient;
 use App\Helpers\ApiResponse;
 use App\Helpers\IpAddressMatcher;
+use App\Helpers\UserDeviceTracker;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Helpers\ApiClientForeignIpNotifier;
 use Symfony\Component\HttpFoundation\Request;
@@ -41,6 +42,7 @@ class AuthMiddleware implements MiddlewareInterface
             }
 
             User::updateUser($userInfo['uuid'], ['last_ip' => CloudFlareRealIP::getRealIP()]);
+            UserDeviceTracker::trackFromRequest($request, $userInfo);
             // Attach user info to the request attributes for downstream use
             $request->attributes->set('user', $userInfo);
             $request->attributes->set('auth_type', 'session');

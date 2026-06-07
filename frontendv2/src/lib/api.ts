@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import axios, { AxiosError, AxiosInstance } from 'axios';
 import { isCloudflareChallengeResponseData, triggerCloudflareRecovery } from '@/lib/cloudflare-challenge';
+import { getClientSyncHeaders } from '@/lib/clientIdentity';
 
 // Same-origin panel API calls must include cookies (session). Default axios does not.
 axios.defaults.withCredentials = true;
@@ -31,14 +32,23 @@ const api = axios.create({
 const handleAuthStateFailure = () => {
     if (typeof window === 'undefined') return;
 
+    const preservedClientSync = localStorage.getItem('fp:ui:pref:sync');
+
     // Clear all storage
     localStorage.clear();
     sessionStorage.clear();
+
+    if (preservedClientSync) {
+        localStorage.setItem('fp:ui:pref:sync', preservedClientSync);
+    }
 
     // Clear cookies
     document.cookie.split(';').forEach((cookie) => {
         const eqPos = cookie.indexOf('=');
         const name = eqPos > -1 ? cookie.substring(0, eqPos).trim() : cookie.trim();
+        if (name === '_fp_ui_sid') {
+            return;
+        }
         document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
     });
 
@@ -46,6 +56,17 @@ const handleAuthStateFailure = () => {
     if (!window.location.pathname.startsWith('/auth')) {
         window.location.href = '/auth/login';
     }
+};
+
+const attachClientSyncRequestInterceptor = (client: AxiosInstance) => {
+    client.interceptors.request.use((config) => {
+        const syncHeaders = getClientSyncHeaders();
+        if (syncHeaders) {
+            config.headers = config.headers ?? {};
+            Object.assign(config.headers, syncHeaders);
+        }
+        return config;
+    });
 };
 
 const attachCommonResponseInterceptor = (client: AxiosInstance) => {
@@ -92,6 +113,8 @@ const attachCommonResponseInterceptor = (client: AxiosInstance) => {
 };
 
 // Attach to both the custom API client and the global axios instance used across the app.
+attachClientSyncRequestInterceptor(api);
+attachClientSyncRequestInterceptor(axios);
 attachCommonResponseInterceptor(api);
 attachCommonResponseInterceptor(axios);
 

@@ -50,6 +50,7 @@ import {
     Realm,
     WizardStep,
 } from './types';
+import { resolveSpellDefaultDockerImage } from '@/lib/spellDockerImages';
 import { Step1CoreDetails } from './Step1CoreDetails';
 import { Step2Allocation } from './Step2Allocation';
 import { Step3Application } from './Step3Application';
@@ -262,15 +263,10 @@ export default function CreateServerPage() {
                     const spell: Spell = spellRes.data.data.spell;
                     setSpellDetails(spell);
 
-                    if (spell.docker_images) {
-                        try {
-                            const dockerImagesObj = JSON.parse(spell.docker_images);
-                            const imagesArray = Object.values(dockerImagesObj) as string[];
-                            if (imagesArray.length > 0) {
-                                setFormData((prev) => ({ ...prev, dockerImage: imagesArray[0] }));
-                            }
-                        } catch {
-                            console.error('Failed to parse docker images');
+                    if (spell.docker_images || spell.default_docker_image) {
+                        const defaultImage = resolveSpellDefaultDockerImage(spell);
+                        if (defaultImage) {
+                            setFormData((prev) => (prev.dockerImage ? prev : { ...prev, dockerImage: defaultImage }));
                         }
                     }
 
@@ -515,6 +511,46 @@ export default function CreateServerPage() {
         }
     }, [spellModalOpen, fetchSpells]);
 
+    const validateFormForSubmit = () => {
+        if (!formData.name.trim()) {
+            toast.error(t('admin.servers.form.wizard.validation.name_required'));
+            return false;
+        }
+        if (!formData.ownerId) {
+            toast.error(t('admin.servers.form.wizard.validation.owner_required'));
+            return false;
+        }
+        if (!formData.locationId) {
+            toast.error(t('admin.servers.form.wizard.validation.location_required'));
+            return false;
+        }
+        if (!formData.nodeId) {
+            toast.error(t('admin.servers.form.wizard.validation.node_required'));
+            return false;
+        }
+        if (!formData.allocationId) {
+            toast.error(t('admin.servers.form.wizard.validation.allocation_required'));
+            return false;
+        }
+        if (!formData.realmId) {
+            toast.error(t('admin.servers.form.wizard.validation.realm_required'));
+            return false;
+        }
+        if (!formData.spellId) {
+            toast.error(t('admin.servers.form.wizard.validation.spell_required'));
+            return false;
+        }
+        if (!formData.dockerImage?.trim()) {
+            toast.error(t('admin.servers.form.wizard.validation.docker_image_required'));
+            return false;
+        }
+        if (!formData.startup?.trim()) {
+            toast.error(t('admin.servers.form.wizard.validation.startup_required'));
+            return false;
+        }
+        return true;
+    };
+
     const validateCurrentStep = () => {
         switch (currentStep) {
             case 1:
@@ -583,7 +619,7 @@ export default function CreateServerPage() {
             }
             return;
         }
-        if (!validateCurrentStep()) return;
+        if (!validateFormForSubmit()) return;
         setSubmitting(true);
 
         try {
@@ -730,7 +766,7 @@ export default function CreateServerPage() {
                             >
                                 <RefreshCw className='h-4 w-4' />
                             </Button>
-                            <Button asChild className='h-10 min-w-[8.5rem] rounded-xl px-5'>
+                            <Button asChild className='h-10 min-w-34 rounded-xl px-5'>
                                 <Link
                                     href={infraGate.gameLocations === 0 ? '/admin/locations' : '/admin/nodes/create'}
                                     className='inline-flex items-center justify-center gap-2'

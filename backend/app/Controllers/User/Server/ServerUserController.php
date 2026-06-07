@@ -698,6 +698,7 @@ class ServerUserController
             'banner' => $spellData['banner'] ?? null,
             'startup' => $spellData['startup'] ?? null,
             'docker_images' => $spellData['docker_images'] ?? null,
+            'default_docker_image' => $spellData['default_docker_image'] ?? null,
             // Features & additional JSON-config fields (decoded further down if JSON)
             'features' => $spellData['features'] ?? null,
             'file_denylist' => $spellData['file_denylist'] ?? null,
@@ -1157,6 +1158,36 @@ class ServerUserController
             if (strlen($image) > 191) {
                 return ApiResponse::error('Docker image is too long (max 191 characters)', 'IMAGE_TOO_LONG', 400);
             }
+
+            $app = App::getInstance(true);
+            $allowCustomDockerImage = $app->getConfig()->getSetting(ConfigInterface::SERVER_ALLOW_CUSTOM_DOCKER_IMAGE, 'false');
+            $allowCustomDockerImage = ($allowCustomDockerImage === 'true' || $allowCustomDockerImage === true || $allowCustomDockerImage === '1' || $allowCustomDockerImage === 1);
+
+            if (!$allowCustomDockerImage) {
+                $spellIdForImage = isset($data['spell_id']) ? (int) $data['spell_id'] : (int) $server['spell_id'];
+                $spellForImage = Spell::getSpellById($spellIdForImage);
+                if (!$spellForImage) {
+                    return ApiResponse::error('Spell not found for Docker image validation', 'SPELL_NOT_FOUND', 404);
+                }
+
+                $allowedImages = Spell::parseDockerImages($spellForImage['docker_images'] ?? null);
+                $currentServerImage = trim((string) ($server['image'] ?? ''));
+                if ($currentServerImage !== '' && !in_array($currentServerImage, $allowedImages, true)) {
+                    $allowedImages[] = $currentServerImage;
+                }
+                $spellDefaultImage = Spell::resolveDefaultDockerImage($spellForImage);
+                if ($spellDefaultImage !== '' && !in_array($spellDefaultImage, $allowedImages, true)) {
+                    $allowedImages[] = $spellDefaultImage;
+                }
+                if ($allowedImages === [] || !in_array($image, $allowedImages, true)) {
+                    return ApiResponse::error(
+                        'Docker image must be one of the images configured for this spell',
+                        'INVALID_DOCKER_IMAGE',
+                        400
+                    );
+                }
+            }
+
             $updateData['image'] = $image;
         }
 

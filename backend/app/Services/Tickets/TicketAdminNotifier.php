@@ -29,8 +29,8 @@ class TicketAdminNotifier
     /**
      * Notify staff with ticket view permission about a new ticket or user reply.
      *
-     * @param array  $ticket  Enriched or raw ticket row
-     * @param string $event   Either `new_ticket` or `user_reply`
+     * @param array $ticket Enriched or raw ticket row
+     * @param string $event Either `new_ticket` or `user_reply`
      * @param string $actorUuid UUID of the user who triggered the event (excluded from recipients)
      */
     public static function notify(array $ticket, string $event, string $actorUuid = ''): void

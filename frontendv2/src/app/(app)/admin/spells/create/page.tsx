@@ -28,7 +28,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { Sparkles, ArrowLeft, Trash2, Plus, Container, Zap, FileCode, Terminal } from 'lucide-react';
+import { Sparkles, ArrowLeft, Trash2, Plus, Container, Zap, FileCode, Terminal, Star } from 'lucide-react';
 import { PageCard } from '@/components/featherui/PageCard';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
@@ -71,6 +71,7 @@ export default function CreateSpellPage() {
     });
 
     const [dockerImages, setDockerImages] = useState<{ name: string; value: string }[]>([]);
+    const [defaultDockerImage, setDefaultDockerImage] = useState('');
     const [features, setFeatures] = useState<string[]>([]);
 
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-spells-create');
@@ -110,6 +111,7 @@ export default function CreateSpellPage() {
             await axios.put('/api/admin/spells', {
                 ...form,
                 docker_images: JSON.stringify(dockerImagesObj),
+                default_docker_image: defaultDockerImage || null,
                 features: JSON.stringify(features),
             });
 
@@ -128,17 +130,30 @@ export default function CreateSpellPage() {
     };
 
     const addDockerImage = () => {
-        setDockerImages([...dockerImages, { name: '', value: '' }]);
+        const next = [...dockerImages, { name: '', value: '' }];
+        setDockerImages(next);
+        if (!defaultDockerImage && next.length === 1) {
+            setDefaultDockerImage('');
+        }
     };
 
     const removeDockerImage = (index: number) => {
-        setDockerImages(dockerImages.filter((_, i) => i !== index));
+        const removed = dockerImages[index];
+        const next = dockerImages.filter((_, i) => i !== index);
+        setDockerImages(next);
+        if (removed?.value && defaultDockerImage === removed.value) {
+            setDefaultDockerImage(next[0]?.value ?? '');
+        }
     };
 
     const updateDockerImage = (index: number, field: 'name' | 'value', value: string) => {
         const updated = [...dockerImages];
+        const previousValue = updated[index].value;
         updated[index][field] = value;
         setDockerImages(updated);
+        if (field === 'value' && defaultDockerImage === previousValue) {
+            setDefaultDockerImage(value);
+        }
     };
 
     const addFeature = () => {
@@ -264,9 +279,26 @@ export default function CreateSpellPage() {
                         <div className='space-y-4'>
                             <div className='space-y-2'>
                                 <Label>{t('admin.spells.form.docker_images')}</Label>
+                                <p className='text-muted-foreground text-xs'>
+                                    {t('admin.spells.form.default_docker_image_help')}
+                                </p>
                                 <div className='space-y-2'>
                                     {dockerImages.map((image, index) => (
                                         <div key={index} className='flex gap-2'>
+                                            <Button
+                                                type='button'
+                                                size='sm'
+                                                variant={
+                                                    defaultDockerImage === image.value && image.value
+                                                        ? 'default'
+                                                        : 'outline'
+                                                }
+                                                onClick={() => setDefaultDockerImage(image.value)}
+                                                disabled={!image.value}
+                                                title={t('admin.spells.form.set_default_docker_image')}
+                                            >
+                                                <Star className='h-4 w-4' />
+                                            </Button>
                                             <Input
                                                 value={image.name}
                                                 onChange={(e) => updateDockerImage(index, 'name', e.target.value)}

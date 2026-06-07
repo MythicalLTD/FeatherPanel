@@ -25,9 +25,9 @@ use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Plugins\Events\Events\TicketEvent;
-use App\Services\Tickets\TicketNotificationService;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Services\Tickets\TicketNotificationService;
 
 #[OA\Schema(
     schema: 'TicketMessage',

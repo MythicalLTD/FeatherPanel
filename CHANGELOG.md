@@ -4,6 +4,12 @@
 
 ### Added
 
+- Configurable default avatar provider in admin settings (Gravatar by default, with panel logo, UI Avatars, RoboHash, DiceBear, and custom URL template support). by @nayskutzu
+- Admin SSO token settings: configure the default token lifetime in App settings, and optionally pass `expires_in` (minutes, 1–1440) when calling `POST /api/admin/users/{uuid}/sso-token`. by @nayskutzu
+- Admin list pages (users, servers, VDS nodes, nodes, VM instances, spells, roles, tickets, and others) now remember search, filters, sort, and pagination in localStorage. by @nayskutzu
+- Spells now support a configurable default Docker image (star icon on the spell Docker tab) so new servers use the correct runtime on first install when game images are updated. by @nayskutzu
+- Server startup Docker image selection is locked to spell-configured images by default; admins can enable custom Docker image input under Settings → Servers (`server_allow_custom_docker_image`, default off). by @nayskutzu
+- Admin server edit now configures Docker image on the Startup tab; create validates the selected image on submit so spell defaults (e.g. Java 25) persist correctly. by @nayskutzu
 - Admin settings to configure the login page default sign-in method, display order of authentication options, and hidden methods (local, LDAP, passkey, email code, Discord, OIDC). by @nayskutzu
 - Admins now get clearer notifications (including email notifications) when there are open support tickets; the ticket section can show all open tickets if the user is an admin. by @nayskutzu
 - Users now receive an email notification when their support ticket is replied to, closed, or reopened. by @nayskutzu
@@ -17,11 +23,20 @@
 - Styles for the auth LDAP button were improved. by @nayskutzu
 - Improved the amazing new role editor page that allows you to edit roles and permissions and thats idiot proof (I HOPE). by @nayskutzu
 - Timezones were missmatched into the server backups page. by @nayskutzu
+- Now you can sort users by newest and oldest and by username. by @nayskutzu
+- Now you can click on the owner's name in the server details page to view the user's profile. by @nayskutzu
+- Admin user edit page now includes a Potential Alts tab that finds other accounts sharing IP addresses with the viewed user. by @nayskutzu
+- Potential alt detection now also compares server activity IPs and hidden browser sync identifiers (localStorage + cookie) collected across the panel. by @nayskutzu
+- Registration can block new accounts when a browser/device already has the maximum allowed panel accounts, pointing users to their main account or support. by @nayskutzu
+- Admins can clear device fingerprint records per user or globally from the Users admin area. by @nayskutzu
 
 ### Fixed
 
+- User server startup page now shows admin-assigned Docker images (e.g. Java 25) even when they are not in the spell image list, matching admin server edit behavior. by @nayskutzu
+- Admin spell export now downloads the PTDL_v2-compatible export file instead of the raw database record, and legacy raw exports can still be imported. by @nayskutzu
 - Admin Updates page plugin bulk updates now call the correct online install API (`/api/admin/plugins/online/install`) instead of a non-existent route. by @nayskutzu
 - Issues related to Discord OAuth2 account linking and registration were fixed. by @nayskutzu
+- Small issues regarding spells export behavior were fixed. by @nayskutzu
 
 ## v1.3.7.3 STABLE
 

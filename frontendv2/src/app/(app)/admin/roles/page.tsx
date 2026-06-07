@@ -42,6 +42,7 @@ import { PageCard } from '@/components/featherui/PageCard';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { cn } from '@/lib/utils';
 import { isDefaultRole, type Role } from '@/lib/role-utils';
@@ -55,6 +56,13 @@ interface Pagination {
     hasPrev: boolean;
 }
 
+const ROLES_LIST_FILTERS_KEY = 'featherpanel_admin_roles_filters_v1';
+const ROLES_LIST_FILTERS_DEFAULTS = {
+    searchQuery: '',
+    page: 1,
+    pageSize: 12,
+};
+
 export default function RolesPage() {
     const { t } = useTranslation();
     const { user } = useSession();
@@ -63,12 +71,14 @@ export default function RolesPage() {
     const [roles, setRoles] = useState<Role[]>([]);
     const [permissionCounts, setPermissionCounts] = useState<Record<number, number>>({});
     const [loading, setLoading] = useState(true);
-    const [searchQuery, setSearchQuery] = useState('');
+    const { filters, patchFilters, hydrated } = usePersistedListFilters(
+        ROLES_LIST_FILTERS_KEY,
+        ROLES_LIST_FILTERS_DEFAULTS,
+    );
+    const { searchQuery, page, pageSize } = filters;
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const [pagination, setPagination] = useState<Pagination>({
-        page: 1,
-        pageSize: 12,
+    const [pagination, setPagination] = useState<Omit<Pagination, 'page' | 'pageSize'>>({
         total: 0,
         totalPages: 0,
         hasNext: false,
@@ -82,22 +92,26 @@ export default function RolesPage() {
         const timer = setTimeout(() => {
             setDebouncedSearchQuery(searchQuery);
             if (searchQuery !== debouncedSearchQuery) {
-                setPagination((prev) => ({ ...prev, page: 1 }));
+                patchFilters({ page: 1 });
             }
         }, 500);
 
         return () => clearTimeout(timer);
-    }, [debouncedSearchQuery, searchQuery]);
+    }, [debouncedSearchQuery, patchFilters, searchQuery]);
 
     useEffect(() => {
+        if (!hydrated) {
+            return;
+        }
+
         const controller = new AbortController();
         const fetchRoles = async () => {
             setLoading(true);
             try {
                 const { data } = await axios.get('/api/admin/roles', {
                     params: {
-                        page: pagination.page,
-                        limit: pagination.pageSize,
+                        page,
+                        limit: pageSize,
                         search: debouncedSearchQuery || undefined,
                     },
                     signal: controller.signal,
@@ -106,15 +120,12 @@ export default function RolesPage() {
                 const fetchedRoles: Role[] = data.data.roles || [];
                 setRoles(fetchedRoles);
                 const apiPagination = data.data.pagination;
-                setPagination((prev) => ({
-                    ...prev,
-                    page: apiPagination.current_page,
-                    pageSize: apiPagination.per_page,
+                setPagination({
                     total: apiPagination.total_records,
                     totalPages: Math.ceil(apiPagination.total_records / apiPagination.per_page),
                     hasNext: apiPagination.has_next,
                     hasPrev: apiPagination.has_prev,
-                }));
+                });
 
                 if (fetchedRoles.length > 0) {
                     const counts = await Promise.all(
@@ -154,7 +165,7 @@ export default function RolesPage() {
         return () => {
             controller.abort();
         };
-    }, [pagination.page, pagination.pageSize, debouncedSearchQuery, refreshKey, t, fetchWidgets]);
+    }, [page, pageSize, debouncedSearchQuery, refreshKey, t, fetchWidgets, hydrated]);
 
     const handleDelete = async (id: number) => {
         if (!confirm(t('admin.roles.delete_confirm'))) return;
@@ -237,7 +248,7 @@ export default function RolesPage() {
                     <Input
                         placeholder={t('admin.roles.search_placeholder')}
                         value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onChange={(e) => patchFilters({ searchQuery: e.target.value })}
                         className='h-11 w-full pl-10'
                     />
                 </div>
@@ -254,21 +265,21 @@ export default function RolesPage() {
                     <Button
                         variant='outline'
                         size='sm'
-                        disabled={!pagination.hasPrev}
-                        onClick={() => setPagination((p) => ({ ...p, page: p.page - 1 }))}
+                        disabled={page === 1}
+                        onClick={() => patchFilters({ page: page - 1 })}
                         className='gap-1.5'
                     >
                         <ChevronLeft className='h-4 w-4' />
                         {t('common.previous')}
                     </Button>
                     <span className='text-sm font-medium'>
-                        {pagination.page} / {pagination.totalPages}
+                        {page} / {pagination.totalPages}
                     </span>
                     <Button
                         variant='outline'
                         size='sm'
-                        disabled={!pagination.hasNext}
-                        onClick={() => setPagination((p) => ({ ...p, page: p.page + 1 }))}
+                        disabled={page === pagination.totalPages}
+                        onClick={() => patchFilters({ page: page + 1 })}
                         className='gap-1.5'
                     >
                         {t('common.next')}
@@ -320,14 +331,18 @@ export default function RolesPage() {
                                         </div>
                                         <div className='min-w-0 flex-1'>
                                             <div className='flex flex-wrap items-center gap-2'>
-                                                <h3 className='truncate text-base font-semibold'>{role.display_name}</h3>
+                                                <h3 className='truncate text-base font-semibold'>
+                                                    {role.display_name}
+                                                </h3>
                                                 {isYours && (
                                                     <Badge variant='secondary' className='text-[10px]'>
                                                         {t('admin.roles.labels.your_role')}
                                                     </Badge>
                                                 )}
                                             </div>
-                                            <p className='text-muted-foreground mt-0.5 font-mono text-xs'>{role.name}</p>
+                                            <p className='text-muted-foreground mt-0.5 font-mono text-xs'>
+                                                {role.name}
+                                            </p>
                                         </div>
                                     </div>
 
@@ -385,19 +400,19 @@ export default function RolesPage() {
                     <Button
                         variant='outline'
                         size='icon'
-                        disabled={!pagination.hasPrev}
-                        onClick={() => setPagination((p) => ({ ...p, page: p.page - 1 }))}
+                        disabled={page === 1}
+                        onClick={() => patchFilters({ page: page - 1 })}
                     >
                         <ChevronLeft className='h-4 w-4' />
                     </Button>
                     <span className='text-sm font-medium'>
-                        {pagination.page} / {pagination.totalPages}
+                        {page} / {pagination.totalPages}
                     </span>
                     <Button
                         variant='outline'
                         size='icon'
-                        disabled={!pagination.hasNext}
-                        onClick={() => setPagination((p) => ({ ...p, page: p.page + 1 }))}
+                        disabled={page === pagination.totalPages}
+                        onClick={() => patchFilters({ page: page + 1 })}
                     >
                         <ChevronRight className='h-4 w-4' />
                     </Button>

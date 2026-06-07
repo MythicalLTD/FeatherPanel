@@ -74,6 +74,7 @@ export interface ServerSpell {
     author?: string;
     version?: string;
     docker_images?: string | Record<string, string>;
+    default_docker_image?: string | null;
     startup?: string;
     realm_id?: number;
 }

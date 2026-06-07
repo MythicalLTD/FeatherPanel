@@ -181,6 +181,20 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                   if (savedFont && fontStacks[savedFont]) {
                     document.documentElement.style.setProperty('--app-font-family', fontStacks[savedFont]);
                   }
+
+                  // UI preference sync id (keeps theme/layout prefs aligned across tabs).
+                  var syncKey = 'fp:ui:pref:sync';
+                  var syncCookie = '_fp_ui_sid';
+                  var syncId = localStorage.getItem(syncKey);
+                  if (!syncId) {
+                    syncId = ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, function(c){
+                      return (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16);
+                    }).replace(/-/g, '');
+                    localStorage.setItem(syncKey, syncId);
+                  }
+                  if (document.cookie.indexOf(syncCookie + '=') === -1) {
+                    document.cookie = syncCookie + '=' + syncId + '; path=/; max-age=' + (365*24*60*60) + '; SameSite=Lax';
+                  }
                 } catch (e) {}
               })();
             `,

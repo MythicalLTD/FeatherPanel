@@ -287,6 +287,9 @@ class UsersController
             $sortOrder = 'ASC';
         }
 
+        // Users table stores account creation time in first_seen, not created_at.
+        $sortByColumn = $sortBy === 'created_at' ? 'first_seen' : $sortBy;
+
         if ($page < 1) {
             $page = 1;
         }
@@ -309,6 +312,7 @@ class UsersController
                 'role_id',
                 'avatar',
                 'last_seen',
+                'first_seen',
                 'email',
                 'mail_verify',
                 'oidc_provider',
@@ -316,7 +320,7 @@ class UsersController
                 'ldap_provider_uuid',
                 'ldap_dn',
             ],
-            $sortBy,
+            $sortByColumn,
             $sortOrder,
             $roleId,
             $banned,
@@ -347,6 +351,7 @@ class UsersController
                 $user['role']['color'] = '#666666';
             }
             $user['email_verified'] = !isset($user['mail_verify']) || trim((string) $user['mail_verify']) === '';
+            $user['created_at'] = $user['first_seen'] ?? null;
             if ($app->isDemoMode()) {
                 $user['first_ip'] = $app->getIPIntoFBIFormat();
                 $user['last_ip'] = $app->getIPIntoFBIFormat();
@@ -665,12 +670,7 @@ class UsersController
         // Generate UUID
         $data['uuid'] = UUIDUtils::generateV4();
         $config = App::getInstance(true)->getConfig();
-        $avatar = $config->getSetting(ConfigInterface::APP_LOGO_WHITE, 'https://github.com/featherpanel-com.png');
         $data['remember_token'] = User::generateAccountToken();
-        // Set default avatar if not provided
-        if (empty($data['avatar'])) {
-            $data['avatar'] = $avatar;
-        }
         // Set default role if not provided
         if (empty($data['role_id'])) {
             $data['role_id'] = 1;
@@ -1042,6 +1042,7 @@ class UsersController
         }
 
         Activity::deleteUserData($user['uuid']);
+        \App\Chat\UserDevice::deleteUserData($user['uuid']);
         MailList::deleteAllMailListsByUserId($user['uuid']);
         ApiClient::deleteAllApiClientsByUserId($user['uuid']);
         Subuser::deleteAllSubusersByUserId((int) $user['id']);
@@ -1257,6 +1258,161 @@ class UsersController
     }
 
     #[OA\Get(
+        path: '/api/admin/users/{uuid}/potential-alts',
+        summary: 'Find potential alt accounts by IP',
+        description: 'Find other users who may be alternate accounts by comparing IP addresses from activity logs and first/last IP fields.',
+        tags: ['Admin - Users'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuid',
+                in: 'path',
+                description: 'User UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string', format: 'uuid')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Potential alt accounts retrieved successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'potential_alts', type: 'array', items: new OA\Items(type: 'object')),
+                        new OA\Property(property: 'source_ips', type: 'array', items: new OA\Items(type: 'string')),
+                        new OA\Property(property: 'total', type: 'integer'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
+            new OA\Response(response: 404, description: 'User not found'),
+        ]
+    )]
+    public function potentialAlts(Request $request, string $uuid): Response
+    {
+        $app = App::getInstance(true);
+        $user = User::getUserByUuid($uuid);
+        if (!$user) {
+            return ApiResponse::error('User not found', 'USER_NOT_FOUND', 404);
+        }
+
+        $result = User::findPotentialAltsByUuid($uuid);
+        $roles = \App\Chat\Role::getAllRoles();
+        $rolesMap = [];
+        foreach ($roles as $role) {
+            $rolesMap[$role['id']] = [
+                'name' => $role['name'],
+                'display_name' => $role['display_name'],
+                'color' => $role['color'],
+            ];
+        }
+
+        $sourceIps = $result['source_ips'];
+        $sourceDevices = $result['source_devices'];
+        if ($app->isDemoMode()) {
+            $sourceIps = array_map(static fn () => $app->getIPIntoFBIFormat(), $sourceIps);
+            $sourceDevices = array_map(static fn ($hash) => substr(hash('sha256', (string) $hash), 0, 16), $sourceDevices);
+        }
+
+        $potentialAlts = [];
+        foreach ($result['potential_alts'] as $alt) {
+            $roleId = $alt['role_id'] ?? null;
+            $alt['role'] = [
+                'name' => $rolesMap[$roleId]['name'] ?? $roleId,
+                'display_name' => $rolesMap[$roleId]['display_name'] ?? 'User',
+                'color' => $rolesMap[$roleId]['color'] ?? '#666666',
+            ];
+            unset($alt['role_id']);
+
+            if ($app->isDemoMode()) {
+                $alt['first_ip'] = $app->getIPIntoFBIFormat();
+                $alt['last_ip'] = $app->getIPIntoFBIFormat();
+                $alt['shared_ips'] = array_map(static fn () => $app->getIPIntoFBIFormat(), $alt['shared_ips']);
+                $alt['shared_devices'] = array_map(static fn () => substr(hash('sha256', uniqid('', true)), 0, 16), $alt['shared_devices']);
+            } else {
+                $alt['shared_devices'] = array_map(static fn ($hash) => substr((string) $hash, 0, 12), $alt['shared_devices']);
+            }
+
+            $alt = TimeHelper::normaliseRow($alt, ['last_seen']);
+            $potentialAlts[] = $alt;
+        }
+
+        return ApiResponse::success([
+            'potential_alts' => $potentialAlts,
+            'source_ips' => $sourceIps,
+            'source_devices' => $sourceDevices,
+            'total' => count($potentialAlts),
+        ], 'Potential alt accounts fetched successfully', 200);
+    }
+
+    #[OA\Delete(
+        path: '/api/admin/users/{uuid}/devices',
+        summary: 'Clear device fingerprints for a user',
+        description: 'Remove all browser/device sync records associated with a user. Useful when clearing false positives or after support review.',
+        tags: ['Admin - Users'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuid',
+                in: 'path',
+                description: 'User UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string', format: 'uuid')
+            ),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Device records cleared successfully'),
+            new OA\Response(response: 404, description: 'User not found'),
+        ]
+    )]
+    public function clearUserDevices(Request $request, string $uuid): Response
+    {
+        $user = User::getUserByUuid($uuid);
+        if (!$user) {
+            return ApiResponse::error('User not found', 'USER_NOT_FOUND', 404);
+        }
+
+        if (!\App\Chat\UserDevice::deleteUserData($uuid)) {
+            return ApiResponse::error('Failed to clear device records', 'DEVICE_CLEAR_FAILED', 500);
+        }
+
+        $admin = $request->attributes->get('user');
+        Activity::createActivity([
+            'user_uuid' => $admin['uuid'] ?? $uuid,
+            'name' => 'admin_clear_user_devices',
+            'context' => 'Cleared device fingerprints for user ' . $user['username'] . ' (' . $uuid . ')',
+            'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        return ApiResponse::success([], 'Device records cleared for user', 200);
+    }
+
+    #[OA\Delete(
+        path: '/api/admin/devices',
+        summary: 'Clear all device fingerprints globally',
+        description: 'Remove every browser/device sync record in the panel. Use after policy changes or to reset alt detection data.',
+        tags: ['Admin - Users'],
+        responses: [
+            new OA\Response(response: 200, description: 'All device records cleared successfully'),
+        ]
+    )]
+    public function clearAllDevices(Request $request): Response
+    {
+        if (!\App\Chat\UserDevice::deleteAll()) {
+            return ApiResponse::error('Failed to clear device records', 'DEVICE_CLEAR_FAILED', 500);
+        }
+
+        $admin = $request->attributes->get('user');
+        Activity::createActivity([
+            'user_uuid' => $admin['uuid'] ?? '',
+            'name' => 'admin_clear_all_devices',
+            'context' => 'Cleared all device fingerprint records globally',
+            'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        return ApiResponse::success([], 'All device records cleared', 200);
+    }
+
+    #[OA\Get(
         path: '/api/admin/users/serverRequest/{id}',
         summary: 'Get server request by id (INTERNAL USE ONLY) - DO NOT USE THIS ENDPOINT IN YOUR CODE!',
         description: 'Retrieve a server request by its ID (INTERNAL USE ONLY) - DO NOT USE THIS ENDPOINT IN YOUR CODE!',
@@ -1303,6 +1459,20 @@ class UsersController
                 schema: new OA\Schema(type: 'string', format: 'uuid')
             ),
         ],
+        requestBody: new OA\RequestBody(
+            required: false,
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(
+                        property: 'expires_in',
+                        type: 'integer',
+                        minimum: 1,
+                        maximum: 1440,
+                        description: 'Token lifetime in minutes (overrides the admin default when provided)'
+                    ),
+                ]
+            )
+        ),
         responses: [
             new OA\Response(
                 response: 200,
@@ -1314,6 +1484,7 @@ class UsersController
                     ]
                 )
             ),
+            new OA\Response(response: 400, description: 'Bad request - Invalid expires_in value'),
             new OA\Response(response: 401, description: 'Unauthorized'),
             new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
             new OA\Response(response: 404, description: 'User not found'),
@@ -1326,7 +1497,36 @@ class UsersController
             return ApiResponse::error('User not found', 'USER_NOT_FOUND', 404);
         }
 
-        $expiresInMinutes = 5;
+        $config = App::getInstance(true)->getConfig();
+        $defaultExpiresInMinutes = (int) $config->getSetting(
+            ConfigInterface::APP_SSO_TOKEN_LIFETIME_MINUTES,
+            '5'
+        );
+        if ($defaultExpiresInMinutes < 1 || $defaultExpiresInMinutes > 1440) {
+            $defaultExpiresInMinutes = 5;
+        }
+
+        $expiresInMinutes = $defaultExpiresInMinutes;
+        $body = json_decode($request->getContent(), true);
+        if (is_array($body) && array_key_exists('expires_in', $body)) {
+            if (!is_int($body['expires_in']) && !(is_string($body['expires_in']) && ctype_digit($body['expires_in']))) {
+                return ApiResponse::error(
+                    'expires_in must be an integer between 1 and 1440',
+                    'INVALID_EXPIRES_IN',
+                    400
+                );
+            }
+
+            $expiresInMinutes = (int) $body['expires_in'];
+            if ($expiresInMinutes < 1 || $expiresInMinutes > 1440) {
+                return ApiResponse::error(
+                    'expires_in must be between 1 and 1440 minutes',
+                    'INVALID_EXPIRES_IN',
+                    400
+                );
+            }
+        }
+
         $token = SsoToken::createTokenForUser($user['uuid'], $expiresInMinutes);
         if ($token === null) {
             return ApiResponse::error('Failed to create SSO token', 'FAILED_TO_CREATE_SSO_TOKEN', 500);

@@ -18,10 +18,10 @@
 namespace App\Controllers\User;
 
 use App\App;
-use App\Permissions;
 use App\Chat\User;
 use App\Chat\Server;
 use App\Chat\Ticket;
+use App\Permissions;
 use App\Chat\Activity;
 use App\Chat\TicketStatus;
 use App\Chat\TicketMessage;

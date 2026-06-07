@@ -25,6 +25,7 @@ use App\Chat\UserPreference;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
+use App\Helpers\UserDeviceTracker;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Plugins\Events\Events\AuthEvent;
 use Symfony\Component\HttpFoundation\Request;
@@ -280,6 +281,7 @@ class LoginController
         $userInfo['remember_token'] = $token;
         setcookie('remember_token', $token, time() + 60 * 60 * 24 * 30, '/');
         User::updateUser($userInfo['uuid'], ['last_ip' => CloudFlareRealIP::getRealIP()]);
+        UserDeviceTracker::trackFromGlobals($userInfo);
 
         Activity::createActivity([
             'user_uuid' => $userInfo['uuid'],

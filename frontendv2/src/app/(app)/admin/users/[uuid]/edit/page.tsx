@@ -21,6 +21,7 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import axios from 'axios';
 import {
     User,
+    Users,
     Shield,
     Mail,
     Server as ServerIcon,
@@ -146,6 +147,23 @@ interface VmInstance {
     created_at?: string;
 }
 
+interface PotentialAlt {
+    uuid: string;
+    username: string;
+    email?: string;
+    avatar: string;
+    banned?: string;
+    last_seen?: string;
+    first_ip?: string;
+    last_ip?: string;
+    role?: UserRole;
+    shared_ips: string[];
+    shared_devices: string[];
+    match_reasons: string[];
+    match_count: number;
+    confidence?: 'high' | 'medium' | 'low';
+}
+
 interface AvailableRole {
     id: string;
     name: string;
@@ -165,6 +183,10 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
     const [availableRoles, setAvailableRoles] = useState<AvailableRole[]>([]);
     const [ownedServers, setOwnedServers] = useState<Server[]>([]);
     const [ownedVms, setOwnedVms] = useState<VmInstance[]>([]);
+    const [potentialAlts, setPotentialAlts] = useState<PotentialAlt[]>([]);
+    const [altSourceIps, setAltSourceIps] = useState<string[]>([]);
+    const [altSourceDevices, setAltSourceDevices] = useState<string[]>([]);
+    const [clearingDevices, setClearingDevices] = useState(false);
     const [ssoGenerating, setSsoGenerating] = useState(false);
     const [ssoLink, setSsoLink] = useState<string | null>(null);
     const [mailPreview, setMailPreview] = useState<{
@@ -260,6 +282,17 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
             } catch {
                 setOwnedVms([]);
             }
+
+            try {
+                const altsRes = await axios.get(`/api/admin/users/${resolvedParams.uuid}/potential-alts`);
+                setPotentialAlts(altsRes.data?.data?.potential_alts || []);
+                setAltSourceIps(altsRes.data?.data?.source_ips || []);
+                setAltSourceDevices(altsRes.data?.data?.source_devices || []);
+            } catch {
+                setPotentialAlts([]);
+                setAltSourceIps([]);
+                setAltSourceDevices([]);
+            }
         } catch {
             toast.error(t('admin.users.edit.error'));
             setUser(null);
@@ -272,6 +305,36 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
         fetchUser();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [resolvedParams.uuid]);
+
+    const clearUserDevices = async () => {
+        if (!user) return;
+        if (
+            !confirm(
+                t('admin.users.edit.potential_alts.clear_user_confirm', {
+                    username: user.username,
+                }),
+            )
+        ) {
+            return;
+        }
+
+        setClearingDevices(true);
+        try {
+            const { data } = await axios.delete(`/api/admin/users/${user.uuid}/devices`);
+            if (data?.success) {
+                toast.success(t('admin.users.edit.potential_alts.clear_user_success'));
+                setPotentialAlts([]);
+                setAltSourceDevices([]);
+                await fetchUser();
+            } else {
+                toast.error(data?.message || t('admin.users.edit.potential_alts.clear_failed'));
+            }
+        } catch {
+            toast.error(t('admin.users.edit.potential_alts.clear_failed'));
+        } finally {
+            setClearingDevices(false);
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -881,6 +944,15 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                             <Activity className='h-4 w-4' />
                             {t('admin.users.edit.tabs.activities')}
                         </TabsTrigger>
+                        <TabsTrigger value='potential-alts' className='gap-2'>
+                            <Users className='h-4 w-4' />
+                            {t('admin.users.edit.tabs.potential_alts')}
+                            {potentialAlts.length > 0 && (
+                                <Badge variant='secondary' className='ml-1 h-5 min-w-5 px-1.5'>
+                                    {potentialAlts.length}
+                                </Badge>
+                            )}
+                        </TabsTrigger>
                         <TabsTrigger value='vds' className='gap-2'>
                             <ServerIcon className='h-4 w-4' />
                             {t('admin.users.edit.tabs.vds', { defaultValue: 'VDS' })}
@@ -1021,6 +1093,213 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                                 <td className='text-muted-foreground p-4'>{activity.context}</td>
                                                 <td className='p-4 font-mono text-xs'>{activity.ip_address}</td>
                                                 <td className='text-muted-foreground p-4'>{activity.created_at}</td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </PageCard>
+                </TabsContent>
+
+                <TabsContent value='potential-alts'>
+                    <PageCard
+                        title={t('admin.users.edit.potential_alts.title')}
+                        icon={Users}
+                        action={
+                            <Button
+                                variant='outline'
+                                size='sm'
+                                onClick={clearUserDevices}
+                                loading={clearingDevices}
+                                disabled={altSourceDevices.length === 0 && potentialAlts.length === 0}
+                            >
+                                <Trash2 className='mr-2 h-4 w-4' />
+                                {t('admin.users.edit.potential_alts.clear_user')}
+                            </Button>
+                        }
+                    >
+                        <p className='text-muted-foreground mb-4 text-sm'>
+                            {t('admin.users.edit.potential_alts.description')}
+                        </p>
+                        {altSourceIps.length > 0 && (
+                            <div className='mb-6 rounded-lg border border-white/5 bg-white/5 p-4'>
+                                <p className='text-muted-foreground mb-2 text-xs font-bold tracking-wider uppercase'>
+                                    {t('admin.users.edit.potential_alts.source_ips')}
+                                </p>
+                                <div className='flex flex-wrap gap-2'>
+                                    {altSourceIps.map((ip) => (
+                                        <Badge key={ip} variant='outline' className='font-mono text-xs'>
+                                            {ip}
+                                        </Badge>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                        {altSourceDevices.length > 0 && (
+                            <div className='mb-6 rounded-lg border border-white/5 bg-white/5 p-4'>
+                                <p className='text-muted-foreground mb-2 text-xs font-bold tracking-wider uppercase'>
+                                    {t('admin.users.edit.potential_alts.source_devices')}
+                                </p>
+                                <div className='flex flex-wrap gap-2'>
+                                    {altSourceDevices.map((device) => (
+                                        <Badge key={device} variant='outline' className='font-mono text-xs'>
+                                            {device.slice(0, 12)}
+                                        </Badge>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                        <div className='overflow-x-auto'>
+                            <table className='w-full text-sm'>
+                                <thead>
+                                    <tr className='border-b border-white/5 text-left'>
+                                        <th className='text-muted-foreground p-4 font-medium'>
+                                            {t('admin.users.edit.potential_alts.user')}
+                                        </th>
+                                        <th className='text-muted-foreground p-4 font-medium'>
+                                            {t('admin.users.edit.potential_alts.role')}
+                                        </th>
+                                        <th className='text-muted-foreground p-4 font-medium'>
+                                            {t('admin.users.edit.potential_alts.signals')}
+                                        </th>
+                                        <th className='text-muted-foreground p-4 font-medium'>
+                                            {t('admin.users.edit.potential_alts.confidence')}
+                                        </th>
+                                        <th className='text-muted-foreground p-4 font-medium'>
+                                            {t('admin.users.edit.potential_alts.last_seen')}
+                                        </th>
+                                        <th className='text-muted-foreground p-4 text-right font-medium'>
+                                            {t('admin.users.edit.potential_alts.actions')}
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {potentialAlts.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={6} className='text-muted-foreground p-8 text-center'>
+                                                {t('admin.users.edit.potential_alts.empty')}
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        potentialAlts.map((alt) => (
+                                            <tr
+                                                key={alt.uuid}
+                                                className='border-b border-white/5 transition-colors last:border-0 hover:bg-white/5'
+                                            >
+                                                <td className='p-4'>
+                                                    <div className='flex items-center gap-3'>
+                                                        <Avatar className='h-8 w-8'>
+                                                            <AvatarImage src={alt.avatar} alt={alt.username} />
+                                                        </Avatar>
+                                                        <div>
+                                                            <div className='font-medium'>{alt.username}</div>
+                                                            <div className='text-muted-foreground text-xs'>
+                                                                {alt.email}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className='p-4'>
+                                                    <div className='flex flex-wrap gap-1'>
+                                                        <Badge
+                                                            style={
+                                                                alt.role?.color
+                                                                    ? {
+                                                                          backgroundColor: alt.role.color,
+                                                                          color: '#fff',
+                                                                      }
+                                                                    : undefined
+                                                            }
+                                                            variant='secondary'
+                                                        >
+                                                            {alt.role?.display_name || alt.role?.name || '-'}
+                                                        </Badge>
+                                                        {alt.banned === 'true' && (
+                                                            <Badge variant='destructive'>
+                                                                {t('admin.users.badges.banned')}
+                                                            </Badge>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                                <td className='p-4'>
+                                                    <div className='space-y-2'>
+                                                        {alt.shared_ips.length > 0 && (
+                                                            <div className='flex max-w-xs flex-wrap gap-1'>
+                                                                {alt.shared_ips.map((ip) => (
+                                                                    <Badge
+                                                                        key={`ip-${ip}`}
+                                                                        variant='outline'
+                                                                        className='font-mono text-xs'
+                                                                        title={t(
+                                                                            'admin.users.edit.potential_alts.match_ip',
+                                                                        )}
+                                                                    >
+                                                                        {ip}
+                                                                    </Badge>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                        {alt.shared_devices.length > 0 && (
+                                                            <div className='flex max-w-xs flex-wrap gap-1'>
+                                                                {alt.shared_devices.map((device) => (
+                                                                    <Badge
+                                                                        key={`dev-${device}`}
+                                                                        variant='secondary'
+                                                                        className='font-mono text-xs'
+                                                                        title={t(
+                                                                            'admin.users.edit.potential_alts.match_device',
+                                                                        )}
+                                                                    >
+                                                                        {device}
+                                                                    </Badge>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                        {alt.match_reasons.length > 0 && (
+                                                            <div className='text-muted-foreground text-xs'>
+                                                                {alt.match_reasons
+                                                                    .map((reason) =>
+                                                                        t(
+                                                                            `admin.users.edit.potential_alts.reasons.${reason}`,
+                                                                            { defaultValue: reason },
+                                                                        ),
+                                                                    )
+                                                                    .join(' · ')}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                                <td className='p-4'>
+                                                    <Badge
+                                                        variant={
+                                                            alt.confidence === 'high'
+                                                                ? 'destructive'
+                                                                : alt.confidence === 'medium'
+                                                                  ? 'secondary'
+                                                                  : 'outline'
+                                                        }
+                                                    >
+                                                        {t(
+                                                            `admin.users.edit.potential_alts.confidence_${alt.confidence || 'low'}`,
+                                                            { defaultValue: alt.confidence || 'low' },
+                                                        )}
+                                                    </Badge>
+                                                    <div className='text-muted-foreground mt-1 text-xs'>
+                                                        {alt.match_count}{' '}
+                                                        {t('admin.users.edit.potential_alts.match_total')}
+                                                    </div>
+                                                </td>
+                                                <td className='text-muted-foreground p-4'>{alt.last_seen || '—'}</td>
+                                                <td className='p-4 text-right'>
+                                                    <Button
+                                                        size='sm'
+                                                        variant='ghost'
+                                                        onClick={() => router.push(`/admin/users/${alt.uuid}/edit`)}
+                                                    >
+                                                        <ExternalLink className='h-4 w-4' />
+                                                    </Button>
+                                                </td>
                                             </tr>
                                         ))
                                     )}

@@ -20,6 +20,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useDateFormatOptions } from '@/contexts/PreferencesContext';
 import axios from 'axios';
+import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
 import {
     Users as UsersIcon,
     Shield,
@@ -64,6 +65,7 @@ interface ApiUser {
     banned?: string;
     two_fa_enabled?: string;
     last_seen?: string;
+    first_seen?: string;
     created_at?: string;
     discord_oauth2_id?: string | null;
     discord_oauth2_linked?: string;
@@ -92,6 +94,18 @@ interface AvailableRole {
     color: string;
 }
 
+const USERS_LIST_FILTERS_KEY = 'featherpanel_admin_users_filters_v1';
+
+const USERS_LIST_FILTERS_DEFAULTS = {
+    searchQuery: '',
+    roleFilter: '',
+    bannedFilter: '',
+    sortBy: 'created_at' as 'id' | 'username' | 'email' | 'last_seen' | 'created_at',
+    sortOrder: 'DESC' as 'ASC' | 'DESC',
+    page: 1,
+    pageSize: 15,
+};
+
 export default function UsersPage() {
     const { t } = useTranslation();
     const dateOpts = useDateFormatOptions();
@@ -99,12 +113,12 @@ export default function UsersPage() {
 
     const [users, setUsers] = useState<ApiUser[]>([]);
     const [loading, setLoading] = useState(true);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [roleFilter, setRoleFilter] = useState('');
-    const [bannedFilter, setBannedFilter] = useState('');
-    const [pagination, setPagination] = useState<Pagination>({
-        page: 1,
-        pageSize: 15,
+    const { filters, patchFilters, resetFilters, hydrated } = usePersistedListFilters(
+        USERS_LIST_FILTERS_KEY,
+        USERS_LIST_FILTERS_DEFAULTS,
+    );
+    const { searchQuery, roleFilter, bannedFilter, sortBy, sortOrder, page, pageSize } = filters;
+    const [pagination, setPagination] = useState<Omit<Pagination, 'page' | 'pageSize'>>({
         total: 0,
         from: 0,
         to: 0,
@@ -114,6 +128,7 @@ export default function UsersPage() {
     const [availableRoles, setAvailableRoles] = useState<AvailableRole[]>([]);
 
     const [refreshKey, setRefreshKey] = useState(0);
+    const [clearingAllDevices, setClearingAllDevices] = useState(false);
 
     const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
 
@@ -127,25 +142,31 @@ export default function UsersPage() {
         const timer = setTimeout(() => {
             setDebouncedSearchQuery(searchQuery);
             if (searchQuery !== debouncedSearchQuery) {
-                setPagination((prev) => ({ ...prev, page: 1 }));
+                patchFilters({ page: 1 });
             }
         }, 500);
 
         return () => clearTimeout(timer);
-    }, [debouncedSearchQuery, searchQuery]);
+    }, [debouncedSearchQuery, patchFilters, searchQuery]);
 
     useEffect(() => {
+        if (!hydrated) {
+            return;
+        }
+
         const controller = new AbortController();
         const fetchUsers = async () => {
             setLoading(true);
             try {
                 const { data } = await axios.get('/api/admin/users', {
                     params: {
-                        page: pagination.page,
-                        limit: pagination.pageSize,
+                        page,
+                        limit: pageSize,
                         search: debouncedSearchQuery || undefined,
                         role: roleFilter || undefined,
                         banned: bannedFilter || undefined,
+                        sort_by: sortBy,
+                        sort_order: sortOrder,
                     },
                     signal: controller.signal,
                 });
@@ -154,15 +175,12 @@ export default function UsersPage() {
                     setUsers(data.data.users || []);
                     setAvailableRoles(data.data.roles || []);
                     const apiPagination = data.data.pagination;
-                    setPagination((prev) => ({
-                        ...prev,
-                        page: apiPagination.current_page,
-                        pageSize: apiPagination.per_page,
+                    setPagination({
                         total: apiPagination.total_records,
                         totalPages: Math.ceil(apiPagination.total_records / apiPagination.per_page),
-                        hasNext: apiPagination.has_next,
-                        hasPrev: apiPagination.has_prev,
-                    }));
+                        from: apiPagination.from ?? 0,
+                        to: apiPagination.to ?? 0,
+                    });
                     if (data.data.roles) {
                         setAvailableRoles(
                             Object.entries(data.data.roles).map(([id, role]) => {
@@ -196,7 +214,7 @@ export default function UsersPage() {
         return () => {
             controller.abort();
         };
-    }, [pagination.page, pagination.pageSize, debouncedSearchQuery, roleFilter, refreshKey, t, bannedFilter]);
+    }, [page, pageSize, debouncedSearchQuery, roleFilter, refreshKey, t, bannedFilter, sortBy, sortOrder, hydrated]);
 
     const handleDeleteUser = async (user: ApiUser) => {
         if (!confirm(t('admin.users.messages.delete_confirm', { username: user.username }))) {
@@ -245,21 +263,19 @@ export default function UsersPage() {
             <Button
                 variant='outline'
                 size='sm'
-                disabled={!pagination || pagination.page === 1}
-                onClick={() => pagination && setPagination({ ...pagination, page: pagination.page - 1 })}
+                disabled={page === 1}
+                onClick={() => patchFilters({ page: page - 1 })}
                 className='gap-1.5'
             >
                 <ChevronLeft className='h-4 w-4' />
                 {t('common.previous')}
             </Button>
-            <span className='text-sm font-medium'>
-                {pagination ? `${pagination.page} / ${pagination.totalPages}` : '—'}
-            </span>
+            <span className='text-sm font-medium'>{`${page} / ${pagination.totalPages}`}</span>
             <Button
                 variant='outline'
                 size='sm'
-                disabled={!pagination || pagination.page === pagination.totalPages}
-                onClick={() => pagination && setPagination({ ...pagination, page: pagination.page + 1 })}
+                disabled={page === pagination.totalPages}
+                onClick={() => patchFilters({ page: page + 1 })}
                 className='gap-1.5'
             >
                 {t('common.next')}
@@ -267,6 +283,26 @@ export default function UsersPage() {
             </Button>
         </div>
     );
+
+    const handleClearAllDevices = async () => {
+        if (!confirm(t('admin.users.clear_all_devices_confirm'))) {
+            return;
+        }
+
+        setClearingAllDevices(true);
+        try {
+            const { data } = await axios.delete('/api/admin/devices');
+            if (data?.success) {
+                toast.success(t('admin.users.clear_all_devices_success'));
+            } else {
+                toast.error(data?.message || t('admin.users.clear_all_devices_failed'));
+            }
+        } catch {
+            toast.error(t('admin.users.clear_all_devices_failed'));
+        } finally {
+            setClearingAllDevices(false);
+        }
+    };
 
     return (
         <div className='space-y-6'>
@@ -277,10 +313,16 @@ export default function UsersPage() {
                 description={t('admin.users.subtitle')}
                 icon={UsersIcon}
                 actions={
-                    <Button onClick={() => router.push('/admin/users/create')}>
-                        <UserPlus className='mr-2 h-4 w-4' />
-                        {t('admin.users.create.title')}
-                    </Button>
+                    <div className='flex flex-wrap gap-2'>
+                        <Button variant='outline' onClick={handleClearAllDevices} loading={clearingAllDevices}>
+                            <Trash2 className='mr-2 h-4 w-4' />
+                            {t('admin.users.clear_all_devices')}
+                        </Button>
+                        <Button onClick={() => router.push('/admin/users/create')}>
+                            <UserPlus className='mr-2 h-4 w-4' />
+                            {t('admin.users.create.title')}
+                        </Button>
+                    </div>
                 }
             />
 
@@ -293,7 +335,7 @@ export default function UsersPage() {
                         placeholder={t('admin.users.search_placeholder')}
                         className='h-11 pl-10'
                         value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onChange={(e) => patchFilters({ searchQuery: e.target.value })}
                     />
                 </div>
                 <div className='flex w-full items-center gap-2 overflow-x-auto pb-2 sm:w-auto sm:pb-0'>
@@ -301,8 +343,7 @@ export default function UsersPage() {
                         <Select
                             value={roleFilter}
                             onChange={(e) => {
-                                setRoleFilter(e.target.value);
-                                setPagination({ ...pagination, page: 1 });
+                                patchFilters({ roleFilter: e.target.value, page: 1 });
                             }}
                             className='h-11 w-[160px] rounded-xl'
                         >
@@ -317,14 +358,35 @@ export default function UsersPage() {
                     <Select
                         value={bannedFilter}
                         onChange={(e) => {
-                            setBannedFilter(e.target.value);
-                            setPagination({ ...pagination, page: 1 });
+                            patchFilters({ bannedFilter: e.target.value, page: 1 });
                         }}
                         className='h-11 w-[160px] rounded-xl'
                     >
                         <option value=''>{t('admin.users.filters.any_status')}</option>
                         <option value='false'>{t('admin.users.filters.status_active')}</option>
                         <option value='true'>{t('admin.users.filters.status_banned')}</option>
+                    </Select>
+                    <Select
+                        value={`${sortBy}-${sortOrder}`}
+                        onChange={(e) => {
+                            const [field, order] = e.target.value.split('-') as [
+                                'id' | 'username' | 'email' | 'last_seen' | 'created_at',
+                                'ASC' | 'DESC',
+                            ];
+                            patchFilters({ sortBy: field, sortOrder: order, page: 1 });
+                        }}
+                        className='h-11 w-[200px] rounded-xl'
+                    >
+                        <option value='created_at-DESC'>{t('admin.users.sort.created_desc')}</option>
+                        <option value='created_at-ASC'>{t('admin.users.sort.created_asc')}</option>
+                        <option value='last_seen-DESC'>{t('admin.users.sort.last_active_desc')}</option>
+                        <option value='last_seen-ASC'>{t('admin.users.sort.last_active_asc')}</option>
+                        <option value='id-DESC'>{t('admin.users.sort.newest')}</option>
+                        <option value='id-ASC'>{t('admin.users.sort.oldest')}</option>
+                        <option value='username-ASC'>{t('admin.users.sort.username_asc')}</option>
+                        <option value='username-DESC'>{t('admin.users.sort.username_desc')}</option>
+                        <option value='email-ASC'>{t('admin.users.sort.email_asc')}</option>
+                        <option value='email-DESC'>{t('admin.users.sort.email_desc')}</option>
                     </Select>
                 </div>
             </div>
@@ -344,9 +406,7 @@ export default function UsersPage() {
                         <Button
                             variant='outline'
                             onClick={() => {
-                                setSearchQuery('');
-                                setRoleFilter('');
-                                setPagination({ ...pagination, page: 1 });
+                                resetFilters();
                             }}
                         >
                             {t('admin.users.clear_filters')}
@@ -448,11 +508,19 @@ export default function UsersPage() {
                                                     </span>
                                                 </div>
                                             )}
-                                            {user.created_at && (
+                                            {(user.created_at || user.first_seen) && (
                                                 <div className='flex items-center gap-1.5'>
                                                     <span className='font-semibold'>{t('admin.users.created')}:</span>
-                                                    <span title={formatDateTimeInTz(user.created_at, dateOpts)}>
-                                                        {formatRelativeTime(user.created_at, dateOpts)}
+                                                    <span
+                                                        title={formatDateTimeInTz(
+                                                            user.created_at || user.first_seen || '',
+                                                            dateOpts,
+                                                        )}
+                                                    >
+                                                        {formatRelativeTime(
+                                                            user.created_at || user.first_seen || '',
+                                                            dateOpts,
+                                                        )}
                                                     </span>
                                                 </div>
                                             )}

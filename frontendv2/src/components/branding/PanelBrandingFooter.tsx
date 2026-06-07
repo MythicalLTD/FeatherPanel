@@ -46,7 +46,9 @@ export function PanelBrandingFooter({ appName, className }: PanelBrandingFooterP
             <ConfiguredLinks variant='inline' className='mb-4 justify-center' />
             {showBranding ? (
                 <>
-                    <p className='mb-2 font-medium'>{t('branding.running_on', { name: displayName, version }).trim()}</p>
+                    <p className='mb-2 font-medium'>
+                        {t('branding.running_on', { name: displayName, version }).trim()}
+                    </p>
                     <PoweredByFeatherPanel variant='inline' className='mb-2' />
                     <a
                         href={FEATHERPANEL_MARKETING_URL}

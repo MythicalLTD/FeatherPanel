@@ -21,8 +21,8 @@ use App\App;
 use App\Chat\User;
 use App\Config\ConfigInterface;
 use App\Mail\templates\TicketClosed;
-use App\Mail\templates\TicketReopened;
 use App\Mail\templates\TicketReplied;
+use App\Mail\templates\TicketReopened;
 
 class TicketNotificationService
 {

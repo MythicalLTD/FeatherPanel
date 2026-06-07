@@ -203,7 +203,11 @@ export function RoleEditor({
     return (
         <div className='space-y-6'>
             <PageHeader
-                title={mode === 'create' ? t('admin.roles.form.create_title') : form.display_name || t('admin.roles.form.edit_title')}
+                title={
+                    mode === 'create'
+                        ? t('admin.roles.form.create_title')
+                        : form.display_name || t('admin.roles.form.edit_title')
+                }
                 description={
                     mode === 'create' ? t('admin.roles.create_description') : t('admin.roles.edit_description')
                 }
@@ -227,7 +231,9 @@ export function RoleEditor({
                         )}
                         <Button loading={isSubmitting} onClick={(e) => onSave(e as unknown as React.FormEvent)}>
                             <Save className='mr-2 h-4 w-4' />
-                            {mode === 'create' ? t('admin.roles.form.submit_create') : t('admin.roles.form.submit_update')}
+                            {mode === 'create'
+                                ? t('admin.roles.form.submit_create')
+                                : t('admin.roles.form.submit_update')}
                         </Button>
                     </div>
                 }
@@ -249,10 +255,15 @@ export function RoleEditor({
                     </div>
                     <div className='min-w-0 flex-1'>
                         <div className='flex flex-wrap items-center gap-2'>
-                            <h2 className='text-xl font-bold'>{form.display_name || t('admin.roles.form.display_name')}</h2>
+                            <h2 className='text-xl font-bold'>
+                                {form.display_name || t('admin.roles.form.display_name')}
+                            </h2>
                             {isYourRole && <Badge variant='secondary'>{t('admin.roles.labels.your_role')}</Badge>}
                             {hasAdminRoot && (
-                                <Badge className='gap-1 border-amber-500/30 bg-amber-500/15 text-amber-200' variant='outline'>
+                                <Badge
+                                    className='gap-1 border-amber-500/30 bg-amber-500/15 text-amber-200'
+                                    variant='outline'
+                                >
                                     <Crown className='h-3 w-3' />
                                     admin.root
                                 </Badge>
@@ -331,7 +342,9 @@ export function RoleEditor({
                                         placeholder='support_team'
                                         className='h-11 font-mono'
                                     />
-                                    <p className='text-muted-foreground text-xs'>{t('admin.roles.form.auto_name_hint')}</p>
+                                    <p className='text-muted-foreground text-xs'>
+                                        {t('admin.roles.form.auto_name_hint')}
+                                    </p>
                                 </div>
                             </div>
 
@@ -386,7 +399,10 @@ export function RoleEditor({
                                 className='bg-muted/20 flex items-center gap-4 rounded-xl border p-4'
                                 style={{ borderColor: `${form.color}55` }}
                             >
-                                <div className='h-10 w-10 shrink-0 rounded-lg' style={{ backgroundColor: form.color }} />
+                                <div
+                                    className='h-10 w-10 shrink-0 rounded-lg'
+                                    style={{ backgroundColor: form.color }}
+                                />
                                 <div className='min-w-0 flex-1'>
                                     <p className='truncate font-semibold'>
                                         {form.display_name || t('admin.roles.form.display_name')}
@@ -404,7 +420,9 @@ export function RoleEditor({
 
                     {mode === 'create' && (
                         <PageCard title={t('admin.roles.permissions.title')} icon={KeyRound}>
-                            <p className='text-muted-foreground text-sm'>{t('admin.roles.permissions.create_first_hint')}</p>
+                            <p className='text-muted-foreground text-sm'>
+                                {t('admin.roles.permissions.create_first_hint')}
+                            </p>
                         </PageCard>
                     )}
                 </TabsContent>
@@ -436,10 +454,22 @@ export function RoleEditor({
                                     </button>
                                 ))}
                                 <div className='ml-auto flex gap-2'>
-                                    <Button type='button' variant='ghost' size='sm' onClick={() => setExpandedCategories(new Set(permissionsByCategory.map(([c]) => c)))}>
+                                    <Button
+                                        type='button'
+                                        variant='ghost'
+                                        size='sm'
+                                        onClick={() =>
+                                            setExpandedCategories(new Set(permissionsByCategory.map(([c]) => c)))
+                                        }
+                                    >
                                         {t('admin.roles.permissions.expand_all')}
                                     </Button>
-                                    <Button type='button' variant='ghost' size='sm' onClick={() => setExpandedCategories(new Set())}>
+                                    <Button
+                                        type='button'
+                                        variant='ghost'
+                                        size='sm'
+                                        onClick={() => setExpandedCategories(new Set())}
+                                    >
                                         {t('admin.roles.permissions.collapse_all')}
                                     </Button>
                                 </div>
@@ -509,7 +539,9 @@ export function RoleEditor({
                                                                 size='sm'
                                                                 className='h-7 gap-1 text-xs'
                                                                 disabled={isBulkLoading}
-                                                                onClick={() => toggleCategoryPermissions(category, true)}
+                                                                onClick={() =>
+                                                                    toggleCategoryPermissions(category, true)
+                                                                }
                                                             >
                                                                 <CheckCheck className='h-3.5 w-3.5' />
                                                                 {t('admin.roles.permissions.enable_category')}
@@ -520,7 +552,9 @@ export function RoleEditor({
                                                                 size='sm'
                                                                 className='h-7 gap-1 text-xs'
                                                                 disabled={isBulkLoading}
-                                                                onClick={() => toggleCategoryPermissions(category, false)}
+                                                                onClick={() =>
+                                                                    toggleCategoryPermissions(category, false)
+                                                                }
                                                             >
                                                                 <XCircle className='h-3.5 w-3.5' />
                                                                 {t('admin.roles.permissions.disable_category')}
@@ -529,7 +563,9 @@ export function RoleEditor({
 
                                                         <div className='space-y-1'>
                                                             {perms.map((perm) => {
-                                                                const isAssigned = assignedPermissionMap.has(perm.value);
+                                                                const isAssigned = assignedPermissionMap.has(
+                                                                    perm.value,
+                                                                );
                                                                 const locked = isRootLocked(perm.value);
                                                                 const isToggling =
                                                                     togglingPermission === perm.value || isBulkLoading;
@@ -560,7 +596,9 @@ export function RoleEditor({
                                                                                 {locked && (
                                                                                     <span className='inline-flex items-center gap-1 rounded-md bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium text-amber-200'>
                                                                                         <Lock className='h-3 w-3' />
-                                                                                        {t('admin.roles.permissions.locked')}
+                                                                                        {t(
+                                                                                            'admin.roles.permissions.locked',
+                                                                                        )}
                                                                                     </span>
                                                                                 )}
                                                                             </div>

@@ -38,7 +38,6 @@ use App\Chat\ServerVariable;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Chat\DatabaseInstance;
-use App\Config\ConfigInterface;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Plugins\Events\Events\UserEvent;
 use App\Plugins\Events\Events\NodesEvent;
@@ -904,8 +903,6 @@ class PterodactylImporterController
                 }
             }
             $roleId = $isRootAdmin ? 4 : 1; // 4 = admin, 1 = user
-            $config = App::getInstance(true)->getConfig();
-            $avatar = $config->getSetting(ConfigInterface::APP_LOGO_DARK, 'https://github.com/featherpanel-com.png');
             $userData = [
                 'uuid' => $user['uuid'],
                 'username' => $user['username'],
@@ -914,7 +911,6 @@ class PterodactylImporterController
                 'last_name' => $user['name_last'] ?? '', // Empty string if not provided
                 'password' => $user['password'], // Bcrypt password from Pterodactyl (compatible)
                 'remember_token' => $user['remember_token'] ?? User::generateAccountToken(),
-                'avatar' => $avatar, // Default avatar
                 'role_id' => $roleId, // Map root_admin to role_id (4 = admin, 1 = user)
                 'external_id' => $user['external_id'] ?? null,
                 'two_fa_enabled' => 'false', // Don't import 2FA - always set to false

@@ -114,9 +114,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
                 ) {
                     setUser(res.data.data.user_info as UserInfo);
                     setPermissions((res.data.data.permissions as PermissionsList) || []);
-                    setAdminTicketStats(
-                        (res.data.data.admin_ticket_stats as AdminTicketStats | undefined) ?? null,
-                    );
+                    setAdminTicketStats((res.data.data.admin_ticket_stats as AdminTicketStats | undefined) ?? null);
                     setIsSessionChecked(true);
                     setIsLoading(false);
                     return true;

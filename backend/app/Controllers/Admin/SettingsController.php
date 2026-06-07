@@ -173,6 +173,7 @@ class SettingsController
                 ConfigInterface::APP_LOGO_DARK,
                 ConfigInterface::APP_TIMEZONE,
                 ConfigInterface::APP_SSO_REDIRECT_PATH,
+                ConfigInterface::APP_SSO_TOKEN_LIFETIME_MINUTES,
                 ConfigInterface::APP_BACKGROUND_IMAGE_URL,
                 ConfigInterface::APP_BACKGROUND_LOCK,
                 ConfigInterface::APP_ACCENT_COLOR_DEFAULT,
@@ -240,9 +241,13 @@ class SettingsController
                 ConfigInterface::REGISTRATION_ENABLED,
 
                 ConfigInterface::REGISTRATION_REQUIRE_EMAIL_VERIFICATION,
+                ConfigInterface::REGISTRATION_DEVICE_LIMIT_ENABLED,
+                ConfigInterface::REGISTRATION_DEVICE_MAX_ACCOUNTS,
                 ConfigInterface::EMAIL_DOMAIN_BLOCKING_ENABLED,
                 ConfigInterface::TELEMETRY,
                 ConfigInterface::REQUIRE_TWO_FA_ADMINS,
+                ConfigInterface::AVATAR_PROVIDER,
+                ConfigInterface::AVATAR_CUSTOM_URL,
                 ConfigInterface::USER_ALLOW_AVATAR_CHANGE,
                 ConfigInterface::USER_ALLOW_USERNAME_CHANGE,
                 ConfigInterface::USER_ALLOW_EMAIL_CHANGE,
@@ -311,6 +316,7 @@ class SettingsController
             'settings' => [
                 ConfigInterface::SERVER_ALLOW_EGG_CHANGE,
                 ConfigInterface::SERVER_ALLOW_STARTUP_CHANGE,
+                ConfigInterface::SERVER_ALLOW_CUSTOM_DOCKER_IMAGE,
                 ConfigInterface::SERVER_ALLOW_SUBUSERS,
                 ConfigInterface::SERVER_ALLOW_SCHEDULES,
                 ConfigInterface::SERVER_LIFECYCLE_HOOKS_ENABLED,
@@ -519,6 +525,19 @@ class SettingsController
                 'required' => true,
                 'placeholder' => '/dashboard',
                 'validation' => 'required|string|max:255',
+                'options' => [],
+                'category' => 'app',
+            ],
+            ConfigInterface::APP_SSO_TOKEN_LIFETIME_MINUTES => [
+                'name' => ConfigInterface::APP_SSO_TOKEN_LIFETIME_MINUTES,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::APP_SSO_TOKEN_LIFETIME_MINUTES, '5'),
+                'description' => 'Default lifetime in minutes for admin-generated SSO login tokens (1–1440)',
+                'type' => 'number',
+                'required' => true,
+                'placeholder' => '5',
+                'validation' => 'required|integer|min:1|max:1440',
                 'options' => [],
                 'category' => 'app',
             ],
@@ -1358,6 +1377,32 @@ class SettingsController
                 'options' => ['true', 'false'],
                 'category' => 'security',
             ],
+            ConfigInterface::REGISTRATION_DEVICE_LIMIT_ENABLED => [
+                'name' => ConfigInterface::REGISTRATION_DEVICE_LIMIT_ENABLED,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::REGISTRATION_DEVICE_LIMIT_ENABLED, 'false'),
+                'description' => 'Block new registrations when a browser/device already has the maximum number of panel accounts.',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'false',
+                'validation' => 'required|string|max:255',
+                'options' => ['true', 'false'],
+                'category' => 'security',
+            ],
+            ConfigInterface::REGISTRATION_DEVICE_MAX_ACCOUNTS => [
+                'name' => ConfigInterface::REGISTRATION_DEVICE_MAX_ACCOUNTS,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::REGISTRATION_DEVICE_MAX_ACCOUNTS, '1'),
+                'description' => 'Maximum number of accounts allowed per browser/device before registration is blocked (main account is the oldest account seen on that device).',
+                'type' => 'number',
+                'required' => true,
+                'placeholder' => '1',
+                'validation' => 'required|integer|min:1|max:10',
+                'options' => [],
+                'category' => 'security',
+            ],
             ConfigInterface::EMAIL_DOMAIN_BLOCKING_ENABLED => [
                 'name' => ConfigInterface::EMAIL_DOMAIN_BLOCKING_ENABLED,
                 'value' => $this->app
@@ -1386,6 +1431,38 @@ class SettingsController
                 'validation' => 'required|string|max:255',
                 'options' => ['true', 'false'],
                 'category' => 'app',
+            ],
+            ConfigInterface::AVATAR_PROVIDER => [
+                'name' => ConfigInterface::AVATAR_PROVIDER,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::AVATAR_PROVIDER, 'gravatar'),
+                'description' => 'Default avatar provider for users without a custom profile picture',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'gravatar',
+                'validation' => 'required|string|max:255',
+                'options' => [
+                    'gravatar',
+                    'panel_logo',
+                    'ui_avatars',
+                    'robohash',
+                    'dicebear',
+                    'custom',
+                ],
+                'category' => 'security',
+            ],
+            ConfigInterface::AVATAR_CUSTOM_URL => [
+                'name' => ConfigInterface::AVATAR_CUSTOM_URL,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::AVATAR_CUSTOM_URL, ''),
+                'description' => 'Custom avatar URL template (only used when avatar provider is custom). Placeholders: {email}, {username}, {name}, {hash}, {app_url}',
+                'type' => 'text',
+                'required' => false,
+                'placeholder' => 'https://example.com/avatar/{hash}',
+                'validation' => 'nullable|string|max:2048',
+                'category' => 'security',
             ],
             ConfigInterface::USER_ALLOW_AVATAR_CHANGE => [
                 'name' => ConfigInterface::USER_ALLOW_AVATAR_CHANGE,
@@ -1626,6 +1703,22 @@ class SettingsController
                 'validation' => 'required|string|max:255',
                 'options' => ['true', 'false'],
                 'description' => 'Allow users to change the server startup',
+                'category' => 'servers',
+            ],
+            ConfigInterface::SERVER_ALLOW_CUSTOM_DOCKER_IMAGE => [
+                'name' => ConfigInterface::SERVER_ALLOW_CUSTOM_DOCKER_IMAGE,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::SERVER_ALLOW_CUSTOM_DOCKER_IMAGE,
+                        'false',
+                    ),
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'false',
+                'validation' => 'required|string|max:255',
+                'options' => ['true', 'false'],
+                'description' => 'Allow users to enter a custom Docker image on the startup page. When disabled, users may only select images configured on the spell.',
                 'category' => 'servers',
             ],
             ConfigInterface::SERVER_ALLOW_SCHEDULES => [

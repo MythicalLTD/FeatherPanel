@@ -61,6 +61,7 @@ import {
     FolderTree,
 } from 'lucide-react';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
 interface Spell {
@@ -92,23 +93,42 @@ interface Realm {
     name: string;
 }
 
+const SPELLS_LIST_FILTERS_KEY = 'featherpanel_admin_spells_filters_v1';
+const SPELLS_LIST_FILTERS_DEFAULTS = {
+    searchQuery: '',
+    realmId: '',
+    page: 1,
+    pageSize: 10,
+};
+
 export default function SpellsPage() {
     const { t } = useTranslation();
     const router = useRouter();
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-spells');
     const searchParams = useSearchParams();
+    const urlRealmId = searchParams?.get('realm_id') ?? '';
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const { filters, patchFilters, hydrated } = usePersistedListFilters(
+        SPELLS_LIST_FILTERS_KEY,
+        SPELLS_LIST_FILTERS_DEFAULTS,
+    );
+    const { searchQuery, page, pageSize } = filters;
+    const realmIdParam = urlRealmId || filters.realmId || '';
+
+    useEffect(() => {
+        if (urlRealmId && urlRealmId !== filters.realmId) {
+            patchFilters({ realmId: urlRealmId, page: 1 });
+        }
+    }, [urlRealmId, filters.realmId, patchFilters]);
 
     const [loading, setLoading] = useState(true);
     const [spells, setSpells] = useState<Spell[]>([]);
     const [realms, setRealms] = useState<Realm[]>([]);
-    const [searchQuery, setSearchQuery] = useState('');
     const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
     const [currentRealm, setCurrentRealm] = useState<Realm | null>(null);
 
-    const [pagination, setPagination] = useState<Pagination>({
-        page: 1,
-        pageSize: 10,
+    const [pagination, setPagination] = useState<Omit<Pagination, 'page' | 'pageSize'>>({
         total: 0,
         totalPages: 0,
         hasNext: false,
@@ -123,17 +143,15 @@ export default function SpellsPage() {
     const [reorderLoading, setReorderLoading] = useState(false);
     const [hasOrderChanges, setHasOrderChanges] = useState(false);
 
-    const realmIdParam = searchParams?.get('realm_id');
-
     useEffect(() => {
         const timer = setTimeout(() => {
             setDebouncedSearchQuery(searchQuery);
             if (searchQuery !== debouncedSearchQuery) {
-                setPagination((p) => ({ ...p, page: 1 }));
+                patchFilters({ page: 1 });
             }
         }, 500);
         return () => clearTimeout(timer);
-    }, [searchQuery, debouncedSearchQuery]);
+    }, [searchQuery, debouncedSearchQuery, patchFilters]);
 
     useEffect(() => {
         const fetchRealms = async () => {
@@ -154,13 +172,17 @@ export default function SpellsPage() {
     }, [realmIdParam]);
 
     useEffect(() => {
+        if (!hydrated) {
+            return;
+        }
+
         const fetchSpells = async () => {
             setLoading(true);
             try {
                 const { data } = await axios.get('/api/admin/spells', {
                     params: {
-                        page: pagination.page,
-                        limit: pagination.pageSize,
+                        page,
+                        limit: pageSize,
                         search: debouncedSearchQuery || undefined,
                         realm_id: realmIdParam || undefined,
                     },
@@ -169,8 +191,6 @@ export default function SpellsPage() {
                 setSpells(data.data.spells || []);
                 const apiPagination = data.data.pagination;
                 setPagination({
-                    page: apiPagination.current_page,
-                    pageSize: apiPagination.per_page,
                     total: apiPagination.total_records,
                     totalPages: Math.ceil(apiPagination.total_records / apiPagination.per_page),
                     hasNext: apiPagination.has_next,
@@ -186,7 +206,7 @@ export default function SpellsPage() {
 
         fetchSpells();
         fetchWidgets();
-    }, [pagination.page, pagination.pageSize, debouncedSearchQuery, refreshKey, realmIdParam, t, fetchWidgets]);
+    }, [page, pageSize, debouncedSearchQuery, refreshKey, realmIdParam, t, fetchWidgets, hydrated]);
 
     const handleDelete = async (spell: Spell) => {
         if (!confirm(t('admin.spells.messages.delete_confirm'))) return;
@@ -202,11 +222,11 @@ export default function SpellsPage() {
 
     const handleExport = async (spell: Spell) => {
         try {
-            const { data } = await axios.get(`/api/admin/spells/${spell.id}`);
-            const spellData = data.data.spell;
+            const response = await axios.get(`/api/admin/spells/${spell.id}/export`, {
+                responseType: 'blob',
+            });
 
-            const blob = new Blob([JSON.stringify(spellData, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
+            const url = URL.createObjectURL(response.data);
             const a = document.createElement('a');
             a.href = url;
             a.download = `${spell.name.toLowerCase().replace(/\s+/g, '-')}.json`;
@@ -352,7 +372,7 @@ export default function SpellsPage() {
             toast.success(t('admin.spells.order.messages.saved'));
             setHasOrderChanges(false);
             setIsReorderMode(false);
-            setPagination((p) => ({ ...p, page: 1 }));
+            patchFilters({ page: 1 });
             setRefreshKey((prev) => prev + 1);
         } catch {
             toast.error(t('admin.spells.order.messages.save_failed'));
@@ -366,7 +386,7 @@ export default function SpellsPage() {
             const ok = await fetchAllSpellsForReorder();
             if (!ok) return;
         } else {
-            setPagination((p) => ({ ...p, page: 1 }));
+            patchFilters({ page: 1 });
             setRefreshKey((prev) => prev + 1);
             setHasOrderChanges(false);
         }
@@ -432,7 +452,7 @@ export default function SpellsPage() {
                         <Input
                             placeholder={t('admin.spells.search_placeholder')}
                             value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
+                            onChange={(e) => patchFilters({ searchQuery: e.target.value })}
                             className='h-11 w-full pl-10'
                         />
                     </div>
@@ -462,20 +482,20 @@ export default function SpellsPage() {
                         variant='outline'
                         size='sm'
                         disabled={!pagination.hasPrev}
-                        onClick={() => setPagination((p) => ({ ...p, page: p.page - 1 }))}
+                        onClick={() => patchFilters({ page: page - 1 })}
                         className='gap-1.5'
                     >
                         <ChevronLeft className='h-4 w-4' />
                         {t('common.previous')}
                     </Button>
                     <span className='text-sm font-medium'>
-                        {pagination.page} / {pagination.totalPages}
+                        {page} / {pagination.totalPages}
                     </span>
                     <Button
                         variant='outline'
                         size='sm'
                         disabled={!pagination.hasNext}
-                        onClick={() => setPagination((p) => ({ ...p, page: p.page + 1 }))}
+                        onClick={() => patchFilters({ page: page + 1 })}
                         className='gap-1.5'
                     >
                         {t('common.next')}
@@ -601,18 +621,18 @@ export default function SpellsPage() {
                         variant='outline'
                         size='icon'
                         disabled={!pagination.hasPrev}
-                        onClick={() => setPagination((p) => ({ ...p, page: p.page - 1 }))}
+                        onClick={() => patchFilters({ page: page - 1 })}
                     >
                         <ChevronLeft className='h-4 w-4' />
                     </Button>
                     <span className='text-sm font-medium'>
-                        {pagination.page} / {pagination.totalPages}
+                        {page} / {pagination.totalPages}
                     </span>
                     <Button
                         variant='outline'
                         size='icon'
                         disabled={!pagination.hasNext}
-                        onClick={() => setPagination((p) => ({ ...p, page: p.page + 1 }))}
+                        onClick={() => patchFilters({ page: page + 1 })}
                     >
                         <ChevronRight className='h-4 w-4' />
                     </Button>

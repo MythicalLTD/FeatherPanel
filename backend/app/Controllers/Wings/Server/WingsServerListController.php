@@ -205,14 +205,10 @@ class WingsServerListController
 
             // Parse spell docker images if available
             $dockerImage = $server['image'];
-            if (!empty($spell['docker_images'])) {
-                try {
-                    $dockerImages = json_decode($spell['docker_images'], true);
-                    if (is_array($dockerImages) && !empty($dockerImages)) {
-                        $dockerImage = $dockerImages[0] ?? $server['image'];
-                    }
-                } catch (\Exception $e) {
-                    // If docker images parsing fails, use server image
+            if (trim((string) $dockerImage) === '') {
+                $resolvedImage = Spell::resolveDefaultDockerImage($spell);
+                if ($resolvedImage !== null) {
+                    $dockerImage = $resolvedImage;
                 }
             }
 

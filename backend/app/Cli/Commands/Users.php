@@ -29,7 +29,6 @@ use App\Chat\MailQueue;
 use App\Chat\VmInstance;
 use App\Helpers\UUIDUtils;
 use App\Cli\CommandBuilder;
-use App\Config\ConfigInterface;
 use App\Helpers\EmailDomainValidator;
 
 class Users extends App implements CommandBuilder
@@ -374,9 +373,6 @@ class Users extends App implements CommandBuilder
         }
         $roleId = empty($roleIdInput) ? 1 : (int) $roleIdInput;
 
-        $config = self::$app->getConfig();
-        $avatar = $config->getSetting(ConfigInterface::APP_LOGO_WHITE, 'https://github.com/featherpanel-com.png');
-
         $data = [
             'username' => $username,
             'email' => $email,
@@ -385,7 +381,6 @@ class Users extends App implements CommandBuilder
             'password' => password_hash($password, PASSWORD_BCRYPT),
             'uuid' => UUIDUtils::generateV4(),
             'remember_token' => User::generateAccountToken(),
-            'avatar' => $avatar,
             'role_id' => $roleId,
         ];
 

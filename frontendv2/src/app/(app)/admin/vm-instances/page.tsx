@@ -27,6 +27,7 @@ import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { PageCard } from '@/components/featherui/PageCard';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { toast } from 'sonner';
 import {
@@ -118,20 +119,48 @@ function formatDisk(gb: number): string {
     return `${gb} GB`;
 }
 
+const VM_INSTANCES_LIST_FILTERS_KEY = 'featherpanel_admin_vm_instances_filters_v1';
+const VM_INSTANCES_LIST_FILTERS_DEFAULTS = {
+    searchQuery: '',
+    ownerFilter: '',
+    nodeFilter: '',
+    statusFilter: '',
+    sortBy: 'id' as 'id' | 'hostname' | 'created_at',
+    sortOrder: 'DESC' as 'ASC' | 'DESC',
+    page: 1,
+    pageSize: 10,
+    filterOwner: null as User | null,
+    filterNode: null as VmNode | null,
+};
+
 export default function VmInstancesPage() {
     const { t } = useTranslation();
     const router = useRouter();
 
+    const { filters, patchFilters, resetFilters, hydrated } = usePersistedListFilters(
+        VM_INSTANCES_LIST_FILTERS_KEY,
+        VM_INSTANCES_LIST_FILTERS_DEFAULTS,
+    );
+    const {
+        searchQuery,
+        ownerFilter,
+        nodeFilter,
+        statusFilter,
+        sortBy,
+        sortOrder,
+        page,
+        pageSize,
+        filterOwner,
+        filterNode,
+    } = filters;
+
     const [loading, setLoading] = useState(true);
     const [instances, setInstances] = useState<VmInstance[]>([]);
-    const [searchQuery, setSearchQuery] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
     const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
     const [deleting, setDeleting] = useState(false);
 
-    const [pagination, setPagination] = useState<Pagination>({
-        page: 1,
-        pageSize: 10,
+    const [pagination, setPagination] = useState<Omit<Pagination, 'page' | 'pageSize'>>({
         total: 0,
         totalPages: 0,
         hasNext: false,
@@ -139,15 +168,6 @@ export default function VmInstancesPage() {
         from: 0,
         to: 0,
     });
-
-    const [ownerFilter, setOwnerFilter] = useState('');
-    const [nodeFilter, setNodeFilter] = useState('');
-    const [statusFilter] = useState('');
-    const [sortBy, setSortBy] = useState<'id' | 'hostname' | 'created_at'>('id');
-    const [sortOrder, setSortOrder] = useState<'ASC' | 'DESC'>('DESC');
-
-    const [filterOwner, setFilterOwner] = useState<User | null>(null);
-    const [filterNode, setFilterNode] = useState<VmNode | null>(null);
     const [isOwnerFilterModalOpen, setIsOwnerFilterModalOpen] = useState(false);
     const [isNodeFilterModalOpen, setIsNodeFilterModalOpen] = useState(false);
     const [ownerFilterSearch, setOwnerFilterSearch] = useState('');
@@ -164,19 +184,23 @@ export default function VmInstancesPage() {
         const timer = setTimeout(() => {
             setDebouncedSearch(searchQuery);
             if (searchQuery !== debouncedSearch) {
-                setPagination((p) => ({ ...p, page: 1 }));
+                patchFilters({ page: 1 });
             }
         }, 500);
         return () => clearTimeout(timer);
-    }, [searchQuery, debouncedSearch]);
+    }, [searchQuery, debouncedSearch, patchFilters]);
 
     const fetchInstances = useCallback(async () => {
+        if (!hydrated) {
+            return;
+        }
+
         setLoading(true);
         try {
             const { data } = await axios.get('/api/admin/vm-instances', {
                 params: {
-                    page: pagination.page,
-                    limit: pagination.pageSize,
+                    page,
+                    limit: pageSize,
                     search: debouncedSearch || undefined,
                     owner_id: ownerFilter || undefined,
                     node_id: nodeFilter || undefined,
@@ -187,8 +211,6 @@ export default function VmInstancesPage() {
             setInstances(data.data?.instances ?? []);
             const pag = data.data?.pagination ?? {};
             setPagination({
-                page: pag.current_page || 1,
-                pageSize: pag.per_page || 10,
                 total: pag.total_records || 0,
                 totalPages: Math.ceil((pag.total_records || 0) / (pag.per_page || 10)),
                 hasNext: pag.has_next || false,
@@ -202,7 +224,7 @@ export default function VmInstancesPage() {
         } finally {
             setLoading(false);
         }
-    }, [pagination.page, pagination.pageSize, debouncedSearch, ownerFilter, nodeFilter, statusFilter, t]);
+    }, [page, pageSize, debouncedSearch, ownerFilter, nodeFilter, statusFilter, t, hydrated]);
 
     useEffect(() => {
         fetchWidgets();
@@ -330,7 +352,7 @@ export default function VmInstancesPage() {
                     <Input
                         placeholder={t('admin.vmInstances.search_placeholder')}
                         value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onChange={(e) => patchFilters({ searchQuery: e.target.value })}
                         className='h-11 w-full pl-10'
                     />
                 </div>
@@ -372,11 +394,7 @@ export default function VmInstancesPage() {
                                 size='sm'
                                 className='h-9 text-xs'
                                 onClick={() => {
-                                    setOwnerFilter('');
-                                    setNodeFilter('');
-                                    setFilterOwner(null);
-                                    setFilterNode(null);
-                                    setPagination((p) => ({ ...p, page: 1 }));
+                                    resetFilters();
                                 }}
                             >
                                 <X className='mr-2 h-3.5 w-3.5' />
@@ -392,8 +410,7 @@ export default function VmInstancesPage() {
                                     'id' | 'hostname' | 'created_at',
                                     'ASC' | 'DESC',
                                 ];
-                                setSortBy(field);
-                                setSortOrder(order);
+                                patchFilters({ sortBy: field, sortOrder: order, page: 1 });
                             }}
                             className='bg-background/50 border-border/50 h-11 w-55 rounded-xl text-sm'
                         >
@@ -432,21 +449,21 @@ export default function VmInstancesPage() {
                                 variant='outline'
                                 size='sm'
                                 disabled={!pagination.hasPrev}
-                                onClick={() => setPagination((p) => ({ ...p, page: p.page - 1 }))}
+                                onClick={() => patchFilters({ page: page - 1 })}
                                 className='gap-1.5'
                             >
                                 <ChevronLeft className='h-4 w-4' />
                                 {t('common.previous')}
                             </Button>
                             <span className='text-sm font-medium'>
-                                {pagination.page} / {pagination.totalPages}
+                                {page} / {pagination.totalPages}
                                 {pagination.total > 0 && ` (${pagination.total} ${t('common.total')})`}
                             </span>
                             <Button
                                 variant='outline'
                                 size='sm'
                                 disabled={!pagination.hasNext}
-                                onClick={() => setPagination((p) => ({ ...p, page: p.page + 1 }))}
+                                onClick={() => patchFilters({ page: page + 1 })}
                                 className='gap-1.5'
                             >
                                 {t('common.next')}
@@ -576,18 +593,18 @@ export default function VmInstancesPage() {
                                 variant='outline'
                                 size='icon'
                                 disabled={!pagination.hasPrev}
-                                onClick={() => setPagination((p) => ({ ...p, page: p.page - 1 }))}
+                                onClick={() => patchFilters({ page: page - 1 })}
                             >
                                 <ChevronLeft className='h-4 w-4' />
                             </Button>
                             <span className='text-sm font-medium'>
-                                {pagination.page} / {pagination.totalPages}
+                                {page} / {pagination.totalPages}
                             </span>
                             <Button
                                 variant='outline'
                                 size='icon'
                                 disabled={!pagination.hasNext}
-                                onClick={() => setPagination((p) => ({ ...p, page: p.page + 1 }))}
+                                onClick={() => patchFilters({ page: page + 1 })}
                             >
                                 <ChevronRight className='h-4 w-4' />
                             </Button>
@@ -670,10 +687,12 @@ export default function VmInstancesPage() {
                                     key={user.id}
                                     type='button'
                                     onClick={() => {
-                                        setFilterOwner(user);
-                                        setOwnerFilter(String(user.id));
+                                        patchFilters({
+                                            filterOwner: user,
+                                            ownerFilter: String(user.id),
+                                            page: 1,
+                                        });
                                         setIsOwnerFilterModalOpen(false);
-                                        setPagination((p) => ({ ...p, page: 1 }));
                                     }}
                                     className='border-border/50 hover:border-primary hover:bg-primary/5 w-full rounded-xl border p-3 text-left'
                                 >
@@ -707,10 +726,12 @@ export default function VmInstancesPage() {
                                     key={node.id}
                                     type='button'
                                     onClick={() => {
-                                        setFilterNode(node);
-                                        setNodeFilter(String(node.id));
+                                        patchFilters({
+                                            filterNode: node,
+                                            nodeFilter: String(node.id),
+                                            page: 1,
+                                        });
                                         setIsNodeFilterModalOpen(false);
-                                        setPagination((p) => ({ ...p, page: 1 }));
                                     }}
                                     className='border-border/50 hover:border-primary hover:bg-primary/5 w-full rounded-xl border p-3 text-left'
                                 >

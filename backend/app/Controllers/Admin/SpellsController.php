@@ -41,6 +41,7 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'description', type: 'string', nullable: true, description: 'Spell description'),
         new OA\Property(property: 'features', type: 'string', nullable: true, description: 'Spell features (JSON)'),
         new OA\Property(property: 'docker_images', type: 'string', nullable: true, description: 'Docker images (JSON)'),
+        new OA\Property(property: 'default_docker_image', type: 'string', nullable: true, description: 'Default Docker image used on new server installs'),
         new OA\Property(property: 'file_denylist', type: 'string', nullable: true, description: 'File denylist (JSON)'),
         new OA\Property(property: 'update_url', type: 'string', nullable: true, description: 'Update URL'),
         new OA\Property(property: 'config_files', type: 'string', nullable: true, description: 'Config files'),
@@ -84,6 +85,7 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'description', type: 'string', nullable: true, description: 'Spell description'),
         new OA\Property(property: 'features', type: 'string', nullable: true, description: 'Spell features (JSON)'),
         new OA\Property(property: 'docker_images', type: 'string', nullable: true, description: 'Docker images (JSON)'),
+        new OA\Property(property: 'default_docker_image', type: 'string', nullable: true, description: 'Default Docker image used on new server installs'),
         new OA\Property(property: 'file_denylist', type: 'string', nullable: true, description: 'File denylist (JSON)'),
         new OA\Property(property: 'update_url', type: 'string', nullable: true, description: 'Update URL'),
         new OA\Property(property: 'config_files', type: 'string', nullable: true, description: 'Config files'),
@@ -112,6 +114,7 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'description', type: 'string', nullable: true, description: 'Spell description'),
         new OA\Property(property: 'features', type: 'string', nullable: true, description: 'Spell features (JSON)'),
         new OA\Property(property: 'docker_images', type: 'string', nullable: true, description: 'Docker images (JSON)'),
+        new OA\Property(property: 'default_docker_image', type: 'string', nullable: true, description: 'Default Docker image used on new server installs'),
         new OA\Property(property: 'file_denylist', type: 'string', nullable: true, description: 'File denylist (JSON)'),
         new OA\Property(property: 'update_url', type: 'string', nullable: true, description: 'Update URL'),
         new OA\Property(property: 'config_files', type: 'string', nullable: true, description: 'Config files'),
@@ -415,7 +418,7 @@ class SpellsController
         }
 
         // Validate string fields
-        $stringFields = ['author', 'name', 'description', 'update_url', 'config_files', 'config_startup', 'config_logs', 'config_stop', 'startup', 'script_container', 'script_entry', 'script_install'];
+        $stringFields = ['author', 'name', 'description', 'update_url', 'config_files', 'config_startup', 'config_logs', 'config_stop', 'startup', 'script_container', 'script_entry', 'script_install', 'default_docker_image'];
         foreach ($stringFields as $field) {
             if (isset($data[$field]) && !is_string($data[$field])) {
                 return ApiResponse::error("$field must be a string", 'INVALID_DATA_TYPE');
@@ -430,6 +433,18 @@ class SpellsController
                     return ApiResponse::error("$field must be valid JSON", 'INVALID_JSON_FIELD');
                 }
             }
+        }
+
+        if (isset($data['default_docker_image']) && $data['default_docker_image'] !== null && !is_string($data['default_docker_image'])) {
+            return ApiResponse::error('default_docker_image must be a string', 'INVALID_DATA_TYPE', 400);
+        }
+
+        $dockerImagesJson = $data['docker_images'] ?? null;
+        if (array_key_exists('default_docker_image', $data) || !empty($dockerImagesJson)) {
+            $data['default_docker_image'] = Spell::sanitizeDefaultDockerImage(
+                $data['default_docker_image'] ?? null,
+                $dockerImagesJson
+            );
         }
 
         // Validate boolean fields
@@ -571,7 +586,7 @@ class SpellsController
         }
 
         // Validate string fields
-        $stringFields = ['author', 'name', 'description', 'update_url', 'config_files', 'config_startup', 'config_logs', 'config_stop', 'startup', 'script_container', 'script_entry', 'script_install'];
+        $stringFields = ['author', 'name', 'description', 'update_url', 'config_files', 'config_startup', 'config_logs', 'config_stop', 'startup', 'script_container', 'script_entry', 'script_install', 'default_docker_image'];
         foreach ($stringFields as $field) {
             if (isset($data[$field]) && !is_string($data[$field])) {
                 return ApiResponse::error("$field must be a string", 'INVALID_DATA_TYPE');
@@ -586,6 +601,18 @@ class SpellsController
                     return ApiResponse::error("$field must be valid JSON", 'INVALID_JSON_FIELD');
                 }
             }
+        }
+
+        if (isset($data['default_docker_image']) && $data['default_docker_image'] !== null && !is_string($data['default_docker_image'])) {
+            return ApiResponse::error('default_docker_image must be a string', 'INVALID_DATA_TYPE', 400);
+        }
+
+        $dockerImagesJson = $data['docker_images'] ?? $spell['docker_images'] ?? null;
+        if (array_key_exists('default_docker_image', $data) || array_key_exists('docker_images', $data)) {
+            $data['default_docker_image'] = Spell::sanitizeDefaultDockerImage(
+                $data['default_docker_image'] ?? $spell['default_docker_image'] ?? null,
+                $dockerImagesJson
+            );
         }
 
         // Validate boolean fields
@@ -995,33 +1022,14 @@ class SpellsController
             return ApiResponse::error('Invalid JSON format', 'INVALID_JSON', 400);
         }
 
-        // Map JSON data to spell format
-        $spellData = [
-            'realm_id' => (int) $realmId,
-            'uuid' => Spell::generateUuid(),
-            'name' => $jsonData['name'] ?? 'Imported Spell',
-            'author' => $jsonData['author'] ?? 'Unknown',
-            'description' => $jsonData['description'] ?? '',
-            'features' => isset($jsonData['features']) && $jsonData['features'] !== null ? json_encode($jsonData['features']) : null,
-            'docker_images' => isset($jsonData['docker_images']) && $jsonData['docker_images'] !== null ? json_encode($jsonData['docker_images']) : null,
-            'file_denylist' => isset($jsonData['file_denylist']) && $jsonData['file_denylist'] !== null ? json_encode($jsonData['file_denylist']) : null,
-            'update_url' => $jsonData['meta']['update_url'] ?? null,
-            'config_files' => $jsonData['config']['files'] ?? null,
-            'config_startup' => $jsonData['config']['startup'] ?? null,
-            'config_logs' => $jsonData['config']['logs'] ?? null,
-            'config_stop' => $jsonData['config']['stop'] ?? null,
-            'startup' => $jsonData['startup'] ?? null,
-            'script_container' => $jsonData['scripts']['installation']['container'] ?? 'alpine:3.4',
-            'script_entry' => $jsonData['scripts']['installation']['entrypoint'] ?? 'ash',
-            'script_is_privileged' => true,
-            'script_install' => $jsonData['scripts']['installation']['script'] ?? null,
-            'force_outgoing_ip' => false,
-        ];
+        $admin = $request->attributes->get('user');
 
-        // Preserve original UUID if it exists in FeatherPanel metadata
-        if (isset($jsonData['_featherpanel']['spell_metadata']['uuid'])) {
-            $originalUuid = $jsonData['_featherpanel']['spell_metadata']['uuid'];
-            // Check if UUID already exists
+        // Map JSON data to spell format
+        $spellData = self::mapImportJsonToSpellData($jsonData, (int) $realmId);
+
+        // Preserve original UUID if it exists in FeatherPanel metadata or legacy raw exports
+        $originalUuid = $jsonData['_featherpanel']['spell_metadata']['uuid'] ?? $jsonData['uuid'] ?? null;
+        if (is_string($originalUuid) && $originalUuid !== '') {
             $existingSpell = Spell::getSpellByUuid($originalUuid);
             if (!$existingSpell) {
                 $spellData['uuid'] = $originalUuid;
@@ -1117,8 +1125,6 @@ class SpellsController
             $logContext .= ' (originally exported by: ' . $importMetadata['original_export_info']['exported_by'] . ')';
         }
 
-        // Log activity
-        $admin = $request->attributes->get('user');
         Activity::createActivity([
             'user_uuid' => $admin['uuid'] ?? null,
             'name' => 'import_spell',
@@ -1170,6 +1176,8 @@ class SpellsController
     )]
     public function export(Request $request, int $id): Response
     {
+        $admin = $request->attributes->get('user');
+
         // Get spell with realm information
         $spell = Spell::getSpellWithRealm($id);
         if (!$spell) {
@@ -1179,9 +1187,13 @@ class SpellsController
         // Get spell variables
         $variables = SpellVariable::getVariablesBySpellId($id);
 
+        $features = self::decodeJsonField($spell['features'] ?? null, []);
+        $dockerImages = self::decodeJsonField($spell['docker_images'] ?? null, []);
+        $fileDenylist = self::decodeJsonField($spell['file_denylist'] ?? null, []);
+
         // Build export data structure matching the import format
         $exportData = [
-            '_comment' => 'DO NOT EDIT: FILE GENERATED AUTOMATICALLY BY PANEL',
+            '_comment' => 'DO NOT EDIT: FILE GENERATED AUTOMATICALLY BY FEATHERPANEL',
             'meta' => [
                 'update_url' => $spell['update_url'],
                 'version' => 'PTDL_v2',
@@ -1190,15 +1202,17 @@ class SpellsController
             'name' => $spell['name'],
             'author' => $spell['author'],
             'description' => $spell['description'],
-            'features' => !empty($spell['features']) ? json_decode($spell['features'], true) : [],
-            'docker_images' => !empty($spell['docker_images']) ? json_decode($spell['docker_images'], true) : [],
-            'file_denylist' => !empty($spell['file_denylist']) ? json_decode($spell['file_denylist'], true) : [],
+            'features' => is_array($features) ? $features : [],
+            'docker_images' => is_array($dockerImages) ? $dockerImages : [],
+            'file_denylist' => is_array($fileDenylist) ? $fileDenylist : [],
             'startup' => $spell['startup'],
             'config' => [
-                'files' => $spell['config_files'] ?? '{}',
-                'startup' => $spell['config_startup'] ?? '{}',
-                'logs' => $spell['config_logs'] ?? '{}',
-                'stop' => $spell['config_stop'] ?? 'stop',
+                'files' => self::decodeSpellConfigField($spell['config_files'] ?? null, (object) []),
+                'startup' => self::decodeSpellConfigField($spell['config_startup'] ?? null, (object) []),
+                'logs' => self::decodeSpellConfigField($spell['config_logs'] ?? null, (object) []),
+                'stop' => is_string($spell['config_stop'] ?? null) && trim($spell['config_stop']) !== ''
+                    ? $spell['config_stop']
+                    : 'stop',
             ],
             'scripts' => [
                 'installation' => [
@@ -1226,10 +1240,11 @@ class SpellsController
                     'force_outgoing_ip' => (bool) $spell['force_outgoing_ip'],
                     'config_from' => $spell['config_from'],
                     'copy_script_from' => $spell['copy_script_from'],
+                    'default_docker_image' => Spell::resolveDefaultDockerImage($spell),
                 ],
                 'variables_count' => count($variables),
-                'features_count' => !empty($spell['features']) ? count(json_decode($spell['features'], true)) : 0,
-                'docker_images_count' => !empty($spell['docker_images']) ? count(json_decode($spell['docker_images'], true)) : 0,
+                'features_count' => is_array($features) ? count($features) : 0,
+                'docker_images_count' => is_array($dockerImages) ? count($dockerImages) : 0,
             ],
         ];
 
@@ -1250,8 +1265,6 @@ class SpellsController
         // Generate filename
         $filename = strtolower(str_replace(' ', '-', $spell['name'])) . '.json';
 
-        // Log activity
-        $admin = $request->attributes->get('user');
         Activity::createActivity([
             'user_uuid' => $admin['uuid'] ?? null,
             'name' => 'export_spell',
@@ -1767,32 +1780,15 @@ class SpellsController
             }
 
             // Map JSON data to spell format
-            $spellData = [
-                'realm_id' => (int) $realmId,
-                'uuid' => Spell::generateUuid(),
+            $spellData = self::mapImportJsonToSpellData($jsonData, (int) $realmId, [
                 'name' => $jsonData['name'] ?? $match['display_name'] ?? 'Imported Spell',
                 'author' => $jsonData['author'] ?? $match['author'] ?? 'Unknown',
                 'description' => $jsonData['description'] ?? $match['description'] ?? '',
-                'features' => isset($jsonData['features']) && $jsonData['features'] !== null ? json_encode($jsonData['features']) : null,
-                'docker_images' => isset($jsonData['docker_images']) && $jsonData['docker_images'] !== null ? json_encode($jsonData['docker_images']) : null,
-                'file_denylist' => isset($jsonData['file_denylist']) && $jsonData['file_denylist'] !== null ? json_encode($jsonData['file_denylist']) : null,
-                'update_url' => $jsonData['meta']['update_url'] ?? null,
-                'config_files' => $jsonData['config']['files'] ?? null,
-                'config_startup' => $jsonData['config']['startup'] ?? null,
-                'config_logs' => $jsonData['config']['logs'] ?? null,
-                'config_stop' => $jsonData['config']['stop'] ?? null,
-                'startup' => $jsonData['startup'] ?? null,
-                'script_container' => $jsonData['scripts']['installation']['container'] ?? 'alpine:3.4',
-                'script_entry' => $jsonData['scripts']['installation']['entrypoint'] ?? 'ash',
-                'script_is_privileged' => true,
-                'script_install' => $jsonData['scripts']['installation']['script'] ?? null,
-                'force_outgoing_ip' => false,
-            ];
+            ]);
 
-            // Preserve original UUID if it exists in FeatherPanel metadata
-            if (isset($jsonData['_featherpanel']['spell_metadata']['uuid'])) {
-                $originalUuid = $jsonData['_featherpanel']['spell_metadata']['uuid'];
-                // Check if UUID already exists
+            // Preserve original UUID if it exists in FeatherPanel metadata or legacy raw exports
+            $originalUuid = $jsonData['_featherpanel']['spell_metadata']['uuid'] ?? $jsonData['uuid'] ?? null;
+            if (is_string($originalUuid) && $originalUuid !== '') {
                 $existingSpell = Spell::getSpellByUuid($originalUuid);
                 if (!$existingSpell) {
                     $spellData['uuid'] = $originalUuid;
@@ -1880,5 +1876,157 @@ class SpellsController
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to install spell from online repository: ' . $e->getMessage(), 500);
         }
+    }
+
+    /**
+     * Decode a spell config field stored as JSON text for PTDL export.
+     */
+    private static function decodeSpellConfigField(?string $value, mixed $default): mixed
+    {
+        if ($value === null || trim($value) === '') {
+            return $default;
+        }
+
+        $decoded = json_decode($value, true);
+        if (json_last_error() === JSON_ERROR_NONE) {
+            return $decoded ?? $default;
+        }
+
+        return $value;
+    }
+
+    /**
+     * Decode a JSON field that may already be decoded or stored as a JSON string.
+     */
+    private static function decodeJsonField(mixed $value, mixed $default): mixed
+    {
+        if ($value === null || $value === '') {
+            return $default;
+        }
+
+        if (is_array($value)) {
+            return $value;
+        }
+
+        if (!is_string($value)) {
+            return $default;
+        }
+
+        $decoded = json_decode($value, true);
+        if (json_last_error() === JSON_ERROR_NONE) {
+            return $decoded ?? $default;
+        }
+
+        return $default;
+    }
+
+    /**
+     * Normalize imported config values for database storage.
+     */
+    private static function encodeSpellConfigFieldForStorage(mixed $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        if (is_array($value)) {
+            return json_encode($value);
+        }
+
+        if (is_string($value)) {
+            return trim($value) === '' ? null : $value;
+        }
+
+        return (string) $value;
+    }
+
+    /**
+     * Normalize legacy raw API spell exports into PTDL_v2 import format.
+     */
+    private static function normalizeSpellImportJson(array $jsonData): array
+    {
+        if (isset($jsonData['meta']['version']) || isset($jsonData['config']) || isset($jsonData['scripts'])) {
+            return $jsonData;
+        }
+
+        $metadata = array_filter([
+            'uuid' => $jsonData['uuid'] ?? null,
+            'script_is_privileged' => isset($jsonData['script_is_privileged']) ? (bool) $jsonData['script_is_privileged'] : null,
+            'force_outgoing_ip' => isset($jsonData['force_outgoing_ip']) ? (bool) $jsonData['force_outgoing_ip'] : null,
+            'config_from' => $jsonData['config_from'] ?? null,
+            'copy_script_from' => $jsonData['copy_script_from'] ?? null,
+            'default_docker_image' => $jsonData['default_docker_image'] ?? null,
+        ], static fn ($value) => $value !== null);
+
+        return [
+            'meta' => [
+                'update_url' => $jsonData['update_url'] ?? null,
+                'version' => 'PTDL_v2',
+            ],
+            'name' => $jsonData['name'] ?? 'Imported Spell',
+            'author' => $jsonData['author'] ?? 'Unknown',
+            'description' => $jsonData['description'] ?? '',
+            'features' => self::decodeJsonField($jsonData['features'] ?? null, []),
+            'docker_images' => self::decodeJsonField($jsonData['docker_images'] ?? null, []),
+            'file_denylist' => self::decodeJsonField($jsonData['file_denylist'] ?? null, []),
+            'startup' => $jsonData['startup'] ?? null,
+            'config' => [
+                'files' => self::decodeJsonField($jsonData['config_files'] ?? null, (object) []),
+                'startup' => self::decodeJsonField($jsonData['config_startup'] ?? null, (object) []),
+                'logs' => self::decodeJsonField($jsonData['config_logs'] ?? null, (object) []),
+                'stop' => is_string($jsonData['config_stop'] ?? null) && trim($jsonData['config_stop']) !== ''
+                    ? $jsonData['config_stop']
+                    : 'stop',
+            ],
+            'scripts' => [
+                'installation' => [
+                    'container' => $jsonData['script_container'] ?? 'alpine:3.4',
+                    'entrypoint' => $jsonData['script_entry'] ?? 'ash',
+                    'script' => $jsonData['script_install'] ?? '',
+                ],
+            ],
+            'variables' => is_array($jsonData['variables'] ?? null) ? $jsonData['variables'] : [],
+            '_featherpanel' => $metadata === [] ? [] : ['spell_metadata' => $metadata],
+        ];
+    }
+
+    /**
+     * Map imported JSON (PTDL_v2 or legacy raw export) to spell database fields.
+     */
+    private static function mapImportJsonToSpellData(array $jsonData, int $realmId, array $overrides = []): array
+    {
+        $jsonData = self::normalizeSpellImportJson($jsonData);
+        $metadata = $jsonData['_featherpanel']['spell_metadata'] ?? [];
+
+        $spellData = [
+            'realm_id' => $realmId,
+            'uuid' => Spell::generateUuid(),
+            'name' => $overrides['name'] ?? $jsonData['name'] ?? 'Imported Spell',
+            'author' => $overrides['author'] ?? $jsonData['author'] ?? 'Unknown',
+            'description' => $overrides['description'] ?? $jsonData['description'] ?? '',
+            'features' => isset($jsonData['features']) && $jsonData['features'] !== null ? json_encode($jsonData['features']) : null,
+            'docker_images' => isset($jsonData['docker_images']) && $jsonData['docker_images'] !== null ? json_encode($jsonData['docker_images']) : null,
+            'file_denylist' => isset($jsonData['file_denylist']) && $jsonData['file_denylist'] !== null ? json_encode($jsonData['file_denylist']) : null,
+            'update_url' => $jsonData['meta']['update_url'] ?? null,
+            'config_files' => self::encodeSpellConfigFieldForStorage($jsonData['config']['files'] ?? null),
+            'config_startup' => self::encodeSpellConfigFieldForStorage($jsonData['config']['startup'] ?? null),
+            'config_logs' => self::encodeSpellConfigFieldForStorage($jsonData['config']['logs'] ?? null),
+            'config_stop' => is_string($jsonData['config']['stop'] ?? null) && trim($jsonData['config']['stop']) !== ''
+                ? $jsonData['config']['stop']
+                : 'stop',
+            'startup' => $jsonData['startup'] ?? null,
+            'script_container' => $jsonData['scripts']['installation']['container'] ?? 'alpine:3.4',
+            'script_entry' => $jsonData['scripts']['installation']['entrypoint'] ?? 'ash',
+            'script_is_privileged' => $metadata['script_is_privileged'] ?? true,
+            'script_install' => $jsonData['scripts']['installation']['script'] ?? null,
+            'force_outgoing_ip' => $metadata['force_outgoing_ip'] ?? false,
+        ];
+
+        $spellData['default_docker_image'] = Spell::sanitizeDefaultDockerImage(
+            is_string($metadata['default_docker_image'] ?? null) ? $metadata['default_docker_image'] : null,
+            $spellData['docker_images']
+        );
+
+        return $spellData;
     }
 }

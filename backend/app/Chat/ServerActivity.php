@@ -204,6 +204,25 @@ class ServerActivity
     }
 
     /**
+     * @return string[]
+     */
+    public static function getDistinctIpsByUserId(int $userId): array
+    {
+        if ($userId <= 0) {
+            return [];
+        }
+
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare(
+            'SELECT DISTINCT ip FROM ' . self::$table
+            . ' WHERE user_id = :user_id AND ip IS NOT NULL AND ip != \'\' ORDER BY ip'
+        );
+        $stmt->execute(['user_id' => $userId]);
+
+        return array_column($stmt->fetchAll(\PDO::FETCH_ASSOC), 'ip');
+    }
+
+    /**
      * Get activities by user ID.
      *
      * @param int $userId User ID

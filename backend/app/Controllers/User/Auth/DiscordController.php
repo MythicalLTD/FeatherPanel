@@ -26,6 +26,7 @@ use App\Helpers\ApiResponse;
 use App\Config\ConfigInterface;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Helpers\EmailDomainValidator;
+use App\Helpers\UserDeviceRegistrationGuard;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -361,6 +362,11 @@ class DiscordController
         $registrationEnabled = $config->getSetting(ConfigInterface::REGISTRATION_ENABLED, 'true') === 'true';
         if (!$registrationEnabled) {
             return ApiResponse::error('Registration is disabled', 'REGISTRATION_DISABLED', 403);
+        }
+
+        $deviceLimitResponse = UserDeviceRegistrationGuard::assertRegistrationAllowed($request, $config);
+        if ($deviceLimitResponse !== null) {
+            return $deviceLimitResponse;
         }
 
         $newUser = $this->autoProvisionUser(

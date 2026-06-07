@@ -16,6 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useState, useEffect, useCallback, type ReactNode, type ElementType } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import axios, { isAxiosError } from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -28,6 +29,7 @@ import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { PageCard } from '@/components/featherui/PageCard';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { toast } from 'sonner';
 import {
@@ -75,6 +77,38 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select } from '@/components/ui/select-native';
 import { HeadlessModal } from '@/components/ui/headless-modal';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Avatar, AvatarImage } from '@/components/ui/avatar';
+
+function resolveAvatarSrc(avatar?: string): string | undefined {
+    if (avatar && (avatar.startsWith('http') || avatar.startsWith('/'))) {
+        return avatar;
+    }
+
+    return undefined;
+}
+
+const SERVERS_LIST_FILTERS_KEY = 'featherpanel_admin_servers_filters_v1';
+const SERVERS_LIST_FILTERS_DEFAULTS = {
+    searchQuery: '',
+    ownerFilter: '',
+    nodeFilter: '',
+    realmFilter: '',
+    spellFilter: '',
+    locationFilter: '',
+    serverIdFilter: '',
+    uuidFilter: '',
+    externalIdFilter: '',
+    sortBy: 'id' as 'id' | 'name' | 'created_at' | 'updated_at',
+    sortOrder: 'DESC' as 'ASC' | 'DESC',
+    showAdvancedFilters: false,
+    page: 1,
+    pageSize: 10,
+    filterOwner: null as { id: number; username: string; email?: string } | null,
+    filterNode: null as ApiNode | null,
+    filterRealm: null as { id: number; name: string } | null,
+    filterSpell: null as { id: number; name: string } | null,
+    filterLocation: null as { id: number; name: string } | null,
+};
 
 export default function ServersPage() {
     const { t } = useTranslation();
@@ -83,8 +117,32 @@ export default function ServersPage() {
 
     const [loading, setLoading] = useState(true);
     const [servers, setServers] = useState<ApiServer[]>([]);
-    const [searchQuery, setSearchQuery] = useState('');
     const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
+    const { filters, patchFilters, resetFilters, hydrated } = usePersistedListFilters(
+        SERVERS_LIST_FILTERS_KEY,
+        SERVERS_LIST_FILTERS_DEFAULTS,
+    );
+    const {
+        searchQuery,
+        ownerFilter,
+        nodeFilter,
+        realmFilter,
+        spellFilter,
+        locationFilter,
+        serverIdFilter,
+        uuidFilter,
+        externalIdFilter,
+        sortBy,
+        sortOrder,
+        showAdvancedFilters,
+        page,
+        pageSize,
+        filterOwner,
+        filterNode,
+        filterRealm,
+        filterSpell,
+        filterLocation,
+    } = filters;
     const [refreshKey, setRefreshKey] = useState(0);
     const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
     const [isHardDelete, setIsHardDelete] = useState(false);
@@ -109,9 +167,7 @@ export default function ServersPage() {
     const [nodeSearch, setNodeSearch] = useState('');
     const [allocationSearch, setAllocationSearch] = useState('');
 
-    const [pagination, setPagination] = useState<Pagination>({
-        page: 1,
-        pageSize: 10,
+    const [pagination, setPagination] = useState<Omit<Pagination, 'page' | 'pageSize'>>({
         total: 0,
         totalPages: 0,
         hasNext: false,
@@ -120,23 +176,6 @@ export default function ServersPage() {
         to: 0,
     });
 
-    const [ownerFilter, setOwnerFilter] = useState('');
-    const [nodeFilter, setNodeFilter] = useState('');
-    const [realmFilter, setRealmFilter] = useState('');
-    const [spellFilter, setSpellFilter] = useState('');
-    const [locationFilter, setLocationFilter] = useState('');
-    const [serverIdFilter, setServerIdFilter] = useState('');
-    const [uuidFilter, setUuidFilter] = useState('');
-    const [externalIdFilter, setExternalIdFilter] = useState('');
-    const [sortBy, setSortBy] = useState<'id' | 'name' | 'created_at' | 'updated_at'>('id');
-    const [sortOrder, setSortOrder] = useState<'ASC' | 'DESC'>('DESC');
-    const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
-
-    const [filterOwner, setFilterOwner] = useState<{ id: number; username: string; email?: string } | null>(null);
-    const [filterNode, setFilterNode] = useState<ApiNode | null>(null);
-    const [filterRealm, setFilterRealm] = useState<{ id: number; name: string } | null>(null);
-    const [filterSpell, setFilterSpell] = useState<{ id: number; name: string } | null>(null);
-    const [filterLocation, setFilterLocation] = useState<{ id: number; name: string } | null>(null);
     const [isOwnerFilterModalOpen, setIsOwnerFilterModalOpen] = useState(false);
     const [isNodeFilterModalOpen, setIsNodeFilterModalOpen] = useState(false);
     const [isRealmFilterModalOpen, setIsRealmFilterModalOpen] = useState(false);
@@ -160,19 +199,23 @@ export default function ServersPage() {
         const timer = setTimeout(() => {
             setDebouncedSearchQuery(searchQuery);
             if (searchQuery !== debouncedSearchQuery) {
-                setPagination((p) => ({ ...p, page: 1 }));
+                patchFilters({ page: 1 });
             }
         }, 500);
         return () => clearTimeout(timer);
-    }, [searchQuery, debouncedSearchQuery]);
+    }, [searchQuery, debouncedSearchQuery, patchFilters]);
 
     const fetchServers = useCallback(async () => {
+        if (!hydrated) {
+            return;
+        }
+
         setLoading(true);
         try {
             const { data } = await axios.get('/api/admin/servers', {
                 params: {
-                    page: pagination.page,
-                    limit: pagination.pageSize,
+                    page,
+                    limit: pageSize,
                     search: debouncedSearchQuery || undefined,
                     owner_id: ownerFilter || undefined,
                     node_id: nodeFilter || undefined,
@@ -190,8 +233,6 @@ export default function ServersPage() {
             setServers(data.data.servers || []);
             const apiPagination = data.data.pagination;
             setPagination({
-                page: apiPagination.current_page,
-                pageSize: apiPagination.per_page,
                 total: apiPagination.total_records,
                 totalPages: Math.ceil(apiPagination.total_records / apiPagination.per_page),
                 hasNext: apiPagination.has_next,
@@ -206,8 +247,8 @@ export default function ServersPage() {
             setLoading(false);
         }
     }, [
-        pagination.page,
-        pagination.pageSize,
+        page,
+        pageSize,
         debouncedSearchQuery,
         ownerFilter,
         nodeFilter,
@@ -220,6 +261,7 @@ export default function ServersPage() {
         sortBy,
         sortOrder,
         t,
+        hydrated,
     ]);
 
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-servers');
@@ -483,7 +525,7 @@ export default function ServersPage() {
                     <Input
                         placeholder={t('admin.servers.search_placeholder')}
                         value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onChange={(e) => patchFilters({ searchQuery: e.target.value })}
                         className='h-11 w-full pl-10'
                     />
                 </div>
@@ -579,7 +621,7 @@ export default function ServersPage() {
                             variant='ghost'
                             size='sm'
                             className='h-9 text-xs'
-                            onClick={() => setShowAdvancedFilters((prev) => !prev)}
+                            onClick={() => patchFilters({ showAdvancedFilters: !showAdvancedFilters })}
                         >
                             {t('admin.servers.filters.advanced')}
                         </Button>
@@ -592,8 +634,7 @@ export default function ServersPage() {
                                     'id' | 'name' | 'created_at' | 'updated_at',
                                     'ASC' | 'DESC',
                                 ];
-                                setSortBy(field);
-                                setSortOrder(order);
+                                patchFilters({ sortBy: field, sortOrder: order, page: 1 });
                             }}
                             className='bg-background/50 border-border/50 h-11 w-55 rounded-xl text-sm'
                         >
@@ -613,8 +654,7 @@ export default function ServersPage() {
                             min={1}
                             value={serverIdFilter}
                             onChange={(e) => {
-                                setServerIdFilter(e.target.value);
-                                setPagination((p) => ({ ...p, page: 1 }));
+                                patchFilters({ serverIdFilter: e.target.value, page: 1 });
                             }}
                             placeholder={t('admin.servers.filters.server_id')}
                             className='h-9 text-xs'
@@ -622,8 +662,7 @@ export default function ServersPage() {
                         <Input
                             value={uuidFilter}
                             onChange={(e) => {
-                                setUuidFilter(e.target.value);
-                                setPagination((p) => ({ ...p, page: 1 }));
+                                patchFilters({ uuidFilter: e.target.value, page: 1 });
                             }}
                             placeholder={t('admin.servers.filters.uuid')}
                             className='h-9 text-xs'
@@ -631,8 +670,7 @@ export default function ServersPage() {
                         <Input
                             value={externalIdFilter}
                             onChange={(e) => {
-                                setExternalIdFilter(e.target.value);
-                                setPagination((p) => ({ ...p, page: 1 }));
+                                patchFilters({ externalIdFilter: e.target.value, page: 1 });
                             }}
                             placeholder={t('admin.servers.filters.external_id')}
                             className='h-9 text-xs'
@@ -642,20 +680,7 @@ export default function ServersPage() {
                             size='sm'
                             className='h-9 justify-start text-xs'
                             onClick={() => {
-                                setOwnerFilter('');
-                                setNodeFilter('');
-                                setFilterOwner(null);
-                                setFilterNode(null);
-                                setRealmFilter('');
-                                setSpellFilter('');
-                                setLocationFilter('');
-                                setFilterRealm(null);
-                                setFilterSpell(null);
-                                setFilterLocation(null);
-                                setServerIdFilter('');
-                                setUuidFilter('');
-                                setExternalIdFilter('');
-                                setPagination((p) => ({ ...p, page: 1 }));
+                                resetFilters();
                             }}
                         >
                             {t('admin.servers.filters.clear')}
@@ -744,20 +769,20 @@ export default function ServersPage() {
                                 variant='outline'
                                 size='sm'
                                 disabled={!pagination.hasPrev}
-                                onClick={() => setPagination((p) => ({ ...p, page: p.page - 1 }))}
+                                onClick={() => patchFilters({ page: page - 1 })}
                                 className='gap-1.5'
                             >
                                 <ChevronLeft className='h-4 w-4' />
                                 {t('common.previous')}
                             </Button>
                             <span className='text-sm font-medium'>
-                                {pagination.page} / {pagination.totalPages}
+                                {page} / {pagination.totalPages}
                             </span>
                             <Button
                                 variant='outline'
                                 size='sm'
                                 disabled={!pagination.hasNext}
-                                onClick={() => setPagination((p) => ({ ...p, page: p.page + 1 }))}
+                                onClick={() => patchFilters({ page: page + 1 })}
                                 className='gap-1.5'
                             >
                                 {t('common.next')}
@@ -773,17 +798,42 @@ export default function ServersPage() {
                                     className: 'bg-primary/10 text-primary border-primary/20',
                                 },
                                 {
-                                    label: server.owner?.username || 'System',
-                                    className: 'bg-muted text-muted-foreground border-border/50',
+                                    label: server.uuidShort,
+                                    className: 'bg-muted/50 text-muted-foreground border-border/50 font-mono',
                                 },
                             ];
 
+                            const ownerAvatarSrc = resolveAvatarSrc(server.owner?.avatar);
                             const serverStatus = displayStatus(server as unknown as ServerType);
                             return (
                                 <ResourceCard
                                     key={server.id}
                                     title={server.name}
-                                    subtitle={server.uuidShort}
+                                    subtitle={
+                                        server.owner ? (
+                                            <div className='flex items-center gap-2'>
+                                                <Avatar className='h-6 w-6 shrink-0'>
+                                                    {ownerAvatarSrc && (
+                                                        <AvatarImage src={ownerAvatarSrc} alt={server.owner.username} />
+                                                    )}
+                                                </Avatar>
+                                                {server.owner.uuid ? (
+                                                    <Link
+                                                        href={`/admin/users/${server.owner.uuid}/edit`}
+                                                        className='text-primary hover:text-primary/80 font-medium underline-offset-4 transition-colors hover:underline'
+                                                    >
+                                                        {server.owner.username}
+                                                    </Link>
+                                                ) : (
+                                                    <span className='text-foreground font-medium'>
+                                                        {server.owner.username}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <span className='text-muted-foreground font-medium'>System</span>
+                                        )
+                                    }
                                     icon={Server}
                                     badges={badges}
                                     description={
@@ -898,18 +948,18 @@ export default function ServersPage() {
                                 variant='outline'
                                 size='icon'
                                 disabled={!pagination.hasPrev}
-                                onClick={() => setPagination((p) => ({ ...p, page: p.page - 1 }))}
+                                onClick={() => patchFilters({ page: page - 1 })}
                             >
                                 <ChevronLeft className='h-4 w-4' />
                             </Button>
                             <span className='text-sm font-medium'>
-                                {pagination.page} / {pagination.totalPages}
+                                {page} / {pagination.totalPages}
                             </span>
                             <Button
                                 variant='outline'
                                 size='icon'
                                 disabled={!pagination.hasNext}
-                                onClick={() => setPagination((p) => ({ ...p, page: p.page + 1 }))}
+                                onClick={() => patchFilters({ page: page + 1 })}
                             >
                                 <ChevronRight className='h-4 w-4' />
                             </Button>
@@ -1152,6 +1202,12 @@ export default function ServersPage() {
                                                 icon={User}
                                                 title={t('admin.servers.details.labels.owner')}
                                                 name={selectedServer?.owner?.username}
+                                                avatarUrl={resolveAvatarSrc(selectedServer?.owner?.avatar)}
+                                                nameHref={
+                                                    selectedServer?.owner?.uuid
+                                                        ? `/admin/users/${selectedServer.owner.uuid}/edit`
+                                                        : undefined
+                                                }
                                                 detail={selectedServer?.owner?.email}
                                                 secondary={
                                                     selectedServer?.owner?.last_seen
@@ -1290,9 +1346,11 @@ export default function ServersPage() {
                                 <button
                                     key={user.id}
                                     onClick={() => {
-                                        setFilterOwner({ id: user.id, username: user.username, email: user.email });
-                                        setOwnerFilter(String(user.id));
-                                        setPagination((p) => ({ ...p, page: 1 }));
+                                        patchFilters({
+                                            filterOwner: { id: user.id, username: user.username, email: user.email },
+                                            ownerFilter: String(user.id),
+                                            page: 1,
+                                        });
                                         setIsOwnerFilterModalOpen(false);
                                     }}
                                     className={`w-full rounded-xl border p-4 text-left transition-all ${
@@ -1320,9 +1378,7 @@ export default function ServersPage() {
                             size='sm'
                             className='w-full justify-start text-xs'
                             onClick={() => {
-                                setFilterOwner(null);
-                                setOwnerFilter('');
-                                setPagination((p) => ({ ...p, page: 1 }));
+                                patchFilters({ filterOwner: null, ownerFilter: '', page: 1 });
                             }}
                         >
                             {t('admin.servers.filters.clear')}
@@ -1363,9 +1419,11 @@ export default function ServersPage() {
                                 <button
                                     key={node.id}
                                     onClick={() => {
-                                        setFilterNode(node);
-                                        setNodeFilter(String(node.id));
-                                        setPagination((p) => ({ ...p, page: 1 }));
+                                        patchFilters({
+                                            filterNode: node,
+                                            nodeFilter: String(node.id),
+                                            page: 1,
+                                        });
                                         setIsNodeFilterModalOpen(false);
                                     }}
                                     className={`w-full rounded-xl border p-4 text-left transition-all ${
@@ -1391,9 +1449,7 @@ export default function ServersPage() {
                             size='sm'
                             className='w-full justify-start text-xs'
                             onClick={() => {
-                                setFilterNode(null);
-                                setNodeFilter('');
-                                setPagination((p) => ({ ...p, page: 1 }));
+                                patchFilters({ filterNode: null, nodeFilter: '', page: 1 });
                             }}
                         >
                             {t('admin.servers.filters.clear')}
@@ -1438,9 +1494,11 @@ export default function ServersPage() {
                                 <button
                                     key={realm.id}
                                     onClick={() => {
-                                        setFilterRealm({ id: realm.id, name: realm.name });
-                                        setRealmFilter(String(realm.id));
-                                        setPagination((p) => ({ ...p, page: 1 }));
+                                        patchFilters({
+                                            filterRealm: { id: realm.id, name: realm.name },
+                                            realmFilter: String(realm.id),
+                                            page: 1,
+                                        });
                                         setIsRealmFilterModalOpen(false);
                                     }}
                                     className={`w-full rounded-xl border p-4 text-left transition-all ${
@@ -1472,9 +1530,7 @@ export default function ServersPage() {
                             size='sm'
                             className='w-full justify-start text-xs'
                             onClick={() => {
-                                setFilterRealm(null);
-                                setRealmFilter('');
-                                setPagination((p) => ({ ...p, page: 1 }));
+                                patchFilters({ filterRealm: null, realmFilter: '', page: 1 });
                             }}
                         >
                             {t('admin.servers.filters.clear')}
@@ -1524,9 +1580,11 @@ export default function ServersPage() {
                                 <button
                                     key={spell.id}
                                     onClick={() => {
-                                        setFilterSpell({ id: spell.id, name: spell.name });
-                                        setSpellFilter(String(spell.id));
-                                        setPagination((p) => ({ ...p, page: 1 }));
+                                        patchFilters({
+                                            filterSpell: { id: spell.id, name: spell.name },
+                                            spellFilter: String(spell.id),
+                                            page: 1,
+                                        });
                                         setIsSpellFilterModalOpen(false);
                                     }}
                                     className={`w-full rounded-xl border p-4 text-left transition-all ${
@@ -1558,9 +1616,7 @@ export default function ServersPage() {
                             size='sm'
                             className='w-full justify-start text-xs'
                             onClick={() => {
-                                setFilterSpell(null);
-                                setSpellFilter('');
-                                setPagination((p) => ({ ...p, page: 1 }));
+                                patchFilters({ filterSpell: null, spellFilter: '', page: 1 });
                             }}
                         >
                             {t('admin.servers.filters.clear')}
@@ -1610,9 +1666,11 @@ export default function ServersPage() {
                                 <button
                                     key={location.id}
                                     onClick={() => {
-                                        setFilterLocation({ id: location.id, name: location.name });
-                                        setLocationFilter(String(location.id));
-                                        setPagination((p) => ({ ...p, page: 1 }));
+                                        patchFilters({
+                                            filterLocation: { id: location.id, name: location.name },
+                                            locationFilter: String(location.id),
+                                            page: 1,
+                                        });
                                         setIsLocationFilterModalOpen(false);
                                     }}
                                     className={`w-full rounded-xl border p-4 text-left transition-all ${
@@ -1644,9 +1702,7 @@ export default function ServersPage() {
                             size='sm'
                             className='w-full justify-start text-xs'
                             onClick={() => {
-                                setFilterLocation(null);
-                                setLocationFilter('');
-                                setPagination((p) => ({ ...p, page: 1 }));
+                                patchFilters({ filterLocation: null, locationFilter: '', page: 1 });
                             }}
                         >
                             {t('admin.servers.filters.clear')}
@@ -1954,6 +2010,8 @@ function RelationCard({
     icon: Icon,
     title,
     name,
+    nameHref,
+    avatarUrl,
     detail,
     secondary,
     secondaryTitle,
@@ -1961,10 +2019,24 @@ function RelationCard({
     icon: ElementType;
     title: string;
     name: string | undefined;
+    nameHref?: string;
+    avatarUrl?: string;
     detail?: string;
     secondary?: ReactNode;
     secondaryTitle?: string;
 }) {
+    const nameContent =
+        nameHref && name ? (
+            <Link
+                href={nameHref}
+                className='text-primary hover:text-primary/80 truncate text-sm font-bold underline-offset-4 transition-colors hover:underline'
+            >
+                {name}
+            </Link>
+        ) : (
+            <p className='truncate text-sm font-bold'>{name || 'N/A'}</p>
+        );
+
     return (
         <div className='bg-muted/30 border-border/50 group hover:border-primary/30 rounded-2xl border p-4 transition-all'>
             <div className='mb-2 flex items-center gap-3'>
@@ -1975,7 +2047,16 @@ function RelationCard({
                     {title}
                 </span>
             </div>
-            <p className='truncate text-sm font-bold'>{name || 'N/A'}</p>
+            {avatarUrl ? (
+                <div className='flex min-w-0 items-center gap-2.5'>
+                    <Avatar className='h-9 w-9 shrink-0'>
+                        <AvatarImage src={avatarUrl} alt={name || ''} />
+                    </Avatar>
+                    <div className='min-w-0 flex-1'>{nameContent}</div>
+                </div>
+            ) : (
+                nameContent
+            )}
             {detail && <p className='text-muted-foreground truncate text-xs'>{detail}</p>}
             {secondary && (
                 <p className='text-muted-foreground mt-1 truncate text-xs' title={secondaryTitle}>

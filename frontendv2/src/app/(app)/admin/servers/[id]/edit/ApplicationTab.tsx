@@ -20,15 +20,12 @@ import { PageCard } from '@/components/featherui/PageCard';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/featherui/Button';
-import { HeadlessSelect } from '@/components/ui/headless-select';
 import { Box, Wand2, Search } from 'lucide-react';
-import { TabProps, SelectedEntities, Spell, SpellVariable } from './types';
+import { TabProps, SelectedEntities, SpellVariable } from './types';
 
 interface ApplicationTabProps extends TabProps {
     selectedEntities: SelectedEntities;
-    spellDetails: Spell | null;
     spellVariables: SpellVariable[];
-    dockerImages: string[];
     setRealmModalOpen: (open: boolean) => void;
     setSpellModalOpen: (open: boolean) => void;
     fetchRealms: () => void;
@@ -41,7 +38,6 @@ export function ApplicationTab({
     errors,
     selectedEntities,
     spellVariables,
-    dockerImages,
     setRealmModalOpen,
     setSpellModalOpen,
     fetchRealms,
@@ -145,22 +141,6 @@ export function ApplicationTab({
                             {errors.spell_id && <p className='text-xs text-red-500'>{errors.spell_id}</p>}
                         </div>
                     </div>
-
-                    {dockerImages.length > 0 && (
-                        <div className='space-y-3'>
-                            <Label className='flex items-center gap-1.5'>
-                                {t('admin.servers.form.docker_image')}
-                                <span className='font-bold text-red-500'>*</span>
-                            </Label>
-                            <HeadlessSelect
-                                value={form.image}
-                                onChange={(val) => setForm((prev) => ({ ...prev, image: String(val) }))}
-                                options={dockerImages.map((img) => ({ id: img, name: img }))}
-                                placeholder={t('admin.servers.form.select_docker_image')}
-                            />
-                            <p className='text-muted-foreground text-xs'>{t('admin.servers.form.docker_image_help')}</p>
-                        </div>
-                    )}
                 </div>
             </PageCard>
 

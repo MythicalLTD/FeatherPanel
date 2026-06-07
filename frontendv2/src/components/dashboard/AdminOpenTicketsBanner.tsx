@@ -105,7 +105,7 @@ export function AdminOpenTicketsBanner({ className }: { className?: string }) {
                     </div>
                 </div>
                 <div className='flex shrink-0 flex-wrap gap-2'>
-                    <Button asChild variant='outline' size='sm' className='border-amber-500/30 bg-background/50'>
+                    <Button asChild variant='outline' size='sm' className='bg-background/50 border-amber-500/30'>
                         <Link href='/dashboard/tickets'>{t('tickets.adminViewOpenTickets')}</Link>
                     </Button>
                     <Button asChild size='sm' className='bg-amber-600 text-white hover:bg-amber-600/90'>

@@ -18,6 +18,7 @@
 namespace App\Chat;
 
 use App\App;
+use App\Helpers\AvatarHelper;
 use App\Config\ConfigInterface;
 
 /**
@@ -148,7 +149,7 @@ class User
         $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE id = :id LIMIT 1');
         $stmt->execute(['id' => $id]);
 
-        return $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
+        return AvatarHelper::enrichUser($stmt->fetch(\PDO::FETCH_ASSOC) ?: null);
     }
 
     /**
@@ -163,7 +164,7 @@ class User
         $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE email = :email LIMIT 1');
         $stmt->execute(['email' => $email]);
 
-        return $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
+        return AvatarHelper::enrichUser($stmt->fetch(\PDO::FETCH_ASSOC) ?: null);
     }
 
     /**
@@ -178,7 +179,7 @@ class User
         }
         $stmt = $pdo->query($sql);
 
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        return AvatarHelper::enrichUsers($stmt->fetchAll(\PDO::FETCH_ASSOC));
     }
 
     /**
@@ -296,7 +297,7 @@ class User
 
         $stmt->execute();
 
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        return AvatarHelper::enrichUsers($stmt->fetchAll(\PDO::FETCH_ASSOC));
     }
 
     /**
@@ -400,7 +401,7 @@ class User
         $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE username = :username LIMIT 1');
         $stmt->execute(['username' => $username]);
 
-        return $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
+        return AvatarHelper::enrichUser($stmt->fetch(\PDO::FETCH_ASSOC) ?: null);
     }
 
     /**
@@ -412,7 +413,7 @@ class User
         $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE uuid = :uuid LIMIT 1');
         $stmt->execute(['uuid' => $uuid]);
 
-        return $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
+        return AvatarHelper::enrichUser($stmt->fetch(\PDO::FETCH_ASSOC) ?: null);
     }
 
     /**
@@ -424,7 +425,7 @@ class User
         $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE mail_verify = :mail_verify LIMIT 1');
         $stmt->execute(['mail_verify' => $mailVerify]);
 
-        return $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
+        return AvatarHelper::enrichUser($stmt->fetch(\PDO::FETCH_ASSOC) ?: null);
     }
 
     public static function getUserByExternalId(string $externalId): ?array
@@ -433,7 +434,7 @@ class User
         $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE external_id = :external_id LIMIT 1');
         $stmt->execute(['external_id' => $externalId]);
 
-        return $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
+        return AvatarHelper::enrichUser($stmt->fetch(\PDO::FETCH_ASSOC) ?: null);
     }
 
     /**
@@ -445,7 +446,7 @@ class User
         $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE ldap_provider_uuid = :provider_uuid AND ldap_dn = :dn LIMIT 1');
         $stmt->execute(['provider_uuid' => $providerUuid, 'dn' => $dn]);
 
-        return $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
+        return AvatarHelper::enrichUser($stmt->fetch(\PDO::FETCH_ASSOC) ?: null);
     }
 
     /**
@@ -457,7 +458,7 @@ class User
         $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE remember_token = :remember_token LIMIT 1');
         $stmt->execute(['remember_token' => $rememberToken]);
 
-        return $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
+        return AvatarHelper::enrichUser($stmt->fetch(\PDO::FETCH_ASSOC) ?: null);
     }
 
     public static function getColumns(): array
@@ -580,5 +581,176 @@ class User
             substr($hex, 16, 4),
             substr($hex, 20, 12)
         );
+    }
+
+    /**
+     * Find other users that may be alts by comparing IP addresses from panel activity,
+     * server activity, first/last IP fields, and browser/device sync identifiers.
+     *
+     * @return array{
+     *     source_ips: string[],
+     *     source_devices: string[],
+     *     potential_alts: array<int, array<string, mixed>>
+     * }
+     */
+    public static function findPotentialAltsByUuid(string $userUuid): array
+    {
+        if (!preg_match('/^[a-f0-9\-]{36}$/i', $userUuid)) {
+            return ['source_ips' => [], 'source_devices' => [], 'potential_alts' => []];
+        }
+
+        $user = self::getUserByUuid($userUuid);
+        if (!$user) {
+            return ['source_ips' => [], 'source_devices' => [], 'potential_alts' => []];
+        }
+
+        $ignoredIps = ['127.0.0.1', '::1', '0.0.0.0', ''];
+        $sourceIps = Activity::getDistinctIpsByUserUuid($userUuid);
+        $sourceIps = array_merge($sourceIps, ServerActivity::getDistinctIpsByUserId((int) $user['id']));
+
+        foreach (['first_ip', 'last_ip'] as $field) {
+            $ip = trim((string) ($user[$field] ?? ''));
+            if ($ip !== '' && !in_array($ip, $ignoredIps, true)) {
+                $sourceIps[] = $ip;
+            }
+        }
+
+        $sourceIps = array_values(array_unique(array_filter(
+            $sourceIps,
+            static fn ($ip) => is_string($ip)
+                && trim($ip) !== ''
+                && !in_array(trim($ip), $ignoredIps, true)
+        )));
+
+        $sourceDevices = array_values(array_unique(array_merge(
+            UserDevice::getDeviceHashesByUserUuid($userUuid),
+            UserDevice::getSignalHashesByUserUuid($userUuid),
+        )));
+
+        if (empty($sourceIps) && empty($sourceDevices)) {
+            return ['source_ips' => [], 'source_devices' => [], 'potential_alts' => []];
+        }
+
+        $pdo = Database::getPdoConnection();
+        $ipMatches = [];
+        if (!empty($sourceIps)) {
+            $placeholders = implode(',', array_fill(0, count($sourceIps), '?'));
+
+            $sql = 'SELECT u.uuid, u.username, u.email, u.avatar, u.banned, u.first_ip, u.last_ip, u.last_seen, u.role_id,
+                           a.ip_address AS shared_ip, \'panel_activity\' AS match_source
+                    FROM featherpanel_activity a
+                    INNER JOIN ' . self::$table . ' u ON u.uuid = a.user_uuid
+                    WHERE a.ip_address IN (' . $placeholders . ') AND u.uuid != ?';
+            $params = array_merge($sourceIps, [$userUuid]);
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($params);
+            $ipMatches = array_merge($ipMatches, $stmt->fetchAll(\PDO::FETCH_ASSOC));
+
+            $sqlServer = 'SELECT u.uuid, u.username, u.email, u.avatar, u.banned, u.first_ip, u.last_ip, u.last_seen, u.role_id,
+                                  sa.ip AS shared_ip, \'server_activity\' AS match_source
+                           FROM featherpanel_server_activities sa
+                           INNER JOIN ' . self::$table . ' u ON u.id = sa.user_id
+                           WHERE sa.ip IN (' . $placeholders . ') AND u.uuid != ?';
+            $stmtServer = $pdo->prepare($sqlServer);
+            $stmtServer->execute($params);
+            $ipMatches = array_merge($ipMatches, $stmtServer->fetchAll(\PDO::FETCH_ASSOC));
+
+            $sql2 = 'SELECT uuid, username, email, avatar, banned, first_ip, last_ip, last_seen, role_id,
+                            first_ip AS shared_ip, \'user_ip\' AS match_source
+                     FROM ' . self::$table . '
+                     WHERE uuid != ? AND first_ip IN (' . $placeholders . ')
+                     UNION ALL
+                     SELECT uuid, username, email, avatar, banned, first_ip, last_ip, last_seen, role_id,
+                            last_ip AS shared_ip, \'user_ip\' AS match_source
+                     FROM ' . self::$table . '
+                     WHERE uuid != ? AND last_ip IN (' . $placeholders . ')';
+            $params2 = array_merge([$userUuid], $sourceIps, [$userUuid], $sourceIps);
+            $stmt2 = $pdo->prepare($sql2);
+            $stmt2->execute($params2);
+            $ipMatches = array_merge($ipMatches, $stmt2->fetchAll(\PDO::FETCH_ASSOC));
+        }
+
+        $deviceHashes = UserDevice::getDeviceHashesByUserUuid($userUuid);
+        $deviceMatches = UserDevice::findUsersByDeviceHashes($deviceHashes, $userUuid);
+        foreach ($deviceMatches as &$row) {
+            $row['match_source'] = 'device_sync';
+        }
+        unset($row);
+
+        $signalHashes = UserDevice::getSignalHashesByUserUuid($userUuid);
+        $signalMatches = UserDevice::findUsersBySignalHashes($signalHashes, $userUuid);
+        foreach ($signalMatches as &$row) {
+            $row['match_source'] = 'device_profile';
+        }
+        unset($row);
+
+        $altsMap = [];
+        foreach (array_merge($ipMatches, $deviceMatches, $signalMatches) as $row) {
+            $uuid = $row['uuid'];
+            if (!isset($altsMap[$uuid])) {
+                $altsMap[$uuid] = [
+                    'uuid' => $uuid,
+                    'username' => $row['username'],
+                    'email' => $row['email'],
+                    'avatar' => $row['avatar'],
+                    'banned' => $row['banned'],
+                    'first_ip' => $row['first_ip'],
+                    'last_ip' => $row['last_ip'],
+                    'last_seen' => $row['last_seen'],
+                    'role_id' => $row['role_id'],
+                    'shared_ips' => [],
+                    'shared_devices' => [],
+                    'match_reasons' => [],
+                ];
+            }
+
+            $matchSource = (string) ($row['match_source'] ?? '');
+            if ($matchSource !== '' && !in_array($matchSource, $altsMap[$uuid]['match_reasons'], true)) {
+                $altsMap[$uuid]['match_reasons'][] = $matchSource;
+            }
+
+            if (isset($row['shared_ip'])) {
+                $sharedIp = trim((string) $row['shared_ip']);
+                if ($sharedIp !== '' && !in_array($sharedIp, $altsMap[$uuid]['shared_ips'], true)) {
+                    $altsMap[$uuid]['shared_ips'][] = $sharedIp;
+                }
+            }
+
+            if (isset($row['shared_device'])) {
+                $sharedDevice = trim((string) $row['shared_device']);
+                if ($sharedDevice !== '' && !in_array($sharedDevice, $altsMap[$uuid]['shared_devices'], true)) {
+                    $altsMap[$uuid]['shared_devices'][] = $sharedDevice;
+                }
+            }
+        }
+
+        $alts = array_values($altsMap);
+        usort($alts, static function (array $a, array $b): int {
+            $scoreA = count($a['shared_ips']) + (count($a['shared_devices']) * 2);
+            $scoreB = count($b['shared_ips']) + (count($b['shared_devices']) * 2);
+            $cmp = $scoreB <=> $scoreA;
+            if ($cmp !== 0) {
+                return $cmp;
+            }
+
+            return strcmp((string) $a['username'], (string) $b['username']);
+        });
+
+        foreach ($alts as &$alt) {
+            sort($alt['shared_ips']);
+            sort($alt['shared_devices']);
+            sort($alt['match_reasons']);
+            $alt['match_count'] = count($alt['shared_ips']) + count($alt['shared_devices']);
+            $alt['confidence'] = in_array('device_sync', $alt['match_reasons'], true)
+                && !empty($alt['shared_ips']) ? 'high'
+                : (in_array('device_sync', $alt['match_reasons'], true) || in_array('device_profile', $alt['match_reasons'], true) ? 'medium' : 'low');
+        }
+        unset($alt);
+
+        return [
+            'source_ips' => $sourceIps,
+            'source_devices' => $sourceDevices,
+            'potential_alts' => $alts,
+        ];
     }
 }

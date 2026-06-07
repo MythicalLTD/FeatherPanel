@@ -31,6 +31,7 @@ export interface Spell {
     description?: string;
     startup: string;
     docker_images: string; // JSON string that needs to be parsed
+    default_docker_image?: string | null;
 }
 
 export interface User {

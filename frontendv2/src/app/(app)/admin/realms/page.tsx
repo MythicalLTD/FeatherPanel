@@ -32,6 +32,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Sparkles, Plus, Search, Pencil, Trash2, ChevronLeft, ChevronRight, FolderTree } from 'lucide-react';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
 interface Realm {
@@ -51,18 +52,27 @@ interface Pagination {
     hasPrev: boolean;
 }
 
+const REALMS_LIST_FILTERS_KEY = 'featherpanel_admin_realms_filters_v1';
+const REALMS_LIST_FILTERS_DEFAULTS = {
+    searchQuery: '',
+    page: 1,
+    pageSize: 10,
+};
+
 export default function RealmsPage() {
     const { t } = useTranslation();
     const router = useRouter();
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-realms');
     const [loading, setLoading] = useState(true);
     const [realms, setRealms] = useState<Realm[]>([]);
-    const [searchQuery, setSearchQuery] = useState('');
+    const { filters, patchFilters, hydrated } = usePersistedListFilters(
+        REALMS_LIST_FILTERS_KEY,
+        REALMS_LIST_FILTERS_DEFAULTS,
+    );
+    const { searchQuery, page, pageSize } = filters;
     const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
 
-    const [pagination, setPagination] = useState<Pagination>({
-        page: 1,
-        pageSize: 10,
+    const [pagination, setPagination] = useState<Omit<Pagination, 'page' | 'pageSize'>>({
         total: 0,
         totalPages: 0,
         hasNext: false,
@@ -82,20 +92,24 @@ export default function RealmsPage() {
         const timer = setTimeout(() => {
             setDebouncedSearchQuery(searchQuery);
             if (searchQuery !== debouncedSearchQuery) {
-                setPagination((p) => ({ ...p, page: 1 }));
+                patchFilters({ page: 1 });
             }
         }, 500);
         return () => clearTimeout(timer);
-    }, [searchQuery, debouncedSearchQuery]);
+    }, [searchQuery, debouncedSearchQuery, patchFilters]);
 
     useEffect(() => {
+        if (!hydrated) {
+            return;
+        }
+
         const fetchRealms = async () => {
             setLoading(true);
             try {
                 const { data } = await axios.get('/api/admin/realms', {
                     params: {
-                        page: pagination.page,
-                        limit: pagination.pageSize,
+                        page,
+                        limit: pageSize,
                         search: debouncedSearchQuery || undefined,
                     },
                 });
@@ -103,8 +117,6 @@ export default function RealmsPage() {
                 setRealms(data.data.realms || []);
                 const apiPagination = data.data.pagination;
                 setPagination({
-                    page: apiPagination.current_page,
-                    pageSize: apiPagination.per_page,
                     total: apiPagination.total_records,
                     totalPages: Math.ceil(apiPagination.total_records / apiPagination.per_page),
                     hasNext: apiPagination.has_next,
@@ -120,7 +132,7 @@ export default function RealmsPage() {
 
         fetchRealms();
         fetchWidgets();
-    }, [pagination.page, pagination.pageSize, debouncedSearchQuery, refreshKey, t, fetchWidgets]);
+    }, [page, pageSize, debouncedSearchQuery, refreshKey, t, fetchWidgets, hydrated]);
 
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -207,7 +219,7 @@ export default function RealmsPage() {
                     <Input
                         placeholder={t('admin.realms.search_placeholder')}
                         value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onChange={(e) => patchFilters({ searchQuery: e.target.value })}
                         className='h-11 w-full pl-10'
                     />
                 </div>
@@ -218,21 +230,21 @@ export default function RealmsPage() {
                     <Button
                         variant='outline'
                         size='sm'
-                        disabled={!pagination.hasPrev}
-                        onClick={() => setPagination((p) => ({ ...p, page: p.page - 1 }))}
+                        disabled={page === 1}
+                        onClick={() => patchFilters({ page: page - 1 })}
                         className='gap-1.5'
                     >
                         <ChevronLeft className='h-4 w-4' />
                         {t('common.previous')}
                     </Button>
                     <span className='text-sm font-medium'>
-                        {pagination.page} / {pagination.totalPages}
+                        {page} / {pagination.totalPages}
                     </span>
                     <Button
                         variant='outline'
                         size='sm'
-                        disabled={!pagination.hasNext}
-                        onClick={() => setPagination((p) => ({ ...p, page: p.page + 1 }))}
+                        disabled={page === pagination.totalPages}
+                        onClick={() => patchFilters({ page: page + 1 })}
                         className='gap-1.5'
                     >
                         {t('common.next')}
@@ -299,19 +311,19 @@ export default function RealmsPage() {
                     <Button
                         variant='outline'
                         size='icon'
-                        disabled={!pagination.hasPrev}
-                        onClick={() => setPagination((p) => ({ ...p, page: p.page - 1 }))}
+                        disabled={page === 1}
+                        onClick={() => patchFilters({ page: page - 1 })}
                     >
                         <ChevronLeft className='h-4 w-4' />
                     </Button>
                     <span className='text-sm font-medium'>
-                        {pagination.page} / {pagination.totalPages}
+                        {page} / {pagination.totalPages}
                     </span>
                     <Button
                         variant='outline'
                         size='icon'
-                        disabled={!pagination.hasNext}
-                        onClick={() => setPagination((p) => ({ ...p, page: p.page + 1 }))}
+                        disabled={page === pagination.totalPages}
+                        onClick={() => patchFilters({ page: page + 1 })}
                     >
                         <ChevronRight className='h-4 w-4' />
                     </Button>

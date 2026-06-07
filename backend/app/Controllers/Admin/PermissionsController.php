@@ -17,10 +17,10 @@
 
 namespace App\Controllers\Admin;
 
+use App\Permissions;
 use App\Chat\Activity;
 use App\Chat\Permission;
 use App\Helpers\ApiResponse;
-use App\Permissions;
 use OpenApi\Attributes as OA;
 use App\CloudFlare\CloudFlareRealIP;
 use Symfony\Component\HttpFoundation\Request;

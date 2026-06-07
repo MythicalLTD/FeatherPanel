@@ -57,6 +57,8 @@ import { MountsTab } from './MountsTab';
 import type { AssignableMountRow } from './MountsTab';
 import { ActionsTab } from './ActionsTab';
 import { AllocationPickerSheet } from '@/components/admin/AllocationPickerSheet';
+import { resolveSpellDefaultDockerImage, buildSpellDockerImageOptions } from '@/lib/spellDockerImages';
+import type { DockerImageOption } from '@/components/admin/DockerImageField';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
@@ -155,7 +157,8 @@ export default function EditServerPage() {
         variable_value: '',
         is_encrypted: false,
     });
-    const [dockerImages, setDockerImages] = useState<string[]>([]);
+    const [dockerImages, setDockerImages] = useState<DockerImageOption[]>([]);
+    const [spellDefaultDockerImage, setSpellDefaultDockerImage] = useState('');
 
     const [ownerModalOpen, setOwnerModalOpen] = useState(false);
     const [realmModalOpen, setRealmModalOpen] = useState(false);
@@ -446,12 +449,9 @@ export default function EditServerPage() {
 
                 if (serverSpell) {
                     setSpellDetails(serverSpell);
-                    try {
-                        const images = JSON.parse(serverSpell.docker_images);
-                        setDockerImages(Object.values(images));
-                    } catch {
-                        setDockerImages([]);
-                    }
+                    const imageOptions = buildSpellDockerImageOptions(serverSpell, server.image || '');
+                    setDockerImages(imageOptions);
+                    setSpellDefaultDockerImage(resolveSpellDefaultDockerImage(serverSpell));
                 }
             }
         } catch (error) {
@@ -600,20 +600,18 @@ export default function EditServerPage() {
                     const spell = spellRes.data.data.spell;
                     setSpellDetails(spell);
 
-                    try {
-                        const images = JSON.parse(spell.docker_images);
-                        const imageList = Object.values(images) as string[];
-                        setDockerImages(imageList);
+                    const imageOptions = buildSpellDockerImageOptions(spell, form.image);
+                    setDockerImages(imageOptions);
+                    setSpellDefaultDockerImage(resolveSpellDefaultDockerImage(spell));
 
-                        setForm((prev) => {
-                            if (!imageList.includes(prev.image)) {
-                                return { ...prev, image: imageList[0] || '' };
-                            }
+                    setForm((prev) => {
+                        const allowedValues = imageOptions.map((img) => img.value);
+                        if (prev.image && allowedValues.includes(prev.image)) {
                             return prev;
-                        });
-                    } catch {
-                        setDockerImages([]);
-                    }
+                        }
+                        const defaultImage = resolveSpellDefaultDockerImage(spell);
+                        return { ...prev, image: defaultImage || allowedValues[0] || '' };
+                    });
 
                     if (variablesRes.data.success) {
                         const newVariables = variablesRes.data.data.variables;
@@ -900,6 +898,7 @@ export default function EditServerPage() {
         if (!form.realms_id) newErrors.realms_id = t('admin.servers.form.wizard.validation.realm_required');
         if (!form.spell_id) newErrors.spell_id = t('admin.servers.form.wizard.validation.spell_required');
         if (!form.startup) newErrors.startup = t('admin.servers.form.wizard.validation.startup_required');
+        if (!form.image?.trim()) newErrors.image = t('admin.servers.form.wizard.validation.docker_image_required');
 
         spellVariables.forEach((variable) => {
             const value = form.variables[variable.env_variable];
@@ -1101,9 +1100,7 @@ export default function EditServerPage() {
                             setForm={setForm}
                             errors={errors}
                             selectedEntities={selectedEntities}
-                            spellDetails={spellDetails}
                             spellVariables={spellVariables}
-                            dockerImages={dockerImages}
                             setRealmModalOpen={setRealmModalOpen}
                             setSpellModalOpen={setSpellModalOpen}
                             fetchRealms={fetchRealms}
@@ -1120,6 +1117,8 @@ export default function EditServerPage() {
                             form={form}
                             setForm={setForm}
                             errors={errors}
+                            dockerImages={dockerImages}
+                            spellDefaultDockerImage={spellDefaultDockerImage}
                             customVariables={customVariables}
                             customVariableForm={customVariableForm}
                             customVariableSaving={customVariableSaving}
