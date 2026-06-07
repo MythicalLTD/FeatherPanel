@@ -45,6 +45,8 @@ interface ServerHeaderProps {
     canStop?: boolean;
     canRestart?: boolean;
     canKill?: boolean;
+    /** When false, power buttons stay usable even if live status is stale (e.g. Wings disconnected). */
+    connectionLive?: boolean;
     onStart?: () => void;
     onStop?: () => void;
     onRestart?: () => void;
@@ -63,6 +65,7 @@ export default function ServerHeader({
     canStop = false,
     canRestart = false,
     canKill = false,
+    connectionLive = true,
     onStart,
     onStop,
     onRestart,
@@ -117,6 +120,9 @@ export default function ServerHeader({
             }
         }
     };
+
+    const isOfflineStatus = (status: string) => status === 'stopped' || status === 'offline';
+    const isRunningStatus = (status: string) => status === 'running' || status === 'starting';
 
     const getStatusColor = (status: string) => {
         switch (status) {
@@ -183,8 +189,8 @@ export default function ServerHeader({
                                 variant='outline'
                                 size='sm'
                                 disabled={
-                                    (serverStatus !== 'stopped' && serverStatus !== 'offline') ||
-                                    actionLoading === 'start'
+                                    actionLoading === 'start' ||
+                                    (connectionLive ? !isOfflineStatus(serverStatus) : false)
                                 }
                                 onClick={() => handleAction('start', onStart)}
                                 className='flex items-center gap-2'
@@ -202,7 +208,9 @@ export default function ServerHeader({
                             <Button
                                 variant='outline'
                                 size='sm'
-                                disabled={serverStatus !== 'running' || actionLoading === 'restart'}
+                                disabled={
+                                    actionLoading === 'restart' || (connectionLive ? serverStatus !== 'running' : false)
+                                }
                                 onClick={() => handleAction('restart', onRestart)}
                                 className='flex items-center gap-2'
                             >
@@ -220,8 +228,8 @@ export default function ServerHeader({
                                 variant='outline'
                                 size='sm'
                                 disabled={
-                                    (serverStatus !== 'running' && serverStatus !== 'starting') ||
-                                    actionLoading === 'stop'
+                                    actionLoading === 'stop' ||
+                                    (connectionLive ? !isRunningStatus(serverStatus) : false)
                                 }
                                 onClick={() => handleAction('stop', onStop)}
                                 className='flex items-center gap-2'
@@ -240,7 +248,7 @@ export default function ServerHeader({
                                 variant='destructive'
                                 size='sm'
                                 disabled={
-                                    serverStatus === 'stopped' || serverStatus === 'offline' || actionLoading === 'kill'
+                                    actionLoading === 'kill' || (connectionLive ? isOfflineStatus(serverStatus) : false)
                                 }
                                 onClick={() => handleAction('kill', onKill)}
                                 className='flex items-center gap-2'

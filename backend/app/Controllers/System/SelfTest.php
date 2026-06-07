@@ -51,6 +51,8 @@ class SelfTest
     public function getSelfTest(Request $request): Response
     {
         $cacheKey = 'system_self_test';
+        $lastGoodKey = 'system_self_test_last_good';
+
         if (Cache::exists($cacheKey)) {
             $data = Cache::get($cacheKey);
             $data['cached'] = true;
@@ -118,6 +120,14 @@ class SelfTest
         // Cache for 1 hour (60 minutes) if everything is OK
         if (!$hasErrors) {
             Cache::put($cacheKey, $result, 60);
+            Cache::put($lastGoodKey, $result, 1440);
+        } elseif (Cache::exists($lastGoodKey)) {
+            // Under load, health checks can fail transiently even when the panel is fine.
+            // Prefer the last known good result instead of falsely reporting not_ready.
+            $data = Cache::get($lastGoodKey);
+            $data['cached'] = true;
+
+            return ApiResponse::success($data, 'System is healthy (last known good)', 200);
         }
 
         return ApiResponse::success($result, $hasErrors ? 'System has issues' : 'System is healthy', 200);

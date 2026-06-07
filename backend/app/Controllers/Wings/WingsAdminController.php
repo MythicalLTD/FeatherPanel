@@ -145,18 +145,6 @@ class WingsAdminController
             $timeout
         );
 
-        if (APP_DEBUG) {
-            $wings->testConnection();
-        } else {
-            try {
-                if (!$wings->testConnection()) {
-                    return ApiResponse::error('Failed to connect to Wings', 'WINGS_CONNECTION_FAILED', 500);
-                }
-            } catch (\Exception $e) {
-                return ApiResponse::error('Failed to connect to Wings', 'WINGS_CONNECTION_FAILED', 500);
-            }
-        }
-
         $utilization = $wings->getSystem()->getSystemUtilization();
 
         // Emit event
@@ -355,18 +343,6 @@ class WingsAdminController
             $timeout
         );
 
-        if (APP_DEBUG) {
-            $wings->testConnection();
-        } else {
-            try {
-                if (!$wings->testConnection()) {
-                    return ApiResponse::error('Failed to connect to Wings', 'WINGS_CONNECTION_FAILED', 500);
-                }
-            } catch (\Exception $e) {
-                return ApiResponse::error('Failed to connect to Wings', 'WINGS_CONNECTION_FAILED', 500);
-            }
-        }
-
         $ips = $wings->getSystem()->getSystemIPs();
 
         // Emit event
@@ -452,18 +428,6 @@ class WingsAdminController
             $timeout
         );
 
-        if (APP_DEBUG) {
-            $wings->testConnection();
-        } else {
-            try {
-                if (!$wings->testConnection()) {
-                    return ApiResponse::error('Failed to connect to Wings', 'WINGS_CONNECTION_FAILED', 500);
-                }
-            } catch (\Exception $e) {
-                return ApiResponse::error('Failed to connect to Wings', 'WINGS_CONNECTION_FAILED', 500);
-            }
-        }
-
         $system = $wings->getSystem()->getDetailedSystemInfo();
 
         // Emit event
@@ -527,18 +491,6 @@ class WingsAdminController
             $timeout
         );
 
-        if (APP_DEBUG) {
-            $wings->testConnection();
-        } else {
-            try {
-                if (!$wings->testConnection()) {
-                    return ApiResponse::error('Failed to connect to Wings', 'WINGS_CONNECTION_FAILED', 500);
-                }
-            } catch (\Exception $e) {
-                return ApiResponse::error('Failed to connect to Wings', 'WINGS_CONNECTION_FAILED', 500);
-            }
-        }
-
         $modules = $wings->getModule()->listModules();
 
         return ApiResponse::success($modules, 'Modules retrieved successfully', 200);
@@ -595,18 +547,6 @@ class WingsAdminController
             $token,
             $timeout
         );
-
-        if (APP_DEBUG) {
-            $wings->testConnection();
-        } else {
-            try {
-                if (!$wings->testConnection()) {
-                    return ApiResponse::error('Failed to connect to Wings', 'WINGS_CONNECTION_FAILED', 500);
-                }
-            } catch (\Exception $e) {
-                return ApiResponse::error('Failed to connect to Wings', 'WINGS_CONNECTION_FAILED', 500);
-            }
-        }
 
         $config = $wings->getModule()->getModuleConfig($module);
 
@@ -670,18 +610,6 @@ class WingsAdminController
             $timeout
         );
 
-        if (APP_DEBUG) {
-            $wings->testConnection();
-        } else {
-            try {
-                if (!$wings->testConnection()) {
-                    return ApiResponse::error('Failed to connect to Wings', 'WINGS_CONNECTION_FAILED', 500);
-                }
-            } catch (\Exception $e) {
-                return ApiResponse::error('Failed to connect to Wings', 'WINGS_CONNECTION_FAILED', 500);
-            }
-        }
-
         $config = $wings->getModule()->updateModuleConfig($module, $requestData['config']);
 
         return ApiResponse::success($config, 'Module configuration updated successfully', 200);
@@ -739,18 +667,6 @@ class WingsAdminController
             $timeout
         );
 
-        if (APP_DEBUG) {
-            $wings->testConnection();
-        } else {
-            try {
-                if (!$wings->testConnection()) {
-                    return ApiResponse::error('Failed to connect to Wings', 'WINGS_CONNECTION_FAILED', 500);
-                }
-            } catch (\Exception $e) {
-                return ApiResponse::error('Failed to connect to Wings', 'WINGS_CONNECTION_FAILED', 500);
-            }
-        }
-
         $result = $wings->getModule()->enableModule($module);
 
         return ApiResponse::success($result, 'Module enabled successfully', 200);
@@ -807,18 +723,6 @@ class WingsAdminController
             $token,
             $timeout
         );
-
-        if (APP_DEBUG) {
-            $wings->testConnection();
-        } else {
-            try {
-                if (!$wings->testConnection()) {
-                    return ApiResponse::error('Failed to connect to Wings', 'WINGS_CONNECTION_FAILED', 500);
-                }
-            } catch (\Exception $e) {
-                return ApiResponse::error('Failed to connect to Wings', 'WINGS_CONNECTION_FAILED', 500);
-            }
-        }
 
         $result = $wings->getModule()->disableModule($module);
 

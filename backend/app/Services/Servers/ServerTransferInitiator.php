@@ -23,9 +23,9 @@ use App\Chat\Server;
 use App\Chat\Activity;
 use App\Chat\Allocation;
 use App\Chat\ServerTransfer;
-use App\Helpers\WingsUrlHelper;
 use App\Services\Wings\Wings;
 use App\Config\ConfigInterface;
+use App\Helpers\WingsUrlHelper;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Plugins\Events\Events\ServerEvent;
 
@@ -40,6 +40,7 @@ class ServerTransferInitiator
      *                                      - destination_allocation_id (optional)
      *                                      - destination_additional_allocations (optional int[])
      *                                      - auto_allocate (bool, default true when primary allocation omitted)
+     *                                      - auto_open_ports (bool, create missing allocations from Wings IPs)
      *
      * @return array{success: bool, error?: string, code?: string, http_status?: int, transfer_id?: int|false, new_allocation?: int|null, new_additional_allocations?: int[]}
      */
@@ -116,21 +117,26 @@ class ServerTransferInitiator
         }
 
         $autoAllocate = !array_key_exists('auto_allocate', $options) || $options['auto_allocate'] !== false;
+        $autoOpenPorts = !empty($options['auto_open_ports']);
         $excludeIds = array_merge(
             $newAllocationId ? [$newAllocationId] : [],
             $newAdditionalAllocations
         );
 
         if ($newAllocationId === null && $autoAllocate) {
-            $picked = Allocation::pickFreeAllocationIdsForNode($destinationNodeId, $allocationCountNeeded, $excludeIds);
-            if (count($picked) < $allocationCountNeeded) {
-                return [
-                    'success' => false,
-                    'error' => 'Not enough free allocations on the destination node (need ' . $allocationCountNeeded . ', found ' . count($picked) . ')',
-                    'code' => 'INSUFFICIENT_FREE_ALLOCATIONS',
-                    'http_status' => 400,
-                ];
+            $pickResult = $this->pickTransferAllocations(
+                $autoOpenPorts,
+                $destinationNodeId,
+                $destinationNode,
+                $currentAllocations,
+                (int) $originalAllocationId,
+                $allocationCountNeeded,
+                $excludeIds
+            );
+            if (!$pickResult['success']) {
+                return $pickResult;
             }
+            $picked = $pickResult['picked'];
             $newAllocationId = array_shift($picked);
             if (!empty($picked)) {
                 $newAdditionalAllocations = array_merge($newAdditionalAllocations, $picked);
@@ -144,20 +150,20 @@ class ServerTransferInitiator
             ];
         } elseif ($autoAllocate && count($newAdditionalAllocations) < count($oldAdditionalAllocations)) {
             $stillNeeded = count($oldAdditionalAllocations) - count($newAdditionalAllocations);
-            $picked = Allocation::pickFreeAllocationIdsForNode(
+            $pickResult = $this->pickTransferAllocations(
+                $autoOpenPorts,
                 $destinationNodeId,
+                $destinationNode,
+                $currentAllocations,
+                (int) $originalAllocationId,
                 $stillNeeded,
-                array_merge($excludeIds, [$newAllocationId], $newAdditionalAllocations)
+                array_merge($excludeIds, [$newAllocationId], $newAdditionalAllocations),
+                true
             );
-            if (count($picked) < $stillNeeded) {
-                return [
-                    'success' => false,
-                    'error' => 'Not enough free allocations on the destination node for additional ports',
-                    'code' => 'INSUFFICIENT_FREE_ALLOCATIONS',
-                    'http_status' => 400,
-                ];
+            if (!$pickResult['success']) {
+                return $pickResult;
             }
-            $newAdditionalAllocations = array_merge($newAdditionalAllocations, $picked);
+            $newAdditionalAllocations = array_merge($newAdditionalAllocations, $pickResult['picked']);
         }
 
         $config = App::getInstance(true)->getConfig();
@@ -406,5 +412,95 @@ class ServerTransferInitiator
             'failed' => $failed,
             'skipped' => $skipped,
         ];
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $sourceAllocations
+     * @param array<int> $excludeIds
+     *
+     * @return array{success: bool, picked: array<int>, error?: string, code?: string, http_status?: int}
+     */
+    private function pickTransferAllocations(
+        bool $autoOpenPorts,
+        int $destinationNodeId,
+        array $destinationNode,
+        array $sourceAllocations,
+        int $primaryAllocationId,
+        int $countNeeded,
+        array $excludeIds,
+        bool $additionalOnly = false,
+    ): array {
+        if ($countNeeded <= 0) {
+            return ['success' => true, 'picked' => []];
+        }
+
+        $provisioner = new TransferAllocationProvisioner();
+
+        if ($autoOpenPorts) {
+            $wingsIpsResult = $provisioner->fetchWingsIpAddresses($destinationNode);
+            if (!$wingsIpsResult['success']) {
+                return [
+                    'success' => false,
+                    'picked' => [],
+                    'error' => $wingsIpsResult['error'] ?? 'Failed to read Wings IP list',
+                    'code' => $wingsIpsResult['code'] ?? 'WINGS_IPS_UNAVAILABLE',
+                    'http_status' => $wingsIpsResult['http_status'] ?? 503,
+                ];
+            }
+
+            $allSlots = $provisioner->resolveDestinationSlots(
+                $sourceAllocations,
+                $primaryAllocationId,
+                max(1, count($sourceAllocations)),
+                $wingsIpsResult['ips'],
+                $destinationNode
+            );
+            $slots = $additionalOnly ? array_slice($allSlots, 1, $countNeeded) : array_slice($allSlots, 0, $countNeeded);
+
+            $picked = Allocation::pickFreeAllocationIdsForSlots($destinationNodeId, $slots, $excludeIds);
+            if (count($picked) < $countNeeded) {
+                $missingSlots = array_slice($slots, count($picked));
+                $provisionResult = $provisioner->provisionResolvedSlots($destinationNodeId, $missingSlots);
+                if (!$provisionResult['success']) {
+                    return [
+                        'success' => false,
+                        'picked' => [],
+                        'error' => $provisionResult['error'] ?? 'Failed to auto-open ports on destination node',
+                        'code' => $provisionResult['code'] ?? 'AUTO_OPEN_PORTS_FAILED',
+                        'http_status' => $provisionResult['http_status'] ?? 500,
+                    ];
+                }
+                $picked = Allocation::pickFreeAllocationIdsForSlots($destinationNodeId, $slots, $excludeIds);
+            }
+
+            if (count($picked) < $countNeeded) {
+                return [
+                    'success' => false,
+                    'picked' => [],
+                    'error' => $additionalOnly
+                        ? 'Not enough free allocations on the destination node for additional ports'
+                        : 'Not enough free allocations on the destination node (need ' . $countNeeded . ', found ' . count($picked) . ')',
+                    'code' => 'INSUFFICIENT_FREE_ALLOCATIONS',
+                    'http_status' => 400,
+                ];
+            }
+
+            return ['success' => true, 'picked' => $picked];
+        }
+
+        $picked = Allocation::pickFreeAllocationIdsForNode($destinationNodeId, $countNeeded, $excludeIds);
+        if (count($picked) < $countNeeded) {
+            return [
+                'success' => false,
+                'picked' => [],
+                'error' => $additionalOnly
+                    ? 'Not enough free allocations on the destination node for additional ports'
+                    : 'Not enough free allocations on the destination node (need ' . $countNeeded . ', found ' . count($picked) . ')',
+                'code' => 'INSUFFICIENT_FREE_ALLOCATIONS',
+                'http_status' => 400,
+            ];
+        }
+
+        return ['success' => true, 'picked' => $picked];
     }
 }

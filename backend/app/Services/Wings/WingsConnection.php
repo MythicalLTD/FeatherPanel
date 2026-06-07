@@ -18,9 +18,9 @@
 namespace App\Services\Wings;
 
 use App\App;
-use App\Helpers\WingsUrlHelper;
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\Request;
+use App\Helpers\WingsUrlHelper;
 use App\Services\Wings\Utils\DnsResolver;
 use App\Services\Wings\Utils\TokenGenerator;
 use App\Services\Wings\Exceptions\WingsRequestException;

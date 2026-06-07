@@ -60,7 +60,7 @@ import {
 import { StatusBadge } from '@/components/servers/StatusBadge';
 import { displayStatus } from '@/lib/server-utils';
 import { formatDateTimeInTz, formatRelativeTime } from '@/lib/dateUtils';
-import { ApiServer, Pagination, ApiNode, ApiAllocation } from '@/types/adminServerTypes';
+import { ApiServer, Pagination, ApiNode } from '@/types/adminServerTypes';
 import type { Server as ServerType } from '@/types/server';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
 import {
@@ -78,6 +78,7 @@ import { Select } from '@/components/ui/select-native';
 import { HeadlessModal } from '@/components/ui/headless-modal';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
+import { TransferServerDialog } from '@/components/admin/TransferServerDialog';
 
 function resolveAvatarSrc(avatar?: string): string | undefined {
     if (avatar && (avatar.startsWith('http') || avatar.startsWith('/'))) {
@@ -152,20 +153,7 @@ export default function ServersPage() {
 
     const [isTransferDialogOpen, setIsTransferDialogOpen] = useState(false);
     const [transferServer, setTransferServer] = useState<ApiServer | null>(null);
-    const [isInitiatingTransfer, setIsInitiatingTransfer] = useState(false);
     const [cancellingTransferId, setCancellingTransferId] = useState<number | null>(null);
-
-    const [isNodeModalOpen, setIsNodeModalOpen] = useState(false);
-    const [isAllocationModalOpen, setIsAllocationModalOpen] = useState(false);
-    const [selectedNode, setSelectedNode] = useState<ApiNode | null>(null);
-    const [selectedAllocation, setSelectedAllocation] = useState<ApiAllocation | null>(null);
-    const [transferAutoAllocate, setTransferAutoAllocate] = useState(true);
-    const [nodesList, setNodesList] = useState<ApiNode[]>([]);
-    const [allocationsList, setAllocationsList] = useState<ApiAllocation[]>([]);
-    const [loadingNodes, setLoadingNodes] = useState(false);
-    const [loadingAllocations, setLoadingAllocations] = useState(false);
-    const [nodeSearch, setNodeSearch] = useState('');
-    const [allocationSearch, setAllocationSearch] = useState('');
 
     const [pagination, setPagination] = useState<Omit<Pagination, 'page' | 'pageSize'>>({
         total: 0,
@@ -186,6 +174,9 @@ export default function ServersPage() {
         { id: number; uuid: string; username: string; email: string }[]
     >([]);
     const [ownerFilterLoading, setOwnerFilterLoading] = useState(false);
+    const [nodeSearch, setNodeSearch] = useState('');
+    const [nodesList, setNodesList] = useState<ApiNode[]>([]);
+    const [loadingNodes, setLoadingNodes] = useState(false);
     const [realmFilterSearch, setRealmFilterSearch] = useState('');
     const [spellFilterSearch, setSpellFilterSearch] = useState('');
     const [locationFilterSearch, setLocationFilterSearch] = useState('');
@@ -387,9 +378,6 @@ export default function ServersPage() {
 
     const openTransferDialog = (server: ApiServer) => {
         setTransferServer(server);
-        setSelectedNode(null);
-        setSelectedAllocation(null);
-        setTransferAutoAllocate(true);
         setIsTransferDialogOpen(true);
     };
 
@@ -399,65 +387,15 @@ export default function ServersPage() {
             const { data } = await axios.get('/api/admin/nodes', {
                 params: {
                     limit: 50,
-                    search,
-                },
-            });
-
-            const filteredNodes = (data.data.nodes || []).filter(
-                (node: ApiNode) => String(node.id) !== String(transferServer?.node_id),
-            );
-            setNodesList(filteredNodes);
-        } catch (error) {
-            console.error('Error fetching nodes for transfer:', error);
-        } finally {
-            setLoadingNodes(false);
-        }
-    };
-
-    const fetchAllocations = async (nodeId: number, search: string = '') => {
-        setLoadingAllocations(true);
-        try {
-            const { data } = await axios.get('/api/admin/allocations', {
-                params: {
-                    limit: 50,
-                    node_id: nodeId,
-                    not_used: true,
                     search: search || undefined,
                 },
             });
-            setAllocationsList(data.data.allocations || []);
+            setNodesList(data.data.nodes || []);
         } catch (error) {
-            console.error('Error fetching allocations for transfer:', error);
+            console.error('Error fetching nodes for filter:', error);
+            setNodesList([]);
         } finally {
-            setLoadingAllocations(false);
-        }
-    };
-
-    const initiateTransfer = async () => {
-        if (!transferServer || !selectedNode || (!transferAutoAllocate && !selectedAllocation)) return;
-
-        setIsInitiatingTransfer(true);
-        try {
-            const payload: {
-                destination_node_id: number;
-                destination_allocation_id?: number;
-                auto_allocate?: boolean;
-            } = {
-                destination_node_id: selectedNode.id,
-                auto_allocate: transferAutoAllocate,
-            };
-            if (!transferAutoAllocate && selectedAllocation) {
-                payload.destination_allocation_id = selectedAllocation.id;
-            }
-            await axios.post(`/api/admin/servers/${transferServer.id}/transfer`, payload);
-            toast.success(t('admin.servers.messages.transfer_initiated'));
-            setIsTransferDialogOpen(false);
-            setRefreshKey((prev) => prev + 1);
-        } catch (error) {
-            console.error('Error initiating transfer:', error);
-            toast.error(t('admin.servers.messages.transfer_failed'));
-        } finally {
-            setIsInitiatingTransfer(false);
+            setLoadingNodes(false);
         }
     };
 
@@ -1711,276 +1649,12 @@ export default function ServersPage() {
                 </div>
             </HeadlessModal>
 
-            <AlertDialog
+            <TransferServerDialog
+                server={transferServer}
                 open={isTransferDialogOpen}
-                onOpenChange={(open) => !open && !isInitiatingTransfer && setIsTransferDialogOpen(false)}
-            >
-                <AlertDialogContent className='custom-scrollbar max-h-[90vh] overflow-y-auto sm:max-w-2xl'>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle className='mb-2 flex items-center gap-2'>
-                            <ArrowLeftRight className='h-5 w-5 text-amber-500' />
-                            {t('admin.servers.transfer.title')}
-                        </AlertDialogTitle>
-                        <AlertDialogDescription>{t('admin.servers.transfer.description')}</AlertDialogDescription>
-                    </AlertDialogHeader>
-
-                    <WidgetRenderer widgets={getWidgets('admin-servers', 'bottom-of-page')} />
-
-                    <div className='space-y-6 pt-4'>
-                        {transferServer && (
-                            <div className='bg-muted/30 border-border/50 grid grid-cols-2 gap-4 rounded-2xl border p-4 text-sm'>
-                                <div>
-                                    <p className='text-muted-foreground mb-1 text-xs font-bold tracking-wider uppercase'>
-                                        {t('admin.servers.transfer.server')}
-                                    </p>
-                                    <p className='font-bold'>{transferServer.name}</p>
-                                </div>
-                                <div>
-                                    <p className='text-muted-foreground mb-1 text-xs font-bold tracking-wider uppercase'>
-                                        {t('admin.servers.transfer.current_node')}
-                                    </p>
-                                    <p className='font-bold'>{transferServer.node?.name || 'Unknown'}</p>
-                                </div>
-                            </div>
-                        )}
-
-                        <div className='space-y-4'>
-                            <div className='space-y-2'>
-                                <label className='text-sm font-bold'>
-                                    {t('admin.servers.transfer.destination_node')}
-                                </label>
-                                <Button
-                                    variant='outline'
-                                    className='border-border bg-background/50 h-12 w-full justify-between rounded-xl border px-4'
-                                    onClick={() => {
-                                        fetchNodes();
-                                        setIsNodeModalOpen(true);
-                                    }}
-                                    disabled={isInitiatingTransfer}
-                                >
-                                    <span
-                                        className={
-                                            selectedNode ? 'text-foreground font-medium' : 'text-muted-foreground'
-                                        }
-                                    >
-                                        {selectedNode
-                                            ? `${selectedNode.name} (${selectedNode.fqdn})`
-                                            : t('admin.servers.transfer.select_node')}
-                                    </span>
-                                    <ChevronRight className='text-muted-foreground h-4 w-4' />
-                                </Button>
-                            </div>
-
-                            <label className='flex cursor-pointer items-start gap-3 rounded-xl border p-4'>
-                                <Checkbox
-                                    checked={transferAutoAllocate}
-                                    onCheckedChange={(v) => {
-                                        const enabled = v === true;
-                                        setTransferAutoAllocate(enabled);
-                                        if (enabled) setSelectedAllocation(null);
-                                    }}
-                                    disabled={isInitiatingTransfer}
-                                />
-                                <div>
-                                    <p className='text-sm font-bold'>{t('admin.servers.transfer.auto_allocate')}</p>
-                                    <p className='text-muted-foreground text-xs'>
-                                        {t('admin.servers.transfer.auto_allocate_help')}
-                                    </p>
-                                </div>
-                            </label>
-
-                            {!transferAutoAllocate ? (
-                                <div className='space-y-2'>
-                                    <label className='text-sm font-bold'>
-                                        {t('admin.servers.transfer.destination_allocation')}
-                                    </label>
-                                    <Button
-                                        variant='outline'
-                                        className='border-border bg-background/50 h-12 w-full justify-between rounded-xl border px-4'
-                                        onClick={() => {
-                                            if (selectedNode) {
-                                                fetchAllocations(selectedNode.id);
-                                                setIsAllocationModalOpen(true);
-                                            } else {
-                                                toast.error(t('admin.servers.transfer.select_node'));
-                                            }
-                                        }}
-                                        disabled={isInitiatingTransfer || !selectedNode}
-                                    >
-                                        <span
-                                            className={
-                                                selectedAllocation
-                                                    ? 'text-foreground font-medium'
-                                                    : 'text-muted-foreground'
-                                            }
-                                        >
-                                            {selectedAllocation
-                                                ? `${selectedAllocation.ip}:${selectedAllocation.port}`
-                                                : t('admin.servers.transfer.select_allocation')}
-                                        </span>
-                                        <ChevronRight className='text-muted-foreground h-4 w-4' />
-                                    </Button>
-                                </div>
-                            ) : null}
-                        </div>
-
-                        <div className='space-y-4'>
-                            <div className='rounded-2xl border border-red-500/20 bg-red-500/10 p-4'>
-                                <p className='mb-2 text-center text-sm font-black text-red-500'>
-                                    {t('admin.servers.transfer.warning_banner')}
-                                </p>
-                                <p className='text-xs leading-relaxed text-red-500/80'>
-                                    {t('admin.servers.transfer.warning_text')}
-                                </p>
-                            </div>
-
-                            <div className='space-y-3 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-5'>
-                                <p className='text-sm font-bold text-amber-500'>
-                                    {t('admin.servers.transfer.beta_title')}
-                                </p>
-                                <ul className='list-inside list-disc space-y-1 text-xs text-amber-600/80'>
-                                    <li>{t('admin.servers.transfer.beta_item1')}</li>
-                                    <li>{t('admin.servers.transfer.beta_item2')}</li>
-                                    <li>{t('admin.servers.transfer.beta_item5')}</li>
-                                    <li>{t('admin.servers.transfer.beta_item7')}</li>
-                                    <li>{t('admin.servers.transfer.beta_item8')}</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-
-                    <AlertDialogFooter className='border-border/50 mt-6 border-t pt-6'>
-                        <AlertDialogCancel disabled={isInitiatingTransfer} className='rounded-xl'>
-                            {t('common.cancel')}
-                        </AlertDialogCancel>
-                        <Button
-                            onClick={initiateTransfer}
-                            disabled={
-                                !selectedNode || (!transferAutoAllocate && !selectedAllocation) || isInitiatingTransfer
-                            }
-                            className='h-11 rounded-xl bg-amber-500 px-6 text-white hover:bg-amber-600'
-                        >
-                            {isInitiatingTransfer ? (
-                                <>
-                                    <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-                                    {t('admin.servers.transfer.submitting')}
-                                </>
-                            ) : (
-                                t('admin.servers.transfer.submit')
-                            )}
-                        </Button>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
-
-            <HeadlessModal
-                isOpen={isNodeModalOpen}
-                onClose={() => setIsNodeModalOpen(false)}
-                title={t('admin.servers.transfer.destination_node')}
-            >
-                <div className='space-y-4'>
-                    <div className='relative'>
-                        <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
-                        <Input
-                            placeholder={t('admin.servers.transfer.search_nodes')}
-                            value={nodeSearch}
-                            onChange={(e) => {
-                                setNodeSearch(e.target.value);
-                                fetchNodes(e.target.value);
-                            }}
-                            className='h-11 pl-10'
-                        />
-                    </div>
-                    <div className='custom-scrollbar max-h-87.5 space-y-2 overflow-y-auto pr-1'>
-                        {loadingNodes ? (
-                            <div className='flex items-center justify-center py-10'>
-                                <Loader2 className='text-primary h-6 w-6 animate-spin' />
-                            </div>
-                        ) : nodesList.length === 0 ? (
-                            <div className='text-muted-foreground py-10 text-center'>{t('common.no_results')}</div>
-                        ) : (
-                            nodesList.map((node) => (
-                                <button
-                                    key={node.id}
-                                    onClick={() => {
-                                        setSelectedNode(node);
-                                        setSelectedAllocation(null);
-                                        setIsNodeModalOpen(false);
-                                    }}
-                                    className={`w-full rounded-xl border p-4 text-left transition-all ${selectedNode?.id === node.id ? 'border-primary bg-primary/5' : 'border-border/50 hover:bg-muted/50'}`}
-                                >
-                                    <div className='flex items-center justify-between'>
-                                        <div>
-                                            <p className='text-sm font-bold'>{node.name}</p>
-                                            <p className='text-muted-foreground text-xs'>{node.fqdn}</p>
-                                        </div>
-                                        {selectedNode?.id === node.id && (
-                                            <ShieldCheck className='text-primary h-5 w-5' />
-                                        )}
-                                    </div>
-                                </button>
-                            ))
-                        )}
-                    </div>
-                </div>
-            </HeadlessModal>
-
-            <HeadlessModal
-                isOpen={isAllocationModalOpen}
-                onClose={() => setIsAllocationModalOpen(false)}
-                title={t('admin.servers.transfer.destination_allocation')}
-            >
-                <div className='space-y-4'>
-                    <div className='relative'>
-                        <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
-                        <Input
-                            placeholder={t('admin.servers.transfer.search_allocations')}
-                            value={allocationSearch}
-                            onChange={(e) => {
-                                setAllocationSearch(e.target.value);
-                                if (selectedNode) fetchAllocations(selectedNode.id, e.target.value);
-                            }}
-                            className='h-11 pl-10'
-                        />
-                    </div>
-                    <div className='custom-scrollbar max-h-87.5 space-y-2 overflow-y-auto pr-1'>
-                        {loadingAllocations ? (
-                            <div className='flex items-center justify-center py-10'>
-                                <Loader2 className='text-primary h-6 w-6 animate-spin' />
-                            </div>
-                        ) : allocationsList.length === 0 ? (
-                            <div className='text-muted-foreground py-10 text-center'>
-                                {t('admin.servers.transfer.no_free_allocations')}
-                            </div>
-                        ) : (
-                            allocationsList.map((allc) => (
-                                <button
-                                    key={allc.id}
-                                    onClick={() => {
-                                        setSelectedAllocation(allc);
-                                        setIsAllocationModalOpen(false);
-                                    }}
-                                    className={`w-full rounded-xl border p-4 text-left transition-all ${selectedAllocation?.id === allc.id ? 'border-primary bg-primary/5' : 'border-border/50 hover:bg-muted/50'}`}
-                                >
-                                    <div className='flex items-center justify-between'>
-                                        <div>
-                                            <p className='text-sm font-bold'>
-                                                {allc.ip}:{allc.port}
-                                            </p>
-                                            <p className='text-muted-foreground text-xs'>
-                                                {allc.ip_alias || 'No Alias'}
-                                            </p>
-                                        </div>
-                                        {selectedAllocation?.id === allc.id && (
-                                            <ShieldCheck className='text-primary h-5 w-5' />
-                                        )}
-                                    </div>
-                                </button>
-                            ))
-                        )}
-                    </div>
-                </div>
-            </HeadlessModal>
+                onOpenChange={setIsTransferDialogOpen}
+                onCompleted={() => setRefreshKey((prev) => prev + 1)}
+            />
         </div>
     );
 }

@@ -22,9 +22,9 @@ use App\Chat\Node;
 use App\Chat\Backup;
 use App\Chat\Database;
 use GuzzleHttp\Client;
-use App\Helpers\WingsUrlHelper;
 use App\Services\Wings\Wings;
 use App\Config\ConfigInterface;
+use App\Helpers\WingsUrlHelper;
 use App\Services\Wings\Services\JwtService;
 
 /**

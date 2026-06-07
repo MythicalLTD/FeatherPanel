@@ -25,6 +25,7 @@ use App\Chat\Server;
 use App\Chat\Allocation;
 use App\Chat\ServerVariable;
 use App\Helpers\ApiResponse;
+use App\Helpers\AppUrlHelper;
 use OpenApi\Attributes as OA;
 use App\Chat\ServerCustomVariable;
 use App\Helpers\WingsFileTrashConfig;
@@ -401,8 +402,8 @@ class WingsServerListController
             $data[] = $serverConfig;
         }
 
-        // Build pagination links
-        $baseUrl = $request->getSchemeAndHttpHost() . $request->getBaseUrl() . '/api/remote/servers';
+        // Build pagination links from APP_URL — not the request host (often localhost behind proxies).
+        $baseUrl = AppUrlHelper::apiUrl('/remote/servers');
         $links = [
             'first' => $baseUrl . '?page=1',
             'last' => $baseUrl . '?page=' . max(1, $lastPage),

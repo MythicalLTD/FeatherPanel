@@ -15,7 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import axios from 'axios';
 import { getFeatherpanelApiErrorCode, getFeatherpanelApiErrorMessage } from '@/lib/api';
@@ -163,6 +163,7 @@ export default function EditNodePage() {
     }>({ data: null, loading: false, error: null });
 
     const [errors, setErrors] = useState<Record<string, string>>({});
+    const wingsTabsFetched = useRef<Set<string>>(new Set());
 
     const fetchInitialData = useCallback(async () => {
         setLoading(true);
@@ -343,10 +344,24 @@ export default function EditNodePage() {
 
     useEffect(() => {
         fetchInitialData();
-        fetchSystemInfo();
-        fetchUtilization();
-        fetchDockerUsage();
-    }, [fetchInitialData, fetchSystemInfo, fetchUtilization, fetchDockerUsage]);
+    }, [fetchInitialData]);
+
+    useEffect(() => {
+        const wingsTabs: Record<string, () => void> = {
+            utilization: fetchUtilization,
+            docker: fetchDockerUsage,
+            'system-info': fetchSystemInfo,
+            'self-update': fetchSystemInfo,
+        };
+
+        const fetchForTab = wingsTabs[activeTab];
+        if (!fetchForTab || wingsTabsFetched.current.has(activeTab)) {
+            return;
+        }
+
+        wingsTabsFetched.current.add(activeTab);
+        fetchForTab();
+    }, [activeTab, fetchSystemInfo, fetchUtilization, fetchDockerUsage]);
 
     const wingsConfigYaml = useMemo(() => {
         if (!nodeData) return '';
@@ -574,7 +589,9 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
                             value='allocations'
                             className='mt-0 focus-visible:ring-0 focus-visible:outline-none'
                         >
-                            <AllocationsTab nodeId={nodeId as string} nodeName={nodeData?.name || ''} />
+                            {activeTab === 'allocations' ? (
+                                <AllocationsTab nodeId={nodeId as string} nodeName={nodeData?.name || ''} />
+                            ) : null}
                         </TabsContent>
 
                         <TabsContent value='network' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
@@ -595,71 +612,79 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
                         </TabsContent>
 
                         <TabsContent value='terminal' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
-                            {nodeData && <TerminalTab node={nodeData} />}
+                            {activeTab === 'terminal' && nodeData ? <TerminalTab node={nodeData} /> : null}
                         </TabsContent>
 
                         <TabsContent
                             value='wings-config'
                             className='mt-0 focus-visible:ring-0 focus-visible:outline-none'
                         >
-                            {nodeData && <WingsConfigTab node={nodeData} />}
+                            {activeTab === 'wings-config' && nodeData ? <WingsConfigTab node={nodeData} /> : null}
                         </TabsContent>
 
                         <TabsContent value='modules' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
-                            {nodeData && <ModulesTab node={nodeData} />}
+                            {activeTab === 'modules' && nodeData ? <ModulesTab node={nodeData} /> : null}
                         </TabsContent>
 
                         <TabsContent
                             value='utilization'
                             className='mt-0 focus-visible:ring-0 focus-visible:outline-none'
                         >
-                            <UtilizationTab
-                                loading={utilization.loading}
-                                data={utilization.data}
-                                error={utilization.error}
-                                onRefresh={fetchUtilization}
-                            />
+                            {activeTab === 'utilization' ? (
+                                <UtilizationTab
+                                    loading={utilization.loading}
+                                    data={utilization.data}
+                                    error={utilization.error}
+                                    onRefresh={fetchUtilization}
+                                />
+                            ) : null}
                         </TabsContent>
 
                         <TabsContent value='docker' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
-                            <DockerTab
-                                nodeId={Number(nodeId)}
-                                loading={dockerUsage.loading}
-                                data={dockerUsage.data}
-                                error={dockerUsage.error}
-                                onRefresh={fetchDockerUsage}
-                            />
+                            {activeTab === 'docker' ? (
+                                <DockerTab
+                                    nodeId={Number(nodeId)}
+                                    loading={dockerUsage.loading}
+                                    data={dockerUsage.data}
+                                    error={dockerUsage.error}
+                                    onRefresh={fetchDockerUsage}
+                                />
+                            ) : null}
                         </TabsContent>
 
                         <TabsContent
                             value='system-info'
                             className='mt-0 focus-visible:ring-0 focus-visible:outline-none'
                         >
-                            <SystemInfoTab
-                                nodeId={Number(nodeId)}
-                                loading={systemInfo.loading}
-                                data={systemInfo.data}
-                                error={systemInfo.error}
-                                onRefresh={fetchSystemInfo}
-                            />
+                            {activeTab === 'system-info' ? (
+                                <SystemInfoTab
+                                    nodeId={Number(nodeId)}
+                                    loading={systemInfo.loading}
+                                    data={systemInfo.data}
+                                    error={systemInfo.error}
+                                    onRefresh={fetchSystemInfo}
+                                />
+                            ) : null}
                         </TabsContent>
 
                         <TabsContent
                             value='diagnostics'
                             className='mt-0 focus-visible:ring-0 focus-visible:outline-none'
                         >
-                            <DiagnosticsTab nodeId={Number(nodeId)} />
+                            {activeTab === 'diagnostics' ? <DiagnosticsTab nodeId={Number(nodeId)} /> : null}
                         </TabsContent>
 
                         <TabsContent
                             value='self-update'
                             className='mt-0 focus-visible:ring-0 focus-visible:outline-none'
                         >
-                            <SelfUpdateTab
-                                nodeId={Number(nodeId)}
-                                systemData={systemInfo.data}
-                                onRefresh={fetchSystemInfo}
-                            />
+                            {activeTab === 'self-update' ? (
+                                <SelfUpdateTab
+                                    nodeId={Number(nodeId)}
+                                    systemData={systemInfo.data}
+                                    onRefresh={fetchSystemInfo}
+                                />
+                            ) : null}
                         </TabsContent>
 
                         {![

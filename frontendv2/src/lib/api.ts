@@ -13,9 +13,14 @@ by the Free Software Foundation, either version 3 of the License, or
 See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
-import axios, { AxiosError, AxiosInstance } from 'axios';
+import axios, { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from 'axios';
 import { isCloudflareChallengeResponseData, triggerCloudflareRecovery } from '@/lib/cloudflare-challenge';
 import { getClientSyncHeaders } from '@/lib/clientIdentity';
+import { acquireWingsSlot, isWingsAdminNodeRequest, releaseWingsSlot } from '@/lib/wingsRequestQueue';
+
+type WingsQueuedAxiosRequestConfig = InternalAxiosRequestConfig & {
+    _wingsQueued?: boolean;
+};
 
 // Same-origin panel API calls must include cookies (session). Default axios does not.
 axios.defaults.withCredentials = true;
@@ -69,6 +74,43 @@ const attachClientSyncRequestInterceptor = (client: AxiosInstance) => {
     });
 };
 
+const releaseWingsQueueSlot = (config?: InternalAxiosRequestConfig) => {
+    const wingsConfig = config as WingsQueuedAxiosRequestConfig | undefined;
+    if (!wingsConfig?._wingsQueued) {
+        return;
+    }
+
+    wingsConfig._wingsQueued = false;
+    releaseWingsSlot();
+};
+
+const attachWingsQueueInterceptor = (client: AxiosInstance) => {
+    client.interceptors.request.use(async (config) => {
+        const url = String(config.url || '');
+        const baseUrl = String(config.baseURL || '');
+        const requestPath = url.startsWith('http') ? url : `${baseUrl}${url}`;
+
+        if (!isWingsAdminNodeRequest(url) && !isWingsAdminNodeRequest(requestPath)) {
+            return config;
+        }
+
+        await acquireWingsSlot();
+        (config as WingsQueuedAxiosRequestConfig)._wingsQueued = true;
+        return config;
+    });
+
+    client.interceptors.response.use(
+        (response) => {
+            releaseWingsQueueSlot(response.config);
+            return response;
+        },
+        (error: AxiosError) => {
+            releaseWingsQueueSlot(error.config);
+            return Promise.reject(error);
+        },
+    );
+};
+
 const attachCommonResponseInterceptor = (client: AxiosInstance) => {
     client.interceptors.response.use(
         (response) => {
@@ -115,6 +157,8 @@ const attachCommonResponseInterceptor = (client: AxiosInstance) => {
 // Attach to both the custom API client and the global axios instance used across the app.
 attachClientSyncRequestInterceptor(api);
 attachClientSyncRequestInterceptor(axios);
+attachWingsQueueInterceptor(api);
+attachWingsQueueInterceptor(axios);
 attachCommonResponseInterceptor(api);
 attachCommonResponseInterceptor(axios);
 

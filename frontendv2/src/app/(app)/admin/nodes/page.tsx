@@ -173,7 +173,9 @@ export default function NodesPage() {
         async (nodesToCheck: Node[]) => {
             setIsCheckingHealth(true);
             try {
-                await Promise.all(nodesToCheck.map((node) => checkNodeHealth(node.id)));
+                for (const node of nodesToCheck) {
+                    await checkNodeHealth(node.id);
+                }
             } catch (error) {
                 console.error('Error checking all nodes health:', error);
                 toast.error(t('admin.node.messages.health_check_failed'));

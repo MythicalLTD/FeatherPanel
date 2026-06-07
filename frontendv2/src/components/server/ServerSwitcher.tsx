@@ -15,7 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { Fragment, useContext, useEffect, useMemo, useState } from 'react';
+import { Fragment, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Menu, MenuButton, MenuItem, MenuItems, Transition } from '@headlessui/react';
 import { Check, ChevronsUpDown, Clock, LayoutGrid, Loader2, Search, Server as ServerIcon, Star, X } from 'lucide-react';
@@ -77,7 +77,6 @@ function ServerAvatar({ server, className }: { server: Server; className?: strin
 }
 
 function preventMenuClose(e: React.MouseEvent | React.PointerEvent) {
-    e.preventDefault();
     e.stopPropagation();
 }
 
@@ -95,6 +94,7 @@ export function ServerSwitcher({ fallbackTitle }: ServerSwitcherProps) {
     const [searchQuery, setSearchQuery] = useState('');
     const [activeTab, setActiveTab] = useState<ServerSwitcherTab>('all');
     const [recentUuidShorts, setRecentUuidShorts] = useState<string[]>([]);
+    const searchInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         if (typeof window === 'undefined') return;
@@ -247,16 +247,23 @@ export function ServerSwitcher({ fallbackTitle }: ServerSwitcherProps) {
 
                         <div
                             className='bg-muted/25 border-border/50 focus-within:ring-primary/30 flex items-center gap-2 rounded-lg border px-2.5 py-1.5 focus-within:ring-2'
-                            onMouseDown={preventMenuClose}
+                            onMouseDown={(e) => {
+                                preventMenuClose(e);
+                                if (!(e.target instanceof HTMLInputElement)) {
+                                    searchInputRef.current?.focus();
+                                }
+                            }}
                             onClick={preventMenuClose}
                         >
                             <Search className='text-muted-foreground h-3.5 w-3.5 shrink-0' aria-hidden />
                             <input
+                                ref={searchInputRef}
                                 type='search'
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 placeholder={t('navbar.server_switcher.search_placeholder')}
                                 className='text-foreground placeholder:text-muted-foreground min-w-0 flex-1 bg-transparent text-sm outline-none'
+                                onMouseDown={preventMenuClose}
                                 onKeyDown={(e) => e.stopPropagation()}
                             />
                             {searchQuery && (

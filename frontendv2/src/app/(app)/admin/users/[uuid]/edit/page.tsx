@@ -809,12 +809,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                 <span className='text-muted-foreground'>
                                     {t('admin.users.edit.account_info.created')}
                                 </span>
-                                <span
-                                    title={formatDateTimeInTz(
-                                        user.created_at || user.first_seen,
-                                        dateOpts,
-                                    )}
-                                >
+                                <span title={formatDateTimeInTz(user.created_at || user.first_seen, dateOpts)}>
                                     {formatDateTimeInTz(user.created_at || user.first_seen, dateOpts)}
                                 </span>
                             </div>
@@ -1307,8 +1302,16 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                                     </div>
                                                 </td>
                                                 <td className='text-muted-foreground p-4'>
-                                                    <span title={alt.last_seen ? formatDateTimeInTz(alt.last_seen, dateOpts) : undefined}>
-                                                        {alt.last_seen ? formatRelativeTime(alt.last_seen, dateOpts) : '—'}
+                                                    <span
+                                                        title={
+                                                            alt.last_seen
+                                                                ? formatDateTimeInTz(alt.last_seen, dateOpts)
+                                                                : undefined
+                                                        }
+                                                    >
+                                                        {alt.last_seen
+                                                            ? formatRelativeTime(alt.last_seen, dateOpts)
+                                                            : '—'}
                                                     </span>
                                                 </td>
                                                 <td className='p-4 text-right'>
@@ -1520,10 +1523,8 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                     <DialogHeader>
                         <DialogTitle>{mailPreview?.subject}</DialogTitle>
                         <DialogDescription>
-                            {mailPreview?.created_at
-                                ? formatDateTimeInTz(mailPreview.created_at, dateOpts)
-                                : '—'}{' '}
-                            | {mailPreview?.status}
+                            {mailPreview?.created_at ? formatDateTimeInTz(mailPreview.created_at, dateOpts) : '—'} |{' '}
+                            {mailPreview?.status}
                         </DialogDescription>
                     </DialogHeader>
                     <div className='bg-muted/50 mt-4 max-h-[60vh] overflow-auto rounded-xl border p-4'>

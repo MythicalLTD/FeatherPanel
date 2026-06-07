@@ -80,6 +80,10 @@ interface WingsWebSocketReturn {
     requestLogs: () => void;
 }
 
+const MAX_RECONNECT_ATTEMPTS = 12;
+const RECONNECT_BASE_DELAY_MS = 3000;
+const RECONNECT_MAX_DELAY_MS = 30000;
+
 export function useWingsWebSocket({
     serverUuid,
     onMessage,
@@ -93,7 +97,7 @@ export function useWingsWebSocket({
     onBackupComplete,
     onTransferLogs,
     onTransferStatus,
-    connect = true,
+    connect: shouldConnect = true,
 }: WingsWebSocketOptions): WingsWebSocketReturn {
     const wsRef = useRef<WebSocket | null>(null);
     const jwtTokenRef = useRef<string>('');
@@ -104,7 +108,11 @@ export function useWingsWebSocket({
     const [ping, setPing] = useState<number | null>(null);
     const [stats, setStats] = useState<WingsStats | null>(null);
     const reconnectTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+    const reconnectAttemptsRef = useRef(0);
+    const connectionBlockedRef = useRef(false);
     const lastStatsRequestTimeRef = useRef<number | null>(null);
+    const consoleOutputQueueRef = useRef<string[]>([]);
+    const consoleFlushRafRef = useRef<number | null>(null);
 
     // Store callbacks in refs to avoid triggering useEffect on every render
     const onMessageRef = useRef(onMessage);
@@ -145,6 +153,53 @@ export function useWingsWebSocket({
         onTransferLogs,
         onTransferStatus,
     ]);
+
+    const flushConsoleOutputQueue = useCallback(() => {
+        consoleFlushRafRef.current = null;
+        const batch = consoleOutputQueueRef.current;
+        consoleOutputQueueRef.current = [];
+        const handler = onConsoleOutputRef.current;
+        if (!handler || batch.length === 0) {
+            return;
+        }
+        for (const chunk of batch) {
+            handler(chunk);
+        }
+    }, []);
+
+    const enqueueConsoleOutput = useCallback(
+        (output: string) => {
+            consoleOutputQueueRef.current.push(output);
+            if (consoleFlushRafRef.current !== null) {
+                return;
+            }
+            consoleFlushRafRef.current = requestAnimationFrame(flushConsoleOutputQueue);
+        },
+        [flushConsoleOutputQueue],
+    );
+
+    const clearConsoleOutputQueue = useCallback(() => {
+        if (consoleFlushRafRef.current !== null) {
+            cancelAnimationFrame(consoleFlushRafRef.current);
+            consoleFlushRafRef.current = null;
+        }
+        consoleOutputQueueRef.current = [];
+    }, []);
+
+    const scheduleReconnect = useCallback((establishConnection: () => void) => {
+        if (connectionBlockedRef.current || reconnectAttemptsRef.current >= MAX_RECONNECT_ATTEMPTS) {
+            setConnectionStatus('error');
+            return;
+        }
+
+        reconnectAttemptsRef.current += 1;
+        const delay = Math.min(RECONNECT_BASE_DELAY_MS * reconnectAttemptsRef.current, RECONNECT_MAX_DELAY_MS);
+
+        reconnectTimeoutRef.current = setTimeout(() => {
+            console.log('[Wings WS] Attempting reconnection...');
+            establishConnection();
+        }, delay);
+    }, []);
 
     const sendCommand = useCallback(
         (command: string) => {
@@ -202,10 +257,12 @@ export function useWingsWebSocket({
         if (!serverUuid) return;
 
         let isCleanedUp = false;
+        connectionBlockedRef.current = false;
+        reconnectAttemptsRef.current = 0;
 
-        const connect = async () => {
-            // Don't connect if we've already cleaned up
-            if (isCleanedUp) return;
+        const establishConnection = async () => {
+            // Don't connect if we've already cleaned up or connecting is disabled
+            if (isCleanedUp || !shouldConnect || connectionBlockedRef.current) return;
 
             setConnectionStatus('connecting');
 
@@ -252,6 +309,7 @@ export function useWingsWebSocket({
                         // Handle auth success
                         if (data.event === 'auth success') {
                             console.log('[Wings WS] Authenticated successfully');
+                            reconnectAttemptsRef.current = 0;
                             setIsConnected(true);
                             setConnectionStatus('connected');
                             return;
@@ -283,9 +341,9 @@ export function useWingsWebSocket({
                             return;
                         }
 
-                        // Handle console output
+                        // Handle console output (batched off the WebSocket thread to avoid UI freezes)
                         if (data.event === 'console output' && onConsoleOutputRef.current) {
-                            onConsoleOutputRef.current(data.args?.[0] as string);
+                            enqueueConsoleOutput((data.args?.[0] as string) || '');
                             return;
                         }
 
@@ -293,24 +351,24 @@ export function useWingsWebSocket({
                         if (data.event === 'daemon error' && onConsoleOutputRef.current) {
                             const raw =
                                 (data.args?.[0] as string) || 'An error occurred while handling a daemon request.';
-                            onConsoleOutputRef.current(`\u001b[31m${raw}\u001b[0m`);
+                            enqueueConsoleOutput(`\u001b[31m${raw}\u001b[0m`);
                             return;
                         }
 
                         if (data.event === 'jwt error' && onConsoleOutputRef.current) {
                             const raw = (data.args?.[0] as string) || 'WebSocket authentication error.';
-                            onConsoleOutputRef.current(`\u001b[31m[JWT] ${raw}\u001b[0m`);
+                            enqueueConsoleOutput(`\u001b[31m[JWT] ${raw}\u001b[0m`);
                             return;
                         }
 
                         // Optional daemon notices published as events (same as stock Wings "daemon message")
                         if (data.event === 'daemon message' && onConsoleOutputRef.current) {
-                            onConsoleOutputRef.current((data.args?.[0] as string) || '');
+                            enqueueConsoleOutput((data.args?.[0] as string) || '');
                             return;
                         }
 
                         if (data.event === 'throttled' && onConsoleOutputRef.current) {
-                            onConsoleOutputRef.current(
+                            enqueueConsoleOutput(
                                 '\u001b[33m[FeatherPanel] Console output is being rate-limited by the node.\u001b[0m',
                             );
                             return;
@@ -417,35 +475,39 @@ export function useWingsWebSocket({
                     setPing(null);
                     setStats(null);
 
-                    // Only attempt reconnection if not cleaned up
-                    if (!isCleanedUp) {
-                        reconnectTimeoutRef.current = setTimeout(() => {
-                            console.log('[Wings WS] Attempting reconnection...');
-                            connect();
-                        }, 5000);
+                    // Only attempt reconnection if not cleaned up and connecting is still enabled
+                    if (!isCleanedUp && shouldConnect) {
+                        scheduleReconnect(establishConnection);
                     }
                 };
             } catch (err) {
                 console.error('[Wings WS] Connection failed:', err);
+
+                if (axios.isAxiosError(err) && err.response?.status === 403) {
+                    connectionBlockedRef.current = true;
+                    setConnectionStatus('error');
+                    return;
+                }
+
                 setConnectionStatus('error');
 
-                // Only attempt reconnection if not cleaned up
-                if (!isCleanedUp) {
-                    reconnectTimeoutRef.current = setTimeout(() => {
-                        console.log('[Wings WS] Attempting reconnection after error...');
-                        connect();
-                    }, 5000);
+                if (!isCleanedUp && shouldConnect) {
+                    scheduleReconnect(establishConnection);
                 }
             }
         };
 
-        if (connect) {
-            connect();
+        if (shouldConnect) {
+            establishConnection();
+        } else {
+            setIsConnected(false);
+            setConnectionStatus('disconnected');
         }
 
         return () => {
             console.log('[Wings WS] Cleaning up connection');
             isCleanedUp = true;
+            clearConsoleOutputQueue();
             if (reconnectTimeoutRef.current) {
                 clearTimeout(reconnectTimeoutRef.current);
             }
@@ -454,7 +516,7 @@ export function useWingsWebSocket({
                 wsRef.current = null;
             }
         };
-    }, [serverUuid, refreshToken, connect]); // Only depend on serverUuid, refreshToken and connect
+    }, [serverUuid, refreshToken, shouldConnect, enqueueConsoleOutput, clearConsoleOutputQueue, scheduleReconnect]);
 
     const reconnect = useCallback(() => {
         if (wsRef.current) {

@@ -29,6 +29,7 @@
 - Potential alt detection now also compares server activity IPs and hidden browser sync identifiers (localStorage + cookie) collected across the panel. by @nayskutzu
 - Registration can block new accounts when a browser/device already has the maximum allowed panel accounts, pointing users to their main account or support. by @nayskutzu
 - Admins can clear device fingerprint records per user or globally from the Users admin area. by @nayskutzu
+- Hopefully fixed some issues with the server console. by @nayskutzu
 
 ### Fixed
 
@@ -39,7 +40,9 @@
 - Small issues regarding spells export behavior were fixed. by @nayskutzu
 - Node connections now actually respect the behind proxy setting. by @nayskutzu
 - Timezones were missmatched into the admin pages.by @nayskutzu
-
+- Search bar in the server navbar was not working. by @nayskutzu
+- Multiple issues with the server transfer dialog were fixed. by @nayskutzu
+- Multiple issues with connections to the nodes were fixed. by @nayskutzu
 
 ## v1.3.7.3 STABLE
 

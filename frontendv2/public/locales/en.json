@@ -851,7 +851,8 @@
 			"installing": "Installing",
 			"install_failed": "Install Failed",
 			"suspended": "Suspended",
-			"restoring_backup": "Restoring Backup"
+			"restoring_backup": "Restoring Backup",
+			"transferring": "Transferring"
 		},
 		"suspended_banner": {
 			"title": "Server Suspended",
@@ -5664,6 +5665,8 @@
 				"select_allocation": "Select destination allocation...",
 				"auto_allocate": "Assign allocation automatically",
 				"auto_allocate_help": "Uses the next free allocation(s) on the destination node for the primary port and any extra ports.",
+				"auto_open_ports": "Auto-open missing ports on destination",
+				"auto_open_ports_help": "If the destination node has no free allocations, create them using IPs from Wings and the same ports this server currently uses.",
 				"search_nodes": "Search nodes...",
 				"search_allocations": "Search allocations...",
 				"no_free_allocations": "No free allocations found",
@@ -5679,7 +5682,12 @@
 				"beta_item8": "Network issues can cause partial transfers or data corruption.",
 				"fetch_nodes_failed": "Failed to fetch destination nodes",
 				"fetch_allocations_failed": "Failed to fetch destination allocations",
-				"submit": "I Understand - Start Transfer",
+				"allocations_needed": "Allocations needed",
+				"free_on_destination": "Free on destination",
+				"insufficient_allocations": "Not enough free allocations on the destination node (need {needed}, found {found}). Add more allocations to the destination node or pick a different node.",
+				"insufficient_allocations_hint": "Enable \"Auto-open missing ports on destination\" to create allocations from the Wings IP list automatically.",
+				"error_title": "Transfer failed",
+				"submit": "Start Transfer",
 				"submitting": "Starting Transfer..."
 			},
 			"form": {
