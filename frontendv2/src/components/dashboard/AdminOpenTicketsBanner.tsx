@@ -17,12 +17,11 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 import { AlertTriangle, X } from 'lucide-react';
 import { useSession } from '@/contexts/SessionContext';
 import { useTranslation } from '@/contexts/TranslationContext';
 import Permissions from '@/lib/permissions';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/featherui/Button';
 import { cn } from '@/lib/utils';
 
 const DISMISS_STORAGE_KEY = 'featherpanel_dismiss_admin_open_tickets_dashboard';
@@ -44,40 +43,30 @@ function readDismissedCount(): number | null {
 }
 
 export function AdminOpenTicketsBanner({ className }: { className?: string }) {
-    const pathname = usePathname();
     const { hasPermission, adminTicketStats } = useSession();
     const { t } = useTranslation();
-    const isDashboardHome = pathname === '/dashboard';
 
-    const [dismissedCount, setDismissedCount] = useState<number | null>(null);
     const [hydrated, setHydrated] = useState(false);
+    const [shouldShow, setShouldShow] = useState(false);
 
     const openCount = adminTicketStats?.open_count ?? 0;
 
+    // Only show the banner if it hasn't been dismissed for this openCount
     useEffect(() => {
-        setDismissedCount(readDismissedCount());
         setHydrated(true);
-    }, []);
-
-    useEffect(() => {
-        if (!hydrated || !isDashboardHome) {
-            return;
+        if (typeof window !== 'undefined') {
+            const dismissedCount = readDismissedCount();
+            if (
+                openCount > 0 &&
+                hasPermission(Permissions.ADMIN_TICKETS_VIEW) &&
+                (dismissedCount === null || dismissedCount < openCount)
+            ) {
+                setShouldShow(true);
+            } else {
+                setShouldShow(false);
+            }
         }
-        setDismissedCount(readDismissedCount());
-    }, [hydrated, isDashboardHome, openCount]);
-
-    if (!hasPermission(Permissions.ADMIN_TICKETS_VIEW)) {
-        return null;
-    }
-
-    if (!hydrated || openCount <= 0) {
-        return null;
-    }
-
-    const isDismissedOnDashboard = isDashboardHome && dismissedCount === openCount;
-    if (isDismissedOnDashboard) {
-        return null;
-    }
+    }, [openCount, hasPermission]);
 
     const handleDismiss = () => {
         try {
@@ -85,8 +74,16 @@ export function AdminOpenTicketsBanner({ className }: { className?: string }) {
         } catch {
             // ignore storage failures
         }
-        setDismissedCount(openCount);
+        setShouldShow(false);
     };
+
+    if (!hydrated) {
+        return null;
+    }
+
+    if (!shouldShow) {
+        return null;
+    }
 
     return (
         <div
@@ -114,30 +111,25 @@ export function AdminOpenTicketsBanner({ className }: { className?: string }) {
                     <Button asChild size='sm' className='bg-amber-600 text-white hover:bg-amber-600/90'>
                         <Link href='/admin/tickets'>{t('tickets.adminManageTickets')}</Link>
                     </Button>
-                    {isDashboardHome && (
-                        <Button
-                            type='button'
-                            variant='ghost'
-                            size='sm'
-                            className='text-amber-800 hover:bg-amber-500/15 dark:text-amber-200'
-                            onClick={handleDismiss}
-                        >
-                            {t('tickets.adminDismissOpenTicketsBanner')}
-                        </Button>
-                    )}
+                    <Button
+                        type='button'
+                        variant='ghost'
+                        size='sm'
+                        className='text-amber-800 hover:bg-amber-500/15 dark:text-amber-200'
+                        onClick={handleDismiss}
+                    >
+                        {t('tickets.adminDismissOpenTicketsBanner')}
+                    </Button>
                 </div>
             </div>
-
-            {isDashboardHome && (
-                <button
-                    type='button'
-                    onClick={handleDismiss}
-                    className='absolute top-3 right-3 rounded-lg p-1 transition-colors hover:bg-amber-500/15 sm:hidden'
-                    aria-label={t('tickets.adminDismissOpenTicketsBanner')}
-                >
-                    <X className='h-4 w-4 opacity-70' />
-                </button>
-            )}
+            <button
+                type='button'
+                onClick={handleDismiss}
+                className='absolute top-3 right-3 rounded-lg p-1 transition-colors hover:bg-amber-500/15 sm:hidden'
+                aria-label={t('tickets.adminDismissOpenTicketsBanner')}
+            >
+                <X className='h-4 w-4 opacity-70' />
+            </button>
         </div>
     );
 }
