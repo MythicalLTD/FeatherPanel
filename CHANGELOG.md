@@ -11,11 +11,10 @@
 - Login page CAPTCHA is shown after username/password (before Sign in), full-width in a bordered block, instead of between the two fields. by @nayskutzu
 - Styles for the auth LDAP button were improved. by @nayskutzu
 
-
 ### Fixed
 
 - Admin Updates page plugin bulk updates now call the correct online install API (`/api/admin/plugins/online/install`) instead of a non-existent route. by @nayskutzu
-
+- Issues related to Discord OAuth2 account linking and registration were fixed. by @nayskutzu
 
 ## v1.3.7.3 STABLE
 

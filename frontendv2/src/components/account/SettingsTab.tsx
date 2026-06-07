@@ -54,6 +54,16 @@ type AuthProvider = {
     name: string;
 };
 
+const discordLinkErrorKeys: Record<string, string> = {
+    discord_already_linked: 'account.discordAlreadyLinked',
+    discord_disabled: 'account.discordDisabled',
+    discord_link_failed: 'account.discordLinkFailed',
+    discord_not_configured: 'account.discordNotConfigured',
+    discord_token_failed: 'account.discordTokenFailed',
+    discord_user_failed: 'account.discordUserFailed',
+    discord_user_not_found: 'account.discordUserNotFound',
+};
+
 const oidcLinkErrorKeys: Record<string, string> = {
     oidc_access_denied: 'account.oidcAccessDenied',
     oidc_discovery_failed: 'account.oidcDiscoveryFailed',
@@ -79,9 +89,9 @@ export default function SettingsTab() {
     const dateOpts = useDateFormatOptions();
     const router = useRouter();
     const searchParams = useSearchParams();
-    const oidcCallbackHandledRef = useRef<string | null>(null);
-    const oidcLinkedParam = searchParams.get('linked');
-    const oidcErrorParam = searchParams.get('error');
+    const identityCallbackHandledRef = useRef<string | null>(null);
+    const linkedParam = searchParams.get('linked');
+    const identityErrorParam = searchParams.get('error');
     const browserTimezone = useMemo(() => getEffectiveTimezone(null), []);
     const supportedTimezones = useMemo(() => listSupportedTimezones(), []);
     const [savingTimezone, setSavingTimezone] = useState(false);
@@ -108,6 +118,7 @@ export default function SettingsTab() {
     const [ldapUsername, setLdapUsername] = useState('');
     const [ldapPassword, setLdapPassword] = useState('');
     const [oidcLinkErrorMessage, setOidcLinkErrorMessage] = useState<string | null>(null);
+    const [discordLinkErrorMessage, setDiscordLinkErrorMessage] = useState<string | null>(null);
     const [turnstileToken, setTurnstileToken] = useState('');
     const [turnstileKey, setTurnstileKey] = useState(0);
 
@@ -176,29 +187,41 @@ export default function SettingsTab() {
 
     useEffect(() => {
         const callbackKey =
-            oidcLinkedParam === 'oidc'
+            linkedParam === 'oidc'
                 ? 'linked:oidc'
-                : oidcErrorParam?.startsWith('oidc_')
-                  ? `error:${oidcErrorParam}`
-                  : null;
+                : linkedParam === 'discord'
+                  ? 'linked:discord'
+                  : identityErrorParam?.startsWith('oidc_')
+                    ? `error:${identityErrorParam}`
+                    : identityErrorParam?.startsWith('discord_')
+                      ? `error:${identityErrorParam}`
+                      : null;
 
-        if (!callbackKey || oidcCallbackHandledRef.current === callbackKey) {
+        if (!callbackKey || identityCallbackHandledRef.current === callbackKey) {
             return;
         }
 
-        oidcCallbackHandledRef.current = callbackKey;
+        identityCallbackHandledRef.current = callbackKey;
         router.replace('/dashboard/account?tab=settings');
 
-        if (oidcLinkedParam === 'oidc') {
+        if (linkedParam === 'oidc') {
             setOidcLinkErrorMessage(null);
             toast.success(t('account.oidcLinkedSuccessfully'));
             void fetchSession(true);
-        } else if (oidcErrorParam?.startsWith('oidc_')) {
-            const message = t(oidcLinkErrorKeys[oidcErrorParam] ?? 'account.oidcLinkFailed');
+        } else if (linkedParam === 'discord') {
+            setDiscordLinkErrorMessage(null);
+            toast.success(t('account.discordLinkedSuccessfully'));
+            void fetchSession(true);
+        } else if (identityErrorParam?.startsWith('oidc_')) {
+            const message = t(oidcLinkErrorKeys[identityErrorParam] ?? 'account.oidcLinkFailed');
             setOidcLinkErrorMessage(message);
             toast.error(message);
+        } else if (identityErrorParam?.startsWith('discord_')) {
+            const message = t(discordLinkErrorKeys[identityErrorParam] ?? 'account.discordLinkFailed');
+            setDiscordLinkErrorMessage(message);
+            toast.error(message);
         }
-    }, [fetchSession, oidcErrorParam, oidcLinkedParam, router, t]);
+    }, [fetchSession, identityErrorParam, linkedParam, router, t]);
 
     const resetTurnstile = () => {
         if (settings?.turnstile_enabled) {
@@ -251,7 +274,8 @@ export default function SettingsTab() {
     };
 
     const handleLinkDiscord = () => {
-        window.location.href = '/api/user/auth/discord/login';
+        setDiscordLinkErrorMessage(null);
+        window.location.href = '/api/user/auth/discord/link';
     };
 
     const handleUnlinkDiscord = async () => {
@@ -765,6 +789,9 @@ export default function SettingsTab() {
                                     <span className='font-medium'>{t('account.linkedAs')}:</span>{' '}
                                     {user?.discord_oauth2_name || t('account.unknown')}
                                 </p>
+                            )}
+                            {discordLinkErrorMessage && (
+                                <p className='text-destructive mt-2 text-sm'>{discordLinkErrorMessage}</p>
                             )}
                         </div>
                         <div className='flex shrink-0 gap-2'>

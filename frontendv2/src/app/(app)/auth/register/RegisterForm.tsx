@@ -221,7 +221,13 @@ export default function RegisterForm() {
                     </Button>
                     <Button
                         variant='outline'
-                        onClick={() => router.replace('/auth/register')}
+                        onClick={() =>
+                            router.replace(
+                                discordLinkToken
+                                    ? `/auth/login?discord_link_token=${discordLinkToken}`
+                                    : '/auth/register',
+                            )
+                        }
                         disabled={loading}
                         className='w-full'
                     >
