@@ -783,7 +783,10 @@
 			},
 			"showingMails": "Showing {from} to {to} of {total} emails",
 			"totalMailsCount": "{count} emails",
-			"mailContent": "Mail Content"
+			"mailContent": "Mail Content",
+			"resend": "Resend",
+			"resendSuccess": "Email queued for resend",
+			"resendFailed": "Failed to resend email"
 		},
 		"licenses": {},
 		"twoFactor": {
@@ -7102,6 +7105,9 @@
 					"created": "Created At",
 					"preview": "Preview",
 					"actions": "Actions",
+					"resend": "Resend",
+					"resend_success": "Email queued for resend",
+					"resend_failed": "Failed to resend email",
 					"no_mails": "No mails found."
 				}
 			},

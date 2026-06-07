@@ -460,12 +460,15 @@ class UsersController
         $queueIds = array_column($mailList, 'queue_id');
         $mailQueues = MailQueue::getByIds($queueIds);
         $user['mails'] = [];
-        foreach ($queueIds as $queueId) {
-            if (isset($mailQueues[$queueId])) {
-                $mail = $mailQueues[$queueId];
-                unset($mail['id'], $mail['user_uuid'], $mail['deleted'], $mail['locked'], $mail['updated_at']);
-                $user['mails'][] = $mail;
+        foreach ($mailList as $mailListEntry) {
+            $queueId = (int) ($mailListEntry['queue_id'] ?? 0);
+            if (!isset($mailQueues[$queueId])) {
+                continue;
             }
+            $mail = $mailQueues[$queueId];
+            $mail['id'] = (int) $mailListEntry['id'];
+            unset($mail['user_uuid'], $mail['deleted'], $mail['locked'], $mail['updated_at']);
+            $user['mails'][] = $mail;
         }
         if ($app->isDemoMode()) {
             $user['first_ip'] = $app->getIPIntoFBIFormat();
@@ -554,12 +557,15 @@ class UsersController
         $queueIds = array_column($mailList, 'queue_id');
         $mailQueues = MailQueue::getByIds($queueIds);
         $user['mails'] = [];
-        foreach ($queueIds as $queueId) {
-            if (isset($mailQueues[$queueId])) {
-                $mail = $mailQueues[$queueId];
-                unset($mail['id'], $mail['user_uuid'], $mail['deleted'], $mail['locked'], $mail['updated_at']);
-                $user['mails'][] = $mail;
+        foreach ($mailList as $mailListEntry) {
+            $queueId = (int) ($mailListEntry['queue_id'] ?? 0);
+            if (!isset($mailQueues[$queueId])) {
+                continue;
             }
+            $mail = $mailQueues[$queueId];
+            $mail['id'] = (int) $mailListEntry['id'];
+            unset($mail['user_uuid'], $mail['deleted'], $mail['locked'], $mail['updated_at']);
+            $user['mails'][] = $mail;
         }
 
         if ($app->isDemoMode()) {
@@ -1432,6 +1438,85 @@ class UsersController
         return ApiResponse::success([
             'queue_id' => $queueId,
         ], 'Email queued successfully', 200);
+    }
+
+    #[OA\Post(
+        path: '/api/admin/users/{uuid}/mails/{id}/resend',
+        summary: 'Resend a failed user email',
+        description: 'Re-queue a failed system email for delivery to the specified user.',
+        tags: ['Admin - Users'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuid',
+                in: 'path',
+                description: 'User UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string', format: 'uuid')
+            ),
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                description: 'Mail list entry ID',
+                required: true,
+                schema: new OA\Schema(type: 'integer', minimum: 1)
+            ),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Email queued for resend'),
+            new OA\Response(response: 400, description: 'Bad request - Mail cannot be resent or SMTP disabled'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
+            new OA\Response(response: 404, description: 'User or mail not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to resend mail'),
+        ]
+    )]
+    public function resendMail(Request $request, string $uuid, int $mailId): Response
+    {
+        if (!preg_match('/^[a-f0-9\-]{36}$/i', $uuid)) {
+            return ApiResponse::error('Invalid UUID format', 'INVALID_UUID', 400);
+        }
+
+        if ($mailId <= 0) {
+            return ApiResponse::error('Invalid mail ID', 'INVALID_MAIL_ID', 400);
+        }
+
+        $user = User::getUserByUuid($uuid);
+        if (!$user) {
+            return ApiResponse::error('User not found', 'USER_NOT_FOUND', 404);
+        }
+
+        $mailListEntry = MailList::getById($mailId);
+        if (!$mailListEntry || ($mailListEntry['user_uuid'] ?? '') !== $user['uuid']) {
+            return ApiResponse::error('Mail not found', 'MAIL_NOT_FOUND', 404);
+        }
+
+        $queueId = (int) ($mailListEntry['queue_id'] ?? 0);
+        $queueEntry = MailQueue::getById($queueId);
+        if (!$queueEntry) {
+            return ApiResponse::error('Mail not found', 'MAIL_NOT_FOUND', 404);
+        }
+
+        if (($queueEntry['status'] ?? '') !== 'failed') {
+            return ApiResponse::error('Only failed emails can be resent', 'MAIL_NOT_RESENDABLE', 400);
+        }
+
+        $app = App::getInstance(true);
+        if ($app->getConfig()->getSetting(ConfigInterface::SMTP_ENABLED, 'false') !== 'true') {
+            return ApiResponse::error('SMTP is not enabled', 'SMTP_DISABLED', 400);
+        }
+
+        if (!MailQueue::retry($queueId)) {
+            return ApiResponse::error('Failed to queue email for resend', 'FAILED_TO_RESEND_MAIL', 500);
+        }
+
+        Activity::createActivity([
+            'user_uuid' => $request->attributes->get('user')['uuid'] ?? null,
+            'name' => 'resend_user_email',
+            'context' => 'Resent failed email to user ' . ($user['username'] ?? $user['uuid']) . '. Subject: ' . ($queueEntry['subject'] ?? ''),
+            'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        return ApiResponse::success([], 'Email queued for resend', 200);
     }
 
     #[OA\Post(

@@ -32,6 +32,7 @@ import {
     ArrowLeft,
     Edit,
     RefreshCw,
+    RotateCcw,
     Copy,
     ExternalLink,
     AlertTriangle,
@@ -110,7 +111,7 @@ interface ApiUser {
     ldap_provider_uuid?: string | null;
     ldap_dn?: string | null;
     activities?: { name: string; context: string; ip_address: string; created_at: string }[];
-    mails?: { subject: string; status: string; created_at: string; body?: string }[];
+    mails?: { id: number; subject: string; status: string; created_at: string; body?: string }[];
 }
 
 interface EditForm {
@@ -176,6 +177,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
     const [sendEmailOpen, setSendEmailOpen] = useState(false);
     const [sendingEmail, setSendingEmail] = useState(false);
     const [sendEmailData, setSendEmailData] = useState({ subject: '', body: '' });
+    const [resendingMailId, setResendingMailId] = useState<number | null>(null);
     const [banDialogOpen, setBanDialogOpen] = useState(false);
     const [banSubmitting, setBanSubmitting] = useState(false);
     const [banReason, setBanReason] = useState<ModerationReasonValue>({
@@ -440,6 +442,29 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
     const showMailPreview = (mail: { subject: string; body?: string; status: string; created_at: string }) => {
         setMailPreview(mail);
         setMailPreviewOpen(true);
+    };
+
+    const handleResendMail = async (mail: { id: number; subject: string; status: string }) => {
+        if (!user) return;
+
+        setResendingMailId(mail.id);
+        try {
+            const { data } = await axios.post(`/api/admin/users/${user.uuid}/mails/${mail.id}/resend`);
+            if (data?.success) {
+                toast.success(t('admin.users.edit.mails.resend_success'));
+                await fetchUser();
+            } else {
+                toast.error(data?.message || t('admin.users.edit.mails.resend_failed'));
+            }
+        } catch (error: unknown) {
+            const message =
+                axios.isAxiosError(error) && error.response?.data?.message
+                    ? String(error.response.data.message)
+                    : t('admin.users.edit.mails.resend_failed');
+            toast.error(message);
+        } finally {
+            setResendingMailId(null);
+        }
     };
 
     const handleSendEmail = async (e: React.FormEvent) => {
@@ -1135,28 +1160,49 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                             </td>
                                         </tr>
                                     ) : (
-                                        user.mails.map((mail, index) => (
+                                        user.mails.map((mail) => (
                                             <tr
-                                                key={index}
+                                                key={mail.id}
                                                 className='border-b border-white/5 transition-colors last:border-0 hover:bg-white/5'
                                             >
                                                 <td className='p-4 font-medium'>{mail.subject}</td>
                                                 <td className='p-4'>
                                                     <Badge
-                                                        variant={mail.status === 'sent' ? 'secondary' : 'destructive'}
+                                                        variant={
+                                                            mail.status === 'sent'
+                                                                ? 'secondary'
+                                                                : mail.status === 'failed'
+                                                                  ? 'destructive'
+                                                                  : 'outline'
+                                                        }
                                                     >
                                                         {mail.status}
                                                     </Badge>
                                                 </td>
                                                 <td className='text-muted-foreground p-4'>{mail.created_at}</td>
                                                 <td className='p-4 text-right'>
-                                                    <Button
-                                                        size='sm'
-                                                        variant='outline'
-                                                        onClick={() => showMailPreview(mail)}
-                                                    >
-                                                        {t('admin.users.edit.mails.preview')}
-                                                    </Button>
+                                                    <div className='flex justify-end gap-2'>
+                                                        <Button
+                                                            size='sm'
+                                                            variant='outline'
+                                                            onClick={() => showMailPreview(mail)}
+                                                        >
+                                                            {t('admin.users.edit.mails.preview')}
+                                                        </Button>
+                                                        {mail.status === 'failed' && (
+                                                            <Button
+                                                                size='sm'
+                                                                variant='outline'
+                                                                disabled={resendingMailId === mail.id}
+                                                                onClick={() => handleResendMail(mail)}
+                                                            >
+                                                                <RotateCcw
+                                                                    className={`mr-1 h-4 w-4 ${resendingMailId === mail.id ? 'animate-spin' : ''}`}
+                                                                />
+                                                                {t('admin.users.edit.mails.resend')}
+                                                            </Button>
+                                                        )}
+                                                    </div>
                                                 </td>
                                             </tr>
                                         ))

@@ -99,6 +99,22 @@ return function (RouteCollection $routes): void {
     );
     App::getInstance(true)->registerAuthRoute(
         $routes,
+        'mails-resend',
+        '/api/user/mails/{id}/resend',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return \App\Helpers\ApiResponse::error('Missing or invalid mail ID', 'INVALID_MAIL_ID', 400);
+            }
+
+            return (new SessionController())->resendMail($request, (int) $id);
+        },
+        ['POST'],
+        Rate::perMinute(10),
+        'user-session'
+    );
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
         'activities-get',
         '/api/user/activities',
         function (Request $request) {

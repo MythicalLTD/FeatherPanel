@@ -175,4 +175,31 @@ class MailQueue
 
         return $stmt->execute(['user_uuid' => $userUuid]);
     }
+
+    /**
+     * Re-queue a failed mail for delivery.
+     */
+    public static function retry(int $id): bool
+    {
+        if ($id <= 0) {
+            return false;
+        }
+
+        $mail = self::getById($id);
+        if (!$mail || ($mail['status'] ?? '') !== 'failed' || ($mail['deleted'] ?? 'false') === 'true') {
+            return false;
+        }
+
+        $updated = self::update($id, [
+            'status' => 'pending',
+            'locked' => 'false',
+        ]);
+        if (!$updated) {
+            return false;
+        }
+
+        \App\Helpers\IAsyncRunnerService::notifyMailPending($id);
+
+        return true;
+    }
 }

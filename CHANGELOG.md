@@ -8,7 +8,7 @@
 - Admins now get clearer notifications (including email notifications) when there are open support tickets; the ticket section can show all open tickets if the user is an admin. by @nayskutzu
 - Users now receive an email notification when their support ticket is replied to, closed, or reopened. by @nayskutzu
 - Added Discord to the links section in settings. displaying these links in a visible area, such as a footer, so users can easily access them.
-
+- Added a button so you can retry sending an email to a user. by @nayskutzu
 
 ### Improved
 

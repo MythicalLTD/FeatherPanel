@@ -177,6 +177,26 @@ return function (RouteCollection $routes): void {
     );
     App::getInstance(true)->registerAdminRoute(
         $routes,
+        'admin-users-resend-mail',
+        '/api/admin/users/{uuid}/mails/{id}/resend',
+        function (Request $request, array $args) {
+            $uuid = $args['uuid'] ?? null;
+            if (!$uuid || !is_string($uuid)) {
+                return ApiResponse::error('Missing or invalid UUID', 'INVALID_UUID', 400);
+            }
+
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid mail ID', 'INVALID_MAIL_ID', 400);
+            }
+
+            return (new UsersController())->resendMail($request, $uuid, (int) $id);
+        },
+        Permissions::ADMIN_USERS_EDIT,
+        ['POST']
+    );
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
         'admin-users-verify-email',
         '/api/admin/users/{uuid}/verify-email',
         function (Request $request, array $args) {
