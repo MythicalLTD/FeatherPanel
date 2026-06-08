@@ -155,20 +155,28 @@ class DiscordController
         // Check if user exists with this Discord ID
         $existingUser = $this->findUserByDiscordId($discordId);
 
-        if ($existingUser && $existingUser['discord_oauth2_linked'] === 'true') {
-            // User exists and is already linked, generate temporary token and redirect to login
-            $tempToken = bin2hex(random_bytes(32));
+        if ($existingUser !== null) {
+            return $this->createDiscordLoginRedirect(
+                $existingUser,
+                $discordId,
+                $accessToken,
+                $discordUsername,
+                $discordName
+            );
+        }
 
-            // Store user UUID and Discord data with temporary token (5 minute expiration)
-            Cache::put('discord_login_token_' . $tempToken, [
-                'user_uuid' => $existingUser['uuid'],
-                'discord_id' => $discordId,
-                'discord_access_token' => $accessToken,
-                'discord_username' => $discordUsername,
-                'discord_name' => $discordName,
-            ], 5);
-
-            return new RedirectResponse('/auth/login?discord_token=' . $tempToken);
+        // Discord OAuth proves email ownership — auto-link and log in existing accounts
+        if (!empty($discordEmail) && filter_var($discordEmail, FILTER_VALIDATE_EMAIL)) {
+            $emailUser = User::getUserByEmail($discordEmail);
+            if ($emailUser !== null && ($emailUser['deleted'] ?? 'false') !== 'true') {
+                return $this->createDiscordLoginRedirect(
+                    $emailUser,
+                    $discordId,
+                    $accessToken,
+                    $discordUsername,
+                    $discordName
+                );
+            }
         }
 
         // User not linked yet — offer registration only when no matching account exists
@@ -369,6 +377,31 @@ class DiscordController
             return $deviceLimitResponse;
         }
 
+        $existingUser = $this->findUserByDiscordId($cached['discord_id']);
+        if ($existingUser !== null) {
+            Cache::forget('discord_link_token_' . $token);
+
+            return (new LoginController())->completeLogin($existingUser);
+        }
+
+        if (!empty($cached['discord_email']) && filter_var($cached['discord_email'], FILTER_VALIDATE_EMAIL)) {
+            $emailUser = User::getUserByEmail($cached['discord_email']);
+            if ($emailUser !== null && ($emailUser['deleted'] ?? 'false') !== 'true') {
+                $this->applyDiscordLink(
+                    $emailUser['uuid'],
+                    $cached['discord_id'],
+                    $cached['discord_access_token'],
+                    $cached['discord_username'],
+                    $cached['discord_name']
+                );
+
+                Cache::forget('discord_link_token_' . $token);
+                $linkedUser = User::getUserByUuid($emailUser['uuid']);
+
+                return (new LoginController())->completeLogin($linkedUser ?? $emailUser);
+            }
+        }
+
         $newUser = $this->autoProvisionUser(
             $cached['discord_id'],
             $cached['discord_username'],
@@ -440,11 +473,29 @@ class DiscordController
 
                 return null;
             }
-            // Check if email is already in use
-            if (User::getUserByEmail($discordEmail) !== null) {
-                $app->getLogger()->warning('Discord auto-provision: email already in use: ' . $discordEmail);
+            // Re-use an existing account when the Discord email is already registered
+            $existingUser = User::getUserByEmail($discordEmail);
+            if ($existingUser !== null) {
+                if (($existingUser['deleted'] ?? 'false') === 'true') {
+                    $app->getLogger()->warning('Discord auto-provision: email belongs to a deleted user: ' . $discordEmail);
 
-                return null;
+                    return null;
+                }
+
+                $linked = $this->applyDiscordLink(
+                    $existingUser['uuid'],
+                    $discordId,
+                    $accessToken,
+                    $discordUsername,
+                    $discordName
+                );
+                if (!$linked) {
+                    $app->getLogger()->error('Discord auto-provision: failed to link existing user for email: ' . $discordEmail);
+
+                    return null;
+                }
+
+                return User::getUserByUuid($existingUser['uuid']);
             }
             $emailValue = $discordEmail;
         } else {
@@ -613,13 +664,54 @@ class DiscordController
     {
         if (!empty($discordEmail) && filter_var($discordEmail, FILTER_VALIDATE_EMAIL)) {
             $user = User::getUserByEmail($discordEmail);
-            if ($user) {
+            if ($user !== null && ($user['deleted'] ?? 'false') !== 'true') {
                 return $user;
             }
         }
 
         $baseUsername = preg_replace('/[^a-zA-Z0-9_]/', '_', strtolower($discordUsername)) ?: 'user';
+        $user = User::getUserByUsername(substr($baseUsername, 0, 32));
+        if ($user !== null && ($user['deleted'] ?? 'false') !== 'true') {
+            return $user;
+        }
 
-        return User::getUserByUsername(substr($baseUsername, 0, 32));
+        return null;
+    }
+
+    private function createDiscordLoginRedirect(
+        array $user,
+        string $discordId,
+        string $accessToken,
+        string $discordUsername,
+        string $discordName,
+    ): RedirectResponse {
+        $this->applyDiscordLink($user['uuid'], $discordId, $accessToken, $discordUsername, $discordName);
+
+        $tempToken = bin2hex(random_bytes(32));
+        Cache::put('discord_login_token_' . $tempToken, [
+            'user_uuid' => $user['uuid'],
+            'discord_id' => $discordId,
+            'discord_access_token' => $accessToken,
+            'discord_username' => $discordUsername,
+            'discord_name' => $discordName,
+        ], 5);
+
+        return new RedirectResponse('/auth/login?discord_token=' . $tempToken);
+    }
+
+    private function applyDiscordLink(
+        string $userUuid,
+        string $discordId,
+        string $accessToken,
+        string $discordUsername,
+        string $discordName,
+    ): bool {
+        return User::updateUser($userUuid, [
+            'discord_oauth2_id' => $discordId,
+            'discord_oauth2_access_token' => $accessToken,
+            'discord_oauth2_linked' => 'true',
+            'discord_oauth2_username' => $discordUsername,
+            'discord_oauth2_name' => $discordName,
+        ]);
     }
 }

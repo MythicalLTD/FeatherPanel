@@ -23,6 +23,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Cpu, MemoryStick, HardDrive } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { SERVER_RESOURCE_LIMITS } from '@/lib/server-utils';
 import { StepProps } from './types';
 
 export function Step4Resources({ formData, setFormData }: StepProps) {
@@ -79,7 +80,7 @@ export function Step4Resources({ formData, setFormData }: StepProps) {
                                     setFormData((prev) => ({ ...prev, memory: parseInt(e.target.value) || 0 }))
                                 }
                                 placeholder='1024'
-                                min={0}
+                                min={SERVER_RESOURCE_LIMITS.memory.min}
                                 className='bg-muted/30'
                             />
                         )}
@@ -186,7 +187,7 @@ export function Step4Resources({ formData, setFormData }: StepProps) {
                                     setFormData((prev) => ({ ...prev, disk: parseInt(e.target.value) || 0 }))
                                 }
                                 placeholder='5120'
-                                min={0}
+                                min={SERVER_RESOURCE_LIMITS.disk.min}
                                 className='bg-muted/30'
                             />
                         )}
@@ -234,7 +235,7 @@ export function Step4Resources({ formData, setFormData }: StepProps) {
                                     setFormData((prev) => ({ ...prev, cpu: parseInt(e.target.value) || 0 }))
                                 }
                                 placeholder='100'
-                                min={0}
+                                min={SERVER_RESOURCE_LIMITS.cpu.min}
                                 className='bg-muted/30'
                             />
                         )}

@@ -51,6 +51,7 @@ import {
     WizardStep,
 } from './types';
 import { resolveSpellDefaultDockerImage } from '@/lib/spellDockerImages';
+import { validateServerResourceLimits } from '@/lib/server-utils';
 import { Step1CoreDetails } from './Step1CoreDetails';
 import { Step2Allocation } from './Step2Allocation';
 import { Step3Application } from './Step3Application';
@@ -548,6 +549,29 @@ export default function CreateServerPage() {
             toast.error(t('admin.servers.form.wizard.validation.startup_required'));
             return false;
         }
+
+        const resourceErrors = validateServerResourceLimits(
+            {
+                memory: formData.memory,
+                swap: formData.swap,
+                disk: formData.disk,
+                cpu: formData.cpu,
+                io: formData.io,
+            },
+            {
+                memory: t('admin.servers.form.wizard.validation.memory_limit'),
+                swap: t('admin.servers.form.wizard.validation.swap_limit'),
+                disk: t('admin.servers.form.wizard.validation.disk_limit'),
+                cpu: t('admin.servers.form.wizard.validation.cpu_limit'),
+                io: t('admin.servers.form.wizard.validation.io_limit'),
+            },
+        );
+        const firstResourceError = Object.values(resourceErrors)[0];
+        if (firstResourceError) {
+            toast.error(firstResourceError);
+            return false;
+        }
+
         return true;
     };
 

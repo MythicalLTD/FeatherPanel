@@ -1106,6 +1106,18 @@ class CloudPluginsController
                 return ApiResponse::error('Invalid addon identifier in conf.yml', 'ADDON_IDENTIFIER_INVALID', 422);
             }
 
+            $entryValidation = \App\Plugins\PluginEntryValidator::validatePackage($tempDir, $identifier);
+            if (!$entryValidation['valid']) {
+                @exec('rm -rf ' . escapeshellarg($tempDir));
+
+                return ApiResponse::error(
+                    $entryValidation['errors'][0] ?? 'Invalid addon entry class configuration',
+                    'ADDON_ENTRY_INVALID',
+                    422,
+                    ['errors' => $entryValidation['errors']]
+                );
+            }
+
             $pluginDir = APP_ADDONS_DIR . '/' . $identifier;
             $isUpdate = file_exists($pluginDir);
             $oldVersion = null;

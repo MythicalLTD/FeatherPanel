@@ -75,6 +75,64 @@ export function formatResourceUsage(used: number, limit: number, formatter: (val
     return formatter(used);
 }
 
+export const SERVER_RESOURCE_LIMITS = {
+    memory: { min: 128, max: 1048576 },
+    swap: { min: 1, max: 1048576 },
+    disk: { min: 128, max: 10485760 },
+    cpu: { min: 1, max: 1000000 },
+    io: { min: 10, max: 1000 },
+} as const;
+
+export interface ServerResourceValues {
+    memory: number;
+    swap: number;
+    disk: number;
+    cpu: number;
+    io: number;
+}
+
+export type ServerResourceValidationMessages = {
+    memory: string;
+    swap: string;
+    disk: string;
+    cpu: string;
+    io: string;
+};
+
+/**
+ * Validate server resource limits (0 = unlimited where applicable).
+ */
+export function validateServerResourceLimits(
+    values: ServerResourceValues,
+    messages: ServerResourceValidationMessages,
+): Record<string, string> {
+    const errors: Record<string, string> = {};
+    const { memory, swap, disk, cpu, io } = values;
+    const limits = SERVER_RESOURCE_LIMITS;
+
+    if (memory !== 0 && (memory < limits.memory.min || memory > limits.memory.max)) {
+        errors.memory = messages.memory;
+    }
+
+    if (swap !== 0 && swap !== -1 && (swap < limits.swap.min || swap > limits.swap.max)) {
+        errors.swap = messages.swap;
+    }
+
+    if (disk !== 0 && (disk < limits.disk.min || disk > limits.disk.max)) {
+        errors.disk = messages.disk;
+    }
+
+    if (cpu !== 0 && (cpu < limits.cpu.min || cpu > limits.cpu.max)) {
+        errors.cpu = messages.cpu;
+    }
+
+    if (io < limits.io.min || io > limits.io.max) {
+        errors.io = messages.io;
+    }
+
+    return errors;
+}
+
 /**
  * Get server memory usage
  */

@@ -230,6 +230,8 @@ class User
         ?int $userId = null,
         ?string $uuid = null,
         ?string $externalId = null,
+        ?string $ip = null,
+        ?bool $emailVerified = null,
     ): array {
         $pdo = Database::getPdoConnection();
 
@@ -276,6 +278,17 @@ class User
         if ($externalId !== null && $externalId !== '') {
             $where[] = 'external_id = :external_id';
             $params['external_id'] = $externalId;
+        }
+
+        if ($ip !== null && $ip !== '') {
+            $where[] = '(last_ip LIKE :ip OR first_ip LIKE :ip)';
+            $params['ip'] = '%' . $ip . '%';
+        }
+
+        if ($emailVerified === true) {
+            $where[] = "(mail_verify IS NULL OR mail_verify = '')";
+        } elseif ($emailVerified === false) {
+            $where[] = "(mail_verify IS NOT NULL AND mail_verify != '')";
         }
 
         if (!empty($where)) {
@@ -480,6 +493,8 @@ class User
         ?int $userId = null,
         ?string $uuid = null,
         ?string $externalId = null,
+        ?string $ip = null,
+        ?bool $emailVerified = null,
     ): int {
         $pdo = Database::getPdoConnection();
         $sql = 'SELECT COUNT(*) FROM ' . self::$table;
@@ -515,6 +530,17 @@ class User
         if ($externalId !== null && $externalId !== '') {
             $where[] = 'external_id = :external_id';
             $params['external_id'] = $externalId;
+        }
+
+        if ($ip !== null && $ip !== '') {
+            $where[] = '(last_ip LIKE :ip OR first_ip LIKE :ip)';
+            $params['ip'] = '%' . $ip . '%';
+        }
+
+        if ($emailVerified === true) {
+            $where[] = "(mail_verify IS NULL OR mail_verify = '')";
+        } elseif ($emailVerified === false) {
+            $where[] = "(mail_verify IS NOT NULL AND mail_verify != '')";
         }
 
         if (!empty($where)) {

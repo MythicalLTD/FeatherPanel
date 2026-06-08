@@ -222,6 +222,20 @@ class UsersController
                 schema: new OA\Schema(type: 'string')
             ),
             new OA\Parameter(
+                name: 'ip',
+                in: 'query',
+                description: 'Filter users by first or last IP address (partial match)',
+                required: false,
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'email_verified',
+                in: 'query',
+                description: 'Filter users by email verification status (true/false)',
+                required: false,
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
                 name: 'sort_by',
                 in: 'query',
                 description: 'Field to sort users by (id, username, email, last_seen, created_at)',
@@ -266,6 +280,8 @@ class UsersController
         $userId = $request->query->getInt('user_id', 0) ?: null;
         $uuid = $request->query->get('uuid');
         $externalId = $request->query->get('external_id');
+        $ip = trim((string) $request->query->get('ip', ''));
+        $emailVerifiedParam = $request->query->get('email_verified');
         $sortBy = $request->query->get('sort_by', 'id');
         $sortOrder = strtoupper((string) $request->query->get('sort_order', 'ASC'));
 
@@ -275,6 +291,15 @@ class UsersController
                 $banned = true;
             } elseif ($bannedParam === 'false' || $bannedParam === '0') {
                 $banned = false;
+            }
+        }
+
+        $emailVerified = null;
+        if ($emailVerifiedParam !== null && $emailVerifiedParam !== '') {
+            if ($emailVerifiedParam === 'true' || $emailVerifiedParam === '1') {
+                $emailVerified = true;
+            } elseif ($emailVerifiedParam === 'false' || $emailVerifiedParam === '0') {
+                $emailVerified = false;
             }
         }
 
@@ -319,6 +344,8 @@ class UsersController
                 'oidc_subject',
                 'ldap_provider_uuid',
                 'ldap_dn',
+                'first_ip',
+                'last_ip',
             ],
             $sortByColumn,
             $sortOrder,
@@ -327,6 +354,8 @@ class UsersController
             $userId,
             $uuid ?: null,
             $externalId ?: null,
+            $ip !== '' ? $ip : null,
+            $emailVerified,
         );
 
         $roles = \App\Chat\Role::getAllRoles();
@@ -369,6 +398,8 @@ class UsersController
             $userId,
             $uuid ?: null,
             $externalId ?: null,
+            $ip !== '' ? $ip : null,
+            $emailVerified,
         );
         $totalPages = ceil($total / $limit);
         $from = ($page - 1) * $limit + 1;

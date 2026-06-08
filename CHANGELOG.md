@@ -33,6 +33,7 @@
 
 ### Fixed
 
+- Plugin uploads with mismatched conf.yml identifier/name and PHP entry class namespace now fail validation at install time instead of bricking the panel into maintenance mode. by @nayskutzu
 - User server startup page now shows admin-assigned Docker images (e.g. Java 25) even when they are not in the spell image list, matching admin server edit behavior. by @nayskutzu
 - Admin spell export now downloads the PTDL_v2-compatible export file instead of the raw database record, and legacy raw exports can still be imported. by @nayskutzu
 - Admin Updates page plugin bulk updates now call the correct online install API (`/api/admin/plugins/online/install`) instead of a non-existent route. by @nayskutzu

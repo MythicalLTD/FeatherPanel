@@ -984,7 +984,7 @@ class ServersController
         if ($data['memory'] !== 0 && ($data['memory'] < 128 || $data['memory'] > 1048576)) {
             return ApiResponse::error('Memory must be between 128 MB and 1TB', 'INVALID_MEMORY_LIMIT', 400);
         }
-        if ($data['swap'] !== 0 && $data['swap'] !== -1 && $data['swap'] > 1048576) {
+        if ($data['swap'] !== 0 && $data['swap'] !== -1 && ($data['swap'] < 1 || $data['swap'] > 1048576)) {
             return ApiResponse::error('Swap must be -1 (unlimited), 0 (disabled), or between 1 MB and 1TB', 'INVALID_SWAP_LIMIT', 400);
         }
         if ($data['disk'] !== 0 && ($data['disk'] < 128 || $data['disk'] > 10485760)) {
@@ -1495,7 +1495,7 @@ class ServersController
         if (isset($data['memory']) && $data['memory'] !== 0 && ($data['memory'] < 128 || $data['memory'] > 1048576)) {
             return ApiResponse::error('Memory must be between 128 MB and 1TB', 'INVALID_MEMORY_LIMIT', 400);
         }
-        if (isset($data['swap']) && $data['swap'] !== 0 && $data['swap'] !== -1 && $data['swap'] > 1048576) {
+        if (isset($data['swap']) && $data['swap'] !== 0 && $data['swap'] !== -1 && ($data['swap'] < 1 || $data['swap'] > 1048576)) {
             return ApiResponse::error('Swap must be -1 (unlimited), 0 (disabled), or between 1 MB and 1TB', 'INVALID_SWAP_LIMIT', 400);
         }
         if (isset($data['disk']) && $data['disk'] !== 0 && ($data['disk'] < 128 || $data['disk'] > 10485760)) {
@@ -1867,9 +1867,29 @@ class ServersController
             return ApiResponse::error('Failed to update server', 'SERVER_UPDATE_FAILED', 500);
         }
 
-        // Sync with Wings if node information is available
-        // If spell changed, trigger reinstall instead of just sync
-        if (isset($data['node_id']) || isset($data['allocation_id']) || isset($data['spell_id']) || isset($data['variables']) || isset($data['image']) || isset($data['startup']) || $mountIdsToSync !== null || $spellChanged) {
+        // Sync with Wings when build/configuration fields change (including resource limits).
+        // If spell changed, trigger reinstall instead of just sync.
+        $shouldSyncWithWings = isset($data['node_id'])
+            || isset($data['allocation_id'])
+            || isset($data['spell_id'])
+            || isset($data['variables'])
+            || isset($data['image'])
+            || isset($data['startup'])
+            || isset($data['memory'])
+            || isset($data['swap'])
+            || isset($data['disk'])
+            || isset($data['cpu'])
+            || isset($data['io'])
+            || array_key_exists('threads', $data)
+            || array_key_exists('oom_killer', $data)
+            || isset($data['allocation_limit'])
+            || isset($data['database_limit'])
+            || isset($data['backup_limit'])
+            || array_key_exists('backup_retention_mode', $data)
+            || $mountIdsToSync !== null
+            || $spellChanged;
+
+        if ($shouldSyncWithWings) {
             $nodeInfo = Node::getNodeById($data['node_id'] ?? $server['node_id']);
             if ($nodeInfo) {
                 $scheme = $nodeInfo['scheme'];

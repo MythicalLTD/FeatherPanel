@@ -264,6 +264,7 @@ class ServerUserController
         $page = (int) $request->query->get('page', 1);
         $limit = (int) $request->query->get('limit', 10);
         $search = $request->query->get('search', '');
+        $statusFilter = self::parseStatusFilter($request);
         // Explicitly check for 'true' string - dashboard should never pass this, only admin area
         $viewAllParam = $request->query->get('view_all', 'false');
         $viewAll = ($viewAllParam === 'true' || $viewAllParam === true || $viewAllParam === '1' || $viewAllParam === 1);
@@ -288,7 +289,7 @@ class ServerUserController
 
             // Use admin search to get all servers (fetch all then paginate)
             // First get total count for pagination
-            $total = Server::getCount($search);
+            $total = Server::getCount($search, status: $statusFilter);
 
             // Get all servers matching the search (we'll paginate in memory)
             // Fetch a large batch to handle all cases
@@ -298,7 +299,8 @@ class ServerUserController
                 search: $search,
                 fields: [],
                 sortBy: 'id',
-                sortOrder: 'DESC'
+                sortOrder: 'DESC',
+                status: $statusFilter,
             );
 
             // Apply pagination to all servers
@@ -351,6 +353,13 @@ class ServerUserController
 
             // Combine owned and subuser servers
             $allServers = array_merge($ownedServers, $subuserServers);
+
+            if ($statusFilter !== null) {
+                $allServers = array_values(array_filter(
+                    $allServers,
+                    static fn (array $server): bool => ($server['status'] ?? null) === $statusFilter
+                ));
+            }
 
             // Get total count before pagination
             $totalServers = count($allServers);
@@ -495,6 +504,7 @@ class ServerUserController
         $page = (int) $request->query->get('page', 1);
         $limit = (int) $request->query->get('limit', 10);
         $search = $request->query->get('search', '');
+        $statusFilter = self::parseStatusFilter($request);
 
         if ($page < 1) {
             $page = 1;
@@ -506,7 +516,7 @@ class ServerUserController
             $limit = 100;
         }
 
-        $total = Server::getCount($search, null, null, null, null, (int) $user['id']);
+        $total = Server::getCount($search, null, null, null, null, (int) $user['id'], status: $statusFilter);
         $servers = Server::searchServers(
             page: $page,
             limit: $limit,
@@ -516,6 +526,7 @@ class ServerUserController
             sortOrder: 'DESC',
             ownerId: null,
             excludeOwnerId: (int) $user['id'],
+            status: $statusFilter,
         );
 
         foreach ($servers as &$server) {
@@ -608,6 +619,23 @@ class ServerUserController
                 'has_results' => count($servers) > 0,
             ],
         ], 'All other servers fetched successfully', 200);
+    }
+
+    /**
+     * Parse optional status filter from query parameters.
+     * Supports `status=running` or legacy `running_only=true`.
+     */
+    private static function parseStatusFilter(Request $request): ?string
+    {
+        $status = trim((string) $request->query->get('status', ''));
+        if ($status !== '') {
+            return $status;
+        }
+
+        $runningOnlyParam = $request->query->get('running_only', 'false');
+        $runningOnly = ($runningOnlyParam === 'true' || $runningOnlyParam === true || $runningOnlyParam === '1' || $runningOnlyParam === 1);
+
+        return $runningOnly ? 'running' : null;
     }
 
     #[OA\Get(

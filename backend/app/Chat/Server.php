@@ -416,6 +416,7 @@ class Server
      * @param string|null $uuid Filter by UUID (optional)
      * @param string|null $uuidShort Filter by short UUID (optional)
      * @param string|null $externalId Filter by external ID (optional)
+     * @param string|null $status Filter by server status (optional)
      */
     public static function searchServers(
         int $page = 1,
@@ -433,6 +434,7 @@ class Server
         ?string $uuid = null,
         ?string $uuidShort = null,
         ?string $externalId = null,
+        ?string $status = null,
     ): array {
         $pdo = Database::getPdoConnection();
 
@@ -494,6 +496,11 @@ class Server
         if ($externalId !== null && $externalId !== '') {
             $where[] = 'external_id = :external_id';
             $params['external_id'] = $externalId;
+        }
+
+        if ($status !== null && $status !== '') {
+            $where[] = 'status = :status';
+            $params['status'] = $status;
         }
 
         if (!empty($where)) {
@@ -716,6 +723,7 @@ class Server
      * Get the total number of servers.
      *
      * @param int|null $excludeOwnerId Exclude servers owned by this user ID (optional)
+     * @param string|null $status Filter by server status (optional)
      */
     public static function getCount(
         string $search = '',
@@ -728,6 +736,7 @@ class Server
         ?string $uuid = null,
         ?string $uuidShort = null,
         ?string $externalId = null,
+        ?string $status = null,
     ): int {
         $pdo = Database::getPdoConnection();
         $sql = 'SELECT COUNT(*) FROM ' . self::$table;
@@ -782,6 +791,11 @@ class Server
         if ($externalId !== null && $externalId !== '') {
             $where[] = 'external_id = :external_id';
             $params['external_id'] = $externalId;
+        }
+
+        if ($status !== null && $status !== '') {
+            $where[] = 'status = :status';
+            $params['status'] = $status;
         }
 
         if (!empty($where)) {

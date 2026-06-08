@@ -250,7 +250,7 @@ class App
                                     if (is_callable($register)) {
                                         $register($routes);
                                     }
-                                } catch (\Exception $e) {
+                                } catch (\Throwable $e) {
                                     self::getLogger()->error('Failed to load plugin routes from ' . $file->getPathname() . ': ' . $e->getMessage());
                                 }
                             }

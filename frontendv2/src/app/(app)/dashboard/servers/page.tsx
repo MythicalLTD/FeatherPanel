@@ -92,7 +92,7 @@ export default function ServersPage() {
         setViewMode,
     } = useServersState();
 
-    const { serverLiveData, isServerConnected, connectServers, disconnectAll } = useServersWebSocket();
+    const { serverLiveData, isServerConnected, syncServers, disconnectAll } = useServersWebSocket();
 
     const { favoriteUuids, toggleFavorite } = useFavoriteServerUuids();
 
@@ -131,13 +131,26 @@ export default function ServersPage() {
 
     const [selectedServerIds, setSelectedServerIds] = useState<number[]>([]);
     const [bulkActionLoading, setBulkActionLoading] = useState(false);
+    const fetchGenerationRef = useRef(0);
 
     useEffect(() => {
         fetchWidgets();
     }, [fetchWidgets]);
 
+    const monitorServersForLiveStats = useCallback(
+        (serversArray: Server[]) => {
+            const serverUuids = serversArray
+                .filter((server) => server.status === 'running' || server.status === 'starting')
+                .map((server) => server.uuidShort);
+            void syncServers(serverUuids);
+        },
+        [syncServers],
+    );
+
     const fetchServers = useCallback(
         async (page = 1, fetchAllForFolders = false) => {
+            const fetchId = ++fetchGenerationRef.current;
+
             try {
                 setLoading(true);
                 setError(null);
@@ -147,69 +160,81 @@ export default function ServersPage() {
                     page,
                     fetchAllForFolders ? 1000 : pagination.per_page,
                     searchQuery,
+                    showOnlyRunning,
                 );
+
+                if (fetchId !== fetchGenerationRef.current) {
+                    return;
+                }
 
                 const serversArray = Array.isArray(response.servers) ? response.servers : [];
                 setServers(serversArray);
-
                 setPagination(response.pagination);
-
-                if (serversArray.length > 0) {
-                    const serverUuids = serversArray.map((s) => s.uuidShort);
-                    void connectServers(serverUuids);
-                }
+                monitorServersForLiveStats(serversArray);
             } catch (err) {
+                if (fetchId !== fetchGenerationRef.current) {
+                    return;
+                }
                 console.error('Failed to fetch servers:', err);
                 setError(err instanceof Error ? err.message : t('servers.errorLoading'));
             } finally {
-                setLoading(false);
+                if (fetchId === fetchGenerationRef.current) {
+                    setLoading(false);
+                }
             }
         },
-        [pagination.per_page, searchQuery, t, connectServers],
+        [pagination.per_page, searchQuery, showOnlyRunning, t, monitorServersForLiveStats],
     );
 
     const fetchAllOtherServers = useCallback(
         async (page = 1) => {
+            const fetchId = ++fetchGenerationRef.current;
+
             try {
                 setLoading(true);
                 setError(null);
 
-                const response = await serversApi.getAdminAllOtherServers(page, pagination.per_page, searchQuery);
+                const response = await serversApi.getAdminAllOtherServers(
+                    page,
+                    pagination.per_page,
+                    searchQuery,
+                    showOnlyRunning,
+                );
+
+                if (fetchId !== fetchGenerationRef.current) {
+                    return;
+                }
 
                 const serversArray = Array.isArray(response.servers) ? response.servers : [];
                 setServers(serversArray);
                 setPagination(response.pagination);
-
-                if (serversArray.length > 0) {
-                    const serverUuids = serversArray.map((s) => s.uuidShort);
-                    void connectServers(serverUuids);
-                }
+                monitorServersForLiveStats(serversArray);
             } catch (err) {
+                if (fetchId !== fetchGenerationRef.current) {
+                    return;
+                }
                 console.error('Failed to fetch all other servers', err);
                 setError(err instanceof Error ? err.message : t('servers.errorLoading'));
             } finally {
-                setLoading(false);
+                if (fetchId === fetchGenerationRef.current) {
+                    setLoading(false);
+                }
             }
         },
-        [pagination.per_page, searchQuery, t, connectServers],
+        [pagination.per_page, searchQuery, showOnlyRunning, t, monitorServersForLiveStats],
     );
 
     const fetchServersRef = useRef(fetchServers);
     fetchServersRef.current = fetchServers;
 
     useEffect(() => {
+        setSelectedServerIds([]);
         if (serverScope === 'all') {
             void fetchAllOtherServers(1);
         } else {
             fetchServersRef.current(1, viewMode === 'folders');
         }
-    }, [viewMode, serverScope, searchQuery, fetchAllOtherServers]);
-
-    useEffect(() => {
-        if (serverScope === 'all') {
-            void fetchAllOtherServers(1);
-        }
-    }, [serverScope, searchQuery, fetchAllOtherServers]);
+    }, [viewMode, serverScope, searchQuery, showOnlyRunning, fetchAllOtherServers]);
 
     useEffect(() => {
         return () => {
@@ -222,10 +247,8 @@ export default function ServersPage() {
         folder_id: serverAssignments[server.uuidShort] || server.folder_id,
     }));
 
-    // Search is applied server-side (across all pages). Only filter by "running only" client-side.
-    const filteredServers = (Array.isArray(serversWithFolders) ? serversWithFolders : []).filter(
-        (server) => !showOnlyRunning || server.status === 'running',
-    );
+    // Search and "running only" are applied server-side for paginated views.
+    const filteredServers = Array.isArray(serversWithFolders) ? serversWithFolders : [];
 
     const serversByFolder = folders.map((folder) => ({
         ...folder,
@@ -480,7 +503,7 @@ export default function ServersPage() {
                 </div>
 
                 <WidgetRenderer widgets={getWidgets('dashboard-servers', 'before-server-list')} />
-                {filteredServers.length > 0 && (
+                {servers.length > 0 && (
                     <div className='border-border bg-card/60 mt-1 flex flex-col items-start justify-between gap-3 rounded-xl border px-4 py-3 sm:flex-row sm:items-center'>
                         <div className='flex items-center gap-2 text-sm'>
                             <button
@@ -641,36 +664,36 @@ export default function ServersPage() {
 
                     {serverScope === 'all' ? (
                         <div className='space-y-6'>
-                            {filteredServers.length === 0 ? (
+                            {pagination.total_pages > 1 && (
+                                <div className='border-border bg-card/50 mb-4 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
+                                    <button
+                                        onClick={() => changePage(pagination.current_page - 1)}
+                                        disabled={!pagination.has_prev || loading}
+                                        className='border-border hover:bg-muted inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50'
+                                    >
+                                        <ChevronLeft className='h-5 w-5' />
+                                        {t('common.previous')}
+                                    </button>
+                                    <span className='text-sm font-medium'>
+                                        {t('servers.pagination.page', {
+                                            current: String(pagination.current_page),
+                                            total: String(pagination.total_pages),
+                                        })}
+                                    </span>
+                                    <button
+                                        onClick={() => changePage(pagination.current_page + 1)}
+                                        disabled={!pagination.has_next || loading}
+                                        className='border-border hover:bg-muted inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50'
+                                    >
+                                        {t('common.next')}
+                                        <ChevronRight className='h-5 w-5' />
+                                    </button>
+                                </div>
+                            )}
+                            {pagination.total_records === 0 ? (
                                 <EmptyState searchQuery={searchQuery} t={t} />
                             ) : (
                                 <>
-                                    {pagination.total_pages > 1 && (
-                                        <div className='border-border bg-card/50 mb-4 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
-                                            <button
-                                                onClick={() => changePage(pagination.current_page - 1)}
-                                                disabled={!pagination.has_prev || loading}
-                                                className='border-border hover:bg-muted inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50'
-                                            >
-                                                <ChevronLeft className='h-5 w-5' />
-                                                {t('common.previous')}
-                                            </button>
-                                            <span className='text-sm font-medium'>
-                                                {t('servers.pagination.page', {
-                                                    current: String(pagination.current_page),
-                                                    total: String(pagination.total_pages),
-                                                })}
-                                            </span>
-                                            <button
-                                                onClick={() => changePage(pagination.current_page + 1)}
-                                                disabled={!pagination.has_next || loading}
-                                                className='border-border hover:bg-muted inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50'
-                                            >
-                                                {t('common.next')}
-                                                <ChevronRight className='h-5 w-5' />
-                                            </button>
-                                        </div>
-                                    )}
                                     <div
                                         className={cn(
                                             selectedLayout === 'grid'
@@ -742,67 +765,65 @@ export default function ServersPage() {
                         >
                             <TabPanels className='mt-2'>
                                 <TabPanel>
-                                    {filteredServers.length === 0 ? (
+                                    {pagination.total_pages > 1 && (
+                                        <div className='border-border bg-card/50 mb-4 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
+                                            <button
+                                                onClick={() => changePage(pagination.current_page - 1)}
+                                                disabled={!pagination.has_prev || loading}
+                                                className='border-border hover:bg-muted inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50'
+                                            >
+                                                <ChevronLeft className='h-4 w-4' />
+                                                {t('common.previous')}
+                                            </button>
+                                            <span className='text-sm font-medium'>
+                                                {t('servers.pagination.page', {
+                                                    current: String(pagination.current_page),
+                                                    total: String(pagination.total_pages),
+                                                })}
+                                            </span>
+                                            <button
+                                                onClick={() => changePage(pagination.current_page + 1)}
+                                                disabled={!pagination.has_next || loading}
+                                                className='border-border hover:bg-muted inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50'
+                                            >
+                                                {t('common.next')}
+                                                <ChevronRight className='h-4 w-4' />
+                                            </button>
+                                        </div>
+                                    )}
+                                    {pagination.total_records === 0 ? (
                                         <EmptyState searchQuery={searchQuery} t={t} />
                                     ) : (
-                                        <>
-                                            {pagination.total_pages > 1 && (
-                                                <div className='border-border bg-card/50 mb-4 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
-                                                    <button
-                                                        onClick={() => changePage(pagination.current_page - 1)}
-                                                        disabled={!pagination.has_prev || loading}
-                                                        className='border-border hover:bg-muted inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50'
-                                                    >
-                                                        <ChevronLeft className='h-4 w-4' />
-                                                        {t('common.previous')}
-                                                    </button>
-                                                    <span className='text-sm font-medium'>
-                                                        {t('servers.pagination.page', {
-                                                            current: String(pagination.current_page),
-                                                            total: String(pagination.total_pages),
-                                                        })}
-                                                    </span>
-                                                    <button
-                                                        onClick={() => changePage(pagination.current_page + 1)}
-                                                        disabled={!pagination.has_next || loading}
-                                                        className='border-border hover:bg-muted inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50'
-                                                    >
-                                                        {t('common.next')}
-                                                        <ChevronRight className='h-4 w-4' />
-                                                    </button>
-                                                </div>
+                                        <div
+                                            className={cn(
+                                                selectedLayout === 'grid'
+                                                    ? 'grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3'
+                                                    : 'flex flex-col gap-4',
                                             )}
-                                            <div
-                                                className={cn(
-                                                    selectedLayout === 'grid'
-                                                        ? 'grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3'
-                                                        : 'flex flex-col gap-4',
-                                                )}
-                                            >
-                                                {filteredServers.map((server) => (
-                                                    <ServerCard
-                                                        key={server.id}
-                                                        server={server}
-                                                        layout={selectedLayout}
-                                                        serverUrl={`/server/${server.uuidShort}`}
-                                                        liveStats={getServerLiveStats(server)}
-                                                        isConnected={isServerConnected(server.uuidShort)}
-                                                        t={t}
-                                                        folders={folders}
-                                                        onAssignFolder={(folderId) =>
-                                                            assignServerToFolder(server.uuidShort, folderId)
-                                                        }
-                                                        onUnassignFolder={() => unassignServer(server.uuidShort)}
-                                                        showFavoriteToggle
-                                                        isFavorite={favoriteUuids.includes(server.uuid)}
-                                                        onToggleFavorite={() => toggleFavorite(server.uuid)}
-                                                        selectable
-                                                        selected={selectedServerIds.includes(server.id)}
-                                                        onToggleSelect={() => toggleServerSelection(server.id)}
-                                                    />
-                                                ))}
-                                            </div>
-                                        </>
+                                        >
+                                            {filteredServers.map((server) => (
+                                                <ServerCard
+                                                    key={server.id}
+                                                    server={server}
+                                                    layout={selectedLayout}
+                                                    serverUrl={`/server/${server.uuidShort}`}
+                                                    liveStats={getServerLiveStats(server)}
+                                                    isConnected={isServerConnected(server.uuidShort)}
+                                                    t={t}
+                                                    folders={folders}
+                                                    onAssignFolder={(folderId) =>
+                                                        assignServerToFolder(server.uuidShort, folderId)
+                                                    }
+                                                    onUnassignFolder={() => unassignServer(server.uuidShort)}
+                                                    showFavoriteToggle
+                                                    isFavorite={favoriteUuids.includes(server.uuid)}
+                                                    onToggleFavorite={() => toggleFavorite(server.uuid)}
+                                                    selectable
+                                                    selected={selectedServerIds.includes(server.id)}
+                                                    onToggleSelect={() => toggleServerSelection(server.id)}
+                                                />
+                                            ))}
+                                        </div>
                                     )}
 
                                     {pagination.total_pages > 1 && (

@@ -5847,7 +5847,12 @@
 						"realm_required": "Realm is required",
 						"spell_required": "Spell is required",
 						"docker_image_required": "Docker image is required",
-						"startup_required": "Startup command is required"
+						"startup_required": "Startup command is required",
+						"memory_limit": "Memory must be unlimited (0) or between 128 MiB and 1 TiB",
+						"swap_limit": "Swap must be disabled (0), unlimited (-1), or between 1 MiB and 1 TiB",
+						"disk_limit": "Disk must be unlimited (0) or between 128 MiB and 10 TiB",
+						"cpu_limit": "CPU must be unlimited (0) or between 1% and 1,000,000%",
+						"io_limit": "IO weight must be between 10 and 1000"
 					}
 				},
 				"messages": {
@@ -7038,7 +7043,11 @@
 				"all_roles": "All Roles",
 				"any_status": "Any Status",
 				"status_active": "Only active users",
-				"status_banned": "Only banned users"
+				"status_banned": "Only banned users",
+				"any_email_status": "Any email status",
+				"email_verified": "Email verified",
+				"email_unverified": "Email unverified",
+				"ip_placeholder": "Filter by IP..."
 			},
 			"sort": {
 				"created_desc": "Recently created",

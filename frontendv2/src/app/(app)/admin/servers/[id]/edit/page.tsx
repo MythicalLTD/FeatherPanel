@@ -46,6 +46,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
 import { formatDateTimeInTz, formatRelativeTime } from '@/lib/dateUtils';
+import { validateServerResourceLimits } from '@/lib/server-utils';
 
 import { DetailsTab } from './DetailsTab';
 import { ResourcesTab } from './ResourcesTab';
@@ -899,6 +900,26 @@ export default function EditServerPage() {
         if (!form.spell_id) newErrors.spell_id = t('admin.servers.form.wizard.validation.spell_required');
         if (!form.startup) newErrors.startup = t('admin.servers.form.wizard.validation.startup_required');
         if (!form.image?.trim()) newErrors.image = t('admin.servers.form.wizard.validation.docker_image_required');
+
+        Object.assign(
+            newErrors,
+            validateServerResourceLimits(
+                {
+                    memory: form.memory,
+                    swap: form.swap,
+                    disk: form.disk,
+                    cpu: form.cpu,
+                    io: form.io,
+                },
+                {
+                    memory: t('admin.servers.form.wizard.validation.memory_limit'),
+                    swap: t('admin.servers.form.wizard.validation.swap_limit'),
+                    disk: t('admin.servers.form.wizard.validation.disk_limit'),
+                    cpu: t('admin.servers.form.wizard.validation.cpu_limit'),
+                    io: t('admin.servers.form.wizard.validation.io_limit'),
+                },
+            ),
+        );
 
         spellVariables.forEach((variable) => {
             const value = form.variables[variable.env_variable];
