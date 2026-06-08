@@ -4179,6 +4179,8 @@
 				"edit_title": "Edit Role",
 				"name": "Internal Name",
 				"display_name": "Display Name",
+				"custom_badge": "Custom Badge",
+				"custom_badge_hint": "Optional short label shown on user badges. Leave empty to use the display name.",
 				"color": "Color",
 				"submit_create": "Create Role",
 				"submit_update": "Save Changes",

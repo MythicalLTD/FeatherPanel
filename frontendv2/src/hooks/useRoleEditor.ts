@@ -33,13 +33,14 @@ interface UseRoleEditorOptions {
 
 export function useRoleEditor({ mode, roleId, defaultRoleCount = 0, initialTab = 'details' }: UseRoleEditorOptions) {
     const { t } = useTranslation();
-    const { user } = useSession();
+    const { user, refreshSession } = useSession();
     const router = useRouter();
 
     const [loading, setLoading] = useState(mode === 'edit');
     const [form, setForm] = useState<RoleForm>({
         name: '',
         display_name: '',
+        custom_badge: '',
         color: pickDefaultRoleColor(defaultRoleCount),
     });
     const nameManuallyEdited = useRef(false);
@@ -95,6 +96,7 @@ export function useRoleEditor({ mode, roleId, defaultRoleCount = 0, initialTab =
                 setForm({
                     name: role.name,
                     display_name: role.display_name,
+                    custom_badge: role.custom_badge ?? '',
                     color: role.color,
                 });
                 await fetchPermissions(roleId);
@@ -244,6 +246,7 @@ export function useRoleEditor({ mode, roleId, defaultRoleCount = 0, initialTab =
         const payload = {
             name: form.name.trim(),
             display_name: form.display_name.trim(),
+            custom_badge: form.custom_badge.trim(),
             color: form.color,
         };
 
@@ -255,6 +258,9 @@ export function useRoleEditor({ mode, roleId, defaultRoleCount = 0, initialTab =
                 router.push(`/admin/roles/${createdRole.id}/edit?tab=permissions`);
             } else if (editorRoleId) {
                 await axios.patch(`/api/admin/roles/${editorRoleId}`, payload);
+                if (user?.role_id === editorRoleId) {
+                    await refreshSession();
+                }
                 toast.success(t('admin.roles.messages.updated'));
             }
         } catch (error: unknown) {

@@ -45,6 +45,7 @@ import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { cn } from '@/lib/utils';
+import { RoleBadge } from '@/components/RoleBadge';
 import { isDefaultRole, type Role } from '@/lib/role-utils';
 
 interface Pagination {
@@ -193,6 +194,7 @@ export default function RolesPage() {
             const { data: createData } = await axios.put('/api/admin/roles', {
                 name: `${role.name}_copy`,
                 display_name: `${role.display_name} (Copy)`,
+                custom_badge: role.custom_badge ?? '',
                 color: role.color,
             });
             const newRole = createData.data.role as Role;
@@ -334,6 +336,7 @@ export default function RolesPage() {
                                                 <h3 className='truncate text-base font-semibold'>
                                                     {role.display_name}
                                                 </h3>
+                                                <RoleBadge role={role} variant='solid' className='text-[10px]' />
                                                 {isYours && (
                                                     <Badge variant='secondary' className='text-[10px]'>
                                                         {t('admin.roles.labels.your_role')}

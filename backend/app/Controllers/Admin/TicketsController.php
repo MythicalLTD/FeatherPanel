@@ -387,6 +387,7 @@ class TicketsController
             $rolesMap[$role['id']] = [
                 'name' => $role['name'],
                 'display_name' => $role['display_name'],
+                'custom_badge' => $role['custom_badge'] ?? null,
                 'color' => $role['color'],
             ];
         }

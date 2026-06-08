@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import type { NextConfig } from 'next';
 import path from 'path';
+import type { Configuration as WebpackConfiguration } from 'webpack';
 
 const nextConfig: NextConfig = {
     reactCompiler: true,
@@ -24,7 +25,19 @@ const nextConfig: NextConfig = {
     },
 
     experimental: {
-        turbopackFileSystemCacheForDev: true,
+        // Filesystem cache balloons RAM on large apps; use webpack dev by default instead.
+        turbopackFileSystemCacheForDev: false,
+    },
+
+    webpack: (config: WebpackConfiguration, { dev }) => {
+        if (dev) {
+            // Keep dev compilation single-threaded to avoid spawning many hungry workers.
+            config.parallelism = 1;
+            if (config.cache && typeof config.cache === 'object') {
+                config.cache = { ...config.cache, maxMemoryGenerations: 1 };
+            }
+        }
+        return config;
     },
 
     // Enable standalone output for optimized Docker builds

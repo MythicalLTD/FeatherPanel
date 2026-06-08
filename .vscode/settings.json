@@ -1,4 +1,13 @@
 {
+  "typescript.tsserver.maxTsServerMemory": 2048,
+  "files.watcherExclude": {
+    "**/.next/**": true,
+    "**/node_modules/**": true
+  },
+  "search.exclude": {
+    "**/.next": true,
+    "**/node_modules": true
+  },
   "json.maxItemsComputed": 10000,
   "editor.largeFileOptimizations": false,
   "editor.renderWhitespace": "all",

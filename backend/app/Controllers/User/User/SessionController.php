@@ -341,6 +341,7 @@ class SessionController
         $user['role'] = [
             'name' => $role ? ($role['name'] ?? $roleId) : $roleId,
             'display_name' => $role ? ($role['display_name'] ?? 'User') : 'User',
+            'custom_badge' => $role ? ($role['custom_badge'] ?? null) : null,
             'color' => $role ? ($role['color'] ?? '#666666') : '#666666',
         ];
 

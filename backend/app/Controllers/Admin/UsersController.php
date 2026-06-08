@@ -364,6 +364,7 @@ class UsersController
             $rolesMap[$role['id']] = [
                 'name' => $role['name'],
                 'display_name' => $role['display_name'],
+                'custom_badge' => $role['custom_badge'] ?? null,
                 'color' => $role['color'],
             ];
         }
@@ -373,10 +374,12 @@ class UsersController
             if (isset($rolesMap[$userRoleId])) {
                 $user['role']['name'] = $rolesMap[$userRoleId]['name'];
                 $user['role']['display_name'] = $rolesMap[$userRoleId]['display_name'];
+                $user['role']['custom_badge'] = $rolesMap[$userRoleId]['custom_badge'];
                 $user['role']['color'] = $rolesMap[$userRoleId]['color'];
             } else {
                 $user['role']['name'] = $userRoleId;
                 $user['role']['display_name'] = 'User';
+                $user['role']['custom_badge'] = null;
                 $user['role']['color'] = '#666666';
             }
             $user['email_verified'] = !isset($user['mail_verify']) || trim((string) $user['mail_verify']) === '';
@@ -469,6 +472,7 @@ class UsersController
             $rolesMap[$role['id']] = [
                 'name' => $role['name'],
                 'display_name' => $role['display_name'],
+                'custom_badge' => $role['custom_badge'] ?? null,
                 'color' => $role['color'],
             ];
         }
@@ -476,6 +480,7 @@ class UsersController
         $user['role'] = [
             'name' => $rolesMap[$roleId]['name'] ?? $roleId,
             'display_name' => $rolesMap[$roleId]['display_name'] ?? 'User',
+            'custom_badge' => $rolesMap[$roleId]['custom_badge'] ?? null,
             'color' => $rolesMap[$roleId]['color'] ?? '#666666',
         ];
 
@@ -566,6 +571,7 @@ class UsersController
             $rolesMap[$role['id']] = [
                 'name' => $role['name'],
                 'display_name' => $role['display_name'],
+                'custom_badge' => $role['custom_badge'] ?? null,
                 'color' => $role['color'],
             ];
         }
@@ -573,6 +579,7 @@ class UsersController
         $user['role'] = [
             'name' => $rolesMap[$roleId]['name'] ?? $roleId,
             'display_name' => $rolesMap[$roleId]['display_name'] ?? 'User',
+            'custom_badge' => $rolesMap[$roleId]['custom_badge'] ?? null,
             'color' => $rolesMap[$roleId]['color'] ?? '#666666',
         ];
 
@@ -1334,6 +1341,7 @@ class UsersController
             $rolesMap[$role['id']] = [
                 'name' => $role['name'],
                 'display_name' => $role['display_name'],
+                'custom_badge' => $role['custom_badge'] ?? null,
                 'color' => $role['color'],
             ];
         }
@@ -1351,6 +1359,7 @@ class UsersController
             $alt['role'] = [
                 'name' => $rolesMap[$roleId]['name'] ?? $roleId,
                 'display_name' => $rolesMap[$roleId]['display_name'] ?? 'User',
+                'custom_badge' => $rolesMap[$roleId]['custom_badge'] ?? null,
                 'color' => $rolesMap[$roleId]['color'] ?? '#666666',
             ];
             unset($alt['role_id']);

@@ -73,10 +73,12 @@ import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useDateFormatOptions } from '@/contexts/PreferencesContext';
 import { formatDateTimeInTz, formatRelativeTime } from '@/lib/dateUtils';
+import { RoleBadge } from '@/components/RoleBadge';
 
 interface UserRole {
     name: string;
     display_name: string;
+    custom_badge?: string | null;
     color: string;
 }
 
@@ -751,16 +753,11 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                             <p className='text-muted-foreground text-sm'>{user.email}</p>
 
                             <div className='mt-4 flex flex-wrap justify-center gap-2'>
-                                <Badge
-                                    style={
-                                        user.role?.color
-                                            ? { backgroundColor: user.role.color, color: '#fff' }
-                                            : undefined
-                                    }
-                                    variant='secondary'
-                                >
-                                    {user.role?.display_name || user.role?.name || '-'}
-                                </Badge>
+                                {user.role ? (
+                                    <RoleBadge role={user.role} variant='solid' size='sm' />
+                                ) : (
+                                    <Badge variant='secondary'>-</Badge>
+                                )}
                                 <Badge variant={user.banned === 'true' ? 'destructive' : 'secondary'}>
                                     {user.banned === 'true'
                                         ? t('admin.users.badges.banned')
@@ -1213,19 +1210,11 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                                 </td>
                                                 <td className='p-4'>
                                                     <div className='flex flex-wrap gap-1'>
-                                                        <Badge
-                                                            style={
-                                                                alt.role?.color
-                                                                    ? {
-                                                                          backgroundColor: alt.role.color,
-                                                                          color: '#fff',
-                                                                      }
-                                                                    : undefined
-                                                            }
-                                                            variant='secondary'
-                                                        >
-                                                            {alt.role?.display_name || alt.role?.name || '-'}
-                                                        </Badge>
+                                                        {alt.role ? (
+                                                            <RoleBadge role={alt.role} variant='solid' size='sm' />
+                                                        ) : (
+                                                            <Badge variant='secondary'>-</Badge>
+                                                        )}
                                                         {alt.banned === 'true' && (
                                                             <Badge variant='destructive'>
                                                                 {t('admin.users.badges.banned')}

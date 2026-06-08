@@ -1197,8 +1197,10 @@ class TicketsController
                 if ($role) {
                     $message['user']['role'] = [
                         'id' => (int) $role['id'],
-                        'name' => $role['display_name'] ?? $role['name'], // Use display_name if available, fallback to name
-                        'color' => $role['color'] ?? null, // Include role color
+                        'name' => $role['name'],
+                        'display_name' => $role['display_name'] ?? $role['name'],
+                        'custom_badge' => $role['custom_badge'] ?? null,
+                        'color' => $role['color'] ?? null,
                     ];
                 }
             }

@@ -45,6 +45,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import Permissions from '@/lib/permissions';
 import { cn } from '@/lib/utils';
+import { RoleBadge } from '@/components/RoleBadge';
 import { ROLE_COLOR_PRESETS, randomRoleColor, isDefaultRole, type RoleForm } from '@/lib/role-utils';
 
 interface PermissionNode {
@@ -348,6 +349,19 @@ export function RoleEditor({
                                 </div>
                             </div>
 
+                            <div className='space-y-2'>
+                                <Label htmlFor='editor-custom-badge'>{t('admin.roles.form.custom_badge')}</Label>
+                                <Input
+                                    id='editor-custom-badge'
+                                    value={form.custom_badge}
+                                    onChange={(e) => onFormChange({ ...form, custom_badge: e.target.value })}
+                                    placeholder='VIP'
+                                    maxLength={64}
+                                    className='h-11'
+                                />
+                                <p className='text-muted-foreground text-xs'>{t('admin.roles.form.custom_badge_hint')}</p>
+                            </div>
+
                             <div className='space-y-3'>
                                 <div className='flex items-center justify-between gap-2'>
                                     <Label>{t('admin.roles.form.color')}</Label>
@@ -411,9 +425,7 @@ export function RoleEditor({
                                         {form.name || 'role_name'}
                                     </p>
                                 </div>
-                                <Badge className='shrink-0 border-0 text-white' style={{ backgroundColor: form.color }}>
-                                    {t('admin.roles.labels.preview')}
-                                </Badge>
+                                <RoleBadge role={form} variant='solid' size='sm' className='shrink-0' />
                             </div>
                         </form>
                     </PageCard>

@@ -46,6 +46,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
 import { formatDateTimeInTz, formatRelativeTime } from '@/lib/dateUtils';
+import { RoleBadge } from '@/components/RoleBadge';
 import { validateServerResourceLimits } from '@/lib/server-utils';
 
 import { DetailsTab } from './DetailsTab';
@@ -1264,18 +1265,7 @@ export default function EditServerPage() {
                                             <div className='min-w-0 flex-1'>
                                                 <div className='flex items-center gap-2'>
                                                     <span className='truncate font-medium'>{user.username}</span>
-                                                    {user.role && (
-                                                        <Badge
-                                                            style={{
-                                                                backgroundColor: `${user.role.color}20`,
-                                                                color: user.role.color,
-                                                                borderColor: `${user.role.color}40`,
-                                                            }}
-                                                            className='text-xs'
-                                                        >
-                                                            {user.role.display_name}
-                                                        </Badge>
-                                                    )}
+                                                    {user.role && <RoleBadge role={user.role} size='sm' />}
                                                 </div>
                                                 <div className='text-muted-foreground truncate text-sm'>
                                                     {user.email}

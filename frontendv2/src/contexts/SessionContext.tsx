@@ -31,6 +31,7 @@ export interface UserInfo {
     role?: {
         name: string;
         display_name: string;
+        custom_badge?: string | null;
         color: string;
     };
     avatar: string;

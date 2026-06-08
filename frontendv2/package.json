@@ -4,7 +4,9 @@
 	"license": "AGPL-3.0-or-later",
 	"type": "module",
 	"scripts": {
-		"dev": "next dev",
+		"dev": "NODE_OPTIONS='--max-old-space-size=2048' next dev --webpack -H 127.0.0.1",
+		"dev:turbo": "NODE_OPTIONS='--max-old-space-size=2048' next dev -H 127.0.0.1",
+		"dev:clean": "rm -rf .next/dev && pnpm dev",
 		"build": "run-s scan:translations lint build:next",
 		"build:next": "next build",
 		"start": "next start",

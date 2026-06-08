@@ -34,6 +34,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSession } from '@/contexts/SessionContext';
+import { RoleBadge } from '@/components/RoleBadge';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
@@ -372,18 +373,10 @@ export default function TicketViewPage() {
                                                     {msg.user?.username || t('tickets.system')}
                                                 </span>
                                                 {msg.user?.role && (
-                                                    <Badge
-                                                        variant='secondary'
-                                                        className='h-4 border-0 px-1 text-[10px] leading-none'
-                                                        style={{
-                                                            backgroundColor: msg.user.role.color
-                                                                ? `${msg.user.role.color}15`
-                                                                : undefined,
-                                                            color: msg.user.role.color,
-                                                        }}
-                                                    >
-                                                        {msg.user.role.name}
-                                                    </Badge>
+                                                    <RoleBadge
+                                                        role={msg.user.role}
+                                                        className='h-4 px-1 text-[10px] leading-none'
+                                                    />
                                                 )}
                                             </div>
                                         )}

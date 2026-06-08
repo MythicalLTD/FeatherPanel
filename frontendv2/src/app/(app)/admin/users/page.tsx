@@ -47,10 +47,13 @@ import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { toast } from 'sonner';
 import { formatDateTimeInTz, formatRelativeTime } from '@/lib/dateUtils';
+import { getRoleBadgeStyles } from '@/components/RoleBadge';
+import { getRoleBadgeLabel } from '@/lib/role-utils';
 
 interface UserRole {
     name: string;
     display_name: string;
+    custom_badge?: string | null;
     color: string;
 }
 
@@ -91,6 +94,7 @@ interface AvailableRole {
     id: string;
     name: string;
     display_name: string;
+    custom_badge?: string | null;
     color: string;
 }
 
@@ -588,9 +592,9 @@ export default function UsersPage() {
 
                         if (user.role) {
                             badges.push({
-                                label: user.role.display_name,
-                                className: `border-transparent text-white`,
-                                style: { backgroundColor: user.role.color },
+                                label: getRoleBadgeLabel(user.role),
+                                className: 'border-transparent text-white',
+                                style: getRoleBadgeStyles(user.role, 'solid'),
                             });
                         }
 

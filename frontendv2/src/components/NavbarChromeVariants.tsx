@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 import Image from 'next/image';
+import { RoleBadge } from '@/components/RoleBadge';
 import { cn, copyToClipboard } from '@/lib/utils';
 import ThemeCustomizer from '@/components/layout/ThemeCustomizer';
 import { PoweredByFeatherPanel } from '@/components/branding/PoweredByFeatherPanel';
@@ -153,21 +154,12 @@ export function NavbarClassicChrome(props: NavbarChromeProps) {
                                     </div>
                                 )}
                             </span>
-                            <span className='hidden lg:ml-0.5 lg:flex lg:max-w-44 lg:min-w-0 lg:flex-col lg:items-start'>
+                            <span className='hidden sm:ml-0.5 sm:flex sm:max-w-44 sm:min-w-0 sm:flex-col sm:items-start'>
                                 <span className='text-foreground w-full truncate text-sm leading-tight font-semibold'>
                                     {getUsername()}
                                 </span>
                                 {user?.role ? (
-                                    <span
-                                        className='mt-0.5 inline-flex max-w-full items-center truncate rounded-md px-1.5 py-px text-[11px] leading-tight font-medium'
-                                        style={{
-                                            backgroundColor: `${user.role.color}18`,
-                                            color: user.role.color,
-                                            border: `1px solid ${user.role.color}35`,
-                                        }}
-                                    >
-                                        {user.role.display_name}
-                                    </span>
+                                    <RoleBadge role={user.role} className='mt-0.5' />
                                 ) : (
                                     <span className='text-muted-foreground mt-0.5 w-full truncate text-[11px] leading-tight'>
                                         {t('navbar.noRole')}
@@ -221,16 +213,7 @@ export function NavbarClassicChrome(props: NavbarChromeProps) {
                                             ) : null}
                                             {user?.role ? (
                                                 <div className='mt-1.5'>
-                                                    <span
-                                                        className='inline-flex max-w-full items-center truncate rounded-md px-2 py-0.5 text-xs font-medium'
-                                                        style={{
-                                                            backgroundColor: `${user.role.color}20`,
-                                                            color: user.role.color,
-                                                            border: `1px solid ${user.role.color}40`,
-                                                        }}
-                                                    >
-                                                        {user.role.display_name}
-                                                    </span>
+                                                    <RoleBadge role={user.role} size='sm' />
                                                 </div>
                                             ) : (
                                                 <p className='text-muted-foreground mt-1.5 text-xs'>
@@ -467,14 +450,12 @@ export function NavbarModernChrome(props: NavbarChromeProps) {
                                         </div>
                                     )}
                                 </span>
-                                <span className='hidden lg:ml-0.5 lg:flex lg:max-w-44 lg:min-w-0 lg:flex-col lg:items-start'>
+                                <span className='hidden sm:ml-0.5 sm:flex sm:max-w-44 sm:min-w-0 sm:flex-col sm:items-start'>
                                     <span className='text-foreground w-full truncate text-sm leading-tight font-semibold'>
                                         {getUsername()}
                                     </span>
                                     {user?.role ? (
-                                        <span className='bg-primary/12 text-primary mt-0.5 inline-flex max-w-full items-center truncate rounded-md px-1.5 py-px text-[11px] leading-tight font-medium'>
-                                            {user.role.display_name}
-                                        </span>
+                                        <RoleBadge role={user.role} className='mt-0.5' />
                                     ) : (
                                         <span className='text-muted-foreground mt-0.5 w-full truncate text-[11px] leading-tight'>
                                             {t('navbar.noRole')}
@@ -528,9 +509,7 @@ export function NavbarModernChrome(props: NavbarChromeProps) {
                                                 ) : null}
                                                 {user?.role ? (
                                                     <div className='mt-1.5'>
-                                                        <span className='border-primary/20 bg-primary/10 text-primary inline-flex max-w-full items-center truncate rounded-md border px-2 py-0.5 text-xs font-medium'>
-                                                            {user.role.display_name}
-                                                        </span>
+                                                        <RoleBadge role={user.role} size='sm' />
                                                     </div>
                                                 ) : (
                                                     <p className='text-muted-foreground mt-1.5 text-xs'>

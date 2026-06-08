@@ -13,10 +13,17 @@ by the Free Software Foundation, either version 3 of the License, or
 See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
+export interface RoleBadgeSource {
+    custom_badge?: string | null;
+    display_name?: string;
+    name?: string;
+}
+
 export interface Role {
     id: number;
     name: string;
     display_name: string;
+    custom_badge?: string | null;
     color: string;
     created_at: string;
     updated_at: string;
@@ -31,7 +38,17 @@ export interface RolePermission {
 export interface RoleForm {
     name: string;
     display_name: string;
+    custom_badge: string;
     color: string;
+}
+
+export function getRoleBadgeLabel(role: RoleBadgeSource): string {
+    const customBadge = role.custom_badge?.trim();
+    if (customBadge) {
+        return customBadge;
+    }
+
+    return role.display_name || role.name || '-';
 }
 
 export const ROLE_COLOR_PRESETS = [

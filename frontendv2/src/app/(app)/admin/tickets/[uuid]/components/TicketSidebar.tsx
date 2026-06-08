@@ -20,6 +20,7 @@ import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Clock, Eye, Info, Mail, RefreshCw, Server, Settings, TicketIcon, User } from 'lucide-react';
 import Link from 'next/link';
+import { RoleBadge } from '@/components/RoleBadge';
 import { cn } from '@/lib/utils';
 import { Ticket, UserData, UserMail } from '../page';
 import React from 'react';
@@ -95,15 +96,12 @@ export function TicketSidebar({
                                 </div>
                                 <div className='flex justify-center gap-2 pt-1'>
                                     {userDetails.role && (
-                                        <Badge
-                                            className='border-none px-2 py-0.5 text-[9px] font-black tracking-widest uppercase shadow-sm'
-                                            style={{
-                                                backgroundColor: userDetails.role.color || '#3b82f6',
-                                                color: 'white',
-                                            }}
-                                        >
-                                            {userDetails.role.display_name || userDetails.role.name}
-                                        </Badge>
+                                        <RoleBadge
+                                            role={userDetails.role}
+                                            variant='solid'
+                                            size='sm'
+                                            className='px-2 py-0.5 text-[9px] font-black tracking-widest uppercase shadow-sm'
+                                        />
                                     )}
                                     {userDetails.banned === 'true' && (
                                         <Badge variant='destructive' className='px-2 py-0.5 text-[9px] uppercase'>
