@@ -22,10 +22,6 @@ const CHALLENGE_MARKERS = [
     'cf-chl-',
 ];
 
-const CHALLENGE_RETRY_PARAM = '_fp_cf_retry';
-const CHALLENGE_RECOVERY_COOLDOWN_MS = 2500;
-const CHALLENGE_RECOVERY_COOLDOWN_KEY = 'fp_cf_recovery_cooldown';
-
 export function isCloudflareChallengeText(value: string | null | undefined): boolean {
     const text = (value || '').toLowerCase();
     if (!text) return false;
@@ -46,32 +42,6 @@ export function isCloudflareChallengeDocument(doc: Document | null | undefined):
     return CHALLENGE_MARKERS.some(
         (marker) => title.includes(marker) || bodyText.includes(marker) || html.includes(marker),
     );
-}
-
-export function triggerCloudflareRecovery(maxRetries = 3): boolean {
-    if (typeof window === 'undefined') return false;
-
-    try {
-        const now = Date.now();
-        const lastRecovery = Number(sessionStorage.getItem(CHALLENGE_RECOVERY_COOLDOWN_KEY) || '0');
-        if (now - lastRecovery < CHALLENGE_RECOVERY_COOLDOWN_MS) {
-            return false;
-        }
-
-        const url = new URL(window.location.href);
-        const currentRetries = Number(url.searchParams.get(CHALLENGE_RETRY_PARAM) || '0');
-        if (Number.isFinite(currentRetries) && currentRetries >= maxRetries) {
-            return false;
-        }
-
-        const nextRetry = Number.isFinite(currentRetries) ? currentRetries + 1 : 1;
-        url.searchParams.set(CHALLENGE_RETRY_PARAM, String(nextRetry));
-        sessionStorage.setItem(CHALLENGE_RECOVERY_COOLDOWN_KEY, String(now));
-        window.location.replace(url.toString());
-        return true;
-    } catch {
-        return false;
-    }
 }
 
 export function withCacheBuster(url: string): string {

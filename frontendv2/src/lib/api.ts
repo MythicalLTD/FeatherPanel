@@ -14,7 +14,6 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
 import axios, { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from 'axios';
-import { isCloudflareChallengeResponseData, triggerCloudflareRecovery } from '@/lib/cloudflare-challenge';
 import { getClientSyncHeaders } from '@/lib/clientIdentity';
 import { acquireWingsSlot, isWingsAdminNodeRequest, releaseWingsSlot } from '@/lib/wingsRequestQueue';
 
@@ -113,25 +112,8 @@ const attachWingsQueueInterceptor = (client: AxiosInstance) => {
 
 const attachCommonResponseInterceptor = (client: AxiosInstance) => {
     client.interceptors.response.use(
-        (response) => {
-            const contentType = String(response.headers?.['content-type'] || '').toLowerCase();
-            if (contentType.includes('text/html') && isCloudflareChallengeResponseData(response.data)) {
-                triggerCloudflareRecovery();
-            }
-            return response;
-        },
+        (response) => response,
         (error: AxiosError<{ error_code?: string; error_message?: string }>) => {
-            const responseData = error.response?.data;
-            const responseHeaders = error.response?.headers;
-            const contentType = String(responseHeaders?.['content-type'] || '').toLowerCase();
-
-            if (
-                isCloudflareChallengeResponseData(responseData) ||
-                (contentType.includes('text/html') && typeof responseData === 'string')
-            ) {
-                triggerCloudflareRecovery();
-            }
-
             // Handle common auth state errors
             const errorCode = error.response?.data?.error_code;
             const status = error.response?.status;
