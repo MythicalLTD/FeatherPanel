@@ -42,6 +42,7 @@
 - Node connections now actually respect the behind proxy setting. by @nayskutzu
 - Timezones were missmatched into the admin pages.by @nayskutzu
 - Search bar in the server navbar was not working. by @nayskutzu
+- Plugin behaviors and errors reporting was improved. by @nayskutzu
 - Multiple issues with the server transfer dialog were fixed. by @nayskutzu
 - Multiple issues with connections to the nodes were fixed. by @nayskutzu
 
