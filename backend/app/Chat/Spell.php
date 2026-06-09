@@ -600,6 +600,73 @@ class Spell
     }
 
     /**
+     * Parse docker_images JSON into a list of image tags.
+     *
+     * @return list<string>
+     */
+    public static function parseDockerImages(?string $dockerImagesJson): array
+    {
+        if ($dockerImagesJson === null || trim($dockerImagesJson) === '') {
+            return [];
+        }
+
+        try {
+            $dockerImages = json_decode($dockerImagesJson, true);
+            if (!is_array($dockerImages) || $dockerImages === []) {
+                return [];
+            }
+
+            return array_values(array_filter(
+                $dockerImages,
+                static fn ($value) => is_string($value) && trim($value) !== ''
+            ));
+        } catch (\Exception $e) {
+            return [];
+        }
+    }
+
+    /**
+     * Resolve the default Docker image for a spell.
+     * Uses default_docker_image when set and valid, otherwise the first docker_images entry.
+     */
+    public static function resolveDefaultDockerImage(array $spell): ?string
+    {
+        $dockerImages = self::parseDockerImages($spell['docker_images'] ?? null);
+
+        if (!empty($spell['default_docker_image']) && is_string($spell['default_docker_image'])) {
+            $default = trim($spell['default_docker_image']);
+            if ($default !== '' && ($dockerImages === [] || in_array($default, $dockerImages, true))) {
+                return $default;
+            }
+        }
+
+        return $dockerImages[0] ?? null;
+    }
+
+    /**
+     * Ensure default_docker_image references a value from docker_images when possible.
+     */
+    public static function sanitizeDefaultDockerImage(?string $defaultDockerImage, ?string $dockerImagesJson): ?string
+    {
+        $images = self::parseDockerImages($dockerImagesJson);
+        if ($images === []) {
+            return null;
+        }
+
+        if ($defaultDockerImage === null || trim($defaultDockerImage) === '') {
+            return $images[0];
+        }
+
+        $defaultDockerImage = trim($defaultDockerImage);
+
+        if (!in_array($defaultDockerImage, $images, true)) {
+            return $images[0];
+        }
+
+        return $defaultDockerImage;
+    }
+
+    /**
      * Sanitize data for logging by excluding sensitive fields.
      */
     private static function sanitizeDataForLogging(array $data): array

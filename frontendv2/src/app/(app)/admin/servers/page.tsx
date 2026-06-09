@@ -16,6 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useState, useEffect, useCallback, type ReactNode, type ElementType } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import axios, { isAxiosError } from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -28,6 +29,7 @@ import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { PageCard } from '@/components/featherui/PageCard';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { toast } from 'sonner';
 import {
@@ -58,7 +60,7 @@ import {
 import { StatusBadge } from '@/components/servers/StatusBadge';
 import { displayStatus } from '@/lib/server-utils';
 import { formatDateTimeInTz, formatRelativeTime } from '@/lib/dateUtils';
-import { ApiServer, Pagination, ApiNode, ApiAllocation } from '@/types/adminServerTypes';
+import { ApiServer, Pagination, ApiNode } from '@/types/adminServerTypes';
 import type { Server as ServerType } from '@/types/server';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
 import {
@@ -75,6 +77,39 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select } from '@/components/ui/select-native';
 import { HeadlessModal } from '@/components/ui/headless-modal';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Avatar, AvatarImage } from '@/components/ui/avatar';
+import { TransferServerDialog } from '@/components/admin/TransferServerDialog';
+
+function resolveAvatarSrc(avatar?: string): string | undefined {
+    if (avatar && (avatar.startsWith('http') || avatar.startsWith('/'))) {
+        return avatar;
+    }
+
+    return undefined;
+}
+
+const SERVERS_LIST_FILTERS_KEY = 'featherpanel_admin_servers_filters_v1';
+const SERVERS_LIST_FILTERS_DEFAULTS = {
+    searchQuery: '',
+    ownerFilter: '',
+    nodeFilter: '',
+    realmFilter: '',
+    spellFilter: '',
+    locationFilter: '',
+    serverIdFilter: '',
+    uuidFilter: '',
+    externalIdFilter: '',
+    sortBy: 'id' as 'id' | 'name' | 'created_at' | 'updated_at',
+    sortOrder: 'DESC' as 'ASC' | 'DESC',
+    showAdvancedFilters: false,
+    page: 1,
+    pageSize: 10,
+    filterOwner: null as { id: number; username: string; email?: string } | null,
+    filterNode: null as ApiNode | null,
+    filterRealm: null as { id: number; name: string } | null,
+    filterSpell: null as { id: number; name: string } | null,
+    filterLocation: null as { id: number; name: string } | null,
+};
 
 export default function ServersPage() {
     const { t } = useTranslation();
@@ -83,8 +118,32 @@ export default function ServersPage() {
 
     const [loading, setLoading] = useState(true);
     const [servers, setServers] = useState<ApiServer[]>([]);
-    const [searchQuery, setSearchQuery] = useState('');
     const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
+    const { filters, patchFilters, resetFilters, hydrated } = usePersistedListFilters(
+        SERVERS_LIST_FILTERS_KEY,
+        SERVERS_LIST_FILTERS_DEFAULTS,
+    );
+    const {
+        searchQuery,
+        ownerFilter,
+        nodeFilter,
+        realmFilter,
+        spellFilter,
+        locationFilter,
+        serverIdFilter,
+        uuidFilter,
+        externalIdFilter,
+        sortBy,
+        sortOrder,
+        showAdvancedFilters,
+        page,
+        pageSize,
+        filterOwner,
+        filterNode,
+        filterRealm,
+        filterSpell,
+        filterLocation,
+    } = filters;
     const [refreshKey, setRefreshKey] = useState(0);
     const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
     const [isHardDelete, setIsHardDelete] = useState(false);
@@ -94,24 +153,9 @@ export default function ServersPage() {
 
     const [isTransferDialogOpen, setIsTransferDialogOpen] = useState(false);
     const [transferServer, setTransferServer] = useState<ApiServer | null>(null);
-    const [isInitiatingTransfer, setIsInitiatingTransfer] = useState(false);
     const [cancellingTransferId, setCancellingTransferId] = useState<number | null>(null);
 
-    const [isNodeModalOpen, setIsNodeModalOpen] = useState(false);
-    const [isAllocationModalOpen, setIsAllocationModalOpen] = useState(false);
-    const [selectedNode, setSelectedNode] = useState<ApiNode | null>(null);
-    const [selectedAllocation, setSelectedAllocation] = useState<ApiAllocation | null>(null);
-    const [transferAutoAllocate, setTransferAutoAllocate] = useState(true);
-    const [nodesList, setNodesList] = useState<ApiNode[]>([]);
-    const [allocationsList, setAllocationsList] = useState<ApiAllocation[]>([]);
-    const [loadingNodes, setLoadingNodes] = useState(false);
-    const [loadingAllocations, setLoadingAllocations] = useState(false);
-    const [nodeSearch, setNodeSearch] = useState('');
-    const [allocationSearch, setAllocationSearch] = useState('');
-
-    const [pagination, setPagination] = useState<Pagination>({
-        page: 1,
-        pageSize: 10,
+    const [pagination, setPagination] = useState<Omit<Pagination, 'page' | 'pageSize'>>({
         total: 0,
         totalPages: 0,
         hasNext: false,
@@ -120,23 +164,6 @@ export default function ServersPage() {
         to: 0,
     });
 
-    const [ownerFilter, setOwnerFilter] = useState('');
-    const [nodeFilter, setNodeFilter] = useState('');
-    const [realmFilter, setRealmFilter] = useState('');
-    const [spellFilter, setSpellFilter] = useState('');
-    const [locationFilter, setLocationFilter] = useState('');
-    const [serverIdFilter, setServerIdFilter] = useState('');
-    const [uuidFilter, setUuidFilter] = useState('');
-    const [externalIdFilter, setExternalIdFilter] = useState('');
-    const [sortBy, setSortBy] = useState<'id' | 'name' | 'created_at' | 'updated_at'>('id');
-    const [sortOrder, setSortOrder] = useState<'ASC' | 'DESC'>('DESC');
-    const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
-
-    const [filterOwner, setFilterOwner] = useState<{ id: number; username: string; email?: string } | null>(null);
-    const [filterNode, setFilterNode] = useState<ApiNode | null>(null);
-    const [filterRealm, setFilterRealm] = useState<{ id: number; name: string } | null>(null);
-    const [filterSpell, setFilterSpell] = useState<{ id: number; name: string } | null>(null);
-    const [filterLocation, setFilterLocation] = useState<{ id: number; name: string } | null>(null);
     const [isOwnerFilterModalOpen, setIsOwnerFilterModalOpen] = useState(false);
     const [isNodeFilterModalOpen, setIsNodeFilterModalOpen] = useState(false);
     const [isRealmFilterModalOpen, setIsRealmFilterModalOpen] = useState(false);
@@ -147,6 +174,9 @@ export default function ServersPage() {
         { id: number; uuid: string; username: string; email: string }[]
     >([]);
     const [ownerFilterLoading, setOwnerFilterLoading] = useState(false);
+    const [nodeSearch, setNodeSearch] = useState('');
+    const [nodesList, setNodesList] = useState<ApiNode[]>([]);
+    const [loadingNodes, setLoadingNodes] = useState(false);
     const [realmFilterSearch, setRealmFilterSearch] = useState('');
     const [spellFilterSearch, setSpellFilterSearch] = useState('');
     const [locationFilterSearch, setLocationFilterSearch] = useState('');
@@ -160,19 +190,23 @@ export default function ServersPage() {
         const timer = setTimeout(() => {
             setDebouncedSearchQuery(searchQuery);
             if (searchQuery !== debouncedSearchQuery) {
-                setPagination((p) => ({ ...p, page: 1 }));
+                patchFilters({ page: 1 });
             }
         }, 500);
         return () => clearTimeout(timer);
-    }, [searchQuery, debouncedSearchQuery]);
+    }, [searchQuery, debouncedSearchQuery, patchFilters]);
 
     const fetchServers = useCallback(async () => {
+        if (!hydrated) {
+            return;
+        }
+
         setLoading(true);
         try {
             const { data } = await axios.get('/api/admin/servers', {
                 params: {
-                    page: pagination.page,
-                    limit: pagination.pageSize,
+                    page,
+                    limit: pageSize,
                     search: debouncedSearchQuery || undefined,
                     owner_id: ownerFilter || undefined,
                     node_id: nodeFilter || undefined,
@@ -190,8 +224,6 @@ export default function ServersPage() {
             setServers(data.data.servers || []);
             const apiPagination = data.data.pagination;
             setPagination({
-                page: apiPagination.current_page,
-                pageSize: apiPagination.per_page,
                 total: apiPagination.total_records,
                 totalPages: Math.ceil(apiPagination.total_records / apiPagination.per_page),
                 hasNext: apiPagination.has_next,
@@ -206,8 +238,8 @@ export default function ServersPage() {
             setLoading(false);
         }
     }, [
-        pagination.page,
-        pagination.pageSize,
+        page,
+        pageSize,
         debouncedSearchQuery,
         ownerFilter,
         nodeFilter,
@@ -220,6 +252,7 @@ export default function ServersPage() {
         sortBy,
         sortOrder,
         t,
+        hydrated,
     ]);
 
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-servers');
@@ -345,9 +378,6 @@ export default function ServersPage() {
 
     const openTransferDialog = (server: ApiServer) => {
         setTransferServer(server);
-        setSelectedNode(null);
-        setSelectedAllocation(null);
-        setTransferAutoAllocate(true);
         setIsTransferDialogOpen(true);
     };
 
@@ -357,65 +387,15 @@ export default function ServersPage() {
             const { data } = await axios.get('/api/admin/nodes', {
                 params: {
                     limit: 50,
-                    search,
-                },
-            });
-
-            const filteredNodes = (data.data.nodes || []).filter(
-                (node: ApiNode) => String(node.id) !== String(transferServer?.node_id),
-            );
-            setNodesList(filteredNodes);
-        } catch (error) {
-            console.error('Error fetching nodes for transfer:', error);
-        } finally {
-            setLoadingNodes(false);
-        }
-    };
-
-    const fetchAllocations = async (nodeId: number, search: string = '') => {
-        setLoadingAllocations(true);
-        try {
-            const { data } = await axios.get('/api/admin/allocations', {
-                params: {
-                    limit: 50,
-                    node_id: nodeId,
-                    not_used: true,
                     search: search || undefined,
                 },
             });
-            setAllocationsList(data.data.allocations || []);
+            setNodesList(data.data.nodes || []);
         } catch (error) {
-            console.error('Error fetching allocations for transfer:', error);
+            console.error('Error fetching nodes for filter:', error);
+            setNodesList([]);
         } finally {
-            setLoadingAllocations(false);
-        }
-    };
-
-    const initiateTransfer = async () => {
-        if (!transferServer || !selectedNode || (!transferAutoAllocate && !selectedAllocation)) return;
-
-        setIsInitiatingTransfer(true);
-        try {
-            const payload: {
-                destination_node_id: number;
-                destination_allocation_id?: number;
-                auto_allocate?: boolean;
-            } = {
-                destination_node_id: selectedNode.id,
-                auto_allocate: transferAutoAllocate,
-            };
-            if (!transferAutoAllocate && selectedAllocation) {
-                payload.destination_allocation_id = selectedAllocation.id;
-            }
-            await axios.post(`/api/admin/servers/${transferServer.id}/transfer`, payload);
-            toast.success(t('admin.servers.messages.transfer_initiated'));
-            setIsTransferDialogOpen(false);
-            setRefreshKey((prev) => prev + 1);
-        } catch (error) {
-            console.error('Error initiating transfer:', error);
-            toast.error(t('admin.servers.messages.transfer_failed'));
-        } finally {
-            setIsInitiatingTransfer(false);
+            setLoadingNodes(false);
         }
     };
 
@@ -483,7 +463,7 @@ export default function ServersPage() {
                     <Input
                         placeholder={t('admin.servers.search_placeholder')}
                         value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onChange={(e) => patchFilters({ searchQuery: e.target.value })}
                         className='h-11 w-full pl-10'
                     />
                 </div>
@@ -579,7 +559,7 @@ export default function ServersPage() {
                             variant='ghost'
                             size='sm'
                             className='h-9 text-xs'
-                            onClick={() => setShowAdvancedFilters((prev) => !prev)}
+                            onClick={() => patchFilters({ showAdvancedFilters: !showAdvancedFilters })}
                         >
                             {t('admin.servers.filters.advanced')}
                         </Button>
@@ -592,8 +572,7 @@ export default function ServersPage() {
                                     'id' | 'name' | 'created_at' | 'updated_at',
                                     'ASC' | 'DESC',
                                 ];
-                                setSortBy(field);
-                                setSortOrder(order);
+                                patchFilters({ sortBy: field, sortOrder: order, page: 1 });
                             }}
                             className='bg-background/50 border-border/50 h-11 w-55 rounded-xl text-sm'
                         >
@@ -613,8 +592,7 @@ export default function ServersPage() {
                             min={1}
                             value={serverIdFilter}
                             onChange={(e) => {
-                                setServerIdFilter(e.target.value);
-                                setPagination((p) => ({ ...p, page: 1 }));
+                                patchFilters({ serverIdFilter: e.target.value, page: 1 });
                             }}
                             placeholder={t('admin.servers.filters.server_id')}
                             className='h-9 text-xs'
@@ -622,8 +600,7 @@ export default function ServersPage() {
                         <Input
                             value={uuidFilter}
                             onChange={(e) => {
-                                setUuidFilter(e.target.value);
-                                setPagination((p) => ({ ...p, page: 1 }));
+                                patchFilters({ uuidFilter: e.target.value, page: 1 });
                             }}
                             placeholder={t('admin.servers.filters.uuid')}
                             className='h-9 text-xs'
@@ -631,8 +608,7 @@ export default function ServersPage() {
                         <Input
                             value={externalIdFilter}
                             onChange={(e) => {
-                                setExternalIdFilter(e.target.value);
-                                setPagination((p) => ({ ...p, page: 1 }));
+                                patchFilters({ externalIdFilter: e.target.value, page: 1 });
                             }}
                             placeholder={t('admin.servers.filters.external_id')}
                             className='h-9 text-xs'
@@ -642,20 +618,7 @@ export default function ServersPage() {
                             size='sm'
                             className='h-9 justify-start text-xs'
                             onClick={() => {
-                                setOwnerFilter('');
-                                setNodeFilter('');
-                                setFilterOwner(null);
-                                setFilterNode(null);
-                                setRealmFilter('');
-                                setSpellFilter('');
-                                setLocationFilter('');
-                                setFilterRealm(null);
-                                setFilterSpell(null);
-                                setFilterLocation(null);
-                                setServerIdFilter('');
-                                setUuidFilter('');
-                                setExternalIdFilter('');
-                                setPagination((p) => ({ ...p, page: 1 }));
+                                resetFilters();
                             }}
                         >
                             {t('admin.servers.filters.clear')}
@@ -744,20 +707,20 @@ export default function ServersPage() {
                                 variant='outline'
                                 size='sm'
                                 disabled={!pagination.hasPrev}
-                                onClick={() => setPagination((p) => ({ ...p, page: p.page - 1 }))}
+                                onClick={() => patchFilters({ page: page - 1 })}
                                 className='gap-1.5'
                             >
                                 <ChevronLeft className='h-4 w-4' />
                                 {t('common.previous')}
                             </Button>
                             <span className='text-sm font-medium'>
-                                {pagination.page} / {pagination.totalPages}
+                                {page} / {pagination.totalPages}
                             </span>
                             <Button
                                 variant='outline'
                                 size='sm'
                                 disabled={!pagination.hasNext}
-                                onClick={() => setPagination((p) => ({ ...p, page: p.page + 1 }))}
+                                onClick={() => patchFilters({ page: page + 1 })}
                                 className='gap-1.5'
                             >
                                 {t('common.next')}
@@ -773,17 +736,42 @@ export default function ServersPage() {
                                     className: 'bg-primary/10 text-primary border-primary/20',
                                 },
                                 {
-                                    label: server.owner?.username || 'System',
-                                    className: 'bg-muted text-muted-foreground border-border/50',
+                                    label: server.uuidShort,
+                                    className: 'bg-muted/50 text-muted-foreground border-border/50 font-mono',
                                 },
                             ];
 
+                            const ownerAvatarSrc = resolveAvatarSrc(server.owner?.avatar);
                             const serverStatus = displayStatus(server as unknown as ServerType);
                             return (
                                 <ResourceCard
                                     key={server.id}
                                     title={server.name}
-                                    subtitle={server.uuidShort}
+                                    subtitle={
+                                        server.owner ? (
+                                            <div className='flex items-center gap-2'>
+                                                <Avatar className='h-6 w-6 shrink-0'>
+                                                    {ownerAvatarSrc && (
+                                                        <AvatarImage src={ownerAvatarSrc} alt={server.owner.username} />
+                                                    )}
+                                                </Avatar>
+                                                {server.owner.uuid ? (
+                                                    <Link
+                                                        href={`/admin/users/${server.owner.uuid}/edit`}
+                                                        className='text-primary hover:text-primary/80 font-medium underline-offset-4 transition-colors hover:underline'
+                                                    >
+                                                        {server.owner.username}
+                                                    </Link>
+                                                ) : (
+                                                    <span className='text-foreground font-medium'>
+                                                        {server.owner.username}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <span className='text-muted-foreground font-medium'>System</span>
+                                        )
+                                    }
                                     icon={Server}
                                     badges={badges}
                                     description={
@@ -898,18 +886,18 @@ export default function ServersPage() {
                                 variant='outline'
                                 size='icon'
                                 disabled={!pagination.hasPrev}
-                                onClick={() => setPagination((p) => ({ ...p, page: p.page - 1 }))}
+                                onClick={() => patchFilters({ page: page - 1 })}
                             >
                                 <ChevronLeft className='h-4 w-4' />
                             </Button>
                             <span className='text-sm font-medium'>
-                                {pagination.page} / {pagination.totalPages}
+                                {page} / {pagination.totalPages}
                             </span>
                             <Button
                                 variant='outline'
                                 size='icon'
                                 disabled={!pagination.hasNext}
-                                onClick={() => setPagination((p) => ({ ...p, page: p.page + 1 }))}
+                                onClick={() => patchFilters({ page: page + 1 })}
                             >
                                 <ChevronRight className='h-4 w-4' />
                             </Button>
@@ -1152,6 +1140,12 @@ export default function ServersPage() {
                                                 icon={User}
                                                 title={t('admin.servers.details.labels.owner')}
                                                 name={selectedServer?.owner?.username}
+                                                avatarUrl={resolveAvatarSrc(selectedServer?.owner?.avatar)}
+                                                nameHref={
+                                                    selectedServer?.owner?.uuid
+                                                        ? `/admin/users/${selectedServer.owner.uuid}/edit`
+                                                        : undefined
+                                                }
                                                 detail={selectedServer?.owner?.email}
                                                 secondary={
                                                     selectedServer?.owner?.last_seen
@@ -1290,9 +1284,11 @@ export default function ServersPage() {
                                 <button
                                     key={user.id}
                                     onClick={() => {
-                                        setFilterOwner({ id: user.id, username: user.username, email: user.email });
-                                        setOwnerFilter(String(user.id));
-                                        setPagination((p) => ({ ...p, page: 1 }));
+                                        patchFilters({
+                                            filterOwner: { id: user.id, username: user.username, email: user.email },
+                                            ownerFilter: String(user.id),
+                                            page: 1,
+                                        });
                                         setIsOwnerFilterModalOpen(false);
                                     }}
                                     className={`w-full rounded-xl border p-4 text-left transition-all ${
@@ -1320,9 +1316,7 @@ export default function ServersPage() {
                             size='sm'
                             className='w-full justify-start text-xs'
                             onClick={() => {
-                                setFilterOwner(null);
-                                setOwnerFilter('');
-                                setPagination((p) => ({ ...p, page: 1 }));
+                                patchFilters({ filterOwner: null, ownerFilter: '', page: 1 });
                             }}
                         >
                             {t('admin.servers.filters.clear')}
@@ -1363,9 +1357,11 @@ export default function ServersPage() {
                                 <button
                                     key={node.id}
                                     onClick={() => {
-                                        setFilterNode(node);
-                                        setNodeFilter(String(node.id));
-                                        setPagination((p) => ({ ...p, page: 1 }));
+                                        patchFilters({
+                                            filterNode: node,
+                                            nodeFilter: String(node.id),
+                                            page: 1,
+                                        });
                                         setIsNodeFilterModalOpen(false);
                                     }}
                                     className={`w-full rounded-xl border p-4 text-left transition-all ${
@@ -1391,9 +1387,7 @@ export default function ServersPage() {
                             size='sm'
                             className='w-full justify-start text-xs'
                             onClick={() => {
-                                setFilterNode(null);
-                                setNodeFilter('');
-                                setPagination((p) => ({ ...p, page: 1 }));
+                                patchFilters({ filterNode: null, nodeFilter: '', page: 1 });
                             }}
                         >
                             {t('admin.servers.filters.clear')}
@@ -1438,9 +1432,11 @@ export default function ServersPage() {
                                 <button
                                     key={realm.id}
                                     onClick={() => {
-                                        setFilterRealm({ id: realm.id, name: realm.name });
-                                        setRealmFilter(String(realm.id));
-                                        setPagination((p) => ({ ...p, page: 1 }));
+                                        patchFilters({
+                                            filterRealm: { id: realm.id, name: realm.name },
+                                            realmFilter: String(realm.id),
+                                            page: 1,
+                                        });
                                         setIsRealmFilterModalOpen(false);
                                     }}
                                     className={`w-full rounded-xl border p-4 text-left transition-all ${
@@ -1472,9 +1468,7 @@ export default function ServersPage() {
                             size='sm'
                             className='w-full justify-start text-xs'
                             onClick={() => {
-                                setFilterRealm(null);
-                                setRealmFilter('');
-                                setPagination((p) => ({ ...p, page: 1 }));
+                                patchFilters({ filterRealm: null, realmFilter: '', page: 1 });
                             }}
                         >
                             {t('admin.servers.filters.clear')}
@@ -1524,9 +1518,11 @@ export default function ServersPage() {
                                 <button
                                     key={spell.id}
                                     onClick={() => {
-                                        setFilterSpell({ id: spell.id, name: spell.name });
-                                        setSpellFilter(String(spell.id));
-                                        setPagination((p) => ({ ...p, page: 1 }));
+                                        patchFilters({
+                                            filterSpell: { id: spell.id, name: spell.name },
+                                            spellFilter: String(spell.id),
+                                            page: 1,
+                                        });
                                         setIsSpellFilterModalOpen(false);
                                     }}
                                     className={`w-full rounded-xl border p-4 text-left transition-all ${
@@ -1558,9 +1554,7 @@ export default function ServersPage() {
                             size='sm'
                             className='w-full justify-start text-xs'
                             onClick={() => {
-                                setFilterSpell(null);
-                                setSpellFilter('');
-                                setPagination((p) => ({ ...p, page: 1 }));
+                                patchFilters({ filterSpell: null, spellFilter: '', page: 1 });
                             }}
                         >
                             {t('admin.servers.filters.clear')}
@@ -1610,9 +1604,11 @@ export default function ServersPage() {
                                 <button
                                     key={location.id}
                                     onClick={() => {
-                                        setFilterLocation({ id: location.id, name: location.name });
-                                        setLocationFilter(String(location.id));
-                                        setPagination((p) => ({ ...p, page: 1 }));
+                                        patchFilters({
+                                            filterLocation: { id: location.id, name: location.name },
+                                            locationFilter: String(location.id),
+                                            page: 1,
+                                        });
                                         setIsLocationFilterModalOpen(false);
                                     }}
                                     className={`w-full rounded-xl border p-4 text-left transition-all ${
@@ -1644,9 +1640,7 @@ export default function ServersPage() {
                             size='sm'
                             className='w-full justify-start text-xs'
                             onClick={() => {
-                                setFilterLocation(null);
-                                setLocationFilter('');
-                                setPagination((p) => ({ ...p, page: 1 }));
+                                patchFilters({ filterLocation: null, locationFilter: '', page: 1 });
                             }}
                         >
                             {t('admin.servers.filters.clear')}
@@ -1655,276 +1649,12 @@ export default function ServersPage() {
                 </div>
             </HeadlessModal>
 
-            <AlertDialog
+            <TransferServerDialog
+                server={transferServer}
                 open={isTransferDialogOpen}
-                onOpenChange={(open) => !open && !isInitiatingTransfer && setIsTransferDialogOpen(false)}
-            >
-                <AlertDialogContent className='custom-scrollbar max-h-[90vh] overflow-y-auto sm:max-w-2xl'>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle className='mb-2 flex items-center gap-2'>
-                            <ArrowLeftRight className='h-5 w-5 text-amber-500' />
-                            {t('admin.servers.transfer.title')}
-                        </AlertDialogTitle>
-                        <AlertDialogDescription>{t('admin.servers.transfer.description')}</AlertDialogDescription>
-                    </AlertDialogHeader>
-
-                    <WidgetRenderer widgets={getWidgets('admin-servers', 'bottom-of-page')} />
-
-                    <div className='space-y-6 pt-4'>
-                        {transferServer && (
-                            <div className='bg-muted/30 border-border/50 grid grid-cols-2 gap-4 rounded-2xl border p-4 text-sm'>
-                                <div>
-                                    <p className='text-muted-foreground mb-1 text-xs font-bold tracking-wider uppercase'>
-                                        {t('admin.servers.transfer.server')}
-                                    </p>
-                                    <p className='font-bold'>{transferServer.name}</p>
-                                </div>
-                                <div>
-                                    <p className='text-muted-foreground mb-1 text-xs font-bold tracking-wider uppercase'>
-                                        {t('admin.servers.transfer.current_node')}
-                                    </p>
-                                    <p className='font-bold'>{transferServer.node?.name || 'Unknown'}</p>
-                                </div>
-                            </div>
-                        )}
-
-                        <div className='space-y-4'>
-                            <div className='space-y-2'>
-                                <label className='text-sm font-bold'>
-                                    {t('admin.servers.transfer.destination_node')}
-                                </label>
-                                <Button
-                                    variant='outline'
-                                    className='border-border bg-background/50 h-12 w-full justify-between rounded-xl border px-4'
-                                    onClick={() => {
-                                        fetchNodes();
-                                        setIsNodeModalOpen(true);
-                                    }}
-                                    disabled={isInitiatingTransfer}
-                                >
-                                    <span
-                                        className={
-                                            selectedNode ? 'text-foreground font-medium' : 'text-muted-foreground'
-                                        }
-                                    >
-                                        {selectedNode
-                                            ? `${selectedNode.name} (${selectedNode.fqdn})`
-                                            : t('admin.servers.transfer.select_node')}
-                                    </span>
-                                    <ChevronRight className='text-muted-foreground h-4 w-4' />
-                                </Button>
-                            </div>
-
-                            <label className='flex cursor-pointer items-start gap-3 rounded-xl border p-4'>
-                                <Checkbox
-                                    checked={transferAutoAllocate}
-                                    onCheckedChange={(v) => {
-                                        const enabled = v === true;
-                                        setTransferAutoAllocate(enabled);
-                                        if (enabled) setSelectedAllocation(null);
-                                    }}
-                                    disabled={isInitiatingTransfer}
-                                />
-                                <div>
-                                    <p className='text-sm font-bold'>{t('admin.servers.transfer.auto_allocate')}</p>
-                                    <p className='text-muted-foreground text-xs'>
-                                        {t('admin.servers.transfer.auto_allocate_help')}
-                                    </p>
-                                </div>
-                            </label>
-
-                            {!transferAutoAllocate ? (
-                                <div className='space-y-2'>
-                                    <label className='text-sm font-bold'>
-                                        {t('admin.servers.transfer.destination_allocation')}
-                                    </label>
-                                    <Button
-                                        variant='outline'
-                                        className='border-border bg-background/50 h-12 w-full justify-between rounded-xl border px-4'
-                                        onClick={() => {
-                                            if (selectedNode) {
-                                                fetchAllocations(selectedNode.id);
-                                                setIsAllocationModalOpen(true);
-                                            } else {
-                                                toast.error(t('admin.servers.transfer.select_node'));
-                                            }
-                                        }}
-                                        disabled={isInitiatingTransfer || !selectedNode}
-                                    >
-                                        <span
-                                            className={
-                                                selectedAllocation
-                                                    ? 'text-foreground font-medium'
-                                                    : 'text-muted-foreground'
-                                            }
-                                        >
-                                            {selectedAllocation
-                                                ? `${selectedAllocation.ip}:${selectedAllocation.port}`
-                                                : t('admin.servers.transfer.select_allocation')}
-                                        </span>
-                                        <ChevronRight className='text-muted-foreground h-4 w-4' />
-                                    </Button>
-                                </div>
-                            ) : null}
-                        </div>
-
-                        <div className='space-y-4'>
-                            <div className='rounded-2xl border border-red-500/20 bg-red-500/10 p-4'>
-                                <p className='mb-2 text-center text-sm font-black text-red-500'>
-                                    {t('admin.servers.transfer.warning_banner')}
-                                </p>
-                                <p className='text-xs leading-relaxed text-red-500/80'>
-                                    {t('admin.servers.transfer.warning_text')}
-                                </p>
-                            </div>
-
-                            <div className='space-y-3 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-5'>
-                                <p className='text-sm font-bold text-amber-500'>
-                                    {t('admin.servers.transfer.beta_title')}
-                                </p>
-                                <ul className='list-inside list-disc space-y-1 text-xs text-amber-600/80'>
-                                    <li>{t('admin.servers.transfer.beta_item1')}</li>
-                                    <li>{t('admin.servers.transfer.beta_item2')}</li>
-                                    <li>{t('admin.servers.transfer.beta_item5')}</li>
-                                    <li>{t('admin.servers.transfer.beta_item7')}</li>
-                                    <li>{t('admin.servers.transfer.beta_item8')}</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-
-                    <AlertDialogFooter className='border-border/50 mt-6 border-t pt-6'>
-                        <AlertDialogCancel disabled={isInitiatingTransfer} className='rounded-xl'>
-                            {t('common.cancel')}
-                        </AlertDialogCancel>
-                        <Button
-                            onClick={initiateTransfer}
-                            disabled={
-                                !selectedNode || (!transferAutoAllocate && !selectedAllocation) || isInitiatingTransfer
-                            }
-                            className='h-11 rounded-xl bg-amber-500 px-6 text-white hover:bg-amber-600'
-                        >
-                            {isInitiatingTransfer ? (
-                                <>
-                                    <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-                                    {t('admin.servers.transfer.submitting')}
-                                </>
-                            ) : (
-                                t('admin.servers.transfer.submit')
-                            )}
-                        </Button>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
-
-            <HeadlessModal
-                isOpen={isNodeModalOpen}
-                onClose={() => setIsNodeModalOpen(false)}
-                title={t('admin.servers.transfer.destination_node')}
-            >
-                <div className='space-y-4'>
-                    <div className='relative'>
-                        <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
-                        <Input
-                            placeholder={t('admin.servers.transfer.search_nodes')}
-                            value={nodeSearch}
-                            onChange={(e) => {
-                                setNodeSearch(e.target.value);
-                                fetchNodes(e.target.value);
-                            }}
-                            className='h-11 pl-10'
-                        />
-                    </div>
-                    <div className='custom-scrollbar max-h-87.5 space-y-2 overflow-y-auto pr-1'>
-                        {loadingNodes ? (
-                            <div className='flex items-center justify-center py-10'>
-                                <Loader2 className='text-primary h-6 w-6 animate-spin' />
-                            </div>
-                        ) : nodesList.length === 0 ? (
-                            <div className='text-muted-foreground py-10 text-center'>{t('common.no_results')}</div>
-                        ) : (
-                            nodesList.map((node) => (
-                                <button
-                                    key={node.id}
-                                    onClick={() => {
-                                        setSelectedNode(node);
-                                        setSelectedAllocation(null);
-                                        setIsNodeModalOpen(false);
-                                    }}
-                                    className={`w-full rounded-xl border p-4 text-left transition-all ${selectedNode?.id === node.id ? 'border-primary bg-primary/5' : 'border-border/50 hover:bg-muted/50'}`}
-                                >
-                                    <div className='flex items-center justify-between'>
-                                        <div>
-                                            <p className='text-sm font-bold'>{node.name}</p>
-                                            <p className='text-muted-foreground text-xs'>{node.fqdn}</p>
-                                        </div>
-                                        {selectedNode?.id === node.id && (
-                                            <ShieldCheck className='text-primary h-5 w-5' />
-                                        )}
-                                    </div>
-                                </button>
-                            ))
-                        )}
-                    </div>
-                </div>
-            </HeadlessModal>
-
-            <HeadlessModal
-                isOpen={isAllocationModalOpen}
-                onClose={() => setIsAllocationModalOpen(false)}
-                title={t('admin.servers.transfer.destination_allocation')}
-            >
-                <div className='space-y-4'>
-                    <div className='relative'>
-                        <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
-                        <Input
-                            placeholder={t('admin.servers.transfer.search_allocations')}
-                            value={allocationSearch}
-                            onChange={(e) => {
-                                setAllocationSearch(e.target.value);
-                                if (selectedNode) fetchAllocations(selectedNode.id, e.target.value);
-                            }}
-                            className='h-11 pl-10'
-                        />
-                    </div>
-                    <div className='custom-scrollbar max-h-87.5 space-y-2 overflow-y-auto pr-1'>
-                        {loadingAllocations ? (
-                            <div className='flex items-center justify-center py-10'>
-                                <Loader2 className='text-primary h-6 w-6 animate-spin' />
-                            </div>
-                        ) : allocationsList.length === 0 ? (
-                            <div className='text-muted-foreground py-10 text-center'>
-                                {t('admin.servers.transfer.no_free_allocations')}
-                            </div>
-                        ) : (
-                            allocationsList.map((allc) => (
-                                <button
-                                    key={allc.id}
-                                    onClick={() => {
-                                        setSelectedAllocation(allc);
-                                        setIsAllocationModalOpen(false);
-                                    }}
-                                    className={`w-full rounded-xl border p-4 text-left transition-all ${selectedAllocation?.id === allc.id ? 'border-primary bg-primary/5' : 'border-border/50 hover:bg-muted/50'}`}
-                                >
-                                    <div className='flex items-center justify-between'>
-                                        <div>
-                                            <p className='text-sm font-bold'>
-                                                {allc.ip}:{allc.port}
-                                            </p>
-                                            <p className='text-muted-foreground text-xs'>
-                                                {allc.ip_alias || 'No Alias'}
-                                            </p>
-                                        </div>
-                                        {selectedAllocation?.id === allc.id && (
-                                            <ShieldCheck className='text-primary h-5 w-5' />
-                                        )}
-                                    </div>
-                                </button>
-                            ))
-                        )}
-                    </div>
-                </div>
-            </HeadlessModal>
+                onOpenChange={setIsTransferDialogOpen}
+                onCompleted={() => setRefreshKey((prev) => prev + 1)}
+            />
         </div>
     );
 }
@@ -1954,6 +1684,8 @@ function RelationCard({
     icon: Icon,
     title,
     name,
+    nameHref,
+    avatarUrl,
     detail,
     secondary,
     secondaryTitle,
@@ -1961,10 +1693,24 @@ function RelationCard({
     icon: ElementType;
     title: string;
     name: string | undefined;
+    nameHref?: string;
+    avatarUrl?: string;
     detail?: string;
     secondary?: ReactNode;
     secondaryTitle?: string;
 }) {
+    const nameContent =
+        nameHref && name ? (
+            <Link
+                href={nameHref}
+                className='text-primary hover:text-primary/80 truncate text-sm font-bold underline-offset-4 transition-colors hover:underline'
+            >
+                {name}
+            </Link>
+        ) : (
+            <p className='truncate text-sm font-bold'>{name || 'N/A'}</p>
+        );
+
     return (
         <div className='bg-muted/30 border-border/50 group hover:border-primary/30 rounded-2xl border p-4 transition-all'>
             <div className='mb-2 flex items-center gap-3'>
@@ -1975,7 +1721,16 @@ function RelationCard({
                     {title}
                 </span>
             </div>
-            <p className='truncate text-sm font-bold'>{name || 'N/A'}</p>
+            {avatarUrl ? (
+                <div className='flex min-w-0 items-center gap-2.5'>
+                    <Avatar className='h-9 w-9 shrink-0'>
+                        <AvatarImage src={avatarUrl} alt={name || ''} />
+                    </Avatar>
+                    <div className='min-w-0 flex-1'>{nameContent}</div>
+                </div>
+            ) : (
+                nameContent
+            )}
             {detail && <p className='text-muted-foreground truncate text-xs'>{detail}</p>}
             {secondary && (
                 <p className='text-muted-foreground mt-1 truncate text-xs' title={secondaryTitle}>

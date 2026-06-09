@@ -369,7 +369,7 @@ class DashboardController
                         ? new \DateTime(
                             $row['last_run_at'],
                             new \DateTimeZone('UTC'),
-                        )->getTimestamp()
+                        )->getTimestamp() ?? null,
                         : null;
                 $expected = $expectedMap[$name] ?? 300; // default 5 minutes if unknown
                 $late = $lastRunAt ? $now - $lastRunAt > $expected * 2 : true; // late if never ran or >2x expected

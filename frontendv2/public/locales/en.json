@@ -1,5 +1,10 @@
 {
 	"auth": {
+		"legal": {
+			"login_prefix": "By continuing, you agree to our",
+			"register_prefix": "By creating an account, you agree to our",
+			"and": "and"
+		},
 		"login": {
 			"title": "Welcome back",
 			"subtitle": "Enter your credentials to access your account",
@@ -97,7 +102,9 @@
 			"last_name_placeholder": "Doe",
 			"email_placeholder": "john@example.com",
 			"username_placeholder": "johndoe",
-			"password_placeholder": "Create a strong password"
+			"password_placeholder": "Create a strong password",
+			"device_limit": "Too many accounts on this device. Please use your main account: {{username}}, or contact support.",
+			"device_limit_generic": "Too many accounts on this device. Please use your main account or contact support."
 		},
 		"forgot_password": {
 			"title": "Reset your password",
@@ -330,6 +337,21 @@
 		"copyright": "{company}",
 		"powered_by": "Powered by FeatherPanel"
 	},
+	"links": {
+		"aria_label": "Panel links",
+		"website": "Website",
+		"support": "Support",
+		"discord": "Discord",
+		"linkedin": "LinkedIn",
+		"telegram": "Telegram",
+		"tiktok": "TikTok",
+		"twitter": "X / Twitter",
+		"whatsapp": "WhatsApp",
+		"youtube": "YouTube",
+		"status": "Status",
+		"terms": "Terms of Service",
+		"privacy": "Privacy Policy"
+	},
 	"maintenance": {
 		"title": "System Maintenance",
 		"message": "We are currently upgrading our systems to provide you with a better experience. We'll be back shortly.",
@@ -542,6 +564,14 @@
 		"linkedAs": "Linked as",
 		"discordUnlinkedSuccessfully": "Discord account unlinked successfully",
 		"discordUnlinkFailed": "Failed to unlink Discord account",
+		"discordLinkedSuccessfully": "Discord account linked successfully",
+		"discordLinkFailed": "Failed to link Discord account",
+		"discordAlreadyLinked": "This Discord account is already linked to another FeatherPanel user.",
+		"discordDisabled": "Discord login is disabled on this panel.",
+		"discordNotConfigured": "Discord OAuth is not configured correctly.",
+		"discordTokenFailed": "Discord authorization failed. Please try again.",
+		"discordUserFailed": "Could not retrieve your Discord profile. Please try again.",
+		"discordUserNotFound": "Your FeatherPanel account could not be found. Please log in and try again.",
 		"oidcAccount": "OIDC Account",
 		"oidcAccountDescription": "Link an external single sign-on account to this FeatherPanel account.",
 		"linkOidc": "Link OIDC",
@@ -760,7 +790,10 @@
 			},
 			"showingMails": "Showing {from} to {to} of {total} emails",
 			"totalMailsCount": "{count} emails",
-			"mailContent": "Mail Content"
+			"mailContent": "Mail Content",
+			"resend": "Resend",
+			"resendSuccess": "Email queued for resend",
+			"resendFailed": "Failed to resend email"
 		},
 		"licenses": {},
 		"twoFactor": {
@@ -818,7 +851,8 @@
 			"installing": "Installing",
 			"install_failed": "Install Failed",
 			"suspended": "Suspended",
-			"restoring_backup": "Restoring Backup"
+			"restoring_backup": "Restoring Backup",
+			"transferring": "Transferring"
 		},
 		"suspended_banner": {
 			"title": "Server Suspended",
@@ -1126,7 +1160,17 @@
 		"priority": "Priority",
 		"server": "Server",
 		"serverId": "ID",
-		"attachFiles": "Attach Files"
+		"attachFiles": "Attach Files",
+		"adminOpenTicketsTitle": "Open support tickets",
+		"adminOpenTicketsDescription": "There are {count} open ticket(s) waiting for staff. Please review them in the admin panel.",
+		"adminViewOpenTickets": "View open tickets",
+		"adminManageTickets": "Manage in admin",
+		"adminViewAndManage": "Review all open support tickets as staff",
+		"adminOpenTicketsInline": "{count} open ticket(s) system-wide",
+		"adminScopeOpen": "All open",
+		"adminScopeAll": "All tickets",
+		"adminScopeMine": "My tickets",
+		"adminDismissOpenTicketsBanner": "Dismiss for now"
 	},
 	"vms": {
 		"title": "Virtual Machines",
@@ -1629,6 +1673,19 @@
 		"noDatabaseHostsDescription": "No database hosts are configured. Please contact an administrator to set up database hosts.",
 		"failedToOpenPhpMyAdmin": "Failed to open phpMyAdmin",
 		"openingPhpMyAdmin": "Opening phpMyAdmin...",
+		"pmaAuth": {
+			"pageTitleLogin": "Logging in - phpMyAdmin",
+			"pageTitleError": "Authentication error - phpMyAdmin",
+			"pageTitleLogout": "Logging out - phpMyAdmin",
+			"databaseManagement": "Database Management",
+			"connecting": "Connecting to phpMyAdmin",
+			"authenticating": "Authenticating your session securely...",
+			"loggingOut": "Logging out",
+			"loggingOutMessage": "Please wait while we securely log you out...",
+			"authError": "Authentication error",
+			"poweredBy": "Powered by {name}",
+			"loading": "Loading"
+		},
 		"noHostSelected": "Please select a database host",
 		"allHosts": "All Hosts",
 		"exportSql": "Export SQL",
@@ -2426,6 +2483,11 @@
 		"startupHelp": "Edit the command that will be used to start the server.",
 		"dockerImage": "Docker Image",
 		"availableImages": "Available Docker Images",
+		"spellDefaultDockerImage": "spell default",
+		"dockerImageListOnlyHelp": "Select one of the images below. Custom Docker images are disabled by your administrator.",
+		"dockerImageMustBeFromList": "Docker image must be selected from the list configured for this spell.",
+		"noDockerImageSelected": "No Docker image selected",
+		"noDockerImagesConfigured": "No Docker images are configured for this spell.",
 		"variables": "Startup Variables",
 		"variablesHelp": "Configure environmental variables for your server.",
 		"restoreDefault": "Restore Default",
@@ -4120,28 +4182,64 @@
 				"delete_failed": "Failed to delete role",
 				"permission_added": "Permission added successfully",
 				"permission_removed": "Permission removed successfully",
-				"permission_failed": "Failed to update permissions"
+				"permission_failed": "Failed to update permissions",
+				"cannot_remove_own_admin_root": "You cannot remove admin.root from your own role — that would lock you out of the panel.",
+				"duplicated": "Role duplicated successfully",
+				"duplicate_failed": "Failed to duplicate role"
 			},
 			"form": {
 				"create_title": "Create Role",
 				"edit_title": "Edit Role",
-				"name": "Name",
+				"name": "Internal Name",
 				"display_name": "Display Name",
+				"custom_badge": "Custom Badge",
+				"custom_badge_hint": "Optional short label shown on user badges. Leave empty to use the display name.",
 				"color": "Color",
 				"submit_create": "Create Role",
-				"submit_update": "Update Role",
+				"submit_update": "Save Changes",
 				"permissions": "Permissions",
-				"no_permissions": "No permissions assigned"
+				"no_permissions": "No permissions assigned",
+				"auto_name_hint": "Auto-generated from the display name. Edit only if you need a custom slug.",
+				"random_color": "Random"
+			},
+			"tabs": {
+				"details": "Details",
+				"permissions": "Permissions"
+			},
+			"filters": {
+				"all": "All",
+				"granted": "Granted",
+				"missing": "Not granted"
+			},
+			"stats": {
+				"assigned": "Granted",
+				"total": "Available",
+				"coverage": "Coverage",
+				"role_count": "{count} roles",
+				"permission_count": "{count} permissions"
+			},
+			"actions": {
+				"duplicate": "Duplicate"
 			},
 			"permissions": {
-				"title": "Manage Permissions",
-				"description": "Add or remove permissions for this role.",
+				"title": "Permissions",
+				"description": "Toggle permissions on or off for this role.",
 				"search": "Search permissions...",
-				"syncing": "Syncing..."
+				"syncing": "Syncing...",
+				"create_first_hint": "Save the role first, then assign permissions.",
+				"admin_root_locked": "Locked on your role so you cannot remove your own full admin access.",
+				"locked": "Locked",
+				"in_category": "granted",
+				"expand_all": "Expand all",
+				"collapse_all": "Collapse all",
+				"enable_category": "Enable all",
+				"disable_category": "Disable all"
 			},
 			"pagination": {},
 			"labels": {
-				"created": "Created"
+				"created": "Created",
+				"your_role": "Your role",
+				"preview": "Preview"
 			},
 			"help": {
 				"managing": {
@@ -5582,6 +5680,8 @@
 				"select_allocation": "Select destination allocation...",
 				"auto_allocate": "Assign allocation automatically",
 				"auto_allocate_help": "Uses the next free allocation(s) on the destination node for the primary port and any extra ports.",
+				"auto_open_ports": "Auto-open missing ports on destination",
+				"auto_open_ports_help": "If the destination node has no free allocations, create them using IPs from Wings and the same ports this server currently uses.",
 				"search_nodes": "Search nodes...",
 				"search_allocations": "Search allocations...",
 				"no_free_allocations": "No free allocations found",
@@ -5597,7 +5697,12 @@
 				"beta_item8": "Network issues can cause partial transfers or data corruption.",
 				"fetch_nodes_failed": "Failed to fetch destination nodes",
 				"fetch_allocations_failed": "Failed to fetch destination allocations",
-				"submit": "I Understand - Start Transfer",
+				"allocations_needed": "Allocations needed",
+				"free_on_destination": "Free on destination",
+				"insufficient_allocations": "Not enough free allocations on the destination node (need {needed}, found {found}). Add more allocations to the destination node or pick a different node.",
+				"insufficient_allocations_hint": "Enable \"Auto-open missing ports on destination\" to create allocations from the Wings IP list automatically.",
+				"error_title": "Transfer failed",
+				"submit": "Start Transfer",
 				"submitting": "Starting Transfer..."
 			},
 			"form": {
@@ -5670,6 +5775,7 @@
 				"docker_image_help": "Select or enter the Docker image for this spell. This will be used to deploy the server.",
 				"select_docker_image": "Select Docker image...",
 				"available_docker_images": "Available from spell",
+				"spell_default_docker_image": "spell default",
 				"memory": "Memory (MiB)",
 				"memory_help": "The maximum amount of memory allowed for this container. Setting this to 0 will allow unlimited memory usage.",
 				"swap": "Swap (MiB)",
@@ -5756,7 +5862,12 @@
 						"realm_required": "Realm is required",
 						"spell_required": "Spell is required",
 						"docker_image_required": "Docker image is required",
-						"startup_required": "Startup command is required"
+						"startup_required": "Startup command is required",
+						"memory_limit": "Memory must be unlimited (0) or between 128 MiB and 1 TiB",
+						"swap_limit": "Swap must be disabled (0), unlimited (-1), or between 1 MiB and 1 TiB",
+						"disk_limit": "Disk must be unlimited (0) or between 128 MiB and 10 TiB",
+						"cpu_limit": "CPU must be unlimited (0) or between 1% and 1,000,000%",
+						"io_limit": "IO weight must be between 10 and 1000"
 					}
 				},
 				"messages": {
@@ -5816,6 +5927,7 @@
 				"startup": {
 					"title": "Startup Configuration",
 					"description": "Configure the startup command for this server",
+					"docker_image_description": "Select the Docker image used when this server installs and runs. The starred spell default is applied for new servers.",
 					"available_variables": "Available Variables:"
 				},
 				"mounts": {
@@ -6898,6 +7010,10 @@
 			"subtitle": "Manage all users in your system",
 			"search_placeholder": "Search by username, email, or role...",
 			"last_seen": "Last seen",
+			"clear_all_devices": "Clear all device fingerprints",
+			"clear_all_devices_confirm": "Clear every browser/device fingerprint record in the panel? This resets alt detection and registration device limits until users browse again.",
+			"clear_all_devices_success": "All device fingerprint records cleared",
+			"clear_all_devices_failed": "Failed to clear device fingerprint records",
 			"table": {},
 			"actions": {
 				"force_verify_email": "Force verify email"
@@ -6942,7 +7058,23 @@
 				"all_roles": "All Roles",
 				"any_status": "Any Status",
 				"status_active": "Only active users",
-				"status_banned": "Only banned users"
+				"status_banned": "Only banned users",
+				"any_email_status": "Any email status",
+				"email_verified": "Email verified",
+				"email_unverified": "Email unverified",
+				"ip_placeholder": "Filter by IP..."
+			},
+			"sort": {
+				"created_desc": "Recently created",
+				"created_asc": "Oldest created",
+				"last_active_desc": "Recently active",
+				"last_active_asc": "Least recently active",
+				"newest": "Newest first",
+				"oldest": "Oldest first",
+				"username_asc": "Username A–Z",
+				"username_desc": "Username Z–A",
+				"email_asc": "Email A–Z",
+				"email_desc": "Email Z–A"
 			},
 			"common": {},
 			"badges": {
@@ -6989,6 +7121,7 @@
 					"servers": "Servers",
 					"vds": "VDS",
 					"activities": "Activities",
+					"potential_alts": "Potential Alts",
 					"mails": "Mails"
 				},
 				"form": {
@@ -7062,6 +7195,38 @@
 					"created": "Created At",
 					"no_activities": "No activity logs found."
 				},
+				"potential_alts": {
+					"title": "Potential Alt Accounts",
+					"description": "These users may be alternate accounts based on shared IP addresses (panel activity, server activity, first/last IP) and browser sync identifiers collected across the panel. Matches are indicative only — shared networks, VPNs, and family devices can produce false positives.",
+					"source_ips": "IPs used by this account",
+					"source_devices": "Browser sync IDs seen for this account",
+					"user": "User",
+					"role": "Role",
+					"shared_ips": "Shared IPs",
+					"signals": "Matched signals",
+					"confidence": "Confidence",
+					"confidence_high": "High",
+					"confidence_medium": "Medium",
+					"confidence_low": "Low",
+					"matches": "Matches",
+					"match_total": "signals",
+					"match_ip": "Shared IP address",
+					"match_device": "Shared browser/device sync ID",
+					"last_seen": "Last Seen",
+					"actions": "Actions",
+					"empty": "No other users share IP addresses or browser sync IDs with this account.",
+					"reasons": {
+						"panel_activity": "Panel activity IP",
+						"server_activity": "Server activity IP",
+						"user_ip": "Account IP",
+						"device_sync": "Browser sync ID",
+						"device_profile": "Browser profile"
+					},
+					"clear_user": "Clear device fingerprints",
+					"clear_user_confirm": "Clear all browser/device fingerprint records for {{username}}? They can register again from the same device after this.",
+					"clear_user_success": "Device fingerprints cleared for this user",
+					"clear_failed": "Failed to clear device fingerprints"
+				},
 				"mails": {
 					"title": "Mails",
 					"subject": "Subject",
@@ -7069,6 +7234,9 @@
 					"created": "Created At",
 					"preview": "Preview",
 					"actions": "Actions",
+					"resend": "Resend",
+					"resend_success": "Email queued for resend",
+					"resend_failed": "Failed to resend email",
 					"no_mails": "No mails found."
 				}
 			},
@@ -7377,6 +7545,10 @@
 				}
 			},
 			"fields": {
+				"discord_url": {
+					"label": "Discord URL",
+					"description": "Discord invite or community server URL shown in the panel footer."
+				},
 				"captcha_provider": {
 					"label": "Captcha Provider",
 					"description": "Choose which captcha service to use: Cloudflare Turnstile, hCaptcha, Google reCAPTCHA, Friendly Captcha, or reForge Captcha.",
@@ -7491,6 +7663,22 @@
 				"require_two_fa_admins": {
 					"label": "Require 2FA for Admins",
 					"description": "Force all administrators to enable Two-Factor Authentication."
+				},
+				"avatar_provider": {
+					"label": "Default Avatar Provider",
+					"description": "Choose which service generates profile pictures for users without a custom avatar.",
+					"options": {
+						"gravatar": "Gravatar (WordPress-style)",
+						"panel_logo": "Panel logo",
+						"ui_avatars": "UI Avatars (initials)",
+						"robohash": "RoboHash",
+						"dicebear": "DiceBear (initials)",
+						"custom": "Custom URL template"
+					}
+				},
+				"avatar_custom_url": {
+					"label": "Custom Avatar URL Template",
+					"description": "Only used when the avatar provider is Custom. Placeholders: {email}, {username}, {name}, {hash}, {app_url}."
 				},
 				"user_allow_avatar_change": {
 					"label": "Allow Avatar Change",
@@ -8118,7 +8306,7 @@
 					"no_schema_desc": "The plugin developer needs to add a config section to conf.yml",
 					"spell_restrictions": {
 						"title": "Server Sidebar Spell Restrictions",
-						"description": "Configure which server types (spells) this plugin should appear on. Leave empty to show on all server types.",
+						"description": "Allow-list only: select the server types (spells) where this plugin should appear in the sidebar. Leave empty to show on all server types. To hide the plugin from specific eggs, select every spell except those — do not select only the eggs you want to block.",
 						"loading": "Loading spells...",
 						"no_spells": "No spells found",
 						"save": "Save Spell Restrictions",
@@ -8410,6 +8598,8 @@
 				"server_configuration": "Server Configuration",
 				"installation_startup_scripts": "Installation & Startup Scripts",
 				"docker_images": "Docker Images",
+				"default_docker_image_help": "Click the star on the image that should be selected by default when creating new servers. Update this when game runtimes change (e.g. newer Java versions).",
+				"set_default_docker_image": "Set as default install image",
 				"add_docker_image": "Add Docker Image",
 				"script_container": "Script Container",
 				"script_entry": "Script Entry",

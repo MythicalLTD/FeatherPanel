@@ -21,9 +21,11 @@ use App\App;
 use App\Chat\Role;
 use App\Chat\User;
 use App\Chat\Ticket;
+use App\Permissions;
 use App\Chat\Activity;
 use App\Chat\MailList;
 use App\Chat\ApiClient;
+use App\Chat\MailQueue;
 use App\Chat\Permission;
 use App\Chat\TicketStatus;
 use App\Chat\TicketMessage;
@@ -36,6 +38,7 @@ use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Helpers\CaptchaHelper;
 use App\Config\ConfigInterface;
+use App\Helpers\PermissionHelper;
 use App\Middleware\AuthMiddleware;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Helpers\EmailDomainValidator;
@@ -338,6 +341,7 @@ class SessionController
         $user['role'] = [
             'name' => $role ? ($role['name'] ?? $roleId) : $roleId,
             'display_name' => $role ? ($role['display_name'] ?? 'User') : 'User',
+            'custom_badge' => $role ? ($role['custom_badge'] ?? null) : null,
             'color' => $role ? ($role['color'] ?? '#666666') : '#666666',
         ];
 
@@ -348,11 +352,24 @@ class SessionController
             $user['last_ip'] = $app->getIPIntoFBIFormat();
         }
 
-        return ApiResponse::success([
+        $sessionData = [
             'user_info' => $user,
             'permissions' => $permissions,
             'preferences' => [],
-        ], 'Session retrieved', 200);
+        ];
+
+        if (
+            PermissionHelper::hasPermission($user['uuid'], Permissions::ADMIN_TICKETS_VIEW)
+            && $app->getConfig()->getSetting(ConfigInterface::TICKET_SYSTEM_ENABLED, 'false') === 'true'
+        ) {
+            $openCount = Ticket::getGlobalOpenTicketsCount();
+            $sessionData['admin_ticket_stats'] = [
+                'open_count' => $openCount,
+                'has_open_tickets' => $openCount > 0,
+            ];
+        }
+
+        return ApiResponse::success($sessionData, 'Session retrieved', 200);
     }
 
     #[OA\Post(
@@ -941,6 +958,66 @@ class SessionController
                 'has_results' => count($mails) > 0,
             ],
         ], 'Mails retrieved successfully', 200);
+    }
+
+    #[OA\Post(
+        path: '/api/user/mails/{id}/resend',
+        summary: 'Resend a failed email',
+        description: 'Re-queue a failed system email for delivery to the current user.',
+        tags: ['User - Session'],
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                description: 'Mail list entry ID',
+                required: true,
+                schema: new OA\Schema(type: 'integer', minimum: 1)
+            ),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Email queued for resend'),
+            new OA\Response(response: 400, description: 'Bad request - Mail cannot be resent or SMTP disabled'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 404, description: 'Mail not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to resend mail'),
+        ]
+    )]
+    public function resendMail(Request $request, int $mailId): Response
+    {
+        $user = AuthMiddleware::getCurrentUser($request);
+        if ($user == null) {
+            return ApiResponse::error('You are not allowed to access this resource!', 'INVALID_ACCOUNT_TOKEN', 400, []);
+        }
+
+        if ($mailId <= 0) {
+            return ApiResponse::error('Invalid mail ID', 'INVALID_MAIL_ID', 400);
+        }
+
+        $mailListEntry = MailList::getById($mailId);
+        if (!$mailListEntry || ($mailListEntry['user_uuid'] ?? '') !== $user['uuid']) {
+            return ApiResponse::error('Mail not found', 'MAIL_NOT_FOUND', 404);
+        }
+
+        $queueId = (int) ($mailListEntry['queue_id'] ?? 0);
+        $queueEntry = MailQueue::getById($queueId);
+        if (!$queueEntry) {
+            return ApiResponse::error('Mail not found', 'MAIL_NOT_FOUND', 404);
+        }
+
+        if (($queueEntry['status'] ?? '') !== 'failed') {
+            return ApiResponse::error('Only failed emails can be resent', 'MAIL_NOT_RESENDABLE', 400);
+        }
+
+        $app = App::getInstance(true);
+        if ($app->getConfig()->getSetting(ConfigInterface::SMTP_ENABLED, 'false') !== 'true') {
+            return ApiResponse::error('SMTP is not enabled', 'SMTP_DISABLED', 400);
+        }
+
+        if (!MailQueue::retry($queueId)) {
+            return ApiResponse::error('Failed to queue email for resend', 'FAILED_TO_RESEND_MAIL', 500);
+        }
+
+        return ApiResponse::success([], 'Email queued for resend', 200);
     }
 
     #[OA\Get(

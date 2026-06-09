@@ -157,6 +157,11 @@ export function ServerProvider({ children, uuidShort, initialServer }: ServerPro
         }
     }, [uuidShort, initialServer, fetchServer]);
 
+    useEffect(() => {
+        if (typeof document === 'undefined' || !uuidShort) return;
+        document.cookie = `serverUuid=${encodeURIComponent(uuidShort)}; path=/; max-age=3600; SameSite=Lax`;
+    }, [uuidShort]);
+
     const hasPermission = useCallback(
         (permission: string): boolean => {
             if (hasGlobalPermission(PermissionsClass.ADMIN_ROOT)) return true;

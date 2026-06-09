@@ -30,6 +30,8 @@ import {} from '@/components/ui/card';
 
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { useSession } from '@/contexts/SessionContext';
+import Permissions from '@/lib/permissions';
 
 interface Category {
     id: number;
@@ -64,6 +66,11 @@ interface ApiTicket {
         id: number;
         name: string;
     };
+    user?: {
+        uuid: string;
+        username: string;
+        email?: string;
+    };
     unread_count?: number;
     has_unread_messages_since_last_reply?: boolean;
 }
@@ -90,17 +97,25 @@ interface ApiPaginationResponse {
             to: number;
             current_page: number;
         };
+        is_admin_view?: boolean;
+        scope?: string;
+        open_tickets_count?: number;
     };
 }
 
 export default function TicketsPage() {
     const { t } = useTranslation();
     const router = useRouter();
+    const { hasPermission } = useSession();
+    const canViewAllTickets = hasPermission(Permissions.ADMIN_TICKETS_VIEW);
 
     const [loading, setLoading] = useState(true);
     const [tickets, setTickets] = useState<ApiTicket[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
     const [statuses, setStatuses] = useState<Status[]>([]);
+    const [isAdminView, setIsAdminView] = useState(false);
+    const [openTicketsCount, setOpenTicketsCount] = useState(0);
+    const [ticketScope, setTicketScope] = useState<'all_open' | 'mine' | 'all'>('mine');
 
     const [filterStatus, setFilterStatus] = useState<string | number>('all');
     const [filterCategory, setFilterCategory] = useState<string | number>('all');
@@ -146,6 +161,12 @@ export default function TicketsPage() {
         fetchFilters();
     }, []);
 
+    useEffect(() => {
+        if (canViewAllTickets) {
+            setTicketScope('all_open');
+        }
+    }, [canViewAllTickets]);
+
     const fetchTickets = useCallback(async () => {
         setLoading(true);
         try {
@@ -156,11 +177,14 @@ export default function TicketsPage() {
             if (searchQuery) params.search = searchQuery;
             if (filterStatus !== 'all') params.status_id = filterStatus;
             if (filterCategory !== 'all') params.category_id = filterCategory;
+            if (canViewAllTickets) params.scope = ticketScope;
 
             const response = await axios.get<ApiPaginationResponse>('/api/user/tickets', { params });
 
             if (response.data.success) {
                 setTickets(response.data.data.tickets || []);
+                setIsAdminView(Boolean(response.data.data.is_admin_view));
+                setOpenTicketsCount(response.data.data.open_tickets_count ?? 0);
                 const meta = response.data.data.pagination;
                 setPagination((prev) => ({
                     ...prev,
@@ -178,7 +202,15 @@ export default function TicketsPage() {
         } finally {
             setLoading(false);
         }
-    }, [pagination.page, pagination.pageSize, searchQuery, filterStatus, filterCategory]);
+    }, [
+        pagination.page,
+        pagination.pageSize,
+        searchQuery,
+        filterStatus,
+        filterCategory,
+        canViewAllTickets,
+        ticketScope,
+    ]);
 
     useEffect(() => {
         void fetchTickets();
@@ -239,7 +271,15 @@ export default function TicketsPage() {
             <div className='flex flex-col justify-between gap-4 sm:flex-row sm:items-center'>
                 <div>
                     <h1 className='text-3xl font-bold tracking-tight'>{t('tickets.title')}</h1>
-                    <p className='text-muted-foreground'>{t('tickets.viewAndManage')}</p>
+                    <p className='text-muted-foreground'>
+                        {isAdminView ? t('tickets.adminViewAndManage') : t('tickets.viewAndManage')}
+                    </p>
+                    {isAdminView && openTicketsCount > 0 && (
+                        <div className='mt-2 inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-medium text-amber-700 dark:text-amber-300'>
+                            <span className='h-2 w-2 animate-pulse rounded-full bg-amber-500' />
+                            {t('tickets.adminOpenTicketsInline').replace('{count}', String(openTicketsCount))}
+                        </div>
+                    )}
                     {unreadTicketsCount > 0 && (
                         <div className='mt-2 inline-flex items-center gap-2 rounded-full border border-red-500/30 bg-red-500/10 px-3 py-1 text-xs font-medium text-red-600 dark:text-red-300'>
                             <span className='h-2 w-2 animate-pulse rounded-full bg-red-500' />
@@ -256,6 +296,31 @@ export default function TicketsPage() {
                 </Link>
             </div>
             <WidgetRenderer widgets={getWidgets('dashboard-tickets', 'after-header')} />
+
+            {canViewAllTickets && (
+                <div className='bg-card/50 border-border/50 flex flex-wrap gap-2 rounded-xl border p-2'>
+                    {(
+                        [
+                            ['all_open', t('tickets.adminScopeOpen')],
+                            ['all', t('tickets.adminScopeAll')],
+                            ['mine', t('tickets.adminScopeMine')],
+                        ] as const
+                    ).map(([scope, label]) => (
+                        <Button
+                            key={scope}
+                            type='button'
+                            size='sm'
+                            variant={ticketScope === scope ? 'default' : 'ghost'}
+                            onClick={() => {
+                                setTicketScope(scope);
+                                setPagination((prev) => ({ ...prev, page: 1 }));
+                            }}
+                        >
+                            {label}
+                        </Button>
+                    ))}
+                </div>
+            )}
 
             <div className='bg-card/50 border-border/50 rounded-xl border p-1 backdrop-blur-xl'>
                 <div className='flex flex-col gap-4 p-4 md:flex-row'>
@@ -354,7 +419,13 @@ export default function TicketsPage() {
                                         ? 'border-l-red-500 bg-red-500/5'
                                         : 'hover:border-l-primary border-l-transparent'
                                 }`}
-                                onClick={() => router.push(`/dashboard/tickets/${ticket.uuid}`)}
+                                onClick={() =>
+                                    router.push(
+                                        isAdminView && ticket.user
+                                            ? `/admin/tickets/${ticket.uuid}`
+                                            : `/dashboard/tickets/${ticket.uuid}`,
+                                    )
+                                }
                             >
                                 <div className='flex-1'>
                                     <div className='mb-2 flex items-center gap-3'>
@@ -402,8 +473,14 @@ export default function TicketsPage() {
                                             )}
                                         </div>
                                     </div>
-                                    <div className='text-muted-foreground flex items-center gap-3 text-sm'>
+                                    <div className='text-muted-foreground flex flex-wrap items-center gap-3 text-sm'>
                                         <span className='font-mono text-xs opacity-50'>#{ticket.id}</span>
+                                        {isAdminView && ticket.user && (
+                                            <>
+                                                <span className='bg-muted-foreground/30 h-1 w-1 rounded-full' />
+                                                <span className='font-medium'>{ticket.user.username}</span>
+                                            </>
+                                        )}
                                         {ticket.has_unread_messages_since_last_reply && (
                                             <>
                                                 <span className='bg-muted-foreground/30 h-1 w-1 rounded-full' />

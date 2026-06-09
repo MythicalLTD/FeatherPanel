@@ -27,6 +27,7 @@ import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { PageCard } from '@/components/featherui/PageCard';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { toast } from 'sonner';
 import {
@@ -83,17 +84,37 @@ interface Pagination {
     hasPrev: boolean;
 }
 
+const NODES_LIST_FILTERS_KEY = 'featherpanel_admin_nodes_filters_v1';
+const NODES_LIST_FILTERS_DEFAULTS = {
+    searchQuery: '',
+    locationId: '',
+    page: 1,
+    pageSize: 10,
+};
+
 export default function NodesPage() {
     const { t } = useTranslation();
     const router = useRouter();
     const searchParams = useSearchParams();
-    const locationIdFilter = searchParams.get('location_id');
+    const urlLocationId = searchParams.get('location_id') ?? '';
+
+    const { filters, patchFilters, hydrated } = usePersistedListFilters(
+        NODES_LIST_FILTERS_KEY,
+        NODES_LIST_FILTERS_DEFAULTS,
+    );
+    const { searchQuery, page, pageSize } = filters;
+    const locationIdFilter = urlLocationId || filters.locationId || '';
+
+    useEffect(() => {
+        if (urlLocationId && urlLocationId !== filters.locationId) {
+            patchFilters({ locationId: urlLocationId, page: 1 });
+        }
+    }, [urlLocationId, filters.locationId, patchFilters]);
 
     const [loading, setLoading] = useState(true);
     const [nodes, setNodes] = useState<Node[]>([]);
     const [locations, setLocations] = useState<Location[]>([]);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
+    const [searchQueryDebounced, setDebouncedSearchQuery] = useState('');
     const [nodeHealth, setNodeHealth] = useState<Record<number, string>>({});
     const [isCheckingHealth, setIsCheckingHealth] = useState(false);
     const [refreshKey, setRefreshKey] = useState(0);
@@ -101,9 +122,7 @@ export default function NodesPage() {
     const [deleting, setDeleting] = useState(false);
     const [massTransferNode, setMassTransferNode] = useState<Node | null>(null);
 
-    const [pagination, setPagination] = useState<Pagination>({
-        page: 1,
-        pageSize: 10,
+    const [pagination, setPagination] = useState<Omit<Pagination, 'page' | 'pageSize'>>({
         total: 0,
         totalPages: 0,
         hasNext: false,
@@ -119,12 +138,12 @@ export default function NodesPage() {
     useEffect(() => {
         const timer = setTimeout(() => {
             setDebouncedSearchQuery(searchQuery);
-            if (searchQuery !== debouncedSearchQuery) {
-                setPagination((p) => ({ ...p, page: 1 }));
+            if (searchQuery !== searchQueryDebounced) {
+                patchFilters({ page: 1 });
             }
         }, 500);
         return () => clearTimeout(timer);
-    }, [searchQuery, debouncedSearchQuery]);
+    }, [searchQuery, searchQueryDebounced, patchFilters]);
 
     useEffect(() => {
         const fetchLocations = async () => {
@@ -154,7 +173,9 @@ export default function NodesPage() {
         async (nodesToCheck: Node[]) => {
             setIsCheckingHealth(true);
             try {
-                await Promise.all(nodesToCheck.map((node) => checkNodeHealth(node.id)));
+                for (const node of nodesToCheck) {
+                    await checkNodeHealth(node.id);
+                }
             } catch (error) {
                 console.error('Error checking all nodes health:', error);
                 toast.error(t('admin.node.messages.health_check_failed'));
@@ -166,13 +187,17 @@ export default function NodesPage() {
     );
 
     const fetchNodes = useCallback(async () => {
+        if (!hydrated) {
+            return;
+        }
+
         setLoading(true);
         try {
             const { data } = await axios.get('/api/admin/nodes', {
                 params: {
-                    page: pagination.page,
-                    limit: pagination.pageSize,
-                    search: debouncedSearchQuery || undefined,
+                    page,
+                    limit: pageSize,
+                    search: searchQueryDebounced || undefined,
                     location_id: locationIdFilter || undefined,
                 },
             });
@@ -181,8 +206,6 @@ export default function NodesPage() {
             setNodes(fetchedNodes);
             const apiPagination = data.data.pagination;
             setPagination({
-                page: apiPagination.current_page,
-                pageSize: apiPagination.per_page,
                 total: apiPagination.total_records,
                 totalPages: Math.ceil(apiPagination.total_records / apiPagination.per_page),
                 hasNext: apiPagination.has_next,
@@ -198,7 +221,7 @@ export default function NodesPage() {
         } finally {
             setLoading(false);
         }
-    }, [pagination.page, pagination.pageSize, debouncedSearchQuery, locationIdFilter, t, checkAllNodesHealth]);
+    }, [page, pageSize, searchQueryDebounced, locationIdFilter, t, checkAllNodesHealth, hydrated]);
 
     useEffect(() => {
         fetchNodes();
@@ -276,7 +299,7 @@ export default function NodesPage() {
                     <Input
                         placeholder={t('admin.node.search_placeholder')}
                         value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onChange={(e) => patchFilters({ searchQuery: e.target.value })}
                         className='h-11 w-full pl-10'
                     />
                 </div>
@@ -289,21 +312,21 @@ export default function NodesPage() {
                     <Button
                         variant='outline'
                         size='sm'
-                        disabled={!pagination.hasPrev}
-                        onClick={() => setPagination((p) => ({ ...p, page: p.page - 1 }))}
+                        disabled={page === 1}
+                        onClick={() => patchFilters({ page: page - 1 })}
                         className='gap-1.5'
                     >
                         <ChevronLeft className='h-4 w-4' />
                         {t('common.previous')}
                     </Button>
                     <span className='text-sm font-medium'>
-                        {pagination.page} / {pagination.totalPages}
+                        {page} / {pagination.totalPages}
                     </span>
                     <Button
                         variant='outline'
                         size='sm'
-                        disabled={!pagination.hasNext}
-                        onClick={() => setPagination((p) => ({ ...p, page: p.page + 1 }))}
+                        disabled={page === pagination.totalPages}
+                        onClick={() => patchFilters({ page: page + 1 })}
                         className='gap-1.5'
                     >
                         {t('common.next')}
@@ -434,19 +457,19 @@ export default function NodesPage() {
                     <Button
                         variant='outline'
                         size='icon'
-                        disabled={!pagination.hasPrev}
-                        onClick={() => setPagination((p) => ({ ...p, page: p.page - 1 }))}
+                        disabled={page === 1}
+                        onClick={() => patchFilters({ page: page - 1 })}
                     >
                         <ChevronLeft className='h-4 w-4' />
                     </Button>
                     <span className='text-sm font-medium'>
-                        {pagination.page} / {pagination.totalPages}
+                        {page} / {pagination.totalPages}
                     </span>
                     <Button
                         variant='outline'
                         size='icon'
-                        disabled={!pagination.hasNext}
-                        onClick={() => setPagination((p) => ({ ...p, page: p.page + 1 }))}
+                        disabled={page === pagination.totalPages}
+                        onClick={() => patchFilters({ page: page + 1 })}
                     >
                         <ChevronRight className='h-4 w-4' />
                     </Button>

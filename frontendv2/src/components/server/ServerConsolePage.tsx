@@ -88,6 +88,7 @@ export default function ServerConsolePage() {
     const serverUuid = params.uuidShort as string;
     const terminalRef = useRef<ServerTerminalRef>(null);
     const pendingActionResolveRef = useRef<(() => void) | null>(null);
+    const hasRequestedLogsRef = useRef(false);
 
     const prevNetworkRef = useRef({ rx: 0, tx: 0, timestamp: 0 });
 
@@ -98,6 +99,10 @@ export default function ServerConsolePage() {
     const [wingsUptime, setWingsUptime] = useState<string>('');
     const [showLogDialog, setShowLogDialog] = useState(false);
     const [uploadedLogs, setUploadedLogs] = useState<{ id: string; url: string; raw: string } | null>(null);
+
+    useEffect(() => {
+        hasRequestedLogsRef.current = false;
+    }, [serverUuid]);
 
     useEffect(() => {
         if (server?.status && !hasInitializedStatus.current) {
@@ -254,6 +259,10 @@ export default function ServerConsolePage() {
     const handleStatsUpdate = useCallback((stats: WingsStats) => {
         const timestamp = new Date().getTime();
 
+        if (stats.state) {
+            setServerStatus(stats.state);
+        }
+
         if (stats.uptime) {
             setWingsUptime(formatUptime(stats.uptime));
         }
@@ -351,7 +360,10 @@ export default function ServerConsolePage() {
 
         requestStats();
 
-        requestLogs();
+        if (!hasRequestedLogsRef.current) {
+            hasRequestedLogsRef.current = true;
+            requestLogs();
+        }
 
         const interval = setInterval(() => {
             requestStats();
@@ -375,6 +387,14 @@ export default function ServerConsolePage() {
 
     const handlePowerAction = useCallback(
         async (action: 'start' | 'stop' | 'restart' | 'kill') => {
+            const optimisticStatus: Record<'start' | 'stop' | 'restart' | 'kill', string> = {
+                start: 'starting',
+                stop: 'stopping',
+                restart: 'stopping',
+                kill: 'stopping',
+            };
+            setServerStatus(optimisticStatus[action]);
+
             return new Promise<void>((resolve) => {
                 if (pendingActionResolveRef.current) {
                     pendingActionResolveRef.current();
@@ -547,6 +567,7 @@ export default function ServerConsolePage() {
                 canStop={hasPermission('control.stop')}
                 canRestart={hasPermission('control.restart')}
                 canKill={hasPermission('control.stop')}
+                connectionLive={connectionStatus === 'connected'}
                 onStart={() => handlePowerAction('start')}
                 onStop={() => handlePowerAction('stop')}
                 onRestart={() => handlePowerAction('restart')}

@@ -42,10 +42,11 @@ import {
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Sheet, SheetHeader, SheetTitle, SheetDescription, SheetContent } from '@/components/ui/sheet';
-import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
 import { formatDateTimeInTz, formatRelativeTime } from '@/lib/dateUtils';
+import { RoleBadge } from '@/components/RoleBadge';
+import { validateServerResourceLimits } from '@/lib/server-utils';
 
 import { DetailsTab } from './DetailsTab';
 import { ResourcesTab } from './ResourcesTab';
@@ -57,6 +58,8 @@ import { MountsTab } from './MountsTab';
 import type { AssignableMountRow } from './MountsTab';
 import { ActionsTab } from './ActionsTab';
 import { AllocationPickerSheet } from '@/components/admin/AllocationPickerSheet';
+import { resolveSpellDefaultDockerImage, buildSpellDockerImageOptions } from '@/lib/spellDockerImages';
+import type { DockerImageOption } from '@/components/admin/DockerImageField';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
@@ -145,7 +148,7 @@ export default function EditServerPage() {
     const [location, setLocation] = useState<Location | null>(null);
     const [node, setNode] = useState<Node | null>(null);
 
-    const [spellDetails, setSpellDetails] = useState<Spell | null>(null);
+    const [, setSpellDetails] = useState<Spell | null>(null);
     const [spellVariables, setSpellVariables] = useState<SpellVariable[]>([]);
     const [customVariables, setCustomVariables] = useState<CustomVariable[]>([]);
     const [customVariableSaving, setCustomVariableSaving] = useState(false);
@@ -155,7 +158,8 @@ export default function EditServerPage() {
         variable_value: '',
         is_encrypted: false,
     });
-    const [dockerImages, setDockerImages] = useState<string[]>([]);
+    const [dockerImages, setDockerImages] = useState<DockerImageOption[]>([]);
+    const [spellDefaultDockerImage, setSpellDefaultDockerImage] = useState('');
 
     const [ownerModalOpen, setOwnerModalOpen] = useState(false);
     const [realmModalOpen, setRealmModalOpen] = useState(false);
@@ -446,12 +450,9 @@ export default function EditServerPage() {
 
                 if (serverSpell) {
                     setSpellDetails(serverSpell);
-                    try {
-                        const images = JSON.parse(serverSpell.docker_images);
-                        setDockerImages(Object.values(images));
-                    } catch {
-                        setDockerImages([]);
-                    }
+                    const imageOptions = buildSpellDockerImageOptions(serverSpell, server.image || '');
+                    setDockerImages(imageOptions);
+                    setSpellDefaultDockerImage(resolveSpellDefaultDockerImage(serverSpell));
                 }
             }
         } catch (error) {
@@ -600,20 +601,18 @@ export default function EditServerPage() {
                     const spell = spellRes.data.data.spell;
                     setSpellDetails(spell);
 
-                    try {
-                        const images = JSON.parse(spell.docker_images);
-                        const imageList = Object.values(images) as string[];
-                        setDockerImages(imageList);
+                    const imageOptions = buildSpellDockerImageOptions(spell, form.image);
+                    setDockerImages(imageOptions);
+                    setSpellDefaultDockerImage(resolveSpellDefaultDockerImage(spell));
 
-                        setForm((prev) => {
-                            if (!imageList.includes(prev.image)) {
-                                return { ...prev, image: imageList[0] || '' };
-                            }
+                    setForm((prev) => {
+                        const allowedValues = imageOptions.map((img) => img.value);
+                        if (prev.image && allowedValues.includes(prev.image)) {
                             return prev;
-                        });
-                    } catch {
-                        setDockerImages([]);
-                    }
+                        }
+                        const defaultImage = resolveSpellDefaultDockerImage(spell);
+                        return { ...prev, image: defaultImage || allowedValues[0] || '' };
+                    });
 
                     if (variablesRes.data.success) {
                         const newVariables = variablesRes.data.data.variables;
@@ -641,6 +640,7 @@ export default function EditServerPage() {
         };
 
         fetchSpellDetails();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [form.spell_id]);
 
     const fetchOwners = useCallback(async () => {
@@ -900,6 +900,27 @@ export default function EditServerPage() {
         if (!form.realms_id) newErrors.realms_id = t('admin.servers.form.wizard.validation.realm_required');
         if (!form.spell_id) newErrors.spell_id = t('admin.servers.form.wizard.validation.spell_required');
         if (!form.startup) newErrors.startup = t('admin.servers.form.wizard.validation.startup_required');
+        if (!form.image?.trim()) newErrors.image = t('admin.servers.form.wizard.validation.docker_image_required');
+
+        Object.assign(
+            newErrors,
+            validateServerResourceLimits(
+                {
+                    memory: form.memory,
+                    swap: form.swap,
+                    disk: form.disk,
+                    cpu: form.cpu,
+                    io: form.io,
+                },
+                {
+                    memory: t('admin.servers.form.wizard.validation.memory_limit'),
+                    swap: t('admin.servers.form.wizard.validation.swap_limit'),
+                    disk: t('admin.servers.form.wizard.validation.disk_limit'),
+                    cpu: t('admin.servers.form.wizard.validation.cpu_limit'),
+                    io: t('admin.servers.form.wizard.validation.io_limit'),
+                },
+            ),
+        );
 
         spellVariables.forEach((variable) => {
             const value = form.variables[variable.env_variable];
@@ -1101,9 +1122,7 @@ export default function EditServerPage() {
                             setForm={setForm}
                             errors={errors}
                             selectedEntities={selectedEntities}
-                            spellDetails={spellDetails}
                             spellVariables={spellVariables}
-                            dockerImages={dockerImages}
                             setRealmModalOpen={setRealmModalOpen}
                             setSpellModalOpen={setSpellModalOpen}
                             fetchRealms={fetchRealms}
@@ -1120,6 +1139,8 @@ export default function EditServerPage() {
                             form={form}
                             setForm={setForm}
                             errors={errors}
+                            dockerImages={dockerImages}
+                            spellDefaultDockerImage={spellDefaultDockerImage}
                             customVariables={customVariables}
                             customVariableForm={customVariableForm}
                             customVariableSaving={customVariableSaving}
@@ -1244,18 +1265,7 @@ export default function EditServerPage() {
                                             <div className='min-w-0 flex-1'>
                                                 <div className='flex items-center gap-2'>
                                                     <span className='truncate font-medium'>{user.username}</span>
-                                                    {user.role && (
-                                                        <Badge
-                                                            style={{
-                                                                backgroundColor: `${user.role.color}20`,
-                                                                color: user.role.color,
-                                                                borderColor: `${user.role.color}40`,
-                                                            }}
-                                                            className='text-xs'
-                                                        >
-                                                            {user.role.display_name}
-                                                        </Badge>
-                                                    )}
+                                                    {user.role && <RoleBadge role={user.role} size='sm' />}
                                                 </div>
                                                 <div className='text-muted-foreground truncate text-sm'>
                                                     {user.email}

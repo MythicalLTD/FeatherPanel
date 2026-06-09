@@ -385,6 +385,7 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
         const terminalRef = useRef<HTMLDivElement>(null);
         const terminalInstanceRef = useRef<Terminal | null>(null);
         const fitAddonRef = useRef<FitAddon | null>(null);
+        const showScrollButtonRef = useRef(false);
         const { t } = useTranslation();
         const [commandInput, setCommandInput] = useState('');
         const [showScrollButton, setShowScrollButton] = useState(false);
@@ -543,7 +544,11 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
 
             terminal.onScroll(() => {
                 const isAtBottom = terminal.buffer.active.viewportY === terminal.buffer.active.baseY;
-                setShowScrollButton(!isAtBottom);
+                const next = !isAtBottom;
+                if (showScrollButtonRef.current !== next) {
+                    showScrollButtonRef.current = next;
+                    setShowScrollButton(next);
+                }
             });
 
             const handleResize = () => {

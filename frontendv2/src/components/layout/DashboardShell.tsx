@@ -24,6 +24,8 @@ import { useNavbarHoverReveal } from '@/hooks/useNavbarHoverReveal';
 import { useChromeLayout } from '@/hooks/useChromeLayout';
 import { NavbarHoverDock } from '@/components/layout/NavbarHoverDock';
 import BackgroundWrapper from '@/components/theme/BackgroundWrapper';
+import { ConfiguredLinks } from '@/components/branding/ConfiguredLinks';
+import { AdminOpenTicketsBanner } from '@/components/dashboard/AdminOpenTicketsBanner';
 
 import { usePluginRoutes, getPluginPaths } from '@/hooks/usePluginRoutes';
 
@@ -74,6 +76,9 @@ export default function DashboardShell({ children }: { children: React.ReactNode
     });
 
     const isFullWidthMode = isActualPluginPage;
+    const isImmersiveRoute = pathname.includes('/files/ide');
+    const hideAppChrome = isImmersiveRoute;
+    const useFullBleedLayout = isFullWidthMode || isImmersiveRoute;
 
     const pathSegments = (pathname || '').split('/').filter(Boolean);
     const isServerConsoleHome = pathSegments.length === 2 && pathSegments[0] === 'server' && Boolean(pathSegments[1]);
@@ -142,42 +147,44 @@ export default function DashboardShell({ children }: { children: React.ReactNode
             <div
                 className={cn(
                     'motion-content flex min-h-screen flex-col',
-                    isFullWidthMode && 'h-screen overflow-hidden',
+                    useFullBleedLayout && 'h-screen overflow-hidden',
                 )}
             >
-                <Sidebar mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
+                {!hideAppChrome && <Sidebar mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />}
 
                 <div
                     className={cn(
                         'flex min-w-0 flex-1 flex-col transition-[padding] duration-300 ease-out',
-                        chromeLayout === 'classic'
-                            ? sidebarCollapsed
-                                ? 'lg:pl-16'
-                                : 'lg:pl-64'
-                            : sidebarCollapsed
-                              ? 'lg:pl-14'
-                              : 'lg:pl-56',
+                        !hideAppChrome &&
+                            (chromeLayout === 'classic'
+                                ? sidebarCollapsed
+                                    ? 'lg:pl-16'
+                                    : 'lg:pl-64'
+                                : sidebarCollapsed
+                                  ? 'lg:pl-14'
+                                  : 'lg:pl-56'),
                     )}
                 >
-                    {navbarHoverDockActive ? (
-                        <NavbarHoverDock>
+                    {!hideAppChrome &&
+                        (navbarHoverDockActive ? (
+                            <NavbarHoverDock>
+                                <Navbar onMenuClick={() => setMobileOpen(true)} />
+                            </NavbarHoverDock>
+                        ) : (
                             <Navbar onMenuClick={() => setMobileOpen(true)} />
-                        </NavbarHoverDock>
-                    ) : (
-                        <Navbar onMenuClick={() => setMobileOpen(true)} />
-                    )}
+                        ))}
 
                     <main
                         className={cn(
                             'flex min-h-0 flex-1 flex-col',
-                            isFullWidthMode ? 'overflow-hidden p-0' : 'px-3 py-5 sm:px-6 sm:py-6 lg:px-8',
+                            useFullBleedLayout ? 'overflow-hidden p-0' : 'px-3 py-5 sm:px-6 sm:py-6 lg:px-8',
                         )}
                     >
                         <div
                             className={cn(
                                 'flex min-h-0 flex-1 flex-col',
-                                isFullWidthMode && 'h-full',
-                                !isFullWidthMode &&
+                                useFullBleedLayout && 'h-full',
+                                !useFullBleedLayout &&
                                     (isServerConsoleHome
                                         ? 'mx-auto w-full max-w-[min(100rem,calc(100vw-1.5rem))] sm:max-w-[min(100rem,calc(100vw-2rem))]'
                                         : isTicketDetailPage
@@ -185,7 +192,13 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                                           : 'mx-auto w-full max-w-7xl'),
                             )}
                         >
+                            {!useFullBleedLayout && <AdminOpenTicketsBanner className='mb-5' />}
                             {children}
+                            {!useFullBleedLayout ? (
+                                <footer className='border-border/40 mt-6 border-t pt-4 pb-2'>
+                                    <ConfiguredLinks variant='compact' />
+                                </footer>
+                            ) : null}
                         </div>
                     </main>
                 </div>

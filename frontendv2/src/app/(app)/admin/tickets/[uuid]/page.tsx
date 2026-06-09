@@ -31,6 +31,7 @@ import ReactMarkdown from 'react-markdown';
 import Link from 'next/link';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { RoleBadge } from '@/components/RoleBadge';
 import { cn } from '@/lib/utils';
 import { formatBytes } from '@/lib/format';
 import { Sheet, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
@@ -533,18 +534,10 @@ export default function TicketViewPage() {
                                                         : t('admin.tickets.view.user'))}
                                             </span>
                                             {msg.user?.role && (
-                                                <Badge
-                                                    variant='secondary'
-                                                    className='h-4 border-0 px-1 text-[9px] leading-none font-bold uppercase'
-                                                    style={{
-                                                        backgroundColor: msg.user.role.color
-                                                            ? `${msg.user.role.color}15`
-                                                            : undefined,
-                                                        color: msg.user.role.color,
-                                                    }}
-                                                >
-                                                    {msg.user.role.name}
-                                                </Badge>
+                                                <RoleBadge
+                                                    role={msg.user.role}
+                                                    className='h-4 px-1 text-[9px] leading-none font-bold uppercase'
+                                                />
                                             )}
                                             <span className='text-muted-foreground ml-1 text-[10px]'>
                                                 {new Date(msg.created_at).toLocaleTimeString([], {

@@ -259,6 +259,24 @@ html[data-fp-plugin-fullbleed='1'] body [data-fp-plugin-main-inner] {
     animation: fadeInUp 0.4s ease-out forwards;
 }
 
+/* Page shell only: opacity fade avoids transform so fixed sidebar/nav stay viewport-bound */
+@keyframes pageShellEnter {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.animate-page-shell {
+    animation: pageShellEnter 0.35s ease-out forwards;
+}
+
+.animate-page-shell-reduced {
+    animation: pageShellEnter 0.2s ease-out forwards;
+}
+
 .animate-scale-in {
     animation: scaleIn 0.3s ease-out forwards;
 }

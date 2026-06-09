@@ -894,6 +894,23 @@ class Proxmox
     }
 
     /**
+     * List Proxmox users from /api2/json/access/users. Requires User.Audit or User.Modify.
+     *
+     * @return array{ok: bool, users: array<int, array<string, mixed>>, error: string|null}
+     */
+    public function listUsers(): array
+    {
+        $result = $this->apiGet('/api2/json/access/users');
+        if (!$result['ok']) {
+            return ['ok' => false, 'users' => [], 'error' => $result['error'] ?? 'unknown'];
+        }
+
+        $users = is_array($result['data']) ? $result['data'] : [];
+
+        return ['ok' => true, 'users' => $users, 'error' => null];
+    }
+
+    /**
      * Create a Proxmox user (for temporary console access). Requires User.Modify.
      *
      * @param int|null $expire Unix timestamp when the user expires (optional)

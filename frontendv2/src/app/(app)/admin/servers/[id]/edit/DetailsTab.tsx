@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import Link from 'next/link';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Input } from '@/components/ui/input';
@@ -105,9 +106,20 @@ export function DetailsTab({
                                 {selectedEntities.owner ? (
                                     <div className='flex items-center gap-2'>
                                         <UserCircle className='text-primary h-4 w-4' />
-                                        <span className='text-foreground font-medium'>
-                                            {selectedEntities.owner.username}
-                                        </span>
+                                        {selectedEntities.owner.uuid ? (
+                                            <Link
+                                                href={`/admin/users/${selectedEntities.owner.uuid}/edit`}
+                                                className='text-primary hover:text-primary/80 font-medium underline-offset-4 transition-colors hover:underline'
+                                                onClick={(e) => e.stopPropagation()}
+                                                onKeyDown={(e) => e.stopPropagation()}
+                                            >
+                                                {selectedEntities.owner.username}
+                                            </Link>
+                                        ) : (
+                                            <span className='text-foreground font-medium'>
+                                                {selectedEntities.owner.username}
+                                            </span>
+                                        )}
                                         <span className='text-muted-foreground'>({selectedEntities.owner.email})</span>
                                     </div>
                                 ) : (

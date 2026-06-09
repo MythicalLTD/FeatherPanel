@@ -1235,7 +1235,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
             <WidgetRenderer widgets={getWidgets('server-files', 'after-header')} />
 
             <div className='flex flex-col gap-4'>
-                <div className='flex flex-col gap-4 rounded-xl border border-white/5 bg-white/10 p-4 backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between'>
+                <div className='flex flex-col gap-4 rounded-xl border border-black/5 bg-white/80 p-4 backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between dark:border-white/10 dark:bg-white/5'>
                     <FileBreadcrumbs
                         currentDirectory={currentDirectory || '/'}
                         onNavigate={navigate}

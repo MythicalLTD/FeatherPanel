@@ -45,6 +45,7 @@ export interface ApiServer {
     external_id?: string;
     owner?: {
         id: number;
+        uuid: string;
         username: string;
         email: string;
         avatar?: string;

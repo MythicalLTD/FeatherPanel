@@ -21,6 +21,7 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import axios from 'axios';
 import {
     User,
+    Users,
     Shield,
     Mail,
     Server as ServerIcon,
@@ -32,6 +33,7 @@ import {
     ArrowLeft,
     Edit,
     RefreshCw,
+    RotateCcw,
     Copy,
     ExternalLink,
     AlertTriangle,
@@ -69,10 +71,14 @@ import { copyToClipboard } from '@/lib/utils';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { useSettings } from '@/contexts/SettingsContext';
+import { useDateFormatOptions } from '@/contexts/PreferencesContext';
+import { formatDateTimeInTz, formatRelativeTime } from '@/lib/dateUtils';
+import { RoleBadge } from '@/components/RoleBadge';
 
 interface UserRole {
     name: string;
     display_name: string;
+    custom_badge?: string | null;
     color: string;
 }
 
@@ -110,7 +116,7 @@ interface ApiUser {
     ldap_provider_uuid?: string | null;
     ldap_dn?: string | null;
     activities?: { name: string; context: string; ip_address: string; created_at: string }[];
-    mails?: { subject: string; status: string; created_at: string; body?: string }[];
+    mails?: { id: number; subject: string; status: string; created_at: string; body?: string }[];
 }
 
 interface EditForm {
@@ -145,6 +151,23 @@ interface VmInstance {
     created_at?: string;
 }
 
+interface PotentialAlt {
+    uuid: string;
+    username: string;
+    email?: string;
+    avatar: string;
+    banned?: string;
+    last_seen?: string;
+    first_ip?: string;
+    last_ip?: string;
+    role?: UserRole;
+    shared_ips: string[];
+    shared_devices: string[];
+    match_reasons: string[];
+    match_count: number;
+    confidence?: 'high' | 'medium' | 'low';
+}
+
 interface AvailableRole {
     id: string;
     name: string;
@@ -157,6 +180,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
     const router = useRouter();
     const resolvedParams = use(params);
     const { settings } = useSettings();
+    const dateOpts = useDateFormatOptions();
 
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
@@ -164,6 +188,10 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
     const [availableRoles, setAvailableRoles] = useState<AvailableRole[]>([]);
     const [ownedServers, setOwnedServers] = useState<Server[]>([]);
     const [ownedVms, setOwnedVms] = useState<VmInstance[]>([]);
+    const [potentialAlts, setPotentialAlts] = useState<PotentialAlt[]>([]);
+    const [altSourceIps, setAltSourceIps] = useState<string[]>([]);
+    const [altSourceDevices, setAltSourceDevices] = useState<string[]>([]);
+    const [clearingDevices, setClearingDevices] = useState(false);
     const [ssoGenerating, setSsoGenerating] = useState(false);
     const [ssoLink, setSsoLink] = useState<string | null>(null);
     const [mailPreview, setMailPreview] = useState<{
@@ -176,6 +204,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
     const [sendEmailOpen, setSendEmailOpen] = useState(false);
     const [sendingEmail, setSendingEmail] = useState(false);
     const [sendEmailData, setSendEmailData] = useState({ subject: '', body: '' });
+    const [resendingMailId, setResendingMailId] = useState<number | null>(null);
     const [banDialogOpen, setBanDialogOpen] = useState(false);
     const [banSubmitting, setBanSubmitting] = useState(false);
     const [banReason, setBanReason] = useState<ModerationReasonValue>({
@@ -258,6 +287,17 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
             } catch {
                 setOwnedVms([]);
             }
+
+            try {
+                const altsRes = await axios.get(`/api/admin/users/${resolvedParams.uuid}/potential-alts`);
+                setPotentialAlts(altsRes.data?.data?.potential_alts || []);
+                setAltSourceIps(altsRes.data?.data?.source_ips || []);
+                setAltSourceDevices(altsRes.data?.data?.source_devices || []);
+            } catch {
+                setPotentialAlts([]);
+                setAltSourceIps([]);
+                setAltSourceDevices([]);
+            }
         } catch {
             toast.error(t('admin.users.edit.error'));
             setUser(null);
@@ -270,6 +310,36 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
         fetchUser();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [resolvedParams.uuid]);
+
+    const clearUserDevices = async () => {
+        if (!user) return;
+        if (
+            !confirm(
+                t('admin.users.edit.potential_alts.clear_user_confirm', {
+                    username: user.username,
+                }),
+            )
+        ) {
+            return;
+        }
+
+        setClearingDevices(true);
+        try {
+            const { data } = await axios.delete(`/api/admin/users/${user.uuid}/devices`);
+            if (data?.success) {
+                toast.success(t('admin.users.edit.potential_alts.clear_user_success'));
+                setPotentialAlts([]);
+                setAltSourceDevices([]);
+                await fetchUser();
+            } else {
+                toast.error(data?.message || t('admin.users.edit.potential_alts.clear_failed'));
+            }
+        } catch {
+            toast.error(t('admin.users.edit.potential_alts.clear_failed'));
+        } finally {
+            setClearingDevices(false);
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -440,6 +510,29 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
     const showMailPreview = (mail: { subject: string; body?: string; status: string; created_at: string }) => {
         setMailPreview(mail);
         setMailPreviewOpen(true);
+    };
+
+    const handleResendMail = async (mail: { id: number; subject: string; status: string }) => {
+        if (!user) return;
+
+        setResendingMailId(mail.id);
+        try {
+            const { data } = await axios.post(`/api/admin/users/${user.uuid}/mails/${mail.id}/resend`);
+            if (data?.success) {
+                toast.success(t('admin.users.edit.mails.resend_success'));
+                await fetchUser();
+            } else {
+                toast.error(data?.message || t('admin.users.edit.mails.resend_failed'));
+            }
+        } catch (error: unknown) {
+            const message =
+                axios.isAxiosError(error) && error.response?.data?.message
+                    ? String(error.response.data.message)
+                    : t('admin.users.edit.mails.resend_failed');
+            toast.error(message);
+        } finally {
+            setResendingMailId(null);
+        }
     };
 
     const handleSendEmail = async (e: React.FormEvent) => {
@@ -660,16 +753,11 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                             <p className='text-muted-foreground text-sm'>{user.email}</p>
 
                             <div className='mt-4 flex flex-wrap justify-center gap-2'>
-                                <Badge
-                                    style={
-                                        user.role?.color
-                                            ? { backgroundColor: user.role.color, color: '#fff' }
-                                            : undefined
-                                    }
-                                    variant='secondary'
-                                >
-                                    {user.role?.display_name || user.role?.name || '-'}
-                                </Badge>
+                                {user.role ? (
+                                    <RoleBadge role={user.role} variant='solid' size='sm' />
+                                ) : (
+                                    <Badge variant='secondary'>-</Badge>
+                                )}
                                 <Badge variant={user.banned === 'true' ? 'destructive' : 'secondary'}>
                                     {user.banned === 'true'
                                         ? t('admin.users.badges.banned')
@@ -718,13 +806,17 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                 <span className='text-muted-foreground'>
                                     {t('admin.users.edit.account_info.created')}
                                 </span>
-                                <span>{user.created_at || user.first_seen}</span>
+                                <span title={formatDateTimeInTz(user.created_at || user.first_seen, dateOpts)}>
+                                    {formatDateTimeInTz(user.created_at || user.first_seen, dateOpts)}
+                                </span>
                             </div>
                             <div className='flex justify-between'>
                                 <span className='text-muted-foreground'>
                                     {t('admin.users.edit.account_info.last_seen')}
                                 </span>
-                                <span>{user.last_seen || '-'}</span>
+                                <span title={user.last_seen ? formatDateTimeInTz(user.last_seen, dateOpts) : undefined}>
+                                    {user.last_seen ? formatRelativeTime(user.last_seen, dateOpts) : '-'}
+                                </span>
                             </div>
                             {user.last_ip && (
                                 <div className='flex justify-between'>
@@ -856,6 +948,15 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                             <Activity className='h-4 w-4' />
                             {t('admin.users.edit.tabs.activities')}
                         </TabsTrigger>
+                        <TabsTrigger value='potential-alts' className='gap-2'>
+                            <Users className='h-4 w-4' />
+                            {t('admin.users.edit.tabs.potential_alts')}
+                            {potentialAlts.length > 0 && (
+                                <Badge variant='secondary' className='ml-1 h-5 min-w-5 px-1.5'>
+                                    {potentialAlts.length}
+                                </Badge>
+                            )}
+                        </TabsTrigger>
                         <TabsTrigger value='vds' className='gap-2'>
                             <ServerIcon className='h-4 w-4' />
                             {t('admin.users.edit.tabs.vds', { defaultValue: 'VDS' })}
@@ -927,7 +1028,9 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                                         {server.status || t('admin.users.edit.servers.offline')}
                                                     </Badge>
                                                 </td>
-                                                <td className='text-muted-foreground p-4'>{server.created_at}</td>
+                                                <td className='text-muted-foreground p-4'>
+                                                    {formatDateTimeInTz(server.created_at, dateOpts)}
+                                                </td>
                                                 <td className='p-4 text-right'>
                                                     <div className='flex justify-end gap-2'>
                                                         <Button
@@ -995,7 +1098,220 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                                 <td className='p-4 font-medium'>{activity.name}</td>
                                                 <td className='text-muted-foreground p-4'>{activity.context}</td>
                                                 <td className='p-4 font-mono text-xs'>{activity.ip_address}</td>
-                                                <td className='text-muted-foreground p-4'>{activity.created_at}</td>
+                                                <td className='text-muted-foreground p-4'>
+                                                    {formatDateTimeInTz(activity.created_at, dateOpts)}
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </PageCard>
+                </TabsContent>
+
+                <TabsContent value='potential-alts'>
+                    <PageCard
+                        title={t('admin.users.edit.potential_alts.title')}
+                        icon={Users}
+                        action={
+                            <Button
+                                variant='outline'
+                                size='sm'
+                                onClick={clearUserDevices}
+                                loading={clearingDevices}
+                                disabled={altSourceDevices.length === 0 && potentialAlts.length === 0}
+                            >
+                                <Trash2 className='mr-2 h-4 w-4' />
+                                {t('admin.users.edit.potential_alts.clear_user')}
+                            </Button>
+                        }
+                    >
+                        <p className='text-muted-foreground mb-4 text-sm'>
+                            {t('admin.users.edit.potential_alts.description')}
+                        </p>
+                        {altSourceIps.length > 0 && (
+                            <div className='mb-6 rounded-lg border border-white/5 bg-white/5 p-4'>
+                                <p className='text-muted-foreground mb-2 text-xs font-bold tracking-wider uppercase'>
+                                    {t('admin.users.edit.potential_alts.source_ips')}
+                                </p>
+                                <div className='flex flex-wrap gap-2'>
+                                    {altSourceIps.map((ip) => (
+                                        <Badge key={ip} variant='outline' className='font-mono text-xs'>
+                                            {ip}
+                                        </Badge>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                        {altSourceDevices.length > 0 && (
+                            <div className='mb-6 rounded-lg border border-white/5 bg-white/5 p-4'>
+                                <p className='text-muted-foreground mb-2 text-xs font-bold tracking-wider uppercase'>
+                                    {t('admin.users.edit.potential_alts.source_devices')}
+                                </p>
+                                <div className='flex flex-wrap gap-2'>
+                                    {altSourceDevices.map((device) => (
+                                        <Badge key={device} variant='outline' className='font-mono text-xs'>
+                                            {device.slice(0, 12)}
+                                        </Badge>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                        <div className='overflow-x-auto'>
+                            <table className='w-full text-sm'>
+                                <thead>
+                                    <tr className='border-b border-white/5 text-left'>
+                                        <th className='text-muted-foreground p-4 font-medium'>
+                                            {t('admin.users.edit.potential_alts.user')}
+                                        </th>
+                                        <th className='text-muted-foreground p-4 font-medium'>
+                                            {t('admin.users.edit.potential_alts.role')}
+                                        </th>
+                                        <th className='text-muted-foreground p-4 font-medium'>
+                                            {t('admin.users.edit.potential_alts.signals')}
+                                        </th>
+                                        <th className='text-muted-foreground p-4 font-medium'>
+                                            {t('admin.users.edit.potential_alts.confidence')}
+                                        </th>
+                                        <th className='text-muted-foreground p-4 font-medium'>
+                                            {t('admin.users.edit.potential_alts.last_seen')}
+                                        </th>
+                                        <th className='text-muted-foreground p-4 text-right font-medium'>
+                                            {t('admin.users.edit.potential_alts.actions')}
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {potentialAlts.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={6} className='text-muted-foreground p-8 text-center'>
+                                                {t('admin.users.edit.potential_alts.empty')}
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        potentialAlts.map((alt) => (
+                                            <tr
+                                                key={alt.uuid}
+                                                className='border-b border-white/5 transition-colors last:border-0 hover:bg-white/5'
+                                            >
+                                                <td className='p-4'>
+                                                    <div className='flex items-center gap-3'>
+                                                        <Avatar className='h-8 w-8'>
+                                                            <AvatarImage src={alt.avatar} alt={alt.username} />
+                                                        </Avatar>
+                                                        <div>
+                                                            <div className='font-medium'>{alt.username}</div>
+                                                            <div className='text-muted-foreground text-xs'>
+                                                                {alt.email}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className='p-4'>
+                                                    <div className='flex flex-wrap gap-1'>
+                                                        {alt.role ? (
+                                                            <RoleBadge role={alt.role} variant='solid' size='sm' />
+                                                        ) : (
+                                                            <Badge variant='secondary'>-</Badge>
+                                                        )}
+                                                        {alt.banned === 'true' && (
+                                                            <Badge variant='destructive'>
+                                                                {t('admin.users.badges.banned')}
+                                                            </Badge>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                                <td className='p-4'>
+                                                    <div className='space-y-2'>
+                                                        {alt.shared_ips.length > 0 && (
+                                                            <div className='flex max-w-xs flex-wrap gap-1'>
+                                                                {alt.shared_ips.map((ip) => (
+                                                                    <Badge
+                                                                        key={`ip-${ip}`}
+                                                                        variant='outline'
+                                                                        className='font-mono text-xs'
+                                                                        title={t(
+                                                                            'admin.users.edit.potential_alts.match_ip',
+                                                                        )}
+                                                                    >
+                                                                        {ip}
+                                                                    </Badge>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                        {alt.shared_devices.length > 0 && (
+                                                            <div className='flex max-w-xs flex-wrap gap-1'>
+                                                                {alt.shared_devices.map((device) => (
+                                                                    <Badge
+                                                                        key={`dev-${device}`}
+                                                                        variant='secondary'
+                                                                        className='font-mono text-xs'
+                                                                        title={t(
+                                                                            'admin.users.edit.potential_alts.match_device',
+                                                                        )}
+                                                                    >
+                                                                        {device}
+                                                                    </Badge>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                        {alt.match_reasons.length > 0 && (
+                                                            <div className='text-muted-foreground text-xs'>
+                                                                {alt.match_reasons
+                                                                    .map((reason) =>
+                                                                        t(
+                                                                            `admin.users.edit.potential_alts.reasons.${reason}`,
+                                                                            { defaultValue: reason },
+                                                                        ),
+                                                                    )
+                                                                    .join(' · ')}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                                <td className='p-4'>
+                                                    <Badge
+                                                        variant={
+                                                            alt.confidence === 'high'
+                                                                ? 'destructive'
+                                                                : alt.confidence === 'medium'
+                                                                  ? 'secondary'
+                                                                  : 'outline'
+                                                        }
+                                                    >
+                                                        {t(
+                                                            `admin.users.edit.potential_alts.confidence_${alt.confidence || 'low'}`,
+                                                            { defaultValue: alt.confidence || 'low' },
+                                                        )}
+                                                    </Badge>
+                                                    <div className='text-muted-foreground mt-1 text-xs'>
+                                                        {alt.match_count}{' '}
+                                                        {t('admin.users.edit.potential_alts.match_total')}
+                                                    </div>
+                                                </td>
+                                                <td className='text-muted-foreground p-4'>
+                                                    <span
+                                                        title={
+                                                            alt.last_seen
+                                                                ? formatDateTimeInTz(alt.last_seen, dateOpts)
+                                                                : undefined
+                                                        }
+                                                    >
+                                                        {alt.last_seen
+                                                            ? formatRelativeTime(alt.last_seen, dateOpts)
+                                                            : '—'}
+                                                    </span>
+                                                </td>
+                                                <td className='p-4 text-right'>
+                                                    <Button
+                                                        size='sm'
+                                                        variant='ghost'
+                                                        onClick={() => router.push(`/admin/users/${alt.uuid}/edit`)}
+                                                    >
+                                                        <ExternalLink className='h-4 w-4' />
+                                                    </Button>
+                                                </td>
                                             </tr>
                                         ))
                                     )}
@@ -1135,28 +1451,51 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                             </td>
                                         </tr>
                                     ) : (
-                                        user.mails.map((mail, index) => (
+                                        user.mails.map((mail) => (
                                             <tr
-                                                key={index}
+                                                key={mail.id}
                                                 className='border-b border-white/5 transition-colors last:border-0 hover:bg-white/5'
                                             >
                                                 <td className='p-4 font-medium'>{mail.subject}</td>
                                                 <td className='p-4'>
                                                     <Badge
-                                                        variant={mail.status === 'sent' ? 'secondary' : 'destructive'}
+                                                        variant={
+                                                            mail.status === 'sent'
+                                                                ? 'secondary'
+                                                                : mail.status === 'failed'
+                                                                  ? 'destructive'
+                                                                  : 'outline'
+                                                        }
                                                     >
                                                         {mail.status}
                                                     </Badge>
                                                 </td>
-                                                <td className='text-muted-foreground p-4'>{mail.created_at}</td>
+                                                <td className='text-muted-foreground p-4'>
+                                                    {formatDateTimeInTz(mail.created_at, dateOpts)}
+                                                </td>
                                                 <td className='p-4 text-right'>
-                                                    <Button
-                                                        size='sm'
-                                                        variant='outline'
-                                                        onClick={() => showMailPreview(mail)}
-                                                    >
-                                                        {t('admin.users.edit.mails.preview')}
-                                                    </Button>
+                                                    <div className='flex justify-end gap-2'>
+                                                        <Button
+                                                            size='sm'
+                                                            variant='outline'
+                                                            onClick={() => showMailPreview(mail)}
+                                                        >
+                                                            {t('admin.users.edit.mails.preview')}
+                                                        </Button>
+                                                        {mail.status === 'failed' && (
+                                                            <Button
+                                                                size='sm'
+                                                                variant='outline'
+                                                                disabled={resendingMailId === mail.id}
+                                                                onClick={() => handleResendMail(mail)}
+                                                            >
+                                                                <RotateCcw
+                                                                    className={`mr-1 h-4 w-4 ${resendingMailId === mail.id ? 'animate-spin' : ''}`}
+                                                                />
+                                                                {t('admin.users.edit.mails.resend')}
+                                                            </Button>
+                                                        )}
+                                                    </div>
                                                 </td>
                                             </tr>
                                         ))
@@ -1173,7 +1512,8 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                     <DialogHeader>
                         <DialogTitle>{mailPreview?.subject}</DialogTitle>
                         <DialogDescription>
-                            {mailPreview?.created_at} | {mailPreview?.status}
+                            {mailPreview?.created_at ? formatDateTimeInTz(mailPreview.created_at, dateOpts) : '—'} |{' '}
+                            {mailPreview?.status}
                         </DialogDescription>
                     </DialogHeader>
                     <div className='bg-muted/50 mt-4 max-h-[60vh] overflow-auto rounded-xl border p-4'>

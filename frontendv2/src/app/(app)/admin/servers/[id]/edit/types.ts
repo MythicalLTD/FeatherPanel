@@ -93,6 +93,7 @@ export interface Spell {
     description?: string;
     startup: string;
     docker_images: string; // JSON string
+    default_docker_image?: string | null;
     realms_id: number;
 }
 

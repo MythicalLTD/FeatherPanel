@@ -16,6 +16,8 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useTranslation } from '@/contexts/TranslationContext';
+import { useDateFormatOptions } from '@/contexts/PreferencesContext';
+import { formatDateTimeInTz } from '@/lib/dateUtils';
 import { AlertTriangle } from 'lucide-react';
 
 export interface ModerationStaffActor {
@@ -41,6 +43,7 @@ export function ModerationStatusCard({
     inactiveLabel,
 }: ModerationStatusCardProps) {
     const { t } = useTranslation();
+    const dateOpts = useDateFormatOptions();
 
     if (!active) {
         return <p className='text-muted-foreground text-sm'>{inactiveLabel}</p>;
@@ -74,7 +77,9 @@ export function ModerationStatusCard({
                         <p className='text-muted-foreground text-xs font-semibold tracking-wide uppercase'>
                             {t('admin.moderation.status_at')}
                         </p>
-                        <p className='mt-1'>{actedAt || t('admin.moderation.unknown_time')}</p>
+                        <p className='mt-1'>
+                            {actedAt ? formatDateTimeInTz(actedAt, dateOpts) : t('admin.moderation.unknown_time')}
+                        </p>
                     </div>
                 </div>
             </div>

@@ -26,9 +26,12 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { Captcha } from '@/components/Captcha';
 import { authApi } from '@/lib/api/auth';
+import axios from 'axios';
+import { getFeatherpanelApiErrorCode } from '@/lib/api';
 import { isCaptchaConfigured, obtainCaptchaResponseToken } from '@/lib/captchaGate';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { AuthLegalNotice } from '@/components/auth/AuthLegalNotice';
 
 export default function RegisterForm() {
     const router = useRouter();
@@ -58,6 +61,25 @@ export default function RegisterForm() {
     const registrationEnabled = settings?.registration_enabled === 'true';
     const showCaptcha = isCaptchaConfigured(settings);
     const discordEnabled = settings?.discord_oauth_enabled === 'true';
+
+    const formatRegistrationError = (err: unknown, fallbackMessage?: string): string => {
+        if (axios.isAxiosError(err)) {
+            const code = getFeatherpanelApiErrorCode(err);
+            const data = err.response?.data?.data as
+                | { main_account?: { username?: string }; support_url?: string | null }
+                | undefined;
+            if (code === 'DEVICE_ACCOUNT_LIMIT') {
+                const username = data?.main_account?.username;
+                if (username) {
+                    return t('auth.register.device_limit', { username });
+                }
+                return t('auth.register.device_limit_generic');
+            }
+            return err.response?.data?.message || fallbackMessage || t('common.error');
+        }
+
+        return fallbackMessage || t('common.error');
+    };
 
     const [discordLinkToken, setDiscordLinkToken] = useState<string | null>(null);
 
@@ -180,7 +202,16 @@ export default function RegisterForm() {
                     }, 1000);
                 }
             } else {
-                setError(response.message || t('common.error'));
+                if (response.error_code === 'DEVICE_ACCOUNT_LIMIT') {
+                    const username = response.data?.main_account?.username;
+                    setError(
+                        username
+                            ? t('auth.register.device_limit', { username })
+                            : t('auth.register.device_limit_generic'),
+                    );
+                } else {
+                    setError(response.message || t('common.error'));
+                }
 
                 if (showCaptcha) {
                     setForm((prev) => ({ ...prev, turnstile_token: '' }));
@@ -188,8 +219,7 @@ export default function RegisterForm() {
                 }
             }
         } catch (err: unknown) {
-            const error = err as { response?: { data?: { message?: string } } };
-            setError(error.response?.data?.message || t('common.error'));
+            setError(formatRegistrationError(err));
 
             if (showCaptcha) {
                 setForm((prev) => ({ ...prev, turnstile_token: '' }));
@@ -215,13 +245,21 @@ export default function RegisterForm() {
                 {error && <div className='bg-destructive/15 text-destructive rounded-lg p-3 text-sm'>{error}</div>}
                 {success && <div className='bg-primary/15 text-primary rounded-lg p-3 text-sm'>{success}</div>}
 
+                <AuthLegalNotice variant='register' />
+
                 <div className='flex flex-col gap-3'>
                     <Button onClick={handleDiscordRegister} disabled={loading} className='w-full'>
                         {loading ? t('common.loading') : t('auth.discordRegistration.submit')}
                     </Button>
                     <Button
                         variant='outline'
-                        onClick={() => router.replace('/auth/register')}
+                        onClick={() =>
+                            router.replace(
+                                discordLinkToken
+                                    ? `/auth/login?discord_link_token=${discordLinkToken}`
+                                    : '/auth/register',
+                            )
+                        }
                         disabled={loading}
                         className='w-full'
                     >
@@ -335,6 +373,8 @@ export default function RegisterForm() {
                         setForm((prev) => ({ ...prev, turnstile_token: '' }));
                     }}
                 />
+
+                <AuthLegalNotice variant='register' />
 
                 <Button type='submit' className='group w-full' loading={loading}>
                     {!loading && (

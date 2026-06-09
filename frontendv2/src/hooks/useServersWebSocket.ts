@@ -486,12 +486,38 @@ export function useServersWebSocket() {
         state.isRefreshingToken = false;
     }, []);
 
-    // Connect to multiple servers
+    // Connect to multiple servers with limited concurrency
     const connectServers = useCallback(
         async (serverUuids: string[]) => {
-            await Promise.all(serverUuids.map((uuid) => connectServer(uuid)));
+            const CONCURRENCY = 5;
+            for (let i = 0; i < serverUuids.length; i += CONCURRENCY) {
+                const batch = serverUuids.slice(i, i + CONCURRENCY);
+                await Promise.all(batch.map((uuid) => connectServer(uuid)));
+            }
         },
         [connectServer],
+    );
+
+    // Disconnect stale servers and connect only the requested set
+    const syncServers = useCallback(
+        async (serverUuids: string[]) => {
+            const targetSet = new Set(serverUuids);
+
+            connectionsRef.current.forEach((_, serverUuid) => {
+                if (!targetSet.has(serverUuid)) {
+                    disconnectServer(serverUuid);
+                }
+            });
+
+            const toConnect = serverUuids.filter((uuid) => {
+                const state = connectionsRef.current.get(uuid);
+                return !state || state.connectionStatus === 'disconnected';
+            });
+
+            await connectServers(toConnect);
+        },
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [connectServer, connectServers, disconnectServer],
     );
 
     // Disconnect from all servers
@@ -517,6 +543,7 @@ export function useServersWebSocket() {
         connectServer,
         disconnectServer,
         connectServers,
+        syncServers,
         disconnectAll,
         requestServerStats,
     };

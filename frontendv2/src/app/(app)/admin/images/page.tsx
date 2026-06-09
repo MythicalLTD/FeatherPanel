@@ -43,6 +43,7 @@ import { EmptyState } from '@/components/featherui/EmptyState';
 import { Sheet, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Label } from '@/components/ui/label';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
 interface Image {
@@ -63,20 +64,29 @@ interface Pagination {
     to: number;
 }
 
+const IMAGES_LIST_FILTERS_KEY = 'featherpanel_admin_images_filters_v1';
+const IMAGES_LIST_FILTERS_DEFAULTS = {
+    searchQuery: '',
+    page: 1,
+    pageSize: 10,
+};
+
 export default function ImagesPage() {
     const { t } = useTranslation();
     const [loading, setLoading] = useState(true);
     const [images, setImages] = useState<Image[]>([]);
-    const [pagination, setPagination] = useState<Pagination>({
-        page: 1,
-        pageSize: 10,
+    const { filters, patchFilters, hydrated } = usePersistedListFilters(
+        IMAGES_LIST_FILTERS_KEY,
+        IMAGES_LIST_FILTERS_DEFAULTS,
+    );
+    const { searchQuery, page, pageSize } = filters;
+    const [pagination, setPagination] = useState<Omit<Pagination, 'page' | 'pageSize'>>({
         total: 0,
         hasNext: false,
         hasPrev: false,
         from: 0,
         to: 0,
     });
-    const [searchQuery, setSearchQuery] = useState('');
     const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
 
     const [createOpen, setCreateOpen] = useState(false);
@@ -98,19 +108,25 @@ export default function ImagesPage() {
         const timer = setTimeout(() => {
             setDebouncedSearchQuery(searchQuery);
             if (searchQuery !== debouncedSearchQuery) {
-                setPagination((p) => ({ ...p, page: 1 }));
+                patchFilters({ page: 1 });
             }
         }, 500);
         return () => clearTimeout(timer);
-    }, [searchQuery, debouncedSearchQuery]);
+    }, [searchQuery, debouncedSearchQuery, patchFilters]);
+
+    const totalPages = Math.ceil(pagination.total / pageSize) || 1;
 
     const fetchImages = useCallback(async () => {
+        if (!hydrated) {
+            return;
+        }
+
         setLoading(true);
         try {
             const { data } = await axios.get('/api/admin/images', {
                 params: {
-                    page: pagination.page,
-                    limit: pagination.pageSize,
+                    page,
+                    limit: pageSize,
                     search: debouncedSearchQuery || undefined,
                 },
             });
@@ -118,8 +134,6 @@ export default function ImagesPage() {
                 setImages(data.data.images || []);
                 const apiPag = data.data.pagination;
                 setPagination({
-                    page: apiPag.current_page,
-                    pageSize: apiPag.per_page,
                     total: apiPag.total_records,
                     hasNext: apiPag.has_next,
                     hasPrev: apiPag.has_prev,
@@ -135,7 +149,7 @@ export default function ImagesPage() {
         } finally {
             setLoading(false);
         }
-    }, [pagination.page, pagination.pageSize, debouncedSearchQuery, t]);
+    }, [page, pageSize, debouncedSearchQuery, t, hydrated]);
 
     useEffect(() => {
         fetchImages();
@@ -279,33 +293,33 @@ export default function ImagesPage() {
                         className='h-11 w-full pl-10'
                         placeholder={t('admin.images.search_placeholder')}
                         value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onChange={(e) => patchFilters({ searchQuery: e.target.value })}
                     />
                 </div>
             </div>
 
             <WidgetRenderer widgets={getWidgets('admin-images', 'before-list')} />
 
-            {pagination.total > pagination.pageSize && (
+            {pagination.total > pageSize && (
                 <div className='border-border bg-card/50 mb-4 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
                     <Button
                         variant='outline'
                         size='sm'
-                        disabled={!pagination.hasPrev}
-                        onClick={() => setPagination((p) => ({ ...p, page: p.page - 1 }))}
+                        disabled={page === 1}
+                        onClick={() => patchFilters({ page: page - 1 })}
                         className='gap-1.5'
                     >
                         <ChevronLeft className='h-4 w-4' />
                         {t('common.previous')}
                     </Button>
                     <span className='text-sm font-medium'>
-                        {pagination.page} / {Math.ceil(pagination.total / pagination.pageSize)}
+                        {page} / {totalPages}
                     </span>
                     <Button
                         variant='outline'
                         size='sm'
-                        disabled={!pagination.hasNext}
-                        onClick={() => setPagination((p) => ({ ...p, page: p.page + 1 }))}
+                        disabled={page === totalPages}
+                        onClick={() => patchFilters({ page: page + 1 })}
                         className='gap-1.5'
                     >
                         {t('common.next')}
@@ -391,24 +405,24 @@ export default function ImagesPage() {
                 )}
             </div>
 
-            {pagination.total > pagination.pageSize && (
+            {pagination.total > pageSize && (
                 <div className='mt-8 flex items-center justify-center gap-2'>
                     <Button
                         variant='outline'
                         size='icon'
-                        disabled={!pagination.hasPrev}
-                        onClick={() => setPagination((p) => ({ ...p, page: p.page - 1 }))}
+                        disabled={page === 1}
+                        onClick={() => patchFilters({ page: page - 1 })}
                     >
                         <ChevronLeft className='h-4 w-4' />
                     </Button>
                     <span className='text-sm font-medium'>
-                        {pagination.page} / {Math.ceil(pagination.total / pagination.pageSize)}
+                        {page} / {totalPages}
                     </span>
                     <Button
                         variant='outline'
                         size='icon'
-                        disabled={!pagination.hasNext}
-                        onClick={() => setPagination((p) => ({ ...p, page: p.page + 1 }))}
+                        disabled={page === totalPages}
+                        onClick={() => patchFilters({ page: page + 1 })}
                     >
                         <ChevronRight className='h-4 w-4' />
                     </Button>

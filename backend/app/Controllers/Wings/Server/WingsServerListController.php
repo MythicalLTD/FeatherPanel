@@ -25,6 +25,7 @@ use App\Chat\Server;
 use App\Chat\Allocation;
 use App\Chat\ServerVariable;
 use App\Helpers\ApiResponse;
+use App\Helpers\AppUrlHelper;
 use OpenApi\Attributes as OA;
 use App\Chat\ServerCustomVariable;
 use App\Helpers\WingsFileTrashConfig;
@@ -205,14 +206,10 @@ class WingsServerListController
 
             // Parse spell docker images if available
             $dockerImage = $server['image'];
-            if (!empty($spell['docker_images'])) {
-                try {
-                    $dockerImages = json_decode($spell['docker_images'], true);
-                    if (is_array($dockerImages) && !empty($dockerImages)) {
-                        $dockerImage = $dockerImages[0] ?? $server['image'];
-                    }
-                } catch (\Exception $e) {
-                    // If docker images parsing fails, use server image
+            if (trim((string) $dockerImage) === '') {
+                $resolvedImage = Spell::resolveDefaultDockerImage($spell);
+                if ($resolvedImage !== null) {
+                    $dockerImage = $resolvedImage;
                 }
             }
 
@@ -405,8 +402,8 @@ class WingsServerListController
             $data[] = $serverConfig;
         }
 
-        // Build pagination links
-        $baseUrl = $request->getSchemeAndHttpHost() . $request->getBaseUrl() . '/api/remote/servers';
+        // Build pagination links from APP_URL — not the request host (often localhost behind proxies).
+        $baseUrl = AppUrlHelper::apiUrl('/remote/servers');
         $links = [
             'first' => $baseUrl . '?page=1',
             'last' => $baseUrl . '?page=' . max(1, $lastPage),

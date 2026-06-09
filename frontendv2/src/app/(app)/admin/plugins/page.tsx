@@ -18,6 +18,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import axios from 'axios';
+import { invalidatePluginRoutesCache } from '@/hooks/usePluginRoutes';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
@@ -407,6 +408,7 @@ export default function PluginsPage() {
             await axios.post(`/api/admin/plugins/${selectedPlugin.identifier}/spell-restrictions`, {
                 allowedOnlyOnSpells: Array.from(selectedSpellIds),
             });
+            invalidatePluginRoutesCache();
             toast.success(t('admin.plugins.messages.spell_restrictions_saved'));
 
             await loadPluginConfig(selectedPlugin);

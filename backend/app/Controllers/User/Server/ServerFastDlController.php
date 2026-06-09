@@ -26,6 +26,7 @@ use App\Helpers\ApiResponse;
 use App\Services\Wings\Wings;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
+use App\Helpers\WingsUrlHelper;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -538,20 +539,7 @@ class ServerFastDlController
      */
     private function createWings(array $node): Wings
     {
-        $scheme = $node['scheme'];
-        $host = $node['fqdn'];
-        $port = $node['daemonListen'];
-        $token = $node['daemon_token'];
-
-        $timeout = (int) 30;
-
-        return new Wings(
-            $host,
-            $port,
-            $scheme,
-            $token,
-            $timeout
-        );
+        return Wings::fromNode($node, 30);
     }
 
     /**
@@ -561,11 +549,7 @@ class ServerFastDlController
      */
     private function buildFastDlUrl(array $node, array $server, string $directory): string
     {
-        $scheme = $node['scheme'] ?? 'http';
-        $host = $node['fqdn'] ?? 'localhost';
-        $port = (int) ($node['daemonListen'] ?? 80);
-
-        $base = rtrim(sprintf('%s://%s:%d', $scheme, $host, $port), '/');
+        $base = rtrim(WingsUrlHelper::buildFromNode($node), '/');
         $dir = trim($directory) !== '' ? trim($directory) : 'fastdl';
 
         return $base . '/' . $server['uuid'] . '/' . $dir;

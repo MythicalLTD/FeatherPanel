@@ -728,20 +728,7 @@ class ServerProxyController
      */
     private function createWings(array $node): Wings
     {
-        $scheme = $node['scheme'];
-        $host = $node['fqdn'];
-        $port = $node['daemonListen'];
-        $token = $node['daemon_token'];
-
-        $timeout = (int) 30;
-
-        return new Wings(
-            $host,
-            $port,
-            $scheme,
-            $token,
-            $timeout
-        );
+        return Wings::fromNode($node, 30);
     }
 
     /**

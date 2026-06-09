@@ -54,6 +54,7 @@ class PublicConfig extends ConfigFactory
             ConfigInterface::APP_LOGO_WHITE => 'https://github.com/featherpanel-com.png',
             ConfigInterface::APP_LOGO_DARK => 'https://github.com/featherpanel-com.png',
             ConfigInterface::APP_SSO_REDIRECT_PATH => '/',
+            ConfigInterface::APP_SSO_TOKEN_LIFETIME_MINUTES => '5',
             // Appearance defaults (safe, non-sensitive)
             // Optional global background image URL and a lock flag to force it for all users.
             ConfigInterface::APP_BACKGROUND_IMAGE_URL => '',
@@ -101,6 +102,7 @@ class PublicConfig extends ConfigFactory
             ConfigInterface::TWITTER_URL => '',
             ConfigInterface::WHATSAPP_URL => '',
             ConfigInterface::YOUTUBE_URL => '',
+            ConfigInterface::DISCORD_URL => '',
             ConfigInterface::WEBSITE_URL => '',
             ConfigInterface::STATUS_PAGE_URL => '',
 
@@ -151,6 +153,7 @@ class PublicConfig extends ConfigFactory
             // Servers related settings
             ConfigInterface::SERVER_ALLOW_EGG_CHANGE => 'false',
             ConfigInterface::SERVER_ALLOW_STARTUP_CHANGE => 'true',
+            ConfigInterface::SERVER_ALLOW_CUSTOM_DOCKER_IMAGE => 'false',
             ConfigInterface::SERVER_ALLOW_SUBUSERS => 'true',
             ConfigInterface::SERVER_ALLOW_SCHEDULES => 'true',
             ConfigInterface::SERVER_LIFECYCLE_HOOKS_ENABLED => 'false',
@@ -171,6 +174,8 @@ class PublicConfig extends ConfigFactory
             ConfigInterface::FILE_TRASH_RETENTION_DAYS => '30',
 
             // User related settings
+            ConfigInterface::AVATAR_PROVIDER => 'gravatar',
+            ConfigInterface::AVATAR_CUSTOM_URL => '',
             ConfigInterface::USER_ALLOW_AVATAR_CHANGE => 'true',
             ConfigInterface::USER_ALLOW_USERNAME_CHANGE => 'true',
             ConfigInterface::USER_ALLOW_EMAIL_CHANGE => 'true',
@@ -215,6 +220,10 @@ class PublicConfig extends ConfigFactory
             // Demo mode settings
             ConfigInterface::APP_DEMO_YES => 'false',
             ConfigInterface::EMAIL_LOGIN_ENABLED => 'false',
+
+            ConfigInterface::LOGIN_DEFAULT_METHOD => 'local',
+            ConfigInterface::LOGIN_METHODS_ORDER => 'local,passkey,ldap,email_code,discord,oidc',
+            ConfigInterface::LOGIN_HIDDEN_METHODS => '',
         ];
     }
 }

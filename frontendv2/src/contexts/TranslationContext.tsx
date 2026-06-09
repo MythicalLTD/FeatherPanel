@@ -16,7 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
-import { isCloudflareChallengeText, triggerCloudflareRecovery } from '@/lib/cloudflare-challenge';
+import { isCloudflareChallengeText } from '@/lib/cloudflare-challenge';
 
 interface Language {
     code: string;
@@ -61,9 +61,7 @@ export function TranslationProvider({ children }: { children: ReactNode }) {
         const contentType = String(response.headers.get('content-type') || '').toLowerCase();
         const raw = await response.text();
 
-        // Cloudflare challenge pages can intermittently replace JSON responses.
         if (contentType.includes('text/html') && isCloudflareChallengeText(raw)) {
-            triggerCloudflareRecovery();
             return null;
         }
 
@@ -71,9 +69,6 @@ export function TranslationProvider({ children }: { children: ReactNode }) {
             const parsed: unknown = JSON.parse(raw);
             return parsed && typeof parsed === 'object' ? (parsed as Record<string, unknown>) : null;
         } catch {
-            if (isCloudflareChallengeText(raw) || raw.toLowerCase().includes('unexpected token <')) {
-                triggerCloudflareRecovery();
-            }
             return null;
         }
     }, []);

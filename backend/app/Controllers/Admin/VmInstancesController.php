@@ -1890,6 +1890,7 @@ class VmInstancesController
         }
 
         $backups = VmInstanceBackup::getBackupsByInstanceId((int) $instance['id']);
+        $backups = TimeHelper::normaliseRows($backups);
 
         $storages = [];
         $vmNode = VmNode::getVmNodeById((int) $instance['vm_node_id']);

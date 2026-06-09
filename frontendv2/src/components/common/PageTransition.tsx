@@ -34,10 +34,10 @@ export default function PageTransition({ children }: PageTransitionProps) {
     }, [pathname]);
 
     const animationClass =
-        motionLevel === 'none' ? '' : motionLevel === 'reduced' ? 'animate-fade-in' : 'animate-fade-in-up';
+        motionLevel === 'none' ? '' : motionLevel === 'reduced' ? 'animate-page-shell-reduced' : 'animate-page-shell';
 
     return (
-        <div key={currentPath} className={clsx('motion-content h-full min-h-screen overflow-y-auto', animationClass)}>
+        <div key={currentPath} className={clsx('motion-content min-h-screen', animationClass)}>
             {children}
         </div>
     );

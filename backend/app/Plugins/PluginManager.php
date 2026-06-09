@@ -36,9 +36,13 @@ class PluginManager
         try {
             $pluginFiles = $this->getPluginFiles();
             foreach ($pluginFiles as $plugin) {
-                $this->processPlugin($plugin, $eventManager);
+                try {
+                    $this->processPlugin($plugin, $eventManager);
+                } catch (\Throwable $e) {
+                    $this->logger->error('Failed to load plugin "' . $plugin . '": ' . $e->getMessage());
+                }
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->logger->error('Failed to start plugins: ' . $e->getMessage());
         }
     }
@@ -159,6 +163,15 @@ class PluginManager
             return;
         }
 
+        $confIdentifier = (string) ($config['plugin']['identifier'] ?? '');
+        if ($confIdentifier !== $plugin) {
+            $this->logger->warning(
+                'Skipping plugin "' . $plugin . '": conf.yml identifier "' . $confIdentifier . '" does not match folder name'
+            );
+
+            return;
+        }
+
         $this->validateAndLoadPlugin($plugin, $config, $eventManager);
     }
 
@@ -202,6 +215,15 @@ class PluginManager
 
     private function loadPlugin(string $plugin, array $config, $eventManager): void
     {
+        if (!PluginProcessor::hasValidEvent($config['plugin']['identifier'])) {
+            $this->logger->error(
+                'Skipping plugin "' . $plugin . '": entry class could not be resolved. '
+                . 'Ensure plugin.name, the PHP class name, and namespace App\\Addons\\' . $plugin . ' all match.'
+            );
+
+            return;
+        }
+
         $this->plugins[] = $plugin;
         PluginProcessor::process($config['plugin']['identifier'], $eventManager);
     }

@@ -37,6 +37,7 @@ use App\Chat\SubdomainDomain;
 use OpenApi\Attributes as OA;
 use App\Chat\DatabaseInstance;
 use App\Config\ConfigInterface;
+use App\Helpers\WingsUrlHelper;
 use App\Helpers\PermissionHelper;
 use App\Chat\ServerCustomVariable;
 use App\CloudFlare\CloudFlareRealIP;
@@ -263,6 +264,7 @@ class ServerUserController
         $page = (int) $request->query->get('page', 1);
         $limit = (int) $request->query->get('limit', 10);
         $search = $request->query->get('search', '');
+        $statusFilter = self::parseStatusFilter($request);
         // Explicitly check for 'true' string - dashboard should never pass this, only admin area
         $viewAllParam = $request->query->get('view_all', 'false');
         $viewAll = ($viewAllParam === 'true' || $viewAllParam === true || $viewAllParam === '1' || $viewAllParam === 1);
@@ -287,7 +289,7 @@ class ServerUserController
 
             // Use admin search to get all servers (fetch all then paginate)
             // First get total count for pagination
-            $total = Server::getCount($search);
+            $total = Server::getCount($search, status: $statusFilter);
 
             // Get all servers matching the search (we'll paginate in memory)
             // Fetch a large batch to handle all cases
@@ -297,7 +299,8 @@ class ServerUserController
                 search: $search,
                 fields: [],
                 sortBy: 'id',
-                sortOrder: 'DESC'
+                sortOrder: 'DESC',
+                status: $statusFilter,
             );
 
             // Apply pagination to all servers
@@ -350,6 +353,13 @@ class ServerUserController
 
             // Combine owned and subuser servers
             $allServers = array_merge($ownedServers, $subuserServers);
+
+            if ($statusFilter !== null) {
+                $allServers = array_values(array_filter(
+                    $allServers,
+                    static fn (array $server): bool => ($server['status'] ?? null) === $statusFilter
+                ));
+            }
 
             // Get total count before pagination
             $totalServers = count($allServers);
@@ -494,6 +504,7 @@ class ServerUserController
         $page = (int) $request->query->get('page', 1);
         $limit = (int) $request->query->get('limit', 10);
         $search = $request->query->get('search', '');
+        $statusFilter = self::parseStatusFilter($request);
 
         if ($page < 1) {
             $page = 1;
@@ -505,7 +516,7 @@ class ServerUserController
             $limit = 100;
         }
 
-        $total = Server::getCount($search, null, null, null, null, (int) $user['id']);
+        $total = Server::getCount($search, null, null, null, null, (int) $user['id'], status: $statusFilter);
         $servers = Server::searchServers(
             page: $page,
             limit: $limit,
@@ -515,6 +526,7 @@ class ServerUserController
             sortOrder: 'DESC',
             ownerId: null,
             excludeOwnerId: (int) $user['id'],
+            status: $statusFilter,
         );
 
         foreach ($servers as &$server) {
@@ -698,6 +710,7 @@ class ServerUserController
             'banner' => $spellData['banner'] ?? null,
             'startup' => $spellData['startup'] ?? null,
             'docker_images' => $spellData['docker_images'] ?? null,
+            'default_docker_image' => $spellData['default_docker_image'] ?? null,
             // Features & additional JSON-config fields (decoded further down if JSON)
             'features' => $spellData['features'] ?? null,
             'file_denylist' => $spellData['file_denylist'] ?? null,
@@ -898,16 +911,14 @@ class ServerUserController
         }
 
         try {
-            $scheme = $node['scheme'];
-            $host = $node['fqdn'];
-            $port = $node['daemonListen'];
             $token = $node['daemon_token'];
+            $wingsBaseUrl = WingsUrlHelper::buildFromNode($node);
 
             // Create JWT service instance
             $jwtService = new JwtService(
                 $token, // Node secret
                 App::getInstance(true)->getConfig()->getSetting(ConfigInterface::APP_URL, 'https://featherpanel.mythical.systems'), // Panel URL
-                $scheme . '://' . $host . ':' . $port // Wings URL
+                $wingsBaseUrl // Wings URL
             );
 
             // Get user permissions
@@ -920,19 +931,13 @@ class ServerUserController
                 $permissions
             );
 
-            if ($scheme == 'http') {
-                $scheme = 'ws';
-            } else {
-                $scheme = 'wss';
-            }
-
             return ApiResponse::success([
                 'token' => $token,
                 'expires_at' => time() + 600, // 10 minutes from now
                 'server_uuid' => $server['uuid'],
                 'user_uuid' => $user['uuid'],
                 'permissions' => $permissions,
-                'connection_string' => $scheme . '://' . $host . ':' . $port . '/api/servers/' . $server['uuid'] . '/ws',
+                'connection_string' => WingsUrlHelper::toWebSocketBaseUrl($wingsBaseUrl) . '/api/servers/' . $server['uuid'] . '/ws',
             ], 'JWT token generated successfully', 200);
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to generate JWT token: ' . $e->getMessage(), 'JWT_GENERATION_FAILED', 500);
@@ -1157,6 +1162,36 @@ class ServerUserController
             if (strlen($image) > 191) {
                 return ApiResponse::error('Docker image is too long (max 191 characters)', 'IMAGE_TOO_LONG', 400);
             }
+
+            $app = App::getInstance(true);
+            $allowCustomDockerImage = $app->getConfig()->getSetting(ConfigInterface::SERVER_ALLOW_CUSTOM_DOCKER_IMAGE, 'false');
+            $allowCustomDockerImage = ($allowCustomDockerImage === 'true' || $allowCustomDockerImage === true || $allowCustomDockerImage === '1' || $allowCustomDockerImage === 1);
+
+            if (!$allowCustomDockerImage) {
+                $spellIdForImage = isset($data['spell_id']) ? (int) $data['spell_id'] : (int) $server['spell_id'];
+                $spellForImage = Spell::getSpellById($spellIdForImage);
+                if (!$spellForImage) {
+                    return ApiResponse::error('Spell not found for Docker image validation', 'SPELL_NOT_FOUND', 404);
+                }
+
+                $allowedImages = Spell::parseDockerImages($spellForImage['docker_images'] ?? null);
+                $currentServerImage = trim((string) ($server['image'] ?? ''));
+                if ($currentServerImage !== '' && !in_array($currentServerImage, $allowedImages, true)) {
+                    $allowedImages[] = $currentServerImage;
+                }
+                $spellDefaultImage = Spell::resolveDefaultDockerImage($spellForImage);
+                if ($spellDefaultImage !== '' && !in_array($spellDefaultImage, $allowedImages, true)) {
+                    $allowedImages[] = $spellDefaultImage;
+                }
+                if ($allowedImages === [] || !in_array($image, $allowedImages, true)) {
+                    return ApiResponse::error(
+                        'Docker image must be one of the images configured for this spell',
+                        'INVALID_DOCKER_IMAGE',
+                        400
+                    );
+                }
+            }
+
             $updateData['image'] = $image;
         }
 
@@ -2080,6 +2115,23 @@ class ServerUserController
         }
 
         return ApiResponse::success([], 'Server deleted successfully', 200);
+    }
+
+    /**
+     * Parse optional status filter from query parameters.
+     * Supports `status=running` or legacy `running_only=true`.
+     */
+    private static function parseStatusFilter(Request $request): ?string
+    {
+        $status = trim((string) $request->query->get('status', ''));
+        if ($status !== '') {
+            return $status;
+        }
+
+        $runningOnlyParam = $request->query->get('running_only', 'false');
+        $runningOnly = ($runningOnlyParam === 'true' || $runningOnlyParam === true || $runningOnlyParam === '1' || $runningOnlyParam === 1);
+
+        return $runningOnly ? 'running' : null;
     }
 
     /**

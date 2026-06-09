@@ -1,6 +1,9 @@
 allowBuilds:
   sharp: true
   unrs-resolver: true
+minimumReleaseAgeExclude:
+  - prettier@3.8.4
+  - react-qr-code@2.2.0
 onlyBuiltDependencies:
   - '@scarf/scarf'
   - '@tree-sitter-grammars/tree-sitter-yaml'

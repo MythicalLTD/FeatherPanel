@@ -21,8 +21,9 @@ import { Dialog, DialogPanel, DialogTitle, Description as DialogDescription } fr
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/featherui/Input';
 import { cn } from '@/lib/utils';
-import { Mail, RefreshCw, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Mail, RefreshCw, Clock, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
 import axios from 'axios';
+import { toast } from 'sonner';
 
 interface MailItem {
     id: number;
@@ -53,6 +54,7 @@ export default function MailTab() {
     const [selectedMail, setSelectedMail] = useState<MailItem | null>(null);
     const [currentPage, setCurrentPage] = useState(1);
     const [pagination, setPagination] = useState<PaginationInfo | null>(null);
+    const [resendingMailId, setResendingMailId] = useState<number | null>(null);
 
     const fetchMails = useCallback(
         async (page: number = 1) => {
@@ -99,6 +101,27 @@ export default function MailTab() {
     const openMailModal = (mail: MailItem) => {
         setSelectedMail(mail);
         setMailModalOpen(true);
+    };
+
+    const handleResendMail = async (mail: MailItem) => {
+        setResendingMailId(mail.id);
+        try {
+            const { data } = await axios.post(`/api/user/mails/${mail.id}/resend`);
+            if (data.success) {
+                toast.success(t('account.mail.resendSuccess'));
+                await fetchMails(currentPage);
+            } else {
+                toast.error(data.message || t('account.mail.resendFailed'));
+            }
+        } catch (err: unknown) {
+            const message =
+                axios.isAxiosError(err) && err.response?.data?.message
+                    ? String(err.response.data.message)
+                    : t('account.mail.resendFailed');
+            toast.error(message);
+        } finally {
+            setResendingMailId(null);
+        }
     };
 
     const getIframeContent = (htmlContent: string): string => {
@@ -273,13 +296,31 @@ export default function MailTab() {
                             key={mail.id}
                             className='border-border/50 bg-card/50 rounded-lg border p-4 backdrop-blur-xl transition-colors'
                         >
-                            <div className='mb-3 flex items-start justify-between'>
+                            <div className='mb-3 flex items-start justify-between gap-3'>
                                 <div className='flex-1'>
                                     <h4 className='text-foreground mb-2 text-sm font-semibold'>{mail.subject}</h4>
-                                    <Button variant='outline' size='sm' onClick={() => openMailModal(mail)}>
-                                        <Mail className='mr-1 h-4 w-4' />
-                                        {t('account.mail.viewFull')}
-                                    </Button>
+                                    <div className='flex flex-wrap gap-2'>
+                                        <Button variant='outline' size='sm' onClick={() => openMailModal(mail)}>
+                                            <Mail className='mr-1 h-4 w-4' />
+                                            {t('account.mail.viewFull')}
+                                        </Button>
+                                        {mail.status === 'failed' && (
+                                            <Button
+                                                variant='outline'
+                                                size='sm'
+                                                disabled={resendingMailId === mail.id}
+                                                onClick={() => handleResendMail(mail)}
+                                            >
+                                                <RotateCcw
+                                                    className={cn(
+                                                        'mr-1 h-4 w-4',
+                                                        resendingMailId === mail.id && 'animate-spin',
+                                                    )}
+                                                />
+                                                {t('account.mail.resend')}
+                                            </Button>
+                                        )}
+                                    </div>
                                 </div>
                                 <div
                                     className={cn(
@@ -357,7 +398,22 @@ export default function MailTab() {
                             )}
                         </div>
 
-                        <div className='mt-4 flex justify-end'>
+                        <div className='mt-4 flex justify-end gap-2'>
+                            {selectedMail?.status === 'failed' && (
+                                <Button
+                                    variant='default'
+                                    disabled={resendingMailId === selectedMail.id}
+                                    onClick={() => selectedMail && handleResendMail(selectedMail)}
+                                >
+                                    <RotateCcw
+                                        className={cn(
+                                            'mr-2 h-4 w-4',
+                                            resendingMailId === selectedMail.id && 'animate-spin',
+                                        )}
+                                    />
+                                    {t('account.mail.resend')}
+                                </Button>
+                            )}
                             <Button variant='outline' onClick={() => setMailModalOpen(false)}>
                                 {t('account.mail.close')}
                             </Button>

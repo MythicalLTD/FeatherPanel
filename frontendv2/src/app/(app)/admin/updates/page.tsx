@@ -250,21 +250,59 @@ export default function AdminUpdatesPage() {
         setIsBulkUpdating(true);
         const toastId = toast.loading(t('admin_updates.messages.bulk_starting'));
 
+        const pluginIdentifiers = Array.from(selectedPlugins);
+        const queuedIdentifiers = pluginIdentifiers;
+        const pluginFailures: string[] = [];
+        let pluginsUpdated = 0;
+
         try {
-            const nodeUpdates = Array.from(selectedNodes).map((id) =>
-                axios.post(`/api/admin/nodes/${id}/self-update`, { source: 'github' }),
+            const nodeResults = await Promise.allSettled(
+                Array.from(selectedNodes).map((id) =>
+                    axios.post(`/api/admin/nodes/${id}/self-update`, { source: 'github' }),
+                ),
             );
 
-            const pluginUpdatesReq = Array.from(selectedPlugins).map((identifier) =>
-                axios.post('/api/admin/cloud-plugins/install', { identifier }),
-            );
+            for (const identifier of pluginIdentifiers) {
+                try {
+                    await axios.post('/api/admin/plugins/online/install', {
+                        identifier,
+                        queued_identifiers: queuedIdentifiers,
+                    });
+                    pluginsUpdated += 1;
+                } catch (error) {
+                    const message = axios.isAxiosError(error)
+                        ? error.response?.data?.message || t('admin.plugins.messages.update_failed')
+                        : t('admin.plugins.messages.update_failed');
+                    const plugin = plugins.find((p) => p.identifier === identifier);
+                    pluginFailures.push(`${plugin?.name || identifier}: ${message}`);
+                }
+            }
 
-            await Promise.allSettled([...nodeUpdates, ...pluginUpdatesReq]);
+            const nodeFailures = nodeResults.filter((r) => r.status === 'rejected').length;
+            const hasFailures = nodeFailures > 0 || pluginFailures.length > 0;
 
-            toast.success(t('admin_updates.messages.bulk_started'), { id: toastId });
+            if (!hasFailures) {
+                toast.success(t('admin_updates.messages.bulk_started'), { id: toastId });
+            } else if (pluginsUpdated > 0 || nodeResults.some((r) => r.status === 'fulfilled')) {
+                toast.error(t('admin_updates.messages.bulk_failed'), { id: toastId });
+                if (pluginFailures.length > 0) {
+                    console.error('Plugin updates failed:', pluginFailures);
+                }
+            } else {
+                toast.error(t('admin_updates.messages.bulk_failed'), { id: toastId });
+                if (pluginFailures.length > 0) {
+                    console.error('Plugin updates failed:', pluginFailures);
+                }
+            }
+
             setSelectedNodes(new Set());
             setSelectedPlugins(new Set());
-            checkAllUpdates();
+            await checkAllUpdates();
+
+            if (pluginsUpdated > 0) {
+                await fetchPlugins();
+                setTimeout(() => window.location.reload(), 1500);
+            }
         } catch (error) {
             console.error(error);
             toast.error(t('admin_updates.messages.bulk_failed'), { id: toastId });

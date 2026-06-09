@@ -34,6 +34,7 @@ use App\CloudFlare\CloudFlareRealIP;
 use App\Plugins\Events\Events\TicketEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Services\Tickets\TicketNotificationService;
 
 #[OA\Schema(
     schema: 'Ticket',
@@ -386,6 +387,7 @@ class TicketsController
             $rolesMap[$role['id']] = [
                 'name' => $role['name'],
                 'display_name' => $role['display_name'],
+                'custom_badge' => $role['custom_badge'] ?? null,
                 'color' => $role['color'],
             ];
         }
@@ -708,6 +710,7 @@ class TicketsController
                             'user_uuid' => $currentUser['uuid'],
                         ]
                     );
+                    TicketNotificationService::notifyClosed($updatedTicket);
                 } elseif ($oldStatusName === 'closed' && $newStatusName === 'open') {
                     $eventManager->emit(
                         TicketEvent::onTicketReopened(),
@@ -716,6 +719,7 @@ class TicketsController
                             'user_uuid' => $currentUser['uuid'],
                         ]
                     );
+                    TicketNotificationService::notifyReopened($updatedTicket);
                 }
             }
         }
@@ -878,6 +882,8 @@ class TicketsController
             );
         }
 
+        TicketNotificationService::notifyClosed($updatedTicket);
+
         return ApiResponse::success([], 'Ticket closed successfully', 200);
     }
 
@@ -962,6 +968,8 @@ class TicketsController
                 ]
             );
         }
+
+        TicketNotificationService::notifyReopened($updatedTicket);
 
         return ApiResponse::success([], 'Ticket reopened successfully', 200);
     }
@@ -1071,6 +1079,10 @@ class TicketsController
                     'user_uuid' => $currentUser['uuid'],
                 ]
             );
+        }
+
+        if ($message !== null) {
+            TicketNotificationService::notifyReply($ticket, $message, $currentUser['uuid'] ?? null);
         }
 
         return ApiResponse::success([

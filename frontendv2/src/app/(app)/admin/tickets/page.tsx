@@ -31,6 +31,7 @@ import { Select } from '@/components/ui/select-native';
 import { PageCard } from '@/components/featherui/PageCard';
 import { AlertCircle } from 'lucide-react';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
 interface User {
@@ -71,6 +72,15 @@ interface Pagination {
     hasPrev: boolean;
 }
 
+const TICKETS_LIST_FILTERS_KEY = 'featherpanel_admin_tickets_filters_v1';
+const TICKETS_LIST_FILTERS_DEFAULTS = {
+    searchQuery: '',
+    statusFilter: 'all',
+    categoryFilter: 'all',
+    page: 1,
+    pageSize: 10,
+};
+
 export default function TicketsPage() {
     const { t } = useTranslation();
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-tickets');
@@ -78,13 +88,13 @@ export default function TicketsPage() {
     const [categories, setCategories] = useState<Meta[]>([]);
     const [statuses, setStatuses] = useState<Meta[]>([]);
     const [loading, setLoading] = useState(true);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [statusFilter, setStatusFilter] = useState<string>('all');
-    const [categoryFilter, setCategoryFilter] = useState<string>('all');
+    const { filters, patchFilters, hydrated } = usePersistedListFilters(
+        TICKETS_LIST_FILTERS_KEY,
+        TICKETS_LIST_FILTERS_DEFAULTS,
+    );
+    const { searchQuery, statusFilter, categoryFilter, page, pageSize } = filters;
 
-    const [pagination, setPagination] = useState<Pagination>({
-        page: 1,
-        pageSize: 10,
+    const [pagination, setPagination] = useState<Omit<Pagination, 'page' | 'pageSize'>>({
         total: 0,
         totalPages: 0,
         hasNext: false,
@@ -99,12 +109,12 @@ export default function TicketsPage() {
         const timer = setTimeout(() => {
             setDebouncedSearchQuery(searchQuery);
             if (searchQuery !== debouncedSearchQuery) {
-                setPagination((prev) => ({ ...prev, page: 1 }));
+                patchFilters({ page: 1 });
             }
         }, 500);
 
         return () => clearTimeout(timer);
-    }, [searchQuery, debouncedSearchQuery]);
+    }, [searchQuery, debouncedSearchQuery, patchFilters]);
 
     useEffect(() => {
         const fetchDependencies = async () => {
@@ -123,14 +133,18 @@ export default function TicketsPage() {
     }, []);
 
     useEffect(() => {
+        if (!hydrated) {
+            return;
+        }
+
         const controller = new AbortController();
         const fetchTickets = async () => {
             setLoading(true);
             try {
                 const { data } = await axios.get('/api/admin/tickets', {
                     params: {
-                        page: pagination.page,
-                        limit: pagination.pageSize,
+                        page,
+                        limit: pageSize,
                         search: debouncedSearchQuery || undefined,
                         status_id: statusFilter !== 'all' ? statusFilter : undefined,
                         category_id: categoryFilter !== 'all' ? categoryFilter : undefined,
@@ -141,15 +155,12 @@ export default function TicketsPage() {
                 setTickets(data.data.tickets || []);
                 const apiPagination = data.data.pagination;
                 if (apiPagination) {
-                    setPagination((prev) => ({
-                        ...prev,
-                        page: apiPagination.current_page,
-                        pageSize: apiPagination.per_page,
+                    setPagination({
                         total: apiPagination.total_records,
                         totalPages: Math.ceil(apiPagination.total_records / apiPagination.per_page),
                         hasNext: apiPagination.has_next,
                         hasPrev: apiPagination.has_prev,
-                    }));
+                    });
                 }
             } catch (error) {
                 if (!axios.isCancel(error)) {
@@ -168,16 +179,7 @@ export default function TicketsPage() {
         return () => {
             controller.abort();
         };
-    }, [
-        pagination.page,
-        pagination.pageSize,
-        debouncedSearchQuery,
-        statusFilter,
-        categoryFilter,
-        refreshKey,
-        t,
-        fetchWidgets,
-    ]);
+    }, [page, pageSize, debouncedSearchQuery, statusFilter, categoryFilter, refreshKey, t, fetchWidgets, hydrated]);
 
     const handleDelete = async (uuid: string, id: number) => {
         if (!confirm(t('admin.tickets.messages.delete_confirm'))) return;
@@ -206,7 +208,7 @@ export default function TicketsPage() {
                     <Input
                         placeholder={t('admin.tickets.search_placeholder')}
                         value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onChange={(e) => patchFilters({ searchQuery: e.target.value })}
                         className='h-11 w-full pl-10'
                     />
                 </div>
@@ -216,8 +218,7 @@ export default function TicketsPage() {
                         <Select
                             value={statusFilter}
                             onChange={(e) => {
-                                setStatusFilter(e.target.value);
-                                setPagination((prev) => ({ ...prev, page: 1 }));
+                                patchFilters({ statusFilter: e.target.value, page: 1 });
                             }}
                             className='bg-background/50 border-border/50 h-11 w-[160px] rounded-xl'
                         >
@@ -232,8 +233,7 @@ export default function TicketsPage() {
                     <Select
                         value={categoryFilter}
                         onChange={(e) => {
-                            setCategoryFilter(e.target.value);
-                            setPagination((prev) => ({ ...prev, page: 1 }));
+                            patchFilters({ categoryFilter: e.target.value, page: 1 });
                         }}
                         className='bg-background/50 border-border/50 h-11 w-[160px] rounded-xl'
                     >
@@ -254,21 +254,21 @@ export default function TicketsPage() {
                     <Button
                         variant='outline'
                         size='sm'
-                        disabled={!pagination.hasPrev}
-                        onClick={() => setPagination((p) => ({ ...p, page: p.page - 1 }))}
+                        disabled={page === 1}
+                        onClick={() => patchFilters({ page: page - 1 })}
                         className='gap-1.5'
                     >
                         <ChevronLeft className='h-4 w-4' />
                         {t('common.previous')}
                     </Button>
                     <span className='text-sm font-medium'>
-                        {pagination.page} / {pagination.totalPages}
+                        {page} / {pagination.totalPages}
                     </span>
                     <Button
                         variant='outline'
                         size='sm'
-                        disabled={!pagination.hasNext}
-                        onClick={() => setPagination((p) => ({ ...p, page: p.page + 1 }))}
+                        disabled={page === pagination.totalPages}
+                        onClick={() => patchFilters({ page: page + 1 })}
                         className='gap-1.5'
                     >
                         {t('common.next')}
@@ -377,21 +377,21 @@ export default function TicketsPage() {
                     <Button
                         variant='outline'
                         size='icon'
-                        disabled={!pagination.hasPrev}
-                        onClick={() => setPagination((p) => ({ ...p, page: p.page - 1 }))}
+                        disabled={page === 1}
+                        onClick={() => patchFilters({ page: page - 1 })}
                     >
                         <ChevronLeft className='h-4 w-4' />
                     </Button>
                     <div className='flex items-center gap-2'>
                         <span className='text-sm font-medium'>
-                            {pagination.page} / {pagination.totalPages}
+                            {page} / {pagination.totalPages}
                         </span>
                     </div>
                     <Button
                         variant='outline'
                         size='icon'
-                        disabled={!pagination.hasNext}
-                        onClick={() => setPagination((p) => ({ ...p, page: p.page + 1 }))}
+                        disabled={page === pagination.totalPages}
+                        onClick={() => patchFilters({ page: page + 1 })}
                     >
                         <ChevronRight className='h-4 w-4' />
                     </Button>

@@ -15,11 +15,13 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useDateFormatOptions } from '@/contexts/PreferencesContext';
 import axios from 'axios';
+import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
 import {
     Users as UsersIcon,
     Shield,
@@ -27,8 +29,6 @@ import {
     Search,
     Eye,
     Trash2,
-    ChevronLeft,
-    ChevronRight,
     AlertCircle,
     UserPlus,
     CheckCircle2,
@@ -39,6 +39,7 @@ import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
+import { ListPagination } from '@/components/featherui/ListPagination';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { Select } from '@/components/ui/select-native';
@@ -46,10 +47,13 @@ import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { toast } from 'sonner';
 import { formatDateTimeInTz, formatRelativeTime } from '@/lib/dateUtils';
+import { getRoleBadgeStyles } from '@/components/RoleBadge';
+import { getRoleBadgeLabel } from '@/lib/role-utils';
 
 interface UserRole {
     name: string;
     display_name: string;
+    custom_badge?: string | null;
     color: string;
 }
 
@@ -64,6 +68,7 @@ interface ApiUser {
     banned?: string;
     two_fa_enabled?: string;
     last_seen?: string;
+    first_seen?: string;
     created_at?: string;
     discord_oauth2_id?: string | null;
     discord_oauth2_linked?: string;
@@ -89,22 +94,129 @@ interface AvailableRole {
     id: string;
     name: string;
     display_name: string;
+    custom_badge?: string | null;
     color: string;
+}
+
+const USERS_LIST_FILTERS_KEY = 'featherpanel_admin_users_filters_v2';
+
+const USERS_LIST_FILTERS_DEFAULTS = {
+    searchQuery: '',
+    roleFilter: '',
+    bannedFilter: '',
+    ipFilter: '',
+    emailVerifiedFilter: '' as '' | 'true' | 'false',
+    sortBy: 'created_at' as 'id' | 'username' | 'email' | 'last_seen' | 'created_at',
+    sortOrder: 'DESC' as 'ASC' | 'DESC',
+    page: 1,
+    pageSize: 15,
+};
+
+type UsersListFilters = typeof USERS_LIST_FILTERS_DEFAULTS;
+
+function filtersToQueryString(filters: UsersListFilters): string {
+    const params = new URLSearchParams();
+
+    if (filters.searchQuery) {
+        params.set('q', filters.searchQuery);
+    }
+    if (filters.page > 1) {
+        params.set('page', String(filters.page));
+    }
+    if (filters.roleFilter) {
+        params.set('role', filters.roleFilter);
+    }
+    if (filters.bannedFilter) {
+        params.set('banned', filters.bannedFilter);
+    }
+    if (filters.ipFilter) {
+        params.set('ip', filters.ipFilter);
+    }
+    if (filters.emailVerifiedFilter) {
+        params.set('email_verified', filters.emailVerifiedFilter);
+    }
+    if (filters.sortBy !== USERS_LIST_FILTERS_DEFAULTS.sortBy) {
+        params.set('sort_by', filters.sortBy);
+    }
+    if (filters.sortOrder !== USERS_LIST_FILTERS_DEFAULTS.sortOrder) {
+        params.set('sort_order', filters.sortOrder);
+    }
+
+    return params.toString();
+}
+
+function filtersFromSearchParams(searchParams: URLSearchParams): Partial<UsersListFilters> {
+    const partial: Partial<UsersListFilters> = {};
+
+    const q = searchParams.get('q');
+    if (q !== null) {
+        partial.searchQuery = q;
+    }
+
+    const page = searchParams.get('page');
+    if (page !== null) {
+        const parsedPage = Number.parseInt(page, 10);
+        if (!Number.isNaN(parsedPage) && parsedPage > 0) {
+            partial.page = parsedPage;
+        }
+    }
+
+    const role = searchParams.get('role');
+    if (role !== null) {
+        partial.roleFilter = role;
+    }
+
+    const banned = searchParams.get('banned');
+    if (banned !== null) {
+        partial.bannedFilter = banned;
+    }
+
+    const ip = searchParams.get('ip');
+    if (ip !== null) {
+        partial.ipFilter = ip;
+    }
+
+    const emailVerified = searchParams.get('email_verified');
+    if (emailVerified === 'true' || emailVerified === 'false') {
+        partial.emailVerifiedFilter = emailVerified;
+    }
+
+    const sortBy = searchParams.get('sort_by');
+    if (
+        sortBy === 'id' ||
+        sortBy === 'username' ||
+        sortBy === 'email' ||
+        sortBy === 'last_seen' ||
+        sortBy === 'created_at'
+    ) {
+        partial.sortBy = sortBy;
+    }
+
+    const sortOrder = searchParams.get('sort_order');
+    if (sortOrder === 'ASC' || sortOrder === 'DESC') {
+        partial.sortOrder = sortOrder;
+    }
+
+    return partial;
 }
 
 export default function UsersPage() {
     const { t } = useTranslation();
     const dateOpts = useDateFormatOptions();
     const router = useRouter();
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
+    const skipUrlSyncRef = useRef(false);
 
     const [users, setUsers] = useState<ApiUser[]>([]);
     const [loading, setLoading] = useState(true);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [roleFilter, setRoleFilter] = useState('');
-    const [bannedFilter, setBannedFilter] = useState('');
-    const [pagination, setPagination] = useState<Pagination>({
-        page: 1,
-        pageSize: 15,
+    const { filters, patchFilters, resetFilters, setFilters, hydrated } = usePersistedListFilters(
+        USERS_LIST_FILTERS_KEY,
+        USERS_LIST_FILTERS_DEFAULTS,
+    );
+    const { searchQuery, roleFilter, bannedFilter, ipFilter, emailVerifiedFilter, sortBy, sortOrder, page, pageSize } =
+        filters;
+    const [pagination, setPagination] = useState<Omit<Pagination, 'page' | 'pageSize'>>({
         total: 0,
         from: 0,
         to: 0,
@@ -114,8 +226,10 @@ export default function UsersPage() {
     const [availableRoles, setAvailableRoles] = useState<AvailableRole[]>([]);
 
     const [refreshKey, setRefreshKey] = useState(0);
+    const [clearingAllDevices, setClearingAllDevices] = useState(false);
 
     const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
+    const [debouncedIpFilter, setDebouncedIpFilter] = useState('');
 
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-users');
 
@@ -124,28 +238,80 @@ export default function UsersPage() {
     }, [fetchWidgets]);
 
     useEffect(() => {
+        if (!hydrated) {
+            return;
+        }
+
+        if (skipUrlSyncRef.current) {
+            skipUrlSyncRef.current = false;
+            return;
+        }
+
+        const fromUrl = filtersFromSearchParams(searchParams);
+        if (Object.keys(fromUrl).length === 0) {
+            return;
+        }
+
+        setFilters((prev) => ({ ...prev, ...fromUrl }));
+    }, [hydrated, searchParams, setFilters]);
+
+    useEffect(() => {
+        if (!hydrated) {
+            return;
+        }
+
+        const nextQuery = filtersToQueryString(filters);
+        const currentQuery = searchParams.toString();
+        if (nextQuery === currentQuery) {
+            return;
+        }
+
+        skipUrlSyncRef.current = true;
+        router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
+    }, [filters, hydrated, pathname, router, searchParams]);
+
+    useEffect(() => {
         const timer = setTimeout(() => {
             setDebouncedSearchQuery(searchQuery);
             if (searchQuery !== debouncedSearchQuery) {
-                setPagination((prev) => ({ ...prev, page: 1 }));
+                patchFilters({ page: 1 });
             }
         }, 500);
 
         return () => clearTimeout(timer);
-    }, [debouncedSearchQuery, searchQuery]);
+    }, [debouncedSearchQuery, patchFilters, searchQuery]);
 
     useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedIpFilter(ipFilter);
+            if (ipFilter !== debouncedIpFilter) {
+                patchFilters({ page: 1 });
+            }
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [debouncedIpFilter, ipFilter, patchFilters]);
+
+    useEffect(() => {
+        if (!hydrated) {
+            return;
+        }
+
         const controller = new AbortController();
         const fetchUsers = async () => {
             setLoading(true);
             try {
                 const { data } = await axios.get('/api/admin/users', {
                     params: {
-                        page: pagination.page,
-                        limit: pagination.pageSize,
+                        page,
+                        limit: pageSize,
                         search: debouncedSearchQuery || undefined,
                         role: roleFilter || undefined,
                         banned: bannedFilter || undefined,
+                        ip: debouncedIpFilter || undefined,
+                        email_verified: emailVerifiedFilter || undefined,
+                        sort_by: sortBy,
+                        sort_order: sortOrder,
                     },
                     signal: controller.signal,
                 });
@@ -154,15 +320,12 @@ export default function UsersPage() {
                     setUsers(data.data.users || []);
                     setAvailableRoles(data.data.roles || []);
                     const apiPagination = data.data.pagination;
-                    setPagination((prev) => ({
-                        ...prev,
-                        page: apiPagination.current_page,
-                        pageSize: apiPagination.per_page,
+                    setPagination({
                         total: apiPagination.total_records,
                         totalPages: Math.ceil(apiPagination.total_records / apiPagination.per_page),
-                        hasNext: apiPagination.has_next,
-                        hasPrev: apiPagination.has_prev,
-                    }));
+                        from: apiPagination.from ?? 0,
+                        to: apiPagination.to ?? 0,
+                    });
                     if (data.data.roles) {
                         setAvailableRoles(
                             Object.entries(data.data.roles).map(([id, role]) => {
@@ -196,7 +359,20 @@ export default function UsersPage() {
         return () => {
             controller.abort();
         };
-    }, [pagination.page, pagination.pageSize, debouncedSearchQuery, roleFilter, refreshKey, t, bannedFilter]);
+    }, [
+        page,
+        pageSize,
+        debouncedSearchQuery,
+        debouncedIpFilter,
+        roleFilter,
+        refreshKey,
+        t,
+        bannedFilter,
+        emailVerifiedFilter,
+        sortBy,
+        sortOrder,
+        hydrated,
+    ]);
 
     const handleDeleteUser = async (user: ApiUser) => {
         if (!confirm(t('admin.users.messages.delete_confirm', { username: user.username }))) {
@@ -240,33 +416,25 @@ export default function UsersPage() {
         }
     };
 
-    const paginationBar = (
-        <div className='border-border bg-card/50 flex items-center justify-between gap-4 rounded-xl border px-4 py-3'>
-            <Button
-                variant='outline'
-                size='sm'
-                disabled={!pagination || pagination.page === 1}
-                onClick={() => pagination && setPagination({ ...pagination, page: pagination.page - 1 })}
-                className='gap-1.5'
-            >
-                <ChevronLeft className='h-4 w-4' />
-                {t('common.previous')}
-            </Button>
-            <span className='text-sm font-medium'>
-                {pagination ? `${pagination.page} / ${pagination.totalPages}` : '—'}
-            </span>
-            <Button
-                variant='outline'
-                size='sm'
-                disabled={!pagination || pagination.page === pagination.totalPages}
-                onClick={() => pagination && setPagination({ ...pagination, page: pagination.page + 1 })}
-                className='gap-1.5'
-            >
-                {t('common.next')}
-                <ChevronRight className='h-4 w-4' />
-            </Button>
-        </div>
-    );
+    const handleClearAllDevices = async () => {
+        if (!confirm(t('admin.users.clear_all_devices_confirm'))) {
+            return;
+        }
+
+        setClearingAllDevices(true);
+        try {
+            const { data } = await axios.delete('/api/admin/devices');
+            if (data?.success) {
+                toast.success(t('admin.users.clear_all_devices_success'));
+            } else {
+                toast.error(data?.message || t('admin.users.clear_all_devices_failed'));
+            }
+        } catch {
+            toast.error(t('admin.users.clear_all_devices_failed'));
+        } finally {
+            setClearingAllDevices(false);
+        }
+    };
 
     return (
         <div className='space-y-6'>
@@ -277,10 +445,16 @@ export default function UsersPage() {
                 description={t('admin.users.subtitle')}
                 icon={UsersIcon}
                 actions={
-                    <Button onClick={() => router.push('/admin/users/create')}>
-                        <UserPlus className='mr-2 h-4 w-4' />
-                        {t('admin.users.create.title')}
-                    </Button>
+                    <div className='flex flex-wrap gap-2'>
+                        <Button variant='outline' onClick={handleClearAllDevices} loading={clearingAllDevices}>
+                            <Trash2 className='mr-2 h-4 w-4' />
+                            {t('admin.users.clear_all_devices')}
+                        </Button>
+                        <Button onClick={() => router.push('/admin/users/create')}>
+                            <UserPlus className='mr-2 h-4 w-4' />
+                            {t('admin.users.create.title')}
+                        </Button>
+                    </div>
                 }
             />
 
@@ -293,16 +467,21 @@ export default function UsersPage() {
                         placeholder={t('admin.users.search_placeholder')}
                         className='h-11 pl-10'
                         value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onChange={(e) => patchFilters({ searchQuery: e.target.value })}
                     />
                 </div>
                 <div className='flex w-full items-center gap-2 overflow-x-auto pb-2 sm:w-auto sm:pb-0'>
+                    <Input
+                        placeholder={t('admin.users.filters.ip_placeholder')}
+                        className='h-11 w-[160px] rounded-xl'
+                        value={ipFilter}
+                        onChange={(e) => patchFilters({ ipFilter: e.target.value })}
+                    />
                     {availableRoles.length > 0 && (
                         <Select
                             value={roleFilter}
                             onChange={(e) => {
-                                setRoleFilter(e.target.value);
-                                setPagination({ ...pagination, page: 1 });
+                                patchFilters({ roleFilter: e.target.value, page: 1 });
                             }}
                             className='h-11 w-[160px] rounded-xl'
                         >
@@ -317,8 +496,7 @@ export default function UsersPage() {
                     <Select
                         value={bannedFilter}
                         onChange={(e) => {
-                            setBannedFilter(e.target.value);
-                            setPagination({ ...pagination, page: 1 });
+                            patchFilters({ bannedFilter: e.target.value, page: 1 });
                         }}
                         className='h-11 w-[160px] rounded-xl'
                     >
@@ -326,12 +504,55 @@ export default function UsersPage() {
                         <option value='false'>{t('admin.users.filters.status_active')}</option>
                         <option value='true'>{t('admin.users.filters.status_banned')}</option>
                     </Select>
+                    <Select
+                        value={emailVerifiedFilter}
+                        onChange={(e) => {
+                            patchFilters({
+                                emailVerifiedFilter: e.target.value as '' | 'true' | 'false',
+                                page: 1,
+                            });
+                        }}
+                        className='h-11 w-[180px] rounded-xl'
+                    >
+                        <option value=''>{t('admin.users.filters.any_email_status')}</option>
+                        <option value='true'>{t('admin.users.filters.email_verified')}</option>
+                        <option value='false'>{t('admin.users.filters.email_unverified')}</option>
+                    </Select>
+                    <Select
+                        value={`${sortBy}-${sortOrder}`}
+                        onChange={(e) => {
+                            const [field, order] = e.target.value.split('-') as [
+                                'id' | 'username' | 'email' | 'last_seen' | 'created_at',
+                                'ASC' | 'DESC',
+                            ];
+                            patchFilters({ sortBy: field, sortOrder: order, page: 1 });
+                        }}
+                        className='h-11 w-[200px] rounded-xl'
+                    >
+                        <option value='created_at-DESC'>{t('admin.users.sort.created_desc')}</option>
+                        <option value='created_at-ASC'>{t('admin.users.sort.created_asc')}</option>
+                        <option value='last_seen-DESC'>{t('admin.users.sort.last_active_desc')}</option>
+                        <option value='last_seen-ASC'>{t('admin.users.sort.last_active_asc')}</option>
+                        <option value='id-DESC'>{t('admin.users.sort.newest')}</option>
+                        <option value='id-ASC'>{t('admin.users.sort.oldest')}</option>
+                        <option value='username-ASC'>{t('admin.users.sort.username_asc')}</option>
+                        <option value='username-DESC'>{t('admin.users.sort.username_desc')}</option>
+                        <option value='email-ASC'>{t('admin.users.sort.email_asc')}</option>
+                        <option value='email-DESC'>{t('admin.users.sort.email_desc')}</option>
+                    </Select>
                 </div>
             </div>
 
             <WidgetRenderer widgets={getWidgets('admin-users', 'before-list')} />
 
-            {pagination && pagination.totalPages > 1 && paginationBar}
+            {pagination.totalPages > 1 && (
+                <ListPagination
+                    page={page}
+                    totalPages={pagination.totalPages}
+                    disabled={loading}
+                    onPageChange={(nextPage) => patchFilters({ page: nextPage })}
+                />
+            )}
 
             {loading ? (
                 <TableSkeleton count={5} />
@@ -344,9 +565,7 @@ export default function UsersPage() {
                         <Button
                             variant='outline'
                             onClick={() => {
-                                setSearchQuery('');
-                                setRoleFilter('');
-                                setPagination({ ...pagination, page: 1 });
+                                resetFilters();
                             }}
                         >
                             {t('admin.users.clear_filters')}
@@ -356,6 +575,7 @@ export default function UsersPage() {
             ) : (
                 <div className='grid grid-cols-1 gap-6'>
                     {users.map((user) => {
+                        const userEditHref = `/admin/users/${user.uuid}/edit`;
                         const avatarSrc =
                             user.avatar &&
                             typeof user.avatar === 'string' &&
@@ -372,9 +592,9 @@ export default function UsersPage() {
 
                         if (user.role) {
                             badges.push({
-                                label: user.role.display_name,
-                                className: `border-transparent text-white`,
-                                style: { backgroundColor: user.role.color },
+                                label: getRoleBadgeLabel(user.role),
+                                className: 'border-transparent text-white',
+                                style: getRoleBadgeStyles(user.role, 'solid'),
                             });
                         }
 
@@ -412,7 +632,6 @@ export default function UsersPage() {
                             });
                         }
 
-                        // Authentication type badges
                         if (user.ldap_provider_uuid && user.ldap_dn) {
                             badges.push({
                                 label: t('admin.users.badges.ldap'),
@@ -433,6 +652,7 @@ export default function UsersPage() {
                         return (
                             <ResourceCard
                                 key={user.uuid}
+                                href={userEditHref}
                                 icon={IconComponent}
                                 title={user.username}
                                 subtitle={user.email}
@@ -448,11 +668,19 @@ export default function UsersPage() {
                                                     </span>
                                                 </div>
                                             )}
-                                            {user.created_at && (
+                                            {(user.created_at || user.first_seen) && (
                                                 <div className='flex items-center gap-1.5'>
                                                     <span className='font-semibold'>{t('admin.users.created')}:</span>
-                                                    <span title={formatDateTimeInTz(user.created_at, dateOpts)}>
-                                                        {formatRelativeTime(user.created_at, dateOpts)}
+                                                    <span
+                                                        title={formatDateTimeInTz(
+                                                            user.created_at || user.first_seen || '',
+                                                            dateOpts,
+                                                        )}
+                                                    >
+                                                        {formatRelativeTime(
+                                                            user.created_at || user.first_seen || '',
+                                                            dateOpts,
+                                                        )}
                                                     </span>
                                                 </div>
                                             )}
@@ -477,21 +705,17 @@ export default function UsersPage() {
                                 }
                                 actions={
                                     <div className='flex items-center gap-2'>
-                                        <Button
-                                            variant='outline'
-                                            size='sm'
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                router.push(`/admin/users/${user.uuid}/edit`);
-                                            }}
-                                        >
-                                            <Eye className='h-4 w-4' />
+                                        <Button asChild variant='outline' size='sm'>
+                                            <Link href={userEditHref} onClick={(e) => e.stopPropagation()}>
+                                                <Eye className='h-4 w-4' />
+                                            </Link>
                                         </Button>
                                         {isEmailUnverified && (
                                             <Button
                                                 variant='outline'
                                                 size='sm'
                                                 onClick={(e) => {
+                                                    e.preventDefault();
                                                     e.stopPropagation();
                                                     handleForceVerifyEmail(user);
                                                 }}
@@ -504,6 +728,7 @@ export default function UsersPage() {
                                             variant='destructive'
                                             size='sm'
                                             onClick={(e) => {
+                                                e.preventDefault();
                                                 e.stopPropagation();
                                                 handleDeleteUser(user);
                                             }}
@@ -512,14 +737,23 @@ export default function UsersPage() {
                                         </Button>
                                     </div>
                                 }
-                                onClick={() => router.push(`/admin/users/${user.uuid}/edit`)}
                             />
                         );
                     })}
                 </div>
             )}
 
-            {pagination && pagination.totalPages > 1 && <div className='mt-6 flex justify-center'>{paginationBar}</div>}
+            {pagination.totalPages > 1 && (
+                <div className='mt-6 flex justify-center'>
+                    <ListPagination
+                        page={page}
+                        totalPages={pagination.totalPages}
+                        disabled={loading}
+                        onPageChange={(nextPage) => patchFilters({ page: nextPage })}
+                        className='w-full max-w-xl'
+                    />
+                </div>
+            )}
 
             <div className='grid grid-cols-1 gap-6 pt-10 md:grid-cols-2 lg:grid-cols-3'>
                 <PageCard title={t('admin.users.help.managing.title')} icon={UsersIcon}>

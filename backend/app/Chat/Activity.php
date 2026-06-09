@@ -102,6 +102,21 @@ class Activity
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 
+    /**
+     * @return string[]
+     */
+    public static function getDistinctIpsByUserUuid(string $userUuid): array
+    {
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare(
+            'SELECT DISTINCT ip_address FROM ' . self::$table
+            . ' WHERE user_uuid = :user_uuid AND ip_address IS NOT NULL AND ip_address != \'\' ORDER BY ip_address'
+        );
+        $stmt->execute(['user_uuid' => $userUuid]);
+
+        return array_column($stmt->fetchAll(\PDO::FETCH_ASSOC), 'ip_address');
+    }
+
     public static function getCountByUserUuid(string $userUuid, ?string $search = null): int
     {
         $pdo = Database::getPdoConnection();

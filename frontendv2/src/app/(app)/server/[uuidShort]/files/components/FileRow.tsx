@@ -456,7 +456,7 @@ export function FileRow({
                         return (
                             <Link
                                 href={`/server/${serverUuid}/files/trash`}
-                                className='text-primary block truncate text-sm font-semibold'
+                                className='text-foreground block truncate text-sm font-semibold'
                                 onClick={(e) => {
                                     if (onRowClick?.(file, e)) {
                                         e.preventDefault();
@@ -475,7 +475,7 @@ export function FileRow({
                         return (
                             <Link
                                 href={`?path=${encodeURIComponent(fullPath)}`}
-                                className='text-primary block truncate text-sm font-semibold'
+                                className='text-foreground block truncate text-sm font-semibold'
                                 onClick={(e) => {
                                     if (onRowClick?.(file, e)) {
                                         e.preventDefault();
@@ -492,7 +492,7 @@ export function FileRow({
                         return (
                             <Link
                                 href={`/server/${serverUuid}/files/edit?file=${encodeURIComponent(file.name)}&directory=${encodeURIComponent(currentDirectory || '/')}`}
-                                className='text-primary block truncate text-sm font-semibold'
+                                className='text-foreground block truncate text-sm font-semibold'
                                 onClick={(e) => {
                                     if (onRowClick?.(file, e)) {
                                         e.preventDefault();
@@ -515,7 +515,7 @@ export function FileRow({
                                     e.stopPropagation();
                                     onAction('preview', file);
                                 }}
-                                className='text-primary block w-full truncate text-left text-sm font-semibold'
+                                className='text-foreground block w-full truncate text-left text-sm font-semibold'
                             >
                                 {file.name}
                             </button>
@@ -534,7 +534,7 @@ export function FileRow({
                                     e.stopPropagation();
                                     onAction('browse-archive', file);
                                 }}
-                                className='text-primary block w-full truncate text-left text-sm font-semibold'
+                                className='text-foreground block w-full truncate text-left text-sm font-semibold'
                             >
                                 {file.name}
                             </button>
@@ -542,7 +542,7 @@ export function FileRow({
                     } else {
                         return (
                             <span
-                                className='text-primary block cursor-default truncate text-sm font-semibold opacity-90'
+                                className='text-foreground block cursor-default truncate text-sm font-semibold'
                                 onClick={(e) => e.stopPropagation()}
                                 title={t('files.row.cant_preview')}
                             >

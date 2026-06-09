@@ -132,6 +132,46 @@ return function (RouteCollection $routes): void {
     );
     App::getInstance(true)->registerAdminRoute(
         $routes,
+        'admin-users-potential-alts',
+        '/api/admin/users/{uuid}/potential-alts',
+        function (Request $request, array $args) {
+            $uuid = $args['uuid'] ?? null;
+            if (!$uuid || !is_string($uuid)) {
+                return ApiResponse::error('Missing or invalid UUID', 'INVALID_UUID', 400);
+            }
+
+            return (new UsersController())->potentialAlts($request, $uuid);
+        },
+        Permissions::ADMIN_USERS_VIEW,
+        ['GET']
+    );
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-users-clear-devices',
+        '/api/admin/users/{uuid}/devices',
+        function (Request $request, array $args) {
+            $uuid = $args['uuid'] ?? null;
+            if (!$uuid || !is_string($uuid)) {
+                return ApiResponse::error('Missing or invalid UUID', 'INVALID_UUID', 400);
+            }
+
+            return (new UsersController())->clearUserDevices($request, $uuid);
+        },
+        Permissions::ADMIN_USERS_EDIT,
+        ['DELETE']
+    );
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-devices-clear-all',
+        '/api/admin/devices',
+        function (Request $request) {
+            return (new UsersController())->clearAllDevices($request);
+        },
+        Permissions::ADMIN_USERS_EDIT,
+        ['DELETE']
+    );
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
         'admin-users-server-request',
         '/api/admin/users/serverRequest/{id}',
         function (Request $request, array $args) {
@@ -171,6 +211,26 @@ return function (RouteCollection $routes): void {
             }
 
             return (new UsersController())->sendEmail($request, $uuid);
+        },
+        Permissions::ADMIN_USERS_EDIT,
+        ['POST']
+    );
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-users-resend-mail',
+        '/api/admin/users/{uuid}/mails/{id}/resend',
+        function (Request $request, array $args) {
+            $uuid = $args['uuid'] ?? null;
+            if (!$uuid || !is_string($uuid)) {
+                return ApiResponse::error('Missing or invalid UUID', 'INVALID_UUID', 400);
+            }
+
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid mail ID', 'INVALID_MAIL_ID', 400);
+            }
+
+            return (new UsersController())->resendMail($request, $uuid, (int) $id);
         },
         Permissions::ADMIN_USERS_EDIT,
         ['POST']

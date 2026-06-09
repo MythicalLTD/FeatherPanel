@@ -34,6 +34,7 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'name', type: 'string', description: 'Role name'),
         new OA\Property(property: 'display_name', type: 'string', description: 'Role display name'),
         new OA\Property(property: 'color', type: 'string', description: 'Role color'),
+        new OA\Property(property: 'custom_badge', type: 'string', nullable: true, description: 'Optional short label shown on user badges instead of the display name'),
         new OA\Property(property: 'created_at', type: 'string', format: 'date-time', description: 'Creation timestamp'),
         new OA\Property(property: 'updated_at', type: 'string', format: 'date-time', description: 'Last update timestamp'),
     ]
@@ -60,6 +61,7 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'name', type: 'string', description: 'Role name', minLength: 2, maxLength: 255),
         new OA\Property(property: 'display_name', type: 'string', description: 'Role display name', minLength: 2, maxLength: 255),
         new OA\Property(property: 'color', type: 'string', description: 'Role color', maxLength: 32),
+        new OA\Property(property: 'custom_badge', type: 'string', nullable: true, description: 'Optional short label shown on user badges', maxLength: 64),
     ]
 )]
 #[OA\Schema(
@@ -69,6 +71,7 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'name', type: 'string', description: 'Role name', minLength: 2, maxLength: 255),
         new OA\Property(property: 'display_name', type: 'string', description: 'Role display name', minLength: 2, maxLength: 255),
         new OA\Property(property: 'color', type: 'string', description: 'Role color', maxLength: 32),
+        new OA\Property(property: 'custom_badge', type: 'string', nullable: true, description: 'Optional short label shown on user badges', maxLength: 64),
     ]
 )]
 class RolesController
@@ -256,6 +259,16 @@ class RolesController
         if (strlen($data['color']) > 32) {
             return ApiResponse::error('Color must be less than 32 characters', 'INVALID_DATA_LENGTH');
         }
+        if (array_key_exists('custom_badge', $data)) {
+            $normalizedBadge = $this->normalizeCustomBadge($data['custom_badge']);
+            if ($normalizedBadge === false) {
+                return ApiResponse::error('Custom badge must be a string', 'INVALID_DATA_TYPE');
+            }
+            if (is_string($normalizedBadge) && strlen($normalizedBadge) > 64) {
+                return ApiResponse::error('Custom badge must be less than 64 characters', 'INVALID_DATA_LENGTH');
+            }
+            $data['custom_badge'] = $normalizedBadge;
+        }
         $id = Role::createRole($data);
         if (!$id) {
             return ApiResponse::error('Failed to create role', 'ROLE_CREATE_FAILED', 400);
@@ -360,6 +373,16 @@ class RolesController
                 return ApiResponse::error('Color must be less than 32 characters', 'INVALID_DATA_LENGTH');
             }
         }
+        if (array_key_exists('custom_badge', $data)) {
+            $normalizedBadge = $this->normalizeCustomBadge($data['custom_badge']);
+            if ($normalizedBadge === false) {
+                return ApiResponse::error('Custom badge must be a string', 'INVALID_DATA_TYPE');
+            }
+            if (is_string($normalizedBadge) && strlen($normalizedBadge) > 64) {
+                return ApiResponse::error('Custom badge must be less than 64 characters', 'INVALID_DATA_LENGTH');
+            }
+            $data['custom_badge'] = $normalizedBadge;
+        }
         $success = Role::updateRole($id, $data);
         if (!$success) {
             return ApiResponse::error('Failed to update role', 'ROLE_UPDATE_FAILED', 400);
@@ -458,5 +481,18 @@ class RolesController
         }
 
         return ApiResponse::success([], 'Role deleted successfully', 200);
+    }
+
+    private function normalizeCustomBadge(mixed $value): string | false | null
+    {
+        if ($value === null) {
+            return null;
+        }
+        if (!is_string($value)) {
+            return false;
+        }
+        $trimmed = trim($value);
+
+        return $trimmed === '' ? null : $trimmed;
     }
 }

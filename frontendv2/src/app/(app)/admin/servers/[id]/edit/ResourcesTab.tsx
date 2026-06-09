@@ -20,6 +20,7 @@ import { PageCard } from '@/components/featherui/PageCard';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/featherui/Button';
+import { SERVER_RESOURCE_LIMITS } from '@/lib/server-utils';
 import { TabProps } from './types';
 
 export function ResourcesTab({ form, setForm, errors }: TabProps) {
@@ -61,7 +62,7 @@ export function ResourcesTab({ form, setForm, errors }: TabProps) {
                                 type='number'
                                 value={form.memory}
                                 onChange={(e) => setForm((prev) => ({ ...prev, memory: Number(e.target.value) }))}
-                                min={0}
+                                min={SERVER_RESOURCE_LIMITS.memory.min}
                                 className={`bg-muted/30 h-11 ${errors.memory ? 'border-red-500' : ''}`}
                             />
                         )}
@@ -147,7 +148,7 @@ export function ResourcesTab({ form, setForm, errors }: TabProps) {
                                 type='number'
                                 value={form.disk}
                                 onChange={(e) => setForm((prev) => ({ ...prev, disk: Number(e.target.value) }))}
-                                min={0}
+                                min={SERVER_RESOURCE_LIMITS.disk.min}
                                 className={`bg-muted/30 h-11 ${errors.disk ? 'border-red-500' : ''}`}
                             />
                         )}
@@ -183,7 +184,7 @@ export function ResourcesTab({ form, setForm, errors }: TabProps) {
                                 type='number'
                                 value={form.cpu}
                                 onChange={(e) => setForm((prev) => ({ ...prev, cpu: Number(e.target.value) }))}
-                                min={0}
+                                min={SERVER_RESOURCE_LIMITS.cpu.min}
                                 className={`bg-muted/30 h-11 ${errors.cpu ? 'border-red-500' : ''}`}
                             />
                         )}

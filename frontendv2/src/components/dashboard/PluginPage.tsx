@@ -209,13 +209,16 @@ export default function PluginPage({ context, serverUuid, vdsId }: PluginPagePro
                 }
 
                 if (matchingItem && matchingItem.component) {
-                    if (context === 'server' && serverSpellId !== null && serverSpellId !== undefined) {
-                        if (
-                            matchingItem.allowedOnlyOnSpells &&
-                            Array.isArray(matchingItem.allowedOnlyOnSpells) &&
-                            matchingItem.allowedOnlyOnSpells.length > 0
-                        ) {
-                            if (!matchingItem.allowedOnlyOnSpells.includes(serverSpellId)) {
+                    if (context === 'server') {
+                        const normalizedSpellId =
+                            serverSpellId === null || serverSpellId === undefined ? null : Number(serverSpellId);
+                        const allowedSpells = matchingItem.allowedOnlyOnSpells;
+                        if (allowedSpells && allowedSpells.length > 0) {
+                            const spellAllowed =
+                                normalizedSpellId !== null &&
+                                Number.isFinite(normalizedSpellId) &&
+                                allowedSpells.some((allowedId) => Number(allowedId) === normalizedSpellId);
+                            if (!spellAllowed) {
                                 setError(t('errors.plugin.spell_restriction'));
                                 setLoading(false);
                                 return;

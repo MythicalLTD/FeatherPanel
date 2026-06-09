@@ -42,6 +42,9 @@ use App\Services\Backup\BackupFifoEviction;
 
 final class VmInstanceUtil
 {
+    /** Prefix for short-lived Proxmox users created for VNC console access. */
+    public const FP_CONSOLE_USER_PREFIX = 'fp-console-';
+
     /**
      * Build a Proxmox client for the given VM node (shared by admin and user controllers).
      *
@@ -801,7 +804,7 @@ final class VmInstanceUtil
             'wss_url' => $wssUrl,
         ];
 
-        $tempUser = 'fp-console-' . $instanceIdForLabel . '-' . bin2hex(random_bytes(4)) . '@pve';
+        $tempUser = self::FP_CONSOLE_USER_PREFIX . $instanceIdForLabel . '-' . bin2hex(random_bytes(4)) . '@pve';
         $tempPass = bin2hex(random_bytes(16));
         $expire = time() + 300;
         $cr = $client->createUser($tempUser, $tempPass, $expire);
@@ -821,6 +824,71 @@ final class VmInstanceUtil
         }
 
         return ['ok' => true, 'payload' => $payload];
+    }
+
+    /**
+     * Delete expired temporary console users (fp-console-*) on a Proxmox node.
+     *
+     * @param array<string, mixed> $vmNode VM node row from VmNode::getAllVmNodes()
+     *
+     * @return array{deleted: int, errors: int}
+     */
+    public static function cleanupExpiredFpConsoleUsersOnNode(array $vmNode): array
+    {
+        $deleted = 0;
+        $errors = 0;
+        $now = time();
+
+        try {
+            $client = self::buildProxmoxClientForNode($vmNode);
+        } catch (\Throwable $e) {
+            App::getInstance(true)->getLogger()->error(
+                'Proxmox client build failed (console user cleanup) for node '
+                . ($vmNode['id'] ?? 'unknown') . ': ' . $e->getMessage()
+            );
+
+            return ['deleted' => 0, 'errors' => 1];
+        }
+
+        $list = $client->listUsers();
+        if (!$list['ok']) {
+            App::getInstance(true)->getLogger()->error(
+                'Proxmox listUsers failed (console user cleanup) for node '
+                . ($vmNode['id'] ?? 'unknown') . ': ' . ($list['error'] ?? 'unknown')
+            );
+
+            return ['deleted' => 0, 'errors' => 1];
+        }
+
+        foreach ($list['users'] as $user) {
+            if (!is_array($user)) {
+                continue;
+            }
+
+            $userid = isset($user['userid']) ? (string) $user['userid'] : '';
+            if ($userid === '' || !str_starts_with($userid, self::FP_CONSOLE_USER_PREFIX)) {
+                continue;
+            }
+
+            $expire = isset($user['expire']) ? (int) $user['expire'] : 0;
+            if ($expire <= 0 || $expire > $now) {
+                continue;
+            }
+
+            $result = $client->deleteUser($userid);
+            if ($result['ok']) {
+                ++$deleted;
+                continue;
+            }
+
+            ++$errors;
+            App::getInstance(true)->getLogger()->warning(
+                'Failed to delete expired Proxmox console user ' . $userid . ' on node '
+                . ($vmNode['id'] ?? 'unknown') . ': ' . ($result['error'] ?? 'unknown')
+            );
+        }
+
+        return ['deleted' => $deleted, 'errors' => $errors];
     }
 
     /**

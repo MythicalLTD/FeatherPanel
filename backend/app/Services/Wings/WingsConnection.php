@@ -20,6 +20,7 @@ namespace App\Services\Wings;
 use App\App;
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\Request;
+use App\Helpers\WingsUrlHelper;
 use App\Services\Wings\Utils\DnsResolver;
 use App\Services\Wings\Utils\TokenGenerator;
 use App\Services\Wings\Exceptions\WingsRequestException;
@@ -51,6 +52,7 @@ class WingsConnection
      * @param string $protocol The protocol to use (http/https)
      * @param string $authToken The authentication token for Wings
      * @param int $timeout Request timeout in seconds (default: 30)
+     * @param bool $behindProxy Whether Wings is accessed through a reverse proxy
      */
     public function __construct(
         string $host,
@@ -58,6 +60,7 @@ class WingsConnection
         string $protocol = 'http',
         string $authToken = '',
         int $timeout = 30,
+        bool $behindProxy = false,
     ) {
         $this->protocol = $protocol;
         $this->port = $port;
@@ -65,7 +68,7 @@ class WingsConnection
         $this->timeout = $timeout;
 
         // Build base URL
-        $this->baseUrl = $this->buildBaseUrl($host, $port, $protocol);
+        $this->baseUrl = $this->buildBaseUrl($host, $port, $protocol, $behindProxy);
 
         // Initialize token generator
         $this->tokenGenerator = new TokenGenerator();
@@ -599,11 +602,9 @@ class WingsConnection
     /**
      * Build the base URL for the Wings API.
      */
-    private function buildBaseUrl(string $host, int $port, string $protocol): string
+    private function buildBaseUrl(string $host, int $port, string $protocol, bool $behindProxy = false): string
     {
-        $host = rtrim($host, '/');
-
-        return "{$protocol}://{$host}:{$port}";
+        return WingsUrlHelper::buildBaseUrl($protocol, $host, $port, $behindProxy);
     }
 
     /**

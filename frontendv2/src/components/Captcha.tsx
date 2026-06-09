@@ -46,6 +46,8 @@ interface CaptchaProps {
     onExpire?: () => void;
     onError?: () => void;
     refreshKey?: number;
+    /** Auth forms: full-width, no extra vertical margin (parent controls spacing). */
+    layout?: 'default' | 'auth';
 }
 
 let friendlyChallengeScriptPromise: Promise<void> | null = null;
@@ -258,7 +260,12 @@ function FriendlyCaptchaInner({
         };
     }, [sitekey, theme]);
 
-    return <div ref={elRef} className='flex justify-center' />;
+    return (
+        <div
+            ref={elRef}
+            className='frc-captcha-host flex w-full min-w-0 justify-center [&_.frc-captcha]:w-full [&_.frc-captcha]:max-w-full'
+        />
+    );
 }
 
 /** Supported reForge widget types (invisible / managed are not supported). */
@@ -339,7 +346,7 @@ function ReforgeCaptchaInner({
     );
 }
 
-export const Captcha: React.FC<CaptchaProps> = ({ onVerify, onExpire, onError, refreshKey }) => {
+export const Captcha: React.FC<CaptchaProps> = ({ onVerify, onExpire, onError, refreshKey, layout = 'default' }) => {
     const { settings } = useSettings();
 
     const captchaEnabled = settings?.turnstile_enabled === 'true';
@@ -348,8 +355,14 @@ export const Captcha: React.FC<CaptchaProps> = ({ onVerify, onExpire, onError, r
 
     if (!captchaEnabled) return null;
 
-    const containerStyle = 'flex justify-center my-4';
-    const recaptchaV3ContainerStyle = 'flex flex-col items-center justify-center my-4 gap-2';
+    const containerStyle =
+        layout === 'auth'
+            ? 'flex w-full min-w-0 justify-center [&_.reforge-captcha]:w-full [&_iframe]:max-w-full'
+            : 'my-4 flex justify-center';
+    const recaptchaV3ContainerStyle =
+        layout === 'auth'
+            ? 'flex w-full min-w-0 flex-col items-center justify-center gap-2'
+            : 'my-4 flex flex-col items-center justify-center gap-2';
 
     switch (provider) {
         case 'hcaptcha':

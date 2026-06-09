@@ -29,6 +29,7 @@ use App\Services\Wings\Wings;
 use App\Chat\TicketAttachment;
 use App\Config\ConfigInterface;
 use App\Cli\Utils\MinecraftColorCodeSupport;
+use App\Services\Tickets\TicketNotificationService;
 use App\Services\UserDataExport\UserDataExportService;
 
 /**
@@ -267,6 +268,11 @@ class UserDataExportProcessor implements TimeTask
 
             if (!$messageId) {
                 throw new \RuntimeException('Failed to create system reply for export ticket');
+            }
+
+            $createdMessage = TicketMessage::getById($messageId);
+            if ($createdMessage) {
+                TicketNotificationService::notifyReply($ticket, $createdMessage);
             }
 
             $attachmentId = TicketAttachment::create([

@@ -32,6 +32,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { toast } from 'sonner';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { HardDrive, Plus, Search, Pencil, Trash2, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 
@@ -72,6 +73,13 @@ interface Pagination {
 
 const MAX_ADMIN_LIST_PAGES = 500;
 
+const MOUNTS_LIST_FILTERS_KEY = 'featherpanel_admin_mounts_filters_v1';
+const MOUNTS_LIST_FILTERS_DEFAULTS = {
+    searchQuery: '',
+    page: 1,
+    pageSize: 20,
+};
+
 async function fetchAllNodes(): Promise<PickNode[]> {
     const out: PickNode[] = [];
     let page = 1;
@@ -110,11 +118,13 @@ export default function AdminMountsPage() {
 
     const [loading, setLoading] = useState(true);
     const [mounts, setMounts] = useState<AdminMount[]>([]);
-    const [searchQuery, setSearchQuery] = useState('');
+    const { filters, patchFilters, hydrated } = usePersistedListFilters(
+        MOUNTS_LIST_FILTERS_KEY,
+        MOUNTS_LIST_FILTERS_DEFAULTS,
+    );
+    const { searchQuery, page, pageSize } = filters;
     const [debouncedSearch, setDebouncedSearch] = useState('');
-    const [pagination, setPagination] = useState<Pagination>({
-        page: 1,
-        pageSize: 20,
+    const [pagination, setPagination] = useState<Omit<Pagination, 'page' | 'pageSize'>>({
         total: 0,
         totalPages: 0,
         hasNext: false,
@@ -166,23 +176,25 @@ export default function AdminMountsPage() {
 
     useEffect(() => {
         const tmr = setTimeout(() => {
-            setDebouncedSearch((prev) => {
-                if (searchQuery !== prev) {
-                    setPagination((p) => ({ ...p, page: 1 }));
-                }
-                return searchQuery;
-            });
+            setDebouncedSearch(searchQuery);
+            if (searchQuery !== debouncedSearch) {
+                patchFilters({ page: 1 });
+            }
         }, 400);
         return () => clearTimeout(tmr);
-    }, [searchQuery]);
+    }, [searchQuery, debouncedSearch, patchFilters]);
 
     const loadMounts = useCallback(async () => {
+        if (!hydrated) {
+            return;
+        }
+
         setLoading(true);
         try {
             const { data } = await axios.get('/api/admin/mounts', {
                 params: {
-                    page: pagination.page,
-                    limit: pagination.pageSize,
+                    page,
+                    limit: pageSize,
                     search: debouncedSearch || undefined,
                     sort_by: 'name',
                     sort_order: 'ASC',
@@ -196,13 +208,12 @@ export default function AdminMountsPage() {
             setMounts(rows);
             const p = data.data?.pagination;
             if (p) {
-                setPagination((prev) => ({
-                    ...prev,
+                setPagination({
                     total: p.total_records,
                     totalPages: p.total_pages,
                     hasNext: p.has_next,
                     hasPrev: p.has_prev,
-                }));
+                });
             }
         } catch (e) {
             console.error(e);
@@ -210,7 +221,7 @@ export default function AdminMountsPage() {
         } finally {
             setLoading(false);
         }
-    }, [pagination.page, pagination.pageSize, debouncedSearch, t]);
+    }, [page, pageSize, debouncedSearch, t, hydrated]);
 
     useEffect(() => {
         loadMounts();
@@ -421,7 +432,7 @@ export default function AdminMountsPage() {
                     <Input
                         placeholder={t('admin.mounts.search_placeholder')}
                         value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onChange={(e) => patchFilters({ searchQuery: e.target.value })}
                         className='h-11 w-full pl-10'
                     />
                 </div>
@@ -432,20 +443,20 @@ export default function AdminMountsPage() {
                     <Button
                         variant='outline'
                         size='sm'
-                        disabled={!pagination.hasPrev}
-                        onClick={() => setPagination((p) => ({ ...p, page: p.page - 1 }))}
+                        disabled={page === 1}
+                        onClick={() => patchFilters({ page: page - 1 })}
                     >
                         <ChevronLeft className='mr-1 h-4 w-4' />
                         {t('common.previous')}
                     </Button>
                     <span className='text-sm'>
-                        {pagination.page} / {pagination.totalPages}
+                        {page} / {pagination.totalPages}
                     </span>
                     <Button
                         variant='outline'
                         size='sm'
-                        disabled={!pagination.hasNext}
-                        onClick={() => setPagination((p) => ({ ...p, page: p.page + 1 }))}
+                        disabled={page === pagination.totalPages}
+                        onClick={() => patchFilters({ page: page + 1 })}
                     >
                         {t('common.next')}
                         <ChevronRight className='ml-1 h-4 w-4' />

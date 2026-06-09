@@ -18,6 +18,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { Fragment, useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { usePathname, useRouter } from 'next/navigation';
 import { Dialog, Transition } from '@headlessui/react';
 import { X, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
@@ -26,6 +27,7 @@ import NextImage from 'next/image';
 import Link from 'next/link';
 import axios from 'axios';
 import { useSettings } from '@/contexts/SettingsContext';
+import { useSession } from '@/contexts/SessionContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { cn } from '@/lib/utils';
 import { useNavigation } from '@/hooks/useNavigation';
@@ -85,11 +87,13 @@ function SidebarContent({
 }) {
     const { theme } = useTheme();
     const { t } = useTranslation();
+    const { adminTicketStats } = useSession();
 
     const [collapsedGroups, setCollapsedGroups] = useState<string[]>([]);
 
     const [collapsedSubmenus, setCollapsedSubmenus] = useState<string[]>([]);
     const [unreadTicketCount, setUnreadTicketCount] = useState(0);
+    const adminOpenTicketCount = adminTicketStats?.open_count ?? 0;
 
     useEffect(() => {
         const saved = localStorage.getItem('featherpanel_collapsed_groups');
@@ -344,7 +348,7 @@ function SidebarContent({
     );
 
     return (
-        <div className='flex h-full flex-col'>
+        <div className='flex h-full min-h-0 flex-col'>
             {isClassicChrome ? (
                 mobile ? (
                     <Link
@@ -387,8 +391,8 @@ function SidebarContent({
             <nav
                 className={cn(
                     isClassicChrome
-                        ? 'custom-scrollbar flex-1 space-y-4 overflow-y-auto px-3 py-3'
-                        : 'custom-scrollbar flex-1 space-y-4 overflow-y-auto py-3 sm:space-y-5',
+                        ? 'custom-scrollbar min-h-0 flex-1 space-y-4 overflow-y-auto px-3 py-3'
+                        : 'custom-scrollbar min-h-0 flex-1 space-y-4 overflow-y-auto py-3 sm:space-y-5',
                     !isClassicChrome && (collapsed && !mobile ? 'px-1.5' : 'px-2'),
                 )}
             >
@@ -435,6 +439,7 @@ function SidebarContent({
                                     const hasChildren = item.children && item.children.length > 0;
                                     const isSubmenuCollapsed = collapsedSubmenus.includes(item.id);
                                     const isTicketsItem = item.url === '/dashboard/tickets';
+                                    const isAdminTicketsItem = item.url === '/admin/tickets';
 
                                     if (hasChildren) {
                                         return (
@@ -542,6 +547,13 @@ function SidebarContent({
                                                         {unreadTicketCount}
                                                     </span>
                                                 )}
+                                                {isAdminTicketsItem &&
+                                                    adminOpenTicketCount > 0 &&
+                                                    (!collapsed || mobile) && (
+                                                        <span className='ml-2 inline-flex items-center rounded-full border border-amber-500/25 bg-amber-500/10 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:text-amber-300'>
+                                                            {adminOpenTicketCount}
+                                                        </span>
+                                                    )}
                                                 {renderCollapsedLabel(item.name)}
                                             </button>
                                         );
@@ -578,6 +590,13 @@ function SidebarContent({
                                                     {unreadTicketCount}
                                                 </span>
                                             )}
+                                            {isAdminTicketsItem &&
+                                                adminOpenTicketCount > 0 &&
+                                                (!collapsed || mobile) && (
+                                                    <span className='ml-2 inline-flex items-center rounded-full border border-amber-500/25 bg-amber-500/10 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:text-amber-300'>
+                                                        {adminOpenTicketCount}
+                                                    </span>
+                                                )}
                                             {renderCollapsedLabel(item.name)}
                                         </Link>
                                     );
@@ -591,6 +610,7 @@ function SidebarContent({
             {!mobile && (
                 <div
                     className={cn(
+                        'mt-auto shrink-0',
                         isClassicChrome
                             ? 'border-border/50 border-t p-2'
                             : 'border-border/40 bg-muted/10 border-t p-1.5',
@@ -653,6 +673,11 @@ export default function Sidebar({ mobileOpen, setMobileOpen, pluginFullBleed = f
         }
         return false;
     });
+    const [portalReady, setPortalReady] = useState(false);
+
+    useEffect(() => {
+        setPortalReady(true);
+    }, []);
 
     const groupedItems = useMemo(() => {
         const grouped = navigationItems.reduce(
@@ -764,39 +789,35 @@ export default function Sidebar({ mobileOpen, setMobileOpen, pluginFullBleed = f
                 </Dialog>
             </Transition.Root>
 
-            <div
-                className={cn(
-                    'hidden lg:fixed lg:inset-y-0 lg:z-40 lg:flex lg:flex-col',
-                    chromeLayout === 'classic'
-                        ? ''
-                        : 'lg:border-border/50 lg:bg-card/45 lg:overflow-hidden lg:rounded-r-2xl lg:border lg:border-l-0 lg:shadow-sm lg:backdrop-blur-2xl',
-                )}
-            >
-                <div
-                    className={cn(
-                        'flex h-full min-h-0 grow flex-col gap-y-5 overflow-y-auto transition-[width] duration-300 ease-out',
-                        chromeLayout === 'classic'
-                            ? cn(
-                                  'bg-card lg:border-border/80 transition-all duration-300 lg:border-r',
-                                  collapsed ? 'w-16' : 'w-64',
-                              )
-                            : collapsed
-                              ? 'w-14'
-                              : 'w-56',
-                    )}
-                    data-fp-plugin-sidebar-dock={pluginFullBleed ? '' : undefined}
-                >
-                    <SidebarContent
-                        collapsed={collapsed}
-                        settings={settings}
-                        pathname={pathname}
-                        router={router}
-                        setMobileOpen={setMobileOpen}
-                        groupedItems={groupedItems}
-                        chromeLayout={chromeLayout}
-                    />
-                </div>
-            </div>
+            {portalReady
+                ? createPortal(
+                      <div className='fp-desktop-sidebar hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-40 lg:flex lg:h-svh lg:max-h-svh lg:flex-col'>
+                          <div
+                              className={cn(
+                                  'flex h-full min-h-0 flex-col overflow-hidden transition-[width] duration-300 ease-out',
+                                  chromeLayout === 'classic'
+                                      ? cn('bg-card lg:border-border/80 lg:border-r', collapsed ? 'w-16' : 'w-64')
+                                      : cn(
+                                            'lg:border-border/50 lg:bg-card/45 lg:rounded-tr-2xl lg:border-r lg:shadow-sm lg:backdrop-blur-2xl',
+                                            collapsed ? 'w-14' : 'w-56',
+                                        ),
+                              )}
+                              data-fp-plugin-sidebar-dock={pluginFullBleed ? '' : undefined}
+                          >
+                              <SidebarContent
+                                  collapsed={collapsed}
+                                  settings={settings}
+                                  pathname={pathname}
+                                  router={router}
+                                  setMobileOpen={setMobileOpen}
+                                  groupedItems={groupedItems}
+                                  chromeLayout={chromeLayout}
+                              />
+                          </div>
+                      </div>,
+                      document.body,
+                  )
+                : null}
         </>
     );
 }

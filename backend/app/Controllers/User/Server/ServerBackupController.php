@@ -21,11 +21,13 @@ use App\App;
 use App\Chat\Node;
 use App\Chat\Backup;
 use App\Chat\Server;
+use App\Helpers\TimeHelper;
 use App\SubuserPermissions;
 use App\Chat\ServerActivity;
 use App\Helpers\ApiResponse;
 use App\Services\Wings\Wings;
 use OpenApi\Attributes as OA;
+use App\Helpers\WingsUrlHelper;
 use App\Plugins\Events\Events\ServerEvent;
 use App\Services\Backup\BackupFifoEviction;
 use Symfony\Component\HttpFoundation\Request;
@@ -181,6 +183,7 @@ class ServerBackupController
         $total = count($backups);
         $offset = ($page - 1) * $perPage;
         $paginatedBackups = array_slice($backups, $offset, $perPage);
+        $paginatedBackups = TimeHelper::normaliseRows($paginatedBackups, ['completed_at', 'deleted_at']);
 
         $retention = BackupFifoEviction::retentionMetaForServer($server);
 
@@ -268,7 +271,7 @@ class ServerBackupController
             return ApiResponse::error('Backup not found', 'BACKUP_NOT_FOUND', 404);
         }
 
-        return ApiResponse::success($backup);
+        return ApiResponse::success(TimeHelper::normaliseRow($backup, ['completed_at', 'deleted_at']));
     }
 
     /**
@@ -1063,16 +1066,14 @@ class ServerBackupController
         }
 
         try {
-            $scheme = $node['scheme'];
-            $host = $node['fqdn'];
-            $port = $node['daemonListen'];
             $token = $node['daemon_token'];
+            $wingsBaseUrl = WingsUrlHelper::buildFromNode($node);
 
             // Create JWT service instance
             $jwtService = new \App\Services\Wings\Services\JwtService(
                 $token, // Node secret
                 App::getInstance(true)->getConfig()->getSetting(\App\Config\ConfigInterface::APP_URL, 'https://devsv.mythical.systems'), // Panel URL
-                $scheme . '://' . $host . ':' . $port // Wings URL
+                $wingsBaseUrl // Wings URL
             );
 
             // Get user permissions
@@ -1110,7 +1111,7 @@ class ServerBackupController
             }
 
             // Construct the download URL
-            $baseUrl = rtrim($scheme . '://' . $host . ':' . $port, '/');
+            $baseUrl = rtrim($wingsBaseUrl, '/');
             $downloadUrl = "{$baseUrl}/download/backup?token={$jwtToken}&server={$serverUuid}&backup={$backupUuid}";
 
             // Log activity

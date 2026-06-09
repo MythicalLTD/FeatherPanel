@@ -406,13 +406,7 @@ class ServerImportController
      */
     private function createWings(array $node): Wings
     {
-        $scheme = $node['scheme'] ?? 'http';
-        $host = $node['fqdn'] ?? 'localhost';
-        $port = $node['daemonListen'] ?? 8443;
-        $token = $node['daemon_token'] ?? '';
-        $timeout = 30;
-
-        return new Wings($host, $port, $scheme, $token, $timeout);
+        return Wings::fromNode($node, 30);
     }
 
     private static function emitEvent(string $eventName, array $payload): void

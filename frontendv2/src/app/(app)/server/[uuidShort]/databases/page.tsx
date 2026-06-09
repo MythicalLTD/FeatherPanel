@@ -46,6 +46,8 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { useSettings } from '@/contexts/SettingsContext';
+import { appendPmaAuthParams, preparePmaAuthContext, storePmaAuthContext } from '@/lib/pma-auth-context';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { cn, copyToClipboard as copyUtil } from '@/lib/utils';
@@ -70,7 +72,8 @@ import {
 import { Database, DatabaseHost, DatabasesResponse, Server } from '@/types/server';
 
 export default function ServerDatabasesPage() {
-    const { t } = useTranslation();
+    const { t, locale } = useTranslation();
+    const { settings } = useSettings();
     const params = useParams();
     const router = useRouter();
     const pathname = usePathname();
@@ -322,7 +325,8 @@ export default function ServerDatabasesPage() {
         try {
             const { data } = await axios.post(`/api/user/servers/${uuidShort}/databases/${db.id}/phpmyadmin/token`);
             if (data.success) {
-                window.open(data.data.url, '_blank');
+                storePmaAuthContext(preparePmaAuthContext(settings, t, locale));
+                window.open(appendPmaAuthParams(data.data.url, locale), '_blank');
                 toast.success(t('serverDatabases.openingPhpMyAdmin'));
             } else {
                 toast.error(data.message || t('serverDatabases.failedToOpenPhpMyAdmin'));

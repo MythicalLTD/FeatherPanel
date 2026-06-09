@@ -54,6 +54,7 @@ import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { serversApi } from '@/lib/servers-api';
 import { vmsApi } from '@/lib/vms-api';
 import { useServersWebSocket } from '@/hooks/useServersWebSocket';
+import { RoleBadge } from '@/components/RoleBadge';
 import { cn } from '@/lib/utils';
 
 import { isEnabled } from '@/lib/utils';
@@ -595,16 +596,7 @@ export default function DashboardPage() {
                     </h2>
                     {user.role && (
                         <div className='mb-1'>
-                            <span
-                                className='inline-flex items-center rounded-md px-2.5 py-0.5 text-xs font-semibold'
-                                style={{
-                                    backgroundColor: `${user.role.color}20`,
-                                    color: user.role.color,
-                                    border: `1px solid ${user.role.color}40`,
-                                }}
-                            >
-                                {user.role.display_name}
-                            </span>
+                            <RoleBadge role={user.role} size='sm' className='font-semibold' />
                         </div>
                     )}
                     <p className='text-muted-foreground truncate text-sm'>@{user.username}</p>

@@ -119,11 +119,8 @@ export function FileList({
     const allSelected = selectableNames.length > 0 && selectableNames.every((n) => selectedFiles.includes(n));
 
     return (
-        <div className='overflow-hidden rounded-3xl border border-gray-200 bg-white backdrop-blur-xl dark:border-white/10 dark:bg-white/5'>
-            <div
-                className='text-foreground/60 flex items-center gap-3 border-b border-gray-200 bg-gray-50/50 px-4 py-4 text-[10px] font-bold tracking-[0.2em] uppercase dark:border-white/10 dark:bg-white/5 dark:text-white/40'
-                style={{ color: 'hsl(var(--foreground))', opacity: 0.6 }}
-            >
+        <div className='overflow-hidden rounded-xl border border-black/5 bg-white/80 backdrop-blur-xl dark:border-white/10 dark:bg-white/5'>
+            <div className='text-muted-foreground flex items-center gap-3 border-b border-gray-200 px-4 py-4 text-[10px] font-bold tracking-[0.2em] uppercase dark:border-white/10'>
                 <div className='flex shrink-0 items-center'>
                     <Checkbox
                         checked={allSelected}

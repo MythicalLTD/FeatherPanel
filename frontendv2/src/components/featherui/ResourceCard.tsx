@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { LucideIcon } from 'lucide-react';
 import { ReactNode, ComponentType } from 'react';
@@ -37,6 +38,7 @@ interface ResourceCardProps {
     iconWrapperClassName?: string;
     iconClassName?: string;
     image?: string;
+    href?: string;
     onClick?: () => void;
     highlightClassName?: string;
 }
@@ -53,6 +55,7 @@ export function ResourceCard({
     iconWrapperClassName,
     iconClassName,
     image,
+    href,
     onClick,
     highlightClassName,
 }: ResourceCardProps) {
@@ -83,16 +86,14 @@ export function ResourceCard({
         return badges as ReactNode;
     };
 
-    return (
-        <div
-            onClick={onClick}
-            style={style}
-            className={cn(
-                'group bg-card/30 border-border/10 hover:border-primary/30 hover:bg-accent/50 relative overflow-hidden rounded-3xl border backdrop-blur-sm transition-all duration-300',
-                onClick && 'cursor-pointer',
-                className,
-            )}
-        >
+    const cardClassName = cn(
+        'group bg-card/30 border-border/10 hover:border-primary/30 hover:bg-accent/50 relative overflow-hidden rounded-3xl border backdrop-blur-sm transition-all duration-300',
+        (href || onClick) && 'cursor-pointer',
+        className,
+    );
+
+    const cardBody = (
+        <>
             {image ? (
                 <div className='absolute inset-0 z-0 opacity-10 blur-sm transition-opacity group-hover:opacity-20'>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -140,6 +141,20 @@ export function ResourceCard({
 
                 {actions && <div className='flex items-center gap-2 md:self-center'>{actions}</div>}
             </div>
+        </>
+    );
+
+    if (href) {
+        return (
+            <Link href={href} style={style} className={cardClassName} onClick={onClick}>
+                {cardBody}
+            </Link>
+        );
+    }
+
+    return (
+        <div onClick={onClick} style={style} className={cardClassName}>
+            {cardBody}
         </div>
     );
 }

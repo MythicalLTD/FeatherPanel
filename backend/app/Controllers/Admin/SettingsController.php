@@ -173,7 +173,7 @@ class SettingsController
                 ConfigInterface::APP_LOGO_DARK,
                 ConfigInterface::APP_TIMEZONE,
                 ConfigInterface::APP_SSO_REDIRECT_PATH,
-                ConfigInterface::APP_SUPPORT_URL,
+                ConfigInterface::APP_SSO_TOKEN_LIFETIME_MINUTES,
                 ConfigInterface::APP_BACKGROUND_IMAGE_URL,
                 ConfigInterface::APP_BACKGROUND_LOCK,
                 ConfigInterface::APP_ACCENT_COLOR_DEFAULT,
@@ -188,14 +188,25 @@ class SettingsController
                 ConfigInterface::APP_BACKDROP_DARKEN_LOCK,
                 ConfigInterface::APP_BACKGROUND_IMAGE_FIT_DEFAULT,
                 ConfigInterface::APP_BACKGROUND_IMAGE_FIT_LOCK,
+            ],
+        ],
+        'links' => [
+            'name' => 'Links',
+            'description' => 'Public links shown across the panel footer (support, social media, legal)',
+            'icon' => 'link',
+            'settings' => [
+                ConfigInterface::APP_SUPPORT_URL,
+                ConfigInterface::WEBSITE_URL,
+                ConfigInterface::DISCORD_URL,
                 ConfigInterface::LINKEDIN_URL,
                 ConfigInterface::TELEGRAM_URL,
                 ConfigInterface::TIKTOK_URL,
                 ConfigInterface::TWITTER_URL,
                 ConfigInterface::WHATSAPP_URL,
                 ConfigInterface::YOUTUBE_URL,
-                ConfigInterface::WEBSITE_URL,
                 ConfigInterface::STATUS_PAGE_URL,
+                ConfigInterface::LEGAL_TOS,
+                ConfigInterface::LEGAL_PRIVACY,
             ],
         ],
         'security' => [
@@ -204,6 +215,9 @@ class SettingsController
             'icon' => 'shield',
             'settings' => [
                 ConfigInterface::EMAIL_LOGIN_ENABLED,
+                ConfigInterface::LOGIN_DEFAULT_METHOD,
+                ConfigInterface::LOGIN_METHODS_ORDER,
+                ConfigInterface::LOGIN_HIDDEN_METHODS,
                 ConfigInterface::CAPTCHA_PROVIDER,
                 ConfigInterface::TURNSTILE_ENABLED,
                 ConfigInterface::TURNSTILE_KEY_PUB,
@@ -227,9 +241,13 @@ class SettingsController
                 ConfigInterface::REGISTRATION_ENABLED,
 
                 ConfigInterface::REGISTRATION_REQUIRE_EMAIL_VERIFICATION,
+                ConfigInterface::REGISTRATION_DEVICE_LIMIT_ENABLED,
+                ConfigInterface::REGISTRATION_DEVICE_MAX_ACCOUNTS,
                 ConfigInterface::EMAIL_DOMAIN_BLOCKING_ENABLED,
                 ConfigInterface::TELEMETRY,
                 ConfigInterface::REQUIRE_TWO_FA_ADMINS,
+                ConfigInterface::AVATAR_PROVIDER,
+                ConfigInterface::AVATAR_CUSTOM_URL,
                 ConfigInterface::USER_ALLOW_AVATAR_CHANGE,
                 ConfigInterface::USER_ALLOW_USERNAME_CHANGE,
                 ConfigInterface::USER_ALLOW_EMAIL_CHANGE,
@@ -298,6 +316,7 @@ class SettingsController
             'settings' => [
                 ConfigInterface::SERVER_ALLOW_EGG_CHANGE,
                 ConfigInterface::SERVER_ALLOW_STARTUP_CHANGE,
+                ConfigInterface::SERVER_ALLOW_CUSTOM_DOCKER_IMAGE,
                 ConfigInterface::SERVER_ALLOW_SUBUSERS,
                 ConfigInterface::SERVER_ALLOW_SCHEDULES,
                 ConfigInterface::SERVER_LIFECYCLE_HOOKS_ENABLED,
@@ -384,8 +403,6 @@ class SettingsController
             'description' => 'Other configuration settings',
             'icon' => 'settings',
             'settings' => [
-                ConfigInterface::LEGAL_TOS,
-                ConfigInterface::LEGAL_PRIVACY,
                 ConfigInterface::APP_DEVELOPER_MODE,
                 ConfigInterface::CUSTOM_JS,
                 ConfigInterface::CUSTOM_CSS,
@@ -508,6 +525,19 @@ class SettingsController
                 'required' => true,
                 'placeholder' => '/dashboard',
                 'validation' => 'required|string|max:255',
+                'options' => [],
+                'category' => 'app',
+            ],
+            ConfigInterface::APP_SSO_TOKEN_LIFETIME_MINUTES => [
+                'name' => ConfigInterface::APP_SSO_TOKEN_LIFETIME_MINUTES,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::APP_SSO_TOKEN_LIFETIME_MINUTES, '5'),
+                'description' => 'Default lifetime in minutes for admin-generated SSO login tokens (1–1440)',
+                'type' => 'number',
+                'required' => true,
+                'placeholder' => '5',
+                'validation' => 'required|integer|min:1|max:1440',
                 'options' => [],
                 'category' => 'app',
             ],
@@ -746,7 +776,20 @@ class SettingsController
                 'placeholder' => 'https://mythical.systems',
                 'validation' => 'required|string|max:255',
                 'options' => [],
-                'category' => 'app',
+                'category' => 'links',
+            ],
+            ConfigInterface::DISCORD_URL => [
+                'name' => ConfigInterface::DISCORD_URL,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::DISCORD_URL, ''),
+                'description' => 'Discord invite or community server URL',
+                'type' => 'text',
+                'required' => false,
+                'placeholder' => 'https://discord.gg/example',
+                'validation' => 'string|max:255',
+                'options' => [],
+                'category' => 'links',
             ],
             ConfigInterface::LINKEDIN_URL => [
                 'name' => ConfigInterface::LINKEDIN_URL,
@@ -759,7 +802,7 @@ class SettingsController
                 'placeholder' => 'https://linkedin.com/company/example',
                 'validation' => 'string|max:255',
                 'options' => [],
-                'category' => 'app',
+                'category' => 'links',
             ],
             ConfigInterface::TELEGRAM_URL => [
                 'name' => ConfigInterface::TELEGRAM_URL,
@@ -772,7 +815,7 @@ class SettingsController
                 'placeholder' => 'https://t.me/example',
                 'validation' => 'string|max:255',
                 'options' => [],
-                'category' => 'app',
+                'category' => 'links',
             ],
             ConfigInterface::TIKTOK_URL => [
                 'name' => ConfigInterface::TIKTOK_URL,
@@ -785,7 +828,7 @@ class SettingsController
                 'placeholder' => 'https://tiktok.com/@example',
                 'validation' => 'string|max:255',
                 'options' => [],
-                'category' => 'app',
+                'category' => 'links',
             ],
             ConfigInterface::TWITTER_URL => [
                 'name' => ConfigInterface::TWITTER_URL,
@@ -798,7 +841,7 @@ class SettingsController
                 'placeholder' => 'https://twitter.com/example',
                 'validation' => 'string|max:255',
                 'options' => [],
-                'category' => 'app',
+                'category' => 'links',
             ],
             ConfigInterface::WHATSAPP_URL => [
                 'name' => ConfigInterface::WHATSAPP_URL,
@@ -811,7 +854,7 @@ class SettingsController
                 'placeholder' => 'https://wa.me/1234567890',
                 'validation' => 'string|max:255',
                 'options' => [],
-                'category' => 'app',
+                'category' => 'links',
             ],
             ConfigInterface::YOUTUBE_URL => [
                 'name' => ConfigInterface::YOUTUBE_URL,
@@ -824,7 +867,7 @@ class SettingsController
                 'placeholder' => 'https://youtube.com/@example',
                 'validation' => 'string|max:255',
                 'options' => [],
-                'category' => 'app',
+                'category' => 'links',
             ],
             ConfigInterface::WEBSITE_URL => [
                 'name' => ConfigInterface::WEBSITE_URL,
@@ -837,7 +880,7 @@ class SettingsController
                 'placeholder' => 'https://example.com',
                 'validation' => 'string|max:255',
                 'options' => [],
-                'category' => 'app',
+                'category' => 'links',
             ],
             ConfigInterface::STATUS_PAGE_URL => [
                 'name' => ConfigInterface::STATUS_PAGE_URL,
@@ -1240,6 +1283,45 @@ class SettingsController
                 'options' => ['true', 'false'],
                 'category' => 'security',
             ],
+            ConfigInterface::LOGIN_DEFAULT_METHOD => [
+                'name' => ConfigInterface::LOGIN_DEFAULT_METHOD,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::LOGIN_DEFAULT_METHOD, 'local'),
+                'description' => 'Default sign-in panel on the login page (local, ldap, email_code, discord, or oidc). Falls back to the first available method if the choice is hidden or unavailable.',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'local',
+                'validation' => 'required|string|max:64',
+                'options' => ['local', 'ldap', 'email_code', 'discord', 'oidc'],
+                'category' => 'security',
+            ],
+            ConfigInterface::LOGIN_METHODS_ORDER => [
+                'name' => ConfigInterface::LOGIN_METHODS_ORDER,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::LOGIN_METHODS_ORDER, 'local,passkey,ldap,email_code,discord,oidc'),
+                'description' => 'Comma-separated order of login methods on the page. Valid ids: local, passkey, ldap, email_code, discord, oidc',
+                'type' => 'text',
+                'required' => true,
+                'placeholder' => 'local,passkey,ldap,email_code,discord,oidc',
+                'validation' => 'required|string|max:255',
+                'options' => [],
+                'category' => 'security',
+            ],
+            ConfigInterface::LOGIN_HIDDEN_METHODS => [
+                'name' => ConfigInterface::LOGIN_HIDDEN_METHODS,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::LOGIN_HIDDEN_METHODS, ''),
+                'description' => 'Comma-separated login method ids to hide on the login page (e.g. passkey, local, ldap, email_code, discord, oidc). Leave empty to show all configured methods.',
+                'type' => 'text',
+                'required' => false,
+                'placeholder' => 'passkey',
+                'validation' => 'nullable|string|max:255',
+                'options' => [],
+                'category' => 'security',
+            ],
             ConfigInterface::LEGAL_TOS => [
                 'name' => ConfigInterface::LEGAL_TOS,
                 'value' => $this->app
@@ -1251,7 +1333,7 @@ class SettingsController
                 'placeholder' => '/tos',
                 'validation' => 'required|string|max:255',
                 'options' => [],
-                'category' => 'other',
+                'category' => 'links',
             ],
             ConfigInterface::LEGAL_PRIVACY => [
                 'name' => ConfigInterface::LEGAL_PRIVACY,
@@ -1264,7 +1346,7 @@ class SettingsController
                 'placeholder' => '/privacy',
                 'validation' => 'required|string|max:255',
                 'options' => [],
-                'category' => 'other',
+                'category' => 'links',
             ],
             ConfigInterface::REGISTRATION_ENABLED => [
                 'name' => ConfigInterface::REGISTRATION_ENABLED,
@@ -1295,6 +1377,32 @@ class SettingsController
                 'options' => ['true', 'false'],
                 'category' => 'security',
             ],
+            ConfigInterface::REGISTRATION_DEVICE_LIMIT_ENABLED => [
+                'name' => ConfigInterface::REGISTRATION_DEVICE_LIMIT_ENABLED,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::REGISTRATION_DEVICE_LIMIT_ENABLED, 'false'),
+                'description' => 'Block new registrations when a browser/device already has the maximum number of panel accounts.',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'false',
+                'validation' => 'required|string|max:255',
+                'options' => ['true', 'false'],
+                'category' => 'security',
+            ],
+            ConfigInterface::REGISTRATION_DEVICE_MAX_ACCOUNTS => [
+                'name' => ConfigInterface::REGISTRATION_DEVICE_MAX_ACCOUNTS,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::REGISTRATION_DEVICE_MAX_ACCOUNTS, '1'),
+                'description' => 'Maximum number of accounts allowed per browser/device before registration is blocked (main account is the oldest account seen on that device).',
+                'type' => 'number',
+                'required' => true,
+                'placeholder' => '1',
+                'validation' => 'required|integer|min:1|max:10',
+                'options' => [],
+                'category' => 'security',
+            ],
             ConfigInterface::EMAIL_DOMAIN_BLOCKING_ENABLED => [
                 'name' => ConfigInterface::EMAIL_DOMAIN_BLOCKING_ENABLED,
                 'value' => $this->app
@@ -1323,6 +1431,38 @@ class SettingsController
                 'validation' => 'required|string|max:255',
                 'options' => ['true', 'false'],
                 'category' => 'app',
+            ],
+            ConfigInterface::AVATAR_PROVIDER => [
+                'name' => ConfigInterface::AVATAR_PROVIDER,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::AVATAR_PROVIDER, 'gravatar'),
+                'description' => 'Default avatar provider for users without a custom profile picture',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'gravatar',
+                'validation' => 'required|string|max:255',
+                'options' => [
+                    'gravatar',
+                    'panel_logo',
+                    'ui_avatars',
+                    'robohash',
+                    'dicebear',
+                    'custom',
+                ],
+                'category' => 'security',
+            ],
+            ConfigInterface::AVATAR_CUSTOM_URL => [
+                'name' => ConfigInterface::AVATAR_CUSTOM_URL,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::AVATAR_CUSTOM_URL, ''),
+                'description' => 'Custom avatar URL template (only used when avatar provider is custom). Placeholders: {email}, {username}, {name}, {hash}, {app_url}',
+                'type' => 'text',
+                'required' => false,
+                'placeholder' => 'https://example.com/avatar/{hash}',
+                'validation' => 'nullable|string|max:2048',
+                'category' => 'security',
             ],
             ConfigInterface::USER_ALLOW_AVATAR_CHANGE => [
                 'name' => ConfigInterface::USER_ALLOW_AVATAR_CHANGE,
@@ -1563,6 +1703,22 @@ class SettingsController
                 'validation' => 'required|string|max:255',
                 'options' => ['true', 'false'],
                 'description' => 'Allow users to change the server startup',
+                'category' => 'servers',
+            ],
+            ConfigInterface::SERVER_ALLOW_CUSTOM_DOCKER_IMAGE => [
+                'name' => ConfigInterface::SERVER_ALLOW_CUSTOM_DOCKER_IMAGE,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::SERVER_ALLOW_CUSTOM_DOCKER_IMAGE,
+                        'false',
+                    ),
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'false',
+                'validation' => 'required|string|max:255',
+                'options' => ['true', 'false'],
+                'description' => 'Allow users to enter a custom Docker image on the startup page. When disabled, users may only select images configured on the spell.',
                 'category' => 'servers',
             ],
             ConfigInterface::SERVER_ALLOW_SCHEDULES => [

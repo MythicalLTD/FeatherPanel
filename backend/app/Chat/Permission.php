@@ -140,4 +140,23 @@ class Permission
 
         return (int) $stmt->fetchColumn();
     }
+
+    /**
+     * Get distinct role IDs that have a specific permission or admin.root.
+     *
+     * @return int[]
+     */
+    public static function getRoleIdsWithPermission(string $permission): array
+    {
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare(
+            'SELECT DISTINCT role_id FROM ' . self::$table . ' WHERE permission = :permission OR permission = :root'
+        );
+        $stmt->execute([
+            'permission' => $permission,
+            'root' => 'admin.root',
+        ]);
+
+        return array_map(static fn (array $row): int => (int) $row['role_id'], $stmt->fetchAll(\PDO::FETCH_ASSOC));
+    }
 }

@@ -52,6 +52,7 @@ import {
 import { toast } from 'sonner';
 import axios, { isAxiosError } from 'axios';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
 export interface SubdomainSpellMapping {
@@ -147,21 +148,30 @@ interface Pagination {
     hasPrev: boolean;
 }
 
+const SUBDOMAINS_LIST_FILTERS_KEY = 'featherpanel_admin_subdomains_filters_v1';
+const SUBDOMAINS_LIST_FILTERS_DEFAULTS = {
+    searchQuery: '',
+    page: 1,
+    pageSize: 10,
+};
+
 export default function AdminSubdomainsPage() {
     const { t } = useTranslation();
     const router = useRouter();
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-subdomains');
     const [loading, setLoading] = useState(true);
     const [domains, setDomains] = useState<SubdomainDomain[]>([]);
-    const [pagination, setPagination] = useState<Pagination>({
-        page: 1,
-        pageSize: 10,
+    const { filters, patchFilters, hydrated } = usePersistedListFilters(
+        SUBDOMAINS_LIST_FILTERS_KEY,
+        SUBDOMAINS_LIST_FILTERS_DEFAULTS,
+    );
+    const { searchQuery, page, pageSize } = filters;
+    const [pagination, setPagination] = useState<Omit<Pagination, 'page' | 'pageSize'>>({
         total: 0,
         totalPages: 0,
         hasNext: false,
         hasPrev: false,
     });
-    const [searchQuery, setSearchQuery] = useState('');
     const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
 
     const [manageOpen, setManageOpen] = useState(false);
@@ -205,21 +215,25 @@ export default function AdminSubdomainsPage() {
         const timer = setTimeout(() => {
             setDebouncedSearchQuery(searchQuery);
             if (searchQuery !== debouncedSearchQuery) {
-                setPagination((p) => ({ ...p, page: 1 }));
+                patchFilters({ page: 1 });
             }
         }, 500);
         return () => clearTimeout(timer);
-    }, [searchQuery, debouncedSearchQuery]);
+    }, [searchQuery, debouncedSearchQuery, patchFilters]);
 
     const fetchDomains = useCallback(async () => {
+        if (!hydrated) {
+            return;
+        }
+
         setLoading(true);
         try {
             const { data } = await axios.get<{ success: boolean; data: SubdomainAdminResponse }>(
                 '/api/admin/subdomains',
                 {
                     params: {
-                        page: pagination.page,
-                        limit: pagination.pageSize,
+                        page,
+                        limit: pageSize,
                         search: debouncedSearchQuery || undefined,
                         includeInactive: true,
                     },
@@ -228,8 +242,6 @@ export default function AdminSubdomainsPage() {
             const result = data.data;
             setDomains(result.domains || []);
             setPagination({
-                page: result.pagination.current_page,
-                pageSize: result.pagination.per_page,
                 total: result.pagination.total_records,
                 totalPages: result.pagination.total_pages,
                 hasNext: result.pagination.current_page < result.pagination.total_pages,
@@ -241,7 +253,7 @@ export default function AdminSubdomainsPage() {
         } finally {
             setLoading(false);
         }
-    }, [pagination.page, pagination.pageSize, debouncedSearchQuery, t]);
+    }, [page, pageSize, debouncedSearchQuery, t, hydrated]);
 
     const fetchInitialData = useCallback(async () => {
         try {
@@ -521,7 +533,7 @@ export default function AdminSubdomainsPage() {
             )}
 
             {userSubdomainsEnabled && (
-                <Alert className='rounded-2xl border-amber-500/45 bg-amber-500/[0.08] shadow-md dark:bg-amber-950/25'>
+                <Alert className='rounded-2xl border-amber-500/45 bg-amber-500/8 shadow-md dark:bg-amber-950/25'>
                     <Settings className='h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400' />
                     <AlertTitle className='text-base font-bold tracking-tight text-amber-950 dark:text-amber-50'>
                         {t('admin.subdomains.featureEnabledAlertTitle')}
@@ -585,7 +597,7 @@ export default function AdminSubdomainsPage() {
                         className='h-11 w-full pl-10'
                         placeholder={t('admin.subdomains.searchPlaceholder')}
                         value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onChange={(e) => patchFilters({ searchQuery: e.target.value })}
                     />
                 </div>
             </div>
@@ -601,21 +613,21 @@ export default function AdminSubdomainsPage() {
                             <Button
                                 variant='outline'
                                 size='sm'
-                                disabled={!pagination.hasPrev}
-                                onClick={() => setPagination((p) => ({ ...p, page: p.page - 1 }))}
+                                disabled={page === 1}
+                                onClick={() => patchFilters({ page: page - 1 })}
                                 className='gap-1.5'
                             >
                                 <ChevronLeft className='h-4 w-4' />
                                 {t('common.previous')}
                             </Button>
                             <span className='text-sm font-medium'>
-                                {pagination.page} / {pagination.totalPages}
+                                {page} / {pagination.totalPages}
                             </span>
                             <Button
                                 variant='outline'
                                 size='sm'
-                                disabled={!pagination.hasNext}
-                                onClick={() => setPagination((p) => ({ ...p, page: p.page + 1 }))}
+                                disabled={page === pagination.totalPages}
+                                onClick={() => patchFilters({ page: page + 1 })}
                                 className='gap-1.5'
                             >
                                 {t('common.next')}
@@ -697,19 +709,19 @@ export default function AdminSubdomainsPage() {
                             <Button
                                 variant='outline'
                                 size='icon'
-                                disabled={!pagination.hasPrev}
-                                onClick={() => setPagination((p) => ({ ...p, page: p.page - 1 }))}
+                                disabled={page === 1}
+                                onClick={() => patchFilters({ page: page - 1 })}
                             >
                                 <ChevronLeft className='h-4 w-4' />
                             </Button>
                             <span className='text-sm font-medium'>
-                                {pagination.page} / {pagination.totalPages}
+                                {page} / {pagination.totalPages}
                             </span>
                             <Button
                                 variant='outline'
                                 size='icon'
-                                disabled={!pagination.hasNext}
-                                onClick={() => setPagination((p) => ({ ...p, page: p.page + 1 }))}
+                                disabled={page === pagination.totalPages}
+                                onClick={() => patchFilters({ page: page + 1 })}
                             >
                                 <ChevronRight className='h-4 w-4' />
                             </Button>

@@ -41,6 +41,8 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { useDateFormatOptions } from '@/contexts/PreferencesContext';
+import { formatDateTimeInTz } from '@/lib/dateUtils';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
@@ -65,6 +67,7 @@ import { BackupItem, BackupsResponse, Server } from '@/types/server';
 
 export default function ServerBackupsPage() {
     const { t } = useTranslation();
+    const dateOpts = useDateFormatOptions();
     const params = useParams();
     const router = useRouter();
     const uuidShort = params.uuidShort as string;
@@ -548,7 +551,7 @@ export default function ServerBackupsPage() {
                                         <div className='text-muted-foreground flex items-center gap-2'>
                                             <Calendar className='h-4 w-4 opacity-50' />
                                             <span className='text-sm font-semibold'>
-                                                {new Date(backup.created_at).toLocaleString()}
+                                                {formatDateTimeInTz(backup.created_at, dateOpts)}
                                             </span>
                                         </div>
                                     </div>

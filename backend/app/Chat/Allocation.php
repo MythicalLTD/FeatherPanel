@@ -238,6 +238,43 @@ class Allocation
      *
      * @return array<int>
      */
+    /**
+     * Pick free allocation IDs that match specific IP/port slots (in order).
+     *
+     * @param array<int, array{ip: string, port: int}> $slots
+     * @param array<int> $excludeIds
+     *
+     * @return array<int>
+     */
+    public static function pickFreeAllocationIdsForSlots(int $nodeId, array $slots, array $excludeIds = []): array
+    {
+        if ($nodeId <= 0 || empty($slots)) {
+            return [];
+        }
+
+        $excludeIds = array_values(array_filter(
+            array_map('intval', $excludeIds),
+            fn (int $id) => $id > 0
+        ));
+
+        $picked = [];
+        foreach ($slots as $slot) {
+            $allocation = self::getByNodeIpPort($nodeId, (string) $slot['ip'], (int) $slot['port']);
+            if ($allocation === null || $allocation['server_id'] !== null) {
+                return [];
+            }
+
+            $id = (int) $allocation['id'];
+            if (in_array($id, $excludeIds, true) || in_array($id, $picked, true)) {
+                return [];
+            }
+
+            $picked[] = $id;
+        }
+
+        return $picked;
+    }
+
     public static function pickFreeAllocationIdsForNode(int $nodeId, int $count, array $excludeIds = []): array
     {
         if ($nodeId <= 0 || $count <= 0) {
@@ -602,6 +639,28 @@ class Allocation
         $stmt->execute($params);
 
         return $stmt->rowCount();
+    }
+
+    /**
+     * Get allocation by node ID, IP, and port.
+     */
+    public static function getByNodeIpPort(int $nodeId, string $ip, int $port): ?array
+    {
+        if ($nodeId <= 0) {
+            return null;
+        }
+
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare(
+            'SELECT * FROM ' . self::$table . ' WHERE node_id = :node_id AND ip = :ip AND port = :port LIMIT 1'
+        );
+        $stmt->execute([
+            'node_id' => $nodeId,
+            'ip' => $ip,
+            'port' => $port,
+        ]);
+
+        return $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
     }
 
     /**

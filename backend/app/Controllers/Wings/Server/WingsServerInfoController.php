@@ -242,16 +242,10 @@ class WingsServerInfoController
 
         // Parse spell docker images if available (from spell.docker_images JSON field)
         $dockerImage = $server['image']; // Use server.image as fallback
-        if (!empty($spell['docker_images'])) {
-            try {
-                $dockerImages = json_decode($spell['docker_images'], true);
-                if (is_array($dockerImages) && !empty($dockerImages)) {
-                    // Use the first available image from spell or fallback to server image
-                    $dockerImage = $dockerImages[0] ?? $server['image'];
-                }
-            } catch (\Exception $e) {
-                // If docker images parsing fails, use server image
-                $dockerImage = $server['image'];
+        if (trim((string) $dockerImage) === '') {
+            $resolvedImage = Spell::resolveDefaultDockerImage($spell);
+            if ($resolvedImage !== null) {
+                $dockerImage = $resolvedImage;
             }
         }
 
