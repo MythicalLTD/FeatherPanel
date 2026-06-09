@@ -621,23 +621,6 @@ class ServerUserController
         ], 'All other servers fetched successfully', 200);
     }
 
-    /**
-     * Parse optional status filter from query parameters.
-     * Supports `status=running` or legacy `running_only=true`.
-     */
-    private static function parseStatusFilter(Request $request): ?string
-    {
-        $status = trim((string) $request->query->get('status', ''));
-        if ($status !== '') {
-            return $status;
-        }
-
-        $runningOnlyParam = $request->query->get('running_only', 'false');
-        $runningOnly = ($runningOnlyParam === 'true' || $runningOnlyParam === true || $runningOnlyParam === '1' || $runningOnlyParam === 1);
-
-        return $runningOnly ? 'running' : null;
-    }
-
     #[OA\Get(
         path: '/api/user/servers/{uuidShort}',
         summary: 'Get server details',
@@ -2132,6 +2115,23 @@ class ServerUserController
         }
 
         return ApiResponse::success([], 'Server deleted successfully', 200);
+    }
+
+    /**
+     * Parse optional status filter from query parameters.
+     * Supports `status=running` or legacy `running_only=true`.
+     */
+    private static function parseStatusFilter(Request $request): ?string
+    {
+        $status = trim((string) $request->query->get('status', ''));
+        if ($status !== '') {
+            return $status;
+        }
+
+        $runningOnlyParam = $request->query->get('running_only', 'false');
+        $runningOnly = ($runningOnlyParam === 'true' || $runningOnlyParam === true || $runningOnlyParam === '1' || $runningOnlyParam === 1);
+
+        return $runningOnly ? 'running' : null;
     }
 
     /**

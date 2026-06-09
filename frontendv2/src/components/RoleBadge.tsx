@@ -84,7 +84,7 @@ export function RoleBadge({ role, variant = 'soft', size = 'xs', className }: Ro
     return (
         <span
             className={cn(
-                'inline-flex max-w-full items-center truncate rounded-md font-medium leading-tight',
+                'inline-flex max-w-full items-center truncate rounded-md leading-tight font-medium',
                 size === 'sm' ? 'px-2 py-0.5 text-xs' : 'px-1.5 py-px text-[11px]',
                 className,
             )}

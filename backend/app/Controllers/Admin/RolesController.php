@@ -76,19 +76,6 @@ use Symfony\Component\HttpFoundation\Response;
 )]
 class RolesController
 {
-    private function normalizeCustomBadge(mixed $value): string|false|null
-    {
-        if ($value === null) {
-            return null;
-        }
-        if (!is_string($value)) {
-            return false;
-        }
-        $trimmed = trim($value);
-
-        return $trimmed === '' ? null : $trimmed;
-    }
-
     #[OA\Get(
         path: '/api/admin/roles',
         summary: 'Get all roles',
@@ -494,5 +481,18 @@ class RolesController
         }
 
         return ApiResponse::success([], 'Role deleted successfully', 200);
+    }
+
+    private function normalizeCustomBadge(mixed $value): string | false | null
+    {
+        if ($value === null) {
+            return null;
+        }
+        if (!is_string($value)) {
+            return false;
+        }
+        $trimmed = trim($value);
+
+        return $trimmed === '' ? null : $trimmed;
     }
 }

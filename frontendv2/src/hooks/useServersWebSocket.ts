@@ -516,6 +516,7 @@ export function useServersWebSocket() {
 
             await connectServers(toConnect);
         },
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         [connectServer, connectServers, disconnectServer],
     );
 

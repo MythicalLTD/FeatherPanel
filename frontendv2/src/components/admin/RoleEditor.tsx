@@ -359,7 +359,9 @@ export function RoleEditor({
                                     maxLength={64}
                                     className='h-11'
                                 />
-                                <p className='text-muted-foreground text-xs'>{t('admin.roles.form.custom_badge_hint')}</p>
+                                <p className='text-muted-foreground text-xs'>
+                                    {t('admin.roles.form.custom_badge_hint')}
+                                </p>
                             </div>
 
                             <div className='space-y-3'>

@@ -42,7 +42,6 @@ import {
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Sheet, SheetHeader, SheetTitle, SheetDescription, SheetContent } from '@/components/ui/sheet';
-import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
 import { formatDateTimeInTz, formatRelativeTime } from '@/lib/dateUtils';
@@ -149,7 +148,7 @@ export default function EditServerPage() {
     const [location, setLocation] = useState<Location | null>(null);
     const [node, setNode] = useState<Node | null>(null);
 
-    const [spellDetails, setSpellDetails] = useState<Spell | null>(null);
+    const [, setSpellDetails] = useState<Spell | null>(null);
     const [spellVariables, setSpellVariables] = useState<SpellVariable[]>([]);
     const [customVariables, setCustomVariables] = useState<CustomVariable[]>([]);
     const [customVariableSaving, setCustomVariableSaving] = useState(false);
@@ -641,6 +640,7 @@ export default function EditServerPage() {
         };
 
         fetchSpellDetails();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [form.spell_id]);
 
     const fetchOwners = useCallback(async () => {
