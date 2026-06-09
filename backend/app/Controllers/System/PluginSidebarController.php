@@ -83,7 +83,7 @@ class PluginSidebarController
         $currentServerSpellId = null;
         if (isset($_COOKIE['serverUuid'])) {
             $serverUuid = $_COOKIE['serverUuid'];
-            $server = Server::getServerByUuid($serverUuid);
+            $server = Server::getServerByUuidShort($serverUuid) ?? Server::getServerByUuid($serverUuid);
             if ($server && isset($server['spell_id'])) {
                 $currentServerSpellId = (int) $server['spell_id'];
             }

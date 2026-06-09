@@ -22,20 +22,27 @@ import { useEffect, useState } from 'react';
 
 import { getAuroraColorStops, getPrimaryHex, getBeamLightHex } from '@/lib/themeColors';
 import { backgroundFitToCssSize } from '@/lib/backgroundImageFit';
+import { importWithRetry } from '@/lib/importWithRetry';
+import BackgroundEffectBoundary from '@/components/theme/BackgroundEffectBoundary';
 
 import '@/components/thirdparty/Aurora.css';
 import '@/components/thirdparty/Beams.css';
 import '@/components/thirdparty/ColorBends.css';
 import '@/components/thirdparty/FloatingLines.css';
 
-const Aurora = dynamic(() => import('@/components/thirdparty/Aurora'), {
+const Aurora = dynamic(() => importWithRetry(() => import('@/components/thirdparty/Aurora')), {
     ssr: false,
     loading: () => <div className='aurora-container' />,
 });
-const Beams = dynamic(() => import('@/components/thirdparty/Beams'), { ssr: false });
-const ColorBends = dynamic(() => import('@/components/thirdparty/ColorBends'), { ssr: false });
-const FloatingLines = dynamic(() => import('@/components/thirdparty/FloatingLines'), { ssr: false });
-const Silk = dynamic(() => import('@/components/thirdparty/Silk'), { ssr: false });
+const Beams = dynamic(() => importWithRetry(() => import('@/components/thirdparty/Beams')), { ssr: false });
+const ColorBends = dynamic(() => importWithRetry(() => import('@/components/thirdparty/ColorBends')), {
+    ssr: false,
+});
+const FloatingLines = dynamic(() => importWithRetry(() => import('@/components/thirdparty/FloatingLines')), {
+    ssr: false,
+    loading: () => <div className='floating-lines-container' aria-hidden />,
+});
+const Silk = dynamic(() => importWithRetry(() => import('@/components/thirdparty/Silk')), { ssr: false });
 
 export default function BackgroundWrapper({ children }: { children: React.ReactNode }) {
     const {
@@ -138,40 +145,42 @@ export default function BackgroundWrapper({ children }: { children: React.ReactN
                         style={{ background: 'hsl(var(--background))' }}
                         aria-hidden
                     >
-                        {backgroundAnimatedVariant === 'aurora' && (
-                            <Aurora colorStops={getAuroraColorStops(accentColor)} amplitude={1.2} blend={0.5} />
-                        )}
-                        {backgroundAnimatedVariant === 'beams' && (
-                            <Beams
-                                lightColor={getBeamLightHex(accentColor)}
-                                speed={2}
-                                noiseIntensity={1.75}
-                                scale={0.2}
-                            />
-                        )}
-                        {backgroundAnimatedVariant === 'colorBends' && (
-                            <ColorBends
-                                colors={getAuroraColorStops(accentColor)}
-                                speed={0.2}
-                                transparent
-                                scale={1}
-                                frequency={1}
-                                warpStrength={1}
-                            />
-                        )}
-                        {backgroundAnimatedVariant === 'floatingLines' && (
-                            <FloatingLines
-                                linesGradient={getAuroraColorStops(accentColor)}
-                                enabledWaves={['middle', 'bottom']}
-                                lineCount={[8]}
-                                animationSpeed={1}
-                                interactive={false}
-                                parallax={false}
-                            />
-                        )}
-                        {backgroundAnimatedVariant === 'silk' && (
-                            <Silk color={getPrimaryHex(accentColor)} speed={5} scale={1} noiseIntensity={1.5} />
-                        )}
+                        <BackgroundEffectBoundary>
+                            {backgroundAnimatedVariant === 'aurora' && (
+                                <Aurora colorStops={getAuroraColorStops(accentColor)} amplitude={1.2} blend={0.5} />
+                            )}
+                            {backgroundAnimatedVariant === 'beams' && (
+                                <Beams
+                                    lightColor={getBeamLightHex(accentColor)}
+                                    speed={2}
+                                    noiseIntensity={1.75}
+                                    scale={0.2}
+                                />
+                            )}
+                            {backgroundAnimatedVariant === 'colorBends' && (
+                                <ColorBends
+                                    colors={getAuroraColorStops(accentColor)}
+                                    speed={0.2}
+                                    transparent
+                                    scale={1}
+                                    frequency={1}
+                                    warpStrength={1}
+                                />
+                            )}
+                            {backgroundAnimatedVariant === 'floatingLines' && (
+                                <FloatingLines
+                                    linesGradient={getAuroraColorStops(accentColor)}
+                                    enabledWaves={['middle', 'bottom']}
+                                    lineCount={[8]}
+                                    animationSpeed={1}
+                                    interactive={false}
+                                    parallax={false}
+                                />
+                            )}
+                            {backgroundAnimatedVariant === 'silk' && (
+                                <Silk color={getPrimaryHex(accentColor)} speed={5} scale={1} noiseIntensity={1.5} />
+                            )}
+                        </BackgroundEffectBoundary>
                     </div>
                     <div
                         className='pointer-events-none fixed inset-0 z-[1]'

@@ -1673,6 +1673,19 @@
 		"noDatabaseHostsDescription": "No database hosts are configured. Please contact an administrator to set up database hosts.",
 		"failedToOpenPhpMyAdmin": "Failed to open phpMyAdmin",
 		"openingPhpMyAdmin": "Opening phpMyAdmin...",
+		"pmaAuth": {
+			"pageTitleLogin": "Logging in - phpMyAdmin",
+			"pageTitleError": "Authentication error - phpMyAdmin",
+			"pageTitleLogout": "Logging out - phpMyAdmin",
+			"databaseManagement": "Database Management",
+			"connecting": "Connecting to phpMyAdmin",
+			"authenticating": "Authenticating your session securely...",
+			"loggingOut": "Logging out",
+			"loggingOutMessage": "Please wait while we securely log you out...",
+			"authError": "Authentication error",
+			"poweredBy": "Powered by {name}",
+			"loading": "Loading"
+		},
 		"noHostSelected": "Please select a database host",
 		"allHosts": "All Hosts",
 		"exportSql": "Export SQL",
@@ -8293,7 +8306,7 @@
 					"no_schema_desc": "The plugin developer needs to add a config section to conf.yml",
 					"spell_restrictions": {
 						"title": "Server Sidebar Spell Restrictions",
-						"description": "Configure which server types (spells) this plugin should appear on. Leave empty to show on all server types.",
+						"description": "Allow-list only: select the server types (spells) where this plugin should appear in the sidebar. Leave empty to show on all server types. To hide the plugin from specific eggs, select every spell except those — do not select only the eggs you want to block.",
 						"loading": "Loading spells...",
 						"no_spells": "No spells found",
 						"save": "Save Spell Restrictions",

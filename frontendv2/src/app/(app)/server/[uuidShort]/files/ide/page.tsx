@@ -330,14 +330,14 @@ export default function ServerFilesIDEPage({
 
     if (!canRead) {
         return (
-            <div className='fixed inset-0 z-40 flex items-center justify-center bg-linear-to-b from-[#060112] via-[#110429] to-[#050115]'>
+            <div className='flex h-full min-h-0 items-center justify-center bg-linear-to-b from-[#060112] via-[#110429] to-[#050115]'>
                 <p className='text-muted-foreground'>{t('files.list.empty_description')}</p>
             </div>
         );
     }
 
     return (
-        <div className='fixed inset-0 z-40 flex flex-col gap-3 bg-linear-to-b from-[#060112] via-[#110429] to-[#050115] p-4'>
+        <div className='flex h-full min-h-0 flex-col gap-3 bg-linear-to-b from-[#060112] via-[#110429] to-[#050115] p-4'>
             <div className='flex items-center justify-between rounded-2xl border border-white/10 bg-black/40 px-4 py-2 backdrop-blur-xl'>
                 <div className='flex items-center gap-3'>
                     <div className='bg-primary/20 border-primary/40 flex h-8 w-8 items-center justify-center overflow-hidden rounded-xl border'>

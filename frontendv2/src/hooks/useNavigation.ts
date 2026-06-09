@@ -31,6 +31,22 @@ import { useVdsPermissions } from '@/hooks/useVdsPermissions';
 import { useDeveloperMode } from '@/hooks/useDeveloperMode';
 import { useMainNavResourceCounts } from '@/hooks/useMainNavResourceCounts';
 
+const normalizeSpellId = (spellId: number | string | null | undefined): number | null => {
+    if (spellId === null || spellId === undefined) return null;
+    const parsed = Number(spellId);
+    return Number.isFinite(parsed) ? parsed : null;
+};
+
+const isSpellAllowedForPlugin = (
+    spellId: number | string | null | undefined,
+    allowedOnlyOnSpells?: number[] | null,
+): boolean => {
+    if (!allowedOnlyOnSpells || allowedOnlyOnSpells.length === 0) return true;
+    const normalizedSpellId = normalizeSpellId(spellId);
+    if (normalizedSpellId === null) return false;
+    return allowedOnlyOnSpells.some((allowedId) => Number(allowedId) === normalizedSpellId);
+};
+
 export function useNavigation() {
     const pathname = usePathname();
     const { hasPermission, user, isLoading, isSessionChecked } = useSession();
@@ -79,21 +95,7 @@ export function useNavigation() {
                 .filter(([, item]) => {
                     // Filter based on spell restrictions for server sidebar items
                     if (category === 'server') {
-                        // If plugin has spell restrictions defined
-                        if (
-                            item.allowedOnlyOnSpells &&
-                            Array.isArray(item.allowedOnlyOnSpells) &&
-                            item.allowedOnlyOnSpells.length > 0
-                        ) {
-                            // Only show if we have a server spell_id and it's in the allowed list
-                            if (currentSpellId !== null && currentSpellId !== undefined) {
-                                return item.allowedOnlyOnSpells.includes(currentSpellId);
-                            }
-                            // If plugin has restrictions but no server spell_id, don't show
-                            return false;
-                        }
-                        // If no restrictions, show on all servers
-                        return true;
+                        return isSpellAllowedForPlugin(currentSpellId, item.allowedOnlyOnSpells);
                     }
                     // For non-server categories, show all
                     return true;

@@ -29,8 +29,10 @@
 - Admin user edit page now includes a Potential Alts tab that finds other accounts sharing IP addresses with the viewed user. by @nayskutzu
 - Potential alt detection now also compares server activity IPs and hidden browser sync identifiers (localStorage + cookie) collected across the panel. by @nayskutzu
 - Registration can block new accounts when a browser/device already has the maximum allowed panel accounts, pointing users to their main account or support. by @nayskutzu
+- Smarter component rendering for improved performance and reliability. by @nayskutzu
 - Admins can clear device fingerprint records per user or globally from the Users admin area. by @nayskutzu
 - Hopefully fixed some issues with the server console. by @nayskutzu
+- Improved phpMyAdmin integration for seamless database management within the panel. by @nayskutzu
 
 ### Fixed
 

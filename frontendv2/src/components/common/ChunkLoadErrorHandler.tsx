@@ -57,20 +57,36 @@ function hardRefresh(): void {
  * refresh so the user gets the new build. Prevents infinite reloads by only
  * auto-refreshing once per "reload session".
  */
+function tryStaleChunkReload(): boolean {
+    if (typeof sessionStorage === 'undefined') return false;
+    if (sessionStorage.getItem(STALE_RELOAD_KEY)) return false;
+    sessionStorage.setItem(STALE_RELOAD_KEY, '1');
+    hardRefresh();
+    return true;
+}
+
 export default function ChunkLoadErrorHandler() {
     useEffect(() => {
-        const handler = (event: PromiseRejectionEvent) => {
+        const onRejection = (event: PromiseRejectionEvent) => {
             if (!isStaleChunkError(event.reason)) return;
-            if (typeof sessionStorage === 'undefined') return;
-            if (sessionStorage.getItem(STALE_RELOAD_KEY)) return;
-
-            sessionStorage.setItem(STALE_RELOAD_KEY, '1');
             event.preventDefault?.();
-            hardRefresh();
+            tryStaleChunkReload();
         };
 
-        window.addEventListener('unhandledrejection', handler);
-        return () => window.removeEventListener('unhandledrejection', handler);
+        const onScriptError = (event: Event) => {
+            const target = event.target;
+            if (!(target instanceof HTMLScriptElement)) return;
+            if (!target.src.includes('/_next/static/chunks/')) return;
+            event.preventDefault?.();
+            tryStaleChunkReload();
+        };
+
+        window.addEventListener('unhandledrejection', onRejection);
+        window.addEventListener('error', onScriptError, true);
+        return () => {
+            window.removeEventListener('unhandledrejection', onRejection);
+            window.removeEventListener('error', onScriptError, true);
+        };
     }, []);
 
     useEffect(() => {

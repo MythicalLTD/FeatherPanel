@@ -466,7 +466,7 @@ class PhpMyAdmin
     private static function copyTokenFiles(string $pmaPath, $logger): void
     {
         $sourceDir = dirname(__DIR__, 2) . '/storage/modules/pma';
-        $tokenFiles = ['token.php', 'token-logout.php'];
+        $tokenFiles = ['token.php', 'token-logout.php', 'auth-page.php'];
 
         // Check if source directory exists
         if (!is_dir($sourceDir)) {

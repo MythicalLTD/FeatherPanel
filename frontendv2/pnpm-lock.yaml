@@ -39,8 +39,8 @@ importers:
         specifier: 13.3.0
         version: 13.3.0
       '@tailwindcss/typography':
-        specifier: ^0.5.19
-        version: 0.5.19(tailwindcss@4.2.4)
+        specifier: ^0.5.20
+        version: 0.5.20(tailwindcss@4.2.4)
       '@types/js-yaml':
         specifier: ^4.0.9
         version: 4.0.9
@@ -99,11 +99,11 @@ importers:
         specifier: ^1.0.11
         version: 1.0.11
       prettier:
-        specifier: ^3.8.3
-        version: 3.8.3
+        specifier: ^3.8.4
+        version: 3.8.4
       prettier-plugin-tailwindcss-canonical-classes:
         specifier: ^0.1.5
-        version: 0.1.5(prettier@3.8.3)(tailwindcss@4.2.4)
+        version: 0.1.5(prettier@3.8.4)(tailwindcss@4.2.4)
       react:
         specifier: 19.2.7
         version: 19.2.7
@@ -117,8 +117,8 @@ importers:
         specifier: ^10.1.0
         version: 10.1.0(@types/react@19.2.14)(react@19.2.7)
       react-qr-code:
-        specifier: ^2.0.21
-        version: 2.0.21(react@19.2.7)
+        specifier: ^2.2.0
+        version: 2.2.0(react@19.2.7)
       react-turnstile:
         specifier: ^1.1.5
         version: 1.1.5(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -170,7 +170,7 @@ importers:
         version: 4.1.5
       prettier-plugin-tailwindcss:
         specifier: ^0.8.0
-        version: 0.8.0(prettier@3.8.3)
+        version: 0.8.0(prettier@3.8.4)
       tailwindcss:
         specifier: ^4
         version: 4.2.4
@@ -1029,10 +1029,10 @@ packages:
   '@tailwindcss/postcss@4.2.4':
     resolution: {integrity: sha512-wgAVj6nUWAolAu8YFvzT2cTBIElWHkjZwFYovF+xsqKsW2ADxM/X2opxj5NsF/qVccAOjRNe8X2IdPzMsWyHTg==}
 
-  '@tailwindcss/typography@0.5.19':
-    resolution: {integrity: sha512-w31dd8HOx3k9vPtcQh5QHP9GwKcgbMp87j58qi6xgiBnFFtKEAgCWnDw4qUT8aHwkCp8bKvb/KGKWWHedP0AAg==}
+  '@tailwindcss/typography@0.5.20':
+    resolution: {integrity: sha512-hwbzQuNUfcPvbegQFatVPl/MY/tcM9KLl963hQ5laJKPh81TEZ1+dNG9PirGvcaDBkp+BCshExAyKVPW91dozw==}
     peerDependencies:
-      tailwindcss: '>=3.0.0 || insiders || >=4.0.0-alpha.20 || >=4.0.0-beta.1'
+      tailwindcss: '>=3.0.0 || >=4.0.0 || insiders'
 
   '@tanstack/react-virtual@3.13.24':
     resolution: {integrity: sha512-aIJvz5OSkhNIhZIpYivrxrPTKYsjW9Uzy+sP/mx0S3sev2HyvPb7xmjbYvokzEpfgYHy/HjzJ2zFAETuUfgCpg==}
@@ -2949,8 +2949,8 @@ packages:
       prettier-plugin-svelte:
         optional: true
 
-  prettier@3.8.3:
-    resolution: {integrity: sha512-7igPTM53cGHMW8xWuVTydi2KO233VFiTNyF5hLJqpilHfmn8C8gPf+PS7dUT64YcXFbiMGZxS9pCSxL/Dxm/Jw==}
+  prettier@3.8.4:
+    resolution: {integrity: sha512-N2MylSdi48+5N/6S5j+maeHbUSIzzZ5uOcX5Hm4QpV8Dkb1HFjfAKTKX6yNPJQD9AhcT3ifHNB66tWTTJDi11Q==}
     engines: {node: '>=14'}
     hasBin: true
 
@@ -2971,8 +2971,8 @@ packages:
     resolution: {integrity: sha512-vYt7UD1U9Wg6138shLtLOvdAu+8DsC/ilFtEVHcH+wydcSpNE20AfSOduf6MkRFahL5FY7X1oU7nKVZFtfq8Fg==}
     engines: {node: '>=6'}
 
-  qr.js@0.0.0:
-    resolution: {integrity: sha512-c4iYnWb+k2E+vYpRimHqSu575b1/wKl4XFeJGpFmrJQz5I88v9aY2czh7s0w36srfCM1sXgC/xpoJz5dJfq+OQ==}
+  qrcode-generator@2.0.4:
+    resolution: {integrity: sha512-mZSiP6RnbHl4xL2Ap5HfkjLnmxfKcPWpWe/c+5XxCuetEenqmNFf1FH/ftXPCtFG5/TDobjsjz6sSNL0Sr8Z9g==}
 
   queue-microtask@1.2.3:
     resolution: {integrity: sha512-NuaNSa6flKT5JaSYQzJok04JzTL1CA6aGhv5rfLW3PgqA+M2ChpZQnAC8h8i4ZFkBS8X5RqkDBHA7r4hej3K9A==}
@@ -3007,8 +3007,8 @@ packages:
       '@types/react': '>=18'
       react: '>=18'
 
-  react-qr-code@2.0.21:
-    resolution: {integrity: sha512-xaywjo0eaF4S3LOz6ns5eoPbM2E+q9HYl4VATYpxK4bBniOhQ9noY2RJ9G4SnZFhUwzx63FUT6KdHzfKgUwyuQ==}
+  react-qr-code@2.2.0:
+    resolution: {integrity: sha512-e5nS0UUN22K3Nf8KBRUzemfdJ6OmnN5w+kbnj1lvJaol9RyVRFeGl05bCkxSN2ZegbLxjjYjX1+mmAoX9+fAhw==}
     peerDependencies:
       react: '*'
 
@@ -4413,7 +4413,7 @@ snapshots:
       postcss: 8.5.14
       tailwindcss: 4.2.4
 
-  '@tailwindcss/typography@0.5.19(tailwindcss@4.2.4)':
+  '@tailwindcss/typography@0.5.20(tailwindcss@4.2.4)':
     dependencies:
       postcss-selector-parser: 6.0.10
       tailwindcss: 4.2.4
@@ -6584,17 +6584,17 @@ snapshots:
 
   prelude-ls@1.2.1: {}
 
-  prettier-plugin-tailwindcss-canonical-classes@0.1.5(prettier@3.8.3)(tailwindcss@4.2.4):
+  prettier-plugin-tailwindcss-canonical-classes@0.1.5(prettier@3.8.4)(tailwindcss@4.2.4):
     dependencies:
       '@laststance/tailwindcss-canonical-classes-core': 0.1.0(tailwindcss@4.2.4)
-      prettier: 3.8.3
+      prettier: 3.8.4
       tailwindcss: 4.2.4
 
-  prettier-plugin-tailwindcss@0.8.0(prettier@3.8.3):
+  prettier-plugin-tailwindcss@0.8.0(prettier@3.8.4):
     dependencies:
-      prettier: 3.8.3
+      prettier: 3.8.4
 
-  prettier@3.8.3: {}
+  prettier@3.8.4: {}
 
   promise-worker-transferable@1.0.4:
     dependencies:
@@ -6613,7 +6613,7 @@ snapshots:
 
   punycode@2.3.1: {}
 
-  qr.js@0.0.0: {}
+  qrcode-generator@2.0.4: {}
 
   queue-microtask@1.2.3: {}
 
@@ -6668,10 +6668,10 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  react-qr-code@2.0.21(react@19.2.7):
+  react-qr-code@2.2.0(react@19.2.7):
     dependencies:
       prop-types: 15.8.1
-      qr.js: 0.0.0
+      qrcode-generator: 2.0.4
       react: 19.2.7
 
   react-redux@9.2.0(@types/react@19.2.14)(react@19.2.7)(redux@5.0.1):

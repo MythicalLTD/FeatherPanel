@@ -19,8 +19,36 @@ import type { PluginSidebarResponse } from '@/types/navigation';
 
 // Global cache to share across all components
 let cachedPluginData: PluginSidebarResponse['data']['sidebar'] | null = null;
+let cachedServerContext: string | null = null;
 let isLoading = false;
 let loadPromise: Promise<void> | null = null;
+
+const getServerSidebarContext = (): string | null => {
+    if (typeof document === 'undefined') return null;
+    const match = document.cookie.match(/(?:^|;\s*)serverUuid=([^;]+)/);
+    return match?.[1] ? decodeURIComponent(match[1]) : null;
+};
+
+const fetchPluginSidebar = async (): Promise<PluginSidebarResponse['data']['sidebar'] | null> => {
+    const { data } = await axios
+        .get<PluginSidebarResponse>('/api/system/plugin-sidebar')
+        .catch(() => ({ data: { success: false, data: null } }));
+
+    if (data.success && data.data?.sidebar) {
+        cachedPluginData = data.data.sidebar;
+        cachedServerContext = getServerSidebarContext();
+        return data.data.sidebar;
+    }
+
+    return null;
+};
+
+export function invalidatePluginRoutesCache(): void {
+    cachedPluginData = null;
+    cachedServerContext = null;
+    isLoading = false;
+    loadPromise = null;
+}
 
 /**
  * Shared hook for accessing plugin routes data
@@ -30,10 +58,16 @@ export function usePluginRoutes() {
     const [pluginData, setPluginData] = useState<PluginSidebarResponse['data']['sidebar'] | null>(cachedPluginData);
 
     useEffect(() => {
-        // If we already have cached data, use it
-        if (cachedPluginData) {
+        const serverContext = getServerSidebarContext();
+        const hasStaleServerContext = cachedPluginData !== null && cachedServerContext !== serverContext;
+
+        if (cachedPluginData && !hasStaleServerContext) {
             setPluginData(cachedPluginData);
             return;
+        }
+
+        if (hasStaleServerContext) {
+            invalidatePluginRoutesCache();
         }
 
         // If already loading, wait for that promise
@@ -46,13 +80,9 @@ export function usePluginRoutes() {
         isLoading = true;
         loadPromise = (async () => {
             try {
-                const { data } = await axios
-                    .get<PluginSidebarResponse>('/api/system/plugin-sidebar')
-                    .catch(() => ({ data: { success: false, data: null } }));
-
-                if (data.success && data.data?.sidebar) {
-                    cachedPluginData = data.data.sidebar;
-                    setPluginData(data.data.sidebar);
+                const sidebar = await fetchPluginSidebar();
+                if (sidebar) {
+                    setPluginData(sidebar);
                 }
             } catch (error) {
                 console.error('Failed to fetch plugin sidebar', error);

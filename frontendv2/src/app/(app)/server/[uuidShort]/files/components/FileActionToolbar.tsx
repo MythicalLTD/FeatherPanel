@@ -245,9 +245,9 @@ export function FileActionToolbar({
                                 variant='ghost'
                                 size='sm'
                                 onClick={onOpenInIDE}
-                                className='text-muted-foreground hover:text-foreground h-9 px-3 hover:bg-black/5 dark:hover:bg-white/5'
+                                className='text-muted-foreground hover:text-foreground h-9 shrink-0 px-3 hover:bg-black/5 dark:hover:bg-white/5'
                             >
-                                <Boxes className='mr-2 h-4 w-4' />
+                                <Boxes className='mr-2 h-4 w-4 shrink-0' />
                                 <span className='xs:inline hidden'>{t('files.toolbar.open_in_ide')}</span>
                             </Button>
 
@@ -255,10 +255,10 @@ export function FileActionToolbar({
                                 <DropdownMenuTrigger
                                     as={Button}
                                     variant='ghost'
-                                    size='icon'
-                                    className='text-muted-foreground h-9 w-9'
+                                    size='sm'
+                                    className='text-muted-foreground hover:text-foreground h-9 w-9 shrink-0 p-0 hover:bg-black/5 dark:hover:bg-white/5'
                                 >
-                                    <Settings className='h-4 w-4' />
+                                    <Settings className='h-4 w-4 shrink-0' />
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align='end'>
                                     <DropdownMenuItem onClick={onIgnoredContent}>
