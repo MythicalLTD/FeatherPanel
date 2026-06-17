@@ -31,7 +31,7 @@ import { Sheet, SheetDescription, SheetHeader, SheetTitle, SheetFooter } from '@
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { PageCard } from '@/components/featherui/PageCard';
-import { cn } from '@/lib/utils';
+import { cn, resolveAttachmentUrl } from '@/lib/utils';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
 interface Category {
@@ -275,10 +275,11 @@ export default function TicketCategoriesPage() {
                                     >
                                         {category.icon ? (
                                             <Image
-                                                src={category.icon}
+                                                src={resolveAttachmentUrl(category.icon) ?? category.icon}
                                                 alt={category.name}
                                                 fill
                                                 className='object-cover'
+                                                unoptimized
                                             />
                                         ) : (
                                             <div className='bg-primary/10 text-primary flex h-8 w-8 items-center justify-center rounded-lg'>
@@ -341,10 +342,11 @@ export default function TicketCategoriesPage() {
                                         <Label className='text-muted-foreground text-xs'>{t('common.preview')}</Label>
                                         <div className='border-border/10 relative h-16 w-16 overflow-hidden rounded-lg border'>
                                             <Image
-                                                src={iconPreview}
+                                                src={resolveAttachmentUrl(iconPreview) ?? iconPreview}
                                                 alt={t('common.preview')}
                                                 fill
                                                 className='object-cover'
+                                                unoptimized
                                             />
                                         </div>
                                     </div>
@@ -415,10 +417,11 @@ export default function TicketCategoriesPage() {
                                         <Label className='text-muted-foreground text-xs'>{t('common.preview')}</Label>
                                         <div className='border-border/10 relative h-16 w-16 overflow-hidden rounded-lg border'>
                                             <Image
-                                                src={iconPreview}
+                                                src={resolveAttachmentUrl(iconPreview) ?? iconPreview}
                                                 alt={t('common.preview')}
                                                 fill
                                                 className='object-cover'
+                                                unoptimized
                                             />
                                         </div>
                                     </div>

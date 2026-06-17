@@ -18,6 +18,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { Listbox, Field, Label, Description } from '@headlessui/react';
 import { Check, ChevronDown } from 'lucide-react';
 import clsx from 'clsx';
+import { resolveAttachmentUrl } from '@/lib/utils';
 
 interface Option {
     id: string | number;
@@ -54,6 +55,7 @@ export function HeadlessSelect({
     anchorPosition = 'bottom',
 }: HeadlessSelectProps) {
     const selectedOption = options.find((o) => o.id === value) || null;
+    const selectedImage = selectedOption?.image ? resolveAttachmentUrl(selectedOption.image) : null;
     const anchor = anchorPosition === 'top' ? 'top start' : 'bottom start';
 
     return (
@@ -76,9 +78,9 @@ export function HeadlessSelect({
                     <span
                         className={clsx('flex items-center gap-3 truncate', !selectedOption && 'text-muted-foreground')}
                     >
-                        {selectedOption?.image && (
+                        {selectedImage && (
                             /* eslint-disable-next-line @next/next/no-img-element */
-                            <img src={selectedOption.image} alt='' className='h-5 w-5 rounded object-cover' />
+                            <img src={selectedImage} alt='' className='h-5 w-5 rounded object-cover' />
                         )}
                         <span
                             className={clsx(
@@ -107,53 +109,57 @@ export function HeadlessSelect({
                         anchorPosition === 'top' ? 'origin-bottom' : 'origin-top',
                     )}
                 >
-                    {options.map((option) => (
-                        <Listbox.Option
-                            key={option.id}
-                            className={({ active, selected }) =>
-                                clsx(
-                                    'group relative mx-0.5 my-0.5 cursor-pointer rounded-xl py-3 pr-10 pl-4 transition-all duration-200 select-none',
-                                    active
-                                        ? 'bg-primary scale-[1.02] text-white'
-                                        : selected
-                                          ? 'bg-primary/10 text-primary'
-                                          : 'text-foreground/80 hover:bg-muted/50',
-                                )
-                            }
-                            value={option.id}
-                        >
-                            {({ selected, active }) => (
-                                <div className='flex items-center gap-3'>
-                                    {option.image && (
-                                        /* eslint-disable-next-line @next/next/no-img-element */
-                                        <img
-                                            src={option.image}
-                                            alt=''
-                                            className='h-6 w-6 rounded-lg object-cover ring-2 ring-white/10'
-                                        />
-                                    )}
-                                    <span
-                                        className={clsx(
-                                            'block truncate text-sm',
-                                            selected ? 'font-bold' : 'font-medium',
+                    {options.map((option) => {
+                        const optionImage = option.image ? resolveAttachmentUrl(option.image) : null;
+
+                        return (
+                            <Listbox.Option
+                                key={option.id}
+                                className={({ active, selected }) =>
+                                    clsx(
+                                        'group relative mx-0.5 my-0.5 cursor-pointer rounded-xl py-3 pr-10 pl-4 transition-all duration-200 select-none',
+                                        active
+                                            ? 'bg-primary scale-[1.02] text-white'
+                                            : selected
+                                              ? 'bg-primary/10 text-primary'
+                                              : 'text-foreground/80 hover:bg-muted/50',
+                                    )
+                                }
+                                value={option.id}
+                            >
+                                {({ selected, active }) => (
+                                    <div className='flex items-center gap-3'>
+                                        {optionImage && (
+                                            /* eslint-disable-next-line @next/next/no-img-element */
+                                            <img
+                                                src={optionImage}
+                                                alt=''
+                                                className='h-6 w-6 rounded-lg object-cover ring-2 ring-white/10'
+                                            />
                                         )}
-                                    >
-                                        {option.name}
-                                    </span>
-                                    {selected ? (
                                         <span
                                             className={clsx(
-                                                'absolute inset-y-0 right-0 flex items-center pr-4 transition-colors',
-                                                active ? 'text-white' : 'text-primary',
+                                                'block truncate text-sm',
+                                                selected ? 'font-bold' : 'font-medium',
                                             )}
                                         >
-                                            <Check className='h-4 w-4 stroke-[3px]' aria-hidden='true' />
+                                            {option.name}
                                         </span>
-                                    ) : null}
-                                </div>
-                            )}
-                        </Listbox.Option>
-                    ))}
+                                        {selected ? (
+                                            <span
+                                                className={clsx(
+                                                    'absolute inset-y-0 right-0 flex items-center pr-4 transition-colors',
+                                                    active ? 'text-white' : 'text-primary',
+                                                )}
+                                            >
+                                                <Check className='h-4 w-4 stroke-[3px]' aria-hidden='true' />
+                                            </span>
+                                        ) : null}
+                                    </div>
+                                )}
+                            </Listbox.Option>
+                        );
+                    })}
                 </Listbox.Options>
 
                 {error && (
