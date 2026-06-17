@@ -6,12 +6,18 @@
 
 - Roles can now use custom icon/image badges, uploadable from the role editor and shown on role badges throughout the panel. by @nayskutzu
 - Server **lifecycle hooks**: added **Server-crash Hook** pipeline that runs when Wings reports a crashed container (Discord webhooks, HTTP requests, container commands). by @nayskutzu
+- Button in the admin are to mass start, restart, kill, stop servers by @nayskutzu
+- Roles can now have custom icons by @nayskutzu
 
 ### Improved
 
 - Improved the file editor to use the Monaco Editor Engine or CodeMirror Editor for mobile devices. by @nayskutzu
 - Tickets will now be automatically closed once user data has been requested. by @nayskutzu
 - Security between the panel and the nodes was improved by using JWT scopes for the connections to prevent unauthorized access. by @nayskutzu
+- Fixed some issues with ticket times not being accurate! by @nayskutzu
+- Fixed some issues with Avatars sometimes not loading by @nayskutzu
+- Admin area dashboard was renamed from Dashboard to Admin Home! by @nayskutzu
+- You can now see the servers that are running on the node using the status page @nayskutzu
 
 ### Fixed
 
