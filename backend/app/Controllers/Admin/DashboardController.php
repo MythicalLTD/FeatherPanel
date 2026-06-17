@@ -364,13 +364,19 @@ class DashboardController
             $recentCrons = array_map(function ($row) use ($now, $expectedMap) {
                 $name = $row['task_name'] ?? '';
                 // Parse last_run_at as UTC since it is stored via UTC_TIMESTAMP()
-                $lastRunAt =
-                    isset($row['last_run_at']) && $row['last_run_at'] !== null
-                        ? new \DateTime(
+                $lastRunAt = null;
+                if (isset($row['last_run_at']) && $row['last_run_at'] !== null) {
+                    try {
+                        $dateTime = new \DateTime(
                             $row['last_run_at'],
-                            new \DateTimeZone('UTC'),
-                        )->getTimestamp() ?? null,
-                        : null;
+                            new \DateTimeZone('UTC')
+                        );
+                        $lastRunAt = $dateTime->getTimestamp();
+                    } catch (\Exception $e) {
+                        $lastRunAt = null;
+                    }
+                }
+				
                 $expected = $expectedMap[$name] ?? 300; // default 5 minutes if unknown
                 $late = $lastRunAt ? $now - $lastRunAt > $expected * 2 : true; // late if never ran or >2x expected
 

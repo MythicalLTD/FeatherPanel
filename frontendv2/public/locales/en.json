@@ -2866,7 +2866,11 @@
 			"load_timeout": "File loading timed out. The file may be too large or the server is taking too long to respond.",
 			"unsaved_prompt": "You have unsaved changes in this file. Are you sure you want to leave without saving?",
 			"window_title": "File Editor",
-			"binary_not_supported": "This file type cannot be opened in the text editor. Download it from the file manager instead."
+			"binary_not_supported": "This file type cannot be opened in the text editor. Download it from the file manager instead.",
+			"engine_monaco": "Monaco Editor Engine v0.34.1",
+			"engine_codemirror": "CodeMirror Engine",
+			"switch_to_monaco": "Use Monaco",
+			"switch_to_codemirror": "Use CodeMirror"
 		},
 		"search": {
 			"files_placeholder": "Filter files in this folder...",

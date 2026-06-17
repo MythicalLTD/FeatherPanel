@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.3.7.5 STABLE
+
+### Improved
+
+- Improved the file editor to use the Monaco Editor Engine or CodeMirror Editor for mobile devices. by @nayskutzu
+
+### Fixed
+
+- Admin area stats were not loading correctly. by @nayskutzu
+
 ## v1.3.7.4 STABLE
 
 ### Added
