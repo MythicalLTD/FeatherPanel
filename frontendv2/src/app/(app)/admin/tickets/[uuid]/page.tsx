@@ -34,6 +34,8 @@ import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { RoleBadge } from '@/components/RoleBadge';
 import { cn } from '@/lib/utils';
 import { formatBytes } from '@/lib/format';
+import { useDateFormatOptions } from '@/contexts/PreferencesContext';
+import { formatDateTimeInTz, formatTimeInTz } from '@/lib/dateUtils';
 import { Sheet, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
@@ -129,6 +131,7 @@ export default function TicketViewPage() {
     const { uuid } = useParams();
     const router = useRouter();
     const { t } = useTranslation();
+    const dateOpts = useDateFormatOptions();
     const [ticket, setTicket] = useState<Ticket | null>(null);
     const [loading, setLoading] = useState(true);
     const [reply, setReply] = useState('');
@@ -389,7 +392,7 @@ export default function TicketViewPage() {
                         <div className='text-muted-foreground flex items-center gap-2 text-xs'>
                             <span className='font-mono'>#{ticket.id}</span>
                             <span>•</span>
-                            <span>{new Date(ticket.created_at).toLocaleString()}</span>
+                            <span>{formatDateTimeInTz(ticket.created_at, dateOpts)}</span>
                             <span>•</span>
                             <span className='text-foreground font-medium'>{ticket.category?.name}</span>
                         </div>
@@ -483,7 +486,7 @@ export default function TicketViewPage() {
                                         {t('admin.tickets.view.original_request')}
                                     </span>
                                     <span className='text-muted-foreground text-[10px]'>
-                                        {new Date(ticket.created_at).toLocaleString()}
+                                        {formatDateTimeInTz(ticket.created_at, dateOpts)}
                                     </span>
                                 </div>
                                 <div className='bg-muted/30 border-border/30 rounded-2xl rounded-tl-sm border p-4 text-sm leading-relaxed whitespace-pre-wrap'>
@@ -540,10 +543,7 @@ export default function TicketViewPage() {
                                                 />
                                             )}
                                             <span className='text-muted-foreground ml-1 text-[10px]'>
-                                                {new Date(msg.created_at).toLocaleTimeString([], {
-                                                    hour: '2-digit',
-                                                    minute: '2-digit',
-                                                })}
+                                                {formatTimeInTz(msg.created_at, dateOpts)}
                                             </span>
                                         </div>
 
@@ -866,7 +866,7 @@ export default function TicketViewPage() {
                     <SheetHeader>
                         <SheetTitle>{mailPreview?.subject || t('admin.tickets.view.mail_preview_title')}</SheetTitle>
                         <SheetDescription>
-                            {mailPreview?.created_at && new Date(mailPreview.created_at).toLocaleString()}
+                            {mailPreview?.created_at && formatDateTimeInTz(mailPreview.created_at, dateOpts)}
                         </SheetDescription>
                     </SheetHeader>
                     <div className='mt-6 h-[calc(100vh-140px)] overflow-hidden rounded-xl border p-0'>

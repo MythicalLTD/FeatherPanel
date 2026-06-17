@@ -18,6 +18,8 @@ import { Ticket, MessageSquare } from 'lucide-react';
 import Link from 'next/link';
 import axios from 'axios';
 import { Badge } from '@/components/ui/badge';
+import { useDateFormatOptions } from '@/contexts/PreferencesContext';
+import { formatDateInTz } from '@/lib/dateUtils';
 
 interface TicketListProps {
     t: (key: string) => string;
@@ -44,6 +46,7 @@ interface ApiTicket {
 }
 
 export function TicketList({ t }: TicketListProps) {
+    const dateOpts = useDateFormatOptions();
     const [tickets, setTickets] = useState<ApiTicket[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
@@ -165,7 +168,7 @@ export function TicketList({ t }: TicketListProps) {
                                                 </>
                                             )}
                                             <span className='hidden sm:inline'>•</span>
-                                            <span>{new Date(ticket.created_at).toLocaleDateString()}</span>
+                                            <span>{formatDateInTz(ticket.created_at, dateOpts)}</span>
                                         </div>
                                     </div>
                                 </div>

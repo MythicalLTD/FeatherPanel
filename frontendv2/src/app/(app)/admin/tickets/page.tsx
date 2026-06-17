@@ -18,6 +18,8 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { useDateFormatOptions } from '@/contexts/PreferencesContext';
+import { formatDateInTz } from '@/lib/dateUtils';
 import { Ticket, Search, Trash2, Eye, ChevronLeft, ChevronRight, RefreshCw, Filter } from 'lucide-react';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { ResourceCard, type ResourceBadge } from '@/components/featherui/ResourceCard';
@@ -83,6 +85,7 @@ const TICKETS_LIST_FILTERS_DEFAULTS = {
 
 export default function TicketsPage() {
     const { t } = useTranslation();
+    const dateOpts = useDateFormatOptions();
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-tickets');
     const [tickets, setTickets] = useState<ApiTicket[]>([]);
     const [categories, setCategories] = useState<Meta[]>([]);
@@ -331,7 +334,7 @@ export default function TicketsPage() {
                                         </div>
                                         <div className='flex items-center gap-2'>
                                             <span className='font-semibold'>{t('admin.tickets.table.created')}:</span>
-                                            <span>{new Date(ticket.created_at).toLocaleDateString()}</span>
+                                            <span>{formatDateInTz(ticket.created_at, dateOpts)}</span>
                                         </div>
                                         {ticket.server_id && (
                                             <div className='flex items-center gap-2'>
