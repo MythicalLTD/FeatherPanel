@@ -118,10 +118,15 @@ class CreateVdsBackupTool implements ToolInterface
             return ['success' => false, 'error' => 'No backup storage could be determined.'];
         }
 
-        // Check backup limit
-        $backupLimit   = (int) ($instance['backup_limit'] ?? 5);
+        // Check backup limit (0 = disabled)
+        $backupLimit   = (int) ($instance['backup_limit'] ?? 0);
         $existingCount = VmInstanceBackup::countByInstanceId((int) $instance['id']);
-        if ($backupLimit > 0 && $existingCount >= $backupLimit) {
+
+        if ($backupLimit === 0) {
+            return ['success' => false, 'error' => 'Backups are disabled for this VM instance.'];
+        }
+
+        if ($existingCount >= $backupLimit) {
             if (!BackupFifoEviction::isFifoRollingForVm($instance)) {
                 return ['success' => false, 'error' => "Backup limit of {$backupLimit} reached. Delete an existing backup first."];
             }

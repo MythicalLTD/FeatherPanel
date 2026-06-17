@@ -47,6 +47,7 @@ import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { cn, formatMib } from '@/lib/utils';
+import { formatBackupLimitLabel, isBackupLimitDisabled } from '@/lib/server-utils';
 
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
@@ -324,8 +325,11 @@ export default function ServerBackupsPage() {
 
     const backupCountTotal = pagination.total;
     const fifoRolling = Boolean(server?.fifo_rolling_enabled);
-    const limitReached = server && server.backup_limit > 0 && backupCountTotal >= server.backup_limit && !fifoRolling;
-    const showHeaderCreateAction = canCreate && backups.length > 0;
+    const backupsDisabled = server ? isBackupLimitDisabled(server.backup_limit) : false;
+    const atBackupCapacity =
+        server != null && server.backup_limit > 0 && backupCountTotal >= server.backup_limit && !fifoRolling;
+    const limitReached = backupsDisabled || atBackupCapacity;
+    const showHeaderCreateAction = canCreate && !backupsDisabled && backups.length > 0;
 
     return (
         <div className='space-y-8 pb-12'>
@@ -336,7 +340,7 @@ export default function ServerBackupsPage() {
                         <span>{t('serverBackups.description')}</span>
                         {server && (
                             <span className='bg-primary/5 text-primary border-primary/20 rounded-full border px-3 py-1 text-[10px] font-black tracking-widest uppercase'>
-                                {backupCountTotal} / {server.backup_limit === 0 ? '∞' : server.backup_limit}
+                                {backupCountTotal} / {formatBackupLimitLabel(server.backup_limit, t('common.disabled'))}
                                 {fifoRolling ? ' · FIFO' : ''}
                             </span>
                         )}
@@ -396,7 +400,25 @@ export default function ServerBackupsPage() {
                 </div>
             )}
 
-            {limitReached && (
+            {backupsDisabled && (
+                <div className='animate-in slide-in-from-top relative overflow-hidden rounded-3xl border border-yellow-500/20 bg-yellow-500/10 p-6 backdrop-blur-xl duration-500'>
+                    <div className='relative z-10 flex items-start gap-5'>
+                        <div className='flex h-12 w-12 items-center justify-center rounded-2xl border border-yellow-500/30 bg-yellow-500/20'>
+                            <AlertTriangle className='h-6 w-6 text-yellow-500' />
+                        </div>
+                        <div className='space-y-1'>
+                            <h3 className='text-lg leading-none font-bold text-yellow-500'>
+                                {t('common.disabled')}
+                            </h3>
+                            <p className='text-sm leading-relaxed font-medium text-yellow-500/80'>
+                                {t('serverBackups.noBackupsNoLimit')}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {atBackupCapacity && (
                 <div className='animate-in slide-in-from-top relative overflow-hidden rounded-3xl border border-yellow-500/20 bg-yellow-500/10 p-6 backdrop-blur-xl duration-500'>
                     <div className='relative z-10 flex items-start gap-5'>
                         <div className='flex h-12 w-12 items-center justify-center rounded-2xl border border-yellow-500/30 bg-yellow-500/20'>
@@ -467,7 +489,7 @@ export default function ServerBackupsPage() {
                         }
                         icon={Archive}
                         action={
-                            canCreate && server ? (
+                            canCreate && server && !backupsDisabled ? (
                                 <Button
                                     size='default'
                                     onClick={() => {

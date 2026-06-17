@@ -5,10 +5,13 @@
 ### Improved
 
 - Improved the file editor to use the Monaco Editor Engine or CodeMirror Editor for mobile devices. by @nayskutzu
+- Tickets will now be automatically closed once user data has been requested. by @nayskutzu
 
 ### Fixed
 
 - Admin area stats were not loading correctly. by @nayskutzu
+- Fixed the issue with unlimited backup limit. by @nayskutzu
+- Issues related to port allocation were fixed. by @nayskutzu
 
 ## v1.3.7.4 STABLE
 

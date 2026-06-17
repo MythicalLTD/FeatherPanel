@@ -5243,7 +5243,7 @@
 					"what_are_allocations_text": "Allocations are IP:Port pairs a node uses to host servers. Each server needs an allocation to run and accept traffic.",
 					"what_you_will_need": "What you’ll need",
 					"what_you_will_need_ip": "IP address (from your node)",
-					"what_you_will_need_port": "Port or port range (e.g., 25565 or 25565-25600)",
+					"what_you_will_need_port": "Port or port range (e.g., 25565 or 25565:25600)",
 					"what_you_will_need_alias": "IP alias (optional) for friendly hostname",
 					"what_you_will_need_notes": "Notes (optional) for admin context",
 					"popular_game_ranges": "Popular game ranges (examples)",
@@ -5262,7 +5262,7 @@
 					"include_default": "Include Default Port?",
 					"include_default_help": "Include port {port} in the range",
 					"exclude_default_help": "Start from port {port} (exclude {default})",
-					"port_range_help": "Enter a single port (e.g., 25565) or a range (e.g., 25565-25700) to create multiple allocations at once."
+					"port_range_help": "Enter a single port (e.g., 25565) or a range (e.g., 25565:25700) to create multiple allocations at once."
 				},
 				"edit": {
 					"title": "Edit Allocation",
@@ -5803,7 +5803,7 @@
 				"allocation_limit": "Allocation Limit",
 				"allocation_limit_help": "The total number of allocations a user is allowed to create for this server.",
 				"backup_limit": "Backup Limit",
-				"backup_limit_help": "The total number of backups that can be created for this server.",
+				"backup_limit_help": "The total number of backups that can be created for this server (0 = disabled).",
 				"backup_retention_mode": "Backup retention override",
 				"backup_retention_mode_help": "Inherit uses the panel default (Admin → Settings → Servers). Hard limit blocks new backups when full. FIFO rolling removes the oldest unlocked backup so scheduled or manual backups can continue.",
 				"backup_retention_inherit": "Inherit panel default",

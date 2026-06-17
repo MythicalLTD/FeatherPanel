@@ -133,6 +133,15 @@ export function validateServerResourceLimits(
     return errors;
 }
 
+/** Server backup_limit: 0 means backups are disabled, not unlimited. */
+export function isBackupLimitDisabled(backupLimit: number): boolean {
+    return backupLimit === 0;
+}
+
+export function formatBackupLimitLabel(backupLimit: number, disabledLabel: string): string {
+    return isBackupLimitDisabled(backupLimit) ? disabledLabel : String(backupLimit);
+}
+
 /**
  * Get server memory usage
  */

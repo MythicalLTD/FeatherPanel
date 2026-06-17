@@ -23,6 +23,7 @@ use App\Chat\Backup;
 use App\Chat\Ticket;
 use App\Chat\Database;
 use App\Chat\TimedTask;
+use App\Chat\TicketStatus;
 use App\Chat\TicketMessage;
 use App\Chat\UserDataExport;
 use App\Services\Wings\Wings;
@@ -291,8 +292,51 @@ class UserDataExportProcessor implements TimeTask
             }
 
             UserDataExport::markCompleted((int) $export['id'], '/attachments/' . $filename);
+
+            $this->closeExportTicket($ticket);
         } finally {
             $service->removeDirectory($exportDir);
+        }
+    }
+
+    private function closeExportTicket(array $ticket): void
+    {
+        if (!empty($ticket['closed_at'])) {
+            return;
+        }
+
+        $closedStatusId = null;
+        foreach (TicketStatus::getAll(null, 100, 0) as $status) {
+            if (isset($status['name']) && strtolower((string) $status['name']) === 'closed') {
+                $closedStatusId = (int) $status['id'];
+                break;
+            }
+        }
+
+        if ($closedStatusId === null) {
+            App::getInstance(false, true)->getLogger()->warning(
+                'Personal data export ticket could not be closed: no "closed" ticket status configured'
+            );
+
+            return;
+        }
+
+        $updated = Ticket::update((int) $ticket['id'], [
+            'status_id' => $closedStatusId,
+            'closed_at' => date('Y-m-d H:i:s'),
+        ]);
+
+        if (!$updated) {
+            App::getInstance(false, true)->getLogger()->warning(
+                'Failed to close personal data export ticket: ' . ($ticket['uuid'] ?? 'unknown')
+            );
+
+            return;
+        }
+
+        $updatedTicket = Ticket::getById((int) $ticket['id']);
+        if ($updatedTicket) {
+            TicketNotificationService::notifyClosed($updatedTicket);
         }
     }
 

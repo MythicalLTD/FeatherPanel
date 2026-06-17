@@ -452,7 +452,23 @@ class AServerScheduleProcessor implements TimeTask
             $ignoredFiles = $this->normalizeIgnoredFiles($ignoredFiles);
             $currentBackups = count(Backup::getBackupsByServerId((int) $server['id']));
             $backupLimit = (int) ($server['backup_limit'] ?? 0);
-            $atBackupLimit = $backupLimit > 0 && $currentBackups >= $backupLimit;
+
+            if ($backupLimit === 0) {
+                MinecraftColorCodeSupport::sendOutputWithNewLine('&eSkipping backup: backups disabled for server: ' . $server['name']);
+                $app->getLogger()->info('Skipped scheduled backup for server ' . ($server['name'] ?? 'unknown') . ': backups disabled (backup_limit=0)');
+                ServerActivity::createActivity([
+                    'server_id' => $server['id'],
+                    'node_id' => $server['node_id'],
+                    'event' => 'schedule_backup_skipped_disabled',
+                    'metadata' => json_encode([
+                        'backup_limit' => 0,
+                    ]),
+                ]);
+
+                return;
+            }
+
+            $atBackupLimit = $currentBackups >= $backupLimit;
 
             if ($atBackupLimit && !BackupFifoEviction::isFifoRollingForServer($server)) {
                 MinecraftColorCodeSupport::sendOutputWithNewLine('&eSkipping backup: limit reached (' . $currentBackups . '/' . $backupLimit . ') for server: ' . $server['name'] . ')');

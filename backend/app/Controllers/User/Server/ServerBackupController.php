@@ -327,11 +327,15 @@ class ServerBackupController
             return $permissionCheck;
         }
 
-        // Check backup limit (optional FIFO rotation per panel setting)
+        // Check backup limit (0 = disabled; optional FIFO rotation per panel setting)
         $currentBackups = count(Backup::getBackupsByServerId((int) $server['id']));
-        $backupLimit = (int) ($server['backup_limit'] ?? 1);
+        $backupLimit = (int) ($server['backup_limit'] ?? 0);
 
-        if ($backupLimit > 0 && $currentBackups >= $backupLimit) {
+        if ($backupLimit === 0) {
+            return ApiResponse::error('Backups are disabled for this server', 'BACKUPS_DISABLED', 403);
+        }
+
+        if ($currentBackups >= $backupLimit) {
             if (!BackupFifoEviction::isFifoRollingForServer($server)) {
                 return ApiResponse::error('Backup limit reached', 'BACKUP_LIMIT_REACHED', 400);
             }

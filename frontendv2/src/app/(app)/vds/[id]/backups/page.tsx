@@ -36,6 +36,7 @@ import { useDateFormatOptions } from '@/contexts/PreferencesContext';
 import { useVmInstance } from '@/contexts/VmInstanceContext';
 import { formatDateTimeInTz } from '@/lib/dateUtils';
 import { cn, formatMib } from '@/lib/utils';
+import { formatBackupLimitLabel, isBackupLimitDisabled } from '@/lib/server-utils';
 
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
@@ -152,7 +153,9 @@ export default function VdsBackupsPage() {
         return () => clearInterval(interval);
     }, [backups, fetchBackups]);
 
-    const limitReached = backupLimit > 0 && backups.length >= backupLimit && !fifoRolling;
+    const backupsDisabled = isBackupLimitDisabled(backupLimit);
+    const limitReached =
+        backupsDisabled || (backupLimit > 0 && backups.length >= backupLimit && !fifoRolling);
 
     const handleCreateBackup = async () => {
         if (limitReached) {
@@ -301,7 +304,7 @@ export default function VdsBackupsPage() {
                             {t('serverBackups.description') || 'Manage filesystem backups for this VDS instance.'}
                         </span>
                         <span className='bg-primary/5 text-primary border-primary/20 rounded-full border px-3 py-1 text-[10px] font-black tracking-widest uppercase'>
-                            {backups.length} / {backupLimit === 0 ? '∞' : backupLimit}
+                            {backups.length} / {formatBackupLimitLabel(backupLimit, t('common.disabled'))}
                             {fifoRolling ? ' · FIFO' : ''}
                         </span>
                     </div>

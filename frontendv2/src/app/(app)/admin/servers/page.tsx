@@ -416,6 +416,12 @@ export default function ServersPage() {
         return `${cpu}%`;
     };
 
+    const formatBackupLimit = (limit: number | undefined) => {
+        if (limit === undefined || limit === null) return '—';
+        if (limit === 0) return t('admin.servers.form.disabled');
+        return String(limit);
+    };
+
     const fetchOwnerFilterUsers = useCallback(async (query: string) => {
         setOwnerFilterLoading(true);
         try {
@@ -1127,7 +1133,7 @@ export default function ServersPage() {
                                                     />
                                                     <DetailItem
                                                         label={t('admin.servers.details.labels.backup_limit')}
-                                                        value={selectedServer?.backup_limit || '∞'}
+                                                        value={formatBackupLimit(selectedServer?.backup_limit)}
                                                     />
                                                 </div>
                                             </div>

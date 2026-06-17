@@ -104,9 +104,18 @@ class CreateBackupTool implements ToolInterface
         }
 
         $currentBackups = count(Backup::getBackupsByServerId((int) $server['id']));
-        $backupLimit = (int) ($server['backup_limit'] ?? 1);
+        $backupLimit = (int) ($server['backup_limit'] ?? 0);
 
-        if ($backupLimit > 0 && $currentBackups >= $backupLimit) {
+        if ($backupLimit === 0) {
+            return [
+                'success' => false,
+                'error' => 'Backups are disabled for this server',
+                'action_type' => 'create_backup',
+                'code' => 'BACKUPS_DISABLED',
+            ];
+        }
+
+        if ($currentBackups >= $backupLimit) {
             if (!BackupFifoEviction::isFifoRollingForServer($server)) {
                 return [
                     'success' => false,
