@@ -6183,9 +6183,19 @@
 				"delete_success": "Status deleted successfully",
 				"delete_error": "Failed to delete status",
 				"delete_confirm": "Are you sure you want to delete this status?",
+				"defaultBadge": "Default for new tickets",
+				"levelLabel": "Level {level}",
+				"moveUp": "Move up",
+				"moveDown": "Move down",
+				"reorderSuccess": "Status order updated",
+				"reorderError": "Failed to update status order",
 				"form": {
 					"name": "Name",
-					"color": "Color"
+					"color": "Color",
+					"sortOrder": "Level",
+					"sortOrderDescription": "Lower numbers appear first in lists. New tickets use the status marked as default.",
+					"isDefault": "Default status for new tickets",
+					"isDefaultDescription": "Only one status can be the default. Reopened tickets also return to this status."
 				},
 				"help": {
 					"workflow": {
