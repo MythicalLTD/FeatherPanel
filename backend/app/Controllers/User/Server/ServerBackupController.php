@@ -28,6 +28,7 @@ use App\Helpers\ApiResponse;
 use App\Services\Wings\Wings;
 use OpenApi\Attributes as OA;
 use App\Helpers\WingsUrlHelper;
+use App\Helpers\BackupIgnoreHelper;
 use App\Plugins\Events\Events\ServerEvent;
 use App\Services\Backup\BackupFifoEviction;
 use Symfony\Component\HttpFoundation\Request;
@@ -362,6 +363,11 @@ class ServerBackupController
             }
         }
 
+        $body = json_decode($request->getContent(), true);
+        if (!is_array($body)) {
+            $body = [];
+        }
+
         // Always use Wings adapter
         $adapter = 'wings';
 
@@ -369,10 +375,13 @@ class ServerBackupController
         $backupUuid = $body['uuid'] ?? $this->generateUuid();
 
         // Generate backup name if not provided
-        $backupName = $body['name'] ?? 'Backup at ' . date('Y-m-d H:i:s');
+        $backupName = trim((string) ($body['name'] ?? ''));
+        if ($backupName === '') {
+            $backupName = 'Backup at ' . date('Y-m-d H:i:s');
+        }
 
-        // Get ignore files
-        $ignoredFiles = $body['ignore'] ?? '[]';
+        // Get ignore files (stored as JSON array; Wings receives newline-separated globs)
+        $ignoredFiles = BackupIgnoreHelper::normalizeForStorage($body['ignore'] ?? []);
 
         // Create backup record in database
         $backupData = [

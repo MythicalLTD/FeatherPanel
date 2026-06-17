@@ -100,6 +100,76 @@ class LifecycleHookExecutorService
         return $result;
     }
 
+    /**
+     * Execute the server-crash lifecycle hook when Wings reports a crash.
+     */
+    public function executeForServerCrash(array $server, array $node, ?array $actor = null): array
+    {
+        App::getInstance(true)->getLogger()->info('Server crash lifecycle hook requested for server ' . ($server['uuid'] ?? 'unknown'));
+        $enabled = App::getInstance(true)->getConfig()->getSetting(ConfigInterface::SERVER_LIFECYCLE_HOOKS_ENABLED, 'false') === 'true';
+        if (!$enabled) {
+            App::getInstance(true)->getLogger()->info('Server crash lifecycle hook skipped because feature is disabled for server ' . ($server['uuid'] ?? 'unknown'));
+
+            return [
+                'attempted' => false,
+                'pipelines' => [],
+            ];
+        }
+
+        $hook = $this->getActiveHookByServerAndType((int) $server['id'], 'server_crash');
+        if (!$hook) {
+            App::getInstance(true)->getLogger()->info('Server crash lifecycle hook not configured or inactive for server ' . ($server['uuid'] ?? 'unknown'));
+
+            return [
+                'attempted' => false,
+                'pipelines' => [],
+            ];
+        }
+
+        App::getInstance(true)->getLogger()->info('Executing server crash lifecycle hook for server ' . ($server['uuid'] ?? 'unknown'));
+        $pipelineResult = $this->executeHookPipeline($hook, $server, $node, 'crash', $actor);
+
+        return [
+            'attempted' => true,
+            'pipelines' => [$pipelineResult],
+        ];
+    }
+
+    /**
+     * Execute post-start lifecycle hooks when the server is detected as running.
+     */
+    public function executeForServerRunning(array $server, array $node, ?array $actor = null): array
+    {
+        App::getInstance(true)->getLogger()->info('Post-start lifecycle hook requested for server ' . ($server['uuid'] ?? 'unknown'));
+        $enabled = App::getInstance(true)->getConfig()->getSetting(ConfigInterface::SERVER_LIFECYCLE_HOOKS_ENABLED, 'false') === 'true';
+        if (!$enabled) {
+            App::getInstance(true)->getLogger()->info('Post-start lifecycle hook skipped because feature is disabled for server ' . ($server['uuid'] ?? 'unknown'));
+
+            return [
+                'attempted' => false,
+                'pipelines' => [],
+            ];
+        }
+
+        $hook = $this->getActiveHookByServerAndType((int) $server['id'], 'post_start');
+        if (!$hook) {
+            App::getInstance(true)->getLogger()->info('Post-start lifecycle hook not configured or inactive for server ' . ($server['uuid'] ?? 'unknown'));
+
+            return [
+                'attempted' => false,
+                'pipelines' => [],
+            ];
+        }
+
+        App::getInstance(true)->getLogger()->info('Executing post-start lifecycle hook for server ' . ($server['uuid'] ?? 'unknown'));
+        $pipelineResult = $this->executeHookPipeline($hook, $server, $node, 'server_running', $actor);
+
+        return [
+            'attempted' => true,
+            'pipelines' => [$pipelineResult],
+        ];
+    }
+
     protected function executeHookPipeline(array $hook, array $server, array $node, string $powerAction, ?array $actor): array
     {
         $steps = $this->getStepsByHookId((int) $hook['id']);

@@ -2,16 +2,23 @@
 
 ## v1.3.7.5 STABLE
 
+### Added
+
+- Roles can now use custom icon/image badges, uploadable from the role editor and shown on role badges throughout the panel. by @nayskutzu
+- Server **lifecycle hooks**: added **Server-crash Hook** pipeline that runs when Wings reports a crashed container (Discord webhooks, HTTP requests, container commands). by @nayskutzu
+
 ### Improved
 
 - Improved the file editor to use the Monaco Editor Engine or CodeMirror Editor for mobile devices. by @nayskutzu
 - Tickets will now be automatically closed once user data has been requested. by @nayskutzu
+- Security between the panel and the nodes was improved by using JWT scopes for the connections to prevent unauthorized access. by @nayskutzu
 
 ### Fixed
 
 - Admin area stats were not loading correctly. by @nayskutzu
 - Fixed the issue with unlimited backup limit. by @nayskutzu
 - Issues related to port allocation were fixed. by @nayskutzu
+- Manual and scheduled server backups now honor custom backup names and exclude lists (patterns are sent to Wings in the correct format). by @nayskutzu
 
 ## v1.3.7.4 STABLE
 

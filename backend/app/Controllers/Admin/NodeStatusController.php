@@ -21,6 +21,7 @@ use App\Chat\Node;
 use App\Helpers\ApiResponse;
 use App\Services\Wings\Wings;
 use OpenApi\Attributes as OA;
+use App\Helpers\NodeStatusHelper;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -53,6 +54,8 @@ class NodeStatusController
                                 new OA\Property(property: 'name', type: 'string'),
                                 new OA\Property(property: 'fqdn', type: 'string'),
                                 new OA\Property(property: 'status', type: 'string', enum: ['healthy', 'unhealthy']),
+                                new OA\Property(property: 'server_count', type: 'integer', description: 'Number of servers on this node'),
+                                new OA\Property(property: 'total_players', type: 'integer', description: 'Total connected players across servers on this node'),
                                 new OA\Property(property: 'utilization', type: 'object', nullable: true),
                             ]
                         )),
@@ -93,6 +96,13 @@ class NodeStatusController
                 'utilization' => null,
                 'error' => null,
             ];
+
+            $nodeData['servers'] = NodeStatusHelper::buildServersForNode((int) $node['id'], true);
+            $nodeData['server_count'] = count($nodeData['servers']);
+            $nodeData['total_players'] = 0;
+            foreach ($nodeData['servers'] as $serverEntry) {
+                $nodeData['total_players'] += (int) ($serverEntry['player_count'] ?? 0);
+            }
 
             try {
                 $wings = new Wings(

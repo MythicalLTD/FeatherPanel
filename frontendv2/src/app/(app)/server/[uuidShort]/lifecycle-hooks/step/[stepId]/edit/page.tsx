@@ -36,6 +36,7 @@ import {
     type StepFormState,
 } from '../../../form-utils';
 import type { LifecycleHookStep, LifecycleHookType } from '@/types/server';
+import { parseLifecycleHookType } from '@/types/server';
 
 type HooksApi = {
     success: boolean;
@@ -61,7 +62,7 @@ export default function EditLifecycleHookStepPage() {
     const canUpdate = hasPermission('schedule.update');
 
     const hookParam = searchParams.get('hook');
-    const hookType: LifecycleHookType = hookParam === 'pre_stop' || hookParam === 'pre_start' ? hookParam : 'pre_start';
+    const hookType = parseLifecycleHookType(hookParam);
 
     const stepId = Number.parseInt(stepIdParam, 10);
 
@@ -74,9 +75,18 @@ export default function EditLifecycleHookStepPage() {
         () => ({
             pre_start: t('lifecycleHooks.hookTypes.preStart'),
             pre_stop: t('lifecycleHooks.hookTypes.preStop'),
+            post_start: t('lifecycleHooks.hookTypes.postStart'),
+            server_crash: t('lifecycleHooks.hookTypes.serverCrash'),
         }),
         [t],
     );
+
+    const stepDescription =
+        hookType === 'server_crash'
+            ? t('lifecycleHooks.stepEdit.descriptionCrash')
+            : hookType === 'post_start'
+              ? t('lifecycleHooks.stepEdit.descriptionPostStart')
+              : t('lifecycleHooks.stepEdit.description');
 
     const back = React.useCallback(() => {
         router.push(`/server/${uuidShort}/lifecycle-hooks`);
@@ -216,7 +226,7 @@ export default function EditLifecycleHookStepPage() {
             <div className='space-y-8 pb-12'>
                 <PageHeader
                     title={t('lifecycleHooks.stepEdit.title', { hookType: hookLabels[hookType] })}
-                    description={t('lifecycleHooks.stepEdit.description')}
+                    description={stepDescription}
                     actions={
                         <Button variant='glass' size='sm' type='button' onClick={back} className='w-full sm:w-auto'>
                             <ArrowLeft className='mr-2 h-4 w-4' />
@@ -236,7 +246,7 @@ export default function EditLifecycleHookStepPage() {
             <div className='space-y-8 pb-12'>
                 <PageHeader
                     title={t('lifecycleHooks.stepEdit.title', { hookType: hookLabels[hookType] })}
-                    description={t('lifecycleHooks.stepEdit.description')}
+                    description={stepDescription}
                     actions={
                         <Button variant='glass' size='sm' type='button' onClick={back} className='w-full sm:w-auto'>
                             <ArrowLeft className='mr-2 h-4 w-4' />
@@ -257,7 +267,7 @@ export default function EditLifecycleHookStepPage() {
             <div className='space-y-8 pb-12'>
                 <PageHeader
                     title={t('lifecycleHooks.stepEdit.title', { hookType: hookLabels[hookType] })}
-                    description={t('lifecycleHooks.stepEdit.description')}
+                    description={stepDescription}
                     actions={
                         <Button variant='glass' size='sm' type='button' onClick={back} className='w-full sm:w-auto'>
                             <ArrowLeft className='mr-2 h-4 w-4' />

@@ -17,6 +17,7 @@
 
 namespace App\Controllers\Wings\Server;
 
+use App\App;
 use App\Chat\Node;
 use App\Chat\Server;
 use App\Helpers\ApiResponse;
@@ -24,6 +25,7 @@ use OpenApi\Attributes as OA;
 use App\Plugins\Events\Events\WingsEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Services\Server\LifecycleHookExecutorService;
 
 #[OA\Schema(
     schema: 'ServerStatusUpdate',
@@ -147,6 +149,8 @@ class WingsServerStatusController
             return ApiResponse::error('Invalid state value', 'INVALID_STATE', 400);
         }
 
+        $oldState = (string) ($server['status'] ?? 'offline');
+
         // Update server status
         $updateData = [
             'status' => $state,
@@ -166,6 +170,26 @@ class WingsServerStatusController
             return ApiResponse::error('Failed to update server status', 'UPDATE_FAILED', 500);
         }
 
+        if ($state === 'crashed' && $oldState !== 'crashed') {
+            try {
+                (new LifecycleHookExecutorService())->executeForServerCrash($server, $node);
+            } catch (\Throwable $e) {
+                App::getInstance(true)->getLogger()->error(
+                    'Server crash lifecycle hook failed for server ' . $uuid . ': ' . $e->getMessage()
+                );
+            }
+        }
+
+        if ($state === 'running' && $oldState !== 'running') {
+            try {
+                (new LifecycleHookExecutorService())->executeForServerRunning($server, $node);
+            } catch (\Throwable $e) {
+                App::getInstance(true)->getLogger()->error(
+                    'Post-start lifecycle hook failed for server ' . $uuid . ': ' . $e->getMessage()
+                );
+            }
+        }
+
         // Emit event
         global $eventManager;
         $eventManager->emit(
@@ -174,7 +198,7 @@ class WingsServerStatusController
                 'server_uuid' => $uuid,
                 'server' => $server,
                 'node' => $node,
-                'old_state' => $server['status'],
+                'old_state' => $oldState,
                 'new_state' => $state,
                 'update_data' => $updateData,
             ]

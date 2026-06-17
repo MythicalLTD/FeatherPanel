@@ -32,7 +32,7 @@ class ServerLifecycleHookController
 {
     use CheckSubuserPermissionsTrait;
 
-    private const ALLOWED_HOOK_TYPES = ['pre_start', 'pre_stop'];
+    private const ALLOWED_HOOK_TYPES = ['pre_start', 'pre_stop', 'post_start', 'server_crash'];
     private const ALLOWED_TASK_TYPES = ['discord_webhook', 'container_command', 'http_request'];
     private const ALLOWED_HTTP_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
 

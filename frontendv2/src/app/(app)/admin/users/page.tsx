@@ -54,6 +54,7 @@ interface UserRole {
     name: string;
     display_name: string;
     custom_badge?: string | null;
+    badge_icon?: string | null;
     color: string;
 }
 
@@ -595,6 +596,7 @@ export default function UsersPage() {
                                 label: getRoleBadgeLabel(user.role),
                                 className: 'border-transparent text-white',
                                 style: getRoleBadgeStyles(user.role, 'solid'),
+                                iconUrl: user.role.badge_icon?.trim() || undefined,
                             });
                         }
 

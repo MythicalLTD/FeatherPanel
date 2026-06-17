@@ -32,6 +32,7 @@ export interface UserInfo {
         name: string;
         display_name: string;
         custom_badge?: string | null;
+        badge_icon?: string | null;
         color: string;
     };
     avatar: string;

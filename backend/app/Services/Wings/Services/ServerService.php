@@ -17,6 +17,7 @@
 
 namespace App\Services\Wings\Services;
 
+use App\Helpers\BackupIgnoreHelper;
 use App\Services\Wings\WingsResponse;
 use App\Services\Wings\WingsConnection;
 use App\Services\Wings\Exceptions\WingsRequestException;
@@ -702,7 +703,7 @@ class ServerService
     /**
      * Create backup.
      */
-    public function createBackup(string $serverUuid, string $adapter, string $uuid, ?string $ignore = null): WingsResponse
+    public function createBackup(string $serverUuid, string $adapter, string $uuid, mixed $ignore = null): WingsResponse
     {
         try {
             $data = [
@@ -710,8 +711,9 @@ class ServerService
                 'uuid' => $uuid,
             ];
 
-            if ($ignore) {
-                $data['ignore'] = $ignore;
+            $ignorePatterns = BackupIgnoreHelper::formatForWings($ignore);
+            if ($ignorePatterns !== '') {
+                $data['ignore'] = $ignorePatterns;
             }
 
             $response = $this->connection->post("/api/servers/{$serverUuid}/backup", $data);

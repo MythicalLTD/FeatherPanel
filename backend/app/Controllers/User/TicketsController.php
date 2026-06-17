@@ -1200,6 +1200,7 @@ class TicketsController
                         'name' => $role['name'],
                         'display_name' => $role['display_name'] ?? $role['name'],
                         'custom_badge' => $role['custom_badge'] ?? null,
+                        'badge_icon' => $role['badge_icon'] ?? null,
                         'color' => $role['color'] ?? null,
                     ];
                 }

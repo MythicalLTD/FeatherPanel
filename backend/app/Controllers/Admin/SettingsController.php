@@ -1745,7 +1745,7 @@ class SettingsController
                         ConfigInterface::SERVER_LIFECYCLE_HOOKS_ENABLED,
                         'false',
                     ),
-                'description' => 'Show the Lifecycle Hooks page in server navigation and allow configuration. Uses the same schedule permissions as tasks (schedule.read / schedule.update). When disabled, the menu entry is hidden, hooks do not run on power actions, and API changes are rejected. Independent of schedules: you can enable hooks without enabling cron schedules.',
+                'description' => 'Show the Lifecycle Hooks page in server navigation and allow configuration. Uses the same schedule permissions as tasks (schedule.read / schedule.update). When disabled, the menu entry is hidden, hooks do not run on power actions or server crashes, and API changes are rejected. Independent of schedules: you can enable hooks without enabling cron schedules.',
                 'type' => 'select',
                 'required' => true,
                 'placeholder' => 'false',

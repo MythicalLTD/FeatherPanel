@@ -365,6 +365,7 @@ class UsersController
                 'name' => $role['name'],
                 'display_name' => $role['display_name'],
                 'custom_badge' => $role['custom_badge'] ?? null,
+                'badge_icon' => $role['badge_icon'] ?? null,
                 'color' => $role['color'],
             ];
         }
@@ -375,11 +376,13 @@ class UsersController
                 $user['role']['name'] = $rolesMap[$userRoleId]['name'];
                 $user['role']['display_name'] = $rolesMap[$userRoleId]['display_name'];
                 $user['role']['custom_badge'] = $rolesMap[$userRoleId]['custom_badge'];
+                $user['role']['badge_icon'] = $rolesMap[$userRoleId]['badge_icon'];
                 $user['role']['color'] = $rolesMap[$userRoleId]['color'];
             } else {
                 $user['role']['name'] = $userRoleId;
                 $user['role']['display_name'] = 'User';
                 $user['role']['custom_badge'] = null;
+                $user['role']['badge_icon'] = null;
                 $user['role']['color'] = '#666666';
             }
             $user['email_verified'] = !isset($user['mail_verify']) || trim((string) $user['mail_verify']) === '';
@@ -473,6 +476,7 @@ class UsersController
                 'name' => $role['name'],
                 'display_name' => $role['display_name'],
                 'custom_badge' => $role['custom_badge'] ?? null,
+                'badge_icon' => $role['badge_icon'] ?? null,
                 'color' => $role['color'],
             ];
         }
@@ -481,6 +485,7 @@ class UsersController
             'name' => $rolesMap[$roleId]['name'] ?? $roleId,
             'display_name' => $rolesMap[$roleId]['display_name'] ?? 'User',
             'custom_badge' => $rolesMap[$roleId]['custom_badge'] ?? null,
+            'badge_icon' => $rolesMap[$roleId]['badge_icon'] ?? null,
             'color' => $rolesMap[$roleId]['color'] ?? '#666666',
         ];
 
@@ -572,6 +577,7 @@ class UsersController
                 'name' => $role['name'],
                 'display_name' => $role['display_name'],
                 'custom_badge' => $role['custom_badge'] ?? null,
+                'badge_icon' => $role['badge_icon'] ?? null,
                 'color' => $role['color'],
             ];
         }
@@ -580,6 +586,7 @@ class UsersController
             'name' => $rolesMap[$roleId]['name'] ?? $roleId,
             'display_name' => $rolesMap[$roleId]['display_name'] ?? 'User',
             'custom_badge' => $rolesMap[$roleId]['custom_badge'] ?? null,
+            'badge_icon' => $rolesMap[$roleId]['badge_icon'] ?? null,
             'color' => $rolesMap[$roleId]['color'] ?? '#666666',
         ];
 
@@ -1342,6 +1349,7 @@ class UsersController
                 'name' => $role['name'],
                 'display_name' => $role['display_name'],
                 'custom_badge' => $role['custom_badge'] ?? null,
+                'badge_icon' => $role['badge_icon'] ?? null,
                 'color' => $role['color'],
             ];
         }
@@ -1360,6 +1368,7 @@ class UsersController
                 'name' => $rolesMap[$roleId]['name'] ?? $roleId,
                 'display_name' => $rolesMap[$roleId]['display_name'] ?? 'User',
                 'custom_badge' => $rolesMap[$roleId]['custom_badge'] ?? null,
+                'badge_icon' => $rolesMap[$roleId]['badge_icon'] ?? null,
                 'color' => $rolesMap[$roleId]['color'] ?? '#666666',
             ];
             unset($alt['role_id']);

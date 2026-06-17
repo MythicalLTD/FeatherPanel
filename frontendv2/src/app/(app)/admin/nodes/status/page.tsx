@@ -21,7 +21,7 @@ import api from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { RefreshCw, Server, Check, AlertTriangle, Cpu, MemoryStick, HardDrive } from 'lucide-react';
+import { RefreshCw, Server, Check, AlertTriangle, Cpu, MemoryStick, HardDrive, Users } from 'lucide-react';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
@@ -30,6 +30,7 @@ import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { formatBytes } from '@/lib/format';
+import { NodeServersList, type NodeStatusServer } from '@/components/admin/NodeServersList';
 
 interface GlobalStats {
     total_nodes: number;
@@ -62,6 +63,9 @@ interface NodeStatus {
     fqdn: string;
     location_id: number;
     status: 'healthy' | 'unhealthy';
+    server_count: number;
+    total_players: number;
+    servers?: NodeStatusServer[];
     utilization: NodeUtilization | null;
     error: string | null;
 }
@@ -293,6 +297,21 @@ export default function NodeStatusPage() {
                                         }
                                     >
                                         <div className='pt-2'>
+                                            <div className='text-muted-foreground mb-4 flex flex-wrap items-center gap-2 text-xs'>
+                                                <span className='shrink-0'>
+                                                    {t('public_portal.servers_count', {
+                                                        count: String(node.server_count ?? 0),
+                                                    })}
+                                                </span>
+                                                <span className='bg-muted-foreground/30 h-1 w-1 shrink-0 rounded-full' />
+                                                <span className='flex shrink-0 items-center gap-1'>
+                                                    <Users className='h-3 w-3' />
+                                                    <span className='text-foreground font-semibold'>
+                                                        {node.total_players ?? 0}
+                                                    </span>
+                                                    {t('dashboard.status.playersOnline')}
+                                                </span>
+                                            </div>
                                             {node.status === 'healthy' && node.utilization ? (
                                                 <div className='space-y-6'>
                                                     <div className='space-y-2'>
@@ -392,6 +411,16 @@ export default function NodeStatusPage() {
                                                         </AlertDescription>
                                                     </div>
                                                 </Alert>
+                                            )}
+
+                                            {node.servers !== undefined && (
+                                                <div className='border-border/50 mt-6 border-t pt-4'>
+                                                    <NodeServersList
+                                                        servers={node.servers}
+                                                        showAdminLinks
+                                                        showPlayerCount
+                                                    />
+                                                </div>
                                             )}
                                         </div>
                                     </PageCard>

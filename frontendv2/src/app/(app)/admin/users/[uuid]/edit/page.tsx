@@ -79,6 +79,7 @@ interface UserRole {
     name: string;
     display_name: string;
     custom_badge?: string | null;
+    badge_icon?: string | null;
     color: string;
 }
 

@@ -376,7 +376,7 @@ class DashboardController
                         $lastRunAt = null;
                     }
                 }
-				
+
                 $expected = $expectedMap[$name] ?? 300; // default 5 minutes if unknown
                 $late = $lastRunAt ? $now - $lastRunAt > $expected * 2 : true; // late if never ran or >2x expected
 

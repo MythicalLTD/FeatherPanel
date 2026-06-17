@@ -17,10 +17,12 @@
 
 namespace App\Controllers\Admin;
 
+use App\App;
 use App\Chat\Role;
 use App\Chat\Activity;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
+use App\Config\ConfigInterface;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Plugins\Events\Events\RolesEvent;
 use Symfony\Component\HttpFoundation\Request;
@@ -35,6 +37,7 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'display_name', type: 'string', description: 'Role display name'),
         new OA\Property(property: 'color', type: 'string', description: 'Role color'),
         new OA\Property(property: 'custom_badge', type: 'string', nullable: true, description: 'Optional short label shown on user badges instead of the display name'),
+        new OA\Property(property: 'badge_icon', type: 'string', nullable: true, description: 'Optional icon or image URL shown on role badges'),
         new OA\Property(property: 'created_at', type: 'string', format: 'date-time', description: 'Creation timestamp'),
         new OA\Property(property: 'updated_at', type: 'string', format: 'date-time', description: 'Last update timestamp'),
     ]
@@ -62,6 +65,7 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'display_name', type: 'string', description: 'Role display name', minLength: 2, maxLength: 255),
         new OA\Property(property: 'color', type: 'string', description: 'Role color', maxLength: 32),
         new OA\Property(property: 'custom_badge', type: 'string', nullable: true, description: 'Optional short label shown on user badges', maxLength: 64),
+        new OA\Property(property: 'badge_icon', type: 'string', nullable: true, description: 'Optional icon or image URL shown on role badges', maxLength: 512),
     ]
 )]
 #[OA\Schema(
@@ -72,6 +76,7 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'display_name', type: 'string', description: 'Role display name', minLength: 2, maxLength: 255),
         new OA\Property(property: 'color', type: 'string', description: 'Role color', maxLength: 32),
         new OA\Property(property: 'custom_badge', type: 'string', nullable: true, description: 'Optional short label shown on user badges', maxLength: 64),
+        new OA\Property(property: 'badge_icon', type: 'string', nullable: true, description: 'Optional icon or image URL shown on role badges', maxLength: 512),
     ]
 )]
 class RolesController
@@ -269,6 +274,16 @@ class RolesController
             }
             $data['custom_badge'] = $normalizedBadge;
         }
+        if (array_key_exists('badge_icon', $data)) {
+            $normalizedIcon = $this->normalizeBadgeIcon($data['badge_icon']);
+            if ($normalizedIcon === false) {
+                return ApiResponse::error('Badge icon must be a string', 'INVALID_DATA_TYPE');
+            }
+            if (is_string($normalizedIcon) && strlen($normalizedIcon) > 512) {
+                return ApiResponse::error('Badge icon URL must be less than 512 characters', 'INVALID_DATA_LENGTH');
+            }
+            $data['badge_icon'] = $normalizedIcon;
+        }
         $id = Role::createRole($data);
         if (!$id) {
             return ApiResponse::error('Failed to create role', 'ROLE_CREATE_FAILED', 400);
@@ -383,6 +398,16 @@ class RolesController
             }
             $data['custom_badge'] = $normalizedBadge;
         }
+        if (array_key_exists('badge_icon', $data)) {
+            $normalizedIcon = $this->normalizeBadgeIcon($data['badge_icon']);
+            if ($normalizedIcon === false) {
+                return ApiResponse::error('Badge icon must be a string', 'INVALID_DATA_TYPE');
+            }
+            if (is_string($normalizedIcon) && strlen($normalizedIcon) > 512) {
+                return ApiResponse::error('Badge icon URL must be less than 512 characters', 'INVALID_DATA_LENGTH');
+            }
+            $data['badge_icon'] = $normalizedIcon;
+        }
         $success = Role::updateRole($id, $data);
         if (!$success) {
             return ApiResponse::error('Failed to update role', 'ROLE_UPDATE_FAILED', 400);
@@ -483,6 +508,94 @@ class RolesController
         return ApiResponse::success([], 'Role deleted successfully', 200);
     }
 
+    #[OA\Post(
+        path: '/api/admin/roles/upload-badge-icon',
+        summary: 'Upload role badge icon',
+        description: 'Upload an image to use as a custom icon on role badges.',
+        tags: ['Admin - Roles'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['icon'],
+                    properties: [
+                        new OA\Property(property: 'icon', type: 'string', format: 'binary', description: 'Badge icon image file'),
+                    ]
+                )
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 201,
+                description: 'Icon uploaded successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'url', type: 'string', description: 'Public URL of the uploaded icon'),
+                        new OA\Property(property: 'filename', type: 'string', description: 'Filename of the uploaded icon'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - No file provided, invalid file type, or file too large'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to save file'),
+        ]
+    )]
+    public function uploadBadgeIcon(Request $request): Response
+    {
+        if (!$request->files->has('icon')) {
+            return ApiResponse::error('No icon file provided', 'NO_FILE_PROVIDED', 400);
+        }
+
+        $file = $request->files->get('icon');
+
+        if (!$file->isValid()) {
+            return ApiResponse::error('Invalid file upload', 'INVALID_FILE', 400);
+        }
+
+        if ($file->getSize() > 5 * 1024 * 1024) {
+            return ApiResponse::error('File size too large. Maximum size is 5MB', 'FILE_TOO_LARGE', 400);
+        }
+
+        $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        if (!in_array($file->getMimeType(), $allowedTypes, true)) {
+            return ApiResponse::error('Invalid file type. Allowed types: JPG, PNG, GIF, WebP', 'INVALID_FILE_TYPE', 400);
+        }
+
+        $attachmentsDir = APP_PUBLIC . '/attachments/role-badges/';
+        if (!is_dir($attachmentsDir)) {
+            mkdir($attachmentsDir, 0755, true);
+        }
+
+        $extension = $file->guessExtension();
+        $filename = uniqid() . '_role_badge.' . $extension;
+        $filePath = $attachmentsDir . $filename;
+
+        try {
+            $file->move($attachmentsDir, $filename);
+            @chmod($filePath, 0644);
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to save file: ' . $e->getMessage(), 'SAVE_FAILED', 500);
+        }
+
+        $baseUrl = App::getInstance(true)->getConfig()->getSetting(ConfigInterface::APP_URL, 'https://featherpanel.mythical.systems');
+        $url = rtrim($baseUrl, '/') . '/attachments/role-badges/' . $filename;
+
+        $admin = $request->attributes->get('user');
+        Activity::createActivity([
+            'user_uuid' => $admin['uuid'] ?? null,
+            'name' => 'upload_role_badge_icon',
+            'context' => 'Uploaded role badge icon: ' . $filename,
+            'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        return ApiResponse::success([
+            'url' => $url,
+            'filename' => $filename,
+        ], 'Icon uploaded successfully', 201);
+    }
+
     private function normalizeCustomBadge(mixed $value): string | false | null
     {
         if ($value === null) {
@@ -494,5 +607,27 @@ class RolesController
         $trimmed = trim($value);
 
         return $trimmed === '' ? null : $trimmed;
+    }
+
+    private function normalizeBadgeIcon(mixed $value): string | false | null
+    {
+        if ($value === null) {
+            return null;
+        }
+        if (!is_string($value)) {
+            return false;
+        }
+        $trimmed = trim($value);
+        if ($trimmed === '') {
+            return null;
+        }
+        if (strlen($trimmed) > 512) {
+            return false;
+        }
+        if (preg_match('#^https?://#i', $trimmed) || str_starts_with($trimmed, '/')) {
+            return $trimmed;
+        }
+
+        return false;
     }
 }

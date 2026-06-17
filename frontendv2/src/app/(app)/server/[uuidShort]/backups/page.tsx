@@ -407,9 +407,7 @@ export default function ServerBackupsPage() {
                             <AlertTriangle className='h-6 w-6 text-yellow-500' />
                         </div>
                         <div className='space-y-1'>
-                            <h3 className='text-lg leading-none font-bold text-yellow-500'>
-                                {t('common.disabled')}
-                            </h3>
+                            <h3 className='text-lg leading-none font-bold text-yellow-500'>{t('common.disabled')}</h3>
                             <p className='text-sm leading-relaxed font-medium text-yellow-500/80'>
                                 {t('serverBackups.noBackupsNoLimit')}
                             </p>

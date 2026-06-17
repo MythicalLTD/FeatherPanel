@@ -199,6 +199,12 @@
 			"knowledgebase": "Knowledgebase"
 		}
 	},
+	"nodeStatus": {
+		"servers": {
+			"title": "Servers ({count})",
+			"empty": "No servers on this node"
+		}
+	},
 	"errors": {
 		"404": {
 			"title": "Page Not Found",
@@ -272,6 +278,8 @@
 		"showing": "Showing {from} - {to} of {total} results",
 		"select_an_option": "Select an option",
 		"edit": "Edit",
+		"moveUp": "Move up",
+		"moveDown": "Move down",
 		"close": "Close",
 		"waitingData": "Waiting for data...",
 		"events": "events",
@@ -414,8 +422,8 @@
 			"diskShort": "DISK",
 			"unhealthyNodes": "Unhealthy Nodes",
 			"clickToExpand": "Click to expand",
-			"nodeDetails": "Node Details"
-		},
+            "nodeDetails": "Node Details"
+        },
 		"stats": {},
 		"recent_servers": {
 			"title": "Recent Servers",
@@ -906,6 +914,8 @@
 			"start": "Start selected",
 			"stop": "Stop selected",
 			"restart": "Restart selected",
+			"kill": "Kill selected",
+			"kill_confirm_description": "This will forcefully terminate {count} selected server(s). This may cause data corruption. Use Stop for a graceful shutdown instead.",
 			"success": "Power action sent to {count} servers.",
 			"partialSuccess": "Power action sent, but some servers failed.",
 			"error": "Failed to send power actions. Please try again."
@@ -1327,6 +1337,8 @@
 		"groups": {},
 		"items": {
 			"dashboard": "Dashboard",
+			"adminHome": "Admin Home",
+			"userDashboard": "User Dashboard",
 			"analytics": "Analytics & KPIs",
 			"users": "Users",
 			"roles": "Roles",
@@ -2594,7 +2606,7 @@
 	},
 	"lifecycleHooks": {
 		"title": "Lifecycle Hooks",
-		"description": "Configure pre-start and pre-stop pipelines that run before power actions.",
+		"description": "Configure pre-start, post-start, pre-stop, and server-crash pipelines.",
 		"export": "Export",
 		"import": "Import",
 		"addStep": "Add Step",
@@ -2608,17 +2620,21 @@
 		"noStepsDescription": "Add your first step to this hook pipeline.",
 		"noStepsReadOnly": "No steps are configured for this hook, or changes are disabled until the feature is enabled.",
 		"featureDisabledTitle": "Lifecycle hooks are disabled",
-		"featureDisabledBody": "Lifecycle hooks are off for this panel. An administrator can turn them on under Admin → Settings → Servers (Lifecycle Hooks Enabled), listed next to cron schedules. While off, the server sidebar entry is hidden, pipelines do not run on power actions, and you cannot add, edit, reorder, or delete steps.",
+		"featureDisabledBody": "Lifecycle hooks are off for this panel. An administrator can turn them on under Admin → Settings → Servers (Lifecycle Hooks Enabled), listed next to cron schedules. While off, the server sidebar entry is hidden, pipelines do not run on power actions, server status changes, or server crashes, and you cannot add, edit, reorder, or delete steps.",
 		"backToHooks": "Back to lifecycle hooks",
 		"stepNew": {
 			"title": "Add {hookType} step",
-			"description": "Configure one action to run in this hook pipeline before the server power action.",
+			"description": "Configure one action to run in this hook pipeline.",
+			"descriptionCrash": "Configure one action to run when Wings reports the server has crashed.",
+			"descriptionPostStart": "Configure one action to run when the server is detected as running.",
 			"formSectionTitle": "Step configuration",
 			"formSectionDescription": "Choose a task type and fill in the details. Validation runs when you save."
 		},
 		"stepEdit": {
 			"title": "Edit {hookType} step",
 			"description": "Update this step. Changes apply on the next power action that uses this hook.",
+			"descriptionCrash": "Update this step. Changes apply the next time Wings reports a server crash.",
+			"descriptionPostStart": "Update this step. Changes apply the next time the server is detected as running.",
 			"formSectionTitle": "Step configuration",
 			"formSectionDescription": "Adjust task type, payload, and failure behavior as needed.",
 			"notFoundTitle": "Step not found",
@@ -2632,8 +2648,17 @@
 		"deleteModalDescription": "This action cannot be undone.",
 		"hookTypes": {
 			"preStart": "Pre-start Hook",
-			"preStop": "Pre-stop Hook"
+			"preStop": "Pre-stop Hook",
+			"postStart": "Post-start Hook",
+			"serverCrash": "Server-crash Hook"
 		},
+		"hookSummaries": {
+			"preStart": "Runs before the server starts.",
+			"preStop": "Runs before the server stops.",
+			"postStart": "Runs when the server is detected as running.",
+			"serverCrash": "Runs when Wings reports the server has crashed."
+		},
+		"pipelineLabel": "Active pipeline",
 		"taskTypes": {
 			"containerCommand": "Container Command",
 			"discordWebhook": "Discord Webhook",
@@ -4189,7 +4214,9 @@
 				"permission_failed": "Failed to update permissions",
 				"cannot_remove_own_admin_root": "You cannot remove admin.root from your own role — that would lock you out of the panel.",
 				"duplicated": "Role duplicated successfully",
-				"duplicate_failed": "Failed to duplicate role"
+				"duplicate_failed": "Failed to duplicate role",
+				"badge_icon_uploaded": "Badge icon uploaded successfully",
+				"badge_icon_upload_failed": "Failed to upload badge icon"
 			},
 			"form": {
 				"create_title": "Create Role",
@@ -4198,6 +4225,10 @@
 				"display_name": "Display Name",
 				"custom_badge": "Custom Badge",
 				"custom_badge_hint": "Optional short label shown on user badges. Leave empty to use the display name.",
+				"badge_icon": "Badge Icon",
+				"badge_icon_hint": "Optional image shown on role badges and role cards. JPG, PNG, GIF, or WebP up to 5 MB.",
+				"badge_icon_upload": "Upload Icon",
+				"badge_icon_clear": "Remove Icon",
 				"color": "Color",
 				"submit_create": "Create Role",
 				"submit_update": "Save Changes",
@@ -5599,7 +5630,8 @@
 				"delete": "Delete server",
 				"hard_delete": "Hard delete",
 				"transfer": "Transfer server",
-				"confirm_delete": "Confirm Delete"
+				"confirm_delete": "Confirm Delete",
+				"power": "Power actions"
 			},
 			"status": {},
 			"details": {
@@ -5663,6 +5695,8 @@
 				"fetch_failed": "Failed to fetch servers",
 				"fetch_details_failed": "Failed to fetch server details",
 				"delete_failed": "Failed to delete server",
+				"power_success": "Power action sent to {name}",
+				"power_failed": "Failed to send power action",
 				"hard_delete_warning_title": "Hard Delete Warning",
 				"hard_delete_warning_p1": "Hard deleting a server should only be used if:",
 				"hard_delete_item1": "You have lost connection to Wings (the node daemon)",

@@ -41,6 +41,7 @@ export function useRoleEditor({ mode, roleId, defaultRoleCount = 0, initialTab =
         name: '',
         display_name: '',
         custom_badge: '',
+        badge_icon: '',
         color: pickDefaultRoleColor(defaultRoleCount),
     });
     const nameManuallyEdited = useRef(false);
@@ -97,6 +98,7 @@ export function useRoleEditor({ mode, roleId, defaultRoleCount = 0, initialTab =
                     name: role.name,
                     display_name: role.display_name,
                     custom_badge: role.custom_badge ?? '',
+                    badge_icon: role.badge_icon ?? '',
                     color: role.color,
                 });
                 await fetchPermissions(roleId);
@@ -247,6 +249,7 @@ export function useRoleEditor({ mode, roleId, defaultRoleCount = 0, initialTab =
             name: form.name.trim(),
             display_name: form.display_name.trim(),
             custom_badge: form.custom_badge.trim(),
+            badge_icon: form.badge_icon.trim(),
             color: form.color,
         };
 

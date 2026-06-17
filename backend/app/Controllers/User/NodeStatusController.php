@@ -24,7 +24,7 @@ use App\Helpers\ApiResponse;
 use App\Services\Wings\Wings;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
-use App\Helpers\PlayerStatusService;
+use App\Helpers\NodeStatusHelper;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -120,20 +120,16 @@ class NodeStatusController
 
                 if ($showIndividualNodes) {
                     $nodeData['fqdn'] = $node['fqdn'];
-                    // Get server count for this node
-                    $nodeData['server_count'] = Server::getCount(nodeId: $node['id']);
+                    $nodeData['servers'] = NodeStatusHelper::buildServersForNode(
+                        (int) $node['id'],
+                        $showPlayerCount
+                    );
+                    $nodeData['server_count'] = count($nodeData['servers']);
+
                     if ($showPlayerCount) {
-                        // Sum up cached player counts for all servers on this node
-                        $nodeServers = Server::getServersByNodeId($node['id']);
                         $totalPlayers = 0;
-                        foreach ($nodeServers as $srv) {
-                            $uuidShort = $srv['uuidShort'] ?? '';
-                            if ($uuidShort !== '') {
-                                $playerStatus = PlayerStatusService::getPlayerStatus($uuidShort);
-                                if ($playerStatus !== null) {
-                                    $totalPlayers += (int) ($playerStatus['player_count'] ?? 0);
-                                }
-                            }
+                        foreach ($nodeData['servers'] as $serverEntry) {
+                            $totalPlayers += (int) ($serverEntry['player_count'] ?? 0);
                         }
                         $nodeData['total_players'] = $totalPlayers;
                     }

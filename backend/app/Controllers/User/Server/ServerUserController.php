@@ -924,8 +924,8 @@ class ServerUserController
             // Get user permissions
             $permissions = $this->getUserServerPermissions($user['id'], $server['id'], $user['uuid']);
 
-            // Generate JWT token
-            $token = $jwtService->generateApiToken(
+            // Generate JWT token for WebSocket authentication
+            $token = $jwtService->generateWebSocketToken(
                 $server['uuid'],
                 $user['uuid'],
                 $permissions

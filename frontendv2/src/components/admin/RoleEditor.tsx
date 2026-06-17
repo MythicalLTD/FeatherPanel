@@ -15,7 +15,9 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import axios, { isAxiosError } from 'axios';
+import Image from 'next/image';
 import {
     Shield,
     Search,
@@ -31,6 +33,7 @@ import {
     ArrowLeft,
     Save,
     Trash2,
+    ImageIcon,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/featherui/PageHeader';
@@ -45,8 +48,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import Permissions from '@/lib/permissions';
 import { cn } from '@/lib/utils';
-import { RoleBadge } from '@/components/RoleBadge';
+import { RoleBadge, RoleIconAvatar } from '@/components/RoleBadge';
 import { ROLE_COLOR_PRESETS, randomRoleColor, isDefaultRole, type RoleForm } from '@/lib/role-utils';
+import { toast } from 'sonner';
 
 interface PermissionNode {
     constant: string;
@@ -105,6 +109,8 @@ export function RoleEditor({
     t,
 }: RoleEditorProps) {
     const router = useRouter();
+    const badgeIconInputRef = useRef<HTMLInputElement>(null);
+    const [uploadingBadgeIcon, setUploadingBadgeIcon] = useState(false);
     const [permissionSearch, setPermissionSearch] = useState('');
     const [permissionFilter, setPermissionFilter] = useState<PermissionFilter>('all');
     const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
@@ -115,6 +121,41 @@ export function RoleEditor({
     const assignedCount = assignedPermissionMap.size;
     const totalCount = allPermissions.length;
     const coveragePercent = totalCount > 0 ? Math.round((assignedCount / totalCount) * 100) : 0;
+
+    const handleBadgeIconSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setUploadingBadgeIcon(true);
+        try {
+            const formData = new FormData();
+            formData.append('icon', file);
+            const { data } = await axios.post('/api/admin/roles/upload-badge-icon', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
+            if (data?.success && data.data?.url) {
+                onFormChange({ ...form, badge_icon: data.data.url });
+                toast.success(t('admin.roles.messages.badge_icon_uploaded'));
+            } else {
+                toast.error(data?.message || t('admin.roles.messages.badge_icon_upload_failed'));
+            }
+        } catch (error: unknown) {
+            let message = t('admin.roles.messages.badge_icon_upload_failed');
+            if (isAxiosError(error) && error.response?.data?.message) {
+                message = error.response.data.message;
+            }
+            toast.error(message);
+        } finally {
+            setUploadingBadgeIcon(false);
+            if (badgeIconInputRef.current) {
+                badgeIconInputRef.current.value = '';
+            }
+        }
+    };
+
+    const handleClearBadgeIcon = () => {
+        onFormChange({ ...form, badge_icon: '' });
+    };
 
     const permissionsByCategory = useMemo(() => {
         const grouped = new Map<string, PermissionNode[]>();
@@ -248,12 +289,7 @@ export function RoleEditor({
                 }}
             >
                 <div className='flex flex-wrap items-center gap-4'>
-                    <div
-                        className='flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl shadow-md'
-                        style={{ backgroundColor: form.color }}
-                    >
-                        <Shield className='h-7 w-7 text-white' />
-                    </div>
+                    <RoleIconAvatar role={form} className='h-14 w-14' iconClassName='h-7 w-7' fallbackIcon={Shield} />
                     <div className='min-w-0 flex-1'>
                         <div className='flex flex-wrap items-center gap-2'>
                             <h2 className='text-xl font-bold'>
@@ -362,6 +398,58 @@ export function RoleEditor({
                                 <p className='text-muted-foreground text-xs'>
                                     {t('admin.roles.form.custom_badge_hint')}
                                 </p>
+                            </div>
+
+                            <div className='space-y-2'>
+                                <Label>{t('admin.roles.form.badge_icon')}</Label>
+                                <div className='flex flex-wrap items-center gap-4'>
+                                    <div
+                                        className='bg-primary/10 border-border/50 flex h-16 w-16 items-center justify-center overflow-hidden rounded-xl border'
+                                        style={form.badge_icon ? undefined : { backgroundColor: `${form.color}22` }}
+                                    >
+                                        {form.badge_icon ? (
+                                            <Image
+                                                src={form.badge_icon}
+                                                alt=''
+                                                width={64}
+                                                height={64}
+                                                className='h-full w-full object-cover'
+                                                unoptimized
+                                            />
+                                        ) : (
+                                            <ImageIcon className='text-muted-foreground h-6 w-6' />
+                                        )}
+                                    </div>
+                                    <div className='flex flex-wrap items-center gap-2'>
+                                        <Button
+                                            type='button'
+                                            variant='outline'
+                                            size='sm'
+                                            loading={uploadingBadgeIcon}
+                                            onClick={() => badgeIconInputRef.current?.click()}
+                                        >
+                                            {t('admin.roles.form.badge_icon_upload')}
+                                        </Button>
+                                        {form.badge_icon && (
+                                            <Button
+                                                type='button'
+                                                variant='ghost'
+                                                size='sm'
+                                                onClick={handleClearBadgeIcon}
+                                            >
+                                                {t('admin.roles.form.badge_icon_clear')}
+                                            </Button>
+                                        )}
+                                    </div>
+                                    <input
+                                        ref={badgeIconInputRef}
+                                        type='file'
+                                        className='hidden'
+                                        accept='image/jpeg,image/png,image/gif,image/webp'
+                                        onChange={handleBadgeIconSelect}
+                                    />
+                                </div>
+                                <p className='text-muted-foreground text-xs'>{t('admin.roles.form.badge_icon_hint')}</p>
                             </div>
 
                             <div className='space-y-3'>

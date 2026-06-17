@@ -18,6 +18,7 @@ import { NavigationItem } from '@/types/navigation';
 import type { AppSettings } from '@/types/settings';
 import {
     Home,
+    LayoutDashboard,
     Server,
     User,
     ShieldCheck,
@@ -77,13 +78,23 @@ export const getAdminNavigationItems = (
     const items: NavigationItem[] = [
         {
             id: 'admin-dashboard',
-            name: t('navigation.items.dashboard'),
-            title: t('landing.hero.title'),
+            name: t('navigation.items.adminHome'),
+            title: t('navigation.items.adminHome'),
             url: '/admin',
             icon: Home,
             isActive: false,
             category: 'admin',
             permission: Permissions.ADMIN_DASHBOARD_VIEW,
+            group: 'overview',
+        },
+        {
+            id: 'user-dashboard',
+            name: t('navigation.items.userDashboard'),
+            title: t('navigation.items.userDashboard'),
+            url: '/dashboard',
+            icon: LayoutDashboard,
+            isActive: false,
+            category: 'admin',
             group: 'overview',
         },
         {

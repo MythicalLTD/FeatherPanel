@@ -154,8 +154,7 @@ export default function VdsBackupsPage() {
     }, [backups, fetchBackups]);
 
     const backupsDisabled = isBackupLimitDisabled(backupLimit);
-    const limitReached =
-        backupsDisabled || (backupLimit > 0 && backups.length >= backupLimit && !fifoRolling);
+    const limitReached = backupsDisabled || (backupLimit > 0 && backups.length >= backupLimit && !fifoRolling);
 
     const handleCreateBackup = async () => {
         if (limitReached) {

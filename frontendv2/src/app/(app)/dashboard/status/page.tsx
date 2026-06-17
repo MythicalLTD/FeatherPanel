@@ -45,6 +45,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
+import { NodeServersList, type NodeStatusServer } from '@/components/admin/NodeServersList';
 
 interface NodeEntry {
     id: number;
@@ -54,6 +55,7 @@ interface NodeEntry {
     server_count?: number;
     total_players?: number;
     cpu_count?: number | null;
+    servers?: NodeStatusServer[];
     utilization?: {
         memory_total?: number;
         memory_used?: number;
@@ -174,6 +176,16 @@ function NodeExpandedDetail({
                     )}
                 </div>
             </div>
+
+            {node.servers !== undefined && (
+                <div className='border-border/40 mt-5 border-t pt-4'>
+                    <NodeServersList
+                        servers={node.servers}
+                        showPlayerCount={showPlayerCount}
+                        showAdminLinks={isAdmin}
+                    />
+                </div>
+            )}
 
             {/* Footer row */}
             <div className='mt-4 flex flex-wrap items-center justify-between gap-3'>
@@ -599,6 +611,11 @@ export default function StatusPage() {
                                                     isAdmin={isAdminContext}
                                                     onAdminClick={() => router.push(`/admin/nodes/${node.id}/edit`)}
                                                 />
+                                            )}
+                                            {isExpanded && node.status !== 'healthy' && node.servers !== undefined && (
+                                                <div className='border-border/40 bg-muted/20 border-t px-6 py-5'>
+                                                    <NodeServersList servers={node.servers} />
+                                                </div>
                                             )}
                                         </div>
                                     );

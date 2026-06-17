@@ -39,6 +39,7 @@ use App\Chat\ServerActivity;
 use App\Chat\ServerSchedule;
 use App\Services\Wings\Wings;
 use App\Config\ConfigInterface;
+use App\Helpers\BackupIgnoreHelper;
 use App\Services\Backup\BackupFifoEviction;
 use App\Cli\Utils\MinecraftColorCodeSupport;
 use App\Services\Server\LifecycleHookPowerGate;
@@ -449,7 +450,7 @@ class AServerScheduleProcessor implements TimeTask
         MinecraftColorCodeSupport::sendOutputWithNewLine('&aBacking up server: ' . $server['name']);
 
         try {
-            $ignoredFiles = $this->normalizeIgnoredFiles($ignoredFiles);
+            $ignoredFiles = BackupIgnoreHelper::normalizeForStorage($ignoredFiles);
             $currentBackups = count(Backup::getBackupsByServerId((int) $server['id']));
             $backupLimit = (int) ($server['backup_limit'] ?? 0);
 
@@ -726,26 +727,5 @@ class AServerScheduleProcessor implements TimeTask
         $data[8] = chr(ord($data[8]) & 0x3F | 0x80); // set bits 6-7 to 10
 
         return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
-    }
-
-    /**
-     * Normalize ignored files payload to valid JSON expected by Wings.
-     */
-    private function normalizeIgnoredFiles(string $payload): string
-    {
-        $payload = trim($payload);
-        if ($payload === '') {
-            return '[]';
-        }
-
-        $json = json_decode($payload, true);
-        if (json_last_error() === JSON_ERROR_NONE && is_array($json)) {
-            return json_encode(array_values(array_filter($json, fn ($item) => is_string($item) && $item !== '')));
-        }
-
-        $parts = preg_split('/[\r\n,]+/', $payload) ?: [];
-        $parts = array_values(array_filter(array_map(static fn ($part) => trim($part), $parts), static fn ($part) => $part !== ''));
-
-        return json_encode($parts);
     }
 }

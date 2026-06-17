@@ -24,6 +24,7 @@ use App\Chat\Server;
 use App\Chat\ServerActivity;
 use App\Services\Wings\Wings;
 use App\Helpers\ServerGateway;
+use App\Helpers\BackupIgnoreHelper;
 use App\Services\Backup\BackupFifoEviction;
 use App\Plugins\Events\Events\ServerBackupEvent;
 
@@ -160,10 +161,7 @@ class CreateBackupTool implements ToolInterface
         $backupName = $params['name'] ?? 'Backup at ' . date('Y-m-d H:i:s');
 
         // Get ignore files
-        $ignoredFiles = $params['ignore'] ?? '[]';
-        if (is_array($ignoredFiles)) {
-            $ignoredFiles = json_encode($ignoredFiles);
-        }
+        $ignoredFiles = BackupIgnoreHelper::normalizeForStorage($params['ignore'] ?? []);
 
         // Create backup record in database
         $backupData = [

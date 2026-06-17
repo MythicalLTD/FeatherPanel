@@ -640,7 +640,7 @@ export default function EditServerPage() {
         };
 
         fetchSpellDetails();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [form.spell_id]);
 
     const fetchOwners = useCallback(async () => {
