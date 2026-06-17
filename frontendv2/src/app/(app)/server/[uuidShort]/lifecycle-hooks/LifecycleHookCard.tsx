@@ -55,12 +55,21 @@ export function LifecycleHookCard({
     onToggleActive,
 }: LifecycleHookCardProps) {
     return (
-        <button
-            type='button'
+        <div
+            role='button'
+            tabIndex={0}
+            aria-pressed={isSelected}
             onClick={onSelect}
+            onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    onSelect();
+                }
+            }}
             className={cn(
-                'group flex w-full flex-col rounded-2xl border p-4 text-left transition-all sm:p-5',
+                'group flex w-full cursor-pointer flex-col rounded-2xl border p-4 text-left transition-all sm:p-5',
                 'bg-card/40 hover:bg-card/60 backdrop-blur-sm',
+                'focus-visible:ring-ring outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
                 isSelected
                     ? 'border-primary/50 ring-primary/30 shadow-primary/5 shadow-lg ring-1'
                     : 'border-border/30 hover:border-primary/25',
@@ -120,6 +129,6 @@ export function LifecycleHookCard({
                     </Button>
                 </div>
             ) : null}
-        </button>
+        </div>
     );
 }

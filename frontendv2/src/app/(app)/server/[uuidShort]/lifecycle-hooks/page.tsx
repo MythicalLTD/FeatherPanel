@@ -37,6 +37,7 @@ import {
     Upload,
     AlertTriangle,
     Play,
+    Square,
 } from 'lucide-react';
 
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -83,9 +84,9 @@ const EMPTY_HOOKS: Record<LifecycleHookType, LifecycleHook> = {
 };
 
 const HOOK_ICONS: Record<LifecycleHookType, typeof Power> = {
-    pre_start: Power,
-    pre_stop: Power,
-    post_start: Play,
+    pre_start: Play,
+    pre_stop: Square,
+    post_start: Power,
     server_crash: AlertTriangle,
 };
 
