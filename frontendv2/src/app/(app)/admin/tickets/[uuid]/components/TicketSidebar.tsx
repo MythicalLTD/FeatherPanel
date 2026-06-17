@@ -361,7 +361,7 @@ export function TicketSidebar({
                                     {t('admin.tickets.sidebar.actions.view_all_tickets')}
                                 </Button>
                             </Link>
-                            <Link href={`/admin/users/${userDetails.uuid}`}>
+                            <Link href={`/admin/users/${userDetails.uuid}/edit`}>
                                 <Button
                                     variant='outline'
                                     size='sm'
