@@ -1,0 +1,255 @@
+# FeatherPanel public demo stack
+# - Uses latest :dev images (auto-pulled on schedule)
+# - Resets panel data every 30 minutes from a golden snapshot
+# - Demo mode enabled (safe to poke around; destructive actions limited)
+#
+# Usage:
+#   cp .env.demo.example .env
+#   docker compose -f docker-compose.demo.yml up -d
+
+services:
+  mysql:
+    image: mariadb:latest
+    container_name: featherpanel_demo_mysql
+    restart: unless-stopped
+    pull_policy: always
+    environment:
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD:-featherpanel_demo_root}
+      MARIADB_DATABASE: ${MARIADB_DATABASE:-featherpanel}
+      MARIADB_USER: ${MARIADB_USER:-featherpanel}
+      MARIADB_PASSWORD: ${MARIADB_PASSWORD:-featherpanel_demo_password}
+      MARIADB_AUTO_UPGRADE: "1"
+    volumes:
+      - demo_mariadb_data:/var/lib/mysql
+    networks:
+      - featherpanel_demo_network
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mariadb-admin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "root",
+          "-pfeatherpanel_demo_root",
+        ]
+      timeout: 20s
+      retries: 10
+
+  redis:
+    image: redis:latest
+    container_name: featherpanel_demo_redis
+    restart: unless-stopped
+    pull_policy: always
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-featherpanel_demo_redis}
+    volumes:
+      - demo_redis_data:/data
+    networks:
+      - featherpanel_demo_network
+    depends_on:
+      mysql:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "featherpanel_demo_redis", "ping"]
+      timeout: 20s
+      retries: 10
+
+  backend:
+    image: ghcr.io/mythicalltd/featherpanel-backend:dev
+    container_name: featherpanel_demo_backend
+    restart: unless-stopped
+    pull_policy: always
+    environment:
+      - DATABASE_HOST=mysql
+      - DATABASE_PORT=3306
+      - DATABASE_DATABASE=${MARIADB_DATABASE:-featherpanel}
+      - DATABASE_USER=${MARIADB_USER:-featherpanel}
+      - DATABASE_PASSWORD=${MARIADB_PASSWORD:-featherpanel_demo_password}
+      - DATABASE_ENCRYPTION=xchacha20
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-featherpanel_demo_redis}
+      - TRUST_PROXY_HEADERS=true
+      - PANEL_DOCKER_DEPLOYMENT=true
+      - FEATHERPANEL_VERSION_CHANNEL=development
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "php", "cli", "help"]
+      timeout: 20s
+      retries: 10
+      start_period: 120s
+    volumes:
+      - demo_attachments:/var/www/html/public/attachments
+      - demo_config:/var/www/html/storage/config
+      - demo_snapshots:/var/www/html/storage/backups
+      - demo_logs:/var/www/html/storage/logs
+      - demo_translations:/var/www/html/public/translations
+      - demo_addons:/var/www/html/storage/addons
+    networks:
+      - featherpanel_demo_network
+
+  frontendv2:
+    image: ghcr.io/mythicalltd/featherpanel-frontendv2:dev
+    container_name: featherpanel_demo_frontendv2
+    restart: unless-stopped
+    pull_policy: always
+    environment:
+      - INTERNAL_API_URL=http://backend:80
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--quiet",
+          "--tries=1",
+          "--spider",
+          "http://localhost:80",
+        ]
+      timeout: 20s
+      retries: 10
+    ports:
+      - "${FEATHERPANEL_PANEL_PORT:-8080}:80"
+    networks:
+      - featherpanel_demo_network
+
+  async-runner:
+    image: ghcr.io/mythicalltd/featherpanel-async-runner:dev
+    container_name: featherpanel_demo_async_runner
+    restart: unless-stopped
+    pull_policy: always
+    environment:
+      - RUST_LOG=info
+      - LOG_DIR=/var/www/html/storage/logs
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_NAME=${MARIADB_DATABASE:-featherpanel}
+      - DB_USER=${MARIADB_USER:-featherpanel}
+      - DB_PASS=${MARIADB_PASSWORD:-featherpanel_demo_password}
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-featherpanel_demo_redis}@redis:6379
+    volumes:
+      - demo_config:/app/config:ro
+      - demo_logs:/var/www/html/storage/logs
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      frontendv2:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    networks:
+      - featherpanel_demo_network
+
+  wings:
+    image: ghcr.io/mythicalltd/featherwings:latest
+    container_name: featherpanel_demo_wings
+    restart: unless-stopped
+    pull_policy: always
+    volumes:
+      - demo_wings_config:/etc/featherpanel
+      - demo_wings_data:/var/lib/featherpanel/volumes
+      - demo_wings_archives:/var/lib/featherpanel/archives
+      - demo_wings_backups:/var/lib/featherpanel/backups
+      - /var/run/docker.sock:/var/run/docker.sock
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - featherpanel_demo_network
+
+  demo-reset:
+    image: ghcr.io/mythicalltd/featherpanel-backend:dev
+    container_name: featherpanel_demo_reset
+    restart: unless-stopped
+    pull_policy: always
+    entrypoint: ["/bin/bash", "/demo/reset-loop.sh"]
+    environment:
+      - DATABASE_HOST=mysql
+      - DATABASE_PORT=3306
+      - DATABASE_DATABASE=${MARIADB_DATABASE:-featherpanel}
+      - DATABASE_USER=${MARIADB_USER:-featherpanel}
+      - DATABASE_PASSWORD=${MARIADB_PASSWORD:-featherpanel_demo_password}
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-featherpanel_demo_redis}
+      - DEMO_RESET_INTERVAL_SECONDS=${DEMO_RESET_INTERVAL_SECONDS:-1800}
+      - DEMO_ADMIN_USERNAME=${DEMO_ADMIN_USERNAME:-admin}
+      - DEMO_ADMIN_PASSWORD=${DEMO_ADMIN_PASSWORD:-FeatherPanelDemo!}
+      - DEMO_USER_USERNAME=${DEMO_USER_USERNAME:-demo}
+      - DEMO_USER_PASSWORD=${DEMO_USER_PASSWORD:-FeatherPanelDemo!}
+      - FEATHERPANEL_APP_URL=${FEATHERPANEL_APP_URL:-http://localhost:8080}
+      - DEMO_GOLDEN_SNAPSHOT=demo-golden.fpb
+      - DEMO_WINGS_REMOTE_URL=${DEMO_WINGS_REMOTE_URL:-http://host.docker.internal:8080}
+      - FEATHERPANEL_PANEL_PORT=${FEATHERPANEL_PANEL_PORT:-8080}
+    volumes:
+      - ./demo:/demo:ro
+      - demo_attachments:/var/www/html/public/attachments
+      - demo_config:/var/www/html/storage/config
+      - demo_snapshots:/var/www/html/storage/backups
+      - demo_logs:/var/www/html/storage/logs
+      - demo_wings_config:/etc/featherpanel
+      - demo_wings_data:/var/lib/featherpanel/volumes
+      - demo_wings_archives:/var/lib/featherpanel/archives
+      - demo_wings_backups:/var/lib/featherpanel/backups
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - featherpanel_demo_network
+
+  demo-updater:
+    image: docker:27-cli
+    container_name: featherpanel_demo_updater
+    restart: unless-stopped
+    entrypoint: ["/bin/sh", "/compose/demo/update-loop.sh"]
+    environment:
+      - DEMO_UPDATE_INTERVAL_SECONDS=${DEMO_UPDATE_INTERVAL_SECONDS:-3600}
+      - COMPOSE_FILE=docker-compose.demo.yml
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - .:/compose:ro
+    working_dir: /compose
+
+volumes:
+  demo_mariadb_data:
+    driver: local
+  demo_redis_data:
+    driver: local
+  demo_attachments:
+    driver: local
+  demo_config:
+    driver: local
+  demo_snapshots:
+    driver: local
+  demo_logs:
+    driver: local
+  demo_translations:
+    driver: local
+  demo_addons:
+    driver: local
+  demo_wings_config:
+    driver: local
+  demo_wings_data:
+    driver: local
+  demo_wings_archives:
+    driver: local
+  demo_wings_backups:
+    driver: local
+
+networks:
+  featherpanel_demo_network:
+    driver: bridge
