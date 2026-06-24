@@ -24,7 +24,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ArrowLeft, Save, MessageSquare, Settings2 } from 'lucide-react';
-import yaml from 'js-yaml';
+import * as yaml from 'js-yaml';
 
 type Primitive = string | number | boolean | null;
 
