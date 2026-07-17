@@ -106,7 +106,7 @@ class GetServerStatusTool implements ToolInterface
                 $node['daemonListen'],
                 $node['scheme'],
                 $node['daemon_token'],
-                10 // 10 second timeout,
+                10, // 10 second timeout
                 WingsUrlHelper::isBehindProxy($node)
             );
 

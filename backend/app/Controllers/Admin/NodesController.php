@@ -1143,7 +1143,7 @@ class NodesController
                 (int) $node['daemonListen'],
                 $node['scheme'],
                 $node['daemon_token'],
-                ($timeoutSeconds ?? 60) + 10 // Add 10s buffer for HTTP timeout,
+                ($timeoutSeconds ?? 60) + 10, // Add 10s buffer for HTTP timeout
                 WingsUrlHelper::isBehindProxy($node)
             );
 
@@ -1569,7 +1569,7 @@ class NodesController
                 (int) $node['daemonListen'],
                 $node['scheme'],
                 $node['daemon_token'],
-                10 // Short timeout for version check,
+                10, // Short timeout for version check
                 WingsUrlHelper::isBehindProxy($node)
             );
 

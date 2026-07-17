@@ -143,7 +143,7 @@ class CompressFilesTool implements ToolInterface
                 $node['daemonListen'],
                 $node['scheme'],
                 $node['daemon_token'],
-                WingsUrlHelper::isBehindProxy($node),
+                30,
                 WingsUrlHelper::isBehindProxy($node)
             );
 

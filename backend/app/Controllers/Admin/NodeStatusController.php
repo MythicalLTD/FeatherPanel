@@ -101,7 +101,7 @@ class NodeStatusController
                     $node['daemonListen'],
                     $node['scheme'],
                     $node['daemon_token'],
-                    10 // Short timeout for status checks,
+                    10, // Short timeout for status checks
                     WingsUrlHelper::isBehindProxy($node)
                 );
 
