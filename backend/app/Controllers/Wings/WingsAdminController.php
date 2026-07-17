@@ -20,6 +20,7 @@ namespace App\Controllers\Wings;
 use App\Chat\Node;
 use App\Helpers\ApiResponse;
 use App\Services\Wings\Wings;
+use App\Helpers\WingsUrlHelper;
 use OpenApi\Attributes as OA;
 use App\Plugins\Events\Events\WingsEvent;
 use Symfony\Component\HttpFoundation\Request;
@@ -142,7 +143,8 @@ class WingsAdminController
             $port,
             $scheme,
             $token,
-            $timeout
+            $timeout,
+            WingsUrlHelper::isBehindProxy($node)
         );
 
         $utilization = $wings->getSystem()->getSystemUtilization();
@@ -208,7 +210,8 @@ class WingsAdminController
             $port,
             $scheme,
             $token,
-            $timeout
+            $timeout,
+            WingsUrlHelper::isBehindProxy($node)
         );
 
         $dockerDiskUsage = $wings->getDocker()->getDockerDiskUsage();
@@ -274,7 +277,8 @@ class WingsAdminController
             $port,
             $scheme,
             $token,
-            $timeout
+            $timeout,
+            WingsUrlHelper::isBehindProxy($node)
         );
 
         $dockerPrune = $wings->getDocker()->pruneDockerImages();
@@ -340,7 +344,8 @@ class WingsAdminController
             $port,
             $scheme,
             $token,
-            $timeout
+            $timeout,
+            WingsUrlHelper::isBehindProxy($node)
         );
 
         $ips = $wings->getSystem()->getSystemIPs();
@@ -425,7 +430,8 @@ class WingsAdminController
             $port,
             $scheme,
             $token,
-            $timeout
+            $timeout,
+            WingsUrlHelper::isBehindProxy($node)
         );
 
         $system = $wings->getSystem()->getDetailedSystemInfo();
@@ -488,7 +494,8 @@ class WingsAdminController
             $port,
             $scheme,
             $token,
-            $timeout
+            $timeout,
+            WingsUrlHelper::isBehindProxy($node)
         );
 
         $modules = $wings->getModule()->listModules();
@@ -545,7 +552,8 @@ class WingsAdminController
             $port,
             $scheme,
             $token,
-            $timeout
+            $timeout,
+            WingsUrlHelper::isBehindProxy($node)
         );
 
         $config = $wings->getModule()->getModuleConfig($module);
@@ -607,7 +615,8 @@ class WingsAdminController
             $port,
             $scheme,
             $token,
-            $timeout
+            $timeout,
+            WingsUrlHelper::isBehindProxy($node)
         );
 
         $config = $wings->getModule()->updateModuleConfig($module, $requestData['config']);
@@ -664,7 +673,8 @@ class WingsAdminController
             $port,
             $scheme,
             $token,
-            $timeout
+            $timeout,
+            WingsUrlHelper::isBehindProxy($node)
         );
 
         $result = $wings->getModule()->enableModule($module);
@@ -721,7 +731,8 @@ class WingsAdminController
             $port,
             $scheme,
             $token,
-            $timeout
+            $timeout,
+            WingsUrlHelper::isBehindProxy($node)
         );
 
         $result = $wings->getModule()->disableModule($module);
