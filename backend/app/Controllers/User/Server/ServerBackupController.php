@@ -345,7 +345,8 @@ class ServerBackupController
                     (int) $nodeForEvict['daemonListen'],
                     $nodeForEvict['scheme'],
                     $nodeForEvict['daemon_token'],
-                    30
+                    30,
+                    WingsUrlHelper::isBehindProxy($nodeForEvict)
                 );
             } catch (\Throwable $e) {
                 App::getInstance(true)->getLogger()->error('FIFO backup eviction: Wings client error: ' . $e->getMessage());
@@ -404,7 +405,8 @@ class ServerBackupController
                 $port,
                 $scheme,
                 $token,
-                $timeout
+                $timeout,
+                WingsUrlHelper::isBehindProxy($node)
             );
 
             // Initiate backup on Wings
@@ -575,7 +577,8 @@ class ServerBackupController
                 $port,
                 $scheme,
                 $token,
-                $timeout
+                $timeout,
+                WingsUrlHelper::isBehindProxy($node)
             );
 
             // Initiate restore on Wings
@@ -926,7 +929,8 @@ class ServerBackupController
                 $port,
                 $scheme,
                 $token,
-                $timeout
+                $timeout,
+                WingsUrlHelper::isBehindProxy($node)
             );
 
             // Delete backup on Wings

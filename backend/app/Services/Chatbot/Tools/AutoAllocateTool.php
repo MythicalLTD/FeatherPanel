@@ -17,6 +17,7 @@
 
 namespace App\Services\Chatbot\Tools;
 
+use App\Helpers\WingsUrlHelper;
 use App\App;
 use App\Chat\Node;
 use App\Chat\Server;
@@ -148,7 +149,8 @@ class AutoAllocateTool implements ToolInterface
                     $node['daemonListen'],
                     $node['scheme'],
                     $node['daemon_token'],
-                    30
+                    30,
+                    WingsUrlHelper::isBehindProxy($node)
                 );
 
                 $response = $wings->getServer()->syncServer($server['uuid']);

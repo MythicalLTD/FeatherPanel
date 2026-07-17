@@ -17,6 +17,7 @@
 
 namespace App\Controllers\Wings\Transfer;
 
+use App\Helpers\WingsUrlHelper;
 use App\App;
 use App\Chat\Node;
 use App\Chat\Backup;
@@ -411,7 +412,8 @@ class WingsTransferStatusController
                 $oldNode['daemonListen'],
                 $oldNode['scheme'],
                 $oldNode['daemon_token'],
-                30
+                30,
+                WingsUrlHelper::isBehindProxy($oldNode)
             );
 
             // Delete the server from the old node

@@ -17,6 +17,7 @@
 
 namespace App\Services\Server;
 
+use App\Helpers\WingsUrlHelper;
 use App\App;
 use GuzzleHttp\Client;
 use App\Chat\ServerActivity;
@@ -256,7 +257,8 @@ class LifecycleHookExecutorService
             $node['daemonListen'],
             $node['scheme'],
             $node['daemon_token'],
-            30
+            30,
+            WingsUrlHelper::isBehindProxy($node)
         );
         $response = $wings->getServer()->sendCommands($server['uuid'], [$command]);
         if (!$response->isSuccessful()) {
