@@ -17,6 +17,7 @@
 
 namespace App\Controllers\Admin;
 
+use App\Helpers\WingsUrlHelper;
 use App\App;
 use App\Chat\Node;
 use App\Chat\User;
@@ -1180,7 +1181,8 @@ class ServersController
                 $port,
                 $scheme,
                 $token,
-                $timeout
+                $timeout,
+                WingsUrlHelper::isBehindProxy($nodeInfo)
             );
 
             $wingsData = [
@@ -1764,7 +1766,8 @@ class ServersController
                             $nodeInfo['daemonListen'],
                             $nodeInfo['scheme'],
                             $nodeInfo['daemon_token'],
-                            30
+                            30,
+                            WingsUrlHelper::isBehindProxy($nodeInfo)
                         );
 
                         // Deauthorize old owner from Wings
@@ -1904,7 +1907,8 @@ class ServersController
                         $port,
                         $scheme,
                         $token,
-                        $timeout
+                        $timeout,
+                        WingsUrlHelper::isBehindProxy($nodeInfo)
                     );
 
                     // If spell changed, trigger reinstall instead of just sync
@@ -2057,7 +2061,8 @@ class ServersController
                 $port,
                 $scheme,
                 $token,
-                $timeout
+                $timeout,
+                WingsUrlHelper::isBehindProxy($nodeInfo)
             );
 
             $response = $wings->getServer()->deleteServer($server['uuid']);
@@ -2572,7 +2577,8 @@ class ServersController
                 $port,
                 $scheme,
                 $token,
-                $timeout
+                $timeout,
+                WingsUrlHelper::isBehindProxy($nodeInfo)
             );
 
             $response = $wings->getServer()->killServer($server['uuid']);
@@ -2916,7 +2922,8 @@ class ServersController
                         $sourceNode['daemonListen'],
                         $sourceNode['scheme'],
                         $sourceNode['daemon_token'],
-                        30
+                        30,
+                        WingsUrlHelper::isBehindProxy($sourceNode)
                     );
                     $wingsSource->getTransfer()->cancelTransfer($server['uuid']);
                     $logger->info('Cancelled transfer on source node for server ' . $server['uuid']);
@@ -2933,7 +2940,8 @@ class ServersController
                         $destinationNode['daemonListen'],
                         $destinationNode['scheme'],
                         $destinationNode['daemon_token'],
-                        30
+                        30,
+                        WingsUrlHelper::isBehindProxy($destinationNode)
                     );
                     // Destination node uses DELETE /api/transfer with server UUID in body
                     $wingsDest->getServer()->deleteServer($server['uuid']);
@@ -3018,7 +3026,8 @@ class ServersController
                 $node['daemonListen'],
                 $node['scheme'],
                 $node['daemon_token'],
-                30
+                30,
+                WingsUrlHelper::isBehindProxy($node)
             );
             $response = $wings->getServer()->syncServer($server['uuid']);
             if (!$response->isSuccessful()) {

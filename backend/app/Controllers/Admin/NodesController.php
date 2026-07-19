@@ -17,6 +17,7 @@
 
 namespace App\Controllers\Admin;
 
+use App\Helpers\WingsUrlHelper;
 use App\App;
 use App\Chat\Node;
 use App\Cache\Cache;
@@ -754,7 +755,8 @@ class NodesController
                 (int) $node['daemonListen'],
                 $node['scheme'],
                 $node['daemon_token'],
-                30
+                30,
+                WingsUrlHelper::isBehindProxy($node)
             );
 
             $diagnostics = $wings->getSystem()->getDiagnostics(
@@ -899,7 +901,8 @@ class NodesController
                 (int) $node['daemonListen'],
                 $node['scheme'],
                 $node['daemon_token'],
-                30
+                30,
+                WingsUrlHelper::isBehindProxy($node)
             );
 
             $response = $wings->getSystem()->triggerSelfUpdate($cleanPayload, true);
@@ -1140,7 +1143,8 @@ class NodesController
                 (int) $node['daemonListen'],
                 $node['scheme'],
                 $node['daemon_token'],
-                ($timeoutSeconds ?? 60) + 10 // Add 10s buffer for HTTP timeout
+                ($timeoutSeconds ?? 60) + 10, // Add 10s buffer for HTTP timeout
+                WingsUrlHelper::isBehindProxy($node)
             );
 
             $result = $wings->getSystem()->executeCommand(
@@ -1231,7 +1235,8 @@ class NodesController
                 (int) $node['daemonListen'],
                 $node['scheme'],
                 $node['daemon_token'],
-                30
+                30,
+                WingsUrlHelper::isBehindProxy($node)
             );
 
             $config = $wings->getConfig()->getConfig();
@@ -1313,7 +1318,8 @@ class NodesController
                 (int) $node['daemonListen'],
                 $node['scheme'],
                 $node['daemon_token'],
-                30
+                30,
+                WingsUrlHelper::isBehindProxy($node)
             );
 
             // Wings API expects 'content' field, not 'config'
@@ -1433,7 +1439,8 @@ class NodesController
                 (int) $node['daemonListen'],
                 $node['scheme'],
                 $node['daemon_token'],
-                30
+                30,
+                WingsUrlHelper::isBehindProxy($node)
             );
 
             // Wings API expects 'updates' field in patchConfig, but we accept 'values' from frontend
@@ -1499,7 +1506,8 @@ class NodesController
                 (int) $node['daemonListen'],
                 $node['scheme'],
                 $node['daemon_token'],
-                30
+                30,
+                WingsUrlHelper::isBehindProxy($node)
             );
 
             $schema = $wings->getConfig()->getConfigSchema();
@@ -1561,7 +1569,8 @@ class NodesController
                 (int) $node['daemonListen'],
                 $node['scheme'],
                 $node['daemon_token'],
-                10 // Short timeout for version check
+                10, // Short timeout for version check
+                WingsUrlHelper::isBehindProxy($node)
             );
 
             // Get current Wings version

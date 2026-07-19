@@ -17,6 +17,7 @@
 
 namespace App\Controllers\User;
 
+use App\Helpers\WingsUrlHelper;
 use App\App;
 use App\Chat\Node;
 use App\Chat\Server;
@@ -149,7 +150,8 @@ class NodeStatusController
                         $node['daemonListen'],
                         $node['scheme'],
                         $node['daemon_token'],
-                        10 // Short timeout for status checks
+                        10, // Short timeout for status checks
+                        WingsUrlHelper::isBehindProxy($node)
                     );
 
                     $utilization = $wings->getSystem()->getSystemUtilization();

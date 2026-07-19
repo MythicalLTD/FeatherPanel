@@ -17,6 +17,7 @@
 
 namespace App\Services\Chatbot\Tools;
 
+use App\Helpers\WingsUrlHelper;
 use App\App;
 use App\Chat\Node;
 use App\Chat\Server;
@@ -104,7 +105,8 @@ class GetServerFirewallRulesTool implements ToolInterface
                 $node['daemonListen'],
                 $node['scheme'],
                 $node['daemon_token'],
-                10
+                10,
+                WingsUrlHelper::isBehindProxy($node)
             );
 
             $response = $wings->getServer()->getFirewallRules($server['uuid']);

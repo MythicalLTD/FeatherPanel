@@ -17,6 +17,7 @@
 
 namespace App\Services\Chatbot\Tools;
 
+use App\Helpers\WingsUrlHelper;
 use App\App;
 use App\Chat\Server;
 use App\Services\Wings\Wings;
@@ -105,7 +106,8 @@ class GetServerStatusTool implements ToolInterface
                 $node['daemonListen'],
                 $node['scheme'],
                 $node['daemon_token'],
-                10 // 10 second timeout
+                10, // 10 second timeout
+                WingsUrlHelper::isBehindProxy($node)
             );
 
             $serverResponse = $wings->getServer()->getServer($server['uuid']);

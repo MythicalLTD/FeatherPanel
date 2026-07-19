@@ -17,6 +17,7 @@
 
 namespace App\Services\Chatbot\Tools;
 
+use App\Helpers\WingsUrlHelper;
 use App\App;
 use App\Chat\Node;
 use App\Chat\Backup;
@@ -122,7 +123,8 @@ class CreateBackupTool implements ToolInterface
                     (int) $node['daemonListen'],
                     $node['scheme'],
                     $node['daemon_token'],
-                    30
+                    30,
+                    WingsUrlHelper::isBehindProxy($node)
                 );
             } catch (\Exception $e) {
                 $this->app->getLogger()->error('CreateBackupTool FIFO: ' . $e->getMessage());
@@ -183,7 +185,8 @@ class CreateBackupTool implements ToolInterface
                 $node['daemonListen'],
                 $node['scheme'],
                 $node['daemon_token'],
-                30
+                30,
+                WingsUrlHelper::isBehindProxy($node)
             );
 
             $response = $wings->getServer()->createBackup($server['uuid'], 'wings', $backupUuid, $ignoredFiles);

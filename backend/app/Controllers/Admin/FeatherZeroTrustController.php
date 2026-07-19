@@ -17,6 +17,7 @@
 
 namespace App\Controllers\Admin;
 
+use App\Helpers\WingsUrlHelper;
 use App\App;
 use App\Chat\Node;
 use App\Chat\Server;
@@ -167,7 +168,8 @@ class FeatherZeroTrustController
                 $node['daemonListen'],
                 $node['scheme'],
                 $node['daemon_token'],
-                30
+                30,
+                WingsUrlHelper::isBehindProxy($node)
             );
 
             // Create configuration
@@ -309,7 +311,8 @@ class FeatherZeroTrustController
                         $node['daemonListen'],
                         $node['scheme'],
                         $node['daemon_token'],
-                        30
+                        30,
+                        WingsUrlHelper::isBehindProxy($node)
                     );
 
                     // Create scanner

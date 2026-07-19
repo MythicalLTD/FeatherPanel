@@ -17,6 +17,7 @@
 
 namespace App\Controllers\User\Server\Logs;
 
+use App\Helpers\WingsUrlHelper;
 use App\App;
 use App\Chat\Server;
 use App\Helpers\LogHelper;
@@ -117,7 +118,8 @@ class ServerLogsController
                 $port,
                 $scheme,
                 $token,
-                $timeout
+                $timeout,
+                WingsUrlHelper::isBehindProxy($node)
             );
 
             $response = $wings->getServer()->getServerLogs($server['uuid']);
@@ -215,7 +217,8 @@ class ServerLogsController
                 $port,
                 $scheme,
                 $token,
-                $timeout
+                $timeout,
+                WingsUrlHelper::isBehindProxy($node)
             );
 
             $response = $wings->getServer()->getServerInstallLogs($server['uuid']);
@@ -318,7 +321,8 @@ class ServerLogsController
                 $port,
                 $scheme,
                 $token,
-                $timeout
+                $timeout,
+                WingsUrlHelper::isBehindProxy($node)
             );
 
             $response = $wings->getServer()->getServerLogs($server['uuid']);
@@ -450,7 +454,8 @@ class ServerLogsController
                 $port,
                 $scheme,
                 $token,
-                $timeout
+                $timeout,
+                WingsUrlHelper::isBehindProxy($node)
             );
 
             $response = $wings->getServer()->getServerInstallLogs($server['uuid']);
