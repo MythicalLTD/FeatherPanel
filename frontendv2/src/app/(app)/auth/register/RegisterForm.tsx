@@ -66,8 +66,7 @@ export default function RegisterForm() {
         if (axios.isAxiosError(err)) {
             const code = getFeatherpanelApiErrorCode(err);
             const data = err.response?.data?.data as
-                | { main_account?: { username?: string }; support_url?: string | null }
-                | undefined;
+                { main_account?: { username?: string }; support_url?: string | null } | undefined;
             if (code === 'DEVICE_ACCOUNT_LIMIT') {
                 const username = data?.main_account?.username;
                 if (username) {

@@ -271,8 +271,8 @@ export default function VmInstanceEditPage() {
         // they are not in the free-IPs list (they're already assigned to this instance).
         const assignedIps =
             (instance.assigned_ips as
-                | Array<{ vm_ip_id: number; ip: string; cidr?: number | null; gateway?: string | null }>
-                | undefined) ?? [];
+                Array<{ vm_ip_id: number; ip: string; cidr?: number | null; gateway?: string | null }> | undefined) ??
+            [];
         for (const ai of assignedIps) {
             const aiId = Number(ai.vm_ip_id);
             if (!Number.isNaN(aiId) && aiId > 0 && !list.some((i) => i.id === aiId)) {

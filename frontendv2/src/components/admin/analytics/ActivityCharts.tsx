@@ -148,7 +148,10 @@ export function HourlyActivityChart({ data }: HourlyActivityChartProps) {
                             cursor={{ fill: 'var(--muted)', opacity: 0.2 }}
                             contentStyle={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}
                             itemStyle={{ color: 'var(--foreground)' }}
-                            labelFormatter={(val) => `${val}:00 - ${val + 1}:00`}
+                            labelFormatter={(val) => {
+                                const hour = Number(val ?? 0);
+                                return `${hour}:00 - ${hour + 1}:00`;
+                            }}
                         />
                         <Bar dataKey='count' fill='#8b5cf6' radius={[4, 4, 0, 0]} />
                     </BarChart>
