@@ -17,6 +17,7 @@
 
 namespace App\Services\Chatbot\Tools;
 
+use App\Helpers\WingsUrlHelper;
 use App\App;
 use App\Chat\Node;
 use App\Chat\Server;
@@ -141,7 +142,9 @@ class CompressFilesTool implements ToolInterface
                 $node['fqdn'],
                 $node['daemonListen'],
                 $node['scheme'],
-                $node['daemon_token']
+                $node['daemon_token'],
+                30,
+                WingsUrlHelper::isBehindProxy($node)
             );
 
             $response = $wings->getServer()->compressFiles($server['uuid'], $root, $files, $name, $extension);

@@ -17,6 +17,7 @@
 
 namespace App\Controllers\User\Server\Power;
 
+use App\Helpers\WingsUrlHelper;
 use App\App;
 use App\Chat\Server;
 use App\SubuserPermissions;
@@ -153,7 +154,8 @@ class ServerPowerController
                 $port,
                 $scheme,
                 $token,
-                $timeout
+                $timeout,
+                WingsUrlHelper::isBehindProxy($node)
             );
 
             if ($action === 'start') {
