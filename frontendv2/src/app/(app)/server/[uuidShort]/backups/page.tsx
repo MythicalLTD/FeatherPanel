@@ -201,16 +201,23 @@ export default function ServerBackupsPage() {
         e.preventDefault();
         if (!newBackupName.trim()) return;
 
+        // Include a pattern typed but not yet added via Enter/+ so it is not silently dropped.
+        const pending = newIgnorePattern.trim();
+        const patterns =
+            pending && !ignoredFiles.includes(pending) ? [...ignoredFiles, pending] : ignoredFiles;
+
         try {
             setCreating(true);
             const { data } = await axios.post(`/api/user/servers/${uuidShort}/backups`, {
                 name: newBackupName,
-                ignore: JSON.stringify(ignoredFiles),
+                ignore: JSON.stringify(patterns),
             });
 
             if (data.success) {
                 toast.success(t('serverBackups.createSuccess'));
                 setCreateDialogOpen(false);
+                setIgnoredFiles([]);
+                setNewIgnorePattern('');
                 fetchBackups(1);
             } else {
                 toast.error(data.message || t('serverBackups.createFailed'));
@@ -355,6 +362,7 @@ export default function ServerBackupsPage() {
                                 onClick={() => {
                                     setNewBackupName(generateBackupName());
                                     setIgnoredFiles([]);
+                                    setNewIgnorePattern('');
                                     setCreateDialogOpen(true);
                                 }}
                                 className='order-1 w-full transition-all active:scale-95 sm:order-2 sm:w-auto'
@@ -493,6 +501,7 @@ export default function ServerBackupsPage() {
                                     onClick={() => {
                                         setNewBackupName(generateBackupName());
                                         setIgnoredFiles([]);
+                                        setNewIgnorePattern('');
                                         setCreateDialogOpen(true);
                                     }}
                                     className='h-14 px-10 text-lg'

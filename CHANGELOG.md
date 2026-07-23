@@ -25,6 +25,8 @@
 - Fixed the issue with unlimited backup limit. by @nayskutzu
 - Issues related to port allocation were fixed. by @nayskutzu
 - Manual and scheduled server backups now honor custom backup names and exclude lists (patterns are sent to Wings in the correct format). by @nayskutzu
+- Fixed the issue with the next-run calculation for cron jobs. by @nayskutzu
+- Backups ignored the exclude list and backup names. by @nayskutzu
 
 ## v1.3.7.4 STABLE
 

@@ -21,7 +21,7 @@ namespace App\Helpers;
  * Normalizes backup ignore/exclude patterns between panel storage and Wings API.
  *
  * Panel stores ignored_files as a JSON array string; Wings expects a newline-separated
- * glob list (same format as .pteroignore).
+ * glob list (same format as .featherpanelignore / gitignore).
  */
 class BackupIgnoreHelper
 {

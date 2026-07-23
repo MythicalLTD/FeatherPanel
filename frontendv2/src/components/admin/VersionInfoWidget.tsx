@@ -35,6 +35,7 @@ import Link from 'next/link';
 import { ChangelogSection } from './ChangelogSection';
 import { IntegrityCheckDialog } from './IntegrityCheckDialog';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { useSettings } from '@/contexts/SettingsContext';
 import { adminSettingsApi } from '@/lib/admin-settings-api';
 import { isDockerUpdateTriggerLikelyStartedError } from '@/lib/is-docker-update-connection-loss';
 import { toast } from 'sonner';
@@ -82,8 +83,9 @@ interface VersionInfoWidgetProps {
     loading?: boolean;
 }
 
-export function VersionInfoWidget({ version }: VersionInfoWidgetProps) {
+export function VersionInfoWidget({ version, loading }: VersionInfoWidgetProps) {
     const { t } = useTranslation();
+    const { settings } = useSettings();
     const [showChangelog, setShowChangelog] = useState(version?.update_available ?? false);
     const [showUpdateModal, setShowUpdateModal] = useState(false);
     const [integrityOpen, setIntegrityOpen] = useState(false);
@@ -117,10 +119,20 @@ export function VersionInfoWidget({ version }: VersionInfoWidgetProps) {
     }, [version?.last_checked]);
 
     const isLatest = !version?.update_available;
-    const current = version?.current;
+    const settingsVersion = (settings?.app_version || '').replace(/^v/i, '').trim();
+    const current = version?.current
+        ? version.current
+        : settingsVersion
+          ? {
+                version: settingsVersion,
+                type: 'Stable',
+                release_name: 'FeatherPanel',
+            }
+          : null;
     const latest = version?.latest;
     const normalizedCurrentVersion = (current?.version || '').trim().toLowerCase();
-    const isCurrentVersionUnknown = normalizedCurrentVersion === '' || normalizedCurrentVersion === 'unknown';
+    const isCurrentVersionUnknown =
+        !loading && (normalizedCurrentVersion === '' || normalizedCurrentVersion === 'unknown');
     const isDevelopmentChannel = (current?.type || '').toLowerCase() === 'development';
     const isUnlistedOnUpdateServer = version?.current_listed_on_update_server === false;
     const hasLatestKnown = Boolean((latest?.version || '').trim());
@@ -183,7 +195,9 @@ export function VersionInfoWidget({ version }: VersionInfoWidgetProps) {
                         <p className='text-muted-foreground text-[9px] font-black tracking-widest uppercase md:text-[10px]'>
                             {t('admin.version.current_build')}
                         </p>
-                        <h4 className='truncate text-lg font-black md:text-xl'>{current?.version || 'unknown'}</h4>
+                        <h4 className='truncate text-lg font-black md:text-xl'>
+                            {loading ? '…' : current?.version || 'unknown'}
+                        </h4>
                     </div>
                     <div className='shrink-0 space-y-1 text-left sm:text-right'>
                         <p className='text-muted-foreground text-[9px] font-black tracking-widest uppercase md:text-[10px]'>
