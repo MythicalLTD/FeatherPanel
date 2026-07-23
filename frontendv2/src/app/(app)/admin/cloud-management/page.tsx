@@ -15,32 +15,28 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
-import { useFeatherCloud, type CloudSummary, type CreditsData, type TeamData } from '@/hooks/useFeatherCloud';
-import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { useFeatherCloud, type CloudSummary } from '@/hooks/useFeatherCloud';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import {
-    Cloud,
-    Key,
-    LockKeyhole,
-    PlugZap,
-    RefreshCw,
-    ShieldCheck,
-    Store,
-    Users,
-    Coins,
-    Brain,
-    BarChart3,
+    Check,
     CheckCircle2,
+    Cloud,
+    Coins,
+    ExternalLink,
+    Link2,
+    Loader2,
+    RefreshCw,
+    Unplug,
+    X,
     XCircle,
 } from 'lucide-react';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
-import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -52,508 +48,392 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
-interface CredentialPair {
-    publicKey: string;
-    privateKey: string;
-    lastRotatedAt?: string;
-}
+const GRANTED_SCOPES = [
+    'Read linked cloud connection details',
+    'Read linked team profile, members, and credit balance',
+    'Read team marketplace purchases / licenses and download allowed .fpa releases',
+    'Browse Mythic egg catalog and download eggs',
+    'Create pastes/logs under the team paste quota; delete team pastes via API',
+    'List issue tracker projects; read/create issues; comment on issues (as mapped team members)',
+    'Submit/update/delete product & egg reviews as mapped team members',
+    'Use team-billed AI / related cloud features tied to the connection (if enabled)',
+] as const;
 
-interface CredentialResponse {
-    panelCredentials: CredentialPair;
-    cloudCredentials: CredentialPair;
-}
+const NOT_GRANTED_SCOPES = [
+    'Cannot log into Mythic as the user',
+    'Cannot change team billing methods, remove members, or manage invoices',
+    'Cannot read Mythic account passwords / 2FA / session cookies',
+    'Cannot access unrelated teams',
+    'Cannot wipe or take over the FeatherPanel database outside approved cloud scopes',
+    'Connection can be revoked anytime from here and from Mythic team cloud connections',
+] as const;
 
-function StatusBadge({ connected }: { connected: boolean }) {
-    const { t } = useTranslation();
-    return (
-        <span
-            className={cn(
-                'inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-semibold',
-                connected
-                    ? 'bg-primary/10 text-primary border-primary/20'
-                    : 'bg-muted/50 text-muted-foreground border-border/50',
-            )}
-        >
-            {connected ? <CheckCircle2 className='h-3.5 w-3.5' /> : <XCircle className='h-3.5 w-3.5' />}
-            {connected
-                ? t('admin.cloud_management.connection_status.active')
-                : t('admin.cloud_management.connection_status.inactive')}
-        </span>
-    );
+interface CloudLinkSettings {
+    linked?: boolean;
+    linked_at?: string | null;
+    has_access_keys?: boolean;
+    has_identity_keys?: boolean;
+    team_uuid?: string | null;
+    team_name?: string | null;
+    cloud_name?: string | null;
+    mythic_user_id?: string | null;
+    mythic_user_email?: string | null;
+    mythic_user_name?: string | null;
+    current_user_mapped?: boolean;
+    last_synced_at?: string | null;
 }
 
 export default function CloudManagementPage() {
     const { t } = useTranslation();
-    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-cloud-management');
-    const { fetchSummary, fetchCredits, fetchTeam, loading: cloudLoading } = useFeatherCloud();
+    const { fetchSummary } = useFeatherCloud();
 
-    const [keys, setKeys] = useState<CredentialResponse>({
-        panelCredentials: { publicKey: '', privateKey: '', lastRotatedAt: undefined },
-        cloudCredentials: { publicKey: '', privateKey: '', lastRotatedAt: undefined },
-    });
-    const [isLoading, setIsLoading] = useState(false);
-    const [isRegenerating, setIsRegenerating] = useState(false);
-    const [isLinking, setIsLinking] = useState(false);
-    const [showRotateConfirmDialog, setShowRotateConfirmDialog] = useState(false);
+    const [linked, setLinked] = useState(false);
+    const [linkInfo, setLinkInfo] = useState<CloudLinkSettings>({});
+    const [loading, setLoading] = useState(true);
+    const [linking, setLinking] = useState(false);
+    const [disconnecting, setDisconnecting] = useState(false);
+    const [showConsent, setShowConsent] = useState(false);
+    const [disconnectOpen, setDisconnectOpen] = useState(false);
+    const [summary, setSummary] = useState<CloudSummary | null>(null);
+    const [credits, setCredits] = useState<number | null>(null);
+    const [refreshing, setRefreshing] = useState(false);
+    const [syncing, setSyncing] = useState(false);
 
-    const [cloudSummary, setCloudSummary] = useState<CloudSummary | null>(null);
-    const [cloudCredits, setCloudCredits] = useState<CreditsData | null>(null);
-    const [cloudTeam, setCloudTeam] = useState<TeamData | null>(null);
-    const [isRefreshingCloudData, setIsRefreshingCloudData] = useState(false);
-
-    const hasPanelKeys = Boolean(keys.panelCredentials.publicKey && keys.panelCredentials.privateKey);
-    const hasCloudKeys = Boolean(keys.cloudCredentials.publicKey && keys.cloudCredentials.privateKey);
-    const isConnected = hasPanelKeys && hasCloudKeys;
-
-    const fetchKeys = useCallback(async () => {
-        setIsLoading(true);
+    const loadStatus = useCallback(async () => {
+        setLoading(true);
         try {
-            const response = await axios.get('/api/admin/cloud/credentials');
-            const data = response.data?.data;
-            setKeys({
-                panelCredentials: {
-                    publicKey: data?.panel_credentials?.public_key ?? '',
-                    privateKey: data?.panel_credentials?.private_key ?? '',
-                    lastRotatedAt: data?.panel_credentials?.last_rotated_at,
-                },
-                cloudCredentials: {
-                    publicKey: data?.cloud_credentials?.public_key ?? '',
-                    privateKey: data?.cloud_credentials?.private_key ?? '',
-                    lastRotatedAt: data?.cloud_credentials?.last_rotated_at,
-                },
-            });
-        } catch (error) {
-            toast.error(t('admin.cloud_management.messages.credentials_load_failed'));
-            console.error(error);
-        } finally {
-            setIsLoading(false);
-        }
-    }, [t]);
+            const settingsRes = await axios.get('/api/admin/cloud/settings');
+            const settings = (settingsRes.data?.data || {}) as CloudLinkSettings;
+            const isLinked = Boolean(settings.linked);
+            setLinkInfo(settings);
+            setLinked(isLinked);
 
-    const regenerateKeys = async () => {
-        setIsRegenerating(true);
-        try {
-            const response = await axios.post('/api/admin/cloud/credentials/rotate');
-            const data = response.data?.data;
-            setKeys({
-                panelCredentials: {
-                    publicKey: data?.panel_credentials?.public_key ?? '',
-                    privateKey: data?.panel_credentials?.private_key ?? '',
-                    lastRotatedAt: data?.panel_credentials?.last_rotated_at,
-                },
-                cloudCredentials: {
-                    publicKey: data?.cloud_credentials?.public_key ?? keys.cloudCredentials.publicKey,
-                    privateKey: data?.cloud_credentials?.private_key ?? keys.cloudCredentials.privateKey,
-                    lastRotatedAt: data?.cloud_credentials?.last_rotated_at ?? keys.cloudCredentials.lastRotatedAt,
-                },
-            });
-
-            const cloudCredsEmpty = !data?.cloud_credentials?.public_key || !data?.cloud_credentials?.private_key;
-            if (cloudCredsEmpty) {
-                toast.warning(t('admin.cloud_management.messages.cloud_credentials_empty'));
+            if (isLinked) {
+                setRefreshing(true);
+                try {
+                    const s = await fetchSummary();
+                    setSummary(s);
+                    const creditVal =
+                        (s as { statistics?: { total_credits?: number } })?.statistics?.total_credits ?? null;
+                    setCredits(typeof creditVal === 'number' ? creditVal : null);
+                    const summaryTeam =
+                        (s as { team?: { name?: string } })?.team?.name ||
+                        (s as { cloud?: { cloud_name?: string } })?.cloud?.cloud_name ||
+                        null;
+                    if (summaryTeam && !settings.team_name) {
+                        setLinkInfo((prev) => ({ ...prev, team_name: summaryTeam }));
+                    }
+                } catch {
+                    setSummary(null);
+                } finally {
+                    setRefreshing(false);
+                }
             } else {
-                toast.success(t('admin.cloud_management.messages.credentials_rotated'));
+                setSummary(null);
+                setCredits(null);
             }
-        } catch (error) {
-            toast.error(t('admin.cloud_management.messages.credentials_rotate_failed'));
-            console.error(error);
+        } catch {
+            toast.error(t('admin.cloud_management.messages.credentials_load_failed'));
+            setLinked(false);
         } finally {
-            setIsRegenerating(false);
+            setLoading(false);
         }
-    };
+    }, [fetchSummary, t]);
 
-    const linkWithFeatherCloud = async () => {
-        setIsLinking(true);
+    useEffect(() => {
+        loadStatus();
+    }, [loadStatus]);
+
+    const startConnect = async () => {
+        setLinking(true);
         try {
             const response = await axios.get('/api/admin/cloud/oauth2/link');
             const oauth2Url = response.data?.data?.oauth2_url;
-            if (oauth2Url) {
-                window.location.href = oauth2Url;
-            } else {
+            if (!oauth2Url) {
                 toast.error(t('admin.cloud_management.messages.oauth_link_failed'));
+                setLinking(false);
+                return;
             }
-        } catch (error) {
+            window.location.href = oauth2Url;
+        } catch {
             toast.error(t('admin.cloud_management.messages.oauth_link_failed'));
-            console.error(error);
-        } finally {
-            setIsLinking(false);
+            setLinking(false);
         }
     };
 
-    const refreshCloudData = async () => {
-        if (!hasCloudKeys) return;
-        setIsRefreshingCloudData(true);
+    const disconnect = async () => {
+        setDisconnecting(true);
         try {
-            const [summary, credits, team] = await Promise.all([fetchSummary(), fetchCredits(), fetchTeam()]);
-            setCloudSummary(summary);
-            setCloudCredits(credits);
-            setCloudTeam(team);
-        } catch (error) {
-            console.error('Failed to refresh cloud data:', error);
+            await axios.post('/api/admin/cloud/disconnect', {});
+            toast.success(t('admin.cloud_management.messages.disconnected'));
+            setDisconnectOpen(false);
+            setLinked(false);
+            setLinkInfo({});
+            setSummary(null);
+            setCredits(null);
+            await loadStatus();
+        } catch {
+            toast.error(t('admin.cloud_management.messages.disconnect_failed'));
         } finally {
-            setIsRefreshingCloudData(false);
+            setDisconnecting(false);
         }
     };
 
-    useEffect(() => {
-        fetchKeys();
-    }, [fetchKeys]);
-
-    useEffect(() => {
-        if (hasCloudKeys) {
-            refreshCloudData();
-        } else {
-            setCloudSummary(null);
-            setCloudCredits(null);
-            setCloudTeam(null);
+    const syncNow = async () => {
+        setSyncing(true);
+        try {
+            const response = await axios.post('/api/admin/cloud/sync');
+            const count = response.data?.data?.purchases_count;
+            toast.success(
+                typeof count === 'number' ? `Synced ${count} purchase(s) from Mythic` : 'Synced with Mythic Cloud',
+            );
+            await loadStatus();
+        } catch (err) {
+            toast.error(axios.isAxiosError(err) ? err.response?.data?.message || 'Sync failed' : 'Sync failed');
+        } finally {
+            setSyncing(false);
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [hasCloudKeys]);
+    };
 
-    useEffect(() => {
-        fetchWidgets();
-    }, [fetchWidgets]);
+    const openMythicClouds = () => {
+        window.open('https://my.mythicalsystems.org/clouds', '_blank', 'noopener,noreferrer');
+    };
+
+    const displayTeam =
+        linkInfo.team_name || linkInfo.cloud_name || (summary as { team?: { name?: string } })?.team?.name || null;
 
     return (
-        <>
-            <WidgetRenderer widgets={getWidgets('admin-cloud-management', 'top-of-page')} />
-            <div className='space-y-6 md:space-y-8'>
-                <PageHeader
-                    title={t('admin.cloud_management.title')}
-                    description={t('admin.cloud_management.subtitle')}
-                    icon={Cloud}
-                    actions={
-                        <div className='flex flex-wrap items-center gap-2'>
-                            <Button variant='outline' size='sm' disabled={isLoading || isLinking} onClick={fetchKeys}>
-                                <RefreshCw className={cn('mr-2 h-4 w-4', isLoading && 'animate-spin')} />
-                                {t('admin.cloud_management.refresh_status')}
-                            </Button>
-                            <Button
-                                variant='outline'
-                                size='sm'
-                                disabled={isRegenerating || isLinking}
-                                onClick={() => setShowRotateConfirmDialog(true)}
-                            >
-                                <Key className={cn('mr-2 h-4 w-4', isRegenerating && 'animate-spin')} />
-                                {t('admin.cloud_management.rotate_keys')}
-                            </Button>
-                            <Button size='sm' disabled={isLinking || isRegenerating} onClick={linkWithFeatherCloud}>
-                                <PlugZap className={cn('mr-2 h-4 w-4', isLinking && 'animate-spin')} />
-                                {isLinking
-                                    ? t('admin.cloud_management.linking')
-                                    : isConnected
-                                      ? t('admin.cloud_management.relink')
-                                      : t('admin.cloud_management.link')}
-                            </Button>
-                        </div>
-                    }
-                />
+        <div className='space-y-6 md:space-y-8'>
+            <PageHeader
+                title={t('admin.cloud_management.title')}
+                description={t('admin.cloud_management.subtitle')}
+                icon={Cloud}
+                actions={
+                    <Button variant='outline' size='sm' disabled={loading || refreshing} onClick={loadStatus}>
+                        <RefreshCw className={cn('mr-2 h-4 w-4', (loading || refreshing) && 'animate-spin')} />
+                        {t('admin.cloud_management.refresh_status')}
+                    </Button>
+                }
+            />
 
-                <PageCard
-                    title={
-                        isConnected
-                            ? t('admin.cloud_management.connection_status.connected')
-                            : t('admin.cloud_management.connection_status.not_connected')
-                    }
-                    description={
-                        isConnected
-                            ? t('admin.cloud_management.connection_status.connected_desc')
-                            : t('admin.cloud_management.connection_status.not_connected_desc')
-                    }
-                    icon={isConnected ? CheckCircle2 : XCircle}
-                    action={<StatusBadge connected={isConnected} />}
-                >
-                    {null}
-                </PageCard>
-
-                {isConnected && (
-                    <PageCard
-                        title={t('admin.cloud_management.credentials.title')}
-                        description={t('admin.cloud_management.credentials.description')}
-                        icon={Key}
-                    >
-                        <div className='grid gap-6 sm:grid-cols-2'>
-                            <div className='border-border/50 bg-muted/10 rounded-xl border p-4'>
-                                <p className='text-muted-foreground mb-1 text-xs font-semibold tracking-wider uppercase'>
-                                    {t('admin.cloud_management.credentials.cloud_to_panel')}
-                                </p>
-                                <p className='text-foreground text-sm'>
-                                    {keys.cloudCredentials.lastRotatedAt
-                                        ? new Date(keys.cloudCredentials.lastRotatedAt).toLocaleString()
-                                        : t('admin.cloud_management.credentials.never_rotated')}
-                                </p>
-                            </div>
-                            <div className='border-border/50 bg-muted/10 rounded-xl border p-4'>
-                                <p className='text-muted-foreground mb-1 text-xs font-semibold tracking-wider uppercase'>
-                                    {t('admin.cloud_management.credentials.panel_to_cloud')}
-                                </p>
-                                <p className='text-foreground text-sm'>
-                                    {keys.panelCredentials.lastRotatedAt
-                                        ? new Date(keys.panelCredentials.lastRotatedAt).toLocaleString()
-                                        : t('admin.cloud_management.credentials.never_rotated')}
-                                </p>
-                            </div>
-                        </div>
-                    </PageCard>
-                )}
-
-                <PageCard title={t('admin.cloud_management.features.title')} icon={Store}>
-                    <ul className='space-y-4'>
-                        <li className='border-border/50 bg-muted/5 flex gap-4 rounded-xl border p-4'>
-                            <div className='bg-primary/10 border-primary/20 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border'>
-                                <Brain className='text-primary h-5 w-5' />
-                            </div>
-                            <div className='min-w-0'>
-                                <p className='text-foreground font-semibold'>
-                                    {t('admin.cloud_management.features.feather_ai.title')}
-                                </p>
-                                <p className='text-muted-foreground mt-0.5 text-sm'>
-                                    {t('admin.cloud_management.features.feather_ai.description')}
-                                </p>
-                                <span className='text-primary border-primary/20 bg-primary/10 mt-2 inline-block rounded-md border px-2 py-0.5 text-xs font-medium'>
-                                    {t('admin.cloud_management.features.feather_ai.coming_soon')}
-                                </span>
-                            </div>
-                        </li>
-                        <li className='border-border/50 bg-muted/5 flex gap-4 rounded-xl border p-4'>
-                            <div className='flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-amber-500/20 bg-amber-500/10'>
-                                <Store className='h-5 w-5 text-amber-600 dark:text-amber-400' />
-                            </div>
-                            <div className='min-w-0'>
-                                <p className='text-foreground font-semibold'>
-                                    {t('admin.cloud_management.features.premium_plugins.title')}
-                                </p>
-                                <p className='text-muted-foreground mt-0.5 text-sm'>
-                                    {t('admin.cloud_management.features.premium_plugins.description')}
-                                </p>
-                                <span className='mt-2 inline-block rounded-md border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-600 dark:text-amber-400'>
-                                    {t('admin.cloud_management.features.premium_plugins.premium')}
-                                </span>
-                            </div>
-                        </li>
-                        <li className='border-border/50 bg-muted/5 flex gap-4 rounded-xl border p-4'>
-                            <div className='bg-primary/10 border-primary/20 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border'>
-                                <ShieldCheck className='text-primary h-5 w-5' />
-                            </div>
-                            <div className='min-w-0'>
-                                <p className='text-foreground font-semibold'>
-                                    {t('admin.cloud_management.features.cloud_intelligence.title')}
-                                </p>
-                                <p className='text-muted-foreground mt-0.5 text-sm'>
-                                    {t('admin.cloud_management.features.cloud_intelligence.description')}
-                                </p>
-                                <span className='text-primary border-primary/20 bg-primary/10 mt-2 inline-block rounded-md border px-2 py-0.5 text-xs font-medium'>
-                                    {t('admin.cloud_management.features.cloud_intelligence.active')}
-                                </span>
-                            </div>
-                        </li>
-                    </ul>
-                </PageCard>
-
-                {isConnected && (cloudSummary || cloudCredits || cloudTeam) && (
-                    <PageCard
-                        title={t('admin.cloud_management.cloud_info.title')}
-                        icon={BarChart3}
-                        action={
-                            <Button
-                                variant='outline'
-                                size='sm'
-                                disabled={isRefreshingCloudData || cloudLoading}
-                                onClick={refreshCloudData}
-                            >
-                                <RefreshCw
-                                    className={cn(
-                                        'mr-2 h-4 w-4',
-                                        (isRefreshingCloudData || cloudLoading) && 'animate-spin',
-                                    )}
-                                />
-                                {t('admin.cloud_management.cloud_info.refresh')}
-                            </Button>
-                        }
-                    >
-                        {cloudLoading || isRefreshingCloudData ? (
-                            <div className='flex items-center justify-center py-12'>
-                                <RefreshCw className='text-muted-foreground h-8 w-8 animate-spin' />
-                            </div>
-                        ) : (
-                            <div className='grid gap-4 sm:grid-cols-3'>
-                                {cloudTeam && (
-                                    <div className='border-border/50 bg-muted/10 flex items-center gap-3 rounded-xl border p-4'>
-                                        <div className='bg-primary/10 border-primary/20 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border'>
-                                            <Users className='text-primary h-5 w-5' />
-                                        </div>
-                                        <div className='min-w-0'>
-                                            <p className='text-muted-foreground text-xs font-semibold tracking-wider uppercase'>
-                                                {t('admin.cloud_management.cloud_info.team')}
-                                            </p>
-                                            <p className='text-foreground truncate font-semibold'>
-                                                {cloudTeam.team.name}
-                                            </p>
-                                            {cloudTeam.team.description && (
-                                                <p className='text-muted-foreground truncate text-sm'>
-                                                    {cloudTeam.team.description}
-                                                </p>
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
-                                {cloudCredits && (
-                                    <div className='border-border/50 bg-muted/10 flex items-center gap-3 rounded-xl border p-4'>
-                                        <div className='bg-primary/10 border-primary/20 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border'>
-                                            <Coins className='text-primary h-5 w-5' />
-                                        </div>
-                                        <div className='min-w-0'>
-                                            <p className='text-muted-foreground text-xs font-semibold tracking-wider uppercase'>
-                                                {t('admin.cloud_management.cloud_info.total_credits')}
-                                            </p>
-                                            <p className='text-foreground font-semibold'>
-                                                {cloudCredits.total_credits.toLocaleString()}
-                                            </p>
-                                            <p className='text-muted-foreground text-sm'>
-                                                {t('admin.cloud_management.cloud_info.team_members', {
-                                                    count: cloudCredits.member_count.toString(),
-                                                })}
-                                            </p>
-                                        </div>
-                                    </div>
-                                )}
-                                {cloudSummary && (
-                                    <div className='border-border/50 bg-muted/10 flex items-center gap-3 rounded-xl border p-4'>
-                                        <div className='bg-primary/10 border-primary/20 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border'>
-                                            <BarChart3 className='text-primary h-5 w-5' />
-                                        </div>
-                                        <div className='min-w-0'>
-                                            <p className='text-muted-foreground text-xs font-semibold tracking-wider uppercase'>
-                                                {t('admin.cloud_management.cloud_info.total_purchases')}
-                                            </p>
-                                            <p className='text-foreground font-semibold'>
-                                                {cloudSummary.statistics.total_purchases}
-                                            </p>
-                                            <p className='text-muted-foreground truncate text-sm'>
-                                                {cloudSummary.cloud.cloud_name}
-                                            </p>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                    </PageCard>
-                )}
-
-                <PageCard title={t('admin.cloud_management.security.title')} icon={LockKeyhole}>
-                    <div className='grid gap-4 sm:grid-cols-2'>
-                        <div className='border-border/50 bg-muted/5 flex gap-3 rounded-xl border p-4'>
-                            <Key className='text-muted-foreground h-5 w-5 shrink-0' />
-                            <div>
-                                <p className='text-foreground font-semibold'>
-                                    {t('admin.cloud_management.security.identification.title')}
-                                </p>
-                                <p className='text-muted-foreground mt-0.5 text-sm'>
-                                    {t('admin.cloud_management.security.identification.description')}
-                                </p>
-                            </div>
-                        </div>
-                        <div className='border-border/50 bg-muted/5 flex gap-3 rounded-xl border p-4'>
-                            <LockKeyhole className='text-muted-foreground h-5 w-5 shrink-0' />
-                            <div>
-                                <p className='text-foreground font-semibold'>
-                                    {t('admin.cloud_management.security.privacy.title')}
-                                </p>
-                                <p className='text-muted-foreground mt-0.5 text-sm'>
-                                    {t('admin.cloud_management.security.privacy.description')}
-                                </p>
-                            </div>
-                        </div>
-                        <div className='border-border/50 bg-muted/5 flex gap-3 rounded-xl border p-4'>
-                            <ShieldCheck className='text-muted-foreground h-5 w-5 shrink-0' />
-                            <div>
-                                <p className='text-foreground font-semibold'>
-                                    {t('admin.cloud_management.security.permissions.title')}
-                                </p>
-                                <p className='text-muted-foreground mt-0.5 text-sm'>
-                                    {t('admin.cloud_management.security.permissions.description')}
-                                </p>
-                            </div>
-                        </div>
-                        <div className='border-border/50 bg-muted/5 flex gap-3 rounded-xl border p-4'>
-                            <BarChart3 className='text-muted-foreground h-5 w-5 shrink-0' />
-                            <div>
-                                <p className='text-foreground font-semibold'>
-                                    {t('admin.cloud_management.security.audit.title')}
-                                </p>
-                                <p className='text-muted-foreground mt-0.5 text-sm'>
-                                    {t('admin.cloud_management.security.audit.description')}
-                                </p>
-                            </div>
-                        </div>
+            <PageCard title={t('admin.cloud_management.connection_status.card_title')} icon={Link2}>
+                {loading ? (
+                    <div className='flex justify-center py-10'>
+                        <Loader2 className='text-muted-foreground h-8 w-8 animate-spin' />
                     </div>
-                </PageCard>
-
-                <PageCard
-                    title={t('admin.cloud_management.oauth2.title')}
-                    description={t('admin.cloud_management.oauth2.description')}
-                    icon={PlugZap}
-                >
-                    <div className='border-border/50 bg-muted/10 space-y-3 rounded-xl border p-4'>
-                        <p className='text-foreground text-sm font-semibold'>
-                            {t('admin.cloud_management.oauth2.how_it_works')}
-                        </p>
-                        <ul className='text-muted-foreground list-inside list-disc space-y-1 text-sm'>
-                            <li>{t('admin.cloud_management.oauth2.step1')}</li>
-                            <li>{t('admin.cloud_management.oauth2.step2')}</li>
-                            <li>{t('admin.cloud_management.oauth2.step3')}</li>
-                            <li>{t('admin.cloud_management.oauth2.step4')}</li>
-                        </ul>
-                    </div>
-                </PageCard>
-
-                <AlertDialog open={showRotateConfirmDialog} onOpenChange={setShowRotateConfirmDialog}>
-                    <AlertDialogContent className='max-w-lg'>
-                        <AlertDialogHeader>
-                            <AlertDialogTitle className='flex items-center gap-2'>
-                                <RefreshCw className='text-primary h-5 w-5' />
-                                {t('admin.cloud_management.rotate_dialog.title')}
-                            </AlertDialogTitle>
-                            <AlertDialogDescription className='space-y-3 pt-2'>
-                                <p className='text-foreground text-sm'>
-                                    {t('admin.cloud_management.rotate_dialog.description')}
-                                </p>
-                                <div className='border-border/50 bg-muted/10 space-y-2 rounded-xl border p-3'>
-                                    <p className='text-foreground text-sm font-semibold'>
-                                        {t('admin.cloud_management.rotate_dialog.important')}
+                ) : linked ? (
+                    <div className='space-y-5'>
+                        <div className='flex flex-wrap items-start justify-between gap-4'>
+                            <div className='space-y-2'>
+                                <div className='flex items-center gap-2'>
+                                    <CheckCircle2 className='text-primary h-5 w-5' />
+                                    <p className='text-foreground text-lg font-semibold'>
+                                        {displayTeam
+                                            ? t('admin.cloud_management.connection_status.connected_to', {
+                                                  team: displayTeam,
+                                              })
+                                            : t('admin.cloud_management.connection_status.connected')}
                                     </p>
-                                    <ul className='text-muted-foreground list-inside list-disc space-y-1 text-sm'>
-                                        <li>{t('admin.cloud_management.rotate_dialog.warning1')}</li>
-                                        <li>{t('admin.cloud_management.rotate_dialog.warning2')}</li>
-                                        <li>{t('admin.cloud_management.rotate_dialog.warning3')}</li>
-                                        {!hasCloudKeys && (
-                                            <li className='text-foreground font-semibold'>
-                                                {t('admin.cloud_management.rotate_dialog.warning4')}
-                                            </li>
-                                        )}
-                                    </ul>
                                 </div>
-                            </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                            <AlertDialogCancel>{t('admin.cloud_management.rotate_dialog.cancel')}</AlertDialogCancel>
-                            <AlertDialogAction
-                                disabled={isRegenerating}
-                                onClick={() => {
-                                    setShowRotateConfirmDialog(false);
-                                    regenerateKeys();
-                                }}
-                            >
-                                <RefreshCw className={cn('mr-2 h-4 w-4', isRegenerating && 'animate-spin')} />
-                                {isRegenerating
-                                    ? t('admin.cloud_management.rotate_dialog.rotating')
-                                    : t('admin.cloud_management.rotate_dialog.confirm')}
-                            </AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
-            </div>
-            <WidgetRenderer widgets={getWidgets('admin-cloud-management', 'bottom-of-page')} />
-        </>
+                                <p className='text-muted-foreground text-sm'>
+                                    {t('admin.cloud_management.connection_status.connected_desc')}
+                                </p>
+                                <div className='flex flex-wrap gap-2 pt-1'>
+                                    {linkInfo.mythic_user_email && (
+                                        <span className='bg-muted text-muted-foreground rounded-md border px-2 py-1 text-xs'>
+                                            {linkInfo.mythic_user_name
+                                                ? `${linkInfo.mythic_user_name} · ${linkInfo.mythic_user_email}`
+                                                : linkInfo.mythic_user_email}
+                                        </span>
+                                    )}
+                                    {linkInfo.mythic_user_id && (
+                                        <span className='bg-muted text-muted-foreground rounded-md border px-2 py-1 font-mono text-xs'>
+                                            Mythic ID {linkInfo.mythic_user_id}
+                                        </span>
+                                    )}
+                                </div>
+                                {credits !== null && (
+                                    <p className='text-muted-foreground flex items-center gap-1.5 text-sm'>
+                                        <Coins className='h-3.5 w-3.5' />
+                                        {t('admin.cloud_management.cloud_info.total_credits')}: {credits}
+                                    </p>
+                                )}
+                                {linkInfo.current_user_mapped === false && (
+                                    <p className='mt-2 text-sm text-amber-600 dark:text-amber-400'>
+                                        {t('admin.cloud_management.mapping.unmapped_hint')}
+                                    </p>
+                                )}
+                                {linkInfo.has_access_keys === false && (
+                                    <p className='mt-2 text-sm text-amber-600 dark:text-amber-400'>
+                                        Mythic→panel credentials (cloud_api_key/secret) were not stored. Mythic may show
+                                        Pending until you re-link or complete OAuth with those params.
+                                    </p>
+                                )}
+                                {linkInfo.last_synced_at && (
+                                    <p className='text-muted-foreground mt-1 text-xs'>
+                                        Last sync: {linkInfo.last_synced_at}
+                                    </p>
+                                )}
+                            </div>
+                            <div className='flex flex-wrap gap-2'>
+                                <Button
+                                    variant='default'
+                                    size='sm'
+                                    onClick={() => void syncNow()}
+                                    disabled={syncing || linking || disconnecting}
+                                >
+                                    {syncing ? (
+                                        <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                                    ) : (
+                                        <RefreshCw className='mr-2 h-4 w-4' />
+                                    )}
+                                    Sync now
+                                </Button>
+                                <Button variant='outline' size='sm' onClick={openMythicClouds}>
+                                    <ExternalLink className='mr-2 h-4 w-4' />
+                                    Open Mythic Clouds
+                                </Button>
+                                <Button
+                                    variant='outline'
+                                    size='sm'
+                                    onClick={() => setShowConsent(true)}
+                                    disabled={linking || disconnecting}
+                                >
+                                    {t('admin.cloud_management.relink')}
+                                </Button>
+                                <Button
+                                    variant='destructive'
+                                    size='sm'
+                                    disabled={disconnecting}
+                                    onClick={() => setDisconnectOpen(true)}
+                                >
+                                    {disconnecting ? (
+                                        <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                                    ) : (
+                                        <Unplug className='mr-2 h-4 w-4' />
+                                    )}
+                                    {t('admin.cloud_management.disconnect')}
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                ) : (
+                    <div className='space-y-5'>
+                        <div className='flex items-center gap-2'>
+                            <XCircle className='text-muted-foreground h-5 w-5' />
+                            <p className='text-foreground text-lg font-semibold'>
+                                {t('admin.cloud_management.connection_status.not_connected')}
+                            </p>
+                        </div>
+                        <p className='text-muted-foreground text-sm'>
+                            {t('admin.cloud_management.connection_status.not_connected_desc')}
+                        </p>
+                        <Button size='lg' onClick={() => setShowConsent(true)} disabled={linking} className='gap-2'>
+                            {linking ? <Loader2 className='h-4 w-4 animate-spin' /> : <Cloud className='h-4 w-4' />}
+                            {t('admin.cloud_management.connect_cta')}
+                        </Button>
+                    </div>
+                )}
+            </PageCard>
+
+            <AlertDialog open={showConsent} onOpenChange={setShowConsent}>
+                <AlertDialogContent className='max-h-[90vh] max-w-lg overflow-y-auto'>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>{t('admin.cloud_management.consent.title')}</AlertDialogTitle>
+                        <AlertDialogDescription className='space-y-4 text-left'>
+                            <p>{t('admin.cloud_management.consent.intro')}</p>
+                            <div>
+                                <p className='text-foreground mb-2 text-sm font-semibold'>
+                                    {t('admin.cloud_management.consent.granted_title')}
+                                </p>
+                                <ul className='space-y-1.5'>
+                                    {GRANTED_SCOPES.map((scope) => (
+                                        <li key={scope} className='text-muted-foreground flex gap-2 text-sm'>
+                                            <Check className='text-primary mt-0.5 h-3.5 w-3.5 shrink-0' />
+                                            <span>{scope}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                            <div>
+                                <p className='text-foreground mb-2 text-sm font-semibold'>
+                                    {t('admin.cloud_management.consent.denied_title')}
+                                </p>
+                                <ul className='space-y-1.5'>
+                                    {NOT_GRANTED_SCOPES.map((scope) => (
+                                        <li key={scope} className='text-muted-foreground flex gap-2 text-sm'>
+                                            <X className='mt-0.5 h-3.5 w-3.5 shrink-0 text-red-500' />
+                                            <span>{scope}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                            <p className='text-muted-foreground text-xs'>
+                                {t('admin.cloud_management.consent.acting_note')}
+                            </p>
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={linking}>
+                            {t('admin.cloud_management.consent.cancel')}
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            disabled={linking}
+                            onClick={(e) => {
+                                e.preventDefault();
+                                void startConnect();
+                            }}
+                        >
+                            {linking ? (
+                                <>
+                                    <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                                    {t('admin.cloud_management.linking')}
+                                </>
+                            ) : (
+                                t('admin.cloud_management.consent.authorize')
+                            )}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            <AlertDialog
+                open={disconnectOpen}
+                onOpenChange={(open) => {
+                    if (!disconnecting) setDisconnectOpen(open);
+                }}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>{t('admin.cloud_management.disconnect_dialog.title')}</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {t('admin.cloud_management.disconnect_dialog.description')}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={disconnecting}>
+                            {t('admin.cloud_management.consent.cancel')}
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            disabled={disconnecting}
+                            className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
+                            onClick={(e) => {
+                                e.preventDefault();
+                                void disconnect();
+                            }}
+                        >
+                            {disconnecting ? (
+                                <>
+                                    <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                                    {t('admin.cloud_management.disconnect')}
+                                </>
+                            ) : (
+                                t('admin.cloud_management.disconnect')
+                            )}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        </div>
     );
 }

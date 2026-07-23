@@ -203,8 +203,7 @@ export default function ServerBackupsPage() {
 
         // Include a pattern typed but not yet added via Enter/+ so it is not silently dropped.
         const pending = newIgnorePattern.trim();
-        const patterns =
-            pending && !ignoredFiles.includes(pending) ? [...ignoredFiles, pending] : ignoredFiles;
+        const patterns = pending && !ignoredFiles.includes(pending) ? [...ignoredFiles, pending] : ignoredFiles;
 
         try {
             setCreating(true);
@@ -574,7 +573,11 @@ export default function ServerBackupsPage() {
                                         <div className='text-muted-foreground flex items-center gap-2'>
                                             <Database className='h-4 w-4 opacity-50' />
                                             <span className='text-sm font-semibold tracking-tight uppercase'>
-                                                {backup.disk}
+                                                {backup.disk === 'pbs'
+                                                    ? 'PBS'
+                                                    : backup.disk === 'wings'
+                                                      ? 'Local'
+                                                      : backup.disk}
                                             </span>
                                         </div>
                                         <div className='text-muted-foreground flex items-center gap-2'>
@@ -608,7 +611,7 @@ export default function ServerBackupsPage() {
                                                         <span className='font-bold'>{t('serverBackups.restore')}</span>
                                                     </DropdownMenuItem>
                                                 )}
-                                                {canDownload && backup.is_successful === 1 && (
+                                                {canDownload && backup.is_successful === 1 && backup.disk !== 'pbs' && (
                                                     <DropdownMenuItem
                                                         onClick={() => handleDownloadBackup(backup)}
                                                         className='flex cursor-pointer items-center gap-3 rounded-xl p-3'

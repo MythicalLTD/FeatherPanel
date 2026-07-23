@@ -222,6 +222,10 @@ class LoginController
             return ApiResponse::error('User is banned', 'USER_BANNED');
         }
 
+        if (($userInfo['deleted'] ?? 'false') === 'true') {
+            return ApiResponse::error('Account is deleted', 'ACCOUNT_DELETED', 403);
+        }
+
         // When OIDC has disabled local login, only allow local login for admins (before password check to avoid leaking valid-credential signal)
         if ($config->getSetting(ConfigInterface::OIDC_DISABLE_LOCAL_LOGIN, 'false') === 'true') {
             if (!\App\Helpers\PermissionHelper::hasPermission($userInfo['uuid'], \App\Permissions::ADMIN_ROOT)) {
@@ -273,6 +277,15 @@ class LoginController
     public function completeLogin(array $userInfo, ?string $redirectTo = null): Response
     {
         $app = App::getInstance(true);
+
+        // Logging in cancels a pending self-service account deletion request
+        if (\App\Services\User\UserDeletionService::hasPendingDeletion($userInfo)) {
+            \App\Services\User\UserDeletionService::cancelPendingDeletion($userInfo);
+            $userInfo['deletion_requested_at'] = null;
+            $userInfo['deletion_scheduled_at'] = null;
+            $userInfo['deletion_mode'] = null;
+        }
+
         // Session cookie requires a non-empty remember_token; older rows may have NULL/empty.
         $token = User::ensureRememberToken($userInfo['uuid'], $userInfo['remember_token'] ?? null);
         if ($token === false) {

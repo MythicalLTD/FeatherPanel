@@ -80,8 +80,9 @@ class ConfigFactory
 
         $settings = [];
         foreach ($results as $result) {
-            $settings[$result['name']] = App::getInstance(true)->decryptValue($result['value']);
-            $this->cache[$result['name']] = $result['value'];
+            $decrypted = App::getInstance(true)->decryptValue($result['value']);
+            $settings[$result['name']] = $decrypted;
+            $this->cache[$result['name']] = $decrypted;
         }
 
         return $settings;
@@ -113,8 +114,8 @@ class ConfigFactory
         $stmt = $this->db->prepare("INSERT INTO {$this->table_name} (name, value, date) VALUES (:name, :value, NOW()) ON DUPLICATE KEY UPDATE value = :value, date = NOW()");
         $result = $stmt->execute(['name' => $name, 'value' => $encryptedValue]);
         if ($result) {
-            // Update the cache
-            $this->cache[$name] = $encryptedValue;
+            // Cache plaintext so getSetting() after setSetting() does not return ciphertext.
+            $this->cache[$name] = $value;
         }
 
         return $result;

@@ -42,6 +42,7 @@ use App\Config\ConfigInterface;
 use App\Helpers\BackupIgnoreHelper;
 use App\Services\Backup\BackupFifoEviction;
 use App\Cli\Utils\MinecraftColorCodeSupport;
+use App\Services\Backup\BackupAdapterResolver;
 use App\Services\Server\LifecycleHookPowerGate;
 use App\Services\Server\LifecycleHookExecutorService;
 
@@ -510,7 +511,7 @@ class AServerScheduleProcessor implements TimeTask
                 }
             }
 
-            $adapter = 'wings';
+            $adapter = BackupAdapterResolver::resolveDefault($wings);
             $backupUuid = $this->generateUuid();
             $backupName = 'Scheduled backup at ' . date('Y-m-d H:i:s');
 

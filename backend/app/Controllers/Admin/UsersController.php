@@ -23,11 +23,9 @@ use App\Chat\User;
 use App\Chat\Realm;
 use App\Chat\Spell;
 use App\Chat\Server;
-use App\Chat\Subuser;
 use App\Chat\Activity;
 use App\Chat\MailList;
 use App\Chat\SsoToken;
-use App\Chat\ApiClient;
 use App\Chat\MailQueue;
 use App\Chat\Allocation;
 use App\Chat\VmInstance;
@@ -38,9 +36,9 @@ use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
 use App\Mail\templates\Welcome;
 use App\CloudFlare\CloudFlareRealIP;
+use App\Helpers\AbuseIPDBBanReporter;
 use App\Helpers\EmailDomainValidator;
 use App\Mail\templates\AccountBanned;
-use App\Mail\templates\AccountDeleted;
 use App\Helpers\ModerationReasonHelper;
 use App\Mail\templates\AccountUnBanned;
 use App\Plugins\Events\Events\UserEvent;
@@ -827,6 +825,14 @@ class UsersController
         if (isset($data['uuid'])) {
             unset($data['uuid']);
         }
+        unset(
+            $data['report_to_abuseipdb'],
+            $data['abuseipdb_categories'],
+            $data['abuseipdb_comment'],
+            $data['reason_category'],
+            $data['reason_details'],
+            $data['reason']
+        );
 
         if ($app->isDemoMode()) {
             if ($user['id'] === 1) {
@@ -895,13 +901,23 @@ class UsersController
         $becameBanned = false;
         $becameUnbanned = false;
         $banReasonForEmail = '';
+        $banRequestBody = [];
+        $abuseipdbReport = null;
 
         if (array_key_exists('banned', $data)) {
             $wantsBanned = $data['banned'] === 'true' || $data['banned'] === true;
-            unset($data['reason_category'], $data['reason_details'], $data['reason']);
+            $banRequestBody = json_decode($request->getContent(), true) ?: [];
+            unset(
+                $data['reason_category'],
+                $data['reason_details'],
+                $data['reason'],
+                $data['report_to_abuseipdb'],
+                $data['abuseipdb_categories'],
+                $data['abuseipdb_comment']
+            );
 
             if ($wantsBanned && !$wasBanned) {
-                $parsed = ModerationReasonHelper::parseRequestBody(json_decode($request->getContent(), true) ?: []);
+                $parsed = ModerationReasonHelper::parseRequestBody($banRequestBody);
                 $reasonError = ModerationReasonHelper::validateReason($parsed['reason']);
                 if ($reasonError !== null) {
                     return ApiResponse::error($reasonError, 'MODERATION_REASON_REQUIRED', 400);
@@ -939,6 +955,7 @@ class UsersController
         }
 
         if ($becameBanned) {
+            $abuseipdbReport = AbuseIPDBBanReporter::maybeReport($user, $banRequestBody, $banReasonForEmail);
             AccountBanned::send([
                 'email' => $user['email'],
                 'subject' => 'Your account has been suspended on ' . $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
@@ -969,7 +986,12 @@ class UsersController
             ]);
         }
 
-        return ApiResponse::success([], 'User updated successfully', 200);
+        $responseData = [];
+        if ($abuseipdbReport !== null && ($abuseipdbReport['attempted'] ?? false)) {
+            $responseData['abuseipdb'] = $abuseipdbReport;
+        }
+
+        return ApiResponse::success($responseData, 'User updated successfully', 200);
     }
 
     #[OA\Delete(
@@ -1008,7 +1030,6 @@ class UsersController
     {
 
         $app = App::getInstance(true);
-        $config = $app->getConfig();
         $user = User::getUserByUuid($uuid);
         if (!$user) {
             return ApiResponse::error('User not found', 'USER_NOT_FOUND', 404);
@@ -1024,77 +1045,17 @@ class UsersController
             }
         }
 
-        // Check if user has any servers
-        $servers = Server::searchServers(
-            page: 1,
-            limit: 1,
-            search: '',
-            fields: ['id'],
-            sortBy: 'id',
-            sortOrder: 'ASC',
-            ownerId: (int) $user['id']
+        // Check if user has any servers / VMs — delegated to shared service below
+        $result = \App\Services\User\UserDeletionService::hardDelete(
+            $user,
+            $request->attributes->get('user'),
+            'User deleted by admin'
         );
+        if (!$result['success']) {
+            $code = $result['code'] ?? 'FAILED_TO_DELETE_USER';
+            $status = in_array($code, ['USER_HAS_SERVERS', 'USER_HAS_VM_INSTANCES', 'USER_HAS_ACTIVE_SUBSCRIPTIONS'], true) ? 409 : 500;
 
-        if (!empty($servers)) {
-            return ApiResponse::error('Cannot delete user with active servers. Please transfer or delete all servers first.', 'USER_HAS_SERVERS', 409);
-        }
-
-        $vmCount = VmInstance::countByUserUuid((string) $user['uuid']);
-        if ($vmCount > 0) {
-            return ApiResponse::error(
-                'Cannot delete user with VDS instances assigned. Reassign or delete those instances first.',
-                'USER_HAS_VM_INSTANCES',
-                409
-            );
-        }
-
-        // Emit event
-        global $eventManager;
-        if (isset($eventManager) && $eventManager !== null) {
-            $eventManager->emit(
-                UserEvent::onUserDeleted(),
-                [
-                    'user' => $user,
-                    'deleted_by' => $request->attributes->get('user'),
-                ]
-            );
-        }
-
-        Activity::createActivity([
-            'user_uuid' => $user['uuid'],
-            'name' => 'delete_user',
-            'context' => 'User deleted by admin',
-            'ip_address' => CloudFlareRealIP::getRealIP(),
-        ]);
-
-        try {
-            AccountDeleted::send([
-                'email' => $user['email'],
-                'subject' => 'Your ' . $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel') . ' account has been deleted',
-                'app_name' => $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
-                'app_url' => $config->getSetting(ConfigInterface::APP_URL, 'https://featherpanel.mythical.systems'),
-                'first_name' => $user['first_name'],
-                'last_name' => $user['last_name'],
-                'username' => $user['username'],
-                'app_support_url' => $config->getSetting(ConfigInterface::APP_SUPPORT_URL, 'https://discord.mythical.systems'),
-                'uuid' => $user['uuid'],
-                'enabled' => $config->getSetting(ConfigInterface::SMTP_ENABLED, 'false'),
-            ]);
-        } catch (\Exception $e) {
-            App::getInstance(true)->getLogger()->error('Failed to send account deleted email: ' . $e->getMessage());
-
-            return ApiResponse::error('Failed to send account deleted email: ' . $e->getMessage(), 'FAILED_TO_SEND_ACCOUNT_DELETED_EMAIL', 500);
-        }
-
-        Activity::deleteUserData($user['uuid']);
-        \App\Chat\UserDevice::deleteUserData($user['uuid']);
-        MailList::deleteAllMailListsByUserId($user['uuid']);
-        ApiClient::deleteAllApiClientsByUserId($user['uuid']);
-        Subuser::deleteAllSubusersByUserId((int) $user['id']);
-        MailQueue::deleteAllMailQueueByUserId($user['uuid']);
-        $deleted = User::hardDeleteUser($user['id']);
-        if (!$deleted) {
-            return ApiResponse::error('Failed to delete user', 'FAILED_TO_DELETE_USER', 500);
+            return ApiResponse::error($result['error'] ?? 'Failed to delete user', $code, $status);
         }
 
         return ApiResponse::success([], 'User deleted successfully', 200);
@@ -1893,6 +1854,8 @@ class UsersController
             return ApiResponse::error('Failed to ban user', 'FAILED_TO_BAN_USER', 500);
         }
 
+        $abuseipdbReport = AbuseIPDBBanReporter::maybeReport($user, $body, $parsed['reason']);
+
         global $eventManager;
         if (isset($eventManager) && $eventManager !== null) {
             $eventManager->emit(
@@ -1923,7 +1886,12 @@ class UsersController
 
         $app->getLogger()->info('User ' . $user['uuid'] . ' banned by ' . ($request->attributes->get('user')['uuid'] ?? 'unknown'));
 
-        return ApiResponse::success([], 'User banned successfully', 200);
+        $responseData = [];
+        if ($abuseipdbReport['attempted'] ?? false) {
+            $responseData['abuseipdb'] = $abuseipdbReport;
+        }
+
+        return ApiResponse::success($responseData, 'User banned successfully', 200);
     }
 
     #[OA\Post(

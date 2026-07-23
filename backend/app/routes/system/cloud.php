@@ -21,6 +21,7 @@ use App\Config\ConfigInterface;
 use Symfony\Component\Routing\Route;
 use App\Middleware\CloudAccessMiddleware;
 use App\Middleware\PanelAccessMiddleware;
+use App\Controllers\System\CloudV1Controller;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
 
@@ -40,7 +41,7 @@ return static function (RouteCollection $routes): void {
                 $cloudRotated = $config->getSetting(ConfigInterface::FEATHERCLOUD_ACCESS_LAST_ROTATED, null);
 
                 return ApiResponse::success([
-                    'message' => 'FeatherCloud handshake successful',
+                    'message' => 'Mythic Cloud handshake successful',
                     'timestamp' => gmdate('c'),
                     'panel_credentials' => [
                         'public_key' => $panelPublic,
@@ -63,19 +64,141 @@ return static function (RouteCollection $routes): void {
         ['POST']
     ));
 
+    // Mythic → Panel: persist FCPUB/FCPRIV identity keys from query (or body/headers).
+    // Optional X-Panel-Public-Key / X-Panel-Private-Key headers may carry Mythic-stored
+    // cloud_api_key / cloud_api_secret when the panel already has ACCESS credentials.
     $routes->add('feathercloud-panel-handshake', new Route(
         '/api/cloud/v1/panel-handshake',
         [
             '_controller' => static function (Request $request) {
-                $config = App::getInstance(true)->getConfig();
+                $app = App::getInstance(true);
+                $config = $app->getConfig();
+                $logger = $app->getLogger();
 
-                if (isset($_GET['panel_public_key']) && isset($_GET['panel_private_key'])) {
-                    $config->setSetting(ConfigInterface::FEATHERCLOUD_CLOUD_PUBLIC_KEY, $_GET['panel_public_key']);
-                    $config->setSetting(ConfigInterface::FEATHERCLOUD_CLOUD_PRIVATE_KEY, $_GET['panel_private_key']);
-                    $config->setSetting(ConfigInterface::FEATHERCLOUD_CLOUD_LAST_ROTATED, gmdate('c'));
+                try {
+                    $storedAccessPublic = trim((string) ($config->getSetting(ConfigInterface::FEATHERCLOUD_ACCESS_PUBLIC_KEY, '') ?? ''));
+                    $storedAccessPrivate = trim((string) ($config->getSetting(ConfigInterface::FEATHERCLOUD_ACCESS_PRIVATE_KEY, '') ?? ''));
+
+                    $incomingAccessPublic = trim((string) (
+                        $request->headers->get('X-Panel-Public-Key')
+                        ?? $request->headers->get('X-Api-Key')
+                        ?? $request->headers->get('x-cloud-public-key')
+                        ?? ''
+                    ));
+                    $incomingAccessPrivate = trim((string) (
+                        $request->headers->get('X-Panel-Private-Key')
+                        ?? $request->headers->get('X-Api-Secret')
+                        ?? $request->headers->get('x-cloud-private-key')
+                        ?? ''
+                    ));
+
+                    // If callback credentials already exist and Mythic sent auth headers, verify them.
+                    if ($storedAccessPublic !== '' && $storedAccessPrivate !== '') {
+                        if ($incomingAccessPublic !== '' || $incomingAccessPrivate !== '') {
+                            if (
+                                $incomingAccessPublic === ''
+                                || $incomingAccessPrivate === ''
+                                || !hash_equals($storedAccessPublic, $incomingAccessPublic)
+                                || !hash_equals($storedAccessPrivate, $incomingAccessPrivate)
+                            ) {
+                                $logger->warning('Mythic panel-handshake: invalid optional cloud access credentials');
+
+                                return ApiResponse::error('Invalid Mythic cloud credentials.', 'CLOUD_REMOTE_CREDENTIALS_INVALID', 403);
+                            }
+                        }
+                    }
+
+                    $payload = json_decode($request->getContent() ?: '[]', true);
+                    if (!is_array($payload)) {
+                        $payload = [];
+                    }
+
+                    $panelPublic = trim((string) (
+                        $request->query->get('panel_public_key')
+                        ?? $request->query->get('public_identity_key')
+                        ?? $request->query->get('public_key')
+                        ?? $payload['panel_public_key']
+                        ?? $payload['public_identity_key']
+                        ?? $payload['public_key']
+                        ?? ''
+                    ));
+                    $panelPrivate = trim((string) (
+                        $request->query->get('panel_private_key')
+                        ?? $request->query->get('private_key')
+                        ?? $payload['panel_private_key']
+                        ?? $payload['private_key']
+                        ?? ''
+                    ));
+
+                    // When Mythic sends identity keys as headers instead of query (and ACCESS keys are empty),
+                    // accept FCPUB-/FCPRIV- shaped values from X-Panel-* as the identity pair.
+                    if ($panelPublic === '' && str_starts_with($incomingAccessPublic, 'FCPUB-')) {
+                        $panelPublic = $incomingAccessPublic;
+                    }
+                    if ($panelPrivate === '' && str_starts_with($incomingAccessPrivate, 'FCPRIV-')) {
+                        $panelPrivate = $incomingAccessPrivate;
+                    }
+
+                    if ($panelPublic === '' || $panelPrivate === '') {
+                        return ApiResponse::error(
+                            'Missing panel_public_key and panel_private_key.',
+                            'MISSING_PANEL_KEYS',
+                            400
+                        );
+                    }
+
+                    $timestamp = gmdate('c');
+                    $config->setSetting(ConfigInterface::FEATHERCLOUD_CLOUD_PUBLIC_KEY, $panelPublic);
+                    $config->setSetting(ConfigInterface::FEATHERCLOUD_CLOUD_PRIVATE_KEY, $panelPrivate);
+                    $config->setSetting(ConfigInterface::FEATHERCLOUD_CLOUD_LAST_ROTATED, $timestamp);
+                    $config->setSetting(ConfigInterface::FEATHERCLOUD_LAST_SYNCED_AT, $timestamp);
+                    if (!$config->getSetting(ConfigInterface::FEATHERCLOUD_LINKED_AT, null)) {
+                        $config->setSetting(ConfigInterface::FEATHERCLOUD_LINKED_AT, $timestamp);
+                    }
+
+                    $logger->info('Mythic panel-handshake: identity keys stored');
+
+                    return ApiResponse::success([
+                        'timestamp' => $timestamp,
+                        'public_key_prefix' => substr($panelPublic, 0, 12),
+                        'linked' => true,
+                    ], 'Panel credentials accepted and updated', 200);
+                } catch (Throwable $exception) {
+                    $logger->error('Mythic panel-handshake failed: ' . $exception->getMessage());
+
+                    return ApiResponse::error('Failed to process panel handshake', 'PANEL_HANDSHAKE_FAILED', 500);
                 }
+            },
+            // Auth is optional (verified inside when ACCESS keys exist + headers provided).
+            '_middleware' => [],
+        ],
+        [],
+        [],
+        '',
+        [],
+        ['POST']
+    ));
 
-                return ApiResponse::success([], 'Panel credentials accepted and updated', 200);
+    $routes->add('feathercloud-status', new Route(
+        '/api/cloud/v1/status',
+        [
+            '_controller' => static function (Request $request) {
+                return (new CloudV1Controller())->status($request);
+            },
+            '_middleware' => [PanelAccessMiddleware::class],
+        ],
+        [],
+        [],
+        '',
+        [],
+        ['GET']
+    ));
+
+    $routes->add('feathercloud-sync', new Route(
+        '/api/cloud/v1/sync',
+        [
+            '_controller' => static function (Request $request) {
+                return (new CloudV1Controller())->sync($request);
             },
             '_middleware' => [PanelAccessMiddleware::class],
         ],
@@ -86,9 +209,7 @@ return static function (RouteCollection $routes): void {
         ['POST']
     ));
 
-    // OAuth2 callback endpoint - FeatherCloud calls this after OAuth2 flow completes
-    // This endpoint accepts cloud_api_key and cloud_api_secret from FeatherCloud headers
-    // No authentication middleware needed since we're establishing credentials
+    // OAuth2 callback endpoint - Mythic may POST credentials here after OAuth completes.
     $routes->add('feathercloud-oauth2-callback', new Route(
         '/api/cloud/v1/oauth2/callback',
         [
@@ -98,11 +219,9 @@ return static function (RouteCollection $routes): void {
                 $logger = $app->getLogger();
 
                 try {
-                    // Get cloud_api_key and cloud_api_secret from headers (generated by FeatherCloud)
                     $cloudApiKey = trim((string) ($request->headers->get('cloud_api_key') ?? $request->headers->get('x-cloud-api-key') ?? ''));
                     $cloudApiSecret = trim((string) ($request->headers->get('cloud_api_secret') ?? $request->headers->get('x-cloud-api-secret') ?? ''));
 
-                    // Also check payload as fallback
                     if ($cloudApiKey === '' || $cloudApiSecret === '') {
                         $payload = json_decode($request->getContent() ?: '[]', true);
                         if (is_array($payload)) {
@@ -115,8 +234,6 @@ return static function (RouteCollection $routes): void {
                         return ApiResponse::error('Missing required parameters: cloud_api_key, cloud_api_secret.', 'MISSING_CLOUD_CREDENTIALS', 400);
                     }
 
-                    // Verify that we have panel credentials (sent during OAuth2 redirect)
-                    // FeatherCloud should include panel public/private keys to verify the request
                     $panelPublicFromRequest = trim((string) ($request->headers->get('panel_public_key') ?? $request->headers->get('x-panel-public-key') ?? ''));
                     $panelPrivateFromRequest = trim((string) ($request->headers->get('panel_private_key') ?? $request->headers->get('x-panel-private-key') ?? ''));
 
@@ -128,40 +245,38 @@ return static function (RouteCollection $routes): void {
                         }
                     }
 
-                    // Verify panel credentials match what we sent in OAuth2 URL
                     if ($panelPublicFromRequest !== '' && $panelPrivateFromRequest !== '') {
                         $storedPanelPublic = $config->getSetting(ConfigInterface::FEATHERCLOUD_CLOUD_PUBLIC_KEY, '');
                         $storedPanelPrivate = $config->getSetting(ConfigInterface::FEATHERCLOUD_CLOUD_PRIVATE_KEY, '');
 
                         if ($storedPanelPublic !== '' && $storedPanelPrivate !== '') {
                             if (!hash_equals($storedPanelPublic, $panelPublicFromRequest) || !hash_equals($storedPanelPrivate, $panelPrivateFromRequest)) {
-                                $logger->warning('FeatherCloud OAuth2 callback: Panel credentials mismatch');
+                                $logger->warning('Mythic OAuth2 callback: Panel credentials mismatch');
 
                                 return ApiResponse::error('Invalid panel credentials.', 'INVALID_PANEL_CREDENTIALS', 403);
                             }
                         }
                     }
 
-                    // Store the cloud credentials (cloud_api_key and cloud_api_secret)
-                    // These are stored as FEATHERCLOUD_ACCESS_PUBLIC_KEY and FEATHERCLOUD_ACCESS_PRIVATE_KEY
                     $timestamp = gmdate('c');
                     $config->setSetting(ConfigInterface::FEATHERCLOUD_ACCESS_PUBLIC_KEY, $cloudApiKey);
                     $config->setSetting(ConfigInterface::FEATHERCLOUD_ACCESS_PRIVATE_KEY, $cloudApiSecret);
                     $config->setSetting(ConfigInterface::FEATHERCLOUD_ACCESS_LAST_ROTATED, $timestamp);
+                    $config->setSetting(ConfigInterface::FEATHERCLOUD_LAST_SYNCED_AT, $timestamp);
 
-                    $logger->info('FeatherCloud OAuth2 callback received - cloud credentials stored successfully');
+                    $logger->info('Mythic OAuth2 callback received - cloud credentials stored successfully');
 
                     return ApiResponse::success([
                         'message' => 'OAuth2 callback processed successfully',
                         'timestamp' => $timestamp,
                     ], 'Cloud credentials stored successfully', 200);
                 } catch (Throwable $exception) {
-                    $logger->error('Failed to process FeatherCloud OAuth2 callback: ' . $exception->getMessage());
+                    $logger->error('Failed to process Mythic OAuth2 callback: ' . $exception->getMessage());
 
                     return ApiResponse::error('Failed to process OAuth2 callback', 'OAUTH2_CALLBACK_FAILED', 500);
                 }
             },
-            '_middleware' => [], // No middleware - we're establishing credentials
+            '_middleware' => [],
         ],
         [],
         [],

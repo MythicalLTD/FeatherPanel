@@ -454,7 +454,7 @@ public static function processEvents(PluginEvents $evt): void
   <p class="muted"><strong>Callback parameters:</strong> string email, string reason.</p>
 
   <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> email, ip_address, reason, username</p>
+  <p class="muted"><strong>Data keys:</strong> abuse_confidence_score, email, ip_address, reason, username</p>
 
   <h3>Emitted From</h3>
   <ul>
@@ -467,9 +467,9 @@ use App\Plugins\Events\Events\AuthEvent;
 
 public static function processEvents(PluginEvents $evt): void
 {
-    $evt->on(AuthEvent::onAuthRegistrationFailed(), function ($email, $ipAddress, $reason, $username) {
+    $evt->on(AuthEvent::onAuthRegistrationFailed(), function ($abuseConfidenceScore, $email, $ipAddress, $reason, $username) {
         // Handle featherpanel:auth:registration:failed
-        // Data keys: email, ip_address, reason, username
+        // Data keys: abuse_confidence_score, email, ip_address, reason, username
     });
 }</code></pre>
 </article>

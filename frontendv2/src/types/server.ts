@@ -571,7 +571,7 @@ export function isLifecycleHookType(value: string): value is LifecycleHookType {
 export function parseLifecycleHookType(value: string | null | undefined): LifecycleHookType {
     return value && isLifecycleHookType(value) ? value : 'pre_start';
 }
-export type LifecycleTaskType = 'discord_webhook' | 'container_command' | 'http_request';
+export type LifecycleTaskType = 'discord_webhook' | 'container_command' | 'container_shell' | 'http_request' | 'sleep';
 
 export interface LifecycleHookStep {
     id: number;

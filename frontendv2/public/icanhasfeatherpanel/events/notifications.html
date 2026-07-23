@@ -33,7 +33,7 @@
   <p class="muted"><strong>Callback parameters:</strong> array notification data.</p>
 
   <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> created_by, notification_data, notification_id</p>
+  <p class="muted"><strong>Data keys:</strong> created_by, emailed, notification_data, notification_id</p>
 
   <h3>Emitted From</h3>
   <ul>
@@ -46,9 +46,9 @@ use App\Plugins\Events\Events\NotificationsEvent;
 
 public static function processEvents(PluginEvents $evt): void
 {
-    $evt->on(NotificationsEvent::onNotificationCreated(), function ($createdBy, $notificationData, $notificationId) {
+    $evt->on(NotificationsEvent::onNotificationCreated(), function ($createdBy, $emailed, $notificationData, $notificationId) {
         // Handle featherpanel:admin:notifications:notification:created
-        // Data keys: created_by, notification_data, notification_id
+        // Data keys: created_by, emailed, notification_data, notification_id
     });
 }</code></pre>
 </article>

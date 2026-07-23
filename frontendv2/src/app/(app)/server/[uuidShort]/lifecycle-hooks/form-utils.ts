@@ -88,11 +88,14 @@ export type StepFormState = {
     discord_username: string;
     discord_embeds: DiscordEmbedForm[];
     container_command: string;
+    container_shell_command: string;
+    container_shell_timeout: number;
     http_url: string;
     http_method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
     http_headers_json: string;
     http_query_json: string;
     http_body: string;
+    sleep_seconds: number;
 };
 
 export const defaultForm: StepFormState = {
@@ -103,11 +106,14 @@ export const defaultForm: StepFormState = {
     discord_username: '',
     discord_embeds: [createEmptyDiscordEmbed()],
     container_command: '',
+    container_shell_command: '',
+    container_shell_timeout: 30,
     http_url: '',
     http_method: 'GET',
     http_headers_json: '{}',
     http_query_json: '{}',
     http_body: '',
+    sleep_seconds: 5,
 };
 
 type DiscordWebhookPayloadEmbed = Record<string, unknown>;
@@ -281,6 +287,17 @@ export function serializeLifecyclePayload(state: StepFormState) {
             command: state.container_command,
         };
     }
+    if (state.task_type === 'container_shell') {
+        return {
+            command: state.container_shell_command,
+            timeout: Math.max(1, Math.min(120, Math.floor(Number(state.container_shell_timeout) || 30))),
+        };
+    }
+    if (state.task_type === 'sleep') {
+        return {
+            seconds: Math.max(1, Math.min(300, Math.floor(Number(state.sleep_seconds) || 0))),
+        };
+    }
 
     const headers = state.http_headers_json.trim() === '' ? {} : JSON.parse(state.http_headers_json);
     const query = state.http_query_json.trim() === '' ? {} : JSON.parse(state.http_query_json);
@@ -375,6 +392,25 @@ export function deserializeLifecyclePayload(step: LifecycleHookStep): StepFormSt
             task_type: 'container_command',
             continue_on_failure: step.continue_on_failure,
             container_command: String(parsed.command || ''),
+        };
+    }
+    if (step.task_type === 'container_shell') {
+        const timeout = Number(parsed.timeout ?? 30);
+        return {
+            ...defaultForm,
+            task_type: 'container_shell',
+            continue_on_failure: step.continue_on_failure,
+            container_shell_command: String(parsed.command || ''),
+            container_shell_timeout: Number.isFinite(timeout) && timeout > 0 ? Math.floor(timeout) : 30,
+        };
+    }
+    if (step.task_type === 'sleep') {
+        const seconds = Number(parsed.seconds);
+        return {
+            ...defaultForm,
+            task_type: 'sleep',
+            continue_on_failure: step.continue_on_failure,
+            sleep_seconds: Number.isFinite(seconds) && seconds > 0 ? Math.floor(seconds) : 5,
         };
     }
 

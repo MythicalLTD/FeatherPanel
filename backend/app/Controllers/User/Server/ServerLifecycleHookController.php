@@ -33,8 +33,12 @@ class ServerLifecycleHookController
     use CheckSubuserPermissionsTrait;
 
     private const ALLOWED_HOOK_TYPES = ['pre_start', 'pre_stop', 'post_start', 'server_crash'];
-    private const ALLOWED_TASK_TYPES = ['discord_webhook', 'container_command', 'http_request'];
+    private const ALLOWED_TASK_TYPES = ['discord_webhook', 'container_command', 'container_shell', 'http_request', 'sleep'];
     private const ALLOWED_HTTP_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
+    private const SLEEP_MIN_SECONDS = 1;
+    private const SLEEP_MAX_SECONDS = 300;
+    private const CONTAINER_SHELL_MIN_TIMEOUT = 1;
+    private const CONTAINER_SHELL_MAX_TIMEOUT = 120;
 
     public function getHooks(Request $request, string $serverUuid): Response
     {
@@ -69,10 +73,12 @@ class ServerLifecycleHookController
         }
 
         $featureEnabled = App::getInstance(true)->getConfig()->getSetting(ConfigInterface::SERVER_LIFECYCLE_HOOKS_ENABLED, 'false') === 'true';
+        $containerShellEnabled = App::getInstance(true)->getConfig()->getSetting(ConfigInterface::SERVER_LIFECYCLE_HOOKS_CONTAINER_SHELL_ENABLED, 'false') === 'true';
 
         return ApiResponse::success([
             'hooks' => $responseHooks,
             'feature_enabled' => $featureEnabled,
+            'container_shell_enabled' => $containerShellEnabled,
         ]);
     }
 
@@ -160,6 +166,11 @@ class ServerLifecycleHookController
             return ApiResponse::error('Invalid task type', 'INVALID_TASK_TYPE', 400);
         }
 
+        $shellGate = $this->requireContainerShellEnabledForTask($taskType);
+        if ($shellGate !== null) {
+            return $shellGate;
+        }
+
         $payload = $body['payload'] ?? null;
         if (!is_array($payload)) {
             return ApiResponse::error('Payload must be an object', 'INVALID_PAYLOAD', 400);
@@ -239,6 +250,11 @@ class ServerLifecycleHookController
         $taskType = isset($body['task_type']) ? trim((string) $body['task_type']) : (string) $step['task_type'];
         if (!in_array($taskType, self::ALLOWED_TASK_TYPES, true)) {
             return ApiResponse::error('Invalid task type', 'INVALID_TASK_TYPE', 400);
+        }
+
+        $shellGate = $this->requireContainerShellEnabledForTask($taskType);
+        if ($shellGate !== null) {
+            return $shellGate;
         }
 
         $existingPayload = json_decode((string) $step['payload'], true);
@@ -395,12 +411,32 @@ class ServerLifecycleHookController
         return null;
     }
 
+    private function requireContainerShellEnabledForTask(string $taskType): ?Response
+    {
+        if ($taskType !== 'container_shell') {
+            return null;
+        }
+
+        $enabled = App::getInstance(true)->getConfig()->getSetting(ConfigInterface::SERVER_LIFECYCLE_HOOKS_CONTAINER_SHELL_ENABLED, 'false') === 'true';
+        if (!$enabled) {
+            return ApiResponse::error(
+                'Container Shell lifecycle steps are disabled by the administrator (security). Enable them under Admin → Settings → Servers.',
+                'CONTAINER_SHELL_DISABLED',
+                403
+            );
+        }
+
+        return null;
+    }
+
     private function validateTaskPayload(string $taskType, array $payload): ?string
     {
         return match ($taskType) {
             'discord_webhook' => $this->validateDiscordWebhookPayload($payload),
             'container_command' => $this->validateContainerCommandPayload($payload),
+            'container_shell' => $this->validateContainerShellPayload($payload),
             'http_request' => $this->validateHttpRequestPayload($payload),
+            'sleep' => $this->validateSleepPayload($payload),
             default => 'Unsupported task type',
         };
     }
@@ -691,6 +727,68 @@ class ServerLifecycleHookController
         }
         if (strlen($command) > 512) {
             return 'Container command exceeds max length of 512 characters';
+        }
+
+        return null;
+    }
+
+    private function validateContainerShellPayload(array $payload): ?string
+    {
+        foreach (array_keys($payload) as $key) {
+            if (!in_array($key, ['command', 'timeout'], true)) {
+                return 'Unsupported field in container shell payload';
+            }
+        }
+
+        $command = trim((string) ($payload['command'] ?? ''));
+        if ($command === '') {
+            return 'Container shell command is required';
+        }
+        if (strlen($command) > 4096) {
+            return 'Container shell command exceeds max length of 4096 characters';
+        }
+
+        if (array_key_exists('timeout', $payload)) {
+            $raw = $payload['timeout'];
+            if (is_bool($raw) || is_array($raw) || is_object($raw)) {
+                return 'Container shell timeout must be an integer number of seconds';
+            }
+            if (is_string($raw) && !preg_match('/^-?\d+$/', trim($raw))) {
+                return 'Container shell timeout must be an integer number of seconds';
+            }
+            if (is_float($raw) && floor($raw) !== $raw) {
+                return 'Container shell timeout must be a whole number of seconds';
+            }
+
+            $timeout = (int) $raw;
+            if ($timeout < self::CONTAINER_SHELL_MIN_TIMEOUT || $timeout > self::CONTAINER_SHELL_MAX_TIMEOUT) {
+                return 'Container shell timeout must be between ' . self::CONTAINER_SHELL_MIN_TIMEOUT . ' and ' . self::CONTAINER_SHELL_MAX_TIMEOUT . ' seconds';
+            }
+        }
+
+        return null;
+    }
+
+    private function validateSleepPayload(array $payload): ?string
+    {
+        if (!array_key_exists('seconds', $payload)) {
+            return 'Sleep duration (seconds) is required';
+        }
+
+        $raw = $payload['seconds'];
+        if (is_bool($raw) || is_array($raw) || is_object($raw)) {
+            return 'Sleep duration must be an integer number of seconds';
+        }
+        if (is_string($raw) && !preg_match('/^-?\d+$/', trim($raw))) {
+            return 'Sleep duration must be an integer number of seconds';
+        }
+        if (is_float($raw) && floor($raw) !== $raw) {
+            return 'Sleep duration must be a whole number of seconds';
+        }
+
+        $seconds = (int) $raw;
+        if ($seconds < self::SLEEP_MIN_SECONDS || $seconds > self::SLEEP_MAX_SECONDS) {
+            return 'Sleep duration must be between ' . self::SLEEP_MIN_SECONDS . ' and ' . self::SLEEP_MAX_SECONDS . ' seconds';
         }
 
         return null;

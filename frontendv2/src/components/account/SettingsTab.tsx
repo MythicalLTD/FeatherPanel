@@ -22,7 +22,7 @@ import { useSession } from '@/contexts/SessionContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { usePreferences, useDateFormatOptions } from '@/contexts/PreferencesContext';
 import { Button } from '@/components/ui/button';
-import { ShieldCheck, Check, Fingerprint, Pencil, FileText, Clock, Network } from 'lucide-react';
+import { ShieldCheck, Check, Fingerprint, Pencil, FileText, Clock, Network, Trash2 } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { Captcha } from '@/components/Captcha';
@@ -54,6 +54,20 @@ type AuthProvider = {
     name: string;
 };
 
+type AccountDeletionStatus = {
+    enabled: boolean;
+    mode: 'instant' | 'delayed' | 'after_services';
+    delay_days: number;
+    verification: { require_2fa: boolean; require_email_otp: boolean };
+    pending: boolean;
+    deletion_requested_at?: string | null;
+    deletion_scheduled_at?: string | null;
+    deletion_mode?: string | null;
+    active_services?: { servers: number; vms: number; subscriptions: number; has_any: boolean };
+    smtp_enabled?: boolean;
+    user_has_2fa?: boolean;
+};
+
 const discordLinkErrorKeys: Record<string, string> = {
     discord_already_linked: 'account.discordAlreadyLinked',
     discord_disabled: 'account.discordDisabled',
@@ -83,7 +97,7 @@ const oidcLinkErrorKeys: Record<string, string> = {
 
 export default function SettingsTab() {
     const { t } = useTranslation();
-    const { user, fetchSession, logout } = useSession();
+    const { user, fetchSession, logout, clearSession } = useSession();
     const { settings } = useSettings();
     const { preferences, timezone, setTimezone, ready: preferencesReady } = usePreferences();
     const dateOpts = useDateFormatOptions();
@@ -121,6 +135,14 @@ export default function SettingsTab() {
     const [discordLinkErrorMessage, setDiscordLinkErrorMessage] = useState<string | null>(null);
     const [turnstileToken, setTurnstileToken] = useState('');
     const [turnstileKey, setTurnstileKey] = useState(0);
+    const [deletionStatus, setDeletionStatus] = useState<AccountDeletionStatus | null>(null);
+    const [deletionDialogOpen, setDeletionDialogOpen] = useState(false);
+    const [deletionConfirmPhrase, setDeletionConfirmPhrase] = useState('');
+    const [deletionTwoFaCode, setDeletionTwoFaCode] = useState('');
+    const [deletionEmailOtp, setDeletionEmailOtp] = useState('');
+    const [isSendingDeletionOtp, setIsSendingDeletionOtp] = useState(false);
+    const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+    const [isCancellingDeletion, setIsCancellingDeletion] = useState(false);
 
     useEffect(() => {
         const init = async () => {
@@ -418,6 +440,160 @@ export default function SettingsTab() {
             resetTurnstile();
         } finally {
             setIsRequestingData(false);
+        }
+    };
+
+    const loadDeletionStatus = async () => {
+        if (!isEnabled(settings?.user_allow_account_deletion)) {
+            setDeletionStatus(null);
+            return;
+        }
+        try {
+            const response = await axios.get('/api/user/account/deletion');
+            if (response.data?.success && response.data?.data) {
+                setDeletionStatus(response.data.data as AccountDeletionStatus);
+            }
+        } catch {
+            // Feature may be disabled server-side
+        }
+    };
+
+    useEffect(() => {
+        if (loading || !user?.uuid) {
+            return;
+        }
+        void loadDeletionStatus();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [loading, user?.uuid, settings?.user_allow_account_deletion]);
+
+    const openDeletionDialog = () => {
+        setDeletionConfirmPhrase('');
+        setDeletionTwoFaCode('');
+        setDeletionEmailOtp('');
+        resetTurnstile();
+        setDeletionDialogOpen(true);
+        void loadDeletionStatus();
+    };
+
+    const handleSendDeletionOtp = async () => {
+        try {
+            setIsSendingDeletionOtp(true);
+            let captchaToken = '';
+            if (isCaptchaConfigured(settings)) {
+                captchaToken = await obtainCaptchaResponseToken(settings ?? null, turnstileToken);
+                if (!captchaToken) {
+                    toast.error(t('validation.captcha_required'));
+                    resetTurnstile();
+                    return;
+                }
+            }
+            const payload: { turnstile_token?: string } = {};
+            if (isCaptchaConfigured(settings)) {
+                payload.turnstile_token = captchaToken;
+            }
+            const response = await axios.post('/api/user/account/deletion/otp', payload);
+            if (response.data?.success) {
+                toast.success(t('account.deleteAccount.otpSent'));
+                resetTurnstile();
+            } else {
+                toast.error(response.data?.message || t('account.deleteAccount.otpFailed'));
+                resetTurnstile();
+            }
+        } catch (error) {
+            if (axios.isAxiosError(error) && error.response?.data?.message) {
+                toast.error(error.response.data.message);
+            } else {
+                toast.error(t('account.deleteAccount.otpFailed'));
+            }
+            resetTurnstile();
+        } finally {
+            setIsSendingDeletionOtp(false);
+        }
+    };
+
+    const handleConfirmDeletion = async () => {
+        if (deletionConfirmPhrase.trim().toUpperCase() !== 'DELETE') {
+            toast.error(t('account.deleteAccount.confirmPhrase'));
+            return;
+        }
+        if (deletionStatus?.verification.require_2fa && !deletionStatus.user_has_2fa) {
+            toast.error(t('account.deleteAccount.twoFaRequired'));
+            return;
+        }
+
+        try {
+            setIsDeletingAccount(true);
+            let captchaToken = '';
+            if (isCaptchaConfigured(settings)) {
+                captchaToken = await obtainCaptchaResponseToken(settings ?? null, turnstileToken);
+                if (!captchaToken) {
+                    toast.error(t('validation.captcha_required'));
+                    resetTurnstile();
+                    return;
+                }
+            }
+
+            const payload: {
+                turnstile_token?: string;
+                two_fa_code?: string;
+                email_otp?: string;
+            } = {};
+            if (isCaptchaConfigured(settings)) {
+                payload.turnstile_token = captchaToken;
+            }
+            if (deletionStatus?.verification.require_2fa) {
+                payload.two_fa_code = deletionTwoFaCode.trim();
+            }
+            if (deletionStatus?.verification.require_email_otp) {
+                payload.email_otp = deletionEmailOtp.trim();
+            }
+
+            const response = await axios.post('/api/user/account/deletion/confirm', payload);
+            if (response.data?.success) {
+                setDeletionDialogOpen(false);
+                if (response.data?.data?.deleted) {
+                    toast.success(t('account.deleteAccount.successDeleted'));
+                    clearSession();
+                    router.push('/auth/login');
+                } else {
+                    toast.success(t('account.deleteAccount.successScheduled'));
+                    await loadDeletionStatus();
+                    resetTurnstile();
+                }
+            } else {
+                toast.error(response.data?.message || t('account.deleteAccount.failed'));
+                resetTurnstile();
+            }
+        } catch (error) {
+            if (axios.isAxiosError(error) && error.response?.data?.message) {
+                toast.error(error.response.data.message);
+            } else {
+                toast.error(t('account.deleteAccount.failed'));
+            }
+            resetTurnstile();
+        } finally {
+            setIsDeletingAccount(false);
+        }
+    };
+
+    const handleCancelDeletion = async () => {
+        try {
+            setIsCancellingDeletion(true);
+            const response = await axios.delete('/api/user/account/deletion');
+            if (response.data?.success) {
+                toast.success(t('account.deleteAccount.cancelSuccess'));
+                await loadDeletionStatus();
+            } else {
+                toast.error(response.data?.message || t('account.deleteAccount.cancelFailed'));
+            }
+        } catch (error) {
+            if (axios.isAxiosError(error) && error.response?.data?.message) {
+                toast.error(error.response.data.message);
+            } else {
+                toast.error(t('account.deleteAccount.cancelFailed'));
+            }
+        } finally {
+            setIsCancellingDeletion(false);
         }
     };
 
@@ -1009,6 +1185,67 @@ export default function SettingsTab() {
                 </div>
             </div>
 
+            {isEnabled(settings?.user_allow_account_deletion) && (
+                <div className='border-destructive/30 bg-card/50 rounded-lg border p-6 backdrop-blur-xl'>
+                    <div className='flex items-start gap-4'>
+                        <div className='shrink-0'>
+                            <div className='bg-destructive/10 flex h-12 w-12 items-center justify-center rounded-lg'>
+                                <Trash2 className='text-destructive h-6 w-6' />
+                            </div>
+                        </div>
+                        <div className='min-w-0 flex-1'>
+                            <div className='flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between'>
+                                <div className='flex-1'>
+                                    <h4 className='text-foreground text-sm font-medium'>
+                                        {t('account.deleteAccount.title')}
+                                    </h4>
+                                    <p className='text-muted-foreground mt-1 text-sm'>
+                                        {deletionStatus?.pending
+                                            ? t('account.deleteAccount.pendingDescription')
+                                            : t('account.deleteAccount.description')}
+                                    </p>
+                                    {deletionStatus?.pending && deletionStatus.deletion_scheduled_at && (
+                                        <p className='text-muted-foreground mt-2 text-xs'>
+                                            {t('account.deleteAccount.scheduledAt', {
+                                                date: formatDateTimeInTz(
+                                                    deletionStatus.deletion_scheduled_at,
+                                                    dateOpts,
+                                                ),
+                                            })}
+                                        </p>
+                                    )}
+                                </div>
+                                <div className='flex shrink-0 flex-col items-end gap-2'>
+                                    {deletionStatus?.pending ? (
+                                        <Button
+                                            type='button'
+                                            variant='outline'
+                                            size='sm'
+                                            disabled={isSubmitting || isCancellingDeletion}
+                                            onClick={() => void handleCancelDeletion()}
+                                        >
+                                            {isCancellingDeletion
+                                                ? t('common.loading')
+                                                : t('account.deleteAccount.cancelButton')}
+                                        </Button>
+                                    ) : (
+                                        <Button
+                                            type='button'
+                                            variant='destructive'
+                                            size='sm'
+                                            disabled={isSubmitting || isDeletingAccount}
+                                            onClick={openDeletionDialog}
+                                        >
+                                            {t('account.deleteAccount.button')}
+                                        </Button>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div className='border-border/50 bg-card/50 rounded-lg border p-6 backdrop-blur-xl'>
                 <div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
                     <div className='flex-1'>
@@ -1095,6 +1332,102 @@ export default function SettingsTab() {
                         </Button>
                         <Button type='button' disabled={isSubmitting} onClick={() => void handleSaveRenamePasskey()}>
                             {isSubmitting ? t('common.saving') : t('common.save')}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={deletionDialogOpen} onOpenChange={setDeletionDialogOpen}>
+                <DialogContent className='sm:max-w-md'>
+                    <DialogHeader>
+                        <DialogTitle>{t('account.deleteAccount.confirmTitle')}</DialogTitle>
+                        <DialogDescription>{t('account.deleteAccount.confirmDescription')}</DialogDescription>
+                    </DialogHeader>
+                    <div className='space-y-4 py-2'>
+                        {deletionStatus?.verification.require_2fa && (
+                            <div className='space-y-2'>
+                                <label htmlFor='deletion-2fa' className='text-foreground text-sm font-medium'>
+                                    {t('account.deleteAccount.twoFaCode')}
+                                </label>
+                                <Input
+                                    id='deletion-2fa'
+                                    value={deletionTwoFaCode}
+                                    onChange={(e) => setDeletionTwoFaCode(e.target.value)}
+                                    placeholder={t('account.deleteAccount.twoFaCodePlaceholder')}
+                                    maxLength={6}
+                                    inputMode='numeric'
+                                    autoComplete='one-time-code'
+                                    disabled={isDeletingAccount}
+                                />
+                            </div>
+                        )}
+                        {deletionStatus?.verification.require_email_otp && (
+                            <div className='space-y-2'>
+                                <label htmlFor='deletion-otp' className='text-foreground text-sm font-medium'>
+                                    {t('account.deleteAccount.emailOtp')}
+                                </label>
+                                <div className='flex gap-2'>
+                                    <Input
+                                        id='deletion-otp'
+                                        value={deletionEmailOtp}
+                                        onChange={(e) => setDeletionEmailOtp(e.target.value)}
+                                        placeholder={t('account.deleteAccount.emailOtpPlaceholder')}
+                                        maxLength={6}
+                                        inputMode='numeric'
+                                        autoComplete='one-time-code'
+                                        disabled={isDeletingAccount}
+                                    />
+                                    <Button
+                                        type='button'
+                                        variant='outline'
+                                        disabled={isSendingDeletionOtp || isDeletingAccount}
+                                        onClick={() => void handleSendDeletionOtp()}
+                                    >
+                                        {isSendingDeletionOtp
+                                            ? t('common.loading')
+                                            : t('account.deleteAccount.sendOtp')}
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+                        <div className='space-y-2'>
+                            <label htmlFor='deletion-confirm' className='text-foreground text-sm font-medium'>
+                                {t('account.deleteAccount.confirmPhrase')}
+                            </label>
+                            <Input
+                                id='deletion-confirm'
+                                value={deletionConfirmPhrase}
+                                onChange={(e) => setDeletionConfirmPhrase(e.target.value)}
+                                placeholder={t('account.deleteAccount.confirmPhrasePlaceholder')}
+                                autoComplete='off'
+                                disabled={isDeletingAccount}
+                            />
+                        </div>
+                        {isCaptchaConfigured(settings) && (
+                            <Captcha
+                                refreshKey={turnstileKey}
+                                onVerify={(token) => setTurnstileToken(token)}
+                                onExpire={() => setTurnstileToken('')}
+                                onError={() => setTurnstileToken('')}
+                            />
+                        )}
+                    </div>
+                    <DialogFooter className='gap-2 sm:gap-0'>
+                        <Button
+                            type='button'
+                            variant='outline'
+                            disabled={isDeletingAccount}
+                            onClick={() => setDeletionDialogOpen(false)}
+                        >
+                            {t('common.cancel')}
+                        </Button>
+                        <Button
+                            type='button'
+                            variant='destructive'
+                            disabled={isDeletingAccount || deletionConfirmPhrase.trim().toUpperCase() !== 'DELETE'}
+                            onClick={() => void handleConfirmDeletion()}
+                        >
+                            {isDeletingAccount ? t('common.loading') : t('account.deleteAccount.confirmButton')}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

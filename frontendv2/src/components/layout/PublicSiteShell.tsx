@@ -1,17 +1,17 @@
 /*
-This file is part of FeatherPanel.
-
-Copyright (C) 2025 MythicalSystems Studios
-Copyright (C) 2025 FeatherPanel Contributors
-Copyright (C) 2025 Cassian Gherman (aka NaysKutzu)
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as published
-by the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-See the LICENSE file or <https://www.gnu.org/licenses/>.
-*/
+ * This file is part of FeatherPanel.
+ *
+ * Copyright (C) 2025 MythicalSystems Studios
+ * Copyright (C) 2025 FeatherPanel Contributors
+ * Copyright (C) 2025 Cassian Gherman (aka NaysKutzu)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published
+ * by the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * See the LICENSE file or <https://www.gnu.org/licenses/>.
+ */
 
 'use client';
 
@@ -23,19 +23,23 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { cn } from '@/lib/utils';
 import { PoweredByFeatherPanel } from '@/components/branding/PoweredByFeatherPanel';
 import { ConfiguredLinks } from '@/components/branding/ConfiguredLinks';
+import { usePluginPublicPages } from '@/hooks/usePluginPublicPages';
 
 interface PublicSiteShellProps {
     children: React.ReactNode;
+    /** Lock the shell to the viewport and let children fill/scroll (plugin iframes). */
+    fillViewport?: boolean;
 }
 
 function isExternalUrl(url: string): boolean {
     return /^https?:\/\//i.test(url);
 }
 
-export default function PublicSiteShell({ children }: PublicSiteShellProps) {
+export default function PublicSiteShell({ children, fillViewport = false }: PublicSiteShellProps) {
     const pathname = usePathname();
     const { settings } = useSettings();
     const { t } = useTranslation();
+    const { pages: pluginPublicPages } = usePluginPublicPages();
 
     const appName = settings?.app_name?.trim() || 'FeatherPanel';
     const appDescription =
@@ -44,6 +48,11 @@ export default function PublicSiteShell({ children }: PublicSiteShellProps) {
         t('public_portal.description');
     const logo = settings?.app_logo_dark?.trim() || settings?.app_logo_white?.trim() || '/assets/logo.png';
     const homeHref = settings?.website_url?.trim() || settings?.app_url?.trim() || '/';
+
+    const isPluginPublicPath = pluginPublicPages.some(
+        (page) => page.enabled && (pathname === page.path || pathname.startsWith(page.path + '/')),
+    );
+    const useFillViewport = fillViewport || isPluginPublicPath;
 
     const navItems = [
         {
@@ -61,11 +70,19 @@ export default function PublicSiteShell({ children }: PublicSiteShellProps) {
                 settings?.knowledgebase_enabled === 'true' &&
                 (settings?.knowledgebase_public_enabled ?? 'true') === 'true',
         },
+        ...pluginPublicPages
+            .filter((page) => page.enabled && page.nav?.label)
+            .map((page) => ({
+                href: page.path,
+                label: page.nav!.label,
+                active: pathname === page.path || pathname.startsWith(page.path + '/'),
+                enabled: true,
+            })),
     ].filter((item) => item.enabled);
 
     return (
-        <div className='flex min-h-screen flex-col'>
-            <header className='border-border/60 bg-background/85 sticky top-0 z-30 border-b backdrop-blur-xl'>
+        <div className={cn('flex flex-col', useFillViewport ? 'h-svh max-h-svh overflow-hidden' : 'min-h-screen')}>
+            <header className='border-border/60 bg-background/85 sticky top-0 z-30 shrink-0 border-b backdrop-blur-xl'>
                 <div className='mx-auto w-full max-w-7xl px-4 md:px-8'>
                     <div className='flex h-16 items-center justify-between gap-4'>
                         {isExternalUrl(homeHref) ? (
@@ -126,22 +143,24 @@ export default function PublicSiteShell({ children }: PublicSiteShellProps) {
                 </div>
             </header>
 
-            <main className='flex-1'>{children}</main>
+            <main className={cn('flex-1', useFillViewport && 'min-h-0 overflow-hidden')}>{children}</main>
 
-            <footer className='border-border/60 bg-card/20 mt-10 border-t'>
-                <div className='mx-auto w-full max-w-7xl px-4 py-6 md:px-8'>
-                    <div className='flex flex-col gap-5 md:flex-row md:items-end md:justify-between'>
-                        <div className='max-w-md'>
-                            <p className='text-sm font-semibold'>{appName}</p>
-                            <p className='text-muted-foreground mt-1 text-xs leading-5'>{appDescription}</p>
-                        </div>
-                        <div className='flex flex-col items-start gap-3 md:items-end'>
-                            <ConfiguredLinks variant='footer' />
-                            <PoweredByFeatherPanel variant='footer' className='md:text-right' />
+            {!useFillViewport && (
+                <footer className='border-border/60 bg-card/20 mt-10 border-t'>
+                    <div className='mx-auto w-full max-w-7xl px-4 py-6 md:px-8'>
+                        <div className='flex flex-col gap-5 md:flex-row md:items-end md:justify-between'>
+                            <div className='max-w-md'>
+                                <p className='text-sm font-semibold'>{appName}</p>
+                                <p className='text-muted-foreground mt-1 text-xs leading-5'>{appDescription}</p>
+                            </div>
+                            <div className='flex flex-col items-start gap-3 md:items-end'>
+                                <ConfiguredLinks variant='footer' />
+                                <PoweredByFeatherPanel variant='footer' className='md:text-right' />
+                            </div>
                         </div>
                     </div>
-                </div>
-            </footer>
+                </footer>
+            )}
         </div>
     );
 }

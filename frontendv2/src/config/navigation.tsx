@@ -37,7 +37,7 @@ import {
     Gauge,
     PlayCircle,
     Package,
-    //  Cloud,
+    Cloud,
     Bot,
     Bell,
     Download,
@@ -58,6 +58,9 @@ import {
     Workflow,
     Ban,
     RefreshCcw,
+    ShieldAlert,
+    Bug,
+    Lightbulb,
 } from 'lucide-react';
 import { isEnabled } from '@/lib/utils';
 
@@ -86,6 +89,7 @@ export const getAdminNavigationItems = (
             category: 'admin',
             permission: Permissions.ADMIN_DASHBOARD_VIEW,
             group: 'overview',
+            priority: 1,
         },
         {
             id: 'user-dashboard',
@@ -96,6 +100,7 @@ export const getAdminNavigationItems = (
             isActive: false,
             category: 'admin',
             group: 'overview',
+            priority: 2,
         },
         {
             id: 'admin-kpi-analytics',
@@ -107,6 +112,65 @@ export const getAdminNavigationItems = (
             category: 'admin',
             permission: Permissions.ADMIN_USERS_VIEW,
             group: 'overview',
+            priority: 10,
+        },
+        {
+            id: 'admin-myfeatherpanel',
+            name: t('navigation.items.myFeatherPanel'),
+            title: t('navigation.items.myFeatherPanel'),
+            url: '/admin/cloud-management',
+            icon: Cloud,
+            isActive: false,
+            category: 'admin',
+            permission: Permissions.ADMIN_PLUGINS_VIEW,
+            group: 'overview',
+            priority: 20,
+            children: [
+                {
+                    id: 'admin-myfeatherpanel-cloud',
+                    name: t('navigation.items.cloudConnections'),
+                    title: t('navigation.items.cloudConnections'),
+                    url: '/admin/cloud-management',
+                    icon: Cloud,
+                    isActive: false,
+                    category: 'admin',
+                    permission: Permissions.ADMIN_ROOT,
+                    group: 'overview',
+                },
+                {
+                    id: 'admin-myfeatherpanel-report-issue',
+                    name: t('navigation.items.reportIssue'),
+                    title: t('navigation.items.reportIssue'),
+                    url: '/admin/feathercloud/issues',
+                    icon: Bug,
+                    isActive: false,
+                    category: 'admin',
+                    permission: Permissions.ADMIN_ROOT,
+                    group: 'overview',
+                },
+                {
+                    id: 'admin-myfeatherpanel-suggest',
+                    name: t('navigation.items.suggestFeature'),
+                    title: t('navigation.items.suggestFeature'),
+                    url: '/admin/feathercloud/suggestions',
+                    icon: Lightbulb,
+                    isActive: false,
+                    category: 'admin',
+                    permission: Permissions.ADMIN_ROOT,
+                    group: 'overview',
+                },
+                {
+                    id: 'admin-myfeatherpanel-marketplace',
+                    name: t('navigation.items.panelMarketplace'),
+                    title: t('navigation.items.panelMarketplace'),
+                    url: '/admin/feathercloud/marketplace',
+                    icon: Package,
+                    isActive: false,
+                    category: 'admin',
+                    permission: Permissions.ADMIN_PLUGINS_VIEW,
+                    group: 'overview',
+                },
+            ],
         },
         {
             id: 'admin-users',
@@ -412,6 +476,17 @@ export const getAdminNavigationItems = (
                     group: 'system',
                 },
                 {
+                    id: 'admin-abuseipdb',
+                    name: t('navigation.items.abuseipdb'),
+                    title: t('navigation.items.abuseipdb'),
+                    url: '/admin/abuseipdb',
+                    icon: ShieldAlert,
+                    isActive: false,
+                    category: 'admin',
+                    permission: Permissions.ADMIN_USERS_VIEW,
+                    group: 'system',
+                },
+                {
                     id: 'admin-subdomains',
                     name: t('navigation.items.subdomains'),
                     title: t('navigation.items.subdomains'),
@@ -442,17 +517,6 @@ export const getAdminNavigationItems = (
                     isActive: false,
                     category: 'admin',
                     permission: Permissions.ADMIN_STATISTICS_VIEW,
-                    group: 'content',
-                },
-                {
-                    id: 'admin-mythicalcloud',
-                    name: 'MythicalCloud',
-                    title: 'MythicalCloud',
-                    url: '/admin/cloud-management',
-                    icon: Globe,
-                    isActive: false,
-                    category: 'admin',
-                    permission: Permissions.ADMIN_ROOT,
                     group: 'content',
                 },
                 {
@@ -544,32 +608,6 @@ export const getAdminNavigationItems = (
                   },
               ]
             : []),
-
-        {
-            id: 'admin-feathercloud-marketplace',
-            name: t('navigation.items.marketplace'),
-            title: t('navigation.items.marketplace'),
-            url: '/admin/feathercloud/marketplace',
-            icon: Package,
-            isActive: false,
-            category: 'admin',
-            permission: Permissions.ADMIN_PLUGINS_VIEW,
-            group: 'content',
-        },
-        /**
-         * We already have it in the plugins section, so we don't need to show it here.
-         */
-        //{
-        //    id: 'admin-cloud-management',
-        //    name: t('navigation.items.cloudManagement'),
-        //    title: t('navigation.items.cloudManagement'),
-        //    url: '/admin/cloud-management',
-        //    icon: Cloud,
-        //    isActive: false,
-        //    category: 'admin',
-        //    permission: Permissions.ADMIN_ROOT,
-        //    group: 'feathercloud',
-        //},
     ];
 
     if (isEnabled(settings?.knowledgebase_enabled)) {

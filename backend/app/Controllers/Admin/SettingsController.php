@@ -158,6 +158,7 @@ class SettingsController
         ConfigInterface::RECAPTCHA_SECRET_KEY,
         ConfigInterface::FRIENDLY_CAPTCHA_SECRET_KEY,
         ConfigInterface::REFORGE_CAPTCHA_SECRET_KEY,
+        ConfigInterface::ABUSEIPDB_API_KEY,
         // Add other sensitive settings here
     ];
 
@@ -244,6 +245,12 @@ class SettingsController
                 ConfigInterface::REGISTRATION_DEVICE_LIMIT_ENABLED,
                 ConfigInterface::REGISTRATION_DEVICE_MAX_ACCOUNTS,
                 ConfigInterface::EMAIL_DOMAIN_BLOCKING_ENABLED,
+                ConfigInterface::ABUSEIPDB_ENABLED,
+                ConfigInterface::ABUSEIPDB_API_KEY,
+                ConfigInterface::ABUSEIPDB_CHECK_ON_REGISTER,
+                ConfigInterface::ABUSEIPDB_MIN_CONFIDENCE_SCORE,
+                ConfigInterface::ABUSEIPDB_MAX_AGE_DAYS,
+                ConfigInterface::ABUSEIPDB_REGISTER_ACTION,
                 ConfigInterface::TELEMETRY,
                 ConfigInterface::REQUIRE_TWO_FA_ADMINS,
                 ConfigInterface::AVATAR_PROVIDER,
@@ -254,6 +261,11 @@ class SettingsController
                 ConfigInterface::USER_ALLOW_FIRST_NAME_CHANGE,
                 ConfigInterface::USER_ALLOW_LAST_NAME_CHANGE,
                 ConfigInterface::USER_ALLOW_API_KEYS_CREATE,
+                ConfigInterface::USER_ALLOW_ACCOUNT_DELETION,
+                ConfigInterface::USER_ACCOUNT_DELETION_MODE,
+                ConfigInterface::USER_ACCOUNT_DELETION_DELAY_DAYS,
+                ConfigInterface::USER_ACCOUNT_DELETION_VERIFY_2FA,
+                ConfigInterface::USER_ACCOUNT_DELETION_VERIFY_EMAIL_OTP,
             ],
         ],
         'email' => [
@@ -320,6 +332,7 @@ class SettingsController
                 ConfigInterface::SERVER_ALLOW_SUBUSERS,
                 ConfigInterface::SERVER_ALLOW_SCHEDULES,
                 ConfigInterface::SERVER_LIFECYCLE_HOOKS_ENABLED,
+                ConfigInterface::SERVER_LIFECYCLE_HOOKS_CONTAINER_SHELL_ENABLED,
                 ConfigInterface::SERVER_BACKUP_RETENTION_MODE,
                 ConfigInterface::SERVER_ALLOW_USER_BACKUP_POLICY_EDIT,
                 ConfigInterface::SERVER_ALLOW_ALLOCATION_SELECT,
@@ -1419,6 +1432,86 @@ class SettingsController
                 'options' => ['true', 'false'],
                 'category' => 'security',
             ],
+            ConfigInterface::ABUSEIPDB_ENABLED => [
+                'name' => ConfigInterface::ABUSEIPDB_ENABLED,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::ABUSEIPDB_ENABLED, 'false'),
+                'description' => 'Enable AbuseIPDB integration for registration checks, user IP scanning, and optional reporting when banning users. Get an API key at https://www.abuseipdb.com/.',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'false',
+                'validation' => 'required|string|max:255',
+                'options' => ['true', 'false'],
+                'category' => 'security',
+            ],
+            ConfigInterface::ABUSEIPDB_API_KEY => [
+                'name' => ConfigInterface::ABUSEIPDB_API_KEY,
+                'value' => $this->maskSensitiveSetting(
+                    ConfigInterface::ABUSEIPDB_API_KEY,
+                    '',
+                ),
+                'description' => 'AbuseIPDB API key (stored encrypted). Required when AbuseIPDB is enabled.',
+                'type' => 'password',
+                'required' => false,
+                'placeholder' => 'Enter API key to change',
+                'validation' => 'string|max:255',
+                'options' => [],
+                'category' => 'security',
+                'sensitive' => true,
+            ],
+            ConfigInterface::ABUSEIPDB_CHECK_ON_REGISTER => [
+                'name' => ConfigInterface::ABUSEIPDB_CHECK_ON_REGISTER,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::ABUSEIPDB_CHECK_ON_REGISTER, 'false'),
+                'description' => 'Check a registering user\'s IP against AbuseIPDB before creating the account.',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'false',
+                'validation' => 'required|string|max:255',
+                'options' => ['true', 'false'],
+                'category' => 'security',
+            ],
+            ConfigInterface::ABUSEIPDB_MIN_CONFIDENCE_SCORE => [
+                'name' => ConfigInterface::ABUSEIPDB_MIN_CONFIDENCE_SCORE,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::ABUSEIPDB_MIN_CONFIDENCE_SCORE, '75'),
+                'description' => 'Minimum AbuseIPDB abuse confidence score (0-100) to treat an IP as reported. AbuseIPDB recommends 75-100 for blocking.',
+                'type' => 'number',
+                'required' => true,
+                'placeholder' => '75',
+                'validation' => 'required|integer|min:0|max:100',
+                'options' => [],
+                'category' => 'security',
+            ],
+            ConfigInterface::ABUSEIPDB_MAX_AGE_DAYS => [
+                'name' => ConfigInterface::ABUSEIPDB_MAX_AGE_DAYS,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::ABUSEIPDB_MAX_AGE_DAYS, '90'),
+                'description' => 'Only consider AbuseIPDB reports from the last N days when checking an IP (1-365).',
+                'type' => 'number',
+                'required' => true,
+                'placeholder' => '90',
+                'validation' => 'required|integer|min:1|max:365',
+                'options' => [],
+                'category' => 'security',
+            ],
+            ConfigInterface::ABUSEIPDB_REGISTER_ACTION => [
+                'name' => ConfigInterface::ABUSEIPDB_REGISTER_ACTION,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::ABUSEIPDB_REGISTER_ACTION, 'block'),
+                'description' => 'What to do when a registering IP meets the confidence score threshold.',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'block',
+                'validation' => 'required|string|max:32',
+                'options' => ['block', 'log', 'auto_ban'],
+                'category' => 'security',
+            ],
             ConfigInterface::APP_DEVELOPER_MODE => [
                 'name' => ConfigInterface::APP_DEVELOPER_MODE,
                 'value' => $this->app
@@ -1553,6 +1646,86 @@ class SettingsController
                         'true',
                     ),
                 'description' => 'Allow users to create API keys',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'true',
+                'validation' => 'required|string|max:255',
+                'options' => ['true', 'false'],
+                'category' => 'security',
+            ],
+            ConfigInterface::USER_ALLOW_ACCOUNT_DELETION => [
+                'name' => ConfigInterface::USER_ALLOW_ACCOUNT_DELETION,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::USER_ALLOW_ACCOUNT_DELETION,
+                        'false',
+                    ),
+                'description' => 'Allow users to permanently delete their own account',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'false',
+                'validation' => 'required|string|max:255',
+                'options' => ['true', 'false'],
+                'category' => 'security',
+            ],
+            ConfigInterface::USER_ACCOUNT_DELETION_MODE => [
+                'name' => ConfigInterface::USER_ACCOUNT_DELETION_MODE,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::USER_ACCOUNT_DELETION_MODE,
+                        'instant',
+                    ),
+                'description' => 'How account deletions are processed: instant, delayed, or after active services expire',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'instant',
+                'validation' => 'required|string|max:64',
+                'options' => ['instant', 'delayed', 'after_services'],
+                'category' => 'security',
+            ],
+            ConfigInterface::USER_ACCOUNT_DELETION_DELAY_DAYS => [
+                'name' => ConfigInterface::USER_ACCOUNT_DELETION_DELAY_DAYS,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::USER_ACCOUNT_DELETION_DELAY_DAYS,
+                        '7',
+                    ),
+                'description' => 'Days to wait before hard-deleting when mode is delayed (1-365)',
+                'type' => 'text',
+                'required' => true,
+                'placeholder' => '7',
+                'validation' => 'required|string|max:10',
+                'options' => [],
+                'category' => 'security',
+            ],
+            ConfigInterface::USER_ACCOUNT_DELETION_VERIFY_2FA => [
+                'name' => ConfigInterface::USER_ACCOUNT_DELETION_VERIFY_2FA,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::USER_ACCOUNT_DELETION_VERIFY_2FA,
+                        'true',
+                    ),
+                'description' => 'Require two-factor authentication to confirm account deletion',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'true',
+                'validation' => 'required|string|max:255',
+                'options' => ['true', 'false'],
+                'category' => 'security',
+            ],
+            ConfigInterface::USER_ACCOUNT_DELETION_VERIFY_EMAIL_OTP => [
+                'name' => ConfigInterface::USER_ACCOUNT_DELETION_VERIFY_EMAIL_OTP,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::USER_ACCOUNT_DELETION_VERIFY_EMAIL_OTP,
+                        'true',
+                    ),
+                'description' => 'Require email one-time password to confirm account deletion',
                 'type' => 'select',
                 'required' => true,
                 'placeholder' => 'true',
@@ -1746,6 +1919,22 @@ class SettingsController
                         'false',
                     ),
                 'description' => 'Show the Lifecycle Hooks page in server navigation and allow configuration. Uses the same schedule permissions as tasks (schedule.read / schedule.update). When disabled, the menu entry is hidden, hooks do not run on power actions or server crashes, and API changes are rejected. Independent of schedules: you can enable hooks without enabling cron schedules.',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'false',
+                'validation' => 'required|string|max:255',
+                'options' => ['true', 'false'],
+                'category' => 'servers',
+            ],
+            ConfigInterface::SERVER_LIFECYCLE_HOOKS_CONTAINER_SHELL_ENABLED => [
+                'name' => ConfigInterface::SERVER_LIFECYCLE_HOOKS_CONTAINER_SHELL_ENABLED,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::SERVER_LIFECYCLE_HOOKS_CONTAINER_SHELL_ENABLED,
+                        'false',
+                    ),
+                'description' => 'Allow the Container Shell lifecycle step (docker exec /bin/sh -c inside the server container). This is a security-sensitive capability: users with schedule.update can run arbitrary shell commands in running containers when lifecycle hooks fire. Default off. Requires Lifecycle Hooks Enabled. Existing Container Shell steps will not execute while this is disabled.',
                 'type' => 'select',
                 'required' => true,
                 'placeholder' => 'false',

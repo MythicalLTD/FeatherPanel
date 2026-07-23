@@ -90,6 +90,8 @@ export interface AppSettings {
     server_allow_schedules: string;
     /** Admin-only: gates lifecycle hooks UI + execution (sidebar entry hidden when false). */
     server_lifecycle_hooks_enabled: string;
+    /** Admin-only: gates Container Shell (docker exec) lifecycle steps. Default off (security). */
+    server_lifecycle_hooks_container_shell_enabled: string;
     file_trash_enabled: string;
     file_trash_max_size_mb: string;
     file_trash_retention_days: string;
@@ -103,6 +105,11 @@ export interface AppSettings {
     user_allow_first_name_change: string;
     user_allow_last_name_change: string;
     user_allow_api_keys_create: string;
+    user_allow_account_deletion: string;
+    user_account_deletion_mode: 'instant' | 'delayed' | 'after_services';
+    user_account_deletion_delay_days: string;
+    user_account_deletion_verify_2fa: string;
+    user_account_deletion_verify_email_otp: string;
     chatbot_temperature: string;
     chatbot_max_tokens: string;
     chatbot_max_history: string;

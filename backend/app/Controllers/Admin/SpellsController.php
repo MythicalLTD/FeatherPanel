@@ -24,6 +24,7 @@ use App\Chat\Activity;
 use App\Chat\SpellVariable;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
+use App\Config\ConfigInterface;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Plugins\Events\Events\SpellsEvent;
 use Symfony\Component\HttpFoundation\Request;
@@ -1578,13 +1579,19 @@ class SpellsController
             $page = (int) ($request->query->get('page') ?? 1);
             $perPage = (int) ($request->query->get('per_page') ?? 20);
             $category = trim((string) ($request->query->get('category') ?? ''));
+            $channel = trim((string) ($request->query->get('channel') ?? ''));
+            $sort = trim((string) ($request->query->get('sort') ?? ''));
 
-            // Try to get from cache first (cache for 60 minutes)
+            $mythicResult = $this->tryMythicEggsList($q, $page, $perPage, $category, $channel, $sort);
+            if ($mythicResult !== null) {
+                return $mythicResult;
+            }
+
+            // Fallback: Pterodactyl eggs API
             $cacheKey = 'pterodactyl_eggs_list';
             $allEggs = \App\Cache\Cache::get($cacheKey);
 
             if ($allEggs === null) {
-                // Fetch from Pterodactyl eggs API
                 $url = 'https://eggs.pterodactyl.io/api/eggs.json';
 
                 $context = stream_context_create([
@@ -1605,11 +1612,9 @@ class SpellsController
                     return ApiResponse::error('Invalid response from eggs store', 'ONLINE_LIST_INVALID', 500);
                 }
 
-                // Cache for 60 minutes
                 \App\Cache\Cache::put($cacheKey, $allEggs, 60);
             }
 
-            // Filter by category if provided
             $filteredEggs = $allEggs;
             if ($category !== '') {
                 $filteredEggs = array_filter($filteredEggs, function ($egg) use ($category) {
@@ -1618,7 +1623,6 @@ class SpellsController
                 $filteredEggs = array_values($filteredEggs);
             }
 
-            // Filter by search query if provided
             if ($q !== '') {
                 $filteredEggs = array_filter($filteredEggs, function ($egg) use ($q) {
                     return stripos($egg['name'] ?? '', $q) !== false
@@ -1629,15 +1633,12 @@ class SpellsController
                 $filteredEggs = array_values($filteredEggs);
             }
 
-            // Calculate pagination
             $total = count($filteredEggs);
-            $totalPages = ceil($total / $perPage);
+            $totalPages = (int) ceil($total / max(1, $perPage));
             $offset = ($page - 1) * $perPage;
             $paginatedEggs = array_slice($filteredEggs, $offset, $perPage);
 
-            // Transform eggs to match expected format
             $onlineSpells = array_map(static function (array $egg): array {
-                // Extract author from repo URL or use default
                 $author = 'Pterodactyl';
                 if (isset($egg['repo']) && preg_match('/github\.com\/([^\/]+)/', $egg['repo'], $matches)) {
                     $author = $matches[1];
@@ -1648,13 +1649,13 @@ class SpellsController
                     'identifier' => $egg['id'] ?? '',
                     'name' => $egg['name'] ?? '',
                     'description' => $egg['description'] ?? null,
-                    'icon' => null, // Pterodactyl eggs don't have icons
+                    'icon' => null,
                     'website' => $egg['repo'] ?? null,
                     'author' => $author,
                     'author_email' => null,
                     'maintainers' => [],
                     'tags' => [$egg['category'] ?? 'unknown'],
-                    'verified' => true, // All Pterodactyl eggs are verified
+                    'verified' => true,
                     'downloads' => 0,
                     'created_at' => $egg['lastUpdated'] ?? null,
                     'updated_at' => $egg['lastUpdated'] ?? null,
@@ -1679,6 +1680,7 @@ class SpellsController
             return ApiResponse::success([
                 'spells' => $onlineSpells,
                 'pagination' => $pagination,
+                'source' => 'pterodactyl',
             ], 'Online spells fetched', 200);
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to fetch online spells: ' . $e->getMessage(), 500);
@@ -1732,45 +1734,64 @@ class SpellsController
                 return ApiResponse::error('Realm not found', 'REALM_NOT_FOUND', 404);
             }
 
-            // Fetch Pterodactyl eggs store
-            $storeUrl = 'https://eggs.pterodactyl.io/api/eggs.json';
-            $context = stream_context_create([
-                'http' => [
-                    'timeout' => 15,
-                    'ignore_errors' => true,
-                    'user_agent' => 'FeatherPanel/1.0',
-                ],
-            ]);
-
-            $storeResp = @file_get_contents($storeUrl, false, $context);
-            if ($storeResp === false) {
-                return ApiResponse::error('Failed to fetch Pterodactyl eggs store', 'EGGS_STORE_FETCH_FAILED', 500);
-            }
-
-            $allEggs = json_decode($storeResp, true);
-            if (!is_array($allEggs)) {
-                return ApiResponse::error('Invalid eggs store format', 'INVALID_EGGS_STORE', 500);
-            }
-
-            // Find the egg by identifier
+            $fileContent = null;
             $match = null;
-            foreach ($allEggs as $egg) {
-                if (($egg['id'] ?? '') === $identifier) {
-                    $match = $egg;
-                    break;
+
+            // Prefer Mythic Panel API egg download when available
+            try {
+                $config = App::getInstance(true)->getConfig();
+                if (($config->getSetting(ConfigInterface::FEATHERCLOUD_EGGS_ENABLED, 'true') ?? 'true') === 'true') {
+                    $client = new \App\Services\FeatherCloud\FeatherCloudClient();
+                    $fileContent = $client->downloadEgg($identifier);
+                    $match = [
+                        'id' => $identifier,
+                        'display_name' => $identifier,
+                        'author' => 'Mythic',
+                        'description' => '',
+                    ];
                 }
+            } catch (\Throwable $e) {
+                App::getInstance(true)->getLogger()->debug('Mythic egg download unavailable, falling back: ' . $e->getMessage());
             }
 
-            if (!$match || !isset($match['downloadUrl'])) {
-                App::getInstance(true)->getLogger()->error('Egg installation failed for identifier: ' . $identifier);
+            if ($fileContent === null) {
+                $storeUrl = 'https://eggs.pterodactyl.io/api/eggs.json';
+                $context = stream_context_create([
+                    'http' => [
+                        'timeout' => 15,
+                        'ignore_errors' => true,
+                        'user_agent' => 'FeatherPanel/1.0',
+                    ],
+                ]);
 
-                return ApiResponse::error("Egg '$identifier' not found in Pterodactyl store", 'EGG_NOT_FOUND', 404);
-            }
+                $storeResp = @file_get_contents($storeUrl, false, $context);
+                if ($storeResp === false) {
+                    return ApiResponse::error('Failed to fetch Pterodactyl eggs store', 'EGGS_STORE_FETCH_FAILED', 500);
+                }
 
-            $downloadUrl = $match['downloadUrl'];
-            $fileContent = @file_get_contents($downloadUrl, false, $context);
-            if ($fileContent === false) {
-                return ApiResponse::error('Failed to download egg JSON', 'EGG_DOWNLOAD_FAILED', 500);
+                $allEggs = json_decode($storeResp, true);
+                if (!is_array($allEggs)) {
+                    return ApiResponse::error('Invalid eggs store format', 'INVALID_EGGS_STORE', 500);
+                }
+
+                foreach ($allEggs as $egg) {
+                    if (($egg['id'] ?? '') === $identifier) {
+                        $match = $egg;
+                        break;
+                    }
+                }
+
+                if (!$match || !isset($match['downloadUrl'])) {
+                    App::getInstance(true)->getLogger()->error('Egg installation failed for identifier: ' . $identifier);
+
+                    return ApiResponse::error("Egg '$identifier' not found in Pterodactyl store", 'EGG_NOT_FOUND', 404);
+                }
+
+                $downloadUrl = $match['downloadUrl'];
+                $fileContent = @file_get_contents($downloadUrl, false, $context);
+                if ($fileContent === false) {
+                    return ApiResponse::error('Failed to download egg JSON', 'EGG_DOWNLOAD_FAILED', 500);
+                }
             }
 
             // Parse the downloaded JSON content
@@ -1781,7 +1802,7 @@ class SpellsController
 
             // Map JSON data to spell format
             $spellData = self::mapImportJsonToSpellData($jsonData, (int) $realmId, [
-                'name' => $jsonData['name'] ?? $match['display_name'] ?? 'Imported Spell',
+                'name' => $jsonData['name'] ?? $match['display_name'] ?? $match['name'] ?? 'Imported Spell',
                 'author' => $jsonData['author'] ?? $match['author'] ?? 'Unknown',
                 'description' => $jsonData['description'] ?? $match['description'] ?? '',
             ]);
@@ -1875,6 +1896,86 @@ class SpellsController
             return ApiResponse::success(['spell' => $spell], 'Spell installed successfully from online repository', 201);
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to install spell from online repository: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Prefer Mythic Panel API /eggs when the eggs module is enabled.
+     */
+    private function tryMythicEggsList(string $q, int $page, int $perPage, string $category, string $channel, string $sort = ''): ?Response
+    {
+        try {
+            $config = App::getInstance(true)->getConfig();
+            if (($config->getSetting(ConfigInterface::FEATHERCLOUD_EGGS_ENABLED, 'true') ?? 'true') !== 'true') {
+                return null;
+            }
+
+            $client = new \App\Services\FeatherCloud\FeatherCloudClient();
+            $query = array_filter([
+                'q' => $q !== '' ? $q : null,
+                'page' => $page,
+                'per_page' => $perPage,
+                'category' => $category !== '' ? $category : null,
+                'channel' => $channel !== '' ? $channel : null,
+                'sort' => $sort !== '' ? $sort : null,
+            ], static fn ($v) => $v !== null && $v !== '');
+
+            $data = $client->listEggs($query);
+            $eggs = $data['eggs'] ?? $data['data'] ?? $data['items'] ?? null;
+            if (!is_array($eggs)) {
+                // Some responses return a bare list as data
+                $eggs = array_is_list($data) ? $data : [];
+            }
+
+            $onlineSpells = array_map(static function (array $egg): array {
+                $id = (string) ($egg['id'] ?? $egg['identifier'] ?? $egg['slug'] ?? '');
+                $category = $egg['category'] ?? ($egg['tags'][0] ?? 'unknown');
+
+                return [
+                    'id' => $egg['id'] ?? null,
+                    'identifier' => $id,
+                    'name' => $egg['name'] ?? $id,
+                    'description' => $egg['description'] ?? null,
+                    'icon' => $egg['icon'] ?? null,
+                    'website' => $egg['website'] ?? ($egg['repo'] ?? null),
+                    'author' => $egg['author'] ?? ($egg['channel'] ?? 'Mythic'),
+                    'author_email' => $egg['author_email'] ?? null,
+                    'maintainers' => $egg['maintainers'] ?? [],
+                    'tags' => is_array($egg['tags'] ?? null) ? $egg['tags'] : [$category],
+                    'verified' => (bool) ($egg['verified'] ?? true),
+                    'downloads' => (int) ($egg['downloads'] ?? 0),
+                    'created_at' => $egg['created_at'] ?? null,
+                    'updated_at' => $egg['updated_at'] ?? null,
+                    'latest_version' => [
+                        'version' => $egg['version'] ?? null,
+                        'download_url' => $egg['download_url'] ?? null,
+                        'file_size' => $egg['file_size'] ?? null,
+                        'created_at' => $egg['updated_at'] ?? null,
+                    ],
+                    'source' => 'mythic',
+                ];
+            }, $eggs);
+
+            $paginationMeta = $data['pagination'] ?? $data['meta'] ?? [];
+            $total = (int) ($paginationMeta['total'] ?? $paginationMeta['total_records'] ?? count($onlineSpells));
+            $totalPages = (int) ($paginationMeta['total_pages'] ?? max(1, (int) ceil($total / max(1, $perPage))));
+
+            return ApiResponse::success([
+                'spells' => $onlineSpells,
+                'pagination' => [
+                    'current_page' => (int) ($paginationMeta['current_page'] ?? $paginationMeta['page'] ?? $page),
+                    'total_pages' => $totalPages,
+                    'total_records' => $total,
+                    'per_page' => (int) ($paginationMeta['per_page'] ?? $perPage),
+                    'has_next' => (bool) ($paginationMeta['has_next'] ?? ($page < $totalPages)),
+                    'has_prev' => (bool) ($paginationMeta['has_prev'] ?? ($page > 1)),
+                ],
+                'source' => 'mythic',
+            ], 'Online spells fetched from Mythic', 200);
+        } catch (\Throwable $e) {
+            App::getInstance(true)->getLogger()->warning('Mythic eggs list unavailable, falling back: ' . $e->getMessage());
+
+            return null;
         }
     }
 

@@ -42,6 +42,7 @@ type HooksApi = {
     success: boolean;
     data: {
         feature_enabled: boolean;
+        container_shell_enabled: boolean;
         hooks: Array<{
             hook_type: LifecycleHookType;
             steps: LifecycleHookStep[];
@@ -68,6 +69,7 @@ export default function EditLifecycleHookStepPage() {
 
     const [loading, setLoading] = React.useState(true);
     const [featureEnabled, setFeatureEnabled] = React.useState(false);
+    const [containerShellEnabled, setContainerShellEnabled] = React.useState(false);
     const [form, setForm] = React.useState<StepFormState | null>(null);
     const [saving, setSaving] = React.useState(false);
 
@@ -100,6 +102,7 @@ export default function EditLifecycleHookStepPage() {
                 const { data } = await axios.get<HooksApi>(`/api/user/servers/${uuidShort}/lifecycle-hooks`);
                 if (!cancelled && data.success) {
                     setFeatureEnabled(Boolean(data.data.feature_enabled));
+                    setContainerShellEnabled(Boolean(data.data.container_shell_enabled));
                     const hook = data.data.hooks.find((h) => h.hook_type === hookType);
                     const step = hook?.steps?.find((s) => s.id === stepId);
                     if (step) {
@@ -145,9 +148,31 @@ export default function EditLifecycleHookStepPage() {
             toast.error(t('lifecycleHooks.messages.commandRequired'));
             return;
         }
+        if (form.task_type === 'container_shell') {
+            if (!containerShellEnabled) {
+                toast.error(t('lifecycleHooks.messages.shellDisabled'));
+                return;
+            }
+            if (form.container_shell_command.trim() === '') {
+                toast.error(t('lifecycleHooks.messages.shellCommandRequired'));
+                return;
+            }
+            const timeout = Math.floor(Number(form.container_shell_timeout));
+            if (!Number.isFinite(timeout) || timeout < 1 || timeout > 120) {
+                toast.error(t('lifecycleHooks.messages.shellTimeoutInvalid'));
+                return;
+            }
+        }
         if (form.task_type === 'http_request' && form.http_url.trim() === '') {
             toast.error(t('lifecycleHooks.messages.urlRequired'));
             return;
+        }
+        if (form.task_type === 'sleep') {
+            const seconds = Math.floor(Number(form.sleep_seconds));
+            if (!Number.isFinite(seconds) || seconds < 1 || seconds > 300) {
+                toast.error(t('lifecycleHooks.messages.sleepSecondsInvalid'));
+                return;
+            }
         }
 
         try {
@@ -289,6 +314,7 @@ export default function EditLifecycleHookStepPage() {
                         cancelLabel={t('common.cancel')}
                         onCancel={back}
                         submitLabel={t('lifecycleHooks.form.saveStep')}
+                        containerShellEnabled={containerShellEnabled}
                     />
                 </PageCard>
             </div>

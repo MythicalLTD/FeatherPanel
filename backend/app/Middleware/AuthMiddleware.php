@@ -40,6 +40,9 @@ class AuthMiddleware implements MiddlewareInterface
             if ($userInfo['banned'] == 'true') {
                 return ApiResponse::error('User is banned', 'USER_BANNED');
             }
+            if (($userInfo['deleted'] ?? 'false') === 'true') {
+                return ApiResponse::error('Account is deleted', 'ACCOUNT_DELETED', 403, []);
+            }
 
             User::updateUser($userInfo['uuid'], ['last_ip' => CloudFlareRealIP::getRealIP()]);
             UserDeviceTracker::trackFromRequest($request, $userInfo);
@@ -68,6 +71,9 @@ class AuthMiddleware implements MiddlewareInterface
                 }
                 if ($userInfo['banned'] == 'true') {
                     return ApiResponse::error('User is banned', 'USER_BANNED');
+                }
+                if (($userInfo['deleted'] ?? 'false') === 'true') {
+                    return ApiResponse::error('Account is deleted', 'ACCOUNT_DELETED', 403, []);
                 }
 
                 $clientIp = CloudFlareRealIP::getRealIP();

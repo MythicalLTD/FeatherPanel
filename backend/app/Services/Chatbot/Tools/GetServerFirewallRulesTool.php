@@ -17,13 +17,13 @@
 
 namespace App\Services\Chatbot\Tools;
 
-use App\Helpers\WingsUrlHelper;
 use App\App;
 use App\Chat\Node;
 use App\Chat\Server;
 use App\Services\Wings\Wings;
 use App\Helpers\ServerGateway;
 use App\Config\ConfigInterface;
+use App\Helpers\WingsUrlHelper;
 
 /**
  * Tool to get firewall rules for a server.

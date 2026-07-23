@@ -63,7 +63,8 @@ const UPDATE_PROGRESS_STORAGE_KEY = 'featherpanel:update_in_progress';
 const UPDATE_PROGRESS_TTL_MS = 10 * 60 * 1000;
 
 const ADMIN_SETTING_DISPLAY_NAMES: Record<string, string> = {
-    server_lifecycle_hooks_enabled: 'Lifecycle hooks (pre-start / pre-stop)',
+    server_lifecycle_hooks_enabled: 'Lifecycle hooks (pre-start / pre-stop / post-start / crash)',
+    server_lifecycle_hooks_container_shell_enabled: 'Lifecycle Container Shell (docker exec)',
 };
 
 function formatSettingName(name: string, key: string) {

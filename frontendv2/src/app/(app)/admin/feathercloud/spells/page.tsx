@@ -47,9 +47,12 @@ import {
     Info,
     BadgeCheck,
     Package,
+    Star,
+    Download,
 } from 'lucide-react';
 
 interface OnlineSpell {
+    id?: string | number | null;
     identifier: string;
     name: string;
     description?: string;
@@ -62,6 +65,14 @@ interface OnlineSpell {
     latest_version?: {
         version: string;
     };
+}
+
+interface EggReview {
+    id?: string | number;
+    rating?: number;
+    comment?: string;
+    createdAt?: string;
+    user?: { id?: number | string; name?: string };
 }
 
 interface OnlinePagination {
@@ -97,6 +108,17 @@ export default function SpellsPage() {
     const [newRealmDescription, setNewRealmDescription] = useState('');
     const [installedSpellIds, setInstalledSpellIds] = useState<string[]>([]);
     const [installingId, setInstallingId] = useState<string | null>(null);
+    const [channel, setChannel] = useState<string>('');
+    const [sort, setSort] = useState<string>('downloads');
+    const [reviewsOpen, setReviewsOpen] = useState(false);
+    const [reviewSpell, setReviewSpell] = useState<OnlineSpell | null>(null);
+    const [eggReviews, setEggReviews] = useState<EggReview[]>([]);
+    const [reviewsMeta, setReviewsMeta] = useState<{ averageRating?: number; reviewCount?: number } | null>(null);
+    const [reviewsLoading, setReviewsLoading] = useState(false);
+    const [reviewRating, setReviewRating] = useState(5);
+    const [reviewComment, setReviewComment] = useState('');
+    const [savingReview, setSavingReview] = useState(false);
+    const [downloadingEggId, setDownloadingEggId] = useState<string | null>(null);
 
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-feathercloud-spells');
 
@@ -152,6 +174,8 @@ export default function SpellsPage() {
 
             const q = onlineSearch.trim();
             if (q) params.set('q', q);
+            if (channel) params.set('channel', channel);
+            if (sort) params.set('sort', sort);
 
             try {
                 const response = await axios.get(`/api/admin/spells/online/list?${params.toString()}`);
@@ -186,8 +210,109 @@ export default function SpellsPage() {
                 }
             }
         },
-        [onlineSearch, t],
+        [onlineSearch, channel, sort, t],
     );
+
+    const eggIdFor = (spell: OnlineSpell): string => String(spell.id ?? spell.identifier);
+
+    const openReviews = async (spell: OnlineSpell) => {
+        setReviewSpell(spell);
+        setReviewsOpen(true);
+        setReviewsLoading(true);
+        setEggReviews([]);
+        setReviewsMeta(null);
+        setReviewComment('');
+        setReviewRating(5);
+        try {
+            const id = eggIdFor(spell);
+            const response = await axios.get(`/api/admin/cloud/data/eggs/${encodeURIComponent(id)}/reviews`);
+            const payload = response.data?.data;
+            const list = Array.isArray(payload)
+                ? payload
+                : Array.isArray(payload?.data)
+                  ? payload.data
+                  : Array.isArray(payload?.reviews)
+                    ? payload.reviews
+                    : [];
+            setEggReviews(list);
+            setReviewsMeta(payload?.meta ?? null);
+        } catch (err) {
+            toast.error(
+                axios.isAxiosError(err)
+                    ? err.response?.data?.message || 'Failed to load reviews'
+                    : 'Failed to load reviews',
+            );
+        } finally {
+            setReviewsLoading(false);
+        }
+    };
+
+    const submitEggReview = async () => {
+        if (!reviewSpell) return;
+        setSavingReview(true);
+        try {
+            await axios.post(`/api/admin/cloud/data/eggs/${encodeURIComponent(eggIdFor(reviewSpell))}/reviews`, {
+                rating: reviewRating,
+                comment: reviewComment.trim() || undefined,
+            });
+            toast.success('Review saved');
+            await openReviews(reviewSpell);
+        } catch (err) {
+            if (axios.isAxiosError(err) && err.response?.data?.error_code === 'MEMBER_UUID_REQUIRED') {
+                toast.error(err.response.data.message || 'Link a matching Mythic email to leave reviews.');
+                return;
+            }
+            toast.error(
+                axios.isAxiosError(err)
+                    ? err.response?.data?.message || 'Failed to save review'
+                    : 'Failed to save review',
+            );
+        } finally {
+            setSavingReview(false);
+        }
+    };
+
+    const deleteEggReview = async () => {
+        if (!reviewSpell) return;
+        setSavingReview(true);
+        try {
+            await axios.delete(`/api/admin/cloud/data/eggs/${encodeURIComponent(eggIdFor(reviewSpell))}/reviews`);
+            toast.success('Review deleted');
+            await openReviews(reviewSpell);
+        } catch (err) {
+            toast.error(
+                axios.isAxiosError(err)
+                    ? err.response?.data?.message || 'Failed to delete review'
+                    : 'Failed to delete review',
+            );
+        } finally {
+            setSavingReview(false);
+        }
+    };
+
+    const downloadEggJson = async (spell: OnlineSpell) => {
+        const id = eggIdFor(spell);
+        setDownloadingEggId(id);
+        try {
+            const response = await axios.get(`/api/admin/cloud/data/eggs/${encodeURIComponent(id)}/download`, {
+                responseType: 'blob',
+            });
+            const blob = new Blob([response.data], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `egg-${id}.json`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+            toast.success('Egg JSON downloaded');
+        } catch (err) {
+            toast.error(axios.isAxiosError(err) ? err.response?.data?.message || 'Download failed' : 'Download failed');
+        } finally {
+            setDownloadingEggId(null);
+        }
+    };
 
     const loadMoreOnlineSpells = useCallback(() => {
         if (loadingMore || onlineLoading) return;
@@ -342,6 +467,28 @@ export default function SpellsPage() {
                                 autoComplete='off'
                             />
                         </div>
+                        <select
+                            className='border-border bg-background h-11 rounded-md border px-3 text-sm'
+                            value={channel}
+                            onChange={(e) => setChannel(e.target.value)}
+                            aria-label='Channel'
+                        >
+                            <option value=''>All channels</option>
+                            <option value='mythicalsystems'>Mythic</option>
+                            <option value='pterodactyl'>Pterodactyl</option>
+                        </select>
+                        <select
+                            className='border-border bg-background h-11 rounded-md border px-3 text-sm'
+                            value={sort}
+                            onChange={(e) => setSort(e.target.value)}
+                            aria-label='Sort'
+                        >
+                            <option value='downloads'>Downloads</option>
+                            <option value='rating'>Rating</option>
+                            <option value='reviews'>Reviews</option>
+                            <option value='newest'>Newest</option>
+                            <option value='name'>Name</option>
+                        </select>
                         <Button
                             type='button'
                             variant='default'
@@ -475,7 +622,7 @@ export default function SpellsPage() {
                                         </div>
                                     }
                                     actions={
-                                        <div className='flex w-full items-center gap-2'>
+                                        <div className='flex w-full flex-wrap items-center gap-2'>
                                             <Button
                                                 variant='default'
                                                 className='flex-1'
@@ -488,6 +635,27 @@ export default function SpellsPage() {
                                                     <CloudDownload className='mr-2 h-4 w-4' />
                                                 )}
                                                 {t('admin.marketplace.spells.grid.install')}
+                                            </Button>
+                                            <Button
+                                                variant='outline'
+                                                size='icon'
+                                                title='Download egg JSON'
+                                                disabled={downloadingEggId === eggIdFor(spell)}
+                                                onClick={() => void downloadEggJson(spell)}
+                                            >
+                                                {downloadingEggId === eggIdFor(spell) ? (
+                                                    <RefreshCw className='h-4 w-4 animate-spin' />
+                                                ) : (
+                                                    <Download className='h-4 w-4' />
+                                                )}
+                                            </Button>
+                                            <Button
+                                                variant='outline'
+                                                size='icon'
+                                                title='Reviews'
+                                                onClick={() => void openReviews(spell)}
+                                            >
+                                                <Star className='h-4 w-4' />
                                             </Button>
                                             {spell.website && (
                                                 <Button
@@ -805,6 +973,86 @@ export default function SpellsPage() {
                                     {t('admin.marketplace.spells.dialog.install')}
                                 </>
                             )}
+                        </Button>
+                    </SheetFooter>
+                </div>
+            </Sheet>
+
+            <Sheet open={reviewsOpen} onOpenChange={setReviewsOpen}>
+                <div className='flex h-full flex-col'>
+                    <SheetHeader>
+                        <SheetTitle>Egg reviews</SheetTitle>
+                        <SheetDescription>
+                            {reviewSpell?.name} ({reviewSpell ? eggIdFor(reviewSpell) : ''})
+                            {reviewsMeta?.averageRating != null
+                                ? ` · ★ ${reviewsMeta.averageRating} (${reviewsMeta.reviewCount ?? 0})`
+                                : ''}
+                        </SheetDescription>
+                    </SheetHeader>
+                    <div className='flex-1 space-y-4 overflow-y-auto pr-2'>
+                        <div className='grid gap-3'>
+                            <div>
+                                <label className='text-muted-foreground mb-1 block text-xs font-semibold uppercase'>
+                                    Rating
+                                </label>
+                                <Input
+                                    type='number'
+                                    min={1}
+                                    max={5}
+                                    value={reviewRating}
+                                    onChange={(e) =>
+                                        setReviewRating(Math.min(5, Math.max(1, Number(e.target.value) || 1)))
+                                    }
+                                />
+                            </div>
+                            <div>
+                                <label className='text-muted-foreground mb-1 block text-xs font-semibold uppercase'>
+                                    Comment
+                                </label>
+                                <Textarea
+                                    rows={3}
+                                    value={reviewComment}
+                                    onChange={(e) => setReviewComment(e.target.value)}
+                                    placeholder='Optional (max 1000 chars)'
+                                />
+                            </div>
+                            <div className='flex gap-2'>
+                                <Button onClick={() => void submitEggReview()} disabled={savingReview}>
+                                    {savingReview ? <RefreshCw className='mr-2 h-4 w-4 animate-spin' /> : null}
+                                    Save review
+                                </Button>
+                                <Button
+                                    variant='outline'
+                                    onClick={() => void deleteEggReview()}
+                                    disabled={savingReview}
+                                >
+                                    Delete mine
+                                </Button>
+                            </div>
+                        </div>
+                        {reviewsLoading ? (
+                            <div className='text-muted-foreground flex items-center gap-2 text-sm'>
+                                <RefreshCw className='h-4 w-4 animate-spin' /> Loading…
+                            </div>
+                        ) : eggReviews.length === 0 ? (
+                            <p className='text-muted-foreground text-sm'>No reviews yet.</p>
+                        ) : (
+                            <ul className='space-y-2'>
+                                {eggReviews.map((r) => (
+                                    <li key={String(r.id)} className='border-border/40 rounded-lg border p-3 text-sm'>
+                                        <p className='font-medium'>
+                                            {'★'.repeat(Number(r.rating || 0))}{' '}
+                                            <span className='text-muted-foreground'>{r.user?.name || 'User'}</span>
+                                        </p>
+                                        {r.comment && <p className='text-muted-foreground mt-1'>{r.comment}</p>}
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </div>
+                    <SheetFooter className='mt-6'>
+                        <Button variant='ghost' onClick={() => setReviewsOpen(false)}>
+                            Close
                         </Button>
                     </SheetFooter>
                 </div>

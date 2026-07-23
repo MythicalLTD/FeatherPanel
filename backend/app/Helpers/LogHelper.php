@@ -18,6 +18,7 @@
 namespace App\Helpers;
 
 use App\App;
+use App\Config\ConfigInterface;
 
 /**
  * LogHelper - Utility class for log file operations and uploads.
@@ -125,7 +126,7 @@ class LogHelper
     }
 
     /**
-     * Upload log content to mclo.gs paste service.
+     * Upload log content to Mythic Panel paste API when linked, otherwise legacy paste host.
      *
      * @param string $content Log content to upload
      *
@@ -133,6 +134,11 @@ class LogHelper
      */
     public static function uploadToMcloGs(string $content): array
     {
+        $mythic = self::uploadToMythicPaste($content);
+        if ($mythic !== null) {
+            return $mythic;
+        }
+
         try {
             $ch = curl_init('https://api.featherpanel.com/1/log');
             curl_setopt($ch, CURLOPT_POST, true);
@@ -266,5 +272,45 @@ class LogHelper
         }
 
         return 'unknown';
+    }
+
+    /**
+     * @return array{success: bool, id?: string, url?: string, raw?: string, error?: string}|null
+     */
+    private static function uploadToMythicPaste(string $content): ?array
+    {
+        try {
+            $config = App::getInstance(true)->getConfig();
+            if (($config->getSetting(ConfigInterface::FEATHERCLOUD_PASTES_ENABLED, 'true') ?? 'true') !== 'true') {
+                return null;
+            }
+
+            $client = new \App\Services\FeatherCloud\FeatherCloudClient();
+            if (!$client->isConfigured()) {
+                return null;
+            }
+
+            $data = $client->createPaste(['content' => $content]);
+            $id = (string) ($data['id'] ?? $data['key'] ?? '');
+            if ($id === '') {
+                return [
+                    'success' => false,
+                    'error' => 'Mythic paste response missing id',
+                ];
+            }
+
+            $base = $client->getBaseUrl();
+
+            return [
+                'success' => true,
+                'id' => $id,
+                'url' => $data['url'] ?? ('https://pastes.mythicalsystems.org/p/' . $id),
+                'raw' => $data['raw'] ?? ($base . '/raw/' . $id),
+            ];
+        } catch (\Throwable $e) {
+            App::getInstance(true)->getLogger()->warning('Mythic paste upload failed, falling back: ' . $e->getMessage());
+
+            return null;
+        }
     }
 }

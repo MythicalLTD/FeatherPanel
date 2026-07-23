@@ -157,6 +157,7 @@ class PublicConfig extends ConfigFactory
             ConfigInterface::SERVER_ALLOW_SUBUSERS => 'true',
             ConfigInterface::SERVER_ALLOW_SCHEDULES => 'true',
             ConfigInterface::SERVER_LIFECYCLE_HOOKS_ENABLED => 'false',
+            ConfigInterface::SERVER_LIFECYCLE_HOOKS_CONTAINER_SHELL_ENABLED => 'false',
             ConfigInterface::SERVER_BACKUP_RETENTION_MODE => 'hard_limit',
             ConfigInterface::SERVER_ALLOW_USER_BACKUP_POLICY_EDIT => 'true',
             ConfigInterface::SERVER_ALLOW_ALLOCATION_SELECT => 'false',
@@ -182,6 +183,11 @@ class PublicConfig extends ConfigFactory
             ConfigInterface::USER_ALLOW_FIRST_NAME_CHANGE => 'true',
             ConfigInterface::USER_ALLOW_LAST_NAME_CHANGE => 'true',
             ConfigInterface::USER_ALLOW_API_KEYS_CREATE => 'true',
+            ConfigInterface::USER_ALLOW_ACCOUNT_DELETION => 'false',
+            ConfigInterface::USER_ACCOUNT_DELETION_MODE => 'instant',
+            ConfigInterface::USER_ACCOUNT_DELETION_DELAY_DAYS => '7',
+            ConfigInterface::USER_ACCOUNT_DELETION_VERIFY_2FA => 'true',
+            ConfigInterface::USER_ACCOUNT_DELETION_VERIFY_EMAIL_OTP => 'true',
 
             // Chatbot related settings
             ConfigInterface::CHATBOT_ENABLED => 'false',

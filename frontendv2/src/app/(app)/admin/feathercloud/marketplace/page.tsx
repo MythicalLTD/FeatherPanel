@@ -49,7 +49,24 @@ export default function MarketplacePage() {
 
             <WidgetRenderer widgets={getWidgets('admin-feathercloud-marketplace', 'before-content')} />
 
-            <div className='grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3'>
+            <div className='grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4'>
+                <ResourceCard
+                    title='Mythic Products'
+                    description='Team purchases, release downloads (.fpa), and product reviews.'
+                    icon={Store}
+                    badges={[
+                        {
+                            label: 'Purchases',
+                            className: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
+                        },
+                    ]}
+                    onClick={() => router.push('/admin/feathercloud/products')}
+                    className='border-emerald-500/20 hover:border-emerald-500/40'
+                    highlightClassName='bg-linear-to-br from-emerald-500/10 via-transparent to-transparent'
+                    iconClassName='text-emerald-500'
+                    iconWrapperClassName='bg-emerald-500/10 border-emerald-500/20'
+                />
+
                 <ResourceCard
                     title={t('admin.marketplace.index.plugins.title')}
                     description={t('admin.marketplace.index.plugins.description')}

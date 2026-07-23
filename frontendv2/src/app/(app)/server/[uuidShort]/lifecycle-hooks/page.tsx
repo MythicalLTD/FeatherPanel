@@ -58,6 +58,7 @@ type LifecycleHookResponse = {
     data: {
         hooks: LifecycleHook[];
         feature_enabled: boolean;
+        container_shell_enabled: boolean;
     };
 };
 
@@ -106,6 +107,7 @@ export default function ServerLifecycleHooksPage() {
     const [togglingHookType, setTogglingHookType] = React.useState<LifecycleHookType | null>(null);
     const [hooks, setHooks] = React.useState<Record<LifecycleHookType, LifecycleHook>>(EMPTY_HOOKS);
     const [featureEnabled, setFeatureEnabled] = React.useState(false);
+    const [containerShellEnabled, setContainerShellEnabled] = React.useState(false);
     const [importing, setImporting] = React.useState(false);
     const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
@@ -134,8 +136,10 @@ export default function ServerLifecycleHooksPage() {
     const taskTypeLabels: Record<LifecycleTaskType, string> = React.useMemo(
         () => ({
             container_command: t('lifecycleHooks.taskTypes.containerCommand'),
+            container_shell: t('lifecycleHooks.taskTypes.containerShell'),
             discord_webhook: t('lifecycleHooks.taskTypes.discordWebhook'),
             http_request: t('lifecycleHooks.taskTypes.httpRequest'),
+            sleep: t('lifecycleHooks.taskTypes.sleep'),
         }),
         [t],
     );
@@ -146,6 +150,7 @@ export default function ServerLifecycleHooksPage() {
             const { data } = await axios.get<LifecycleHookResponse>(`/api/user/servers/${uuidShort}/lifecycle-hooks`);
             if (data.success) {
                 setFeatureEnabled(Boolean(data.data.feature_enabled));
+                setContainerShellEnabled(Boolean(data.data.container_shell_enabled));
                 const nextMap = { ...EMPTY_HOOKS };
                 for (const hookType of LIFECYCLE_HOOK_TYPES) {
                     nextMap[hookType] =
@@ -310,7 +315,15 @@ export default function ServerLifecycleHooksPage() {
                 return;
             }
 
-            const validTaskTypes: LifecycleTaskType[] = ['container_command', 'discord_webhook', 'http_request'];
+            const validTaskTypes: LifecycleTaskType[] = [
+                'container_command',
+                'discord_webhook',
+                'http_request',
+                'sleep',
+            ];
+            if (containerShellEnabled) {
+                validTaskTypes.splice(1, 0, 'container_shell');
+            }
             for (const hookType of LIFECYCLE_HOOK_TYPES) {
                 const importedHook = parsed.hooks.find((h) => h.hook_type === hookType);
                 if (!importedHook) continue;
@@ -405,6 +418,40 @@ export default function ServerLifecycleHooksPage() {
                     <code className='text-xs break-all whitespace-pre-wrap'>
                         {command || t('lifecycleHooks.payloadUnavailable')}
                     </code>
+                );
+            }
+
+            if (step.task_type === 'container_shell') {
+                const command = typeof parsed.command === 'string' ? parsed.command : '';
+                const timeout = typeof parsed.timeout === 'number' ? parsed.timeout : Number(parsed.timeout);
+                return (
+                    <div className='space-y-1 text-xs'>
+                        <code className='break-all whitespace-pre-wrap'>
+                            {command || t('lifecycleHooks.payloadUnavailable')}
+                        </code>
+                        {Number.isFinite(timeout) && (
+                            <p className='text-muted-foreground'>
+                                <span className='text-foreground/80 font-semibold'>
+                                    {t('lifecycleHooks.form.shellTimeout')}:
+                                </span>{' '}
+                                {t('lifecycleHooks.shellTimeoutSummary', { seconds: String(Math.floor(timeout)) })}
+                            </p>
+                        )}
+                    </div>
+                );
+            }
+
+            if (step.task_type === 'sleep') {
+                const seconds = typeof parsed.seconds === 'number' ? parsed.seconds : Number(parsed.seconds);
+                return (
+                    <p className='text-muted-foreground text-xs'>
+                        <span className='text-foreground/80 font-semibold'>
+                            {t('lifecycleHooks.form.sleepSeconds')}:
+                        </span>{' '}
+                        {Number.isFinite(seconds)
+                            ? t('lifecycleHooks.sleepSummary', { seconds: String(Math.floor(seconds)) })
+                            : t('lifecycleHooks.payloadUnavailable')}
+                    </p>
                 );
             }
 

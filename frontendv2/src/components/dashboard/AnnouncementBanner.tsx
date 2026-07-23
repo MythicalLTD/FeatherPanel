@@ -22,11 +22,14 @@ import type { Notification } from '@/types/notification';
 import { cn } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
 
-export function AnnouncementBanner() {
+export function AnnouncementBanner({ serverId }: { serverId?: number | null } = {}) {
     const { notifications, dismissNotification } = useNotifications();
     const { t } = useTranslation();
 
-    if (notifications.length === 0) return null;
+    const visibleNotifications =
+        serverId != null ? notifications.filter((n) => n.server_id == null || n.server_id === serverId) : notifications;
+
+    if (visibleNotifications.length === 0) return null;
 
     const getTypeStyles = (type: Notification['type']) => {
         switch (type) {
@@ -60,7 +63,7 @@ export function AnnouncementBanner() {
 
     return (
         <div className='mb-6 space-y-4'>
-            {notifications.map((notification) => {
+            {visibleNotifications.map((notification) => {
                 const Icon = getTypeIcon(notification.type);
                 const styles = getTypeStyles(notification.type);
 

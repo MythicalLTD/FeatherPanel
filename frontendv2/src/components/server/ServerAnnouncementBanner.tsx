@@ -15,8 +15,15 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import NotFound from '@/components/common/NotFound';
+import { AnnouncementBanner } from '@/components/dashboard/AnnouncementBanner';
+import { useServer } from '@/contexts/ServerContext';
 
-export default function NotFoundPage() {
-    return <NotFound />;
+export function ServerAnnouncementBanner() {
+    const { server } = useServer();
+
+    if (!server?.id) {
+        return null;
+    }
+
+    return <AnnouncementBanner serverId={server.id} />;
 }

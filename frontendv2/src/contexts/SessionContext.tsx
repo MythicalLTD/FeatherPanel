@@ -20,6 +20,7 @@ import type { AxiosError } from 'axios';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import PermissionsClass from '@/lib/permissions';
+import { getCachedPluginPublicPages } from '@/hooks/usePluginPublicPages';
 
 export interface UserInfo {
     id: number;
@@ -72,24 +73,45 @@ interface SessionContextType {
 
 const SessionContext = createContext<SessionContextType | undefined>(undefined);
 
+function normalizePathname(pathname: string): string {
+    if (pathname.length > 1 && pathname.endsWith('/')) {
+        return pathname.slice(0, -1);
+    }
+    return pathname;
+}
+
+function isCorePublicNoAuthRoute(pathname: string): boolean {
+    return (
+        pathname === '/status' ||
+        pathname.startsWith('/status/') ||
+        pathname === '/knowledgebase' ||
+        pathname.startsWith('/knowledgebase/') ||
+        pathname === '/knowladgebase' ||
+        pathname.startsWith('/knowladgebase/')
+    );
+}
+
 export function SessionProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<UserInfo | null>(null);
     const [permissions, setPermissions] = useState<PermissionsList>([]);
     const [adminTicketStats, setAdminTicketStats] = useState<AdminTicketStats | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isSessionChecked, setIsSessionChecked] = useState(false);
+    const [pluginPublicPaths, setPluginPublicPaths] = useState<string[]>([]);
+    const [pluginPathsLoaded, setPluginPathsLoaded] = useState(false);
     const router = useRouter();
 
-    const isPublicNoAuthRoute = useCallback((pathname: string): boolean => {
-        return (
-            pathname === '/status' ||
-            pathname.startsWith('/status/') ||
-            pathname === '/knowledgebase' ||
-            pathname.startsWith('/knowledgebase/') ||
-            pathname === '/knowladgebase' ||
-            pathname.startsWith('/knowladgebase/')
-        );
-    }, []);
+    const isPublicNoAuthRoute = useCallback(
+        (pathname: string): boolean => {
+            if (isCorePublicNoAuthRoute(pathname)) {
+                return true;
+            }
+
+            const normalized = normalizePathname(pathname);
+            return pluginPublicPaths.some((path) => normalized === path || normalized.startsWith(path + '/'));
+        },
+        [pluginPublicPaths],
+    );
 
     const fetchSession = useCallback(
         async (force = false): Promise<boolean> => {
@@ -193,6 +215,33 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     };
 
     useEffect(() => {
+        let cancelled = false;
+
+        (async () => {
+            const pages = await getCachedPluginPublicPages();
+            if (!cancelled) {
+                setPluginPublicPaths(pages.filter((page) => page.enabled).map((page) => normalizePathname(page.path)));
+                setPluginPathsLoaded(true);
+            }
+        })();
+
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    useEffect(() => {
+        if (typeof window !== 'undefined' && isCorePublicNoAuthRoute(window.location.pathname)) {
+            setIsSessionChecked(true);
+            setIsLoading(false);
+            return;
+        }
+
+        // Wait for plugin public-page registry before deciding auth redirects.
+        if (!pluginPathsLoaded) {
+            return;
+        }
+
         if (typeof window !== 'undefined' && isPublicNoAuthRoute(window.location.pathname)) {
             setIsSessionChecked(true);
             setIsLoading(false);
@@ -200,7 +249,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         }
 
         fetchSession();
-    }, [fetchSession, isPublicNoAuthRoute]);
+    }, [fetchSession, isPublicNoAuthRoute, pluginPathsLoaded]);
 
     return (
         <SessionContext.Provider

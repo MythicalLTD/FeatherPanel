@@ -196,6 +196,26 @@ class ServerService
     }
 
     /**
+     * Execute a shell command inside the server Docker container via docker exec.
+     *
+     * @param int $timeoutSeconds Optional timeout (1–120); Wings defaults to 30 when omitted/0
+     */
+    public function execInContainer(string $serverUuid, string $command, int $timeoutSeconds = 30): WingsResponse
+    {
+        try {
+            $payload = [
+                'command' => $command,
+                'timeout_seconds' => $timeoutSeconds,
+            ];
+            $response = $this->connection->post("/api/servers/{$serverUuid}/exec", $payload, [], 3, max(35, $timeoutSeconds + 10));
+
+            return new WingsResponse($response, 200);
+        } catch (\Exception $e) {
+            return new WingsResponse(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
      * Install server.
      */
     public function installServer(string $serverUuid): WingsResponse

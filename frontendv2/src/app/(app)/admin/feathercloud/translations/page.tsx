@@ -15,234 +15,259 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useTranslation } from '@/contexts/TranslationContext';
-import { usePluginWidgets } from '@/hooks/usePluginWidgets';
-import { WidgetRenderer } from '@/components/server/WidgetRenderer';
-import { PageHeader } from '@/components/featherui/PageHeader';
-import { Button } from '@/components/featherui/Button';
-import { Input } from '@/components/featherui/Input';
-import { TableSkeleton } from '@/components/featherui/TableSkeleton';
-import { EmptyState } from '@/components/featherui/EmptyState';
-import { Badge } from '@/components/ui/badge';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import axios from 'axios';
 import { toast } from 'sonner';
-import { Languages, Search, Download, Globe, Star, Users, Calendar, FileText } from 'lucide-react';
+import { ArrowLeft, Download, Languages, Loader2, RefreshCw } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { PageHeader } from '@/components/featherui/PageHeader';
+import { PageCard } from '@/components/featherui/PageCard';
+import { Button } from '@/components/featherui/Button';
+import { EmptyState } from '@/components/featherui/EmptyState';
+import { Input } from '@/components/featherui/Input';
 
-interface CommunityTranslation {
-    id: string;
-    lang: string;
-    name: string;
-    nativeName: string;
-    author: string;
-    version: string;
-    downloads: number;
-    rating: number;
-    updatedAt: string;
-    description?: string;
-    verified?: boolean;
+interface LocaleRow {
+    locale?: string;
+    code?: string;
+    name?: string;
+    nativeName?: string;
+    completion?: number | string;
+    published?: boolean;
 }
 
-export default function CommunityTranslationsPage() {
-    const { t } = useTranslation();
+function normalizeLocales(data: unknown): LocaleRow[] {
+    if (!data) return [];
+    if (Array.isArray(data)) return data as LocaleRow[];
+    if (typeof data === 'object') {
+        const d = data as Record<string, unknown>;
+        if (Array.isArray(d.locales)) return d.locales as LocaleRow[];
+        if (Array.isArray(d.data)) return d.data as LocaleRow[];
+        if (Array.isArray(d.items)) return d.items as LocaleRow[];
+    }
+    return [];
+}
+
+function localeCode(row: LocaleRow): string {
+    return String(row.locale || row.code || '').trim();
+}
+
+export default function MythicTranslationsPage() {
     const router = useRouter();
+    const [project, setProject] = useState('featherpanel');
+    const [locales, setLocales] = useState<LocaleRow[]>([]);
     const [loading, setLoading] = useState(true);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
-    const [translations, setTranslations] = useState<CommunityTranslation[]>([]);
-    const [filteredTranslations, setFilteredTranslations] = useState<CommunityTranslation[]>([]);
-    const { fetchWidgets, getWidgets } = usePluginWidgets('admin-feathercloud-translations');
+    const [search, setSearch] = useState('');
+    const [busyLocale, setBusyLocale] = useState<string | null>(null);
+    const [selected, setSelected] = useState<Record<string, boolean>>({});
 
-    useEffect(() => {
-        fetchWidgets();
-    }, [fetchWidgets]);
-
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setDebouncedSearchQuery(searchQuery);
-        }, 500);
-        return () => clearTimeout(timer);
-    }, [searchQuery]);
-
-    useEffect(() => {
-        const fetchTranslations = async () => {
-            setLoading(true);
-            try {
-                const mockTranslations: CommunityTranslation[] = [];
-
-                setTranslations(mockTranslations);
-                setFilteredTranslations(mockTranslations);
-            } catch (error) {
-                console.error('Error fetching community translations:', error);
-                toast.error(t('admin.feathercloud.translations.fetch_failed'));
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchTranslations();
-    }, [t]);
-
-    useEffect(() => {
-        if (!debouncedSearchQuery) {
-            setFilteredTranslations(translations);
-            return;
-        }
-
-        const query = debouncedSearchQuery.toLowerCase();
-        const filtered = translations.filter(
-            (translation) =>
-                translation.name.toLowerCase().includes(query) ||
-                translation.nativeName.toLowerCase().includes(query) ||
-                translation.lang.toLowerCase().includes(query) ||
-                translation.author.toLowerCase().includes(query) ||
-                translation.description?.toLowerCase().includes(query),
-        );
-        setFilteredTranslations(filtered);
-    }, [debouncedSearchQuery, translations]);
-
-    const handleDownload = async () => {
+    const load = useCallback(async (slug: string) => {
+        setLoading(true);
         try {
-            toast.info(t('admin.feathercloud.translations.download_coming_soon'));
-        } catch (error) {
-            console.error('Error downloading translation:', error);
-            toast.error(t('admin.feathercloud.translations.download_failed'));
+            const settings = await axios.get('/api/admin/cloud/translations/settings').catch(() => null);
+            const configured = settings?.data?.data?.project;
+            const useSlug = slug || configured || 'featherpanel';
+            setProject(useSlug);
+
+            const response = await axios.get(
+                `/api/admin/cloud/translations/projects/${encodeURIComponent(useSlug)}/locales`,
+            );
+            const list = normalizeLocales(response.data?.data);
+            setLocales(list);
+            setSelected({});
+        } catch (err) {
+            toast.error(
+                axios.isAxiosError(err)
+                    ? err.response?.data?.message || 'Failed to load locales'
+                    : 'Failed to load locales',
+            );
+            setLocales([]);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        void load('featherpanel');
+    }, [load]);
+
+    const filtered = useMemo(() => {
+        const q = search.trim().toLowerCase();
+        if (!q) return locales;
+        return locales.filter((row) => {
+            const code = localeCode(row).toLowerCase();
+            const name = String(row.name || row.nativeName || '').toLowerCase();
+            return code.includes(q) || name.includes(q);
+        });
+    }, [locales, search]);
+
+    const downloadLocale = async (locale: string) => {
+        setBusyLocale(locale);
+        try {
+            const response = await axios.get(
+                `/api/admin/cloud/translations/projects/${encodeURIComponent(project)}/locales/${encodeURIComponent(locale)}/download`,
+                { responseType: 'blob' },
+            );
+            const blob = new Blob([response.data], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${locale}.json`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+            toast.success(`Downloaded ${locale}.json`);
+        } catch (err) {
+            toast.error(axios.isAxiosError(err) ? err.response?.data?.message || 'Download failed' : 'Download failed');
+        } finally {
+            setBusyLocale(null);
         }
     };
 
-    const handleInstall = async () => {
+    const installLocale = async (locale: string) => {
+        setBusyLocale(locale);
         try {
-            toast.info(t('admin.marketplace.index.translations.install_coming_soon'));
-        } catch (error) {
-            console.error('Error installing translation:', error);
-            toast.error(t('admin.marketplace.index.translations.install_failed'));
+            await axios.post(
+                `/api/admin/cloud/translations/projects/${encodeURIComponent(project)}/locales/${encodeURIComponent(locale)}/install`,
+            );
+            toast.success(`Installed ${locale} into panel translations`);
+        } catch (err) {
+            toast.error(axios.isAxiosError(err) ? err.response?.data?.message || 'Install failed' : 'Install failed');
+        } finally {
+            setBusyLocale(null);
+        }
+    };
+
+    const bulkDownload = async () => {
+        const codes = Object.entries(selected)
+            .filter(([, on]) => on)
+            .map(([code]) => code);
+        if (codes.length === 0) {
+            toast.error('Select at least one locale');
+            return;
+        }
+        for (const code of codes) {
+            await downloadLocale(code);
         }
     };
 
     return (
-        <div className='space-y-8'>
-            <WidgetRenderer widgets={getWidgets('admin-feathercloud-translations', 'top-of-page')} />
-
+        <div className='space-y-6 md:space-y-8'>
             <PageHeader
-                title={t('admin.marketplace.index.translations.title')}
-                description={t('admin.marketplace.index.translations.description')}
+                title='Mythic Translations'
+                description='Browse published locales from translate.mythicalsystems.org and download or install {locale}.json into this panel.'
                 icon={Languages}
+                actions={
+                    <div className='flex flex-wrap gap-2'>
+                        <Button
+                            variant='outline'
+                            size='sm'
+                            onClick={() => router.push('/admin/feathercloud/marketplace')}
+                        >
+                            <ArrowLeft className='mr-2 h-4 w-4' />
+                            Marketplace
+                        </Button>
+                        <Button variant='outline' size='sm' onClick={() => void load(project)} disabled={loading}>
+                            <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                            Refresh
+                        </Button>
+                    </div>
+                }
             />
 
-            <WidgetRenderer widgets={getWidgets('admin-feathercloud-translations', 'after-header')} />
-
-            <WidgetRenderer widgets={getWidgets('admin-feathercloud-translations', 'before-content')} />
-
-            <div className='border-border/50 bg-card/50 rounded-3xl border p-6 backdrop-blur-3xl'>
-                <div className='flex items-center gap-4'>
-                    <div className='relative flex-1'>
-                        <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform' />
+            <PageCard title='Project' icon={Languages}>
+                <div className='flex flex-wrap items-end gap-3'>
+                    <div className='min-w-[220px] flex-1'>
+                        <label className='text-muted-foreground mb-1 block text-xs font-semibold uppercase'>
+                            Project slug
+                        </label>
                         <Input
-                            placeholder={t('admin.translations.search_placeholder')}
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className='pl-10'
+                            value={project}
+                            onChange={(e) => setProject(e.target.value)}
+                            placeholder='featherpanel'
                         />
                     </div>
-                    <Button variant='outline' onClick={() => router.push('/admin/translations')}>
-                        <FileText className='mr-2 h-4 w-4' />
-                        {t('admin.marketplace.index.translations.manage_local')}
+                    <Button onClick={() => void load(project)} disabled={loading || !project.trim()}>
+                        Load locales
+                    </Button>
+                    <Button variant='outline' onClick={() => void bulkDownload()}>
+                        Download selected
                     </Button>
                 </div>
-            </div>
+                <p className='text-muted-foreground mt-2 text-xs'>
+                    Public API — no Mythic Cloud link required. API serves the last published snapshot only.
+                </p>
+            </PageCard>
 
-            {loading ? (
-                <TableSkeleton count={5} />
-            ) : filteredTranslations.length === 0 ? (
-                <EmptyState
-                    icon={Languages}
-                    title={
-                        searchQuery
-                            ? t('admin.marketplace.index.translations.no_results')
-                            : t('admin.marketplace.index.translations.no_community')
-                    }
-                    description={
-                        searchQuery
-                            ? t('admin.marketplace.index.translations.adjust_search')
-                            : t('admin.marketplace.index.translations.community_description')
-                    }
-                    action={
-                        !searchQuery && (
-                            <Button onClick={() => router.push('/admin/translations')}>
-                                {t('admin.marketplace.index.translations.go_to_management')}
-                            </Button>
-                        )
-                    }
-                />
-            ) : (
-                <div className='grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3'>
-                    {filteredTranslations.map((translation) => (
-                        <div
-                            key={translation.id}
-                            className='border-border/50 bg-card/50 rounded-3xl border p-6 backdrop-blur-3xl transition-shadow hover:shadow-lg'
-                        >
-                            <div className='space-y-4'>
-                                <div className='flex items-start justify-between'>
-                                    <div className='flex items-center gap-3'>
-                                        <div className='bg-primary/10 rounded-lg p-2'>
-                                            <Globe className='text-primary h-5 w-5' />
-                                        </div>
-                                        <div>
-                                            <h3 className='text-lg font-semibold'>{translation.name}</h3>
-                                            <p className='text-muted-foreground text-sm'>{translation.nativeName}</p>
-                                        </div>
-                                    </div>
-                                    {translation.verified && (
-                                        <Badge
-                                            variant='default'
-                                            className='border-green-500/20 bg-green-500/10 text-green-600'
-                                        >
-                                            {t('admin.marketplace.index.translations.verified')}
-                                        </Badge>
-                                    )}
-                                </div>
-
-                                {translation.description && (
-                                    <p className='text-muted-foreground line-clamp-2 text-sm'>
-                                        {translation.description}
-                                    </p>
-                                )}
-
-                                <div className='text-muted-foreground flex flex-wrap gap-2 text-xs'>
-                                    <div className='flex items-center gap-1'>
-                                        <Users className='h-3 w-3' />
-                                        <span>{translation.author}</span>
-                                    </div>
-                                    <div className='flex items-center gap-1'>
-                                        <Download className='h-3 w-3' />
-                                        <span>{translation.downloads}</span>
-                                    </div>
-                                    <div className='flex items-center gap-1'>
-                                        <Star className='h-3 w-3 fill-yellow-400 text-yellow-400' />
-                                        <span>{translation.rating.toFixed(1)}</span>
-                                    </div>
-                                    <div className='flex items-center gap-1'>
-                                        <Calendar className='h-3 w-3' />
-                                        <span>{new Date(translation.updatedAt).toLocaleDateString()}</span>
-                                    </div>
-                                </div>
-
-                                <div className='flex gap-2 border-t pt-2'>
-                                    <Button variant='outline' size='sm' className='flex-1' onClick={handleDownload}>
-                                        <Download className='mr-2 h-4 w-4' />
-                                        {t('admin.marketplace.index.translations.download')}
-                                    </Button>
-                                    <Button size='sm' className='flex-1' onClick={handleInstall}>
-                                        {t('admin.marketplace.index.translations.install')}
-                                    </Button>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
+            <PageCard title='Locales' icon={Languages}>
+                <div className='mb-4'>
+                    <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder='Filter locales…' />
                 </div>
-            )}
-
-            <WidgetRenderer widgets={getWidgets('admin-feathercloud-translations', 'bottom-of-page')} />
+                {loading ? (
+                    <div className='text-muted-foreground flex items-center gap-2 text-sm'>
+                        <Loader2 className='h-4 w-4 animate-spin' /> Loading locales…
+                    </div>
+                ) : filtered.length === 0 ? (
+                    <EmptyState
+                        title='No locales'
+                        description='No published locales found for this project.'
+                        icon={Languages}
+                    />
+                ) : (
+                    <ul className='space-y-2'>
+                        {filtered.map((row) => {
+                            const code = localeCode(row);
+                            if (!code) return null;
+                            const busy = busyLocale === code;
+                            return (
+                                <li
+                                    key={code}
+                                    className='border-border/50 flex flex-wrap items-center justify-between gap-3 rounded-xl border p-3'
+                                >
+                                    <div className='flex items-center gap-3'>
+                                        <input
+                                            type='checkbox'
+                                            checked={Boolean(selected[code])}
+                                            onChange={(e) =>
+                                                setSelected((prev) => ({ ...prev, [code]: e.target.checked }))
+                                            }
+                                        />
+                                        <div>
+                                            <p className='font-semibold'>
+                                                {row.name || row.nativeName || code}{' '}
+                                                <span className='text-muted-foreground font-mono text-xs'>{code}</span>
+                                            </p>
+                                            {row.completion != null && (
+                                                <p className='text-muted-foreground text-xs'>
+                                                    Completion: {String(row.completion)}
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className='flex gap-2'>
+                                        <Button
+                                            size='sm'
+                                            variant='outline'
+                                            disabled={busy}
+                                            onClick={() => void downloadLocale(code)}
+                                        >
+                                            {busy ? (
+                                                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                                            ) : (
+                                                <Download className='mr-2 h-4 w-4' />
+                                            )}
+                                            Download
+                                        </Button>
+                                        <Button size='sm' disabled={busy} onClick={() => void installLocale(code)}>
+                                            Install
+                                        </Button>
+                                    </div>
+                                </li>
+                            );
+                        })}
+                    </ul>
+                )}
+            </PageCard>
         </div>
     );
 }

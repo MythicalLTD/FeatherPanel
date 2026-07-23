@@ -15,18 +15,26 @@
  * See the LICENSE file or <https://www.gnu.org/licenses/>.
  */
 
-use App\App;
+use Symfony\Component\Routing\Route;
+use App\Middleware\PanelAccessSoftMiddleware;
 use Symfony\Component\HttpFoundation\Request;
 use App\Controllers\System\SettingsController;
 use Symfony\Component\Routing\RouteCollection;
 
 return function (RouteCollection $routes): void {
-    App::getInstance(true)->registerApiRoute(
-        $routes,
-        'settings',
+    // Public for panel UI; when Mythic sends cloud_api_key/secret headers they are validated.
+    $routes->add('settings', new Route(
         '/api/system/settings',
-        function (Request $request) {
-            return (new SettingsController())->index($request);
-        },
-    );
+        [
+            '_controller' => static function (Request $request) {
+                return (new SettingsController())->index($request);
+            },
+            '_middleware' => [PanelAccessSoftMiddleware::class],
+        ],
+        [],
+        [],
+        '',
+        [],
+        ['GET']
+    ));
 };

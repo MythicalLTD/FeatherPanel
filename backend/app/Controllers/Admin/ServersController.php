@@ -17,7 +17,6 @@
 
 namespace App\Controllers\Admin;
 
-use App\Helpers\WingsUrlHelper;
 use App\App;
 use App\Chat\Node;
 use App\Chat\User;
@@ -40,6 +39,7 @@ use App\Services\Wings\Wings;
 use OpenApi\Attributes as OA;
 use App\Chat\DatabaseInstance;
 use App\Config\ConfigInterface;
+use App\Helpers\WingsUrlHelper;
 use App\Chat\ServerCustomVariable;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Mail\templates\ServerBanned;
@@ -50,6 +50,7 @@ use App\Helpers\ModerationReasonHelper;
 use App\Plugins\Events\Events\ServerEvent;
 use App\Services\Backup\BackupFifoEviction;
 use Symfony\Component\HttpFoundation\Request;
+use App\Services\Notifications\WarningService;
 use Symfony\Component\HttpFoundation\Response;
 use App\Services\Subdomain\SubdomainCleanupService;
 
@@ -617,6 +618,8 @@ class ServersController
         $reservedVariables = [
             'P_SERVER_LOCATION',
             'P_SERVER_UUID',
+            'P_SERVER_UUID_SHORT',
+            'P_SERVER_ID',
             'P_SERVER_ALLOCATION_LIMIT',
             'SERVER_MEMORY',
             'SERVER_IP',
@@ -2634,6 +2637,113 @@ class ServersController
         }
 
         return ApiResponse::success([], 'Server suspended', 200);
+    }
+
+    #[OA\Post(
+        path: '/api/admin/servers/{id}/warn',
+        summary: 'Send warning to server owner',
+        description: 'Create an in-panel warning for the server owner (optionally emailed), e.g. high CPU stop notices.',
+        tags: ['Admin - Servers'],
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                description: 'Server ID',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['title', 'message'],
+                properties: [
+                    new OA\Property(property: 'title', type: 'string', description: 'Warning title', minLength: 1, maxLength: 255),
+                    new OA\Property(property: 'message', type: 'string', description: 'Warning message (markdown supported)', minLength: 1),
+                    new OA\Property(property: 'type', type: 'string', enum: ['info', 'warning', 'danger', 'success', 'error'], description: 'Notification type (default: warning)'),
+                    new OA\Property(property: 'send_email', type: 'boolean', description: 'Also email the server owner (default: true)'),
+                    new OA\Property(property: 'is_dismissible', type: 'boolean', description: 'Whether the warning can be dismissed (default: true)'),
+                    new OA\Property(property: 'is_sticky', type: 'boolean', description: 'Whether the warning stays until closed (default: false)'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 201,
+                description: 'Warning sent successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'notification_id', type: 'integer'),
+                        new OA\Property(property: 'emailed', type: 'boolean'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 404, description: 'Server not found'),
+            new OA\Response(response: 500, description: 'Internal server error'),
+        ]
+    )]
+    public function warn(Request $request, int $id): Response
+    {
+        $server = Server::getServerById($id);
+        if (!$server) {
+            return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+        }
+
+        $data = json_decode($request->getContent(), true);
+        if (!is_array($data) || empty($data)) {
+            return ApiResponse::error('No data provided', 'NO_DATA_PROVIDED', 400);
+        }
+
+        $title = isset($data['title']) ? trim((string) $data['title']) : '';
+        $message = isset($data['message']) ? trim((string) $data['message']) : '';
+        if ($title === '' || $message === '') {
+            return ApiResponse::error('title and message are required', 'MISSING_REQUIRED_FIELDS', 400);
+        }
+        if (strlen($title) > 255) {
+            return ApiResponse::error('title must be less than 255 characters', 'INVALID_DATA_LENGTH', 400);
+        }
+
+        $type = $data['type'] ?? 'warning';
+        $validTypes = ['info', 'warning', 'danger', 'success', 'error'];
+        if (!in_array($type, $validTypes, true)) {
+            return ApiResponse::error('Invalid type', 'INVALID_TYPE', 400);
+        }
+
+        $sendEmail = array_key_exists('send_email', $data) ? (bool) $data['send_email'] : true;
+        $isDismissible = array_key_exists('is_dismissible', $data) ? (bool) $data['is_dismissible'] : true;
+        $isSticky = array_key_exists('is_sticky', $data) ? (bool) $data['is_sticky'] : false;
+
+        $currentUser = $request->attributes->get('user');
+        $result = WarningService::send([
+            'title' => $title,
+            'message_markdown' => $message,
+            'type' => $type,
+            'server_id' => (int) $server['id'],
+            'user_id' => (int) $server['owner_id'],
+            'send_email' => $sendEmail,
+            'is_dismissible' => $isDismissible,
+            'is_sticky' => $isSticky,
+            'actor_uuid' => $currentUser['uuid'] ?? null,
+        ]);
+
+        if ($result === false) {
+            return ApiResponse::error('Failed to send warning', 'WARN_FAILED', 500);
+        }
+
+        Activity::createActivity([
+            'user_uuid' => $currentUser['uuid'] ?? '',
+            'name' => 'warn_server',
+            'context' => 'Sent warning to server: ' . $server['name'] . ' — ' . $title,
+            'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        return ApiResponse::success([
+            'notification_id' => $result['notification_id'],
+            'emailed' => $result['emailed'],
+        ], 'Warning sent successfully', 201);
     }
 
     #[OA\Post(

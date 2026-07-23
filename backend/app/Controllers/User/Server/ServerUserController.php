@@ -1548,6 +1548,8 @@ class ServerUserController
         $reservedVariables = [
             'P_SERVER_LOCATION',
             'P_SERVER_UUID',
+            'P_SERVER_UUID_SHORT',
+            'P_SERVER_ID',
             'P_SERVER_ALLOCATION_LIMIT',
             'SERVER_MEMORY',
             'SERVER_IP',

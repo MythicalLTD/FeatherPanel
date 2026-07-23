@@ -757,12 +757,22 @@ class UserDataExportService
                 return $result;
             }
 
+            $wings = new Wings(
+                $node['fqdn'],
+                (int) $node['daemonListen'],
+                $node['scheme'],
+                $node['daemon_token'],
+                30,
+                WingsUrlHelper::isBehindProxy($node)
+            );
+            $adapter = \App\Services\Backup\BackupAdapterResolver::resolveDefault($wings);
+
             $backupId = Backup::createBackup([
                 'server_id' => (int) $server['id'],
                 'uuid' => $backupUuid,
                 'name' => 'Personal data export backup ' . $exportUuid,
                 'ignored_files' => '[]',
-                'disk' => 'wings',
+                'disk' => $adapter,
                 'is_successful' => 0,
                 'is_locked' => 1,
             ]);
@@ -774,15 +784,7 @@ class UserDataExportService
                 return $result;
             }
 
-            $wings = new Wings(
-                $node['fqdn'],
-                (int) $node['daemonListen'],
-                $node['scheme'],
-                $node['daemon_token'],
-                30,
-                WingsUrlHelper::isBehindProxy($node)
-            );
-            $response = $wings->getServer()->createBackup((string) $server['uuid'], 'wings', $backupUuid, '[]');
+            $response = $wings->getServer()->createBackup((string) $server['uuid'], $adapter, $backupUuid, '[]');
 
             if (!$response->isSuccessful()) {
                 Backup::deleteBackup((int) $backupId);

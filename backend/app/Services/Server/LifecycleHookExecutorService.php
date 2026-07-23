@@ -17,13 +17,13 @@
 
 namespace App\Services\Server;
 
-use App\Helpers\WingsUrlHelper;
 use App\App;
 use GuzzleHttp\Client;
 use App\Chat\ServerActivity;
 use GuzzleHttp\Psr7\Request;
 use App\Services\Wings\Wings;
 use App\Config\ConfigInterface;
+use App\Helpers\WingsUrlHelper;
 use App\Chat\ServerLifecycleHook;
 use App\Chat\ServerLifecycleHookStep;
 use App\Plugins\Events\Events\ServerEvent;
@@ -338,6 +338,69 @@ class LifecycleHookExecutorService
         return ['sent' => true];
     }
 
+    protected function executeContainerShell(array $payload, array $server, array $node): array
+    {
+        $enabled = App::getInstance(true)->getConfig()->getSetting(ConfigInterface::SERVER_LIFECYCLE_HOOKS_CONTAINER_SHELL_ENABLED, 'false') === 'true';
+        if (!$enabled) {
+            throw new \Exception('Container Shell steps are disabled by the administrator');
+        }
+
+        $command = trim((string) ($payload['command'] ?? ''));
+        if ($command === '') {
+            throw new \Exception('Missing shell command');
+        }
+        if (strlen($command) > 4096) {
+            throw new \Exception('Shell command too long');
+        }
+
+        $timeout = (int) ($payload['timeout'] ?? 30);
+        if ($timeout < 1) {
+            $timeout = 30;
+        }
+        if ($timeout > 120) {
+            $timeout = 120;
+        }
+
+        $wings = new Wings(
+            $node['fqdn'],
+            $node['daemonListen'],
+            $node['scheme'],
+            $node['daemon_token'],
+            max(35, $timeout + 10),
+            WingsUrlHelper::isBehindProxy($node)
+        );
+        $response = $wings->getServer()->execInContainer($server['uuid'], $command, $timeout);
+        if (!$response->isSuccessful()) {
+            throw new \Exception('Failed to execute shell command in container: ' . $response->getError());
+        }
+
+        $data = $response->getData();
+        if (!is_array($data)) {
+            throw new \Exception('Invalid response from container shell exec');
+        }
+
+        if (!empty($data['timed_out'])) {
+            throw new \Exception('Container shell command timed out after ' . $timeout . ' seconds');
+        }
+
+        $exitCode = (int) ($data['exit_code'] ?? -1);
+        if ($exitCode !== 0) {
+            $stderr = trim((string) ($data['stderr'] ?? ''));
+            $stdout = trim((string) ($data['stdout'] ?? ''));
+            $detail = $stderr !== '' ? $stderr : $stdout;
+            if ($detail !== '') {
+                $detail = mb_substr($detail, 0, 500);
+                throw new \Exception('Container shell command exited with code ' . $exitCode . ': ' . $detail);
+            }
+            throw new \Exception('Container shell command exited with code ' . $exitCode);
+        }
+
+        return [
+            'exit_code' => $exitCode,
+            'duration_ms' => (int) ($data['duration_ms'] ?? 0),
+        ];
+    }
+
     protected function executeHttpRequest(array $payload): array
     {
         $url = trim((string) ($payload['url'] ?? ''));
@@ -465,8 +528,25 @@ class LifecycleHookExecutorService
         return match ($taskType) {
             'discord_webhook' => $this->executeDiscordWebhook($payload),
             'container_command' => $this->executeContainerCommand($payload, $server, $node),
+            'container_shell' => $this->executeContainerShell($payload, $server, $node),
             'http_request' => $this->executeHttpRequest($payload),
+            'sleep' => $this->executeSleep($payload),
             default => throw new \Exception('Unsupported lifecycle hook task type: ' . $taskType),
         };
+    }
+
+    protected function executeSleep(array $payload): array
+    {
+        $seconds = (int) ($payload['seconds'] ?? 0);
+        if ($seconds < 1) {
+            throw new \Exception('Invalid sleep duration');
+        }
+        if ($seconds > 300) {
+            throw new \Exception('Sleep duration exceeds maximum of 300 seconds');
+        }
+
+        sleep($seconds);
+
+        return ['slept' => $seconds];
     }
 }

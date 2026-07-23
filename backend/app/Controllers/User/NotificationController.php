@@ -30,6 +30,8 @@ use App\Plugins\Events\Events\NotificationsEvent;
     type: 'object',
     properties: [
         new OA\Property(property: 'id', type: 'integer', description: 'Notification ID'),
+        new OA\Property(property: 'user_id', type: 'integer', nullable: true, description: 'Target user ID (null = global)'),
+        new OA\Property(property: 'server_id', type: 'integer', nullable: true, description: 'Target server ID (null = account/global)'),
         new OA\Property(property: 'title', type: 'string', description: 'Notification title'),
         new OA\Property(property: 'message_markdown', type: 'string', description: 'Notification message in Markdown format'),
         new OA\Property(property: 'type', type: 'string', enum: ['info', 'warning', 'danger', 'success', 'error'], description: 'Notification type'),
@@ -44,7 +46,7 @@ class NotificationController
     #[OA\Get(
         path: '/api/user/notifications',
         summary: 'Get user notifications',
-        description: 'Retrieve all active global notifications for the authenticated user.',
+        description: 'Retrieve global and user-targeted notifications for the authenticated user.',
         tags: ['User - Notifications'],
         responses: [
             new OA\Response(
@@ -75,7 +77,7 @@ class NotificationController
             return ApiResponse::error('User not found', 'USER_NOT_FOUND', 404);
         }
 
-        // Get global notifications
+        // Get global + user-targeted notifications
         $notifications = Notification::getNotificationsForUser($userId, false, 100);
 
         return ApiResponse::success([
@@ -128,10 +130,13 @@ class NotificationController
 
         $userId = (int) $currentUser['id'];
 
-        // Get notification to verify it exists and is global
         $notification = Notification::getNotificationById($id);
 
         if (!$notification) {
+            return ApiResponse::error('Notification not found', 'NOTIFICATION_NOT_FOUND', 404);
+        }
+
+        if (!Notification::isVisibleToUser($notification, $userId)) {
             return ApiResponse::error('Notification not found', 'NOTIFICATION_NOT_FOUND', 404);
         }
 
