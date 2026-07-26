@@ -35,10 +35,10 @@ export function PageHeader({ title, description, icon: Icon, actions, className 
                     </div>
                 )}
                 <div className='min-w-0 space-y-2'>
-                    <h1 className='text-4xl font-black tracking-tight uppercase break-words'>{title}</h1>
+                    <h1 className='text-4xl font-black tracking-tight break-words uppercase'>{title}</h1>
                     {description && (
                         <div className='text-muted-foreground flex min-w-0 items-center gap-3'>
-                            <div className='text-lg font-medium opacity-80 break-words [overflow-wrap:anywhere]'>
+                            <div className='text-lg font-medium [overflow-wrap:anywhere] break-words opacity-80'>
                                 {description}
                             </div>
                         </div>

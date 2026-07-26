@@ -328,7 +328,7 @@ export function SpellPickerSheet({
                                             key={spell.id}
                                             type='button'
                                             onClick={() => onSelectSpell(spell)}
-                                            className='bg-card/80 hover:bg-card w-full cursor-pointer rounded-2xl p-4 text-left shadow-sm ring-1 ring-border/40 transition hover:shadow-md'
+                                            className='bg-card/80 hover:bg-card ring-border/40 w-full cursor-pointer rounded-2xl p-4 text-left shadow-sm ring-1 transition hover:shadow-md'
                                         >
                                             <div className='flex items-start gap-3'>
                                                 <div className='bg-muted flex h-10 w-10 shrink-0 items-center justify-center rounded-xl'>
@@ -339,7 +339,7 @@ export function SpellPickerSheet({
                                                         {spell.name}
                                                     </span>
                                                     {spell.description ? (
-                                                        <span className='text-muted-foreground mt-1 block line-clamp-2 break-words text-xs leading-relaxed'>
+                                                        <span className='text-muted-foreground mt-1 line-clamp-2 block text-xs leading-relaxed break-words'>
                                                             {spell.description}
                                                         </span>
                                                     ) : null}
@@ -452,7 +452,7 @@ export function SpellPickerSheet({
                                         return (
                                             <article
                                                 key={spell.identifier}
-                                                className='bg-card/80 flex flex-col overflow-hidden rounded-2xl shadow-sm ring-1 ring-border/40'
+                                                className='bg-card/80 ring-border/40 flex flex-col overflow-hidden rounded-2xl shadow-sm ring-1'
                                             >
                                                 <div className='flex flex-1 flex-col gap-3 p-4'>
                                                     <div className='flex items-start gap-3'>
@@ -491,7 +491,7 @@ export function SpellPickerSheet({
                                                         </div>
                                                     </div>
 
-                                                    <p className='text-muted-foreground line-clamp-2 break-words text-xs leading-relaxed'>
+                                                    <p className='text-muted-foreground line-clamp-2 text-xs leading-relaxed break-words'>
                                                         {spell.description ||
                                                             t('admin.marketplace.spells.grid.no_description')}
                                                     </p>

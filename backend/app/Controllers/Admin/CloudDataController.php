@@ -23,11 +23,11 @@ use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Services\FeatherCloud\MythicEggsClient;
 use App\Services\FeatherCloud\FeatherCloudClient;
 use App\Services\FeatherCloud\MythicMemberResolver;
 use App\Services\FeatherCloud\FeatherCloudException;
 use App\Services\FeatherCloud\MythicIssueReportCollector;
-use App\Services\FeatherCloud\MythicEggsClient;
 
 class CloudDataController
 {

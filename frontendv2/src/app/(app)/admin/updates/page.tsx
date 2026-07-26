@@ -16,16 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-    ArrowUpCircle,
-    CheckCircle2,
-    Download,
-    Loader2,
-    Package,
-    RefreshCw,
-    Search,
-    Server,
-} from 'lucide-react';
+import { ArrowUpCircle, CheckCircle2, Download, Loader2, Package, RefreshCw, Search, Server } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { PageHeader } from '@/components/featherui/PageHeader';
@@ -82,7 +73,10 @@ interface PluginUpdateInfo {
 }
 
 function compactId(value: string): string {
-    return value.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+    return value
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '');
 }
 
 function findStoreMatch(plugin: PluginRow, items: StoreItem[]): StoreItem | null {
@@ -293,7 +287,11 @@ export default function AdminUpdatesPage() {
     const selectablePluginIds = useMemo(
         () =>
             filteredPlugins
-                .filter((p) => pluginUpdates[p.identifier]?.update_available && pluginUpdates[p.identifier]?.can_download !== false)
+                .filter(
+                    (p) =>
+                        pluginUpdates[p.identifier]?.update_available &&
+                        pluginUpdates[p.identifier]?.can_download !== false,
+                )
                 .map((p) => p.identifier),
         [filteredPlugins, pluginUpdates],
     );
@@ -352,17 +350,12 @@ export default function AdminUpdatesPage() {
         setIsBulkUpdating(true);
         const toastId = toast.loading(t('admin_updates.messages.bulk_starting'));
 
-        let nodeOk = 0;
-        let pluginOk = 0;
         let fail = 0;
 
         try {
             const nodeResults = await Promise.allSettled(
-                [...selectedNodes].map((id) =>
-                    axios.post(`/api/admin/nodes/${id}/self-update`, { source: 'github' }),
-                ),
+                [...selectedNodes].map((id) => axios.post(`/api/admin/nodes/${id}/self-update`, { source: 'github' })),
             );
-            nodeOk = nodeResults.filter((r) => r.status === 'fulfilled').length;
             fail += nodeResults.filter((r) => r.status === 'rejected').length;
 
             for (const identifier of selectedPlugins) {
@@ -381,7 +374,6 @@ export default function AdminUpdatesPage() {
                             queued_identifiers: [...selectedPlugins],
                         });
                     }
-                    pluginOk += 1;
                 } catch {
                     fail += 1;
                 }
@@ -568,11 +560,7 @@ export default function AdminUpdatesPage() {
                         >
                             Select updates
                         </Button>
-                        <Button
-                            size='sm'
-                            variant='outline'
-                            onClick={() => router.push('/admin/feathercloud/products')}
-                        >
+                        <Button size='sm' variant='outline' onClick={() => router.push('/admin/feathercloud/products')}>
                             Open store
                         </Button>
                     </div>
@@ -643,7 +631,9 @@ export default function AdminUpdatesPage() {
                                         )}
                                     </div>
                                     <div className='min-w-0 flex-1'>
-                                        <p className='truncate text-sm font-medium'>{plugin.name || plugin.identifier}</p>
+                                        <p className='truncate text-sm font-medium'>
+                                            {plugin.name || plugin.identifier}
+                                        </p>
                                         <p className='text-muted-foreground truncate font-mono text-[11px]'>
                                             {plugin.identifier}
                                         </p>
@@ -738,10 +728,7 @@ export default function AdminUpdatesPage() {
                             return (
                                 <div
                                     key={node.id}
-                                    className={cn(
-                                        'bg-muted/20 rounded-2xl p-4',
-                                        checked && 'ring-primary/40 ring-1',
-                                    )}
+                                    className={cn('bg-muted/20 rounded-2xl p-4', checked && 'ring-primary/40 ring-1')}
                                 >
                                     <div className='flex items-start gap-3'>
                                         <Checkbox

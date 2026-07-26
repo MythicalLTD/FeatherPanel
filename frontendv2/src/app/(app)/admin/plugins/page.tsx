@@ -121,7 +121,10 @@ interface PluginStoreUpdate {
 }
 
 function compactId(value: string): string {
-    return value.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+    return value
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '');
 }
 
 function findStoreMatch(plugin: Plugin, items: StoreItem[]): StoreItem | null {
@@ -221,57 +224,60 @@ export default function PluginsPage() {
         [t],
     );
 
-    const checkAllUpdates = useCallback(async (pluginList?: Plugin[]) => {
-        const list = pluginList || plugins;
-        setUpdateCheckLoading(true);
-        setStoreError(null);
-        try {
-            if (list.length === 0) {
-                setStoreUpdates({});
-                return;
-            }
-            const response = await axios.get('/api/admin/cloud/data/store', {
-                params: {
-                    page: 1,
-                    limit: 100,
-                    category: FEATHERPANEL_CATEGORY_SLUG,
-                    type: 'product',
-                },
-            });
-            const items = extractStoreItems(response.data?.data);
-            const next: Record<string, PluginStoreUpdate> = {};
-            for (const plugin of list) {
-                const match = findStoreMatch(plugin, items);
-                if (!match?.product) continue;
-                const latest = storeLatestVersion(match.product);
-                const slug = productSlug(match.product);
-                if (!latest || !plugin.version || !slug) continue;
-                next[plugin.identifier] = {
-                    latest_version: latest,
-                    store_slug: slug,
-                    can_download: match.can_download === true,
-                    update_available: comparePluginVersions(plugin.version, latest) < 0,
-                };
-            }
-            setStoreUpdates(next);
-        } catch (err) {
-            if (axios.isAxiosError(err)) {
-                const code = err.response?.data?.error_code;
-                if (code === 'CLOUD_CREDENTIALS_NOT_CONFIGURED' || err.response?.status === 503) {
-                    setStoreError(
-                        err.response?.data?.message ||
-                            'Mythic Cloud is not linked. Connect Cloud Connections to check updates.',
-                    );
+    const checkAllUpdates = useCallback(
+        async (pluginList?: Plugin[]) => {
+            const list = pluginList || plugins;
+            setUpdateCheckLoading(true);
+            setStoreError(null);
+            try {
+                if (list.length === 0) {
                     setStoreUpdates({});
                     return;
                 }
+                const response = await axios.get('/api/admin/cloud/data/store', {
+                    params: {
+                        page: 1,
+                        limit: 100,
+                        category: FEATHERPANEL_CATEGORY_SLUG,
+                        type: 'product',
+                    },
+                });
+                const items = extractStoreItems(response.data?.data);
+                const next: Record<string, PluginStoreUpdate> = {};
+                for (const plugin of list) {
+                    const match = findStoreMatch(plugin, items);
+                    if (!match?.product) continue;
+                    const latest = storeLatestVersion(match.product);
+                    const slug = productSlug(match.product);
+                    if (!latest || !plugin.version || !slug) continue;
+                    next[plugin.identifier] = {
+                        latest_version: latest,
+                        store_slug: slug,
+                        can_download: match.can_download === true,
+                        update_available: comparePluginVersions(plugin.version, latest) < 0,
+                    };
+                }
+                setStoreUpdates(next);
+            } catch (err) {
+                if (axios.isAxiosError(err)) {
+                    const code = err.response?.data?.error_code;
+                    if (code === 'CLOUD_CREDENTIALS_NOT_CONFIGURED' || err.response?.status === 503) {
+                        setStoreError(
+                            err.response?.data?.message ||
+                                'Mythic Cloud is not linked. Connect Cloud Connections to check updates.',
+                        );
+                        setStoreUpdates({});
+                        return;
+                    }
+                }
+                setStoreError(mythicCloudErrorMessage(err, 'Failed to check Mythic store for updates'));
+                setStoreUpdates({});
+            } finally {
+                setUpdateCheckLoading(false);
             }
-            setStoreError(mythicCloudErrorMessage(err, 'Failed to check Mythic store for updates'));
-            setStoreUpdates({});
-        } finally {
-            setUpdateCheckLoading(false);
-        }
-    }, [plugins]);
+        },
+        [plugins],
+    );
 
     const pluginsWithUpdates = useMemo(
         () => plugins.filter((p) => storeUpdates[p.identifier]?.update_available),
@@ -718,11 +724,7 @@ export default function PluginsPage() {
                             <Plus className='mr-2 h-4 w-4' />
                             {t('admin.plugins.actions.install_url')}
                         </Button>
-                        <Button
-                            size='sm'
-                            variant='outline'
-                            onClick={() => router.push('/admin/feathercloud/products')}
-                        >
+                        <Button size='sm' variant='outline' onClick={() => router.push('/admin/feathercloud/products')}>
                             <Store className='mr-2 h-4 w-4' />
                             Store
                         </Button>
@@ -848,11 +850,7 @@ export default function PluginsPage() {
                                         <div className='bg-muted flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl'>
                                             {plugin.icon ? (
                                                 // eslint-disable-next-line @next/next/no-img-element
-                                                <img
-                                                    src={plugin.icon}
-                                                    alt=''
-                                                    className='h-full w-full object-cover'
-                                                />
+                                                <img src={plugin.icon} alt='' className='h-full w-full object-cover' />
                                             ) : (
                                                 <Puzzle className='text-muted-foreground h-5 w-5' />
                                             )}

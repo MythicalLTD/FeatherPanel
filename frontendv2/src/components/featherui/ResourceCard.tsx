@@ -156,7 +156,7 @@ export function ResourceCard({
                         </div>
                     )}
 
-                    {description && <div className='min-w-0 w-full'>{description}</div>}
+                    {description && <div className='w-full min-w-0'>{description}</div>}
                 </div>
 
                 {actions && (

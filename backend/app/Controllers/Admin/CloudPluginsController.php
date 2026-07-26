@@ -1484,7 +1484,8 @@ class CloudPluginsController
             $releasesPayload = $client->getProductReleases($lookupSlug);
             $releases = $this->extractReleases($releasesPayload);
         } catch (FeatherCloudException $e) {
-            if (in_array($e->getErrorCode(), ['PRODUCT_NOT_FOUND', 'NOT_FOUND', 'PANEL_DOWNLOADS_DISABLED', 'ACCESS_DENIED', 'NO_RELEASES'], true)
+            if (
+                in_array($e->getErrorCode(), ['PRODUCT_NOT_FOUND', 'NOT_FOUND', 'PANEL_DOWNLOADS_DISABLED', 'ACCESS_DENIED', 'NO_RELEASES'], true)
                 || $e->getHttpStatusCode() === 404
                 || $e->getHttpStatusCode() === 403
             ) {

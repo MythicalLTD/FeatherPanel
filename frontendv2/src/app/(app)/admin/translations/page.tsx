@@ -364,11 +364,7 @@ export default function TranslationsPage() {
                                     <ExternalLink className='mr-2 h-4 w-4' />
                                     {t('admin.translations.community_made')}
                                 </DropdownMenuItem>
-                                <DropdownMenuItem
-                                    onClick={() =>
-                                        (location.href = '/admin/feathercloud/translations')
-                                    }
-                                >
+                                <DropdownMenuItem onClick={() => (location.href = '/admin/feathercloud/translations')}>
                                     <Globe className='mr-2 h-4 w-4' />
                                     Mythic Translate install
                                 </DropdownMenuItem>

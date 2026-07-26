@@ -318,11 +318,20 @@ export default function MythicProductsPage() {
                                 <CheckSquare className='mr-2 h-4 w-4' />
                                 Select actionable
                             </Button>
-                            <Button size='sm' variant='outline' onClick={() => setSelected(new Set())} disabled={!selected.size}>
+                            <Button
+                                size='sm'
+                                variant='outline'
+                                onClick={() => setSelected(new Set())}
+                                disabled={!selected.size}
+                            >
                                 <Square className='mr-2 h-4 w-4' />
                                 Clear
                             </Button>
-                            <Button size='sm' onClick={() => void installSelected()} disabled={bulkInstalling || !selected.size}>
+                            <Button
+                                size='sm'
+                                onClick={() => void installSelected()}
+                                disabled={bulkInstalling || !selected.size}
+                            >
                                 {bulkInstalling ? (
                                     <Loader2 className='mr-2 h-4 w-4 animate-spin' />
                                 ) : (

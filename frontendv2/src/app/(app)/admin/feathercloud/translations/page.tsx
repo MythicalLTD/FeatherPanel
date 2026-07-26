@@ -292,11 +292,7 @@ export default function MythicTranslationsPage() {
                             <ArrowLeft className='mr-2 h-4 w-4' />
                             Marketplace
                         </Button>
-                        <Button
-                            variant='outline'
-                            size='sm'
-                            onClick={() => router.push('/admin/translations')}
-                        >
+                        <Button variant='outline' size='sm' onClick={() => router.push('/admin/translations')}>
                             Local files
                         </Button>
                         <Button
@@ -333,11 +329,7 @@ export default function MythicTranslationsPage() {
                 <div className='bg-card/60 flex flex-wrap items-center gap-4 rounded-2xl px-4 py-3'>
                     {projectInfo.iconUrl ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                            src={projectInfo.iconUrl}
-                            alt=''
-                            className='h-10 w-10 rounded-xl object-cover'
-                        />
+                        <img src={projectInfo.iconUrl} alt='' className='h-10 w-10 rounded-xl object-cover' />
                     ) : (
                         <div className='bg-muted flex h-10 w-10 items-center justify-center rounded-xl'>
                             <Languages className='text-muted-foreground h-5 w-5' />
@@ -418,9 +410,7 @@ export default function MythicTranslationsPage() {
                     description='No published locales match your search or filter. Contribute missing languages on Mythic Translate.'
                     icon={Languages}
                     action={
-                        <Button
-                            onClick={() => window.open(MYTHIC_TRANSLATE_URL, '_blank', 'noopener,noreferrer')}
-                        >
+                        <Button onClick={() => window.open(MYTHIC_TRANSLATE_URL, '_blank', 'noopener,noreferrer')}>
                             <ExternalLink className='mr-2 h-4 w-4' />
                             Open Mythic Translate
                         </Button>
@@ -508,7 +498,9 @@ export default function MythicTranslationsPage() {
                                             </span>
                                         ) : null}
                                         {row.source ? <span className='capitalize'>{row.source}</span> : null}
-                                        {row.status ? <span className='capitalize'>{row.status.replace(/_/g, ' ')}</span> : null}
+                                        {row.status ? (
+                                            <span className='capitalize'>{row.status.replace(/_/g, ' ')}</span>
+                                        ) : null}
                                     </div>
 
                                     {row.lastContributor?.name || contributors.length > 0 ? (
@@ -527,9 +519,7 @@ export default function MythicTranslationsPage() {
                                                 {row.lastContributor?.name ||
                                                     contributors[0]?.user?.name ||
                                                     'Community'}
-                                                {contributors.length > 1
-                                                    ? ` +${contributors.length - 1}`
-                                                    : ''}
+                                                {contributors.length > 1 ? ` +${contributors.length - 1}` : ''}
                                             </span>
                                         </div>
                                     ) : null}

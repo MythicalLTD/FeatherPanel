@@ -192,7 +192,10 @@ export interface InstalledPluginInfo {
 }
 
 function compactPluginId(value: string): string {
-    return value.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+    return value
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '');
 }
 
 function installedPluginLookup(
@@ -363,9 +366,7 @@ export function StarDisplay({
                     key={n}
                     className={cn(
                         icon,
-                        n <= Math.round(value)
-                            ? 'fill-amber-400 text-amber-400'
-                            : 'text-muted-foreground/35',
+                        n <= Math.round(value) ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground/35',
                     )}
                     aria-hidden
                 />

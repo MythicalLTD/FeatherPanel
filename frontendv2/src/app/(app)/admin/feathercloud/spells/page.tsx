@@ -410,7 +410,6 @@ export default function SpellsPage() {
         }
     };
 
-
     return (
         <div className='space-y-6'>
             <WidgetRenderer widgets={getWidgets('admin-feathercloud-spells', 'top-of-page')} />
@@ -452,17 +451,12 @@ export default function SpellsPage() {
                 </div>
                 <div className='bg-card/60 rounded-2xl px-4 py-3'>
                     <p className='text-muted-foreground text-xs'>Catalog</p>
-                    <p className='mt-1 text-sm font-medium'>
-                        {onlinePagination?.total_records ?? '—'}
-                    </p>
+                    <p className='mt-1 text-sm font-medium'>{onlinePagination?.total_records ?? '—'}</p>
                 </div>
                 <div className='bg-card/60 rounded-2xl px-4 py-3'>
                     <p className='text-muted-foreground text-xs'>Installed matches</p>
                     <p className='mt-1 text-sm font-medium'>
-                        {
-                            onlineSpells.filter((spell) => installedSpellIds.includes(spell.name))
-                                .length
-                        }
+                        {onlineSpells.filter((spell) => installedSpellIds.includes(spell.name)).length}
                     </p>
                 </div>
             </div>
@@ -561,7 +555,7 @@ export default function SpellsPage() {
                                 <article
                                     key={spell.identifier}
                                     className={cn(
-                                        'bg-card/80 flex flex-col overflow-hidden rounded-2xl shadow-sm ring-1 ring-border/40 transition',
+                                        'bg-card/80 ring-border/40 flex flex-col overflow-hidden rounded-2xl shadow-sm ring-1 transition',
                                         'hover:bg-card hover:shadow-md',
                                     )}
                                 >
@@ -600,7 +594,7 @@ export default function SpellsPage() {
                                             </div>
                                         </div>
 
-                                        <p className='text-muted-foreground line-clamp-2 break-words text-xs leading-relaxed'>
+                                        <p className='text-muted-foreground line-clamp-2 text-xs leading-relaxed break-words'>
                                             {spell.description || t('admin.marketplace.spells.grid.no_description')}
                                         </p>
 
@@ -626,9 +620,7 @@ export default function SpellsPage() {
                                                     {reviewCount > 0 ? ` · ${reviewCount}` : ''}
                                                 </span>
                                             </span>
-                                            {spell.channel ? (
-                                                <span className='capitalize'>{spell.channel}</span>
-                                            ) : null}
+                                            {spell.channel ? <span className='capitalize'>{spell.channel}</span> : null}
                                         </div>
 
                                         {!spell.verified ? (
@@ -1057,10 +1049,7 @@ export default function SpellsPage() {
                                 {eggReviews.map((r) => {
                                     const when = r.created_at || r.createdAt;
                                     return (
-                                        <li
-                                            key={String(r.id)}
-                                            className='bg-muted/20 rounded-xl px-4 py-3 text-sm'
-                                        >
+                                        <li key={String(r.id)} className='bg-muted/20 rounded-xl px-4 py-3 text-sm'>
                                             <div className='flex flex-wrap items-center gap-2'>
                                                 <StarDisplay rating={Number(r.rating || 0)} />
                                                 <span className='font-medium'>

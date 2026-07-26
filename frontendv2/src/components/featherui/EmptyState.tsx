@@ -19,7 +19,7 @@ import { cn } from '@/lib/utils';
 
 interface EmptyStateProps {
     title: string;
-    description: string;
+    description?: string;
     icon: LucideIcon;
     action?: React.ReactNode;
     className?: string;
@@ -41,7 +41,9 @@ export function EmptyState({ title, description, icon: Icon, action, className }
             </div>
             <div className='max-w-md space-y-3 px-4'>
                 <h2 className='text-3xl font-black tracking-tight uppercase'>{title}</h2>
-                <p className='text-muted-foreground text-lg leading-relaxed font-medium'>{description}</p>
+                {description ? (
+                    <p className='text-muted-foreground text-lg leading-relaxed font-medium'>{description}</p>
+                ) : null}
             </div>
             {action && <div className='mt-8'>{action}</div>}
         </div>

@@ -18,15 +18,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import React, { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
 import { toast } from 'sonner';
-import {
-    ArrowLeft,
-    Download,
-    Loader2,
-    MessageCircle,
-    Package,
-    RefreshCw,
-    Star,
-} from 'lucide-react';
+import { ArrowLeft, Download, Loader2, MessageCircle, Package, RefreshCw, Star } from 'lucide-react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
@@ -46,7 +38,6 @@ import {
     extractInstalledPlugins,
     formatPrice,
     hasPluginUpdate,
-    isPluginInstalled,
     mythicCloudErrorMessage,
     parseBlobError,
     pluginIdentifier,
@@ -211,11 +202,7 @@ export default function ProductDetailPage() {
                 icon={Package}
                 actions={
                     <div className='flex flex-wrap gap-2'>
-                        <Button
-                            variant='outline'
-                            size='sm'
-                            onClick={() => router.push('/admin/feathercloud/products')}
-                        >
+                        <Button variant='outline' size='sm' onClick={() => router.push('/admin/feathercloud/products')}>
                             <ArrowLeft className='mr-2 h-4 w-4' />
                             Back to plugins
                         </Button>
@@ -254,32 +241,32 @@ export default function ProductDetailPage() {
                     <p className='text-muted-foreground mt-1 text-sm'>
                         This plugin could not be loaded from the Mythic store.
                     </p>
-                    <Button className='mt-4' variant='outline' onClick={() => router.push('/admin/feathercloud/products')}>
+                    <Button
+                        className='mt-4'
+                        variant='outline'
+                        onClick={() => router.push('/admin/feathercloud/products')}
+                    >
                         Return to catalog
                     </Button>
                 </div>
             ) : (
                 <>
-                    <section className='overflow-hidden rounded-2xl bg-muted/30'>
+                    <section className='bg-muted/30 overflow-hidden rounded-2xl'>
                         <div className='relative h-48 sm:h-64'>
                             {bannerUrl(product) ? (
                                 // eslint-disable-next-line @next/next/no-img-element
-                                <img
-                                    src={bannerUrl(product)!}
-                                    alt=''
-                                    className='h-full w-full object-cover'
-                                />
+                                <img src={bannerUrl(product)!} alt='' className='h-full w-full object-cover' />
                             ) : (
                                 <div className='from-muted to-muted/40 flex h-full items-center justify-center bg-linear-to-br' />
                             )}
-                            <div className='absolute inset-0 bg-linear-to-t from-background via-background/55 to-transparent' />
+                            <div className='from-background via-background/55 absolute inset-0 bg-linear-to-t to-transparent' />
                             <div className='absolute right-5 bottom-5 left-5 flex flex-wrap items-end gap-4'>
                                 {product.icon_url ? (
                                     // eslint-disable-next-line @next/next/no-img-element
                                     <img
                                         src={product.icon_url}
                                         alt=''
-                                        className='h-16 w-16 rounded-2xl object-cover shadow-lg ring-2 ring-background'
+                                        className='ring-background h-16 w-16 rounded-2xl object-cover shadow-lg ring-2'
                                     />
                                 ) : null}
                                 <div className='min-w-0 flex-1 space-y-1'>
@@ -318,29 +305,32 @@ export default function ProductDetailPage() {
                         </div>
 
                         <div className='flex gap-1 overflow-x-auto px-3 pt-3 sm:px-5'>
-                            {(
-                                [
-                                    { key: 'overview' as const, label: 'Overview', count: null as number | null, withStar: false },
-                                    {
-                                        key: 'versions' as const,
-                                        label: 'Versions',
-                                        count: meta?.versions_count ?? versions.length,
-                                        withStar: false,
-                                    },
-                                    {
-                                        key: 'reviews' as const,
-                                        label: 'Reviews',
-                                        count: reviewCount,
-                                        withStar: true,
-                                    },
-                                    {
-                                        key: 'questions' as const,
-                                        label: 'Q&A',
-                                        count: meta?.question_count ?? questions.length,
-                                        withStar: false,
-                                    },
-                                ]
-                            ).map(({ key, label, count, withStar }) => (
+                            {[
+                                {
+                                    key: 'overview' as const,
+                                    label: 'Overview',
+                                    count: null as number | null,
+                                    withStar: false,
+                                },
+                                {
+                                    key: 'versions' as const,
+                                    label: 'Versions',
+                                    count: meta?.versions_count ?? versions.length,
+                                    withStar: false,
+                                },
+                                {
+                                    key: 'reviews' as const,
+                                    label: 'Reviews',
+                                    count: reviewCount,
+                                    withStar: true,
+                                },
+                                {
+                                    key: 'questions' as const,
+                                    label: 'Q&A',
+                                    count: meta?.question_count ?? questions.length,
+                                    withStar: false,
+                                },
+                            ].map(({ key, label, count, withStar }) => (
                                 <button
                                     key={key}
                                     type='button'
@@ -349,12 +339,10 @@ export default function ProductDetailPage() {
                                         'inline-flex items-center gap-1.5 border-b-2 px-3 py-2.5 text-sm font-medium transition-colors',
                                         tab === key
                                             ? 'border-primary text-foreground'
-                                            : 'border-transparent text-muted-foreground hover:text-foreground',
+                                            : 'text-muted-foreground hover:text-foreground border-transparent',
                                     )}
                                 >
-                                    {withStar ? (
-                                        <Star className='h-3.5 w-3.5 fill-amber-400 text-amber-400' />
-                                    ) : null}
+                                    {withStar ? <Star className='h-3.5 w-3.5 fill-amber-400 text-amber-400' /> : null}
                                     {label}
                                     {count != null ? (
                                         <span className='text-muted-foreground text-xs'>({count})</span>
@@ -425,11 +413,7 @@ export default function ProductDetailPage() {
                                         <p className='text-muted-foreground mb-2 text-xs font-semibold tracking-wide uppercase'>
                                             Your rating
                                         </p>
-                                        <StarRatingInput
-                                            value={rating}
-                                            onChange={setRating}
-                                            disabled={savingReview}
-                                        />
+                                        <StarRatingInput value={rating} onChange={setRating} disabled={savingReview} />
                                     </div>
                                     <div>
                                         <p className='text-muted-foreground mb-2 text-xs font-semibold tracking-wide uppercase'>
@@ -506,13 +490,15 @@ export default function ProductDetailPage() {
                                                 </p>
                                                 <p className='text-muted-foreground mt-1'>{q.body}</p>
                                                 {(q.replies?.length ?? 0) > 0 ? (
-                                                    <ul className='mt-3 space-y-2 border-l border-muted-foreground/20 pl-3'>
+                                                    <ul className='border-muted-foreground/20 mt-3 space-y-2 border-l pl-3'>
                                                         {q.replies!.map((reply) => (
                                                             <li key={String(reply.id)}>
                                                                 <p className='text-xs font-semibold'>
                                                                     {reply.user?.username || 'User'}
                                                                     {reply.is_team_member ? (
-                                                                        <span className='text-primary ml-2'>Seller</span>
+                                                                        <span className='text-primary ml-2'>
+                                                                            Seller
+                                                                        </span>
                                                                     ) : null}
                                                                 </p>
                                                                 <p className='text-muted-foreground'>{reply.body}</p>
