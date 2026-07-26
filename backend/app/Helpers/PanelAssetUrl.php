@@ -18,8 +18,8 @@
 namespace App\Helpers;
 
 /**
- * Rewrites FeatherCloud CDN icon URLs to this panel's proxy so browsers load them same-origin
- * (avoids hotlink / cross-site blocks on api.featherpanel.com).
+ * Rewrites legacy FeatherCloud CDN icon URLs to this panel's proxy so browsers load them same-origin.
+ * New Mythic product icons that already use absolute non-api.featherpanel.com URLs pass through unchanged.
  */
 class PanelAssetUrl
 {
@@ -29,6 +29,7 @@ class PanelAssetUrl
         'http://api.featherpanel.com/storage/icons/',
     ];
 
+    /** @deprecated Legacy icon CDN; Mythic marketplace icons typically use absolute CDN URLs. */
     private const UPSTREAM_BASE = 'https://api.featherpanel.com/storage/icons/';
 
     public static function upstreamBase(): string

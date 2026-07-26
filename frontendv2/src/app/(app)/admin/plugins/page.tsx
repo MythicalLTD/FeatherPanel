@@ -16,14 +16,15 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/contexts/TranslationContext';
 import axios from 'axios';
 import { invalidatePluginRoutesCache } from '@/hooks/usePluginRoutes';
 import { PageHeader } from '@/components/featherui/PageHeader';
-import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Badge } from '@/components/ui/badge';
+import { EmptyState } from '@/components/featherui/EmptyState';
 import { Sheet, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import {
     Dialog,
@@ -48,10 +49,28 @@ import {
     Search,
     ChevronLeft,
     ChevronRight,
+    Store,
+    Download,
+    CheckCircle2,
+    Loader2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { cn } from '@/lib/utils';
+import {
+    FEATHERPANEL_CATEGORY_SLUG,
+    type StoreItem,
+    comparePluginVersions,
+    downloadAndInstall,
+    extractStoreItems,
+    mythicCloudErrorMessage,
+    parseBlobError,
+    pluginIdentifier,
+    productSlug,
+    resolveInstallVersion,
+    storeLatestVersion,
+} from '@/app/(app)/admin/feathercloud/products/_shared';
 
 interface ConfigField {
     name: string;
@@ -94,23 +113,36 @@ interface PluginConfig {
     allowedOnlyOnSpells?: number[];
 }
 
-interface UpdateRequirements {
-    can_install: boolean;
+interface PluginStoreUpdate {
+    latest_version: string;
+    store_slug: string;
+    can_download: boolean;
     update_available: boolean;
-    installed_version?: string | null;
-    latest_version?: string | null;
-    package: {
-        identifier: string;
-        name: string;
-        version?: string;
-    };
+}
+
+function compactId(value: string): string {
+    return value.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+function findStoreMatch(plugin: Plugin, items: StoreItem[]): StoreItem | null {
+    const local = compactId(plugin.identifier);
+    if (!local) return null;
+    for (const item of items) {
+        const id = compactId(pluginIdentifier(item.product));
+        const slug = compactId(productSlug(item.product));
+        if (id === local || slug === local) return item;
+    }
+    return null;
 }
 
 export default function PluginsPage() {
     const { t } = useTranslation();
+    const router = useRouter();
 
     const [loading, setLoading] = useState(true);
     const [plugins, setPlugins] = useState<Plugin[]>([]);
+    const [search, setSearch] = useState('');
+    const [filter, setFilter] = useState<'all' | 'updates' | 'issues'>('all');
 
     const [configDrawerOpen, setConfigDrawerOpen] = useState(false);
     const [selectedPlugin, setSelectedPlugin] = useState<Plugin | null>(null);
@@ -140,124 +172,148 @@ export default function PluginsPage() {
     const [selectedPluginForUninstall, setSelectedPluginForUninstall] = useState<Plugin | null>(null);
     const [pendingUploadFile, setPendingUploadFile] = useState<File | null>(null);
 
-    const [checkingUpdateId, setCheckingUpdateId] = useState<string | null>(null);
-
-    const [onlinePluginsCache, setOnlinePluginsCache] = useState<Map<string, { version: string; identifier: string }>>(
-        new Map(),
-    );
+    const [storeUpdates, setStoreUpdates] = useState<Record<string, PluginStoreUpdate>>({});
+    const [storeError, setStoreError] = useState<string | null>(null);
     const [updateCheckLoading, setUpdateCheckLoading] = useState(false);
     const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
-    const [updateRequirements, setUpdateRequirements] = useState<UpdateRequirements | null>(null);
+    const [pendingUpdatePlugin, setPendingUpdatePlugin] = useState<Plugin | null>(null);
     const [installingUpdateId, setInstallingUpdateId] = useState<string | null>(null);
-    const [pluginsWithUpdates, setPluginsWithUpdates] = useState<Plugin[]>([]);
     const [bulkUpdatingPlugins, setBulkUpdatingPlugins] = useState(false);
 
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-plugins');
 
-    const normalizeVersion = (v: string): string => v.replace(/^v/i, '');
-
-    const compareVersions = (v1: string, v2: string): number => {
-        const parts1 = normalizeVersion(v1).split('.').map(Number);
-        const parts2 = normalizeVersion(v2).split('.').map(Number);
-        const maxLength = Math.max(parts1.length, parts2.length);
-
-        for (let i = 0; i < maxLength; i++) {
-            const part1 = parts1[i] || 0;
-            const part2 = parts2[i] || 0;
-            if (part1 < part2) return -1;
-            if (part1 > part2) return 1;
-        }
-        return 0;
-    };
-
-    const hasUpdateAvailable = (plugin: Plugin): boolean => {
-        if (!plugin.identifier || !plugin.version) return false;
-        const onlinePlugin = onlinePluginsCache.get(plugin.identifier);
-        if (!onlinePlugin || !onlinePlugin.version) return false;
-        return compareVersions(plugin.version, onlinePlugin.version) < 0;
-    };
-
-    const fetchPlugins = useCallback(async () => {
-        setLoading(true);
-        try {
-            const response = await axios.get('/api/admin/plugins');
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const pluginsArray = Object.values(response.data.data.plugins || {}).map((pluginData: any) => {
-                const plugin = pluginData.plugin;
-                return {
-                    identifier: plugin.identifier,
-                    name: plugin.name,
-                    version: plugin.version,
-                    author: Array.isArray(plugin.author) ? plugin.author.join(', ') : plugin.author,
-                    description: plugin.description,
-                    website: plugin.website,
-                    icon: plugin.icon,
-                    flags: plugin.flags,
-                    target: plugin.target,
-                    requiredConfigs: plugin.requiredConfigs,
-                    dependencies: plugin.dependencies,
-                    loaded: plugin.loaded ?? true,
-                    unmetDependencies: Array.isArray(plugin.unmetDependencies) ? plugin.unmetDependencies : [],
-                    missingConfigs: Array.isArray(plugin.missingConfigs) ? plugin.missingConfigs : [],
-                    configSchema: pluginData.configSchema || [],
-                };
-            });
-            setPlugins(pluginsArray);
-        } catch (error) {
-            console.error(error);
-            toast.error(t('admin.plugins.messages.load_failed'));
-        } finally {
-            setLoading(false);
-        }
-    }, [t]);
-
-    const fetchOnlinePluginInfo = async (identifier: string) => {
-        if (onlinePluginsCache.has(identifier)) return;
-        try {
-            const response = await axios.get(`/api/admin/plugins/online/${encodeURIComponent(identifier)}`);
-            const packageData = response.data.data?.package;
-            if (packageData?.latest_version?.version) {
-                setOnlinePluginsCache((prev) => {
-                    const newCache = new Map(prev);
-                    newCache.set(identifier, {
-                        version: packageData.latest_version.version,
-                        identifier: packageData.identifier,
-                    });
-                    return newCache;
+    const fetchPlugins = useCallback(
+        async (opts?: { silent?: boolean }) => {
+            if (!opts?.silent) setLoading(true);
+            try {
+                const response = await axios.get('/api/admin/plugins');
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const pluginsArray = Object.values(response.data.data.plugins || {}).map((pluginData: any) => {
+                    const plugin = pluginData.plugin;
+                    return {
+                        identifier: plugin.identifier,
+                        name: plugin.name,
+                        version: plugin.version,
+                        author: Array.isArray(plugin.author) ? plugin.author.join(', ') : plugin.author,
+                        description: plugin.description,
+                        website: plugin.website,
+                        icon: plugin.icon,
+                        flags: plugin.flags,
+                        target: plugin.target,
+                        requiredConfigs: plugin.requiredConfigs,
+                        dependencies: plugin.dependencies,
+                        loaded: plugin.loaded ?? true,
+                        unmetDependencies: Array.isArray(plugin.unmetDependencies) ? plugin.unmetDependencies : [],
+                        missingConfigs: Array.isArray(plugin.missingConfigs) ? plugin.missingConfigs : [],
+                        configSchema: pluginData.configSchema || [],
+                    } as Plugin;
                 });
+                setPlugins(pluginsArray);
+                return pluginsArray;
+            } catch (error) {
+                console.error(error);
+                toast.error(t('admin.plugins.messages.load_failed'));
+                return [] as Plugin[];
+            } finally {
+                if (!opts?.silent) setLoading(false);
             }
-        } catch {}
-    };
+        },
+        [t],
+    );
 
-    useEffect(() => {
-        setPluginsWithUpdates(plugins.filter((p) => hasUpdateAvailable(p)));
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [plugins, onlinePluginsCache]);
-
-    const checkAllUpdates = async () => {
-        if (updateCheckLoading) return;
+    const checkAllUpdates = useCallback(async (pluginList?: Plugin[]) => {
+        const list = pluginList || plugins;
         setUpdateCheckLoading(true);
+        setStoreError(null);
         try {
-            const promises = plugins.map((p) => fetchOnlinePluginInfo(p.identifier));
-            await Promise.all(promises);
-        } catch (error) {
-            console.error(error);
+            if (list.length === 0) {
+                setStoreUpdates({});
+                return;
+            }
+            const response = await axios.get('/api/admin/cloud/data/store', {
+                params: {
+                    page: 1,
+                    limit: 100,
+                    category: FEATHERPANEL_CATEGORY_SLUG,
+                    type: 'product',
+                },
+            });
+            const items = extractStoreItems(response.data?.data);
+            const next: Record<string, PluginStoreUpdate> = {};
+            for (const plugin of list) {
+                const match = findStoreMatch(plugin, items);
+                if (!match?.product) continue;
+                const latest = storeLatestVersion(match.product);
+                const slug = productSlug(match.product);
+                if (!latest || !plugin.version || !slug) continue;
+                next[plugin.identifier] = {
+                    latest_version: latest,
+                    store_slug: slug,
+                    can_download: match.can_download === true,
+                    update_available: comparePluginVersions(plugin.version, latest) < 0,
+                };
+            }
+            setStoreUpdates(next);
+        } catch (err) {
+            if (axios.isAxiosError(err)) {
+                const code = err.response?.data?.error_code;
+                if (code === 'CLOUD_CREDENTIALS_NOT_CONFIGURED' || err.response?.status === 503) {
+                    setStoreError(
+                        err.response?.data?.message ||
+                            'Mythic Cloud is not linked. Connect Cloud Connections to check updates.',
+                    );
+                    setStoreUpdates({});
+                    return;
+                }
+            }
+            setStoreError(mythicCloudErrorMessage(err, 'Failed to check Mythic store for updates'));
+            setStoreUpdates({});
         } finally {
             setUpdateCheckLoading(false);
         }
-    };
+    }, [plugins]);
+
+    const pluginsWithUpdates = useMemo(
+        () => plugins.filter((p) => storeUpdates[p.identifier]?.update_available),
+        [plugins, storeUpdates],
+    );
+
+    const issueCount = useMemo(
+        () =>
+            plugins.filter(
+                (p) =>
+                    (p.unmetDependencies && p.unmetDependencies.length > 0) ||
+                    (p.missingConfigs && p.missingConfigs.length > 0) ||
+                    !p.loaded,
+            ).length,
+        [plugins],
+    );
+
+    const filteredPlugins = useMemo(() => {
+        const q = search.trim().toLowerCase();
+        return plugins.filter((plugin) => {
+            const update = storeUpdates[plugin.identifier];
+            const hasIssue =
+                (plugin.unmetDependencies && plugin.unmetDependencies.length > 0) ||
+                (plugin.missingConfigs && plugin.missingConfigs.length > 0) ||
+                !plugin.loaded;
+            if (filter === 'updates' && !update?.update_available) return false;
+            if (filter === 'issues' && !hasIssue) return false;
+            if (!q) return true;
+            return `${plugin.name || ''} ${plugin.identifier} ${plugin.author || ''} ${plugin.description || ''}`
+                .toLowerCase()
+                .includes(q);
+        });
+    }, [plugins, storeUpdates, filter, search]);
 
     useEffect(() => {
-        fetchPlugins();
-        fetchWidgets();
-    }, [fetchPlugins, fetchWidgets]);
-
-    useEffect(() => {
-        if (plugins.length > 0) {
-            checkAllUpdates();
-        }
+        void (async () => {
+            const list = await fetchPlugins();
+            fetchWidgets();
+            await checkAllUpdates(list);
+        })();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [plugins.length]);
+    }, [fetchPlugins, fetchWidgets]);
 
     const loadPluginConfig = async (plugin: Plugin) => {
         setConfigLoading(true);
@@ -454,7 +510,8 @@ export default function PluginsPage() {
             toast.success(t('admin.plugins.messages.install_success'));
             setConfirmUploadOpen(false);
             setPendingUploadFile(null);
-            fetchPlugins();
+            const list = await fetchPlugins({ silent: true });
+            await checkAllUpdates(list);
             setTimeout(() => window.location.reload(), 1500);
         } catch (error) {
             if (axios.isAxiosError(error)) {
@@ -473,7 +530,8 @@ export default function PluginsPage() {
             toast.success(t('admin.plugins.messages.install_success'));
             setConfirmUrlOpen(false);
             setInstallUrl('');
-            fetchPlugins();
+            const list = await fetchPlugins({ silent: true });
+            await checkAllUpdates(list);
             setTimeout(() => window.location.reload(), 1500);
         } catch (error) {
             if (axios.isAxiosError(error)) {
@@ -498,7 +556,8 @@ export default function PluginsPage() {
             toast.success(t('admin.plugins.messages.uninstall_success'));
             setConfirmUninstallOpen(false);
             setSelectedPluginForUninstall(null);
-            fetchPlugins();
+            const list = await fetchPlugins({ silent: true });
+            await checkAllUpdates(list);
             setTimeout(() => window.location.reload(), 1500);
         } catch (error) {
             if (axios.isAxiosError(error)) {
@@ -509,52 +568,42 @@ export default function PluginsPage() {
         }
     };
 
-    const checkForUpdate = async (plugin: Plugin) => {
-        setCheckingUpdateId(plugin.identifier);
-        setSelectedPlugin(plugin);
-        try {
-            const response = await axios.get(
-                `/api/admin/plugins/online/${encodeURIComponent(plugin.identifier)}/check`,
+    const openUpdateDialog = (plugin: Plugin) => {
+        const update = storeUpdates[plugin.identifier];
+        if (!update?.update_available) {
+            toast.info(
+                t('admin.plugins.messages.up_to_date', {
+                    plugin: plugin.name || plugin.identifier,
+                }),
             );
-            const requirements = response.data.data;
-            if (requirements?.update_available) {
-                setUpdateRequirements(requirements);
-                setUpdateDialogOpen(true);
-            } else {
-                toast.info(
-                    t('admin.plugins.messages.up_to_date', {
-                        plugin: plugin.name || plugin.identifier,
-                    }),
-                );
-            }
-        } catch (error) {
-            if (axios.isAxiosError(error)) {
-                toast.error(error.response?.data?.message || t('admin.plugins.messages.update_check_failed'));
-            } else {
-                toast.error(t('admin.plugins.messages.update_check_failed'));
-            }
-        } finally {
-            setCheckingUpdateId(null);
+            return;
         }
+        setPendingUpdatePlugin(plugin);
+        setUpdateDialogOpen(true);
     };
 
     const installUpdate = async () => {
-        if (!selectedPlugin) return;
-        setInstallingUpdateId(selectedPlugin.identifier);
+        if (!pendingUpdatePlugin) return;
+        const update = storeUpdates[pendingUpdatePlugin.identifier];
+        setInstallingUpdateId(pendingUpdatePlugin.identifier);
         try {
-            await axios.post('/api/admin/plugins/online/install', { identifier: selectedPlugin.identifier });
+            if (update?.store_slug && update.can_download) {
+                const version = await resolveInstallVersion(update.store_slug);
+                if (!version) throw new Error('No downloadable release found.');
+                await downloadAndInstall(update.store_slug, version);
+            } else {
+                await axios.post('/api/admin/plugins/online/install', {
+                    identifier: pendingUpdatePlugin.identifier,
+                });
+            }
             toast.success(t('admin.plugins.messages.update_success'));
             setUpdateDialogOpen(false);
-            setUpdateRequirements(null);
-            fetchPlugins();
-            checkAllUpdates();
+            setPendingUpdatePlugin(null);
+            const list = await fetchPlugins({ silent: true });
+            await checkAllUpdates(list);
             setTimeout(() => window.location.reload(), 1500);
         } catch (error) {
-            if (axios.isAxiosError(error)) {
-                toast.error(error.response?.data?.message || t('admin.plugins.messages.update_failed'));
-            } else {
-                toast.error(t('admin.plugins.messages.update_failed'));
-            }
+            toast.error(await parseBlobError(error, t('admin.plugins.messages.update_failed')));
         } finally {
             setInstallingUpdateId(null);
         }
@@ -564,23 +613,27 @@ export default function PluginsPage() {
         if (bulkUpdatingPlugins || pluginsWithUpdates.length === 0) return;
 
         setBulkUpdatingPlugins(true);
-        const queuedIdentifiers = pluginsWithUpdates.map((plugin) => plugin.identifier);
         const failures: string[] = [];
         let updatedCount = 0;
 
         try {
             for (const plugin of pluginsWithUpdates) {
+                const update = storeUpdates[plugin.identifier];
                 setInstallingUpdateId(plugin.identifier);
                 try {
-                    await axios.post('/api/admin/plugins/online/install', {
-                        identifier: plugin.identifier,
-                        queued_identifiers: queuedIdentifiers,
-                    });
+                    if (update?.store_slug && update.can_download) {
+                        const version = await resolveInstallVersion(update.store_slug);
+                        if (!version) throw new Error('No downloadable release found.');
+                        await downloadAndInstall(update.store_slug, version);
+                    } else {
+                        await axios.post('/api/admin/plugins/online/install', {
+                            identifier: plugin.identifier,
+                            queued_identifiers: pluginsWithUpdates.map((p) => p.identifier),
+                        });
+                    }
                     updatedCount += 1;
                 } catch (error) {
-                    const message = axios.isAxiosError(error)
-                        ? error.response?.data?.message || t('admin.plugins.messages.update_failed')
-                        : t('admin.plugins.messages.update_failed');
+                    const message = await parseBlobError(error, t('admin.plugins.messages.update_failed'));
                     failures.push(`${plugin.name || plugin.identifier}: ${message}`);
                 }
             }
@@ -601,8 +654,8 @@ export default function PluginsPage() {
             }
 
             if (updatedCount > 0) {
-                fetchPlugins();
-                checkAllUpdates();
+                const list = await fetchPlugins({ silent: true });
+                await checkAllUpdates(list);
                 setTimeout(() => window.location.reload(), 1500);
             }
         } finally {
@@ -613,6 +666,7 @@ export default function PluginsPage() {
 
     const configFields = useMemo(() => pluginConfig?.configSchema || [], [pluginConfig]);
     const hasConfigSchema = configFields.length > 0;
+    const pendingUpdate = pendingUpdatePlugin ? storeUpdates[pendingUpdatePlugin.identifier] : null;
 
     return (
         <div className='space-y-6'>
@@ -623,34 +677,54 @@ export default function PluginsPage() {
                 icon={Puzzle}
                 actions={
                     <div className='flex flex-wrap gap-2'>
-                        <Button variant='outline' onClick={fetchPlugins} disabled={loading}>
-                            <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                            {t('admin.plugins.actions.refresh')}
-                        </Button>
-                        <Button variant='outline' onClick={checkAllUpdates} disabled={updateCheckLoading}>
-                            <RefreshCw className={`mr-2 h-4 w-4 ${updateCheckLoading ? 'animate-spin' : ''}`} />
+                        <Button
+                            size='sm'
+                            variant='outline'
+                            onClick={() => void checkAllUpdates()}
+                            disabled={updateCheckLoading || loading}
+                        >
+                            {updateCheckLoading ? (
+                                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                            ) : (
+                                <RefreshCw className='mr-2 h-4 w-4' />
+                            )}
                             {t('admin.plugins.actions.check_updates')}
                         </Button>
-                        {pluginsWithUpdates.length > 0 && (
+                        {pluginsWithUpdates.length > 0 ? (
                             <Button
+                                size='sm'
                                 variant='outline'
-                                onClick={installAllUpdates}
+                                onClick={() => void installAllUpdates()}
                                 disabled={bulkUpdatingPlugins || !!installingUpdateId}
                             >
-                                <RefreshCw className={`mr-2 h-4 w-4 ${bulkUpdatingPlugins ? 'animate-spin' : ''}`} />
-                                {t('admin.plugins.actions.update_all', { count: String(pluginsWithUpdates.length) })}
+                                {bulkUpdatingPlugins ? (
+                                    <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                                ) : (
+                                    <Download className='mr-2 h-4 w-4' />
+                                )}
+                                {t('admin.plugins.actions.update_all', {
+                                    count: String(pluginsWithUpdates.length),
+                                })}
                             </Button>
-                        )}
-                        <Button variant='outline' asChild>
+                        ) : null}
+                        <Button size='sm' variant='outline' asChild>
                             <label className='cursor-pointer'>
                                 <Upload className='mr-2 h-4 w-4' />
                                 {t('admin.plugins.actions.upload')}
                                 <input type='file' accept='.fpa' className='hidden' onChange={onUploadPlugin} />
                             </label>
                         </Button>
-                        <Button onClick={() => setConfirmUrlOpen(true)}>
+                        <Button size='sm' onClick={() => setConfirmUrlOpen(true)}>
                             <Plus className='mr-2 h-4 w-4' />
                             {t('admin.plugins.actions.install_url')}
+                        </Button>
+                        <Button
+                            size='sm'
+                            variant='outline'
+                            onClick={() => router.push('/admin/feathercloud/products')}
+                        >
+                            <Store className='mr-2 h-4 w-4' />
+                            Store
                         </Button>
                     </div>
                 }
@@ -658,198 +732,250 @@ export default function PluginsPage() {
 
             <WidgetRenderer widgets={getWidgets('admin-plugins', 'after-header')} />
 
-            {pluginsWithUpdates.length > 0 && (
-                <div className='rounded-md border border-blue-500/30 bg-blue-500/10 p-4 text-blue-700 dark:text-blue-400'>
-                    <div className='flex items-start gap-3'>
-                        <RefreshCw className='mt-0.5 h-5 w-5 shrink-0' />
-                        <div className='flex-1'>
-                            <div className='mb-2 font-semibold'>{t('admin.plugins.banners.updates.title')}</div>
-                            <p className='mb-2 text-sm'>{t('admin.plugins.banners.updates.description')}</p>
-                            <div className='mb-2 flex flex-wrap gap-2'>
-                                {pluginsWithUpdates.map((plugin) => (
-                                    <Badge
-                                        key={plugin.identifier}
-                                        variant='secondary'
-                                        className='cursor-pointer text-xs transition-colors hover:bg-blue-200 dark:hover:bg-blue-800'
-                                        onClick={() => checkForUpdate(plugin)}
-                                    >
-                                        {plugin.name || plugin.identifier}
-                                        <RefreshCw className='ml-1 inline h-3 w-3' />
-                                    </Badge>
-                                ))}
-                            </div>
-                            <Button
-                                size='sm'
-                                onClick={installAllUpdates}
-                                disabled={bulkUpdatingPlugins || !!installingUpdateId}
-                            >
-                                <RefreshCw className={`mr-2 h-4 w-4 ${bulkUpdatingPlugins ? 'animate-spin' : ''}`} />
-                                {t('admin.plugins.actions.update_all', { count: String(pluginsWithUpdates.length) })}
-                            </Button>
-                        </div>
-                    </div>
+            <div className='grid gap-3 sm:grid-cols-3'>
+                <div className='bg-card/60 rounded-2xl px-4 py-3'>
+                    <p className='text-muted-foreground text-xs'>Installed</p>
+                    <p className='mt-1 text-sm font-medium'>{plugins.length}</p>
                 </div>
-            )}
+                <div className='bg-card/60 rounded-2xl px-4 py-3'>
+                    <p className='text-muted-foreground text-xs'>Updates</p>
+                    <p className='mt-1 text-sm font-medium'>
+                        {storeError
+                            ? 'Store unavailable'
+                            : pluginsWithUpdates.length > 0
+                              ? `${pluginsWithUpdates.length} available`
+                              : 'Up to date'}
+                    </p>
+                </div>
+                <div className='bg-card/60 rounded-2xl px-4 py-3'>
+                    <p className='text-muted-foreground text-xs'>Issues</p>
+                    <p className='mt-1 text-sm font-medium'>
+                        {issueCount > 0 ? `${issueCount} need attention` : 'None'}
+                    </p>
+                </div>
+            </div>
 
-            {plugins.length > 0 ? (
-                <div className='grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3'>
-                    {plugins.map((plugin) => (
-                        <PageCard
-                            key={plugin.identifier}
-                            title={plugin.name || plugin.identifier}
-                            description={plugin.identifier}
-                            iconSrc={plugin.icon}
-                            icon={Puzzle}
-                            className='flex h-full flex-col'
-                            variant={
-                                plugin.unmetDependencies?.length || plugin.missingConfigs?.length
-                                    ? 'warning'
-                                    : 'default'
-                            }
-                            footer={
-                                <div className='flex items-center gap-2'>
-                                    <Button
-                                        size='sm'
-                                        variant='outline'
-                                        className='flex-1'
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            openPluginConfig(plugin);
-                                        }}
-                                    >
-                                        <Settings className='mr-2 h-4 w-4' />
-                                        {t('admin.plugins.actions.configure')}
-                                    </Button>
-                                    <Button
-                                        size='sm'
-                                        variant='ghost'
-                                        className='text-muted-foreground hover:text-destructive h-9 w-9 p-0'
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            requestUninstall(plugin);
-                                        }}
-                                    >
-                                        <Trash2 className='h-4 w-4' />
-                                    </Button>
-                                </div>
-                            }
+            {storeError ? (
+                <div className='bg-muted/40 flex flex-wrap items-center justify-between gap-3 rounded-2xl px-4 py-3 text-sm'>
+                    <p className='text-muted-foreground'>{storeError}</p>
+                    <Button size='sm' variant='outline' onClick={() => router.push('/admin/cloud-management')}>
+                        Cloud Connections
+                    </Button>
+                </div>
+            ) : null}
+
+            <div className='flex flex-col gap-3 sm:flex-row sm:items-center'>
+                <div className='relative min-w-0 flex-1'>
+                    <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
+                    <Input
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder='Search installed plugins…'
+                        className='pl-9'
+                    />
+                </div>
+                <div className='flex flex-wrap gap-2'>
+                    {(
+                        [
+                            { key: 'all' as const, label: 'All' },
+                            { key: 'updates' as const, label: 'Updates' },
+                            { key: 'issues' as const, label: 'Issues' },
+                        ] as const
+                    ).map((item) => (
+                        <Button
+                            key={item.key}
+                            size='sm'
+                            variant={filter === item.key ? 'default' : 'outline'}
+                            onClick={() => setFilter(item.key)}
                         >
-                            <div className='flex-1 space-y-4'>
-                                <p className='text-muted-foreground line-clamp-2 min-h-10 text-sm'>
-                                    {plugin.description || t('admin.plugins.grid.no_description')}
-                                </p>
+                            {item.label}
+                        </Button>
+                    ))}
+                    <Button
+                        size='sm'
+                        variant='outline'
+                        onClick={() => void fetchPlugins().then((list) => checkAllUpdates(list))}
+                        disabled={loading}
+                    >
+                        <RefreshCw className={cn('mr-2 h-4 w-4', loading && 'animate-spin')} />
+                        {t('admin.plugins.actions.refresh')}
+                    </Button>
+                </div>
+            </div>
 
-                                <div className='space-y-2'>
-                                    <div className='flex items-center justify-between text-xs'>
-                                        <span className='text-muted-foreground'>{t('admin.plugins.grid.version')}</span>
-                                        <span className='bg-secondary/50 rounded px-1.5 py-0.5 font-mono'>
-                                            v{plugin.version || '?'}
-                                        </span>
+            {loading ? (
+                <div className='text-muted-foreground flex items-center gap-2 py-16 text-sm'>
+                    <Loader2 className='h-4 w-4 animate-spin' /> Loading plugins…
+                </div>
+            ) : filteredPlugins.length === 0 ? (
+                <EmptyState
+                    title={
+                        plugins.length === 0
+                            ? t('admin.plugins.grid.empty_title')
+                            : filter === 'updates'
+                              ? 'All plugins are up to date'
+                              : 'No plugins match'
+                    }
+                    description={
+                        plugins.length === 0
+                            ? t('admin.plugins.grid.empty_description')
+                            : 'Try another filter or search term.'
+                    }
+                    icon={Puzzle}
+                />
+            ) : (
+                <div className='grid gap-4 sm:grid-cols-2 xl:grid-cols-3'>
+                    {filteredPlugins.map((plugin) => {
+                        const update = storeUpdates[plugin.identifier];
+                        const needsUpdate = Boolean(update?.update_available);
+                        const hasIssue =
+                            (plugin.unmetDependencies && plugin.unmetDependencies.length > 0) ||
+                            (plugin.missingConfigs && plugin.missingConfigs.length > 0) ||
+                            !plugin.loaded;
+                        const busy = installingUpdateId === plugin.identifier || bulkUpdatingPlugins;
+
+                        return (
+                            <article
+                                key={plugin.identifier}
+                                className={cn(
+                                    'bg-card/80 flex flex-col overflow-hidden rounded-2xl shadow-sm ring-1 ring-transparent transition',
+                                    'hover:bg-card hover:shadow-md',
+                                    hasIssue ? 'ring-amber-500/30' : 'ring-border/40',
+                                )}
+                            >
+                                <div className='flex flex-1 flex-col space-y-3 p-4'>
+                                    <div className='flex items-start gap-3'>
+                                        <div className='bg-muted flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl'>
+                                            {plugin.icon ? (
+                                                // eslint-disable-next-line @next/next/no-img-element
+                                                <img
+                                                    src={plugin.icon}
+                                                    alt=''
+                                                    className='h-full w-full object-cover'
+                                                />
+                                            ) : (
+                                                <Puzzle className='text-muted-foreground h-5 w-5' />
+                                            )}
+                                        </div>
+                                        <div className='min-w-0 flex-1'>
+                                            <h3 className='truncate text-sm font-semibold'>
+                                                {plugin.name || plugin.identifier}
+                                            </h3>
+                                            <p className='text-muted-foreground truncate font-mono text-[11px]'>
+                                                {plugin.identifier}
+                                            </p>
+                                        </div>
+                                        <div className='flex shrink-0 flex-col items-end gap-1'>
+                                            {needsUpdate ? (
+                                                <span className='rounded-md bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-400'>
+                                                    Update
+                                                </span>
+                                            ) : update ? (
+                                                <span className='text-muted-foreground inline-flex items-center gap-1 text-[10px]'>
+                                                    <CheckCircle2 className='h-3 w-3 text-emerald-500' />
+                                                    Current
+                                                </span>
+                                            ) : null}
+                                        </div>
                                     </div>
-                                    <div className='flex items-center justify-between text-xs'>
-                                        <span className='text-muted-foreground'>{t('admin.plugins.grid.author')}</span>
-                                        <span className='max-w-[120px] truncate font-medium'>
+
+                                    <p className='text-muted-foreground line-clamp-2 min-h-10 text-xs'>
+                                        {plugin.description || t('admin.plugins.grid.no_description')}
+                                    </p>
+
+                                    <div className='text-muted-foreground flex flex-wrap gap-x-3 gap-y-1 text-[11px]'>
+                                        <span>
+                                            v{plugin.version || '?'}
+                                            {needsUpdate ? (
+                                                <span className='text-amber-600 dark:text-amber-400'>
+                                                    {' '}
+                                                    → v{update?.latest_version}
+                                                </span>
+                                            ) : null}
+                                        </span>
+                                        <span className='truncate'>
                                             {plugin.author || t('admin.plugins.grid.author_unknown')}
                                         </span>
-                                    </div>
-                                    {plugin.website && (
-                                        <div className='flex items-center justify-between text-xs'>
-                                            <span className='text-muted-foreground'>
-                                                {t('admin.plugins.drawers.info.sections.website')}
-                                            </span>
+                                        {plugin.website ? (
                                             <a
                                                 href={plugin.website}
                                                 target='_blank'
                                                 rel='noreferrer'
-                                                className='text-primary flex items-center gap-1 hover:underline'
-                                                onClick={(e) => e.stopPropagation()}
+                                                className='text-primary inline-flex items-center gap-1 hover:underline'
                                             >
-                                                {t('admin.plugins.grid.visit_action')} <Globe className='h-3 w-3' />
+                                                Site <Globe className='h-3 w-3' />
                                             </a>
+                                        ) : null}
+                                    </div>
+
+                                    {(plugin.unmetDependencies?.length ||
+                                        plugin.missingConfigs?.length ||
+                                        !plugin.loaded) && (
+                                        <div className='flex flex-wrap gap-1.5'>
+                                            {plugin.unmetDependencies?.map((dep) => (
+                                                <Badge
+                                                    key={dep}
+                                                    variant='outline'
+                                                    className='border-amber-500/40 bg-amber-500/10 text-[10px] text-amber-700 dark:text-amber-400'
+                                                >
+                                                    {t('admin.plugins.grid.missing_badge', { dep })}
+                                                </Badge>
+                                            ))}
+                                            {plugin.missingConfigs?.map((cfg) => (
+                                                <Badge
+                                                    key={String(cfg)}
+                                                    variant='outline'
+                                                    className='border-orange-500/40 bg-orange-500/10 text-[10px] text-orange-700 dark:text-orange-400'
+                                                >
+                                                    {t('admin.plugins.grid.config_badge', { cfg: String(cfg) })}
+                                                </Badge>
+                                            ))}
+                                            {!plugin.loaded ? (
+                                                <Badge variant='secondary' className='text-[10px]'>
+                                                    {t('admin.plugins.grid.not_loaded')}
+                                                </Badge>
+                                            ) : null}
                                         </div>
                                     )}
                                 </div>
 
-                                <div className='flex flex-wrap gap-1.5 pt-2'>
-                                    {hasUpdateAvailable(plugin) && (
-                                        <Badge
-                                            className='w-full cursor-pointer justify-center border-0 bg-blue-500 py-1 text-white hover:bg-blue-600'
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                checkForUpdate(plugin);
-                                            }}
+                                <div className='flex items-center gap-2 px-4 pb-4'>
+                                    <Button
+                                        size='sm'
+                                        variant='outline'
+                                        className='flex-1'
+                                        onClick={() => void openPluginConfig(plugin)}
+                                    >
+                                        <Settings className='mr-1.5 h-3.5 w-3.5' />
+                                        {t('admin.plugins.actions.configure')}
+                                    </Button>
+                                    {needsUpdate ? (
+                                        <Button
+                                            size='sm'
+                                            disabled={busy || update?.can_download === false}
+                                            onClick={() => openUpdateDialog(plugin)}
                                         >
-                                            <RefreshCw
-                                                className={`mr-1 h-3 w-3 ${
-                                                    checkingUpdateId === plugin.identifier
-                                                        ? 'animate-spin'
-                                                        : 'animate-pulse'
-                                                }`}
-                                            />
-                                            {checkingUpdateId === plugin.identifier
-                                                ? t('admin.plugins.grid.update_checking')
-                                                : t('admin.plugins.grid.update_available')}
-                                        </Badge>
-                                    )}
-                                    {plugin.unmetDependencies?.map((dep) => (
-                                        <Badge
-                                            key={dep}
-                                            variant='outline'
-                                            className='border-yellow-500/50 bg-yellow-500/10 text-[10px] text-yellow-600'
-                                        >
-                                            {t('admin.plugins.grid.missing_badge', { dep })}
-                                        </Badge>
-                                    ))}
-                                    {plugin.missingConfigs?.map((cfg) => (
-                                        <Badge
-                                            key={String(cfg)}
-                                            variant='outline'
-                                            className='border-orange-500/50 bg-orange-500/10 text-[10px] text-orange-600'
-                                        >
-                                            {t('admin.plugins.grid.config_badge', { cfg: String(cfg) })}
-                                        </Badge>
-                                    ))}
-                                    {!plugin.loaded && (
-                                        <Badge variant='secondary' className='text-[10px]'>
-                                            {t('admin.plugins.grid.not_loaded')}
-                                        </Badge>
-                                    )}
+                                            {installingUpdateId === plugin.identifier ? (
+                                                <Loader2 className='h-3.5 w-3.5 animate-spin' />
+                                            ) : (
+                                                <Download className='h-3.5 w-3.5' />
+                                            )}
+                                        </Button>
+                                    ) : null}
+                                    <Button
+                                        size='sm'
+                                        variant='ghost'
+                                        className='text-muted-foreground hover:text-destructive h-8 w-8 p-0'
+                                        onClick={() => requestUninstall(plugin)}
+                                    >
+                                        <Trash2 className='h-3.5 w-3.5' />
+                                    </Button>
                                 </div>
-                            </div>
-                        </PageCard>
-                    ))}
-                </div>
-            ) : (
-                <div className='py-12 text-center'>
-                    <div className='bg-muted mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full'>
-                        <Puzzle className='text-muted-foreground h-12 w-12' />
-                    </div>
-                    <h3 className='mb-2 text-lg font-semibold'>{t('admin.plugins.grid.empty_title')}</h3>
-                    <p className='text-muted-foreground mb-4'>{t('admin.plugins.grid.empty_description')}</p>
-                    <Button onClick={fetchPlugins}>
-                        <RefreshCw className='mr-2 h-4 w-4' />
-                        {t('admin.plugins.actions.refresh')}
-                    </Button>
+                            </article>
+                        );
+                    })}
                 </div>
             )}
-
-            <div className='mt-6 grid grid-cols-1 gap-6 pt-10 md:grid-cols-2 lg:grid-cols-3'>
-                <PageCard title={t('admin.plugins.help.install.title')} icon={Upload}>
-                    <p className='text-muted-foreground text-sm leading-relaxed'>
-                        {t('admin.plugins.help.install.description')}
-                    </p>
-                </PageCard>
-                <PageCard title={t('admin.plugins.help.config.title')} icon={Settings}>
-                    <p className='text-muted-foreground text-sm leading-relaxed'>
-                        {t('admin.plugins.help.config.description')}
-                    </p>
-                </PageCard>
-                <PageCard title={t('admin.plugins.help.security.title')} icon={AlertCircle} variant='warning'>
-                    <p className='text-muted-foreground text-sm leading-relaxed'>
-                        {t('admin.plugins.help.security.description')}
-                    </p>
-                </PageCard>
-            </div>
 
             <Sheet open={configDrawerOpen} onOpenChange={setConfigDrawerOpen} className='max-w-2xl'>
                 <SheetHeader>
@@ -1339,24 +1465,35 @@ export default function PluginsPage() {
                 </DialogContent>
             </Dialog>
 
-            <Dialog open={updateDialogOpen} onOpenChange={setUpdateDialogOpen}>
+            <Dialog
+                open={updateDialogOpen}
+                onOpenChange={(open) => {
+                    setUpdateDialogOpen(open);
+                    if (!open) setPendingUpdatePlugin(null);
+                }}
+            >
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>{t('admin.plugins.dialogs.update.title')}</DialogTitle>
-                        <DialogDescription>{updateRequirements?.package.name}</DialogDescription>
+                        <DialogDescription>
+                            {pendingUpdatePlugin?.name || pendingUpdatePlugin?.identifier}
+                        </DialogDescription>
                     </DialogHeader>
                     <div className='space-y-4'>
-                        <div className='rounded-md border border-green-500/30 bg-green-500/10 p-3 text-sm text-green-700'>
-                            <div className='mb-1 font-semibold'>{t('admin.plugins.dialogs.update.available')}</div>
-                            <p>
+                        <div className='rounded-2xl bg-emerald-500/10 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-400'>
+                            <p className='font-medium'>{t('admin.plugins.dialogs.update.available')}</p>
+                            <p className='mt-1'>
                                 {t('admin.plugins.dialogs.update.version_info', {
-                                    current: updateRequirements?.installed_version || 'unknown',
-                                    latest: updateRequirements?.latest_version || 'unknown',
+                                    current: pendingUpdatePlugin?.version || 'unknown',
+                                    latest: pendingUpdate?.latest_version || 'unknown',
                                 })}
                             </p>
                         </div>
-                        <div className='rounded-md border border-yellow-500/30 bg-yellow-500/10 p-3 text-sm text-yellow-700'>
-                            <AlertCircle className='mb-1 h-5 w-5' />
+                        <div className='rounded-2xl bg-amber-500/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-400'>
+                            <div className='mb-1 flex items-center gap-2 font-medium'>
+                                <AlertCircle className='h-4 w-4' />
+                                Note
+                            </div>
                             <p>{t('admin.plugins.dialogs.update.backup_warning')}</p>
                         </div>
                     </div>
@@ -1364,8 +1501,8 @@ export default function PluginsPage() {
                         <Button variant='outline' onClick={() => setUpdateDialogOpen(false)}>
                             {t('admin.plugins.actions.cancel')}
                         </Button>
-                        <Button onClick={installUpdate} disabled={!!installingUpdateId}>
-                            {installingUpdateId ? <RefreshCw className='mr-2 h-4 w-4 animate-spin' /> : null}
+                        <Button onClick={() => void installUpdate()} disabled={!!installingUpdateId}>
+                            {installingUpdateId ? <Loader2 className='mr-2 h-4 w-4 animate-spin' /> : null}
                             {t('admin.plugins.actions.update')}
                         </Button>
                     </DialogFooter>

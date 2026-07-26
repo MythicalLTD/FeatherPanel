@@ -317,6 +317,8 @@ interface ConfigInterface
     public const FEATHERCLOUD_AUTHORIZER_NAME = 'feathercloud_authorizer_name';
     public const FEATHERCLOUD_MARKETPLACE_ENABLED = 'feathercloud_marketplace_enabled';
     public const FEATHERCLOUD_EGGS_ENABLED = 'feathercloud_eggs_enabled';
+    /** Mythic Eggs API base (prod: https://eggs.mythicalsystems.org, dev: https://eggs-dev.mythicalsystems.org) */
+    public const FEATHERCLOUD_EGGS_BASE_URL = 'feathercloud_eggs_base_url';
     public const FEATHERCLOUD_PASTES_ENABLED = 'feathercloud_pastes_enabled';
     public const FEATHERCLOUD_ISSUES_ENABLED = 'feathercloud_issues_enabled';
     public const FEATHERCLOUD_LAST_SYNCED_AT = 'feathercloud_last_synced_at';

@@ -27,6 +27,7 @@ use App\Services\FeatherCloud\FeatherCloudClient;
 use App\Services\FeatherCloud\MythicMemberResolver;
 use App\Services\FeatherCloud\FeatherCloudException;
 use App\Services\FeatherCloud\MythicIssueReportCollector;
+use App\Services\FeatherCloud\MythicEggsClient;
 
 class CloudDataController
 {
@@ -62,12 +63,169 @@ class CloudDataController
     #[OA\Get(path: '/api/admin/cloud/data/products', summary: 'Get purchased products', tags: ['Admin - FeatherCloud'])]
     public function getProducts(Request $request): Response
     {
-        $page = (int) $request->query->get('page', 1);
+        $page = max(1, (int) $request->query->get('page', 1));
         $limit = (int) $request->query->get('limit', 50);
+        if ($limit < 1) {
+            $limit = 50;
+        }
+        if ($limit > 100) {
+            $limit = 100;
+        }
 
         return $this->proxy(
             static fn (FeatherCloudClient $client): array => $client->getPurchasedProducts($page, $limit),
             'Products retrieved successfully'
+        );
+    }
+
+    #[OA\Get(path: '/api/admin/cloud/data/store', summary: 'Mythic marketplace store catalog', tags: ['Admin - FeatherCloud'])]
+    public function getStore(Request $request): Response
+    {
+        if (!$this->moduleEnabled(ConfigInterface::FEATHERCLOUD_MARKETPLACE_ENABLED)) {
+            return ApiResponse::error('Marketplace module is disabled', 'CLOUD_MODULE_DISABLED', 403);
+        }
+
+        $page = max(1, (int) $request->query->get('page', 1));
+        $limit = (int) $request->query->get('limit', 50);
+        if ($limit < 1) {
+            $limit = 50;
+        }
+        if ($limit > 100) {
+            $limit = 100;
+        }
+
+        $query = [
+            'page' => $page,
+            'limit' => $limit,
+            'q' => $request->query->get('q'),
+            'type' => $request->query->get('type'),
+            'price' => $request->query->get('price'),
+            'category' => $request->query->get('category'),
+            'cloud_download' => $request->query->get('cloud_download'),
+        ];
+
+        return $this->proxy(
+            static fn (FeatherCloudClient $client): array => $client->getStore($query),
+            'Store catalog retrieved successfully'
+        );
+    }
+
+    #[OA\Get(path: '/api/admin/cloud/data/store/products/{slug}', summary: 'Mythic store product detail', tags: ['Admin - FeatherCloud'])]
+    public function getStoreProduct(Request $request, string $slug): Response
+    {
+        if (!$this->moduleEnabled(ConfigInterface::FEATHERCLOUD_MARKETPLACE_ENABLED)) {
+            return ApiResponse::error('Marketplace module is disabled', 'CLOUD_MODULE_DISABLED', 403);
+        }
+
+        return $this->proxy(
+            static fn (FeatherCloudClient $client): array => $client->getStoreProduct($slug),
+            'Store product retrieved successfully'
+        );
+    }
+
+    #[OA\Get(path: '/api/admin/cloud/data/store/products/{slug}/versions', summary: 'Store product versions', tags: ['Admin - FeatherCloud'])]
+    public function getStoreProductVersions(Request $request, string $slug): Response
+    {
+        if (!$this->moduleEnabled(ConfigInterface::FEATHERCLOUD_MARKETPLACE_ENABLED)) {
+            return ApiResponse::error('Marketplace module is disabled', 'CLOUD_MODULE_DISABLED', 403);
+        }
+
+        return $this->proxy(
+            static fn (FeatherCloudClient $client): array => $client->getStoreProductVersions($slug),
+            'Product versions retrieved successfully'
+        );
+    }
+
+    #[OA\Get(path: '/api/admin/cloud/data/store/products/{slug}/reviews', summary: 'Store product reviews', tags: ['Admin - FeatherCloud'])]
+    public function getStoreProductReviews(Request $request, string $slug): Response
+    {
+        return $this->proxy(
+            static fn (FeatherCloudClient $client): array => $client->getStoreProductReviews($slug),
+            'Product reviews retrieved successfully'
+        );
+    }
+
+    #[OA\Post(path: '/api/admin/cloud/data/store/products/{slug}/reviews', summary: 'Create/update store product review', tags: ['Admin - FeatherCloud'])]
+    public function createStoreProductReview(Request $request, string $slug): Response
+    {
+        $payload = json_decode($request->getContent() ?: '[]', true);
+        if (!is_array($payload)) {
+            return ApiResponse::error('Invalid JSON payload provided.', 'INVALID_JSON_PAYLOAD', 400);
+        }
+
+        $rating = isset($payload['rating']) ? (int) $payload['rating'] : 0;
+        if ($rating < 1 || $rating > 5) {
+            return ApiResponse::error('Rating must be an integer from 1 to 5.', 'INVALID_RATING', 400);
+        }
+
+        $comment = trim((string) ($payload['comment'] ?? ''));
+        if (strlen($comment) < 5 || strlen($comment) > 1000) {
+            return ApiResponse::error('Comment is required (5–1000 characters).', 'INVALID_COMMENT', 400);
+        }
+
+        $body = [
+            'rating' => $rating,
+            'comment' => $comment,
+        ];
+
+        return $this->proxy(
+            function (FeatherCloudClient $client) use ($slug, $body, $request): array {
+                return $this->clientWithMember($client, $request)->createStoreProductReview($slug, $body);
+            },
+            'Product review saved successfully'
+        );
+    }
+
+    #[OA\Get(path: '/api/admin/cloud/data/store/products/{slug}/questions', summary: 'Store product questions', tags: ['Admin - FeatherCloud'])]
+    public function getStoreProductQuestions(Request $request, string $slug): Response
+    {
+        return $this->proxy(
+            static fn (FeatherCloudClient $client): array => $client->getStoreProductQuestions($slug),
+            'Product questions retrieved successfully'
+        );
+    }
+
+    #[OA\Post(path: '/api/admin/cloud/data/store/products/{slug}/questions', summary: 'Ask a store product question', tags: ['Admin - FeatherCloud'])]
+    public function createStoreProductQuestion(Request $request, string $slug): Response
+    {
+        $payload = json_decode($request->getContent() ?: '[]', true);
+        if (!is_array($payload)) {
+            return ApiResponse::error('Invalid JSON payload provided.', 'INVALID_JSON_PAYLOAD', 400);
+        }
+
+        $bodyText = trim((string) ($payload['body'] ?? ''));
+        if ($bodyText === '' || strlen($bodyText) > 2000) {
+            return ApiResponse::error('Question body is required (max 2000 characters).', 'INVALID_QUESTION', 400);
+        }
+
+        return $this->proxy(
+            function (FeatherCloudClient $client) use ($slug, $bodyText, $request): array {
+                return $this->clientWithMember($client, $request)->createStoreProductQuestion($slug, ['body' => $bodyText]);
+            },
+            'Question submitted successfully'
+        );
+    }
+
+    #[OA\Post(path: '/api/admin/cloud/data/store/products/{slug}/questions/{questionId}/replies', summary: 'Reply to store product question', tags: ['Admin - FeatherCloud'])]
+    public function replyStoreProductQuestion(Request $request, string $slug, string $questionId): Response
+    {
+        $payload = json_decode($request->getContent() ?: '[]', true);
+        if (!is_array($payload)) {
+            return ApiResponse::error('Invalid JSON payload provided.', 'INVALID_JSON_PAYLOAD', 400);
+        }
+
+        $bodyText = trim((string) ($payload['body'] ?? ''));
+        if ($bodyText === '' || strlen($bodyText) > 2000) {
+            return ApiResponse::error('Reply body is required (max 2000 characters).', 'INVALID_REPLY', 400);
+        }
+
+        return $this->proxy(
+            function (FeatherCloudClient $client) use ($slug, $questionId, $bodyText, $request): array {
+                return $this->clientWithMember($client, $request)->replyStoreProductQuestion($slug, $questionId, [
+                    'body' => $bodyText,
+                ]);
+            },
+            'Reply submitted successfully'
         );
     }
 
@@ -135,6 +293,21 @@ class CloudDataController
         if (!is_array($payload)) {
             return ApiResponse::error('Invalid JSON payload provided.', 'INVALID_JSON_PAYLOAD', 400);
         }
+
+        $rating = isset($payload['rating']) ? (int) $payload['rating'] : 0;
+        if ($rating < 1 || $rating > 5) {
+            return ApiResponse::error('Rating must be an integer from 1 to 5.', 'INVALID_RATING', 400);
+        }
+
+        $comment = trim((string) ($payload['comment'] ?? ''));
+        if (strlen($comment) < 5 || strlen($comment) > 1000) {
+            return ApiResponse::error('Comment is required (5–1000 characters).', 'INVALID_COMMENT', 400);
+        }
+
+        $payload = [
+            'rating' => $rating,
+            'comment' => $comment,
+        ];
 
         return $this->proxy(
             function (FeatherCloudClient $client) use ($slug, $payload, $request): array {
@@ -210,11 +383,16 @@ class CloudDataController
             'per_page' => $request->query->get('per_page'),
         ], static fn ($v) => $v !== null && $v !== '');
 
-        return $this->proxy(
-            static fn (FeatherCloudClient $client): array => $client->listEggs($query),
-            'Eggs retrieved successfully',
-            false
-        );
+        try {
+            $eggs = new MythicEggsClient();
+            $payload = $eggs->listEggs($query);
+
+            return ApiResponse::success($payload, 'Eggs retrieved successfully', 200);
+        } catch (FeatherCloudException $e) {
+            return $this->cloudErrorResponse($e);
+        } catch (\Exception $e) {
+            return ApiResponse::error($e->getMessage(), 'INTERNAL_ERROR', 500);
+        }
     }
 
     #[OA\Get(path: '/api/admin/cloud/data/eggs/{id}', summary: 'Get Mythic egg detail', tags: ['Admin - FeatherCloud'])]
@@ -224,11 +402,16 @@ class CloudDataController
             return ApiResponse::error('Eggs module is disabled', 'CLOUD_MODULE_DISABLED', 403);
         }
 
-        return $this->proxy(
-            static fn (FeatherCloudClient $client): array => $client->getEgg($id),
-            'Egg retrieved successfully',
-            false
-        );
+        try {
+            $eggs = new MythicEggsClient();
+            $payload = $eggs->getEgg($id);
+
+            return ApiResponse::success($payload, 'Egg retrieved successfully', 200);
+        } catch (FeatherCloudException $e) {
+            return $this->cloudErrorResponse($e);
+        } catch (\Exception $e) {
+            return ApiResponse::error($e->getMessage(), 'INTERNAL_ERROR', 500);
+        }
     }
 
     #[OA\Get(path: '/api/admin/cloud/data/eggs/{id}/download', summary: 'Download Mythic egg JSON', tags: ['Admin - FeatherCloud'])]
@@ -239,8 +422,8 @@ class CloudDataController
                 return ApiResponse::error('Eggs module is disabled', 'CLOUD_MODULE_DISABLED', 403);
             }
 
-            $client = new FeatherCloudClient();
-            $content = $client->downloadEgg($id);
+            $eggs = new MythicEggsClient();
+            $content = $eggs->downloadEgg($id);
             $response = new Response($content, 200);
             $response->headers->set('Content-Type', 'application/json');
             $response->headers->set('Content-Disposition', 'attachment; filename="egg-' . $id . '.json"');
@@ -260,11 +443,17 @@ class CloudDataController
             return ApiResponse::error('Eggs module is disabled', 'CLOUD_MODULE_DISABLED', 403);
         }
 
-        return $this->proxy(
-            static fn (FeatherCloudClient $client): array => $client->getEggReviews($id),
-            'Egg reviews retrieved successfully',
-            false
-        );
+        try {
+            // Prefer eggs host for public list (camelCase meta, no CloudApiResponse).
+            $eggs = new MythicEggsClient();
+            $payload = $eggs->getEggReviews($id);
+
+            return ApiResponse::success($payload, 'Egg reviews retrieved successfully', 200);
+        } catch (FeatherCloudException $e) {
+            return $this->cloudErrorResponse($e);
+        } catch (\Exception $e) {
+            return ApiResponse::error($e->getMessage(), 'INTERNAL_ERROR', 500);
+        }
     }
 
     #[OA\Post(path: '/api/admin/cloud/data/eggs/{id}/reviews', summary: 'Create/update egg review', tags: ['Admin - FeatherCloud'])]
@@ -279,9 +468,29 @@ class CloudDataController
             return ApiResponse::error('Invalid JSON payload provided.', 'INVALID_JSON_PAYLOAD', 400);
         }
 
+        $rating = isset($payload['rating']) ? (int) $payload['rating'] : 0;
+        if ($rating < 1 || $rating > 5) {
+            return ApiResponse::error('Rating must be an integer from 1 to 5.', 'INVALID_RATING', 400);
+        }
+
+        $body = ['rating' => $rating];
+        if (array_key_exists('comment', $payload)) {
+            $comment = $payload['comment'];
+            if ($comment !== null && $comment !== '') {
+                $comment = trim((string) $comment);
+                if (strlen($comment) > 1000) {
+                    return ApiResponse::error('Comment must be at most 1000 characters.', 'INVALID_COMMENT', 400);
+                }
+                $body['comment'] = $comment;
+            } else {
+                $body['comment'] = null;
+            }
+        }
+
         return $this->proxy(
-            function (FeatherCloudClient $client) use ($id, $payload, $request): array {
-                return $this->clientWithMember($client, $request)->createEggReview($id, $payload);
+            function (FeatherCloudClient $client) use ($id, $body, $request): array {
+                // Review writes use panels host (keys + X-Panel-User-Uuid).
+                return $this->clientWithMember($client, $request)->createEggReview($id, $body);
             },
             'Egg review saved successfully'
         );
@@ -444,6 +653,10 @@ class CloudDataController
     )]
     public function submitSuggestion(Request $request): Response
     {
+        if (!$this->moduleEnabled(ConfigInterface::FEATHERCLOUD_ISSUES_ENABLED)) {
+            return ApiResponse::error('Issues module is disabled', 'CLOUD_MODULE_DISABLED', 403);
+        }
+
         $payload = json_decode($request->getContent() ?: '[]', true);
         if (!is_array($payload)) {
             return ApiResponse::error('Invalid JSON payload provided.', 'INVALID_JSON_PAYLOAD', 400);
@@ -454,36 +667,49 @@ class CloudDataController
             return ApiResponse::error('Title is required', 'TITLE_REQUIRED', 400);
         }
 
-        if (!str_starts_with(strtolower($title), '[feature]')) {
-            $payload['title'] = '[Feature] ' . $title;
+        // Strip legacy "[Feature]" prefix — suggestions board does not use GitHub labels.
+        $stripped = preg_replace('/^\[feature\]\s*/i', '', $title);
+        if (is_string($stripped) && trim($stripped) !== '') {
+            $title = trim($stripped);
         }
 
         $why = trim((string) ($payload['why'] ?? ''));
         $body = trim((string) ($payload['body'] ?? ''));
         if ($why !== '') {
-            $payload['body'] = ($body !== '' ? $body . "\n\n" : '') . "Why this helps:\n" . $why;
+            $body = ($body !== '' ? $body . "\n\n" : '') . "Why this helps:\n" . $why;
         }
-        unset($payload['why']);
 
-        // Suggestions only need environment context — skip panel/node logs.
-        $payload['auto_collect'] = $payload['auto_collect'] ?? true;
-        $payload['include_node_diagnostics'] = false;
-        $payload['include_panel_logs'] = false;
+        // Light environment context only (no panel/node logs) — append to body.
+        $autoCollect = filter_var($payload['auto_collect'] ?? true, FILTER_VALIDATE_BOOLEAN);
+        if ($autoCollect) {
+            try {
+                $collector = new MythicIssueReportCollector();
+                $collected = $collector->collect($payload, false, false);
+                $merged = $collector->mergeIntoPayload(['body' => $body, 'diagnostics' => []], $collected);
+                $body = trim((string) ($merged['body'] ?? $body));
+            } catch (\Throwable $e) {
+                App::getInstance(true)->getLogger()->warning(
+                    'Mythic suggestion env collect failed: ' . $e->getMessage()
+                );
+            }
+        }
 
-        $forward = Request::create(
-            '/api/admin/cloud/data/report',
-            'POST',
-            [],
-            $request->cookies->all(),
-            [],
-            $request->server->all(),
-            json_encode($payload)
+        if ($body === '') {
+            return ApiResponse::error('Body is required', 'BODY_REQUIRED', 400);
+        }
+
+        $project = MythicIssueReportCollector::PROJECT;
+        $suggestionPayload = [
+            'title' => $title,
+            'body' => $body,
+        ];
+
+        return $this->proxy(
+            function (FeatherCloudClient $client) use ($project, $suggestionPayload, $request): array {
+                return $this->clientWithMember($client, $request)->createSuggestion($project, $suggestionPayload);
+            },
+            'Suggestion created successfully'
         );
-        foreach ($request->attributes->all() as $key => $value) {
-            $forward->attributes->set($key, $value);
-        }
-
-        return $this->createIssue($forward, MythicIssueReportCollector::PROJECT);
     }
 
     #[OA\Get(path: '/api/admin/cloud/data/issues/{project}/{number}', summary: 'Get Mythic issue', tags: ['Admin - FeatherCloud'])]
@@ -602,12 +828,24 @@ class CloudDataController
     {
         $status = $e->getHttpStatusCode();
         $code = $e->getErrorCode();
+        $message = $e->getMessage();
 
         // Prevent frontend global-auth handlers from treating external 401s as session expiry.
         if ($status === 401) {
             $status = 503;
         }
 
-        return ApiResponse::error($e->getMessage(), $code, $status);
+        $message = match ($code) {
+            'PANEL_DOWNLOADS_DISABLED' => 'Panel downloads are disabled for this product.',
+            'ACCESS_DENIED' => 'Access denied for this Mythic marketplace action.',
+            'INVALID_USER_UUID' => 'Missing or invalid Mythic user id for this panel user. Re-link Cloud Connections.',
+            'USER_NOT_TEAM_MEMBER' => 'This panel user is not a member of the linked Mythic team.',
+            'MEMBER_UUID_REQUIRED' => 'Your panel user is not mapped to a Mythic team member. Re-link Cloud Connections with a matching email.',
+            'CREDENTIALS_NOT_CONFIGURED' => 'Mythic Cloud credentials are not configured. Link your panel in Cloud Management.',
+            'REVIEW_NOT_FOUND' => 'No review found for this Mythic team member.',
+            default => $message,
+        };
+
+        return ApiResponse::error($message, $code, $status);
     }
 }

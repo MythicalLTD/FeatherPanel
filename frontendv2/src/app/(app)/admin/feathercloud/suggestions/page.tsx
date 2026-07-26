@@ -112,7 +112,7 @@ export default function FeatherCloudSuggestionsPage() {
         <div className='space-y-6 md:space-y-8'>
             <PageHeader
                 title='Suggest a New Thing'
-                description='Ideas go to the featherpanel project. We attach basic environment details automatically (no logs).'
+                description='Ideas land on the Mythic suggestions board for featherpanel (not GitHub until accepted). We attach basic environment details automatically (no logs).'
                 icon={Lightbulb}
             />
 

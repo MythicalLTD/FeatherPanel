@@ -194,10 +194,97 @@ return function (RouteCollection $routes): void {
 
     App::getInstance(true)->registerAdminRoute(
         $routes,
+        'admin-cloud-data-store',
+        '/api/admin/cloud/data/store',
+        static function (Request $request) {
+            return (new CloudDataController())->getStore($request);
+        },
+        Permissions::ADMIN_ROOT,
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-cloud-data-store-product',
+        '/api/admin/cloud/data/store/products/{slug}',
+        static function (Request $request, array $args) {
+            return (new CloudDataController())->getStoreProduct($request, (string) ($args['slug'] ?? ''));
+        },
+        Permissions::ADMIN_ROOT,
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-cloud-data-store-product-versions',
+        '/api/admin/cloud/data/store/products/{slug}/versions',
+        static function (Request $request, array $args) {
+            return (new CloudDataController())->getStoreProductVersions($request, (string) ($args['slug'] ?? ''));
+        },
+        Permissions::ADMIN_ROOT,
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-cloud-data-store-product-reviews-get',
+        '/api/admin/cloud/data/store/products/{slug}/reviews',
+        static function (Request $request, array $args) {
+            return (new CloudDataController())->getStoreProductReviews($request, (string) ($args['slug'] ?? ''));
+        },
+        Permissions::ADMIN_ROOT,
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-cloud-data-store-product-reviews-post',
+        '/api/admin/cloud/data/store/products/{slug}/reviews',
+        static function (Request $request, array $args) {
+            return (new CloudDataController())->createStoreProductReview($request, (string) ($args['slug'] ?? ''));
+        },
+        Permissions::ADMIN_ROOT,
+        ['POST'],
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-cloud-data-store-product-questions-get',
+        '/api/admin/cloud/data/store/products/{slug}/questions',
+        static function (Request $request, array $args) {
+            return (new CloudDataController())->getStoreProductQuestions($request, (string) ($args['slug'] ?? ''));
+        },
+        Permissions::ADMIN_ROOT,
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-cloud-data-store-product-questions-post',
+        '/api/admin/cloud/data/store/products/{slug}/questions',
+        static function (Request $request, array $args) {
+            return (new CloudDataController())->createStoreProductQuestion($request, (string) ($args['slug'] ?? ''));
+        },
+        Permissions::ADMIN_ROOT,
+        ['POST'],
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-cloud-data-store-product-question-reply',
+        '/api/admin/cloud/data/store/products/{slug}/questions/{questionId}/replies',
+        static function (Request $request, array $args) {
+            return (new CloudDataController())->replyStoreProductQuestion(
+                $request,
+                (string) ($args['slug'] ?? ''),
+                (string) ($args['questionId'] ?? '')
+            );
+        },
+        Permissions::ADMIN_ROOT,
+        ['POST'],
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
         'admin-cloud-data-product-releases',
         '/api/admin/cloud/data/products/{slug}/releases',
-        static function (Request $request, string $slug) {
-            return (new CloudDataController())->getProductReleases($request, $slug);
+        static function (Request $request, array $args) {
+            return (new CloudDataController())->getProductReleases($request, (string) ($args['slug'] ?? ''));
         },
         Permissions::ADMIN_ROOT,
     );
@@ -206,8 +293,12 @@ return function (RouteCollection $routes): void {
         $routes,
         'admin-cloud-data-product-release-download',
         '/api/admin/cloud/data/products/{slug}/releases/{version}/download',
-        static function (Request $request, string $slug, string $version) {
-            return (new CloudDataController())->downloadProductRelease($request, $slug, $version);
+        static function (Request $request, array $args) {
+            return (new CloudDataController())->downloadProductRelease(
+                $request,
+                (string) ($args['slug'] ?? ''),
+                (string) ($args['version'] ?? '')
+            );
         },
         Permissions::ADMIN_ROOT,
     );
@@ -216,8 +307,8 @@ return function (RouteCollection $routes): void {
         $routes,
         'admin-cloud-data-product-reviews-get',
         '/api/admin/cloud/data/products/{slug}/reviews',
-        static function (Request $request, string $slug) {
-            return (new CloudDataController())->getProductReviews($request, $slug);
+        static function (Request $request, array $args) {
+            return (new CloudDataController())->getProductReviews($request, (string) ($args['slug'] ?? ''));
         },
         Permissions::ADMIN_ROOT,
     );
@@ -226,8 +317,8 @@ return function (RouteCollection $routes): void {
         $routes,
         'admin-cloud-data-product-reviews-post',
         '/api/admin/cloud/data/products/{slug}/reviews',
-        static function (Request $request, string $slug) {
-            return (new CloudDataController())->createProductReview($request, $slug);
+        static function (Request $request, array $args) {
+            return (new CloudDataController())->createProductReview($request, (string) ($args['slug'] ?? ''));
         },
         Permissions::ADMIN_ROOT,
         ['POST'],
@@ -237,8 +328,12 @@ return function (RouteCollection $routes): void {
         $routes,
         'admin-cloud-data-product-reviews-delete',
         '/api/admin/cloud/data/products/{slug}/reviews/{reviewId}',
-        static function (Request $request, string $slug, string $reviewId) {
-            return (new CloudDataController())->deleteProductReview($request, $slug, $reviewId);
+        static function (Request $request, array $args) {
+            return (new CloudDataController())->deleteProductReview(
+                $request,
+                (string) ($args['slug'] ?? ''),
+                (string) ($args['reviewId'] ?? '')
+            );
         },
         Permissions::ADMIN_ROOT,
         ['DELETE'],
@@ -248,8 +343,12 @@ return function (RouteCollection $routes): void {
         $routes,
         'admin-cloud-download-package',
         '/api/admin/cloud/data/download/{packageName}/{version}',
-        static function (Request $request, string $packageName, string $version) {
-            return (new CloudDataController())->downloadPackage($request, $packageName, $version);
+        static function (Request $request, array $args) {
+            return (new CloudDataController())->downloadPackage(
+                $request,
+                (string) ($args['packageName'] ?? ''),
+                (string) ($args['version'] ?? '')
+            );
         },
         Permissions::ADMIN_ROOT,
     );
@@ -268,8 +367,8 @@ return function (RouteCollection $routes): void {
         $routes,
         'admin-cloud-data-egg-get',
         '/api/admin/cloud/data/eggs/{id}',
-        static function (Request $request, string $id) {
-            return (new CloudDataController())->getEgg($request, $id);
+        static function (Request $request, array $args) {
+            return (new CloudDataController())->getEgg($request, (string) ($args['id'] ?? ''));
         },
         Permissions::ADMIN_ROOT,
     );
@@ -278,8 +377,8 @@ return function (RouteCollection $routes): void {
         $routes,
         'admin-cloud-data-eggs-download',
         '/api/admin/cloud/data/eggs/{id}/download',
-        static function (Request $request, string $id) {
-            return (new CloudDataController())->downloadEgg($request, $id);
+        static function (Request $request, array $args) {
+            return (new CloudDataController())->downloadEgg($request, (string) ($args['id'] ?? ''));
         },
         Permissions::ADMIN_ROOT,
     );
@@ -288,8 +387,8 @@ return function (RouteCollection $routes): void {
         $routes,
         'admin-cloud-data-egg-reviews-get',
         '/api/admin/cloud/data/eggs/{id}/reviews',
-        static function (Request $request, string $id) {
-            return (new CloudDataController())->getEggReviews($request, $id);
+        static function (Request $request, array $args) {
+            return (new CloudDataController())->getEggReviews($request, (string) ($args['id'] ?? ''));
         },
         Permissions::ADMIN_ROOT,
     );
@@ -298,8 +397,8 @@ return function (RouteCollection $routes): void {
         $routes,
         'admin-cloud-data-egg-reviews-post',
         '/api/admin/cloud/data/eggs/{id}/reviews',
-        static function (Request $request, string $id) {
-            return (new CloudDataController())->createEggReview($request, $id);
+        static function (Request $request, array $args) {
+            return (new CloudDataController())->createEggReview($request, (string) ($args['id'] ?? ''));
         },
         Permissions::ADMIN_ROOT,
         ['POST'],
@@ -309,8 +408,8 @@ return function (RouteCollection $routes): void {
         $routes,
         'admin-cloud-data-egg-reviews-delete',
         '/api/admin/cloud/data/eggs/{id}/reviews',
-        static function (Request $request, string $id) {
-            return (new CloudDataController())->deleteEggReview($request, $id);
+        static function (Request $request, array $args) {
+            return (new CloudDataController())->deleteEggReview($request, (string) ($args['id'] ?? ''));
         },
         Permissions::ADMIN_ROOT,
         ['DELETE'],
@@ -341,8 +440,8 @@ return function (RouteCollection $routes): void {
         $routes,
         'admin-cloud-translations-project',
         '/api/admin/cloud/translations/projects/{slug}',
-        static function (Request $request, string $slug) {
-            return (new \App\Controllers\Admin\MythicTranslationsController())->getProject($request, $slug);
+        static function (Request $request, array $args) {
+            return (new \App\Controllers\Admin\MythicTranslationsController())->getProject($request, (string) ($args['slug'] ?? ''));
         },
         Permissions::ADMIN_ROOT,
     );
@@ -351,8 +450,8 @@ return function (RouteCollection $routes): void {
         $routes,
         'admin-cloud-translations-locales',
         '/api/admin/cloud/translations/projects/{slug}/locales',
-        static function (Request $request, string $slug) {
-            return (new \App\Controllers\Admin\MythicTranslationsController())->listLocales($request, $slug);
+        static function (Request $request, array $args) {
+            return (new \App\Controllers\Admin\MythicTranslationsController())->listLocales($request, (string) ($args['slug'] ?? ''));
         },
         Permissions::ADMIN_ROOT,
     );
@@ -361,8 +460,12 @@ return function (RouteCollection $routes): void {
         $routes,
         'admin-cloud-translations-locale-get',
         '/api/admin/cloud/translations/projects/{slug}/locales/{locale}',
-        static function (Request $request, string $slug, string $locale) {
-            return (new \App\Controllers\Admin\MythicTranslationsController())->getLocale($request, $slug, $locale);
+        static function (Request $request, array $args) {
+            return (new \App\Controllers\Admin\MythicTranslationsController())->getLocale(
+                $request,
+                (string) ($args['slug'] ?? ''),
+                (string) ($args['locale'] ?? '')
+            );
         },
         Permissions::ADMIN_ROOT,
     );
@@ -371,8 +474,12 @@ return function (RouteCollection $routes): void {
         $routes,
         'admin-cloud-translations-locale-download',
         '/api/admin/cloud/translations/projects/{slug}/locales/{locale}/download',
-        static function (Request $request, string $slug, string $locale) {
-            return (new \App\Controllers\Admin\MythicTranslationsController())->downloadLocale($request, $slug, $locale);
+        static function (Request $request, array $args) {
+            return (new \App\Controllers\Admin\MythicTranslationsController())->downloadLocale(
+                $request,
+                (string) ($args['slug'] ?? ''),
+                (string) ($args['locale'] ?? '')
+            );
         },
         Permissions::ADMIN_ROOT,
     );
@@ -381,8 +488,12 @@ return function (RouteCollection $routes): void {
         $routes,
         'admin-cloud-translations-locale-install',
         '/api/admin/cloud/translations/projects/{slug}/locales/{locale}/install',
-        static function (Request $request, string $slug, string $locale) {
-            return (new \App\Controllers\Admin\MythicTranslationsController())->installLocale($request, $slug, $locale);
+        static function (Request $request, array $args) {
+            return (new \App\Controllers\Admin\MythicTranslationsController())->installLocale(
+                $request,
+                (string) ($args['slug'] ?? ''),
+                (string) ($args['locale'] ?? '')
+            );
         },
         Permissions::ADMIN_ROOT,
         ['POST'],
@@ -403,8 +514,8 @@ return function (RouteCollection $routes): void {
         $routes,
         'admin-cloud-data-pastes-get',
         '/api/admin/cloud/data/pastes/{id}',
-        static function (Request $request, string $id) {
-            return (new CloudDataController())->getPaste($request, $id);
+        static function (Request $request, array $args) {
+            return (new CloudDataController())->getPaste($request, (string) ($args['id'] ?? ''));
         },
         Permissions::ADMIN_ROOT,
     );
@@ -445,8 +556,8 @@ return function (RouteCollection $routes): void {
         $routes,
         'admin-cloud-data-issues-list',
         '/api/admin/cloud/data/issues/{project}',
-        static function (Request $request, string $project) {
-            return (new CloudDataController())->listIssues($request, $project);
+        static function (Request $request, array $args) {
+            return (new CloudDataController())->listIssues($request, (string) ($args['project'] ?? ''));
         },
         Permissions::ADMIN_ROOT,
     );
@@ -455,8 +566,8 @@ return function (RouteCollection $routes): void {
         $routes,
         'admin-cloud-data-issues-create',
         '/api/admin/cloud/data/issues/{project}',
-        static function (Request $request, string $project) {
-            return (new CloudDataController())->createIssue($request, $project);
+        static function (Request $request, array $args) {
+            return (new CloudDataController())->createIssue($request, (string) ($args['project'] ?? ''));
         },
         Permissions::ADMIN_ROOT,
         ['POST'],
@@ -466,8 +577,12 @@ return function (RouteCollection $routes): void {
         $routes,
         'admin-cloud-data-issues-get',
         '/api/admin/cloud/data/issues/{project}/{number}',
-        static function (Request $request, string $project, string $number) {
-            return (new CloudDataController())->getIssue($request, $project, $number);
+        static function (Request $request, array $args) {
+            return (new CloudDataController())->getIssue(
+                $request,
+                (string) ($args['project'] ?? ''),
+                (string) ($args['number'] ?? '')
+            );
         },
         Permissions::ADMIN_ROOT,
     );
@@ -476,8 +591,12 @@ return function (RouteCollection $routes): void {
         $routes,
         'admin-cloud-data-issues-comment',
         '/api/admin/cloud/data/issues/{project}/{number}/comments',
-        static function (Request $request, string $project, string $number) {
-            return (new CloudDataController())->commentOnIssue($request, $project, $number);
+        static function (Request $request, array $args) {
+            return (new CloudDataController())->commentOnIssue(
+                $request,
+                (string) ($args['project'] ?? ''),
+                (string) ($args['number'] ?? '')
+            );
         },
         Permissions::ADMIN_ROOT,
         ['POST'],

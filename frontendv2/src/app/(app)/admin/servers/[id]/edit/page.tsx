@@ -58,6 +58,7 @@ import { MountsTab } from './MountsTab';
 import type { AssignableMountRow } from './MountsTab';
 import { ActionsTab } from './ActionsTab';
 import { AllocationPickerSheet } from '@/components/admin/AllocationPickerSheet';
+import { SpellPickerSheet } from '@/components/admin/SpellPickerSheet';
 import { resolveSpellDefaultDockerImage, buildSpellDockerImageOptions } from '@/lib/spellDockerImages';
 import type { DockerImageOption } from '@/components/admin/DockerImageField';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
@@ -1479,147 +1480,25 @@ export default function EditServerPage() {
                 </SheetContent>
             </Sheet>
 
-            <Sheet open={spellModalOpen} onOpenChange={setSpellModalOpen}>
-                <SheetContent className='sm:max-w-2xl'>
-                    <SheetHeader>
-                        <SheetTitle>{t('admin.servers.form.select_spell')}</SheetTitle>
-                        <SheetDescription>
-                            {t('admin.servers.form.select_spell_description', {
-                                total: String(spellPagination.total_records || 0),
-                            })}
-                        </SheetDescription>
-                    </SheetHeader>
-
-                    <div className='mt-6 space-y-4'>
-                        <div className='relative'>
-                            <SearchIcon className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform' />
-                            <Input
-                                placeholder={t('admin.servers.form.search_spells')}
-                                value={spellSearch}
-                                onChange={(e) => setSpellSearch(e.target.value)}
-                                className='pl-10'
-                            />
-                        </div>
-
-                        {spellPagination.total_pages > 1 && (
-                            <div className='border-border bg-muted/30 flex items-center justify-between gap-2 rounded-lg border px-3 py-2'>
-                                <Button
-                                    variant='outline'
-                                    size='sm'
-                                    disabled={!spellPagination.has_prev}
-                                    onClick={() =>
-                                        setSpellPagination((prev) => ({
-                                            ...prev,
-                                            current_page: prev.current_page - 1,
-                                        }))
-                                    }
-                                    className='h-8 gap-1'
-                                >
-                                    <ChevronLeft className='h-3 w-3' />
-                                    {t('common.previous')}
-                                </Button>
-                                <span className='text-xs font-medium'>
-                                    {spellPagination.current_page} / {spellPagination.total_pages}
-                                </span>
-                                <Button
-                                    variant='outline'
-                                    size='sm'
-                                    disabled={!spellPagination.has_next}
-                                    onClick={() =>
-                                        setSpellPagination((prev) => ({
-                                            ...prev,
-                                            current_page: prev.current_page + 1,
-                                        }))
-                                    }
-                                    className='h-8 gap-1'
-                                >
-                                    {t('common.next')}
-                                    <ChevronRight className='h-3 w-3' />
-                                </Button>
-                            </div>
-                        )}
-
-                        <div className='max-h-[calc(100vh-300px)] space-y-2 overflow-y-auto'>
-                            {spells.length === 0 ? (
-                                <div className='text-muted-foreground py-8 text-center'>
-                                    {t('admin.servers.form.no_spells_found')}
-                                </div>
-                            ) : (
-                                spells.map((spell) => (
-                                    <button
-                                        key={spell.id}
-                                        onClick={() => handleSelectSpell(spell)}
-                                        className='border-border/50 hover:bg-muted/50 hover:border-primary/50 w-full rounded-lg border p-3 text-left transition-colors'
-                                    >
-                                        <div className='flex items-start gap-3'>
-                                            <div className='bg-primary/10 mt-0.5 rounded-lg p-2'>
-                                                <Wand2 className='text-primary h-5 w-5' />
-                                            </div>
-                                            <div className='min-w-0 flex-1'>
-                                                <div className='font-medium'>{spell.name}</div>
-                                                {spell.description && (
-                                                    <div className='text-muted-foreground mt-1 text-sm'>
-                                                        {spell.description}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </button>
-                                ))
-                            )}
-                        </div>
-
-                        {spellPagination.total_pages > 1 && (
-                            <div className='flex items-center justify-between border-t pt-4'>
-                                <div className='text-muted-foreground text-sm'>
-                                    {t('common.showing', {
-                                        from: String(
-                                            spellPagination.current_page * spellPagination.per_page -
-                                                spellPagination.per_page +
-                                                1,
-                                        ),
-                                        to: String(
-                                            Math.min(
-                                                spellPagination.current_page * spellPagination.per_page,
-                                                spellPagination.total_records,
-                                            ),
-                                        ),
-                                        total: String(spellPagination.total_records),
-                                    })}
-                                </div>
-                                <div className='flex gap-2'>
-                                    <Button
-                                        variant='outline'
-                                        size='sm'
-                                        onClick={() =>
-                                            setSpellPagination((prev) => ({
-                                                ...prev,
-                                                current_page: prev.current_page - 1,
-                                            }))
-                                        }
-                                        disabled={!spellPagination.has_prev}
-                                    >
-                                        {t('common.previous')}
-                                    </Button>
-                                    <Button
-                                        variant='outline'
-                                        size='sm'
-                                        onClick={() =>
-                                            setSpellPagination((prev) => ({
-                                                ...prev,
-                                                current_page: prev.current_page + 1,
-                                            }))
-                                        }
-                                        disabled={!spellPagination.has_next}
-                                    >
-                                        {t('common.next')}
-                                    </Button>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                </SheetContent>
-            </Sheet>
+            {form.realms_id != null && (
+                <SpellPickerSheet
+                    open={spellModalOpen}
+                    onOpenChange={setSpellModalOpen}
+                    realmId={form.realms_id}
+                    spells={spells}
+                    spellSearch={spellSearch}
+                    setSpellSearch={setSpellSearch}
+                    spellPagination={spellPagination}
+                    setSpellPagination={setSpellPagination}
+                    fetchSpells={fetchSpells}
+                    onSelectSpell={(spell) =>
+                        handleSelectSpell({
+                            ...spell,
+                            realms_id: form.realms_id!,
+                        })
+                    }
+                />
+            )}
 
             {node?.id != null && (
                 <AllocationPickerSheet

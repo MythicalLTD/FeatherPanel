@@ -165,6 +165,149 @@ class FeatherCloudClient
         return $this->makeRequest('/panel/products', 'GET', ['page' => $page, 'limit' => $limit]);
     }
 
+    /**
+     * Mythic marketplace catalog for the linked panel (GET /panel/store).
+     *
+     * Response data shape:
+     * { items: [{ kind, owned, can_download, product|bundle }], pagination, filters }
+     *
+     * @param array<string, mixed> $query q, type, price, category, cloud_download, page, limit
+     */
+    public function getStore(array $query = []): array
+    {
+        $params = array_filter([
+            'page' => $query['page'] ?? 1,
+            'limit' => $query['limit'] ?? 50,
+            'q' => $query['q'] ?? null,
+            'type' => $query['type'] ?? null,
+            'price' => $query['price'] ?? null,
+            'category' => $query['category'] ?? null,
+            'cloud_download' => $query['cloud_download'] ?? null,
+        ], static fn ($v) => $v !== null && $v !== '');
+
+        return $this->makeRequest('/panel/store', 'GET', $params);
+    }
+
+    /**
+     * Full store product detail (markdown description, versions, reviews, questions).
+     *
+     * Slugs are case-sensitive (e.g. minecraft-utils-6GcgsX).
+     *
+     * @return array{kind?: string, owned?: bool, can_download?: bool, product?: array<string, mixed>, meta?: array<string, mixed>}
+     */
+    public function getStoreProduct(string $slug): array
+    {
+        return $this->makeRequest('/panel/store/products/' . rawurlencode($slug));
+    }
+
+    public function getStoreProductVersions(string $slug): array
+    {
+        try {
+            return $this->makeRequest('/panel/store/products/' . rawurlencode($slug) . '/versions');
+        } catch (FeatherCloudException $e) {
+            if (in_array($e->getHttpStatusCode(), [404, 405], true)) {
+                return $this->makeRequest('/panel/products/' . rawurlencode($slug) . '/versions');
+            }
+            throw $e;
+        }
+    }
+
+    public function getStoreProductReviews(string $slug): array
+    {
+        try {
+            return $this->makeRequest('/panel/store/products/' . rawurlencode($slug) . '/reviews');
+        } catch (FeatherCloudException $e) {
+            if (in_array($e->getHttpStatusCode(), [404, 405], true)) {
+                return $this->getProductReviews($slug);
+            }
+            throw $e;
+        }
+    }
+
+    public function createStoreProductReview(string $slug, array $body): array
+    {
+        try {
+            return $this->makeRequest(
+                '/panel/store/products/' . rawurlencode($slug) . '/reviews',
+                'POST',
+                [],
+                $body,
+                true,
+                true
+            );
+        } catch (FeatherCloudException $e) {
+            if (in_array($e->getHttpStatusCode(), [404, 405], true)) {
+                return $this->createProductReview($slug, $body);
+            }
+            throw $e;
+        }
+    }
+
+    public function getStoreProductQuestions(string $slug): array
+    {
+        try {
+            return $this->makeRequest('/panel/store/products/' . rawurlencode($slug) . '/questions');
+        } catch (FeatherCloudException $e) {
+            if (in_array($e->getHttpStatusCode(), [404, 405], true)) {
+                return $this->makeRequest('/panel/products/' . rawurlencode($slug) . '/questions');
+            }
+            throw $e;
+        }
+    }
+
+    public function createStoreProductQuestion(string $slug, array $body): array
+    {
+        try {
+            return $this->makeRequest(
+                '/panel/store/products/' . rawurlencode($slug) . '/questions',
+                'POST',
+                [],
+                $body,
+                true,
+                true
+            );
+        } catch (FeatherCloudException $e) {
+            if (in_array($e->getHttpStatusCode(), [404, 405], true)) {
+                return $this->makeRequest(
+                    '/panel/products/' . rawurlencode($slug) . '/questions',
+                    'POST',
+                    [],
+                    $body,
+                    true,
+                    true
+                );
+            }
+            throw $e;
+        }
+    }
+
+    public function replyStoreProductQuestion(string $slug, string | int $questionId, array $body): array
+    {
+        $qid = rawurlencode((string) $questionId);
+        try {
+            return $this->makeRequest(
+                '/panel/store/products/' . rawurlencode($slug) . '/questions/' . $qid . '/replies',
+                'POST',
+                [],
+                $body,
+                true,
+                true
+            );
+        } catch (FeatherCloudException $e) {
+            if (in_array($e->getHttpStatusCode(), [404, 405], true)) {
+                return $this->makeRequest(
+                    '/panel/products/' . rawurlencode($slug) . '/questions/' . $qid . '/replies',
+                    'POST',
+                    [],
+                    $body,
+                    true,
+                    true
+                );
+            }
+            throw $e;
+        }
+    }
+
     public function getMemberProducts(string $userUuid, int $page = 1, int $limit = 50): array
     {
         return $this->makeRequest('/panel/members/' . rawurlencode($userUuid) . '/products', 'GET', [
@@ -309,6 +452,17 @@ class FeatherCloudClient
     public function createIssue(string $project, array $body): array
     {
         return $this->makeRequest('/panel/issues/' . rawurlencode($project), 'POST', [], $body, true, true);
+    }
+
+    /**
+     * Community suggestions board on Mythic (/suggestions/{project}).
+     * Does NOT open a GitHub issue until a Mythic admin accepts it.
+     *
+     * @param array{title: string, body: string} $body
+     */
+    public function createSuggestion(string $project, array $body): array
+    {
+        return $this->makeRequest('/panel/suggestions/' . rawurlencode($project), 'POST', [], $body, true, true);
     }
 
     public function getIssue(string $project, string | int $number): array

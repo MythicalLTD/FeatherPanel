@@ -143,12 +143,14 @@ export const isCloudPackageOwned = (
 
 const PURCHASE_STRING_FIELDS = [
     'identifier',
+    'featherpanel_plugin_identifier',
     'package_identifier',
     'product_identifier',
     'package_name',
     'product_name',
     'name',
     'slug',
+    'store_slug',
     'url',
     'link',
     'product_url',

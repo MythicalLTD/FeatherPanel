@@ -6809,7 +6809,7 @@
 			"index": {
 				"plugins": {
 					"title": "Plugins",
-					"description": "Addons that extend FeatherPanel with new features and functionality",
+					"description": "Mythic marketplace addons linked to this panel — browse team products and install .fpa releases",
 					"available": "Available"
 				},
 				"spells": {
@@ -6844,12 +6844,12 @@
 			"plugins": {
 				"title": "Plugins",
 				"installed": "Installed",
-				"subtitle": "Browse and install plugins from the online repository",
+				"subtitle": "Browse and install plugins from Mythic marketplace products linked to this panel",
 				"back": "Back to Marketplace",
 				"loading_error": "Failed to load online addons",
 				"cloud_missing": {
 					"title": "Cloud Account Missing",
-					"description": "FeatherCloud credentials are not configured. You cannot download premium plugins until you configure your cloud account credentials in Cloud Management.",
+					"description": "Mythic Cloud credentials are not configured. Link your panel in Cloud Management to browse and download marketplace products.",
 					"action": "Configure Cloud Account"
 				},
 				"cloud_connected": {

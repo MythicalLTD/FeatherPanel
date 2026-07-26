@@ -156,7 +156,7 @@ export function ResourceCard({
                         </div>
                     )}
 
-                    {description && <div className='flex flex-wrap items-center gap-x-6 gap-y-2'>{description}</div>}
+                    {description && <div className='min-w-0 w-full'>{description}</div>}
                 </div>
 
                 {actions && (

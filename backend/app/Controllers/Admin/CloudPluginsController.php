@@ -28,6 +28,8 @@ use App\CloudFlare\CloudFlareRealIP;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use App\Plugins\Events\Events\CloudPluginsEvent;
+use App\Services\FeatherCloud\FeatherCloudClient;
+use App\Services\FeatherCloud\FeatherCloudException;
 
 #[OA\Schema(
     schema: 'OnlineAddon',
@@ -115,7 +117,7 @@ class CloudPluginsController
     #[OA\Get(
         path: '/api/admin/plugins/online/list',
         summary: 'Get online addons list',
-        description: 'Retrieve a paginated list of available addons from the FeatherPanel packages API with search functionality.',
+        description: 'Retrieve a paginated list of Mythic marketplace products available to the linked team (GET /panel/products).',
         tags: ['Admin - Cloud Plugins'],
         parameters: [
             new OA\Parameter(
@@ -187,68 +189,45 @@ class CloudPluginsController
     public function list(Request $request): Response
     {
         try {
-            // New official packages API
-            $base = 'https://api.featherpanel.com/packages';
+            $client = new FeatherCloudClient();
+            if (!$client->isConfigured()) {
+                return $this->credentialsRequiredResponse();
+            }
+
             $q = trim((string) ($request->query->get('q') ?? ''));
-            $page = (int) ($request->query->get('page') ?? 1);
-            $perPage = (int) ($request->query->get('per_page') ?? 20);
+            $page = max(1, (int) ($request->query->get('page') ?? 1));
+            $perPage = max(1, (int) ($request->query->get('per_page') ?? 20));
             $verifiedOnly = $request->query->get('verified_only') === 'true' || $request->query->get('verified_only') === '1';
             $tags = trim((string) ($request->query->get('tags') ?? ''));
             $sortBy = trim((string) ($request->query->get('sort_by') ?? 'created_at'));
             $sortOrder = strtoupper(trim((string) ($request->query->get('sort_order') ?? 'DESC')));
 
-            $query = [];
-            if ($q !== '') {
-                $query['search'] = $q;
-            }
-            if ($page > 0) {
-                $query['page'] = (string) $page;
-            }
-            if ($perPage > 0) {
-                $query['per_page'] = (string) $perPage;
-            }
-            if ($verifiedOnly) {
-                $query['verified_only'] = 'true';
-            }
-            if ($tags !== '') {
-                $query['tags'] = $tags;
-            }
-            if (in_array($sortBy, ['created_at', 'downloads', 'updated_at'], true)) {
-                $query['sort_by'] = $sortBy;
-            }
-            if (in_array($sortOrder, ['ASC', 'DESC'], true)) {
-                $query['sort_order'] = $sortOrder;
-            }
-            $url = $base . (!empty($query) ? ('?' . http_build_query($query)) : '');
-            $context = stream_context_create([
-                'http' => [
-                    'timeout' => 10,
-                    'ignore_errors' => true,
-                ],
-            ]);
-            $response = @file_get_contents($url, false, $context);
-            if ($response === false) {
-                return ApiResponse::error('Failed to fetch online addon list', 'ONLINE_LIST_FETCH_FAILED', 500);
-            }
+            $addons = $this->listMythicAddons($client);
+            $addons = $this->filterMythicAddons($addons, $q, $verifiedOnly, $tags !== '' ? array_map('trim', explode(',', $tags)) : []);
+            $addons = $this->sortMythicAddons($addons, $sortBy, $sortOrder);
 
-            $data = json_decode($response, true);
-            if (!is_array($data) || !isset($data['data']['packages']) || !is_array($data['data']['packages'])) {
-                return ApiResponse::error('Invalid response from online addon list', 'ONLINE_LIST_INVALID', 500);
-            }
-
-            $packages = $data['data']['packages'];
-            $addons = array_map(static fn (array $pkg): array => self::normalizePackageForResponse($pkg), $packages);
-
-            $pagination = $data['data']['pagination'] ?? null;
+            $total = count($addons);
+            $offset = ($page - 1) * $perPage;
+            $pageItems = array_slice($addons, $offset, $perPage);
+            $totalPages = max(1, (int) ceil($total / $perPage));
 
             return ApiResponse::success([
-                'addons' => $addons,
-                'pagination' => $pagination,
+                'addons' => array_values($pageItems),
+                'pagination' => [
+                    'current_page' => $page,
+                    'per_page' => $perPage,
+                    'total' => $total,
+                    'total_pages' => $totalPages,
+                    'has_next' => $page < $totalPages,
+                    'has_prev' => $page > 1,
+                ],
             ], 'Online addons fetched', 200);
+        } catch (FeatherCloudException $e) {
+            return $this->mythicErrorResponse($e);
         } catch (\Exception $e) {
             App::getInstance(true)->getLogger()->error('Failed to fetch online addons: ' . $e->getMessage());
 
-            return ApiResponse::error('Failed to fetch online addons: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to fetch online addons: ' . $e->getMessage(), 'ONLINE_LIST_FETCH_FAILED', 500);
         }
     }
 
@@ -296,7 +275,7 @@ class CloudPluginsController
     #[OA\Get(
         path: '/api/admin/plugins/online/popular',
         summary: 'Get popular packages',
-        description: 'Retrieve the most popular packages based on download count.',
+        description: 'Retrieve Mythic team products sorted for the popular addons carousel.',
         tags: ['Admin - Cloud Plugins'],
         parameters: [
             new OA\Parameter(
@@ -325,8 +304,11 @@ class CloudPluginsController
     public function popular(Request $request): Response
     {
         try {
-            // Use the main packages endpoint with downloads sorting by default
-            $base = 'https://api.featherpanel.com/packages';
+            $client = new FeatherCloudClient();
+            if (!$client->isConfigured()) {
+                return $this->credentialsRequiredResponse();
+            }
+
             $limit = (int) ($request->query->get('limit') ?? 10);
             if ($limit < 1) {
                 $limit = 10;
@@ -335,56 +317,24 @@ class CloudPluginsController
                 $limit = 50;
             }
 
-            // Build query parameters - sort by downloads descending by default
-            $query = [
-                'page' => '1',
-                'per_page' => (string) $limit,
-                'sort_by' => 'downloads',
-                'sort_order' => 'DESC',
-            ];
+            $addons = $this->listMythicAddons($client);
+            $addons = $this->sortMythicAddons($addons, 'downloads', 'DESC');
+            $addons = array_slice($addons, 0, $limit);
 
-            $url = $base . '?' . http_build_query($query);
-            $context = stream_context_create([
-                'http' => [
-                    'timeout' => 10,
-                    'ignore_errors' => true,
-                ],
-            ]);
-            $response = @file_get_contents($url, false, $context);
-            if ($response === false) {
-                return ApiResponse::error('Failed to fetch popular packages', 'POPULAR_FETCH_FAILED', 500);
-            }
-
-            $data = json_decode($response, true);
-            if (!is_array($data) || !isset($data['data']['packages']) || !is_array($data['data']['packages'])) {
-                App::getInstance(true)->getLogger()->error('Invalid popular packages API response: ' . json_encode($data));
-
-                return ApiResponse::error('Invalid response from popular packages API', 'POPULAR_INVALID', 500);
-            }
-
-            $packages = $data['data']['packages'];
-
-            // Ensure packages are sorted by downloads (descending) in case API doesn't sort properly
-            usort($packages, static function (array $a, array $b): int {
-                $downloadsA = (int) ($a['downloads'] ?? 0);
-                $downloadsB = (int) ($b['downloads'] ?? 0);
-
-                return $downloadsB <=> $downloadsA; // Descending order
-            });
-            $addons = array_map(static fn (array $pkg): array => self::normalizePackageForResponse($pkg), $packages);
-
-            return ApiResponse::success(['addons' => $addons], 'Popular packages fetched', 200);
+            return ApiResponse::success(['addons' => array_values($addons)], 'Popular packages fetched', 200);
+        } catch (FeatherCloudException $e) {
+            return $this->mythicErrorResponse($e);
         } catch (\Exception $e) {
             App::getInstance(true)->getLogger()->error('Failed to fetch popular packages: ' . $e->getMessage());
 
-            return ApiResponse::error('Failed to fetch popular packages: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to fetch popular packages: ' . $e->getMessage(), 'POPULAR_FETCH_FAILED', 500);
         }
     }
 
     #[OA\Get(
         path: '/api/admin/plugins/online/{identifier}',
         summary: 'Get package details',
-        description: 'Retrieve detailed information about a specific package, including all versions.',
+        description: 'Retrieve Mythic product details and downloadable releases for a product slug.',
         tags: ['Admin - Cloud Plugins'],
         parameters: [
             new OA\Parameter(
@@ -415,67 +365,37 @@ class CloudPluginsController
     public function show(Request $request, string $identifier): Response
     {
         try {
-            $base = 'https://api.featherpanel.com/packages/' . urlencode($identifier);
-            $context = stream_context_create([
-                'http' => [
-                    'timeout' => 10,
-                    'ignore_errors' => true,
-                ],
-            ]);
-            $response = @file_get_contents($base, false, $context);
-            if ($response === false) {
-                return ApiResponse::error('Failed to fetch package details', 'PACKAGE_DETAILS_FETCH_FAILED', 500);
+            $client = new FeatherCloudClient();
+            if (!$client->isConfigured()) {
+                return $this->credentialsRequiredResponse();
             }
 
-            $data = json_decode($response, true);
-            if (!is_array($data) || !isset($data['data']['package'])) {
+            $resolved = $this->resolveMythicProduct($client, $identifier);
+            if ($resolved === null) {
                 return ApiResponse::error('Package not found', 'PACKAGE_NOT_FOUND', 404);
             }
 
-            $pkg = $data['data']['package'];
-            $versions = $data['data']['versions'] ?? [];
-            $dataBlock = $data['data'] ?? [];
-            if (array_key_exists('latest_version', $dataBlock)) {
-                $rawLatest = $dataBlock['latest_version'];
-                $latestForNorm = is_array($rawLatest) ? $rawLatest : [];
-            } else {
-                $latestForNorm = null;
-            }
-
-            $package = self::normalizePackageForResponse($pkg, $latestForNorm);
-
-            $formattedVersions = array_map(static function (array $ver): array {
-                return [
-                    'id' => $ver['id'] ?? null,
-                    'version' => $ver['version'] ?? null,
-                    'download_url' => isset($ver['download_url']) ? ('https://api.featherpanel.com' . $ver['download_url']) : null,
-                    'file_size' => $ver['file_size'] ?? null,
-                    'file_hash' => $ver['file_hash'] ?? null,
-                    'changelog' => $ver['changelog'] ?? null,
-                    'dependencies' => $ver['dependencies'] ?? [],
-                    'min_panel_version' => $ver['min_panel_version'] ?? null,
-                    'max_panel_version' => $ver['max_panel_version'] ?? null,
-                    'downloads' => $ver['downloads'] ?? 0,
-                    'created_at' => $ver['created_at'] ?? null,
-                    'updated_at' => $ver['updated_at'] ?? null,
-                ];
-            }, $versions);
+            $package = $resolved['addon'];
+            $releases = $resolved['releases'];
+            $formattedVersions = array_map(static fn (array $rel): array => self::normalizeReleaseAsVersion($rel), $releases);
 
             return ApiResponse::success([
                 'package' => $package,
                 'versions' => $formattedVersions,
             ], 'Package details fetched', 200);
+        } catch (FeatherCloudException $e) {
+            return $this->mythicErrorResponse($e);
         } catch (\Exception $e) {
             App::getInstance(true)->getLogger()->error('Failed to fetch package details for ' . $identifier . ': ' . $e->getMessage());
 
-            return ApiResponse::error('Failed to fetch package details: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to fetch package details: ' . $e->getMessage(), 'PACKAGE_DETAILS_FETCH_FAILED', 500);
         }
     }
 
     #[OA\Get(
         path: '/api/admin/plugins/online/tag/{tag}',
         summary: 'Search packages by tag',
-        description: 'Retrieve packages that have a specific tag, with pagination.',
+        description: 'Filter Mythic team products by tag.',
         tags: ['Admin - Cloud Plugins'],
         parameters: [
             new OA\Parameter(
@@ -520,48 +440,38 @@ class CloudPluginsController
     public function searchByTag(Request $request, string $tag): Response
     {
         try {
-            $base = 'https://api.featherpanel.com/packages/tag/' . urlencode($tag);
-            $page = (int) ($request->query->get('page') ?? 1);
-            $perPage = (int) ($request->query->get('per_page') ?? 20);
-            $query = [];
-            if ($page > 0) {
-                $query['page'] = (string) $page;
-            }
-            if ($perPage > 0) {
-                $query['per_page'] = (string) $perPage;
-            }
-            $url = $base . (!empty($query) ? ('?' . http_build_query($query)) : '');
-            $context = stream_context_create([
-                'http' => [
-                    'timeout' => 10,
-                    'ignore_errors' => true,
-                ],
-            ]);
-            $response = @file_get_contents($url, false, $context);
-            if ($response === false) {
-                return ApiResponse::error('Failed to fetch packages by tag', 'TAG_FETCH_FAILED', 500);
+            $client = new FeatherCloudClient();
+            if (!$client->isConfigured()) {
+                return $this->credentialsRequiredResponse();
             }
 
-            $data = json_decode($response, true);
-            if (!is_array($data) || !isset($data['data']['packages']) || !is_array($data['data']['packages'])) {
-                return ApiResponse::error('Invalid response from tag API', 'TAG_INVALID', 500);
-            }
+            $page = max(1, (int) ($request->query->get('page') ?? 1));
+            $perPage = max(1, (int) ($request->query->get('per_page') ?? 20));
 
-            $packages = $data['data']['packages'];
-            $addons = array_map(static fn (array $pkg): array => self::normalizePackageForResponse($pkg), $packages);
-
-            $pagination = $data['data']['pagination'] ?? null;
-            $tagName = $data['data']['tag'] ?? $tag;
+            $addons = $this->filterMythicAddons($this->listMythicAddons($client), '', false, [$tag]);
+            $total = count($addons);
+            $offset = ($page - 1) * $perPage;
+            $pageItems = array_slice($addons, $offset, $perPage);
+            $totalPages = max(1, (int) ceil($total / $perPage));
 
             return ApiResponse::success([
-                'addons' => $addons,
-                'tag' => $tagName,
-                'pagination' => $pagination,
+                'addons' => array_values($pageItems),
+                'tag' => $tag,
+                'pagination' => [
+                    'current_page' => $page,
+                    'per_page' => $perPage,
+                    'total' => $total,
+                    'total_pages' => $totalPages,
+                    'has_next' => $page < $totalPages,
+                    'has_prev' => $page > 1,
+                ],
             ], 'Packages by tag fetched', 200);
+        } catch (FeatherCloudException $e) {
+            return $this->mythicErrorResponse($e);
         } catch (\Exception $e) {
             App::getInstance(true)->getLogger()->error('Failed to fetch packages by tag ' . $tag . ': ' . $e->getMessage());
 
-            return ApiResponse::error('Failed to fetch packages by tag: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to fetch packages by tag: ' . $e->getMessage(), 'TAG_FETCH_FAILED', 500);
         }
     }
 
@@ -606,50 +516,56 @@ class CloudPluginsController
     public function checkRequirements(Request $request, string $identifier): Response
     {
         try {
-            // Fetch package details
-            $base = 'https://api.featherpanel.com/packages/' . urlencode($identifier);
-            $context = stream_context_create([
-                'http' => [
-                    'timeout' => 10,
-                    'ignore_errors' => true,
-                ],
-            ]);
-            $response = @file_get_contents($base, false, $context);
-            if ($response === false) {
-                return ApiResponse::error('Failed to fetch package details', 'PACKAGE_DETAILS_FETCH_FAILED', 500);
+            $client = new FeatherCloudClient();
+            if (!$client->isConfigured()) {
+                return $this->credentialsRequiredResponse();
             }
 
-            $data = json_decode($response, true);
-            if (!is_array($data) || !isset($data['data']['package'])) {
+            $resolved = $this->resolveMythicProduct($client, $identifier);
+            if ($resolved === null) {
                 return ApiResponse::error('Package not found', 'PACKAGE_NOT_FOUND', 404);
             }
 
-            $pkg = $data['data']['package'];
-            $latestVersion = $data['data']['latest_version'] ?? [];
+            $pkg = $resolved['product'];
+            $addon = $resolved['addon'];
+            $latestVersion = is_array($addon['latest_version'] ?? null) ? $addon['latest_version'] : [];
+            $latestVersionString = (string) ($latestVersion['version'] ?? '');
+            $storeSlug = $this->productSlug(is_array($pkg) ? $pkg : []);
+            if ($storeSlug === '' && is_array($addon)) {
+                $storeSlug = trim((string) ($addon['store_slug'] ?? ''));
+            }
+            if ($storeSlug === '') {
+                $storeSlug = (string) $identifier;
+            }
+            $localIdentifier = $this->pluginIdentifier(is_array($pkg) ? $pkg : []);
+            if ($localIdentifier === '' && is_array($addon)) {
+                $localIdentifier = trim((string) ($addon['identifier'] ?? ''));
+            }
+            if ($localIdentifier === '') {
+                $localIdentifier = (string) $identifier;
+            }
 
             // Check if already installed and get installed version
             if (!defined('APP_ADDONS_DIR')) {
                 define('APP_ADDONS_DIR', dirname(__DIR__, 3) . '/storage/addons');
             }
-            $pluginDir = APP_ADDONS_DIR . '/' . $identifier;
+            $pluginDir = APP_ADDONS_DIR . '/' . $localIdentifier;
             $alreadyInstalled = file_exists($pluginDir);
             $installedVersion = null;
             $updateAvailable = false;
 
             if ($alreadyInstalled) {
                 try {
-                    $installedConfig = \App\Plugins\PluginConfig::getConfig($identifier);
+                    $installedConfig = \App\Plugins\PluginConfig::getConfig($localIdentifier);
                     $installedVersion = $installedConfig['plugin']['version'] ?? null;
 
-                    // Compare versions if both exist
-                    if ($installedVersion && isset($latestVersion['version'])) {
+                    if ($installedVersion && $latestVersionString !== '') {
                         $normalizeVersion = static function (string $version): string {
                             return ltrim($version, 'vV');
                         };
                         $installedNormalized = $normalizeVersion($installedVersion);
-                        $latestNormalized = $normalizeVersion($latestVersion['version']);
+                        $latestNormalized = $normalizeVersion($latestVersionString);
 
-                        // Check if update is available (latest > installed)
                         if (version_compare($latestNormalized, $installedNormalized, '>')) {
                             $updateAvailable = true;
                         }
@@ -659,37 +575,30 @@ class CloudPluginsController
                 }
             }
 
-            // Get dependencies from latest version
             $dependencies = $latestVersion['dependencies'] ?? [];
             $minPanelVersion = $latestVersion['min_panel_version'] ?? null;
             $maxPanelVersion = $latestVersion['max_panel_version'] ?? null;
 
-            // Check panel version
             $panelVersionOk = true;
             $panelVersionMessage = null;
             if ($minPanelVersion || $maxPanelVersion) {
-                // Get current panel version from APP_VERSION constant (defined in index.php)
                 $currentVersion = defined('APP_VERSION') ? APP_VERSION : 'unknown';
-
-                // Normalize versions for comparison (strip 'v' prefix if present)
-                // Panel uses 'v1.0.3' format, plugins use '1.0.3' format
                 $normalizeVersion = static function (string $version): string {
                     return ltrim($version, 'vV');
                 };
 
                 $currentVersionNormalized = $normalizeVersion($currentVersion);
-                $displayVersion = $currentVersion; // Keep original for display
+                $displayVersion = $currentVersion;
 
-                // Compare versions (normalized without 'v' prefix)
                 if ($minPanelVersion) {
-                    $minVersionNormalized = $normalizeVersion($minPanelVersion);
+                    $minVersionNormalized = $normalizeVersion((string) $minPanelVersion);
                     if (version_compare($currentVersionNormalized, $minVersionNormalized, '<')) {
                         $panelVersionOk = false;
                         $panelVersionMessage = "Requires panel version {$minPanelVersion} or higher (current: {$displayVersion})";
                     }
                 }
                 if ($maxPanelVersion) {
-                    $maxVersionNormalized = $normalizeVersion($maxPanelVersion);
+                    $maxVersionNormalized = $normalizeVersion((string) $maxPanelVersion);
                     if (version_compare($currentVersionNormalized, $maxVersionNormalized, '>')) {
                         $panelVersionOk = false;
                         $panelVersionMessage = "Requires panel version {$maxPanelVersion} or lower (current: {$displayVersion})";
@@ -697,9 +606,10 @@ class CloudPluginsController
                 }
             }
 
-            // Check dependencies (conf.yml inside package); honour addons also selected in the download queue
-            $downloadUrl = isset($latestVersion['download_url']) ? ('https://api.featherpanel.com' . $latestVersion['download_url']) : null;
-            $eval = $this->evaluateConfDependencyChecksFromDownloadUrl($downloadUrl, $context);
+            $eval = ['checks' => [], 'all_met' => true, 'missing' => []];
+            if ($latestVersionString !== '') {
+                $eval = $this->evaluateConfDependencyChecksForProduct($client, $storeSlug, $latestVersionString);
+            }
             $dependencyChecks = $eval['checks'];
             $allDependenciesMet = $eval['all_met'];
             $pendingQueued = $this->parsePendingPluginsQuery($request);
@@ -718,23 +628,24 @@ class CloudPluginsController
                 }
             }
 
-            // Can install if: not installed OR update available, and all requirements met
             $canInstall = (!$alreadyInstalled || $updateAvailable) && $panelVersionOk && $allDependenciesMet;
+            $isPremium = (int) ($addon['premium'] ?? 0) === 1;
 
             return ApiResponse::success([
                 'can_install' => $canInstall,
                 'already_installed' => $alreadyInstalled,
                 'update_available' => $updateAvailable,
                 'installed_version' => $installedVersion,
-                'latest_version' => $latestVersion['version'] ?? null,
+                'latest_version' => $latestVersionString !== '' ? $latestVersionString : null,
                 'package' => [
-                    'identifier' => $identifier,
-                    'name' => $pkg['display_name'] ?? ($pkg['name'] ?? ''),
-                    'description' => $pkg['description'] ?? null,
-                    'version' => $latestVersion['version'] ?? null,
-                    'author' => $pkg['author'] ?? null,
-                    'verified' => isset($pkg['verified']) ? (int) $pkg['verified'] === 1 : false,
-                    'premium' => isset($pkg['premium']) ? (int) $pkg['premium'] : 0,
+                    'identifier' => $localIdentifier,
+                    'store_slug' => $storeSlug,
+                    'name' => $addon['name'] ?? ($pkg['name'] ?? ''),
+                    'description' => $addon['description'] ?? ($pkg['description'] ?? null),
+                    'version' => $latestVersionString !== '' ? $latestVersionString : null,
+                    'author' => $addon['author'] ?? ($pkg['author'] ?? null),
+                    'verified' => (bool) ($addon['verified'] ?? false),
+                    'premium' => $isPremium ? 1 : 0,
                 ],
                 'dependencies' => [
                     'checks' => $dependencyChecks,
@@ -747,17 +658,19 @@ class CloudPluginsController
                     'max' => $maxPanelVersion,
                 ],
             ], 'Requirements check completed', 200);
+        } catch (FeatherCloudException $e) {
+            return $this->mythicErrorResponse($e);
         } catch (\Exception $e) {
             App::getInstance(true)->getLogger()->error('Failed to check requirements for ' . $identifier . ': ' . $e->getMessage());
 
-            return ApiResponse::error('Failed to check requirements: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Failed to check requirements: ' . $e->getMessage(), 'REQUIREMENTS_CHECK_FAILED', 500);
         }
     }
 
     #[OA\Post(
         path: '/api/admin/plugins/online/install',
         summary: 'Install addon from online registry',
-        description: 'Download and install an addon from the FeatherPanel packages API. Downloads the latest version and extracts it to the addons directory.',
+        description: 'Download and install an addon from Mythic marketplace releases (GET /panel/products/{slug}/releases/{version}/download).',
         tags: ['Admin - Cloud Plugins'],
         requestBody: new OA\RequestBody(
             required: true,
@@ -839,34 +752,45 @@ class CloudPluginsController
                 return ApiResponse::error('Failed to prepare addons directory', 'ADDONS_DIR_CREATE_FAILED', 500);
             }
 
-            // Fetch package metadata directly by identifier (same approach as show method)
-            $base = 'https://api.featherpanel.com/packages/' . urlencode($identifier);
-            $context = stream_context_create([
-                'http' => [
-                    'timeout' => 15,
-                    'ignore_errors' => true,
-                ],
-            ]);
-            $response = @file_get_contents($base, false, $context);
-            if ($response === false) {
-                return ApiResponse::error('Failed to fetch package details', 'PACKAGE_DETAILS_FETCH_FAILED', 500);
+            // Fetch product metadata + releases from Mythic Panel API
+            $client = new FeatherCloudClient();
+            if (!$client->isConfigured()) {
+                return $this->credentialsRequiredResponse([
+                    'premium_link' => null,
+                    'premium_price' => null,
+                ]);
             }
 
-            $data = json_decode($response, true);
-            if (!is_array($data) || !isset($data['data']['package'])) {
+            try {
+                $resolved = $this->resolveMythicProduct($client, (string) $identifier);
+            } catch (FeatherCloudException $e) {
+                return $this->mythicErrorResponse($e);
+            }
+
+            if ($resolved === null) {
                 return ApiResponse::error('Package not found in registry', 'PACKAGE_NOT_FOUND', 404);
             }
 
-            $pkg = $data['data']['package'];
-            $latestVersion = $data['data']['latest_version'] ?? [];
+            $pkg = $resolved['product'];
+            $addon = $resolved['addon'];
+            $storeSlug = $this->productSlug(is_array($pkg) ? $pkg : []);
+            if ($storeSlug === '' && is_array($addon)) {
+                $storeSlug = trim((string) ($addon['store_slug'] ?? ''));
+            }
+            if ($storeSlug === '') {
+                $storeSlug = (string) $identifier;
+            }
+            $latestVersion = is_array($addon['latest_version'] ?? null) ? $addon['latest_version'] : [];
+            $latestVersionString = (string) ($latestVersion['version'] ?? ($body['version'] ?? ''));
 
             // Resolve plugin= dependencies using the same download queue (install missing deps first)
-            $downloadUrlForConf = isset($latestVersion['download_url']) ? ('https://api.featherpanel.com' . $latestVersion['download_url']) : null;
             $dependencyChecks = [];
             $allDependenciesMet = false;
 
             for ($depResolveAttempt = 0; $depResolveAttempt < 32; ++$depResolveAttempt) {
-                $eval = $this->evaluateConfDependencyChecksFromDownloadUrl($downloadUrlForConf, $context);
+                $eval = $latestVersionString !== ''
+                    ? $this->evaluateConfDependencyChecksForProduct($client, $storeSlug, $latestVersionString)
+                    : ['checks' => [], 'all_met' => true, 'missing' => []];
                 $dependencyChecks = $eval['checks'];
                 if ($eval['all_met']) {
                     $allDependenciesMet = true;
@@ -930,84 +854,51 @@ class CloudPluginsController
                 );
             }
 
-            // Check if addon is premium
-            $isPremium = isset($pkg['premium']) && (int) $pkg['premium'] === 1;
-            $fileContent = false;
+            $isPremium = (int) ($addon['premium'] ?? 0) === 1;
+            $premiumLink = $addon['premium_link'] ?? ($pkg['premium_link'] ?? null);
+            $premiumPrice = $addon['premium_price'] ?? ($pkg['premium_price'] ?? null);
 
-            if ($isPremium) {
-                // Check if FeatherCloud credentials are configured BEFORE attempting download
-                $featherCloudClient = new \App\Services\FeatherCloud\FeatherCloudClient();
-                if (!$featherCloudClient->isConfigured()) {
-                    $premiumLink = $pkg['premium_link'] ?? null;
+            if ($latestVersionString === '') {
+                return ApiResponse::error(
+                    'Version is required to download this product release',
+                    'VERSION_REQUIRED',
+                    400,
+                    [
+                        'premium_link' => $premiumLink,
+                        'premium_price' => $premiumPrice,
+                    ]
+                );
+            }
 
-                    return ApiResponse::error(
-                        'FeatherCloud credentials are not configured. Please configure your cloud account credentials in Cloud Management to download premium plugins.',
-                        'CLOUD_CREDENTIALS_NOT_CONFIGURED',
-                        503,
-                        [
-                            'premium_link' => $premiumLink,
-                            'premium_price' => $pkg['premium_price'] ?? null,
-                        ]
-                    );
+            try {
+                $fileContent = $client->downloadProductRelease($storeSlug, $latestVersionString);
+            } catch (FeatherCloudException $e) {
+                if ($e->getErrorCode() === 'CREDENTIALS_NOT_CONFIGURED') {
+                    return $this->credentialsRequiredResponse([
+                        'premium_link' => $premiumLink,
+                        'premium_price' => $premiumPrice,
+                    ]);
                 }
 
-                // For premium plugins, try to download via FeatherCloud
-                try {
-                    // Get version from latest_version or request
-                    $version = $latestVersion['version'] ?? ($body['version'] ?? null);
-                    if (!$version) {
-                        return ApiResponse::error(
-                            'Version is required for premium plugins',
-                            'VERSION_REQUIRED',
-                            400,
-                            [
-                                'premium_link' => $pkg['premium_link'] ?? null,
-                                'premium_price' => $pkg['premium_price'] ?? null,
-                            ]
-                        );
-                    }
+                $status = $e->getHttpStatusCode() ?: ($isPremium ? 402 : 500);
+                $code = $e->getErrorCode() ?: ($isPremium ? 'PREMIUM_ADDON_PURCHASE_REQUIRED' : 'ADDON_DOWNLOAD_FAILED');
+                $message = $e->getMessage() ?: ($isPremium
+                    ? 'This is a premium addon and must be purchased'
+                    : 'Failed to download addon package');
 
-                    // Download premium package via FeatherCloud
-                    $fileContent = $featherCloudClient->downloadPremiumPackage($identifier, $version);
-                } catch (\App\Services\FeatherCloud\FeatherCloudException $e) {
-                    // If FeatherCloud download fails, return error with purchase info
-                    $premiumLink = $pkg['premium_link'] ?? null;
+                return ApiResponse::error(
+                    $message,
+                    $code,
+                    $status,
+                    [
+                        'premium_link' => $premiumLink,
+                        'premium_price' => $premiumPrice,
+                    ]
+                );
+            }
 
-                    // Don't spam with credentials error if it's already checked
-                    if ($e->getErrorCode() === 'CREDENTIALS_NOT_CONFIGURED') {
-                        return ApiResponse::error(
-                            'FeatherCloud credentials are not configured. Please configure your cloud account credentials in Cloud Management to download premium plugins.',
-                            'CLOUD_CREDENTIALS_NOT_CONFIGURED',
-                            503,
-                            [
-                                'premium_link' => $premiumLink,
-                                'premium_price' => $pkg['premium_price'] ?? null,
-                            ]
-                        );
-                    }
-
-                    return ApiResponse::error(
-                        $e->getMessage() ?: 'This is a premium addon and must be purchased',
-                        $e->getErrorCode() ?: 'PREMIUM_ADDON_PURCHASE_REQUIRED',
-                        $e->getHttpStatusCode() ?: 402,
-                        [
-                            'premium_link' => $premiumLink,
-                            'premium_price' => $pkg['premium_price'] ?? null,
-                        ]
-                    );
-                }
-            } else {
-                // For free plugins, download from public API
-                // Get download URL from latest version
-                if (!isset($latestVersion['download_url'])) {
-                    return ApiResponse::error('Package has no download URL available', 'PACKAGE_NO_DOWNLOAD_URL', 404);
-                }
-
-                $downloadUrl = 'https://api.featherpanel.com' . $latestVersion['download_url'];
-                $fileContent = @file_get_contents($downloadUrl, false, $context);
-                if ($fileContent === false) {
-                    return ApiResponse::error('Failed to download addon package', 'ADDON_DOWNLOAD_FAILED', 500);
-                }
+            if ($fileContent === '') {
+                return ApiResponse::error('Failed to download addon package', 'ADDON_DOWNLOAD_FAILED', 500);
             }
 
             $tempFile = sys_get_temp_dir() . '/' . uniqid('featherpanel_', true) . '.fpa';
@@ -1026,7 +917,11 @@ class CloudPluginsController
                 return ApiResponse::error('Failed to extract addon package', 'ADDON_EXTRACT_FAILED', 422);
             }
 
-            $installResult = $this->performAddonInstall($tempDir, $identifier, $pkg['id'] ?? null);
+            $cloudId = null;
+            if (isset($pkg['id']) && is_numeric($pkg['id'])) {
+                $cloudId = (int) $pkg['id'];
+            }
+            $installResult = $this->performAddonInstall($tempDir, $identifier, $cloudId);
 
             // If install was successful, log activity and emit event
             if ($installResult->getStatusCode() === 200 || $installResult->getStatusCode() === 201) {
@@ -1393,26 +1288,45 @@ class CloudPluginsController
     }
 
     /**
-     * Download the .fpa and read conf.yml dependency lines.
+     * Download a Mythic product release and read conf.yml dependency lines.
      *
      * @return array{checks: list<array<string, mixed>>, all_met: bool, missing: list<string>}
      */
-    private function evaluateConfDependencyChecksFromDownloadUrl(?string $downloadUrl, mixed $streamContext): array
+    private function evaluateConfDependencyChecksForProduct(FeatherCloudClient $client, string $slug, string $version): array
+    {
+        try {
+            $fileContent = $client->downloadProductRelease($slug, $version);
+
+            return $this->evaluateConfDependencyChecksFromBinary($fileContent);
+        } catch (FeatherCloudException $e) {
+            App::getInstance(true)->getLogger()->warning(
+                'Mythic dependency check download failed for ' . $slug . '@' . $version . ': ' . $e->getMessage()
+            );
+
+            return ['checks' => [], 'all_met' => true, 'missing' => []];
+        } catch (\Throwable $e) {
+            App::getInstance(true)->getLogger()->warning(
+                'Mythic dependency check failed for ' . $slug . '@' . $version . ': ' . $e->getMessage()
+            );
+
+            return ['checks' => [], 'all_met' => true, 'missing' => []];
+        }
+    }
+
+    /**
+     * @return array{checks: list<array<string, mixed>>, all_met: bool, missing: list<string>}
+     */
+    private function evaluateConfDependencyChecksFromBinary(string $fileContent): array
     {
         $dependencyChecks = [];
         $missingDependencies = [];
         $allDependenciesMet = true;
 
-        if ($downloadUrl === null || $downloadUrl === '') {
+        if ($fileContent === '') {
             return ['checks' => [], 'all_met' => true, 'missing' => []];
         }
 
         $tempFile = sys_get_temp_dir() . '/' . uniqid('featherpanel_check_', true) . '.fpa';
-        $fileContent = @file_get_contents($downloadUrl, false, $streamContext);
-        if ($fileContent === false) {
-            return ['checks' => [], 'all_met' => true, 'missing' => []];
-        }
-
         file_put_contents($tempFile, $fileContent);
 
         $tempDir = sys_get_temp_dir() . '/' . uniqid('featherpanel_check_', true);
@@ -1496,66 +1410,525 @@ class CloudPluginsController
     }
 
     /**
-     * Map a FeatherCloud API package row to the panel's online-addon shape.
-     *
-     * @param array<string, mixed> $pkg
-     * @param array<string, mixed>|null $latestOverride When set, use instead of $pkg['latest_version']; pass empty array for no latest block
-     *
-     * @return array<string, mixed>
+     * @return list<array<string, mixed>>
      */
-    private static function normalizePackageForResponse(array $pkg, ?array $latestOverride = null): array
+    private function listMythicAddons(FeatherCloudClient $client): array
     {
-        $latest = $latestOverride ?? ($pkg['latest_version'] ?? []);
-        $downloadUrl = null;
-        if ($latest !== [] && isset($latest['download_url']) && $latest['download_url'] !== null && $latest['download_url'] !== '') {
-            $du = (string) $latest['download_url'];
-            if (preg_match('#^https?://#i', $du)) {
-                $downloadUrl = $du;
-            } else {
-                $downloadUrl = 'https://api.featherpanel.com' . (str_starts_with($du, '/') ? $du : '/' . $du);
+        $rows = $this->fetchAllPurchases($client);
+        $bySlug = [];
+
+        foreach ($rows as $row) {
+            $product = $this->extractProductFromPurchaseRow($row);
+            if ($product === null) {
+                continue;
+            }
+            $slug = $this->productSlug($product);
+            if ($slug === '' || isset($bySlug[$slug])) {
+                continue;
+            }
+
+            try {
+                $releasesPayload = $client->getProductReleases($slug);
+            } catch (FeatherCloudException $e) {
+                // Only list products this panel can actually download.
+                if (in_array($e->getErrorCode(), ['PANEL_DOWNLOADS_DISABLED', 'ACCESS_DENIED', 'PRODUCT_NOT_FOUND', 'NO_RELEASES', 'NOT_FOUND'], true)) {
+                    continue;
+                }
+                App::getInstance(true)->getLogger()->debug(
+                    'Mythic releases unavailable for ' . $slug . ': ' . $e->getErrorCode()
+                );
+                continue;
+            }
+
+            $releases = $this->extractReleases($releasesPayload);
+            if ($releases === []) {
+                continue;
+            }
+
+            $productFromReleases = $this->extractProductFromReleasesPayload($releasesPayload);
+            if ($productFromReleases !== null) {
+                $product = array_merge($product, $productFromReleases);
+            }
+
+            $addon = self::normalizeMythicProductForResponse($product, $row);
+            $addon['latest_version'] = self::normalizeReleaseAsLatest($releases[0]);
+            $bySlug[$slug] = $addon;
+        }
+
+        return array_values($bySlug);
+    }
+
+    /**
+     * @return array{addon: array<string, mixed>, product: array<string, mixed>, releases: list<array<string, mixed>>}|null
+     */
+    private function resolveMythicProduct(FeatherCloudClient $client, string $identifier): ?array
+    {
+        $product = null;
+        foreach ($this->fetchAllPurchases($client) as $row) {
+            $candidate = $this->extractProductFromPurchaseRow($row);
+            if ($candidate === null) {
+                continue;
+            }
+            if ($this->productMatchesIdentifier($candidate, $identifier)) {
+                $product = $candidate;
+                break;
             }
         }
 
-        $iconUrl = $pkg['icon_url'] ?? null;
+        $lookupSlug = $product !== null ? $this->productSlug($product) : '';
+        if ($lookupSlug === '') {
+            $lookupSlug = trim($identifier);
+        }
 
-        $latestBlock = null;
-        if ($latest !== []) {
-            $latestBlock = [
-                'version' => $latest['version'] ?? null,
-                'download_url' => $downloadUrl,
-                'file_size' => $latest['file_size'] ?? null,
-                'created_at' => $latest['created_at'] ?? null,
+        try {
+            $releasesPayload = $client->getProductReleases($lookupSlug);
+            $releases = $this->extractReleases($releasesPayload);
+        } catch (FeatherCloudException $e) {
+            if (in_array($e->getErrorCode(), ['PRODUCT_NOT_FOUND', 'NOT_FOUND', 'PANEL_DOWNLOADS_DISABLED', 'ACCESS_DENIED', 'NO_RELEASES'], true)
+                || $e->getHttpStatusCode() === 404
+                || $e->getHttpStatusCode() === 403
+            ) {
+                return null;
+            }
+            throw $e;
+        }
+
+        if ($releases === []) {
+            return null;
+        }
+
+        $productFromReleases = $this->extractProductFromReleasesPayload($releasesPayload);
+        if ($productFromReleases !== null) {
+            $product = is_array($product) ? array_merge($product, $productFromReleases) : $productFromReleases;
+        }
+
+        if ($product === null) {
+            $product = [
+                'id' => null,
+                'identifier' => $identifier,
+                'slug' => $lookupSlug,
+                'name' => $identifier,
+                'display_name' => $identifier,
             ];
-            foreach (['changelog', 'dependencies', 'min_panel_version', 'max_panel_version'] as $k) {
-                if (array_key_exists($k, $latest)) {
-                    $latestBlock[$k] = $latest[$k];
+        }
+
+        $addon = self::normalizeMythicProductForResponse($product);
+        $addon['latest_version'] = self::normalizeReleaseAsLatest($releases[0]);
+
+        return [
+            'addon' => $addon,
+            'product' => $product,
+            'releases' => $releases,
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     *
+     * @return array<string, mixed>|null
+     */
+    private function extractProductFromReleasesPayload(array $payload): ?array
+    {
+        if (isset($payload['product']) && is_array($payload['product'])) {
+            return $payload['product'];
+        }
+        if (isset($payload['data']['product']) && is_array($payload['data']['product'])) {
+            return $payload['data']['product'];
+        }
+
+        return null;
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function fetchAllPurchases(FeatherCloudClient $client): array
+    {
+        $all = [];
+        $page = 1;
+        $limit = 100;
+
+        do {
+            $payload = $client->getPurchasedProducts($page, $limit);
+            $batch = $this->extractPurchaseRows($payload);
+            foreach ($batch as $row) {
+                $all[] = $row;
+            }
+            $count = count($batch);
+            ++$page;
+        } while ($count >= $limit && $page <= 20);
+
+        return $all;
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function extractPurchaseRows(array $payload): array
+    {
+        if (isset($payload['purchases']) && is_array($payload['purchases'])) {
+            return array_values(array_filter($payload['purchases'], 'is_array'));
+        }
+        if (isset($payload['items']) && is_array($payload['items'])) {
+            return array_values(array_filter($payload['items'], 'is_array'));
+        }
+        if (isset($payload['products']) && is_array($payload['products'])) {
+            return array_values(array_filter($payload['products'], 'is_array'));
+        }
+        if (isset($payload['data']) && is_array($payload['data'])) {
+            if (array_is_list($payload['data'])) {
+                return array_values(array_filter($payload['data'], 'is_array'));
+            }
+            foreach (['purchases', 'items', 'products'] as $key) {
+                if (isset($payload['data'][$key]) && is_array($payload['data'][$key])) {
+                    return array_values(array_filter($payload['data'][$key], 'is_array'));
                 }
             }
         }
+        if (array_is_list($payload)) {
+            return array_values(array_filter($payload, 'is_array'));
+        }
 
-        $premiumLink = isset($pkg['premium_link']) && is_string($pkg['premium_link']) ? $pkg['premium_link'] : null;
+        return [];
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     *
+     * @return array<string, mixed>|null
+     */
+    private function extractProductFromPurchaseRow(array $row): ?array
+    {
+        if (isset($row['product']) && is_array($row['product'])) {
+            return $row['product'];
+        }
+        if (isset($row['identifier']) || isset($row['name']) || isset($row['slug'])) {
+            return $row;
+        }
+
+        return null;
+    }
+
+    /**
+     * Marketplace product slug used for Mythic download/release API paths.
+     *
+     * @param array<string, mixed> $product
+     */
+    private function productSlug(array $product): string
+    {
+        foreach (['slug', 'store_slug'] as $key) {
+            if (isset($product[$key]) && is_string($product[$key]) && trim($product[$key]) !== '') {
+                return trim($product[$key]);
+            }
+        }
+
+        // Legacy payloads may only expose a single identifier field.
+        foreach (['identifier', 'name'] as $key) {
+            if (isset($product[$key]) && is_string($product[$key]) && trim($product[$key]) !== '') {
+                return trim($product[$key]);
+            }
+        }
+
+        return '';
+    }
+
+    /**
+     * Local FeatherPanel plugin identifier (conf.yml / addons folder).
+     *
+     * @param array<string, mixed> $product
+     */
+    private function pluginIdentifier(array $product): string
+    {
+        foreach (['featherpanel_plugin_identifier', 'identifier'] as $key) {
+            if (isset($product[$key]) && is_string($product[$key]) && trim($product[$key]) !== '') {
+                return trim($product[$key]);
+            }
+        }
+
+        return $this->productSlug($product);
+    }
+
+    /**
+     * Whether a purchase/product row matches a requested plugin id or store slug.
+     *
+     * @param array<string, mixed> $product
+     */
+    private function productMatchesIdentifier(array $product, string $identifier): bool
+    {
+        $needle = strtolower(trim($identifier));
+        if ($needle === '') {
+            return false;
+        }
+
+        foreach ([$this->pluginIdentifier($product), $this->productSlug($product)] as $candidate) {
+            if ($candidate !== '' && strtolower($candidate) === $needle) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function extractReleases(array $payload): array
+    {
+        $list = [];
+        if (isset($payload['releases']) && is_array($payload['releases'])) {
+            $list = $payload['releases'];
+        } elseif (isset($payload['data']) && is_array($payload['data'])) {
+            if (isset($payload['data']['releases']) && is_array($payload['data']['releases'])) {
+                $list = $payload['data']['releases'];
+            } elseif (array_is_list($payload['data'])) {
+                $list = $payload['data'];
+            }
+        } elseif (array_is_list($payload)) {
+            $list = $payload;
+        }
+
+        $releases = array_values(array_filter($list, 'is_array'));
+        usort($releases, static function (array $a, array $b): int {
+            $va = ltrim((string) ($a['version'] ?? ''), 'vV');
+            $vb = ltrim((string) ($b['version'] ?? ''), 'vV');
+            if ($va !== '' && $vb !== '' && version_compare($va, $vb, '!=')) {
+                return version_compare($vb, $va);
+            }
+
+            return strcmp((string) ($b['created_at'] ?? ''), (string) ($a['created_at'] ?? ''));
+        });
+
+        return $releases;
+    }
+
+    /**
+     * @param list<array<string, mixed>> $addons
+     * @param list<string> $tags
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function filterMythicAddons(array $addons, string $q, bool $verifiedOnly, array $tags): array
+    {
+        $qLower = mb_strtolower($q);
+        $tagSet = array_values(array_filter(array_map(static fn (string $t): string => mb_strtolower(trim($t)), $tags), static fn (string $t): bool => $t !== ''));
+
+        return array_values(array_filter($addons, static function (array $addon) use ($qLower, $verifiedOnly, $tagSet): bool {
+            if ($verifiedOnly && empty($addon['verified'])) {
+                return false;
+            }
+            if ($tagSet !== []) {
+                $addonTags = array_map(static fn ($t): string => mb_strtolower((string) $t), is_array($addon['tags'] ?? null) ? $addon['tags'] : []);
+                foreach ($tagSet as $tag) {
+                    if (!in_array($tag, $addonTags, true)) {
+                        return false;
+                    }
+                }
+            }
+            if ($qLower === '') {
+                return true;
+            }
+            $haystack = mb_strtolower(implode(' ', [
+                (string) ($addon['identifier'] ?? ''),
+                (string) ($addon['name'] ?? ''),
+                (string) ($addon['description'] ?? ''),
+                (string) ($addon['author'] ?? ''),
+            ]));
+
+            return str_contains($haystack, $qLower);
+        }));
+    }
+
+    /**
+     * @param list<array<string, mixed>> $addons
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function sortMythicAddons(array $addons, string $sortBy, string $sortOrder): array
+    {
+        $field = in_array($sortBy, ['created_at', 'downloads', 'updated_at'], true) ? $sortBy : 'created_at';
+        $desc = strtoupper($sortOrder) !== 'ASC';
+
+        usort($addons, static function (array $a, array $b) use ($field, $desc): int {
+            $av = $a[$field] ?? null;
+            $bv = $b[$field] ?? null;
+            if ($field === 'downloads') {
+                $cmp = ((int) $av) <=> ((int) $bv);
+            } else {
+                $cmp = strcmp((string) $av, (string) $bv);
+            }
+
+            return $desc ? -$cmp : $cmp;
+        });
+
+        return $addons;
+    }
+
+    /**
+     * Map a Mythic product to the panel online-addon shape.
+     *
+     * @param array<string, mixed> $product
+     * @param array<string, mixed>|null $purchaseRow
+     *
+     * @return array<string, mixed>
+     */
+    private static function normalizeMythicProductForResponse(array $product, ?array $purchaseRow = null): array
+    {
+        $storeSlug = '';
+        foreach (['slug', 'store_slug'] as $key) {
+            if (isset($product[$key]) && is_string($product[$key]) && trim($product[$key]) !== '') {
+                $storeSlug = trim($product[$key]);
+                break;
+            }
+        }
+
+        $pluginId = '';
+        foreach (['featherpanel_plugin_identifier', 'identifier'] as $key) {
+            if (isset($product[$key]) && is_string($product[$key]) && trim($product[$key]) !== '') {
+                $pluginId = trim($product[$key]);
+                break;
+            }
+        }
+        if ($pluginId === '') {
+            $pluginId = $storeSlug;
+        }
+        if ($storeSlug === '') {
+            $storeSlug = $pluginId;
+        }
+        if ($storeSlug === '' && isset($product['name']) && is_string($product['name'])) {
+            $storeSlug = trim($product['name']);
+            if ($pluginId === '') {
+                $pluginId = $storeSlug;
+            }
+        }
+
+        $price = $product['price'] ?? ($product['premium_price'] ?? null);
+        $isPremium = 0;
+        if (isset($product['premium'])) {
+            $isPremium = (int) $product['premium'] ? 1 : 0;
+        } elseif (is_numeric($price) && (float) $price > 0) {
+            $isPremium = 1;
+        }
+
+        $premiumLink = null;
+        if (isset($product['premium_link']) && is_string($product['premium_link'])) {
+            $premiumLink = $product['premium_link'];
+        } elseif (isset($product['url']) && is_string($product['url'])) {
+            $premiumLink = $product['url'];
+        } elseif ($storeSlug !== '') {
+            $premiumLink = 'https://my.mythicalsystems.org/market/' . rawurlencode($storeSlug);
+        }
+
+        $iconUrl = $product['icon_url'] ?? ($product['icon'] ?? ($product['image'] ?? null));
 
         return [
-            'id' => $pkg['id'] ?? null,
-            'identifier' => $pkg['name'] ?? '',
-            'store_slug' => self::extractStoreSlugFromPremiumLink($premiumLink),
-            'name' => $pkg['display_name'] ?? ($pkg['name'] ?? ''),
-            'description' => $pkg['description'] ?? null,
+            'id' => $product['id'] ?? null,
+            'identifier' => $pluginId,
+            'featherpanel_plugin_identifier' => isset($product['featherpanel_plugin_identifier'])
+                && is_string($product['featherpanel_plugin_identifier'])
+                && trim($product['featherpanel_plugin_identifier']) !== ''
+                    ? trim($product['featherpanel_plugin_identifier'])
+                    : null,
+            'store_slug' => $storeSlug !== '' ? $storeSlug : self::extractStoreSlugFromPremiumLink($premiumLink),
+            'name' => $product['display_name'] ?? ($product['name'] ?? $pluginId),
+            'description' => $product['description'] ?? null,
             'icon' => PanelAssetUrl::rewriteCloudStorageIcon(is_string($iconUrl) ? $iconUrl : null),
-            'website' => $pkg['website'] ?? null,
-            'author' => $pkg['author'] ?? null,
-            'author_email' => $pkg['author_email'] ?? null,
-            'maintainers' => $pkg['maintainers'] ?? [],
-            'tags' => $pkg['tags'] ?? [],
-            'verified' => isset($pkg['verified']) ? (int) $pkg['verified'] === 1 : false,
-            'premium' => isset($pkg['premium']) ? (int) $pkg['premium'] : 0,
+            'website' => $product['website'] ?? null,
+            'author' => $product['author'] ?? ($purchaseRow['username'] ?? null),
+            'author_email' => $product['author_email'] ?? ($purchaseRow['email'] ?? null),
+            'maintainers' => $product['maintainers'] ?? [],
+            'tags' => $product['tags'] ?? [],
+            'verified' => isset($product['verified']) ? ((int) $product['verified'] === 1 || $product['verified'] === true) : false,
+            'premium' => $isPremium,
             'premium_link' => $premiumLink,
-            'premium_price' => $pkg['premium_price'] ?? null,
-            'downloads' => $pkg['downloads'] ?? 0,
-            'created_at' => $pkg['created_at'] ?? null,
-            'updated_at' => $pkg['updated_at'] ?? null,
-            'latest_version' => $latestBlock,
+            'premium_price' => $price,
+            'downloads' => $product['downloads'] ?? 0,
+            'created_at' => $product['created_at'] ?? ($purchaseRow['purchased_at'] ?? null),
+            'updated_at' => $product['updated_at'] ?? null,
+            'latest_version' => null,
         ];
+    }
+
+    /**
+     * @param array<string, mixed> $release
+     *
+     * @return array<string, mixed>
+     */
+    private static function normalizeReleaseAsLatest(array $release): array
+    {
+        return [
+            'version' => $release['version'] ?? null,
+            'download_url' => null,
+            'file_size' => $release['file_size'] ?? ($release['size'] ?? null),
+            'created_at' => $release['created_at'] ?? null,
+            'changelog' => $release['changelog'] ?? null,
+            'dependencies' => $release['dependencies'] ?? [],
+            'min_panel_version' => $release['min_panel_version'] ?? null,
+            'max_panel_version' => $release['max_panel_version'] ?? null,
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $release
+     *
+     * @return array<string, mixed>
+     */
+    private static function normalizeReleaseAsVersion(array $release): array
+    {
+        return [
+            'id' => $release['id'] ?? null,
+            'version' => $release['version'] ?? null,
+            'download_url' => null,
+            'file_size' => $release['file_size'] ?? ($release['size'] ?? null),
+            'file_hash' => $release['file_hash'] ?? ($release['hash'] ?? null),
+            'changelog' => $release['changelog'] ?? null,
+            'dependencies' => $release['dependencies'] ?? [],
+            'min_panel_version' => $release['min_panel_version'] ?? null,
+            'max_panel_version' => $release['max_panel_version'] ?? null,
+            'downloads' => $release['downloads'] ?? 0,
+            'created_at' => $release['created_at'] ?? null,
+            'updated_at' => $release['updated_at'] ?? null,
+            'title' => $release['title'] ?? null,
+            'file_name' => $release['file_name'] ?? null,
+        ];
+    }
+
+    /**
+     * @param array<string, mixed>|null $extra
+     */
+    private function credentialsRequiredResponse(?array $extra = null): Response
+    {
+        return ApiResponse::error(
+            'Mythic Cloud credentials are not configured. Link your panel in Cloud Management to browse and download marketplace products.',
+            'CLOUD_CREDENTIALS_NOT_CONFIGURED',
+            503,
+            $extra
+        );
+    }
+
+    private function mythicErrorResponse(FeatherCloudException $e): Response
+    {
+        $status = $e->getHttpStatusCode();
+        $code = $e->getErrorCode();
+        $message = $e->getMessage();
+
+        if ($status === 401) {
+            $status = 503;
+        }
+
+        $message = match ($code) {
+            'PANEL_DOWNLOADS_DISABLED' => 'This product does not allow MythicalCloud panel downloads.',
+            'ACCESS_DENIED' => 'Access denied for this Mythic marketplace action.',
+            'INVALID_USER_UUID' => 'Your panel user is not mapped to a Mythic team member. Re-link Cloud Connections with a matching email.',
+            'MEMBER_UUID_REQUIRED' => 'Your panel user is not mapped to a Mythic team member. Re-link Cloud Connections with a matching email.',
+            'CREDENTIALS_NOT_CONFIGURED' => 'Mythic Cloud credentials are not configured. Link your panel in Cloud Management.',
+            default => $message,
+        };
+
+        return ApiResponse::error($message, $code, $status);
     }
 
     /**

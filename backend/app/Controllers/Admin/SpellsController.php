@@ -1737,11 +1737,11 @@ class SpellsController
             $fileContent = null;
             $match = null;
 
-            // Prefer Mythic Panel API egg download when available
+            // Prefer Mythic Eggs API download when available
             try {
                 $config = App::getInstance(true)->getConfig();
                 if (($config->getSetting(ConfigInterface::FEATHERCLOUD_EGGS_ENABLED, 'true') ?? 'true') === 'true') {
-                    $client = new \App\Services\FeatherCloud\FeatherCloudClient();
+                    $client = new \App\Services\FeatherCloud\MythicEggsClient();
                     $fileContent = $client->downloadEgg($identifier);
                     $match = [
                         'id' => $identifier,
@@ -1910,7 +1910,6 @@ class SpellsController
                 return null;
             }
 
-            $client = new \App\Services\FeatherCloud\FeatherCloudClient();
             $query = array_filter([
                 'q' => $q !== '' ? $q : null,
                 'page' => $page,
@@ -1920,16 +1919,14 @@ class SpellsController
                 'sort' => $sort !== '' ? $sort : null,
             ], static fn ($v) => $v !== null && $v !== '');
 
-            $data = $client->listEggs($query);
-            $eggs = $data['eggs'] ?? $data['data'] ?? $data['items'] ?? null;
-            if (!is_array($eggs)) {
-                // Some responses return a bare list as data
-                $eggs = array_is_list($data) ? $data : [];
-            }
+            $client = new \App\Services\FeatherCloud\MythicEggsClient();
+            $payload = $client->listEggs($query);
+            $eggs = is_array($payload['data'] ?? null) ? $payload['data'] : [];
 
             $onlineSpells = array_map(static function (array $egg): array {
-                $id = (string) ($egg['id'] ?? $egg['identifier'] ?? $egg['slug'] ?? '');
-                $category = $egg['category'] ?? ($egg['tags'][0] ?? 'unknown');
+                $id = (string) ($egg['id'] ?? '');
+                $category = $egg['category'] ?? 'unknown';
+                $downloadUrl = $egg['downloadUrl'] ?? null;
 
                 return [
                     'id' => $egg['id'] ?? null,
@@ -1937,38 +1934,45 @@ class SpellsController
                     'name' => $egg['name'] ?? $id,
                     'description' => $egg['description'] ?? null,
                     'icon' => $egg['icon'] ?? null,
-                    'website' => $egg['website'] ?? ($egg['repo'] ?? null),
-                    'author' => $egg['author'] ?? ($egg['channel'] ?? 'Mythic'),
-                    'author_email' => $egg['author_email'] ?? null,
-                    'maintainers' => $egg['maintainers'] ?? [],
-                    'tags' => is_array($egg['tags'] ?? null) ? $egg['tags'] : [$category],
-                    'verified' => (bool) ($egg['verified'] ?? true),
-                    'downloads' => (int) ($egg['downloads'] ?? 0),
-                    'created_at' => $egg['created_at'] ?? null,
-                    'updated_at' => $egg['updated_at'] ?? null,
+                    'website' => $egg['webUrl'] ?? ($egg['repo'] ?? null),
+                    'author' => $egg['author'] ?? ($egg['channelLabel'] ?? ($egg['channel'] ?? 'Mythic')),
+                    'author_email' => null,
+                    'maintainers' => [],
+                    'tags' => is_string($category) ? [$category] : [],
+                    'verified' => (bool) ($egg['isOfficial'] ?? false),
+                    'downloads' => (int) ($egg['downloadCount'] ?? 0),
+                    'average_rating' => $egg['averageRating'] ?? null,
+                    'review_count' => $egg['reviewCount'] ?? null,
+                    'channel' => $egg['channel'] ?? null,
+                    'category' => is_string($category) ? $category : 'unknown',
+                    'created_at' => $egg['approvedAt'] ?? null,
+                    'updated_at' => $egg['lastUpdated'] ?? null,
                     'latest_version' => [
-                        'version' => $egg['version'] ?? null,
-                        'download_url' => $egg['download_url'] ?? null,
-                        'file_size' => $egg['file_size'] ?? null,
-                        'created_at' => $egg['updated_at'] ?? null,
+                        'version' => null,
+                        'download_url' => is_string($downloadUrl) ? $downloadUrl : null,
+                        'file_size' => null,
+                        'created_at' => $egg['lastUpdated'] ?? null,
                     ],
                     'source' => 'mythic',
+                    'hasCatalogContent' => (bool) ($egg['hasCatalogContent'] ?? true),
                 ];
             }, $eggs);
 
-            $paginationMeta = $data['pagination'] ?? $data['meta'] ?? [];
-            $total = (int) ($paginationMeta['total'] ?? $paginationMeta['total_records'] ?? count($onlineSpells));
-            $totalPages = (int) ($paginationMeta['total_pages'] ?? max(1, (int) ceil($total / max(1, $perPage))));
+            $paginationMeta = is_array($payload['meta'] ?? null) ? $payload['meta'] : [];
+            $total = (int) ($paginationMeta['total'] ?? count($onlineSpells));
+            $perPageSafe = max(1, $perPage);
+            $totalPages = (int) ($paginationMeta['last_page'] ?? max(1, (int) ceil($total / $perPageSafe)));
+            $currentPage = (int) ($paginationMeta['page'] ?? $page);
 
             return ApiResponse::success([
                 'spells' => $onlineSpells,
                 'pagination' => [
-                    'current_page' => (int) ($paginationMeta['current_page'] ?? $paginationMeta['page'] ?? $page),
+                    'current_page' => $currentPage,
                     'total_pages' => $totalPages,
                     'total_records' => $total,
                     'per_page' => (int) ($paginationMeta['per_page'] ?? $perPage),
-                    'has_next' => (bool) ($paginationMeta['has_next'] ?? ($page < $totalPages)),
-                    'has_prev' => (bool) ($paginationMeta['has_prev'] ?? ($page > 1)),
+                    'has_next' => $currentPage < $totalPages,
+                    'has_prev' => $currentPage > 1,
                 ],
                 'source' => 'mythic',
             ], 'Online spells fetched from Mythic', 200);
