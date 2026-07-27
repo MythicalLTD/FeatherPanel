@@ -309,7 +309,7 @@ export default function AdminDashboardPage() {
                                 </button>
                             )}
                             <div className={cn(hiddenWidgets.includes('version') && 'opacity-30 grayscale')}>
-                                <VersionInfoWidget version={data?.version} />
+                                <VersionInfoWidget version={data?.version} loading={loading} />
                             </div>
                         </div>
                     </div>

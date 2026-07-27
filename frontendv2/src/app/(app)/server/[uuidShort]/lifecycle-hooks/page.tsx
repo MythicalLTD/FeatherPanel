@@ -35,6 +35,9 @@ import {
     Settings2,
     Download,
     Upload,
+    AlertTriangle,
+    Play,
+    Square,
 } from 'lucide-react';
 
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -46,13 +49,16 @@ import { EmptyState } from '@/components/featherui/EmptyState';
 import { Button } from '@/components/featherui/Button';
 import { HeadlessModal } from '@/components/ui/headless-modal';
 import type { LifecycleHook, LifecycleHookStep, LifecycleHookType, LifecycleTaskType } from '@/types/server';
+import { LIFECYCLE_HOOK_TYPES } from '@/types/server';
 import { computeMovedSequence } from './form-utils';
+import { LifecycleHookCard } from './LifecycleHookCard';
 
 type LifecycleHookResponse = {
     success: boolean;
     data: {
         hooks: LifecycleHook[];
         feature_enabled: boolean;
+        container_shell_enabled: boolean;
     };
 };
 
@@ -74,6 +80,15 @@ type LifecycleHookExportFile = {
 const EMPTY_HOOKS: Record<LifecycleHookType, LifecycleHook> = {
     pre_start: { id: null, server_id: 0, hook_type: 'pre_start', is_active: 0, steps: [] },
     pre_stop: { id: null, server_id: 0, hook_type: 'pre_stop', is_active: 0, steps: [] },
+    post_start: { id: null, server_id: 0, hook_type: 'post_start', is_active: 0, steps: [] },
+    server_crash: { id: null, server_id: 0, hook_type: 'server_crash', is_active: 0, steps: [] },
+};
+
+const HOOK_ICONS: Record<LifecycleHookType, typeof Power> = {
+    pre_start: Play,
+    pre_stop: Square,
+    post_start: Power,
+    server_crash: AlertTriangle,
 };
 
 export default function ServerLifecycleHooksPage() {
@@ -92,6 +107,7 @@ export default function ServerLifecycleHooksPage() {
     const [togglingHookType, setTogglingHookType] = React.useState<LifecycleHookType | null>(null);
     const [hooks, setHooks] = React.useState<Record<LifecycleHookType, LifecycleHook>>(EMPTY_HOOKS);
     const [featureEnabled, setFeatureEnabled] = React.useState(false);
+    const [containerShellEnabled, setContainerShellEnabled] = React.useState(false);
     const [importing, setImporting] = React.useState(false);
     const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
@@ -103,14 +119,27 @@ export default function ServerLifecycleHooksPage() {
         () => ({
             pre_start: t('lifecycleHooks.hookTypes.preStart'),
             pre_stop: t('lifecycleHooks.hookTypes.preStop'),
+            post_start: t('lifecycleHooks.hookTypes.postStart'),
+            server_crash: t('lifecycleHooks.hookTypes.serverCrash'),
+        }),
+        [t],
+    );
+    const hookSummaries: Record<LifecycleHookType, string> = React.useMemo(
+        () => ({
+            pre_start: t('lifecycleHooks.hookSummaries.preStart'),
+            pre_stop: t('lifecycleHooks.hookSummaries.preStop'),
+            post_start: t('lifecycleHooks.hookSummaries.postStart'),
+            server_crash: t('lifecycleHooks.hookSummaries.serverCrash'),
         }),
         [t],
     );
     const taskTypeLabels: Record<LifecycleTaskType, string> = React.useMemo(
         () => ({
             container_command: t('lifecycleHooks.taskTypes.containerCommand'),
+            container_shell: t('lifecycleHooks.taskTypes.containerShell'),
             discord_webhook: t('lifecycleHooks.taskTypes.discordWebhook'),
             http_request: t('lifecycleHooks.taskTypes.httpRequest'),
+            sleep: t('lifecycleHooks.taskTypes.sleep'),
         }),
         [t],
     );
@@ -121,10 +150,12 @@ export default function ServerLifecycleHooksPage() {
             const { data } = await axios.get<LifecycleHookResponse>(`/api/user/servers/${uuidShort}/lifecycle-hooks`);
             if (data.success) {
                 setFeatureEnabled(Boolean(data.data.feature_enabled));
-                const nextMap: Record<LifecycleHookType, LifecycleHook> = {
-                    pre_start: data.data.hooks.find((hook) => hook.hook_type === 'pre_start') || EMPTY_HOOKS.pre_start,
-                    pre_stop: data.data.hooks.find((hook) => hook.hook_type === 'pre_stop') || EMPTY_HOOKS.pre_stop,
-                };
+                setContainerShellEnabled(Boolean(data.data.container_shell_enabled));
+                const nextMap = { ...EMPTY_HOOKS };
+                for (const hookType of LIFECYCLE_HOOK_TYPES) {
+                    nextMap[hookType] =
+                        data.data.hooks.find((hook) => hook.hook_type === hookType) || EMPTY_HOOKS[hookType];
+                }
                 setHooks(nextMap);
             }
         } catch (error) {
@@ -240,7 +271,7 @@ export default function ServerLifecycleHooksPage() {
         const payload: LifecycleHookExportFile = {
             version: 1,
             exported_at: new Date().toISOString(),
-            hooks: (['pre_start', 'pre_stop'] as LifecycleHookType[]).map((hookType) => ({
+            hooks: LIFECYCLE_HOOK_TYPES.map((hookType) => ({
                 hook_type: hookType,
                 is_active: hooks[hookType].is_active,
                 steps: [...hooks[hookType].steps]
@@ -284,8 +315,16 @@ export default function ServerLifecycleHooksPage() {
                 return;
             }
 
-            const validTaskTypes: LifecycleTaskType[] = ['container_command', 'discord_webhook', 'http_request'];
-            for (const hookType of ['pre_start', 'pre_stop'] as LifecycleHookType[]) {
+            const validTaskTypes: LifecycleTaskType[] = [
+                'container_command',
+                'discord_webhook',
+                'http_request',
+                'sleep',
+            ];
+            if (containerShellEnabled) {
+                validTaskTypes.splice(1, 0, 'container_shell');
+            }
+            for (const hookType of LIFECYCLE_HOOK_TYPES) {
                 const importedHook = parsed.hooks.find((h) => h.hook_type === hookType);
                 if (!importedHook) continue;
 
@@ -382,6 +421,40 @@ export default function ServerLifecycleHooksPage() {
                 );
             }
 
+            if (step.task_type === 'container_shell') {
+                const command = typeof parsed.command === 'string' ? parsed.command : '';
+                const timeout = typeof parsed.timeout === 'number' ? parsed.timeout : Number(parsed.timeout);
+                return (
+                    <div className='space-y-1 text-xs'>
+                        <code className='break-all whitespace-pre-wrap'>
+                            {command || t('lifecycleHooks.payloadUnavailable')}
+                        </code>
+                        {Number.isFinite(timeout) && (
+                            <p className='text-muted-foreground'>
+                                <span className='text-foreground/80 font-semibold'>
+                                    {t('lifecycleHooks.form.shellTimeout')}:
+                                </span>{' '}
+                                {t('lifecycleHooks.shellTimeoutSummary', { seconds: String(Math.floor(timeout)) })}
+                            </p>
+                        )}
+                    </div>
+                );
+            }
+
+            if (step.task_type === 'sleep') {
+                const seconds = typeof parsed.seconds === 'number' ? parsed.seconds : Number(parsed.seconds);
+                return (
+                    <p className='text-muted-foreground text-xs'>
+                        <span className='text-foreground/80 font-semibold'>
+                            {t('lifecycleHooks.form.sleepSeconds')}:
+                        </span>{' '}
+                        {Number.isFinite(seconds)
+                            ? t('lifecycleHooks.sleepSummary', { seconds: String(Math.floor(seconds)) })
+                            : t('lifecycleHooks.payloadUnavailable')}
+                    </p>
+                );
+            }
+
             const method = typeof parsed.method === 'string' ? parsed.method.toUpperCase() : 'GET';
             const url = typeof parsed.url === 'string' ? parsed.url : '';
             return (
@@ -432,6 +505,7 @@ export default function ServerLifecycleHooksPage() {
                 <PageHeader
                     title={t('lifecycleHooks.title')}
                     description={t('lifecycleHooks.description')}
+                    className='gap-4'
                     actions={
                         <div className='flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center sm:gap-3'>
                             <Button variant='glass' size='sm' onClick={fetchHooks} disabled={loading}>
@@ -478,67 +552,54 @@ export default function ServerLifecycleHooksPage() {
                     </PageCard>
                 ) : null}
 
-                <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
-                    {(['pre_start', 'pre_stop'] as LifecycleHookType[]).map((hookType) => (
-                        <ResourceCard
+                <div className='grid grid-cols-1 gap-3 md:grid-cols-2'>
+                    {LIFECYCLE_HOOK_TYPES.map((hookType) => (
+                        <LifecycleHookCard
                             key={hookType}
-                            icon={Power}
-                            onClick={() => setSelectedHookType(hookType)}
-                            className={selectedHookType === hookType ? 'ring-primary/40 border-primary/40 ring-1' : ''}
-                            iconWrapperClassName={selectedHookType === hookType ? 'bg-primary/20' : undefined}
+                            icon={HOOK_ICONS[hookType]}
                             title={hookLabels[hookType]}
-                            description={t('lifecycleHooks.configuredSteps', {
+                            summary={hookSummaries[hookType]}
+                            stepCountLabel={t('lifecycleHooks.configuredSteps', {
                                 count: String(hooks[hookType].steps.length),
                             })}
-                            badges={[
-                                {
-                                    label: hooks[hookType].is_active === 1 ? t('common.enabled') : t('common.disabled'),
-                                    className:
-                                        hooks[hookType].is_active === 1
-                                            ? 'bg-green-500/10 text-green-400 border-green-500/20'
-                                            : 'bg-white/5 text-muted-foreground border-white/10',
-                                },
-                                ...(selectedHookType === hookType
-                                    ? [
-                                          {
-                                              label: t('lifecycleHooks.selected'),
-                                              className: 'bg-primary/20 text-primary border-primary/30',
-                                          },
-                                      ]
-                                    : []),
-                            ]}
-                            actions={
-                                mutationsAllowed ? (
-                                    <div className='flex flex-wrap items-center gap-2'>
-                                        <Button
-                                            variant='outline'
-                                            size='sm'
-                                            type='button'
-                                            loading={togglingHookType === hookType}
-                                            disabled={togglingHookType !== null}
-                                            onClick={() =>
-                                                updateHookActive(hookType, hooks[hookType].is_active === 1 ? 0 : 1)
-                                            }
-                                        >
-                                            {hooks[hookType].is_active === 1 ? t('common.disable') : t('common.enable')}
-                                        </Button>
-                                    </div>
-                                ) : undefined
-                            }
+                            isActive={hooks[hookType].is_active === 1}
+                            isSelected={selectedHookType === hookType}
+                            enabledLabel={t('common.enabled')}
+                            disabledLabel={t('common.disabled')}
+                            selectedLabel={t('lifecycleHooks.selected')}
+                            enableLabel={t('common.enable')}
+                            disableLabel={t('common.disable')}
+                            canToggle={mutationsAllowed}
+                            toggling={togglingHookType === hookType}
+                            onSelect={() => setSelectedHookType(hookType)}
+                            onToggleActive={() => updateHookActive(hookType, hooks[hookType].is_active === 1 ? 0 : 1)}
                         />
                     ))}
                 </div>
 
-                <div className='border-border/30 bg-card/40 flex flex-wrap items-center justify-between gap-2 rounded-2xl border px-4 py-3'>
-                    <p className='text-sm font-medium'>
-                        {t('lifecycleHooks.currentlyManaging', { hookType: hookLabels[selectedHookType] })}
-                    </p>
-                    {mutationsAllowed ? (
-                        <Button type='button' size='sm' onClick={goCreateStep}>
-                            <Plus className='mr-2 h-4 w-4' />
-                            {t('lifecycleHooks.addStep')}
-                        </Button>
-                    ) : null}
+                <div className='border-border/30 bg-card/40 rounded-2xl border p-4 sm:p-5'>
+                    <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
+                        <div className='min-w-0 space-y-1'>
+                            <p className='text-muted-foreground text-xs font-semibold tracking-wide uppercase'>
+                                {t('lifecycleHooks.pipelineLabel')}
+                            </p>
+                            <p className='text-base font-semibold sm:text-lg'>{hookLabels[selectedHookType]}</p>
+                            <p className='text-muted-foreground text-sm leading-relaxed'>
+                                {hookSummaries[selectedHookType]}
+                            </p>
+                        </div>
+                        {mutationsAllowed ? (
+                            <Button
+                                type='button'
+                                size='sm'
+                                onClick={goCreateStep}
+                                className='w-full shrink-0 sm:w-auto'
+                            >
+                                <Plus className='mr-2 h-4 w-4' />
+                                {t('lifecycleHooks.addStep')}
+                            </Button>
+                        ) : null}
+                    </div>
                 </div>
 
                 {sortedSteps.length === 0 ? (
@@ -564,8 +625,10 @@ export default function ServerLifecycleHooksPage() {
                         {sortedSteps.map((step) => (
                             <ResourceCard
                                 key={step.id}
+                                layout='stacked'
                                 icon={ListCheck}
                                 title={taskTypeLabels[step.task_type]}
+                                titleClassName='break-words'
                                 description={summarizeStepPayload(step)}
                                 badges={[
                                     {
@@ -583,22 +646,24 @@ export default function ServerLifecycleHooksPage() {
                                 ]}
                                 actions={
                                     mutationsAllowed ? (
-                                        <div className='flex items-center gap-2'>
+                                        <div className='flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end'>
                                             <Button
                                                 size='sm'
                                                 variant='ghost'
                                                 type='button'
+                                                aria-label={t('common.moveUp')}
                                                 onClick={() => handleMoveStep(step, -1)}
                                             >
-                                                <ChevronUp className='h-3.5 w-3.5' />
+                                                <ChevronUp className='h-4 w-4' />
                                             </Button>
                                             <Button
                                                 size='sm'
                                                 variant='ghost'
                                                 type='button'
+                                                aria-label={t('common.moveDown')}
                                                 onClick={() => handleMoveStep(step, 1)}
                                             >
-                                                <ChevronDown className='h-3.5 w-3.5' />
+                                                <ChevronDown className='h-4 w-4' />
                                             </Button>
                                             <Button
                                                 type='button'
@@ -606,7 +671,8 @@ export default function ServerLifecycleHooksPage() {
                                                 variant='glass'
                                                 onClick={() => goEditStep(step)}
                                             >
-                                                <Pencil className='h-3.5 w-3.5' />
+                                                <Pencil className='mr-1.5 h-3.5 w-3.5' />
+                                                {t('common.edit')}
                                             </Button>
                                             <Button
                                                 type='button'
@@ -617,7 +683,8 @@ export default function ServerLifecycleHooksPage() {
                                                     setIsDeleteOpen(true);
                                                 }}
                                             >
-                                                <Trash2 className='h-3.5 w-3.5' />
+                                                <Trash2 className='mr-1.5 h-3.5 w-3.5' />
+                                                {t('common.delete')}
                                             </Button>
                                         </div>
                                     ) : undefined

@@ -15,6 +15,8 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import Image from 'next/image';
+import type { ComponentType } from 'react';
 import { getRoleBadgeLabel, type RoleBadgeSource } from '@/lib/role-utils';
 import { cn } from '@/lib/utils';
 
@@ -78,19 +80,71 @@ export function getRoleBadgeStyles(
     };
 }
 
+function RoleBadgeIcon({ src, size }: { src: string; size: 'xs' | 'sm' }) {
+    const dimension = size === 'sm' ? 14 : 12;
+
+    return (
+        <Image
+            src={src}
+            alt=''
+            width={dimension}
+            height={dimension}
+            className='shrink-0 rounded-sm object-cover'
+            unoptimized
+        />
+    );
+}
+
 export function RoleBadge({ role, variant = 'soft', size = 'xs', className }: RoleBadgeProps) {
     const styles = getRoleBadgeStyles(role, variant);
+    const badgeIcon = role.badge_icon?.trim();
 
     return (
         <span
             className={cn(
-                'inline-flex max-w-full items-center truncate rounded-md leading-tight font-medium',
+                'inline-flex max-w-full items-center gap-1 truncate rounded-md leading-tight font-medium',
                 size === 'sm' ? 'px-2 py-0.5 text-xs' : 'px-1.5 py-px text-[11px]',
                 className,
             )}
             style={styles}
         >
+            {badgeIcon && <RoleBadgeIcon src={badgeIcon} size={size} />}
             {getRoleBadgeLabel(role)}
         </span>
+    );
+}
+
+export function RoleIconAvatar({
+    role,
+    className,
+    iconClassName,
+    fallbackIcon: FallbackIcon,
+}: {
+    role: RoleBadgeRole;
+    className?: string;
+    iconClassName?: string;
+    fallbackIcon: ComponentType<{ className?: string }>;
+}) {
+    const badgeIcon = role.badge_icon?.trim();
+    const color = normalizeHexColor(role.color);
+
+    if (badgeIcon) {
+        return (
+            <div
+                className={cn('relative shrink-0 overflow-hidden rounded-xl shadow-sm', className)}
+                style={{ backgroundColor: color }}
+            >
+                <Image src={badgeIcon} alt='' fill className='object-cover' unoptimized />
+            </div>
+        );
+    }
+
+    return (
+        <div
+            className={cn('flex shrink-0 items-center justify-center rounded-xl shadow-sm', className)}
+            style={{ backgroundColor: color }}
+        >
+            <FallbackIcon className={cn('text-white', iconClassName)} />
+        </div>
     );
 }

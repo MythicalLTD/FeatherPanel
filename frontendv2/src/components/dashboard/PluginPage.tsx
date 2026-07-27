@@ -21,7 +21,7 @@ import Link from 'next/link';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import { RefreshCw, AlertTriangle, ArrowLeft, Home } from 'lucide-react';
+import { RefreshCw, AlertTriangle, ArrowLeft, Home, FileQuestion } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn, isEnabled } from '@/lib/utils';
 import type { PluginSidebarItem } from '@/types/navigation';
@@ -383,24 +383,20 @@ export default function PluginPage({ context, serverUuid, vdsId }: PluginPagePro
         if (isPluginNotFound) {
             return (
                 <div className='flex min-h-[60vh] flex-col items-center justify-center p-8 text-center'>
-                    <div className='relative mb-8'>
-                        <h1 className='from-primary via-primary/80 to-primary/60 bg-linear-to-br bg-clip-text text-9xl leading-none font-black text-transparent md:text-[12rem]'>
-                            404
-                        </h1>
-                        <div className='absolute inset-0 flex items-center justify-center'>
-                            <div className='text-6xl opacity-10 md:text-7xl'>🔍</div>
-                        </div>
+                    <div className='bg-muted/40 text-muted-foreground border-border/50 mb-6 flex h-14 w-14 items-center justify-center rounded-2xl border'>
+                        <FileQuestion className='h-7 w-7' strokeWidth={1.5} />
                     </div>
-                    <div className='max-w-md space-y-4'>
-                        <h2 className='text-2xl font-bold tracking-tight md:text-3xl'>{t('errors.404.title')}</h2>
-                        <p className='text-muted-foreground'>{t('errors.404.message')}</p>
+                    <div className='max-w-md space-y-3'>
+                        <p className='text-muted-foreground font-mono text-xs tracking-[0.25em] uppercase'>404</p>
+                        <h2 className='text-2xl font-bold tracking-tight'>{t('errors.404.title')}</h2>
+                        <p className='text-muted-foreground text-sm leading-relaxed'>{t('errors.404.message')}</p>
                         <div className='flex flex-col justify-center gap-3 pt-4 sm:flex-row'>
-                            <Button onClick={() => router.back()} variant='outline' className='group'>
-                                <ArrowLeft className='mr-2 h-4 w-4 transition-transform group-hover:-translate-x-1' />
+                            <Button onClick={() => router.back()} variant='outline'>
+                                <ArrowLeft className='mr-2 h-4 w-4' />
                                 {t('errors.404.go_back')}
                             </Button>
                             <Link href='/dashboard'>
-                                <Button className='group w-full sm:w-auto'>
+                                <Button className='w-full sm:w-auto'>
                                     <Home className='mr-2 h-4 w-4' />
                                     {t('errors.404.go_home')}
                                 </Button>

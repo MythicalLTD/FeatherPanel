@@ -17,10 +17,9 @@
 
 namespace App\Controllers\Wings;
 
-use App\App;
 use App\Chat\Node;
 use App\Helpers\ApiResponse;
-use App\Config\ConfigInterface;
+use App\Helpers\AppUrlHelper;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -48,7 +47,8 @@ class WingsConfigController
             return ApiResponse::error('Invalid Wings authentication', 'INVALID_WINGS_AUTH', 403);
         }
 
-        $panelUrl = App::getInstance(true)->getConfig()->getSetting(ConfigInterface::APP_URL, 'https://featherpanel.mythical.systems');
+        // Prefer WINGS_REMOTE_URL so SFTP/auth callbacks are not blocked by Cloudflare challenges on APP_URL.
+        $panelUrl = AppUrlHelper::wingsRemoteUrl();
         $yaml = Node::generateWingsConfigYaml($node, $panelUrl);
 
         $response = new Response($yaml, 200, [

@@ -209,6 +209,33 @@ async fn initiate_clone(
     )
 }
 
+/// True when Proxmox failed a disk resize due to a transient lock/storage timeout.
+/// Safe to retry after a short settle (same class of failure as delete lock timeouts).
+pub(crate) fn is_transient_proxmox_resize_error(msg: &str) -> bool {
+    let m = msg.to_lowercase();
+    let lock_or_timeout = m.contains("got timeout")
+        || m.contains("can't lock")
+        || m.contains("unable to lock")
+        || m.contains("locked command timed out");
+    if !lock_or_timeout {
+        return false;
+    }
+    // Prefer matching the qemu-img resize failure users report; also catch API-level resize locks.
+    m.contains("qemu-img") || m.contains("resize") || m.contains("qcow2")
+}
+
+/// Growing wait before the next resize attempt after a transient failure.
+pub(crate) fn resize_retry_backoff_secs(failed_attempt: u32) -> u64 {
+    // failed_attempt 1 -> 15s, 2 -> 30, 3 -> 60, 4+ -> 90s cap
+    let exp = 15u64.saturating_mul(1u64 << failed_attempt.saturating_sub(1));
+    exp.min(90)
+}
+
+/// Let storage settle after clone before the first resize (avoids immediate lock timeouts).
+const RESIZE_POST_CLONE_SETTLE_SECS: u64 = 10;
+
+const MAX_RESIZE_API_ATTEMPTS: u32 = 5;
+
 async fn handle_resize_step(
     pool: &MySqlPool,
     task_id: &str,
@@ -219,34 +246,104 @@ async fn handle_resize_step(
     client: &ProxmoxClient,
 ) -> Result<()> {
     let requested_disk_gb = meta["disk"].as_i64().or_else(|| meta["disk_gb"].as_i64()).unwrap_or(0);
-    
-    if requested_disk_gb > 0 {
-        // Get current disk size
+    let prior_resize_retries = meta["resize_retry"].as_u64().unwrap_or(0);
+
+    if requested_disk_gb <= 0 {
+        advance_step(pool, task_id, "config").await?;
+        return Ok(());
+    }
+
+    let disk_key = if vm_type.as_str() == "qemu" {
+        meta["root_disk"].as_str().unwrap_or("scsi0")
+    } else {
+        "rootfs"
+    };
+
+    let mut settled = prior_resize_retries > 0;
+
+    for attempt in 1..=MAX_RESIZE_API_ATTEMPTS {
         let config = client.get_vm_config(node, vmid, vm_type).await?;
-        let disk_key = if vm_type.as_str() == "qemu" {
-            meta["root_disk"].as_str().unwrap_or("scsi0")
-        } else {
-            "rootfs"
-        };
-        
         let current_disk_gb = extract_disk_size(&config, disk_key);
-        
-        if requested_disk_gb > current_disk_gb {
-            info!("📏 Resizing disk from {}G to {}G", current_disk_gb, requested_disk_gb);
-            let upid = client.resize_disk(node, vmid, vm_type, disk_key, &format!("{}G", requested_disk_gb)).await?;
-            
-            if !upid.is_empty() {
-                update_task_upid(pool, task_id, &upid).await?;
+
+        if requested_disk_gb <= current_disk_gb {
+            info!("✅ Disk already {}G or larger, skipping resize", current_disk_gb);
+            advance_step(pool, task_id, "config").await?;
+            return Ok(());
+        }
+
+        // First attempt after a fresh clone: give storage a moment to release locks.
+        if !settled {
+            info!(
+                "⏳ Waiting {}s after clone so storage can settle before resize...",
+                RESIZE_POST_CLONE_SETTLE_SECS
+            );
+            tokio::time::sleep(tokio::time::Duration::from_secs(RESIZE_POST_CLONE_SETTLE_SECS)).await;
+            settled = true;
+        }
+
+        info!(
+            "📏 Resizing disk from {}G to {}G (attempt {}/{})",
+            current_disk_gb, requested_disk_gb, attempt, MAX_RESIZE_API_ATTEMPTS
+        );
+
+        match client
+            .resize_disk(
+                node,
+                vmid,
+                vm_type,
+                disk_key,
+                &format!("{}G", requested_disk_gb),
+            )
+            .await
+        {
+            Ok(upid) if !upid.is_empty() => {
+                // Mark that this UPID is a resize so the main loop can retry on timeout
+                // without confusing it with the preceding clone UPID (also step "resize").
+                let task = sqlx::query("SELECT data FROM featherpanel_vm_tasks WHERE task_id = ?")
+                    .bind(task_id)
+                    .fetch_one(pool)
+                    .await?;
+                let data_str: String = task.try_get("data").unwrap_or_else(|_| "{}".to_string());
+                let mut meta_mut: Value = serde_json::from_str(&data_str)?;
+                meta_mut["awaiting_resize"] = json!(true);
+
+                sqlx::query("UPDATE featherpanel_vm_tasks SET upid = ?, data = ? WHERE task_id = ?")
+                    .bind(&upid)
+                    .bind(serde_json::to_string(&meta_mut)?)
+                    .bind(task_id)
+                    .execute(pool)
+                    .await?;
+
+                info!("✅ Resize submitted with UPID: {}", upid);
                 return Ok(());
             }
-        } else {
-            info!("✅ Disk already {}G or larger, skipping resize", current_disk_gb);
+            Ok(_) => {
+                // Synchronous success (no UPID)
+                advance_step(pool, task_id, "config").await?;
+                return Ok(());
+            }
+            Err(e) => {
+                let error_msg = format!("{}", e);
+                if attempt < MAX_RESIZE_API_ATTEMPTS
+                    && is_transient_proxmox_resize_error(&error_msg)
+                {
+                    let wait = resize_retry_backoff_secs(attempt);
+                    warn!(
+                        "⚠️ Resize request for VM {} failed (attempt {}/{}): {}. Waiting {}s before retry...",
+                        vmid, attempt, MAX_RESIZE_API_ATTEMPTS, error_msg, wait
+                    );
+                    tokio::time::sleep(tokio::time::Duration::from_secs(wait)).await;
+                    continue;
+                }
+                return Err(e);
+            }
         }
     }
-    
-    // Move to next step
-    advance_step(pool, task_id, "config").await?;
-    Ok(())
+
+    anyhow::bail!(
+        "Disk resize failed after {} attempts. On the Proxmox node, try: pvesm set <storage> --preallocation off (e.g. pvesm set raid1 --preallocation off)",
+        MAX_RESIZE_API_ATTEMPTS
+    )
 }
 
 async fn apply_create_config(
@@ -440,15 +537,6 @@ fn extract_disk_size(config: &Value, disk_key: &str) -> i64 {
         }
     }
     0
-}
-
-async fn update_task_upid(pool: &MySqlPool, task_id: &str, upid: &str) -> Result<()> {
-    sqlx::query("UPDATE featherpanel_vm_tasks SET upid = ? WHERE task_id = ?")
-        .bind(upid)
-        .bind(task_id)
-        .execute(pool)
-        .await?;
-    Ok(())
 }
 
 async fn advance_step(pool: &MySqlPool, task_id: &str, next_step: &str) -> Result<()> {

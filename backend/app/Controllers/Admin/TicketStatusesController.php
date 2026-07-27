@@ -33,6 +33,8 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'id', type: 'integer', description: 'Status ID'),
         new OA\Property(property: 'name', type: 'string', description: 'Status name'),
         new OA\Property(property: 'color', type: 'string', description: 'Status color'),
+        new OA\Property(property: 'sort_order', type: 'integer', description: 'Display order (lower appears first)'),
+        new OA\Property(property: 'is_default', type: 'integer', description: 'Whether new tickets use this status (0 or 1)'),
         new OA\Property(property: 'created_at', type: 'string', format: 'date-time', description: 'Creation timestamp'),
         new OA\Property(property: 'updated_at', type: 'string', format: 'date-time', nullable: true, description: 'Last update timestamp'),
     ]
@@ -58,6 +60,8 @@ use Symfony\Component\HttpFoundation\Response;
     properties: [
         new OA\Property(property: 'name', type: 'string', description: 'Status name', minLength: 1, maxLength: 255),
         new OA\Property(property: 'color', type: 'string', nullable: true, description: 'Status color', default: '#000000'),
+        new OA\Property(property: 'sort_order', type: 'integer', nullable: true, description: 'Display order (lower appears first)'),
+        new OA\Property(property: 'is_default', type: 'boolean', nullable: true, description: 'Assign this status to newly created tickets'),
     ]
 )]
 #[OA\Schema(
@@ -66,6 +70,8 @@ use Symfony\Component\HttpFoundation\Response;
     properties: [
         new OA\Property(property: 'name', type: 'string', description: 'Status name', minLength: 1, maxLength: 255),
         new OA\Property(property: 'color', type: 'string', nullable: true, description: 'Status color'),
+        new OA\Property(property: 'sort_order', type: 'integer', nullable: true, description: 'Display order (lower appears first)'),
+        new OA\Property(property: 'is_default', type: 'boolean', nullable: true, description: 'Assign this status to newly created tickets'),
     ]
 )]
 class TicketStatusesController

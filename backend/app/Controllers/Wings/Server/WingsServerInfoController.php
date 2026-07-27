@@ -190,6 +190,8 @@ class WingsServerInfoController
         // Add default environment variables based on database fields
         $environment['P_SERVER_LOCATION'] = $node['location_id'] ?? '';
         $environment['P_SERVER_UUID'] = $server['uuid'];
+        $environment['P_SERVER_UUID_SHORT'] = $server['uuidShort'];
+        $environment['P_SERVER_ID'] = $server['id'];
         $environment['P_SERVER_ALLOCATION_LIMIT'] = $server['allocation_limit'] ?? 0;
         // Use 1024 MB when memory is 0 (unlimited) - Wings does env substitution at runtime and -Xmx0M is invalid for Java
         $environment['SERVER_MEMORY'] = ((int) $server['memory']) > 0 ? $server['memory'] : 1024;

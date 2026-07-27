@@ -17,7 +17,6 @@
 
 namespace App\Services\Chatbot\Tools;
 
-use App\Helpers\WingsUrlHelper;
 use App\App;
 use App\Chat\Node;
 use App\Chat\Backup;
@@ -25,7 +24,10 @@ use App\Chat\Server;
 use App\Chat\ServerActivity;
 use App\Services\Wings\Wings;
 use App\Helpers\ServerGateway;
+use App\Helpers\WingsUrlHelper;
+use App\Helpers\BackupIgnoreHelper;
 use App\Services\Backup\BackupFifoEviction;
+use App\Services\Backup\BackupAdapterResolver;
 use App\Plugins\Events\Events\ServerBackupEvent;
 
 /**
@@ -105,9 +107,18 @@ class CreateBackupTool implements ToolInterface
         }
 
         $currentBackups = count(Backup::getBackupsByServerId((int) $server['id']));
-        $backupLimit = (int) ($server['backup_limit'] ?? 1);
+        $backupLimit = (int) ($server['backup_limit'] ?? 0);
 
-        if ($backupLimit > 0 && $currentBackups >= $backupLimit) {
+        if ($backupLimit === 0) {
+            return [
+                'success' => false,
+                'error' => 'Backups are disabled for this server',
+                'action_type' => 'create_backup',
+                'code' => 'BACKUPS_DISABLED',
+            ];
+        }
+
+        if ($currentBackups >= $backupLimit) {
             if (!BackupFifoEviction::isFifoRollingForServer($server)) {
                 return [
                     'success' => false,
@@ -153,30 +164,7 @@ class CreateBackupTool implements ToolInterface
         $backupName = $params['name'] ?? 'Backup at ' . date('Y-m-d H:i:s');
 
         // Get ignore files
-        $ignoredFiles = $params['ignore'] ?? '[]';
-        if (is_array($ignoredFiles)) {
-            $ignoredFiles = json_encode($ignoredFiles);
-        }
-
-        // Create backup record in database
-        $backupData = [
-            'server_id' => $server['id'],
-            'uuid' => $backupUuid,
-            'name' => $backupName,
-            'ignored_files' => $ignoredFiles,
-            'disk' => 'wings',
-            'is_successful' => 0,
-            'is_locked' => 1, // Lock while backup is in progress
-        ];
-
-        $backupId = Backup::createBackup($backupData);
-        if (!$backupId) {
-            return [
-                'success' => false,
-                'error' => 'Failed to create backup record',
-                'action_type' => 'create_backup',
-            ];
-        }
+        $ignoredFiles = BackupIgnoreHelper::normalizeForStorage($params['ignore'] ?? []);
 
         // Initiate backup on Wings
         try {
@@ -189,7 +177,29 @@ class CreateBackupTool implements ToolInterface
                 WingsUrlHelper::isBehindProxy($node)
             );
 
-            $response = $wings->getServer()->createBackup($server['uuid'], 'wings', $backupUuid, $ignoredFiles);
+            $adapter = BackupAdapterResolver::resolveDefault($wings);
+
+            // Create backup record in database
+            $backupData = [
+                'server_id' => $server['id'],
+                'uuid' => $backupUuid,
+                'name' => $backupName,
+                'ignored_files' => $ignoredFiles,
+                'disk' => $adapter,
+                'is_successful' => 0,
+                'is_locked' => 1, // Lock while backup is in progress
+            ];
+
+            $backupId = Backup::createBackup($backupData);
+            if (!$backupId) {
+                return [
+                    'success' => false,
+                    'error' => 'Failed to create backup record',
+                    'action_type' => 'create_backup',
+                ];
+            }
+
+            $response = $wings->getServer()->createBackup($server['uuid'], $adapter, $backupUuid, $ignoredFiles);
 
             if (!$response->isSuccessful()) {
                 // Rollback database record
@@ -205,7 +215,9 @@ class CreateBackupTool implements ToolInterface
             }
         } catch (\Exception $e) {
             // Rollback database record
-            Backup::deleteBackup($backupId);
+            if (isset($backupId) && $backupId) {
+                Backup::deleteBackup($backupId);
+            }
             $this->app->getLogger()->error('CreateBackupTool error: ' . $e->getMessage());
 
             return [

@@ -95,7 +95,7 @@ export function AllocationCreateForm({ nodeId, onCreated, onCancel, showFooter =
                 if (preset) {
                     const start = includeDefaultPort ? preset.defaultPort : preset.defaultPort + 1;
                     const end = start + presetPortCount - 1;
-                    port = `${start}-${end}`;
+                    port = `${start}:${end}`;
                 }
             }
 
@@ -260,7 +260,7 @@ export function AllocationCreateForm({ nodeId, onCreated, onCancel, showFooter =
                 <div className='space-y-2'>
                     <Label className='text-sm font-semibold'>{t('admin.node.allocations.port')}</Label>
                     <Input
-                        placeholder='25565 or 25565-25700'
+                        placeholder='25565 or 25565:25700'
                         value={createForm.port}
                         className='h-11 font-mono'
                         onChange={(e) => setCreateForm((prev) => ({ ...prev, port: e.target.value }))}

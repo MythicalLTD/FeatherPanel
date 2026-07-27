@@ -22,6 +22,28 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
+ * Normalize attachment/icon URLs from the API to same-origin paths so they work
+ * behind the Next.js proxy regardless of the APP_URL stored in the database.
+ */
+export function resolveAttachmentUrl(url: string | null | undefined): string | null {
+    if (!url) return null;
+    const trimmed = url.trim();
+    if (trimmed === '') return null;
+    if (trimmed.startsWith('/')) return trimmed;
+
+    try {
+        const parsed = new URL(trimmed);
+        if (parsed.pathname.startsWith('/attachments/') || parsed.pathname.startsWith('/addons/')) {
+            return `${parsed.pathname}${parsed.search}`;
+        }
+    } catch {
+        // Not a valid absolute URL — return as-is for relative paths without a leading slash.
+    }
+
+    return trimmed;
+}
+
+/**
  * Copy text to clipboard with fallback
  */
 export async function copyToClipboard(text: string, t?: (key: string) => string) {

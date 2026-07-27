@@ -342,6 +342,7 @@ class SessionController
             'name' => $role ? ($role['name'] ?? $roleId) : $roleId,
             'display_name' => $role ? ($role['display_name'] ?? 'User') : 'User',
             'custom_badge' => $role ? ($role['custom_badge'] ?? null) : null,
+            'badge_icon' => $role ? ($role['badge_icon'] ?? null) : null,
             'color' => $role ? ($role['color'] ?? '#666666') : '#666666',
         ];
 
@@ -454,18 +455,8 @@ class SessionController
             return ApiResponse::error('No ticket priorities configured', 'NO_PRIORITIES', 500);
         }
 
-        $statuses = TicketStatus::getAll(null, 100, 0);
-        $openStatus = null;
-        foreach ($statuses as $status) {
-            if (strtolower($status['name']) === 'open') {
-                $openStatus = $status;
-                break;
-            }
-        }
-        if (!$openStatus && !empty($statuses)) {
-            $openStatus = $statuses[0];
-        }
-        if (!$openStatus) {
+        $defaultStatus = TicketStatus::getDefault();
+        if (!$defaultStatus) {
             return ApiResponse::error('No ticket statuses configured', 'NO_STATUSES', 500);
         }
 
@@ -487,7 +478,7 @@ class SessionController
             'server_id' => null,
             'category_id' => (int) $categories[0]['id'],
             'priority_id' => (int) $priorities[0]['id'],
-            'status_id' => (int) $openStatus['id'],
+            'status_id' => (int) $defaultStatus['id'],
             'title' => $title,
             'description' => $description,
         ];

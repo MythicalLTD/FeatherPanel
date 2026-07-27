@@ -8,6 +8,9 @@
 /attachments/avatars/*.png
 /attachments/avatars/*.jpg
 /attachments/avatars/*.webp
+/attachments/role-badges/*.png
+/attachments/role-badges/*.jpg
+/attachments/role-badges/*.webp
 /attachments/image_hosting/*/*.gif
 /attachments/image_hosting/*/*.svg
 /attachments/image_hosting/*/*.ico

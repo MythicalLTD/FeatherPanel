@@ -460,7 +460,7 @@ export function AffiliatesShowcase({ endpoint, className }: AffiliatesShowcasePr
                         <p className='text-sm font-semibold'>{t('admin.affiliates.support_title')}</p>
                         <p className='text-muted-foreground text-xs'>{t('admin.affiliates.support_description')}</p>
                         <div className='grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4'>
-                            <a href='https://cloud.mythical.systems/market' target='_blank' rel='noreferrer noopener'>
+                            <a href='https://my.mythicalsystems.org/market' target='_blank' rel='noreferrer noopener'>
                                 <Button type='button' size='sm' variant='outline' className='w-full justify-start'>
                                     <ExternalLink className='mr-2 h-4 w-4' />
                                     {t('admin.affiliates.support_cloud')}

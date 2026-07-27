@@ -15,11 +15,22 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
-import { Activity, Plus, Pencil, Trash2, Search, GitBranch, Eye, Settings2 } from 'lucide-react';
+import {
+    Activity,
+    Plus,
+    Pencil,
+    Trash2,
+    Search,
+    GitBranch,
+    Eye,
+    Settings2,
+    ChevronUp,
+    ChevronDown,
+} from 'lucide-react';
 import { PageCard } from '@/components/featherui/PageCard';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
@@ -30,13 +41,31 @@ import { Input } from '@/components/featherui/Input';
 import { Sheet, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
 import { toast } from 'sonner';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
 interface Status {
     id: number;
     name: string;
     color: string;
+    sort_order: number;
+    is_default: number;
 }
+
+type StatusForm = {
+    name: string;
+    color: string;
+    sort_order: string;
+    is_default: boolean;
+};
+
+const EMPTY_FORM: StatusForm = {
+    name: '',
+    color: '#5B8DEF',
+    sort_order: '',
+    is_default: false,
+};
 
 export default function TicketStatusesPage() {
     const { t } = useTranslation();
@@ -50,18 +79,18 @@ export default function TicketStatusesPage() {
     const [editingStatus, setEditingStatus] = useState<Status | null>(null);
 
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [reorderingId, setReorderingId] = useState<number | null>(null);
     const [refreshKey, setRefreshKey] = useState(0);
 
-    const [form, setForm] = useState({
-        name: '',
-        color: '#5B8DEF',
-    });
+    const [form, setForm] = useState<StatusForm>(EMPTY_FORM);
 
     useEffect(() => {
         const fetchStatuses = async () => {
             setLoading(true);
             try {
-                const { data } = await axios.get('/api/admin/tickets/statuses');
+                const { data } = await axios.get('/api/admin/tickets/statuses', {
+                    params: { limit: 100, page: 1 },
+                });
                 setStatuses(data.data.statuses || []);
             } catch (error) {
                 console.error('Error fetching statuses:', error);
@@ -77,13 +106,32 @@ export default function TicketStatusesPage() {
         fetchWidgets();
     }, [fetchWidgets]);
 
-    const filteredStatuses = statuses.filter((s) => s.name.toLowerCase().includes(searchQuery.toLowerCase()));
+    const sortedStatuses = useMemo(
+        () => [...statuses].sort((a, b) => a.sort_order - b.sort_order || a.id - b.id),
+        [statuses],
+    );
+
+    const filteredStatuses = sortedStatuses.filter((status) =>
+        status.name.toLowerCase().includes(searchQuery.toLowerCase()),
+    );
+
+    const nextSortOrder = useMemo(() => {
+        if (sortedStatuses.length === 0) return 10;
+        return Math.max(...sortedStatuses.map((status) => status.sort_order ?? 0)) + 10;
+    }, [sortedStatuses]);
+
+    const buildPayload = () => ({
+        name: form.name,
+        color: form.color,
+        sort_order: form.sort_order.trim() === '' ? nextSortOrder : Number(form.sort_order),
+        is_default: form.is_default,
+    });
 
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSubmitting(true);
         try {
-            await axios.put('/api/admin/tickets/statuses', form);
+            await axios.put('/api/admin/tickets/statuses', buildPayload());
             toast.success(t('admin.tickets.statuses.create_success') || t('common.success'));
             setCreateOpen(false);
             resetForm();
@@ -102,7 +150,7 @@ export default function TicketStatusesPage() {
 
         setIsSubmitting(true);
         try {
-            await axios.patch(`/api/admin/tickets/statuses/${editingStatus.id}`, form);
+            await axios.patch(`/api/admin/tickets/statuses/${editingStatus.id}`, buildPayload());
             toast.success(t('admin.tickets.statuses.update_success') || t('common.success'));
             setEditOpen(false);
             resetForm();
@@ -128,19 +176,107 @@ export default function TicketStatusesPage() {
         }
     };
 
+    const handleMove = async (status: Status, direction: -1 | 1) => {
+        const ordered = [...sortedStatuses];
+        const index = ordered.findIndex((item) => item.id === status.id);
+        const swapIndex = index + direction;
+        if (index < 0 || swapIndex < 0 || swapIndex >= ordered.length) return;
+
+        const current = ordered[index];
+        const neighbor = ordered[swapIndex];
+
+        setReorderingId(status.id);
+        try {
+            await Promise.all([
+                axios.patch(`/api/admin/tickets/statuses/${current.id}`, { sort_order: neighbor.sort_order }),
+                axios.patch(`/api/admin/tickets/statuses/${neighbor.id}`, { sort_order: current.sort_order }),
+            ]);
+            toast.success(t('admin.tickets.statuses.reorderSuccess'));
+            setRefreshKey((prev) => prev + 1);
+        } catch (error) {
+            console.error('Error reordering statuses:', error);
+            toast.error(t('admin.tickets.statuses.reorderError'));
+        } finally {
+            setReorderingId(null);
+        }
+    };
+
     const openEdit = (status: Status) => {
         setEditingStatus(status);
         setForm({
             name: status.name,
             color: status.color,
+            sort_order: String(status.sort_order ?? 0),
+            is_default: status.is_default === 1,
         });
         setEditOpen(true);
     };
 
     const resetForm = () => {
-        setForm({ name: '', color: '#5B8DEF' });
+        setForm({ ...EMPTY_FORM, sort_order: String(nextSortOrder) });
         setEditingStatus(null);
     };
+
+    const renderStatusFormFields = (idPrefix: 'create' | 'edit') => (
+        <>
+            <div className='space-y-2'>
+                <Label htmlFor={`${idPrefix}-name`}>{t('admin.tickets.statuses.form.name')}</Label>
+                <Input
+                    id={`${idPrefix}-name`}
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    required
+                />
+            </div>
+
+            <div className='space-y-2'>
+                <Label htmlFor={`${idPrefix}-sort-order`}>{t('admin.tickets.statuses.form.sortOrder')}</Label>
+                <Input
+                    id={`${idPrefix}-sort-order`}
+                    type='number'
+                    min={0}
+                    value={form.sort_order}
+                    onChange={(e) => setForm({ ...form, sort_order: e.target.value })}
+                    placeholder={String(nextSortOrder)}
+                />
+                <p className='text-muted-foreground text-xs'>{t('admin.tickets.statuses.form.sortOrderDescription')}</p>
+            </div>
+
+            <div className='space-y-2'>
+                <Label htmlFor={`${idPrefix}-color`}>{t('admin.tickets.statuses.form.color')}</Label>
+                <div className='flex gap-2'>
+                    <Input
+                        type='color'
+                        id={`${idPrefix}-color`}
+                        value={form.color}
+                        onChange={(e) => setForm({ ...form, color: e.target.value })}
+                        className='h-11 w-12 p-1'
+                    />
+                    <Input
+                        value={form.color}
+                        onChange={(e) => setForm({ ...form, color: e.target.value })}
+                        className='flex-1'
+                    />
+                </div>
+            </div>
+
+            <div className='bg-muted/20 border-border/40 flex items-start gap-3 rounded-xl border p-4'>
+                <Checkbox
+                    id={`${idPrefix}-is-default`}
+                    checked={form.is_default}
+                    onCheckedChange={(checked) => setForm({ ...form, is_default: checked === true })}
+                />
+                <div className='space-y-1'>
+                    <Label htmlFor={`${idPrefix}-is-default`} className='cursor-pointer'>
+                        {t('admin.tickets.statuses.form.isDefault')}
+                    </Label>
+                    <p className='text-muted-foreground text-xs'>
+                        {t('admin.tickets.statuses.form.isDefaultDescription')}
+                    </p>
+                </div>
+            </div>
+        </>
+    );
 
     return (
         <>
@@ -195,16 +331,49 @@ export default function TicketStatusesPage() {
                     />
                 ) : (
                     <div className='grid grid-cols-1 gap-4'>
-                        {filteredStatuses.map((status) => (
+                        {filteredStatuses.map((status, index) => (
                             <ResourceCard
                                 key={status.id}
                                 icon={Activity}
                                 title={status.name}
-                                subtitle={status.color}
+                                subtitle={t('admin.tickets.statuses.levelLabel').replace(
+                                    '{level}',
+                                    String(status.sort_order),
+                                )}
                                 iconClassName='text-primary'
                                 style={{ borderLeft: `4px solid ${status.color}` }}
+                                description={
+                                    <div className='flex flex-wrap items-center gap-2'>
+                                        <span className='text-muted-foreground text-sm'>{status.color}</span>
+                                        {status.is_default === 1 ? (
+                                            <Badge variant='secondary' className='text-xs'>
+                                                {t('admin.tickets.statuses.defaultBadge')}
+                                            </Badge>
+                                        ) : null}
+                                    </div>
+                                }
                                 actions={
                                     <div className='flex items-center gap-2'>
+                                        <Button
+                                            size='sm'
+                                            variant='ghost'
+                                            type='button'
+                                            aria-label={t('admin.tickets.statuses.moveUp')}
+                                            disabled={reorderingId !== null || index === 0}
+                                            onClick={() => void handleMove(status, -1)}
+                                        >
+                                            <ChevronUp className='h-4 w-4' />
+                                        </Button>
+                                        <Button
+                                            size='sm'
+                                            variant='ghost'
+                                            type='button'
+                                            aria-label={t('admin.tickets.statuses.moveDown')}
+                                            disabled={reorderingId !== null || index === filteredStatuses.length - 1}
+                                            onClick={() => void handleMove(status, 1)}
+                                        >
+                                            <ChevronDown className='h-4 w-4' />
+                                        </Button>
                                         <Button size='sm' variant='ghost' onClick={() => openEdit(status)}>
                                             <Pencil className='h-4 w-4' />
                                         </Button>
@@ -230,33 +399,7 @@ export default function TicketStatusesPage() {
                             <SheetDescription>{t('admin.tickets.statuses.subtitle')}</SheetDescription>
                         </SheetHeader>
                         <form onSubmit={handleCreate} className='space-y-4'>
-                            <div className='space-y-2'>
-                                <Label htmlFor='create-name'>{t('admin.tickets.statuses.form.name')}</Label>
-                                <Input
-                                    id='create-name'
-                                    value={form.name}
-                                    onChange={(e) => setForm({ ...form, name: e.target.value })}
-                                    required
-                                />
-                            </div>
-
-                            <div className='space-y-2'>
-                                <Label htmlFor='create-color'>{t('admin.tickets.statuses.form.color')}</Label>
-                                <div className='flex gap-2'>
-                                    <Input
-                                        type='color'
-                                        id='create-color'
-                                        value={form.color}
-                                        onChange={(e) => setForm({ ...form, color: e.target.value })}
-                                        className='h-11 w-12 p-1'
-                                    />
-                                    <Input
-                                        value={form.color}
-                                        onChange={(e) => setForm({ ...form, color: e.target.value })}
-                                        className='flex-1'
-                                    />
-                                </div>
-                            </div>
+                            {renderStatusFormFields('create')}
 
                             <SheetFooter>
                                 <Button type='submit' loading={isSubmitting}>
@@ -275,33 +418,7 @@ export default function TicketStatusesPage() {
                         </SheetHeader>
                         {editingStatus && (
                             <form onSubmit={handleUpdate} className='space-y-4'>
-                                <div className='space-y-2'>
-                                    <Label htmlFor='edit-name'>{t('admin.tickets.statuses.form.name')}</Label>
-                                    <Input
-                                        id='edit-name'
-                                        value={form.name}
-                                        onChange={(e) => setForm({ ...form, name: e.target.value })}
-                                        required
-                                    />
-                                </div>
-
-                                <div className='space-y-2'>
-                                    <Label htmlFor='edit-color'>{t('admin.tickets.statuses.form.color')}</Label>
-                                    <div className='flex gap-2'>
-                                        <Input
-                                            type='color'
-                                            id='edit-color'
-                                            value={form.color}
-                                            onChange={(e) => setForm({ ...form, color: e.target.value })}
-                                            className='h-11 w-12 p-1'
-                                        />
-                                        <Input
-                                            value={form.color}
-                                            onChange={(e) => setForm({ ...form, color: e.target.value })}
-                                            className='flex-1'
-                                        />
-                                    </div>
-                                </div>
+                                {renderStatusFormFields('edit')}
 
                                 <SheetFooter>
                                     <Button type='submit' loading={isSubmitting}>

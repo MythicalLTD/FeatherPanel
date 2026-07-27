@@ -388,6 +388,7 @@ class TicketsController
                 'name' => $role['name'],
                 'display_name' => $role['display_name'],
                 'custom_badge' => $role['custom_badge'] ?? null,
+                'badge_icon' => $role['badge_icon'] ?? null,
                 'color' => $role['color'],
             ];
         }
@@ -921,22 +922,13 @@ class TicketsController
             return ApiResponse::error('Ticket not found', 'TICKET_NOT_FOUND', 404);
         }
 
-        // Find "open" status (case-insensitive match by name)
-        $statuses = TicketStatus::getAll(null, 100, 0);
-        $openStatusId = null;
-        foreach ($statuses as $status) {
-            if (isset($status['name']) && strtolower((string) $status['name']) === 'open') {
-                $openStatusId = (int) $status['id'];
-                break;
-            }
-        }
-
-        if ($openStatusId === null) {
-            return ApiResponse::error('Open status not configured', 'STATUS_NOT_FOUND', 404);
+        $defaultStatus = TicketStatus::getDefault();
+        if (!$defaultStatus) {
+            return ApiResponse::error('Default ticket status not configured', 'STATUS_NOT_FOUND', 404);
         }
 
         $data = [
-            'status_id' => $openStatusId,
+            'status_id' => (int) $defaultStatus['id'],
             'closed_at' => null,
         ];
 

@@ -26,6 +26,7 @@ use App\Helpers\ApiResponse;
 use App\Config\ConfigInterface;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Helpers\EmailDomainValidator;
+use App\Helpers\AbuseIPDBRegistrationGuard;
 use App\Helpers\UserDeviceRegistrationGuard;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -416,6 +417,14 @@ class DiscordController
 
         Cache::forget('discord_link_token_' . $token);
 
+        if (($newUser['banned'] ?? 'false') === 'true') {
+            return ApiResponse::error(
+                'Your account was created but suspended due to IP reputation. Contact support if you believe this is a mistake.',
+                'IP_REPUTATION_AUTO_BANNED',
+                403
+            );
+        }
+
         $loginController = new LoginController();
 
         return $loginController->completeLogin($newUser);
@@ -510,6 +519,16 @@ class DiscordController
         $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
         $ip = CloudFlareRealIP::getRealIP();
 
+        $abuseDecision = AbuseIPDBRegistrationGuard::evaluate($ip);
+        if (AbuseIPDBRegistrationGuard::shouldBlock($abuseDecision)) {
+            $app->getLogger()->warning(
+                'Discord auto-provision blocked by AbuseIPDB for IP ' . $ip
+                . ' (score=' . ($abuseDecision['score'] ?? 0) . ')'
+            );
+
+            return null;
+        }
+
         $userId = false;
         $username = '';
         $maxAttempts = 5;
@@ -562,6 +581,8 @@ class DiscordController
             'discord_oauth2_username' => $discordUsername,
             'discord_oauth2_name' => $discordName,
         ]);
+
+        AbuseIPDBRegistrationGuard::applyAutoBanIfNeeded($uuid, $abuseDecision);
 
         // Log registration activity
         Activity::createActivity([

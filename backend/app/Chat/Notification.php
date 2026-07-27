@@ -73,9 +73,21 @@ class Notification
             return false;
         }
 
-        // Remove user_id if provided (column doesn't exist)
-        if (isset($data['user_id'])) {
-            unset($data['user_id']);
+        // Normalize targeting
+        if (array_key_exists('user_id', $data)) {
+            if ($data['user_id'] === null || $data['user_id'] === '' || (int) $data['user_id'] <= 0) {
+                $data['user_id'] = null;
+            } else {
+                $data['user_id'] = (int) $data['user_id'];
+            }
+        }
+
+        if (array_key_exists('server_id', $data)) {
+            if ($data['server_id'] === null || $data['server_id'] === '' || (int) $data['server_id'] <= 0) {
+                $data['server_id'] = null;
+            } else {
+                $data['server_id'] = (int) $data['server_id'];
+            }
         }
 
         // Set defaults
@@ -125,12 +137,10 @@ class Notification
 
         $result = $stmt->fetch(\PDO::FETCH_ASSOC);
         if ($result) {
-            // Convert boolean values
-            $result['is_dismissible'] = (bool) $result['is_dismissible'];
-            $result['is_sticky'] = (bool) $result['is_sticky'];
+            return self::normalizeRow($result);
         }
 
-        return $result ?: null;
+        return null;
     }
 
     /**
@@ -142,6 +152,9 @@ class Notification
      * @param string|null $type Filter by type (optional)
      * @param string $sortBy Field to sort by (default: 'created_at')
      * @param string $sortOrder 'ASC' or 'DESC' (default: 'DESC')
+     * @param int|null $userId Filter by target user (optional)
+     * @param int|null $serverId Filter by target server (optional)
+     * @param bool|null $globalOnly When true, only notifications with null user_id
      *
      * @return array Array of notifications
      */
@@ -152,10 +165,19 @@ class Notification
         ?string $type = null,
         string $sortBy = 'created_at',
         string $sortOrder = 'DESC',
+        ?int $userId = null,
+        ?int $serverId = null,
+        ?bool $globalOnly = null,
     ): array {
         $pdo = Database::getPdoConnection();
         $offset = ($page - 1) * $limit;
         $params = [];
+
+        $allowedSort = ['id', 'title', 'type', 'created_at', 'updated_at'];
+        if (!in_array($sortBy, $allowedSort, true)) {
+            $sortBy = 'created_at';
+        }
+        $sortOrder = strtoupper($sortOrder) === 'ASC' ? 'ASC' : 'DESC';
 
         $sql = 'SELECT * FROM ' . self::$table;
         $where = [];
@@ -168,6 +190,18 @@ class Notification
         if ($type !== null && $type !== '') {
             $where[] = 'type = :type';
             $params['type'] = $type;
+        }
+
+        if ($globalOnly === true) {
+            $where[] = 'user_id IS NULL';
+        } elseif ($userId !== null && $userId > 0) {
+            $where[] = 'user_id = :user_id';
+            $params['user_id'] = $userId;
+        }
+
+        if ($serverId !== null && $serverId > 0) {
+            $where[] = 'server_id = :server_id';
+            $params['server_id'] = $serverId;
         }
 
         if (!empty($where)) {
@@ -188,10 +222,8 @@ class Notification
 
         $results = $stmt->fetchAll(\PDO::FETCH_ASSOC);
 
-        // Convert boolean values
         foreach ($results as &$result) {
-            $result['is_dismissible'] = (bool) $result['is_dismissible'];
-            $result['is_sticky'] = (bool) $result['is_sticky'];
+            $result = self::normalizeRow($result);
         }
 
         return $results;
@@ -202,12 +234,18 @@ class Notification
      *
      * @param string $search Search term (optional)
      * @param string|null $type Filter by type (optional)
+     * @param int|null $userId Filter by target user (optional)
+     * @param int|null $serverId Filter by target server (optional)
+     * @param bool|null $globalOnly When true, only notifications with null user_id
      *
      * @return int Count of notifications
      */
     public static function getNotificationsCount(
         string $search = '',
         ?string $type = null,
+        ?int $userId = null,
+        ?int $serverId = null,
+        ?bool $globalOnly = null,
     ): int {
         $pdo = Database::getPdoConnection();
         $params = [];
@@ -223,6 +261,18 @@ class Notification
         if ($type !== null && $type !== '') {
             $where[] = 'type = :type';
             $params['type'] = $type;
+        }
+
+        if ($globalOnly === true) {
+            $where[] = 'user_id IS NULL';
+        } elseif ($userId !== null && $userId > 0) {
+            $where[] = 'user_id = :user_id';
+            $params['user_id'] = $userId;
+        }
+
+        if ($serverId !== null && $serverId > 0) {
+            $where[] = 'server_id = :server_id';
+            $params['server_id'] = $serverId;
         }
 
         if (!empty($where)) {
@@ -241,32 +291,56 @@ class Notification
     }
 
     /**
-     * Get notifications for a user.
+     * Get notifications visible to a user (global + targeted to them).
      *
-     * @param int $userId User ID (not used, kept for compatibility)
-     * @param bool $includeDismissed Include dismissed notifications (default: false)
+     * @param int $userId User ID
+     * @param bool $includeDismissed Include dismissed notifications (default: false, unused)
      * @param int $limit Maximum number of notifications to return
      *
      * @return array Array of notifications
      */
     public static function getNotificationsForUser(int $userId, bool $includeDismissed = false, int $limit = 50): array
     {
+        unset($includeDismissed);
+
+        if ($userId <= 0) {
+            return [];
+        }
+
         $pdo = Database::getPdoConnection();
 
-        $sql = 'SELECT * FROM ' . self::$table . ' ORDER BY created_at DESC LIMIT :limit';
+        $sql = 'SELECT * FROM ' . self::$table
+            . ' WHERE user_id IS NULL OR user_id = :user_id'
+            . ' ORDER BY created_at DESC LIMIT :limit';
         $stmt = $pdo->prepare($sql);
+        $stmt->bindValue(':user_id', $userId, \PDO::PARAM_INT);
         $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
         $stmt->execute();
 
         $results = $stmt->fetchAll(\PDO::FETCH_ASSOC);
 
-        // Convert boolean values
         foreach ($results as &$result) {
-            $result['is_dismissible'] = (bool) $result['is_dismissible'];
-            $result['is_sticky'] = (bool) $result['is_sticky'];
+            $result = self::normalizeRow($result);
         }
 
         return $results;
+    }
+
+    /**
+     * Whether a notification is visible to the given user.
+     */
+    public static function isVisibleToUser(array $notification, int $userId): bool
+    {
+        if ($userId <= 0) {
+            return false;
+        }
+
+        $targetUserId = $notification['user_id'] ?? null;
+        if ($targetUserId === null) {
+            return true;
+        }
+
+        return (int) $targetUserId === $userId;
     }
 
     /**
@@ -303,9 +377,20 @@ class Notification
                 }
             }
 
-            // Remove user_id if provided (column doesn't exist)
-            if (isset($data['user_id'])) {
-                unset($data['user_id']);
+            if (array_key_exists('user_id', $data)) {
+                if ($data['user_id'] === null || $data['user_id'] === '' || (int) $data['user_id'] <= 0) {
+                    $data['user_id'] = null;
+                } else {
+                    $data['user_id'] = (int) $data['user_id'];
+                }
+            }
+
+            if (array_key_exists('server_id', $data)) {
+                if ($data['server_id'] === null || $data['server_id'] === '' || (int) $data['server_id'] <= 0) {
+                    $data['server_id'] = null;
+                } else {
+                    $data['server_id'] = (int) $data['server_id'];
+                }
             }
 
             // Convert boolean values to MySQL boolean (0/1)
@@ -363,8 +448,12 @@ class Notification
             return false;
         }
 
+        if (!self::isVisibleToUser($notification, $userId)) {
+            return false;
+        }
+
         // Notification dismissal is handled client-side via localStorage
-        // This method always returns true for API compatibility
+        // This method always returns true for API compatibility when visible
         return true;
     }
 
@@ -399,6 +488,23 @@ class Notification
         $stmt->execute();
 
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Normalize boolean and nullable ID fields on a notification row.
+     */
+    private static function normalizeRow(array $result): array
+    {
+        $result['is_dismissible'] = (bool) $result['is_dismissible'];
+        $result['is_sticky'] = (bool) $result['is_sticky'];
+        $result['user_id'] = isset($result['user_id']) && $result['user_id'] !== null
+            ? (int) $result['user_id']
+            : null;
+        $result['server_id'] = isset($result['server_id']) && $result['server_id'] !== null
+            ? (int) $result['server_id']
+            : null;
+
+        return $result;
     }
 
     /**

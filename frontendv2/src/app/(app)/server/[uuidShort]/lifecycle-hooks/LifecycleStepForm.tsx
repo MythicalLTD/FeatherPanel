@@ -35,6 +35,7 @@ export function LifecycleStepForm({
     cancelLabel,
     onCancel,
     submitLabel,
+    containerShellEnabled = false,
 }: {
     form: StepFormState;
     setForm: React.Dispatch<React.SetStateAction<StepFormState>>;
@@ -43,8 +44,26 @@ export function LifecycleStepForm({
     cancelLabel: string;
     onCancel: () => void;
     submitLabel: string;
+    /** When false, Container Shell is hidden from the task-type picker (admin security flag). */
+    containerShellEnabled?: boolean;
 }) {
     const { t } = useTranslation();
+
+    const taskTypeOptions = React.useMemo(() => {
+        const options: { id: LifecycleTaskType; name: string }[] = [
+            { id: 'container_command', name: t('lifecycleHooks.taskTypes.containerCommand') },
+            { id: 'discord_webhook', name: t('lifecycleHooks.taskTypes.discordWebhook') },
+            { id: 'http_request', name: t('lifecycleHooks.taskTypes.httpRequest') },
+            { id: 'sleep', name: t('lifecycleHooks.taskTypes.sleep') },
+        ];
+        if (containerShellEnabled || form.task_type === 'container_shell') {
+            options.splice(1, 0, {
+                id: 'container_shell',
+                name: t('lifecycleHooks.taskTypes.containerShell'),
+            });
+        }
+        return options;
+    }, [t, containerShellEnabled, form.task_type]);
 
     return (
         <form onSubmit={onSubmit} className='space-y-6'>
@@ -53,12 +72,13 @@ export function LifecycleStepForm({
                 <HeadlessSelect
                     value={form.task_type}
                     onChange={(val) => setForm((current) => ({ ...current, task_type: val as LifecycleTaskType }))}
-                    options={[
-                        { id: 'container_command', name: t('lifecycleHooks.taskTypes.containerCommand') },
-                        { id: 'discord_webhook', name: t('lifecycleHooks.taskTypes.discordWebhook') },
-                        { id: 'http_request', name: t('lifecycleHooks.taskTypes.httpRequest') },
-                    ]}
+                    options={taskTypeOptions}
                 />
+                {form.task_type === 'container_shell' && !containerShellEnabled && (
+                    <p className='text-destructive text-[11px]'>
+                        {t('lifecycleHooks.form.containerShellDisabledHint')}
+                    </p>
+                )}
             </div>
 
             {form.task_type === 'container_command' && (
@@ -69,6 +89,66 @@ export function LifecycleStepForm({
                         onChange={(e) => setForm((current) => ({ ...current, container_command: e.target.value }))}
                         required
                     />
+                    <p className='text-muted-foreground text-[11px]'>{t('lifecycleHooks.form.containerCommandHint')}</p>
+                </div>
+            )}
+
+            {form.task_type === 'container_shell' && (
+                <>
+                    <div className='space-y-2'>
+                        <Label>{t('lifecycleHooks.form.shellCommand')}</Label>
+                        <Textarea
+                            className='min-h-[100px] font-mono text-xs font-medium'
+                            value={form.container_shell_command}
+                            onChange={(e) =>
+                                setForm((current) => ({ ...current, container_shell_command: e.target.value }))
+                            }
+                            placeholder={t('lifecycleHooks.form.shellCommandPlaceholder')}
+                            required
+                        />
+                        <p className='text-muted-foreground text-[11px]'>
+                            {t('lifecycleHooks.form.containerShellHint')}
+                        </p>
+                    </div>
+                    <div className='space-y-2'>
+                        <Label>{t('lifecycleHooks.form.shellTimeout')}</Label>
+                        <Input
+                            type='number'
+                            min={1}
+                            max={120}
+                            step={1}
+                            value={form.container_shell_timeout}
+                            onChange={(e) =>
+                                setForm((current) => ({
+                                    ...current,
+                                    container_shell_timeout: Number(e.target.value),
+                                }))
+                            }
+                            required
+                        />
+                        <p className='text-muted-foreground text-[11px]'>{t('lifecycleHooks.form.shellTimeoutHint')}</p>
+                    </div>
+                </>
+            )}
+
+            {form.task_type === 'sleep' && (
+                <div className='space-y-2'>
+                    <Label>{t('lifecycleHooks.form.sleepSeconds')}</Label>
+                    <Input
+                        type='number'
+                        min={1}
+                        max={300}
+                        step={1}
+                        value={form.sleep_seconds}
+                        onChange={(e) =>
+                            setForm((current) => ({
+                                ...current,
+                                sleep_seconds: Number(e.target.value),
+                            }))
+                        }
+                        required
+                    />
+                    <p className='text-muted-foreground text-[11px]'>{t('lifecycleHooks.form.sleepSecondsHint')}</p>
                 </div>
             )}
 

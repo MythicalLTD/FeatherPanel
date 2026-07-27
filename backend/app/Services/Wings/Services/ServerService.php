@@ -17,6 +17,7 @@
 
 namespace App\Services\Wings\Services;
 
+use App\Helpers\BackupIgnoreHelper;
 use App\Services\Wings\WingsResponse;
 use App\Services\Wings\WingsConnection;
 use App\Services\Wings\Exceptions\WingsRequestException;
@@ -189,6 +190,26 @@ class ServerService
             $response = $this->connection->post("/api/servers/{$serverUuid}/commands", ['commands' => $commands]);
 
             return new WingsResponse($response, 204);
+        } catch (\Exception $e) {
+            return new WingsResponse(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Execute a shell command inside the server Docker container via docker exec.
+     *
+     * @param int $timeoutSeconds Optional timeout (1–120); Wings defaults to 30 when omitted/0
+     */
+    public function execInContainer(string $serverUuid, string $command, int $timeoutSeconds = 30): WingsResponse
+    {
+        try {
+            $payload = [
+                'command' => $command,
+                'timeout_seconds' => $timeoutSeconds,
+            ];
+            $response = $this->connection->post("/api/servers/{$serverUuid}/exec", $payload, [], 3, max(35, $timeoutSeconds + 10));
+
+            return new WingsResponse($response, 200);
         } catch (\Exception $e) {
             return new WingsResponse(['error' => $e->getMessage()], 500);
         }
@@ -702,7 +723,7 @@ class ServerService
     /**
      * Create backup.
      */
-    public function createBackup(string $serverUuid, string $adapter, string $uuid, ?string $ignore = null): WingsResponse
+    public function createBackup(string $serverUuid, string $adapter, string $uuid, mixed $ignore = null): WingsResponse
     {
         try {
             $data = [
@@ -710,8 +731,9 @@ class ServerService
                 'uuid' => $uuid,
             ];
 
-            if ($ignore) {
-                $data['ignore'] = $ignore;
+            $ignorePatterns = BackupIgnoreHelper::formatForWings($ignore);
+            if ($ignorePatterns !== '') {
+                $data['ignore'] = $ignorePatterns;
             }
 
             $response = $this->connection->post("/api/servers/{$serverUuid}/backup", $data);

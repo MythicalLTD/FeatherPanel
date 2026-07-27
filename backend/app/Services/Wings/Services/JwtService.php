@@ -17,6 +17,7 @@
 
 namespace App\Services\Wings\Services;
 
+use App\Enums\NodeJwtScope;
 use App\Services\Wings\Utils\TokenGenerator;
 
 /**
@@ -390,6 +391,7 @@ class JwtService
         $additionalClaims = [
             'type' => 'transfer',
             'server_uuid' => $serverUuid,
+            'scope' => NodeJwtScope::ServerTransfer->value,
         ];
 
         return $this->tokenGenerator->generateWingsApiToken(

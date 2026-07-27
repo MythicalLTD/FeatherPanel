@@ -25,12 +25,15 @@ use App\Helpers\TimeHelper;
 use App\SubuserPermissions;
 use App\Chat\ServerActivity;
 use App\Helpers\ApiResponse;
+use App\Helpers\AppUrlHelper;
 use App\Services\Wings\Wings;
 use OpenApi\Attributes as OA;
 use App\Helpers\WingsUrlHelper;
+use App\Helpers\BackupIgnoreHelper;
 use App\Plugins\Events\Events\ServerEvent;
 use App\Services\Backup\BackupFifoEviction;
 use Symfony\Component\HttpFoundation\Request;
+use App\Services\Backup\BackupAdapterResolver;
 use Symfony\Component\HttpFoundation\Response;
 use App\Plugins\Events\Events\ServerBackupEvent;
 
@@ -327,11 +330,15 @@ class ServerBackupController
             return $permissionCheck;
         }
 
-        // Check backup limit (optional FIFO rotation per panel setting)
+        // Check backup limit (0 = disabled; optional FIFO rotation per panel setting)
         $currentBackups = count(Backup::getBackupsByServerId((int) $server['id']));
-        $backupLimit = (int) ($server['backup_limit'] ?? 1);
+        $backupLimit = (int) ($server['backup_limit'] ?? 0);
 
-        if ($backupLimit > 0 && $currentBackups >= $backupLimit) {
+        if ($backupLimit === 0) {
+            return ApiResponse::error('Backups are disabled for this server', 'BACKUPS_DISABLED', 403);
+        }
+
+        if ($currentBackups >= $backupLimit) {
             if (!BackupFifoEviction::isFifoRollingForServer($server)) {
                 return ApiResponse::error('Backup limit reached', 'BACKUP_LIMIT_REACHED', 400);
             }
@@ -359,33 +366,22 @@ class ServerBackupController
             }
         }
 
-        // Always use Wings adapter
-        $adapter = 'wings';
+        $body = json_decode($request->getContent(), true);
+        if (!is_array($body)) {
+            $body = [];
+        }
 
         // Generate backup UUID if not provided
         $backupUuid = $body['uuid'] ?? $this->generateUuid();
 
         // Generate backup name if not provided
-        $backupName = $body['name'] ?? 'Backup at ' . date('Y-m-d H:i:s');
-
-        // Get ignore files
-        $ignoredFiles = $body['ignore'] ?? '[]';
-
-        // Create backup record in database
-        $backupData = [
-            'server_id' => $server['id'],
-            'uuid' => $backupUuid,
-            'name' => $backupName,
-            'ignored_files' => $ignoredFiles,
-            'disk' => 'wings', // Default to wings for now
-            'is_successful' => 0,
-            'is_locked' => 1, // Lock while backup is in progress
-        ];
-
-        $backupId = Backup::createBackup($backupData);
-        if (!$backupId) {
-            return ApiResponse::error('Failed to create backup record', 'CREATION_FAILED', 500);
+        $backupName = trim((string) ($body['name'] ?? ''));
+        if ($backupName === '') {
+            $backupName = 'Backup at ' . date('Y-m-d H:i:s');
         }
+
+        // Get ignore files (stored as JSON array; Wings receives newline-separated globs)
+        $ignoredFiles = BackupIgnoreHelper::normalizeForStorage($body['ignore'] ?? []);
 
         // Get node information
         $node = Node::getNodeById($server['node_id']);
@@ -399,6 +395,8 @@ class ServerBackupController
         $token = $node['daemon_token'];
 
         $timeout = (int) 30;
+        $backupId = null;
+        $adapter = BackupAdapterResolver::ADAPTER_WINGS;
         try {
             $wings = new Wings(
                 $host,
@@ -408,6 +406,25 @@ class ServerBackupController
                 $timeout,
                 WingsUrlHelper::isBehindProxy($node)
             );
+
+            // Prefer Proxmox Backup Server when enabled on the Wings node
+            $adapter = BackupAdapterResolver::resolveDefault($wings);
+
+            // Create backup record in database
+            $backupData = [
+                'server_id' => $server['id'],
+                'uuid' => $backupUuid,
+                'name' => $backupName,
+                'ignored_files' => $ignoredFiles,
+                'disk' => $adapter,
+                'is_successful' => 0,
+                'is_locked' => 1, // Lock while backup is in progress
+            ];
+
+            $backupId = Backup::createBackup($backupData);
+            if (!$backupId) {
+                return ApiResponse::error('Failed to create backup record', 'CREATION_FAILED', 500);
+            }
 
             // Initiate backup on Wings
             $response = $wings->getServer()->createBackup($serverUuid, $adapter, $backupUuid, $ignoredFiles);
@@ -431,7 +448,9 @@ class ServerBackupController
             }
         } catch (\Exception $e) {
             // Rollback database record
-            Backup::deleteBackup($backupId);
+            if ($backupId) {
+                Backup::deleteBackup($backupId);
+            }
             App::getInstance(true)->getLogger()->error('Failed to initiate backup on Wings: ' . $e->getMessage());
 
             return ApiResponse::error('Failed to initiate backup on Wings: ' . $e->getMessage(), 'FAILED_TO_INITIATE_BACKUP_ON_WINGS', 500);
@@ -553,8 +572,8 @@ class ServerBackupController
             return ApiResponse::error('Invalid request body', 'INVALID_REQUEST_BODY', 400);
         }
 
-        // Always use Wings adapter
-        $adapter = 'wings';
+        // Use the adapter stored on the backup (wings local archive or PBS)
+        $adapter = BackupAdapterResolver::normalizeStored($backup['disk'] ?? null);
 
         $truncateDirectory = $body['truncate_directory'] ?? false;
         $downloadUrl = $body['download_url'] ?? null;
@@ -1057,6 +1076,14 @@ class ServerBackupController
             return ApiResponse::error('Backup is not available for download. The backup may have failed or is still in progress.', 'BACKUP_NOT_SUCCESSFUL', 400);
         }
 
+        if (BackupAdapterResolver::isPbs($backup['disk'] ?? null)) {
+            return ApiResponse::error(
+                'Proxmox Backup Server backups cannot be downloaded as a file. Restore them from the panel instead.',
+                'PBS_DOWNLOAD_UNSUPPORTED',
+                400
+            );
+        }
+
         // Get node info
         $node = Node::getNodeById($server['node_id']);
         if (!$node) {
@@ -1076,7 +1103,7 @@ class ServerBackupController
             // Create JWT service instance
             $jwtService = new \App\Services\Wings\Services\JwtService(
                 $token, // Node secret
-                App::getInstance(true)->getConfig()->getSetting(\App\Config\ConfigInterface::APP_URL, 'https://devsv.mythical.systems'), // Panel URL
+                AppUrlHelper::wingsRemoteUrl(), // Must match Wings `remote:` (issuer)
                 $wingsBaseUrl // Wings URL
             );
 

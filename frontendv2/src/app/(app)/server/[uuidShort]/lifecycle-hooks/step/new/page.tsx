@@ -36,10 +36,11 @@ import {
     type StepFormState,
 } from '../../form-utils';
 import type { LifecycleHookType } from '@/types/server';
+import { parseLifecycleHookType } from '@/types/server';
 
 type HooksApi = {
     success: boolean;
-    data: { feature_enabled: boolean };
+    data: { feature_enabled: boolean; container_shell_enabled: boolean };
 };
 
 export default function NewLifecycleHookStepPage() {
@@ -55,10 +56,11 @@ export default function NewLifecycleHookStepPage() {
     const canUpdate = hasPermission('schedule.update');
 
     const hookParam = searchParams.get('hook');
-    const hookType: LifecycleHookType = hookParam === 'pre_stop' || hookParam === 'pre_start' ? hookParam : 'pre_start';
+    const hookType = parseLifecycleHookType(hookParam);
 
     const [checking, setChecking] = React.useState(true);
     const [featureEnabled, setFeatureEnabled] = React.useState(false);
+    const [containerShellEnabled, setContainerShellEnabled] = React.useState(false);
     const [form, setForm] = React.useState<StepFormState>(defaultForm);
     const [saving, setSaving] = React.useState(false);
 
@@ -66,9 +68,18 @@ export default function NewLifecycleHookStepPage() {
         () => ({
             pre_start: t('lifecycleHooks.hookTypes.preStart'),
             pre_stop: t('lifecycleHooks.hookTypes.preStop'),
+            post_start: t('lifecycleHooks.hookTypes.postStart'),
+            server_crash: t('lifecycleHooks.hookTypes.serverCrash'),
         }),
         [t],
     );
+
+    const stepDescription =
+        hookType === 'server_crash'
+            ? t('lifecycleHooks.stepNew.descriptionCrash')
+            : hookType === 'post_start'
+              ? t('lifecycleHooks.stepNew.descriptionPostStart')
+              : t('lifecycleHooks.stepNew.description');
 
     React.useEffect(() => {
         let cancelled = false;
@@ -78,6 +89,7 @@ export default function NewLifecycleHookStepPage() {
                 const { data } = await axios.get<HooksApi>(`/api/user/servers/${uuidShort}/lifecycle-hooks`);
                 if (!cancelled && data.success) {
                     setFeatureEnabled(Boolean(data.data.feature_enabled));
+                    setContainerShellEnabled(Boolean(data.data.container_shell_enabled));
                 }
             } catch {
                 if (!cancelled) toast.error(t('lifecycleHooks.messages.fetchFailed'));
@@ -106,6 +118,21 @@ export default function NewLifecycleHookStepPage() {
             toast.error(t('lifecycleHooks.messages.commandRequired'));
             return;
         }
+        if (form.task_type === 'container_shell') {
+            if (!containerShellEnabled) {
+                toast.error(t('lifecycleHooks.messages.shellDisabled'));
+                return;
+            }
+            if (form.container_shell_command.trim() === '') {
+                toast.error(t('lifecycleHooks.messages.shellCommandRequired'));
+                return;
+            }
+            const timeout = Math.floor(Number(form.container_shell_timeout));
+            if (!Number.isFinite(timeout) || timeout < 1 || timeout > 120) {
+                toast.error(t('lifecycleHooks.messages.shellTimeoutInvalid'));
+                return;
+            }
+        }
         if (form.task_type === 'discord_webhook' && form.discord_url.trim() === '') {
             toast.error(t('lifecycleHooks.messages.webhookUrlRequired'));
             return;
@@ -117,6 +144,13 @@ export default function NewLifecycleHookStepPage() {
         if (form.task_type === 'http_request' && form.http_url.trim() === '') {
             toast.error(t('lifecycleHooks.messages.urlRequired'));
             return;
+        }
+        if (form.task_type === 'sleep') {
+            const seconds = Math.floor(Number(form.sleep_seconds));
+            if (!Number.isFinite(seconds) || seconds < 1 || seconds > 300) {
+                toast.error(t('lifecycleHooks.messages.sleepSecondsInvalid'));
+                return;
+            }
         }
 
         try {
@@ -175,7 +209,7 @@ export default function NewLifecycleHookStepPage() {
             <div className='space-y-8 pb-12'>
                 <PageHeader
                     title={t('lifecycleHooks.stepNew.title', { hookType: hookLabels[hookType] })}
-                    description={t('lifecycleHooks.stepNew.description')}
+                    description={stepDescription}
                     actions={
                         <Button variant='glass' size='sm' type='button' onClick={back} className='w-full sm:w-auto'>
                             <ArrowLeft className='mr-2 h-4 w-4' />
@@ -195,7 +229,7 @@ export default function NewLifecycleHookStepPage() {
             <div className='space-y-8 pb-12'>
                 <PageHeader
                     title={t('lifecycleHooks.stepNew.title', { hookType: hookLabels[hookType] })}
-                    description={t('lifecycleHooks.stepNew.description')}
+                    description={stepDescription}
                     actions={
                         <Button variant='glass' size='sm' type='button' onClick={back} className='w-full sm:w-auto'>
                             <ArrowLeft className='mr-2 h-4 w-4' />
@@ -216,7 +250,7 @@ export default function NewLifecycleHookStepPage() {
             <div className='space-y-8 pb-12'>
                 <PageHeader
                     title={t('lifecycleHooks.stepNew.title', { hookType: hookLabels[hookType] })}
-                    description={t('lifecycleHooks.stepNew.description')}
+                    description={stepDescription}
                     actions={
                         <Button variant='glass' size='sm' type='button' onClick={back} className='w-full sm:w-auto'>
                             <ArrowLeft className='mr-2 h-4 w-4' />
@@ -238,6 +272,7 @@ export default function NewLifecycleHookStepPage() {
                         cancelLabel={t('common.cancel')}
                         onCancel={back}
                         submitLabel={t('lifecycleHooks.form.saveStep')}
+                        containerShellEnabled={containerShellEnabled}
                     />
                 </PageCard>
             </div>

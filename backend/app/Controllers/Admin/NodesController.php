@@ -17,7 +17,6 @@
 
 namespace App\Controllers\Admin;
 
-use App\Helpers\WingsUrlHelper;
 use App\App;
 use App\Chat\Node;
 use App\Cache\Cache;
@@ -30,7 +29,7 @@ use App\Chat\ServerTransfer;
 use App\Helpers\ApiResponse;
 use App\Services\Wings\Wings;
 use OpenApi\Attributes as OA;
-use App\Config\ConfigInterface;
+use App\Helpers\WingsUrlHelper;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Plugins\Events\Events\NodesEvent;
 use Symfony\Component\HttpFoundation\Request;
@@ -1027,7 +1026,8 @@ class NodesController
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
         }
 
-        $panelUrl = rtrim(App::getInstance(true)->getConfig()->getSetting(ConfigInterface::APP_URL, 'https://featherpanel.mythical.systems'), '/');
+        // Use Wings remote URL so node setup/config fetch works when APP_URL is behind Cloudflare challenges.
+        $panelUrl = \App\Helpers\AppUrlHelper::wingsRemoteUrl();
         $configUrl = $panelUrl . '/api/remote/config';
         $tokenId = $node['daemon_token_id'] ?? '';
         $tokenSecret = $node['daemon_token'] ?? '';

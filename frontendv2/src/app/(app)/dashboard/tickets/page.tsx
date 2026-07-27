@@ -21,6 +21,8 @@ import Link from 'next/link';
 import axios from 'axios';
 import { Ticket as TicketIcon, Plus, Search, ChevronLeft, ChevronRight, Trash2, MessageCircle } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { useDateFormatOptions } from '@/contexts/PreferencesContext';
+import { formatDateInTz } from '@/lib/dateUtils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -105,6 +107,7 @@ interface ApiPaginationResponse {
 
 export default function TicketsPage() {
     const { t } = useTranslation();
+    const dateOpts = useDateFormatOptions();
     const router = useRouter();
     const { hasPermission } = useSession();
     const canViewAllTickets = hasPermission(Permissions.ADMIN_TICKETS_VIEW);
@@ -499,7 +502,7 @@ export default function TicketsPage() {
                                             </>
                                         )}
                                         <span className='bg-muted-foreground/30 h-1 w-1 rounded-full' />
-                                        <span>{new Date(ticket.created_at).toLocaleDateString()}</span>
+                                        <span>{formatDateInTz(ticket.created_at, dateOpts)}</span>
                                     </div>
                                 </div>
                                 <div className='flex items-center gap-2'>

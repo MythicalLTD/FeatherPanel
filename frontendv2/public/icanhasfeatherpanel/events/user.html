@@ -138,11 +138,11 @@ public static function processEvents(PluginEvents $evt): void
   <p class="muted"><strong>Callback parameters:</strong> array user data, array deleted by.</p>
 
   <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> deleted_by, user</p>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
 
   <h3>Emitted From</h3>
   <ul>
-<li><code>backend/app/Controllers/Admin/UsersController.php</code></li>
+<li class="muted">No known emission locations.</li>
   </ul>
 
   <h3>Usage Example</h3>
@@ -151,9 +151,9 @@ use App\Plugins\Events\Events\UserEvent;
 
 public static function processEvents(PluginEvents $evt): void
 {
-    $evt->on(UserEvent::onUserDeleted(), function ($deletedBy, $user) {
+    $evt->on(UserEvent::onUserDeleted(), function ($data, $by) {
         // Handle featherpanel:user:deleted
-        // Data keys: deleted_by, user
+        // Parameters: array user data, array deleted by.
     });
 }</code></pre>
 </article>

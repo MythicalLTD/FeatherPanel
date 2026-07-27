@@ -89,6 +89,8 @@ class Migrate extends App implements CommandBuilder
             exit;
         }
 
+        self::cleanupObsoleteAddonDirectories($cliApp);
+
         /**
          * Get all the migration scripts.
          */
@@ -303,5 +305,59 @@ class Migrate extends App implements CommandBuilder
         }
 
         return $migrations;
+    }
+
+    private static function cleanupObsoleteAddonDirectories(App $cliApp): void
+    {
+        $obsoleteAddons = [
+            'yetanotherbadupdate',
+        ];
+
+        $addonsRoot = __DIR__ . '/../../../storage/addons/';
+        foreach ($obsoleteAddons as $addon) {
+            $path = $addonsRoot . $addon;
+            if (!is_dir($path)) {
+                continue;
+            }
+
+            $cliApp->send($cliApp->color3 . '&l🧹 Removing obsolete addon: &r&f' . $addon);
+
+            try {
+                self::deleteDirectoryRecursive($path);
+                $cliApp->send('&a&l✅ Removed obsolete addon directory: &r&f' . $addon);
+            } catch (\Throwable $e) {
+                $cliApp->send('&c&l❌ Failed to remove obsolete addon directory: &r&f' . $addon);
+                $cliApp->send('&c&l   Error: &r' . $e->getMessage());
+                exit;
+            }
+        }
+    }
+
+    private static function deleteDirectoryRecursive(string $path): void
+    {
+        $entries = scandir($path);
+        if ($entries === false) {
+            throw new \RuntimeException('Unable to read directory: ' . $path);
+        }
+
+        foreach ($entries as $entry) {
+            if ($entry === '.' || $entry === '..') {
+                continue;
+            }
+
+            $child = $path . '/' . $entry;
+            if (is_dir($child)) {
+                self::deleteDirectoryRecursive($child);
+                continue;
+            }
+
+            if (!unlink($child)) {
+                throw new \RuntimeException('Unable to delete file: ' . $child);
+            }
+        }
+
+        if (!rmdir($path)) {
+            throw new \RuntimeException('Unable to delete directory: ' . $path);
+        }
     }
 }

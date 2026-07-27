@@ -43,7 +43,13 @@ interface AdminDashboardData {
             type: string;
             release_name: string;
             release_description?: string;
+            description?: string;
             php_version?: string;
+            min_supported_php?: string | null;
+            max_supported_php?: string | null;
+            is_security_release?: boolean;
+            github_html_url?: string | null;
+            published_at?: string | null;
             changelog_added?: string[];
             changelog_fixed?: string[];
             changelog_improved?: string[];
@@ -53,7 +59,15 @@ interface AdminDashboardData {
         latest: {
             version: string;
             type: string;
+            release_name?: string;
             release_description?: string;
+            description?: string;
+            php_version?: string;
+            min_supported_php?: string | null;
+            max_supported_php?: string | null;
+            is_security_release?: boolean;
+            github_html_url?: string | null;
+            published_at?: string | null;
             changelog_added?: string[];
             changelog_fixed?: string[];
             changelog_improved?: string[];
@@ -62,7 +76,17 @@ interface AdminDashboardData {
         } | null;
         update_available: boolean;
         last_checked: string | null;
+        runtime_php?: string;
         current_listed_on_update_server?: boolean;
+        project?: {
+            name?: string;
+            slug?: string;
+            description?: string;
+            github_url?: string | null;
+            default_type?: string;
+            min_supported_php?: string | null;
+            max_supported_php?: string | null;
+        } | null;
     };
 }
 

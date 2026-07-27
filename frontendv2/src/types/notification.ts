@@ -16,6 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 export interface Notification {
     id: number;
     user_id: number | null;
+    server_id: number | null;
     title: string;
     message_markdown: string;
     type: 'info' | 'success' | 'warning' | 'error' | 'danger';

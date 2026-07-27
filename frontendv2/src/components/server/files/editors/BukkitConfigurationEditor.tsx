@@ -24,7 +24,7 @@ import { Textarea } from '@/components/featherui/Textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select } from '@/components/ui/select-native';
 import { Activity, ArrowLeft, FileText, Gauge, Layers, Save, Settings2 } from 'lucide-react';
-import yaml from 'js-yaml';
+import * as yaml from 'js-yaml';
 
 type DeprecatedVerboseMode = 'default' | 'true' | 'false';
 

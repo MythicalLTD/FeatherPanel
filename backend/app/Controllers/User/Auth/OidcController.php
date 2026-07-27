@@ -23,7 +23,9 @@ use App\Cache\Cache;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
+use App\CloudFlare\CloudFlareRealIP;
 use App\Helpers\EmailDomainValidator;
+use App\Helpers\AbuseIPDBRegistrationGuard;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -305,6 +307,9 @@ class OidcController
             if (!$user) {
                 return new RedirectResponse('/auth/login?error=oidc_provision_failed');
             }
+            if (($user['banned'] ?? 'false') === 'true') {
+                return new RedirectResponse('/auth/login?error=ip_reputation_auto_banned');
+            }
         } else {
             if ($requireEmailVerified && !$emailVerifiedStrict) {
                 return new RedirectResponse('/auth/login?error=oidc_email_not_verified');
@@ -499,6 +504,17 @@ class OidcController
         $uuid = User::generateUuid();
         $password = bin2hex(random_bytes(32));
         $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
+        $ip = CloudFlareRealIP::getRealIP();
+
+        $abuseDecision = AbuseIPDBRegistrationGuard::evaluate($ip);
+        if (AbuseIPDBRegistrationGuard::shouldBlock($abuseDecision)) {
+            $app->getLogger()->warning(
+                'OIDC auto-provision blocked by AbuseIPDB for IP ' . $ip
+                . ' (score=' . ($abuseDecision['score'] ?? 0) . ')'
+            );
+
+            return null;
+        }
 
         $maxAttempts = 5;
         $userId = false;
@@ -530,6 +546,8 @@ class OidcController
                 'oidc_provider' => $providerId,
                 'oidc_subject' => $subject,
                 'oidc_email' => $emailValue,
+                'first_ip' => $ip,
+                'last_ip' => $ip,
             ], true);
 
             if ($userId !== false) {
@@ -542,6 +560,8 @@ class OidcController
 
             return null;
         }
+
+        AbuseIPDBRegistrationGuard::applyAutoBanIfNeeded($uuid, $abuseDecision);
 
         return User::getUserByUuid($uuid);
     }

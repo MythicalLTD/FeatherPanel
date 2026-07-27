@@ -34,6 +34,9 @@ use Symfony\Component\HttpFoundation\Response;
 
 class DashboardController
 {
+    private const UPDATE_SERVER_BASE = 'https://update.mythicalsystems.org';
+    private const UPDATE_PROJECT_SLUG = 'featherpanel';
+
     #[OA\Get(
         path: '/api/admin/dashboard',
         summary: 'Get dashboard statistics',
@@ -346,7 +349,7 @@ class DashboardController
             $upstream = APP_UPSTREAM;
 
             // Get version information with caching (15 minutes)
-            $versionCacheKey = "dashboard_version_info_{$upstream}";
+            $versionCacheKey = "dashboard_version_info_v2_{$upstream}";
             $versionInfo = Cache::get($versionCacheKey);
 
             if ($versionInfo === null) {
@@ -364,13 +367,19 @@ class DashboardController
             $recentCrons = array_map(function ($row) use ($now, $expectedMap) {
                 $name = $row['task_name'] ?? '';
                 // Parse last_run_at as UTC since it is stored via UTC_TIMESTAMP()
-                $lastRunAt =
-                    isset($row['last_run_at']) && $row['last_run_at'] !== null
-                        ? new \DateTime(
+                $lastRunAt = null;
+                if (isset($row['last_run_at']) && $row['last_run_at'] !== null) {
+                    try {
+                        $dateTime = new \DateTime(
                             $row['last_run_at'],
-                            new \DateTimeZone('UTC'),
-                        )->getTimestamp() ?? null,
-                        : null;
+                            new \DateTimeZone('UTC')
+                        );
+                        $lastRunAt = $dateTime->getTimestamp();
+                    } catch (\Exception $e) {
+                        $lastRunAt = null;
+                    }
+                }
+
                 $expected = $expectedMap[$name] ?? 300; // default 5 minutes if unknown
                 $late = $lastRunAt ? $now - $lastRunAt > $expected * 2 : true; // late if never ran or >2x expected
 
@@ -480,12 +489,14 @@ class DashboardController
     }
 
     /**
-     * Fetch version information from the API.
+     * Fetch version information from the MythicalSystems Update Server.
      *
      * @param string $upstream The upstream type (stable/beta/canary)
      * @param string $currentVersion The current application version
      *
      * @return array Version information
+     *
+     * @see https://update.mythicalsystems.org/docs
      */
     private function fetchVersionInfo(
         string $upstream,
@@ -497,151 +508,52 @@ class DashboardController
             'current' => null,
             'latest' => null,
             'update_available' => false,
-            'last_checked' => date('c'), // ISO 8601 format
+            'last_checked' => date('c'),
+            'runtime_php' => PHP_VERSION,
+            'project' => null,
         ];
 
         $currentListedOnUpdateServer = false;
+        $projectMeta = null;
 
         try {
-            // Fetch current version details
-            // API expects semantic version without a leading "v".
-            $normalizedCurrentVersion = ltrim($currentVersion, 'vV');
-            $currentVersionUrl =
-                'https://api.featherpanel.com/versions/' .
-                $normalizedCurrentVersion;
-            $context = stream_context_create([
-                'http' => [
-                    'timeout' => 10,
-                    'user_agent' => 'FeatherPanel/' . $currentVersion,
-                ],
-            ]);
+            $projectMeta = $this->fetchUpdateServerJson('/' . self::UPDATE_PROJECT_SLUG);
+            if (is_array($projectMeta) && !isset($projectMeta['error'])) {
+                $versionInfo['project'] = [
+                    'name' => $projectMeta['name'] ?? 'FeatherPanel',
+                    'slug' => $projectMeta['slug'] ?? self::UPDATE_PROJECT_SLUG,
+                    'description' => $projectMeta['description'] ?? '',
+                    'github_url' => $projectMeta['github_url'] ?? null,
+                    'default_type' => $projectMeta['default_type'] ?? 'stable',
+                    'min_supported_php' => $projectMeta['min_supported_php'] ?? null,
+                    'max_supported_php' => $projectMeta['max_supported_php'] ?? null,
+                ];
+            }
 
-            $logger->debug(
-                'Attempting to fetch current version from: ' .
-                    $currentVersionUrl,
-            );
-            $currentVersionResponse = @file_get_contents(
-                $currentVersionUrl,
-                false,
-                $context,
-            );
-
-            if ($currentVersionResponse !== false) {
+            $currentRelease = $this->fetchUpdateServerRelease($currentVersion);
+            if ($currentRelease !== null) {
+                $versionInfo['current'] = $this->mapUpdateReleasePayload($currentRelease);
+                $currentListedOnUpdateServer = true;
                 $logger->debug(
-                    'Current version API response received: ' .
-                        substr($currentVersionResponse, 0, 200) .
-                        '...',
-                );
-                $currentVersionData = json_decode(
-                    $currentVersionResponse,
-                    true,
-                );
-                if (
-                    isset($currentVersionData['success'])
-                    && $currentVersionData['success']
-                    && isset($currentVersionData['data']['version'])
-                ) {
-                    $versionData = $currentVersionData['data']['version'];
-                    $versionInfo['current'] = [
-                        'version' => $versionData['version'] ?? $currentVersion,
-                        'type' => $versionData['type'] ?? 'Stable',
-                        'release_name' => $versionData['release_name'] ?? 'Unknown Release',
-                        'release_description' => $versionData['release_description'] ?? '',
-                        'php_version' => $versionData['php_version'] ?? '8.2',
-                        'changelog_added' => $versionData['changelog_added'] ?? [],
-                        'changelog_fixed' => $versionData['changelog_fixed'] ?? [],
-                        'changelog_improved' => $versionData['changelog_improved'] ?? [],
-                        'changelog_updated' => $versionData['changelog_updated'] ?? [],
-                        'changelog_removed' => $versionData['changelog_removed'] ?? [],
-                    ];
-                    $currentListedOnUpdateServer = true;
-                    $logger->debug(
-                        'Successfully fetched current version details: ' .
-                            $currentVersion,
-                    );
-                } else {
-                    $logger->warning(
-                        'Failed to parse current version response. Success: ' .
-                            ($currentVersionData['success'] ?? 'not set') .
-                            ', Response: ' .
-                            $currentVersionResponse,
-                    );
-                }
-            } else {
-                $error = error_get_last();
-                $logger->warning(
-                    'Failed to fetch current version from API. Error: ' .
-                        ($error['message'] ?? 'Unknown error'),
+                    'Successfully fetched current version details: ' . $currentVersion,
                 );
             }
 
-            // Fetch latest version details
-            $latestVersionUrl =
-                'https://api.featherpanel.com/versions/latest?type=' .
-                $upstream;
-            $logger->debug(
-                'Attempting to fetch latest version from: ' . $latestVersionUrl,
-            );
-            $latestVersionResponse = @file_get_contents(
-                $latestVersionUrl,
-                false,
-                $context,
-            );
-
-            if ($latestVersionResponse !== false) {
+            $latestRelease = $this->resolveLatestUpdateRelease($upstream, $projectMeta);
+            if ($latestRelease !== null) {
+                $versionInfo['latest'] = $this->mapUpdateReleasePayload($latestRelease);
                 $logger->debug(
-                    'Latest version API response received: ' .
-                        substr($latestVersionResponse, 0, 200) .
-                        '...',
+                    'Successfully fetched latest version details: ' .
+                        ($versionInfo['latest']['version'] ?? 'unknown'),
                 );
-                $latestVersionData = json_decode($latestVersionResponse, true);
-                if (
-                    isset($latestVersionData['success'])
-                    && $latestVersionData['success']
-                    && isset($latestVersionData['data']['version'])
-                ) {
-                    $latestData = $latestVersionData['data']['version'];
-                    $versionInfo['latest'] = [
-                        'version' => $latestData['version'] ?? 'Unknown',
-                        'type' => $latestData['type'] ?? $upstream,
-                        'release_description' => $latestData['release_description'] ?? '',
-                        'changelog_added' => $latestData['changelog_added'] ?? [],
-                        'changelog_fixed' => $latestData['changelog_fixed'] ?? [],
-                        'changelog_improved' => $latestData['changelog_improved'] ?? [],
-                        'changelog_updated' => $latestData['changelog_updated'] ?? [],
-                        'changelog_removed' => $latestData['changelog_removed'] ?? [],
-                    ];
+            }
 
-                    // Compare versions
-                    if (
-                        isset($versionInfo['current']['version'])
-                        && isset($versionInfo['latest']['version'])
-                    ) {
-                        $versionInfo['update_available'] = version_compare(
-                            $versionInfo['current']['version'],
-                            $versionInfo['latest']['version'],
-                            '<',
-                        );
-                    }
-
-                    $latestVersion = $versionInfo['latest']['version'];
-                    $logger->debug(
-                        'Successfully fetched latest version details: ' .
-                            $latestVersion,
-                    );
-                } else {
-                    $logger->warning(
-                        'Failed to parse latest version response. Success: ' .
-                            ($latestVersionData['success'] ?? 'not set') .
-                            ', Response: ' .
-                            $latestVersionResponse,
-                    );
-                }
-            } else {
-                $error = error_get_last();
-                $logger->warning(
-                    'Failed to fetch latest version from API. Error: ' .
-                        ($error['message'] ?? 'Unknown error'),
+            if (
+                isset($versionInfo['current']['version'], $versionInfo['latest']['version'])
+            ) {
+                $versionInfo['update_available'] = $this->isVersionOlder(
+                    (string) $versionInfo['current']['version'],
+                    (string) $versionInfo['latest']['version'],
                 );
             }
         } catch (\Exception $e) {
@@ -650,16 +562,13 @@ class DashboardController
             );
         }
 
-        // Dev images and many Docker builds are not listed on api.featherpanel.com — still expose APP_VERSION in the UI.
+        // Dev images and builds not listed on the update server — still expose APP_VERSION in the UI.
         if ($versionInfo['current'] === null) {
-            $norm = ltrim($currentVersion, 'vV');
+            $norm = $this->normalizeVersionString($currentVersion);
             if ($norm === '' || strcasecmp($norm, 'unknown') === 0) {
-                $norm =
-                    ltrim(
-                        (string) (defined('APP_VERSION') ? APP_VERSION : ''),
-                        'vV',
-                    ) ?:
-                    'unknown';
+                $norm = $this->normalizeVersionString(
+                    (string) (defined('APP_VERSION') ? APP_VERSION : ''),
+                ) ?: 'unknown';
             }
 
             $channel = strtolower(
@@ -667,8 +576,8 @@ class DashboardController
             );
             $isDevChannel = \in_array($channel, ['development', 'dev'], true);
 
-            // Plain X.Y.Z only — anything else (build metadata, SHA, pre-release) is treated as a development-style build.
-            $isPlainSemver = (bool) preg_match('/^\d+\.\d+\.\d+$/', $norm);
+            // Plain dotted numeric versions only — anything else is treated as a development-style build.
+            $isPlainSemver = (bool) preg_match('/^\d+(\.\d+)*$/', $norm);
 
             $type = 'Stable';
             if ($upstream !== 'stable' && $upstream !== '') {
@@ -678,14 +587,23 @@ class DashboardController
                 $type = 'Development';
             }
 
+            $minPhp = is_array($projectMeta) ? ($projectMeta['min_supported_php'] ?? null) : null;
+            $maxPhp = is_array($projectMeta) ? ($projectMeta['max_supported_php'] ?? null) : null;
+
             $versionInfo['current'] = [
                 'version' => $norm,
                 'type' => $type,
                 'release_name' => $type === 'Development'
-                        ? 'Development build'
-                        : 'FeatherPanel',
+                    ? 'Development build'
+                    : 'FeatherPanel',
                 'release_description' => '',
-                'php_version' => PHP_VERSION,
+                'description' => '',
+                'php_version' => $this->formatPhpVersionRange($minPhp, $maxPhp) ?? PHP_VERSION,
+                'min_supported_php' => $minPhp,
+                'max_supported_php' => $maxPhp,
+                'is_security_release' => false,
+                'github_html_url' => null,
+                'published_at' => null,
                 'changelog_added' => [],
                 'changelog_fixed' => [],
                 'changelog_improved' => [],
@@ -697,18 +615,237 @@ class DashboardController
             if ($isDevChannel || $type === 'Development') {
                 $versionInfo['update_available'] = false;
             } elseif (isset($versionInfo['latest']['version'])) {
-                $versionInfo['update_available'] = version_compare(
+                $versionInfo['update_available'] = $this->isVersionOlder(
                     $norm,
-                    $versionInfo['latest']['version'],
-                    '<',
+                    (string) $versionInfo['latest']['version'],
                 );
             }
         }
 
-        $versionInfo[
-            'current_listed_on_update_server'
-        ] = $currentListedOnUpdateServer;
+        $versionInfo['current_listed_on_update_server'] = $currentListedOnUpdateServer;
 
         return $versionInfo;
+    }
+
+    /**
+     * Resolve the latest release for the configured upstream channel.
+     *
+     * @param array<string, mixed>|null $projectMeta
+     *
+     * @return array<string, mixed>|null
+     */
+    private function resolveLatestUpdateRelease(
+        string $upstream,
+        ?array $projectMeta,
+    ): ?array {
+        $upstream = strtolower(trim($upstream)) ?: 'stable';
+
+        if (
+            is_array($projectMeta)
+            && isset($projectMeta['latest'])
+            && is_array($projectMeta['latest'])
+            && isset($projectMeta['latest']['version'])
+        ) {
+            $embedded = $projectMeta['latest'];
+            $embeddedType = strtolower((string) ($embedded['type'] ?? 'stable'));
+            if ($upstream === 'stable' || $embeddedType === $upstream) {
+                return $embedded;
+            }
+        }
+
+        $latest = $this->fetchUpdateServerJson(
+            '/' . self::UPDATE_PROJECT_SLUG . '/latest',
+        );
+        if (
+            is_array($latest)
+            && !isset($latest['error'])
+            && isset($latest['version'])
+        ) {
+            $latestType = strtolower((string) ($latest['type'] ?? 'stable'));
+            if ($upstream === 'stable' || $latestType === $upstream) {
+                return $latest;
+            }
+        }
+
+        // Non-stable channels: scan recent releases for the matching type.
+        if ($upstream !== 'stable') {
+            $releases = $this->fetchUpdateServerJson(
+                '/' . self::UPDATE_PROJECT_SLUG . '/releases?per_page=50',
+            );
+            if (is_array($releases) && isset($releases['data']) && is_array($releases['data'])) {
+                foreach ($releases['data'] as $release) {
+                    if (!is_array($release) || !isset($release['version'])) {
+                        continue;
+                    }
+                    if (strtolower((string) ($release['type'] ?? '')) === $upstream) {
+                        return $release;
+                    }
+                }
+            }
+        }
+
+        return is_array($latest) && isset($latest['version']) && !isset($latest['error'])
+            ? $latest
+            : null;
+    }
+
+    /**
+     * Fetch a single release by version, trying common tag variants.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function fetchUpdateServerRelease(string $version): ?array
+    {
+        $normalized = $this->normalizeVersionString($version);
+        if ($normalized === '' || strcasecmp($normalized, 'unknown') === 0) {
+            return null;
+        }
+
+        $candidates = array_values(array_unique(array_filter([
+            $version,
+            'v' . $normalized,
+            $normalized,
+        ])));
+
+        foreach ($candidates as $candidate) {
+            $payload = $this->fetchUpdateServerJson(
+                '/' . self::UPDATE_PROJECT_SLUG . '/releases/' . rawurlencode($candidate),
+            );
+            if (
+                is_array($payload)
+                && !isset($payload['error'])
+                && isset($payload['version'])
+            ) {
+                return $payload;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * GET JSON from the MythicalSystems Update Server.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function fetchUpdateServerJson(string $path): ?array
+    {
+        $logger = App::getInstance(true)->getLogger();
+        $url = self::UPDATE_SERVER_BASE . $path;
+        $userAgent = 'FeatherPanel/' . (defined('APP_VERSION') ? APP_VERSION : 'unknown');
+
+        $context = stream_context_create([
+            'http' => [
+                'timeout' => 10,
+                'user_agent' => $userAgent,
+                'header' => "Accept: application/json\r\n",
+                'ignore_errors' => true,
+            ],
+        ]);
+
+        $logger->debug('Fetching update server: ' . $url);
+        $response = @file_get_contents($url, false, $context);
+        if ($response === false) {
+            $error = error_get_last();
+            $logger->warning(
+                'Failed to fetch update server URL ' . $url . ': ' .
+                    ($error['message'] ?? 'Unknown error'),
+            );
+
+            return null;
+        }
+
+        $decoded = json_decode($response, true);
+        if (!is_array($decoded)) {
+            $logger->warning(
+                'Invalid JSON from update server URL ' . $url . ': ' .
+                    substr($response, 0, 200),
+            );
+
+            return null;
+        }
+
+        return $decoded;
+    }
+
+    /**
+     * Map an update-server release payload into the dashboard version shape.
+     *
+     * @param array<string, mixed> $release
+     *
+     * @return array<string, mixed>
+     */
+    private function mapUpdateReleasePayload(array $release): array
+    {
+        $minPhp = isset($release['min_supported_php'])
+            ? (string) $release['min_supported_php']
+            : null;
+        $maxPhp = isset($release['max_supported_php'])
+            ? (string) $release['max_supported_php']
+            : null;
+        $description = (string) ($release['description'] ?? '');
+        $type = (string) ($release['type'] ?? 'stable');
+
+        return [
+            'id' => isset($release['id']) ? (int) $release['id'] : null,
+            'version' => $this->normalizeVersionString(
+                (string) ($release['version'] ?? 'unknown'),
+            ),
+            'type' => $type !== '' ? ucfirst($type) : 'Stable',
+            'release_name' => (string) ($release['release_name'] ?? ($release['version'] ?? 'Unknown Release')),
+            'release_description' => $description,
+            'description' => $description,
+            'php_version' => $this->formatPhpVersionRange($minPhp, $maxPhp) ?? PHP_VERSION,
+            'min_supported_php' => $minPhp,
+            'max_supported_php' => $maxPhp,
+            'is_security_release' => (bool) ($release['is_security_release'] ?? false),
+            'github_html_url' => isset($release['github_html_url'])
+                ? (string) $release['github_html_url']
+                : null,
+            'published_at' => isset($release['published_at'])
+                ? (string) $release['published_at']
+                : null,
+            'changelog_added' => is_array($release['changelog_added'] ?? null)
+                ? $release['changelog_added']
+                : [],
+            'changelog_fixed' => is_array($release['changelog_fixed'] ?? null)
+                ? $release['changelog_fixed']
+                : [],
+            'changelog_improved' => is_array($release['changelog_improved'] ?? null)
+                ? $release['changelog_improved']
+                : [],
+            'changelog_updated' => is_array($release['changelog_updated'] ?? null)
+                ? $release['changelog_updated']
+                : [],
+            'changelog_removed' => is_array($release['changelog_removed'] ?? null)
+                ? $release['changelog_removed']
+                : [],
+        ];
+    }
+
+    private function normalizeVersionString(string $version): string
+    {
+        return ltrim(trim($version), 'vV');
+    }
+
+    private function isVersionOlder(string $current, string $latest): bool
+    {
+        return version_compare(
+            $this->normalizeVersionString($current),
+            $this->normalizeVersionString($latest),
+            '<',
+        );
+    }
+
+    private function formatPhpVersionRange(?string $min, ?string $max): ?string
+    {
+        $min = $min !== null && $min !== '' ? $min : null;
+        $max = $max !== null && $max !== '' ? $max : null;
+
+        if ($min !== null && $max !== null) {
+            return $min === $max ? $min : $min . '–' . $max;
+        }
+
+        return $min ?? $max;
     }
 }

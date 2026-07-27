@@ -23,7 +23,7 @@ import { Input } from '@/components/featherui/Input';
 import { Textarea } from '@/components/featherui/Textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ArrowLeft, ListChecks, Plus, Save, Trash2 } from 'lucide-react';
-import yaml from 'js-yaml';
+import * as yaml from 'js-yaml';
 
 interface CommandsYaml {
     'command-block-overrides'?: unknown;

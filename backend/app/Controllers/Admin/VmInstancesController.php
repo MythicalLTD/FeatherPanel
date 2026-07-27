@@ -2019,9 +2019,14 @@ class VmInstancesController
             return ApiResponse::error('No backup-capable storage selected', 'NO_BACKUP_STORAGE', 400);
         }
 
-        $backupLimit = (int) ($instance['backup_limit'] ?? 5);
+        $backupLimit = (int) ($instance['backup_limit'] ?? 0);
         $existingCount = VmInstanceBackup::countByInstanceId((int) $instance['id']);
-        if ($backupLimit > 0 && $existingCount >= $backupLimit) {
+
+        if ($backupLimit === 0) {
+            return ApiResponse::error('Backups are disabled for this VM instance', 'BACKUPS_DISABLED', 403);
+        }
+
+        if ($existingCount >= $backupLimit) {
             if (!BackupFifoEviction::isFifoRollingForVm($instance)) {
                 return ApiResponse::error(
                     'Backup limit reached (' . $backupLimit . '). Delete an existing backup first.',

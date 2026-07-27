@@ -44,6 +44,9 @@ import { toast } from 'sonner';
 import clsx from 'clsx';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { useDateFormatOptions } from '@/contexts/PreferencesContext';
+import { formatDateTimeInTz, formatTimeInTz, parseApiDate } from '@/lib/dateUtils';
+import { resolveAttachmentUrl } from '@/lib/utils';
 
 interface ApiTicket {
     id: number;
@@ -118,6 +121,7 @@ export default function TicketViewPage() {
     const { uuid } = useParams();
     const { t } = useTranslation();
     const { user: currentUser } = useSession();
+    const dateOpts = useDateFormatOptions();
 
     const [loading, setLoading] = useState(true);
     const [ticket, setTicket] = useState<ApiTicket | null>(null);
@@ -139,7 +143,7 @@ export default function TicketViewPage() {
                 setTicket(data.data.ticket);
 
                 const sortedMessages = [...(data.data.messages || [])].sort((a, b) => {
-                    return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+                    return (parseApiDate(a.created_at)?.getTime() ?? 0) - (parseApiDate(b.created_at)?.getTime() ?? 0);
                 });
                 setMessages(sortedMessages);
             } else {
@@ -296,7 +300,7 @@ export default function TicketViewPage() {
                         <div className='text-muted-foreground flex items-center gap-2 text-xs'>
                             <span className='font-mono'>#{ticket.id}</span>
                             <span>•</span>
-                            <span>{new Date(ticket.created_at).toLocaleString()}</span>
+                            <span>{formatDateTimeInTz(ticket.created_at, dateOpts)}</span>
                         </div>
                     </div>
                 </div>
@@ -329,7 +333,7 @@ export default function TicketViewPage() {
                                 <div className='flex items-center gap-2'>
                                     <span className='text-sm font-semibold'>{t('tickets.originalRequest')}</span>
                                     <span className='text-muted-foreground text-xs'>
-                                        {new Date(ticket.created_at).toLocaleString()}
+                                        {formatDateTimeInTz(ticket.created_at, dateOpts)}
                                     </span>
                                 </div>
                                 <div className='bg-card/70 border-border/50 rounded-2xl rounded-tl-sm border p-4 text-sm leading-relaxed whitespace-pre-wrap'>
@@ -444,10 +448,7 @@ export default function TicketViewPage() {
                                                 )}
                                             >
                                                 <span className='text-[10px]'>
-                                                    {new Date(msg.created_at).toLocaleTimeString([], {
-                                                        hour: '2-digit',
-                                                        minute: '2-digit',
-                                                    })}
+                                                    {formatTimeInTz(msg.created_at, dateOpts)}
                                                 </span>
                                             </div>
 
@@ -636,11 +637,12 @@ export default function TicketViewPage() {
                                     {ticket.category?.icon && (
                                         <div className='relative h-4 w-4 opacity-75'>
                                             <Image
-                                                src={ticket.category.icon}
+                                                src={resolveAttachmentUrl(ticket.category.icon) ?? ticket.category.icon}
                                                 alt=''
                                                 fill
                                                 className='object-contain'
                                                 sizes='16px'
+                                                unoptimized
                                             />
                                         </div>
                                     )}

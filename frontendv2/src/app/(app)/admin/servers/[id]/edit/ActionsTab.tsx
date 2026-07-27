@@ -23,8 +23,10 @@ import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/featherui/Input';
+import { Textarea } from '@/components/featherui/Textarea';
 import { HeadlessModal } from '@/components/ui/headless-modal';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -42,7 +44,17 @@ import {
 } from '@/components/admin/ModerationReasonFields';
 import { ModerationStatusCard, ModerationStaffActor } from '@/components/admin/ModerationStatusCard';
 import { toast } from 'sonner';
-import { Pause, Play, Trash2, AlertTriangle, ArrowLeftRight, Search, ChevronRight, Loader2 } from 'lucide-react';
+import {
+    Pause,
+    Play,
+    Trash2,
+    AlertTriangle,
+    ArrowLeftRight,
+    Search,
+    ChevronRight,
+    Loader2,
+    Megaphone,
+} from 'lucide-react';
 import { ApiNode, ApiAllocation } from '@/types/adminServerTypes';
 
 interface ActionsTabProps {
@@ -93,6 +105,11 @@ export function ActionsTab({
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [suspendDialogOpen, setSuspendDialogOpen] = useState(false);
     const [suspendReason, setSuspendReason] = useState<ModerationReasonValue>(emptyReason);
+    const [warnDialogOpen, setWarnDialogOpen] = useState(false);
+    const [warning, setWarning] = useState(false);
+    const [warnTitle, setWarnTitle] = useState('');
+    const [warnMessage, setWarnMessage] = useState('');
+    const [warnSendEmail, setWarnSendEmail] = useState(true);
 
     const handleSuspend = async () => {
         if (!isModerationReasonValid(suspendReason)) {
@@ -130,6 +147,37 @@ export function ActionsTab({
             toast.error(t('admin.servers.edit.actions.unsuspend_failed'));
         } finally {
             setSuspending(false);
+        }
+    };
+
+    const handleWarn = async () => {
+        if (!warnTitle.trim() || !warnMessage.trim()) {
+            toast.error(t('admin.servers.edit.actions.warn_required'));
+            return;
+        }
+
+        setWarning(true);
+        try {
+            await axios.post(`/api/admin/servers/${serverId}/warn`, {
+                title: warnTitle.trim(),
+                message: warnMessage.trim(),
+                type: 'warning',
+                send_email: warnSendEmail,
+            });
+            toast.success(t('admin.servers.edit.actions.warn_success'));
+            setWarnDialogOpen(false);
+            setWarnTitle('');
+            setWarnMessage('');
+            setWarnSendEmail(true);
+        } catch (error: unknown) {
+            console.error('Error sending warning:', error);
+            const message =
+                axios.isAxiosError(error) && error.response?.data?.error_message
+                    ? String(error.response.data.error_message)
+                    : t('admin.servers.edit.actions.warn_failed');
+            toast.error(message);
+        } finally {
+            setWarning(false);
         }
     };
 
@@ -266,6 +314,24 @@ export function ActionsTab({
             </PageCard>
 
             <PageCard
+                title={t('admin.servers.edit.actions.warn_title')}
+                description={t('admin.servers.edit.actions.warn_description')}
+            >
+                <Button
+                    variant='outline'
+                    onClick={() => {
+                        setWarnTitle(t('admin.servers.edit.actions.warn_default_title', { name: serverName }));
+                        setWarnMessage('');
+                        setWarnSendEmail(true);
+                        setWarnDialogOpen(true);
+                    }}
+                >
+                    <Megaphone className='mr-2 h-4 w-4' />
+                    {t('admin.servers.edit.actions.warn')}
+                </Button>
+            </PageCard>
+
+            <PageCard
                 title={t('admin.servers.edit.actions.delete_title')}
                 description={t('admin.servers.edit.actions.delete_description')}
             >
@@ -381,6 +447,63 @@ export function ActionsTab({
                             disabled={suspending || !isModerationReasonValid(suspendReason)}
                         >
                             {suspending ? t('common.loading') : t('admin.servers.edit.actions.suspend')}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            <AlertDialog open={warnDialogOpen} onOpenChange={setWarnDialogOpen}>
+                <AlertDialogContent className='max-w-lg'>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className='flex items-center gap-2'>
+                            <Megaphone className='h-5 w-5 text-amber-500' />
+                            {t('admin.servers.edit.actions.warn_confirm_title')}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {t('admin.servers.edit.actions.warn_confirm_description', { name: serverName })}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <div className='space-y-4 py-2'>
+                        <div className='space-y-2'>
+                            <Label htmlFor='warn-title'>{t('admin.servers.edit.actions.warn_title_label')}</Label>
+                            <Input
+                                id='warn-title'
+                                value={warnTitle}
+                                onChange={(e) => setWarnTitle(e.target.value)}
+                                disabled={warning}
+                            />
+                        </div>
+                        <div className='space-y-2'>
+                            <Label htmlFor='warn-message'>{t('admin.servers.edit.actions.warn_message_label')}</Label>
+                            <Textarea
+                                id='warn-message'
+                                value={warnMessage}
+                                onChange={(e) => setWarnMessage(e.target.value)}
+                                rows={5}
+                                placeholder={t('admin.servers.edit.actions.warn_message_placeholder')}
+                                disabled={warning}
+                            />
+                        </div>
+                        <div className='flex items-center space-x-2'>
+                            <Checkbox
+                                id='warn-send-email'
+                                checked={warnSendEmail}
+                                onCheckedChange={(checked) => setWarnSendEmail(checked as boolean)}
+                                disabled={warning}
+                            />
+                            <Label htmlFor='warn-send-email'>{t('admin.servers.edit.actions.warn_send_email')}</Label>
+                        </div>
+                    </div>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={warning}>{t('common.cancel')}</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={(e) => {
+                                e.preventDefault();
+                                void handleWarn();
+                            }}
+                            disabled={warning || !warnTitle.trim() || !warnMessage.trim()}
+                        >
+                            {warning ? t('common.loading') : t('admin.servers.edit.actions.warn')}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

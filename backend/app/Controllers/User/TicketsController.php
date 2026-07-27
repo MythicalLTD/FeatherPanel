@@ -360,22 +360,9 @@ class TicketsController
             }
         }
 
-        // Get "Open" status specifically (not just first status)
-        $allStatuses = TicketStatus::getAll(null, 100, 0);
-        $openStatus = null;
-        foreach ($allStatuses as $status) {
-            if (strtolower($status['name']) === 'open') {
-                $openStatus = $status;
-                break;
-            }
-        }
-
-        // Fallback to first status if "Open" not found
-        if (!$openStatus && !empty($allStatuses)) {
-            $openStatus = $allStatuses[0];
-        }
-
-        if (!$openStatus) {
+        // Use the configured default status (or the lowest sort order).
+        $defaultStatus = TicketStatus::getDefault();
+        if (!$defaultStatus) {
             return ApiResponse::error('No ticket statuses configured', 'NO_STATUSES', 500);
         }
 
@@ -389,7 +376,7 @@ class TicketsController
             'server_id' => $serverId,
             'category_id' => (int) $data['category_id'],
             'priority_id' => (int) $data['priority_id'],
-            'status_id' => (int) $openStatus['id'],
+            'status_id' => (int) $defaultStatus['id'],
             'title' => trim($data['title']),
             'description' => trim($data['description']),
         ];
@@ -1200,6 +1187,7 @@ class TicketsController
                         'name' => $role['name'],
                         'display_name' => $role['display_name'] ?? $role['name'],
                         'custom_badge' => $role['custom_badge'] ?? null,
+                        'badge_icon' => $role['badge_icon'] ?? null,
                         'color' => $role['color'] ?? null,
                     ];
                 }

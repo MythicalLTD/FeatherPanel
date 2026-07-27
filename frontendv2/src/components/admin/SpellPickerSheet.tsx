@@ -1,5 +1,5 @@
 /*
- * Spell picker for admin server create: local spells for the realm or FeatherCloud marketplace install.
+ * Spell picker for admin server create/edit: local spells for the realm or FeatherCloud marketplace install.
  *
  * This file is part of FeatherPanel.
  *
@@ -25,7 +25,6 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
-import { ResourceCard, type ResourceBadge } from '@/components/featherui/ResourceCard';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import {
     Search as SearchIcon,
@@ -36,12 +35,13 @@ import {
     AlertCircle,
     RefreshCw,
     Globe,
-    Settings,
     ExternalLink,
+    Star,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import type { Spell } from '@/app/(app)/admin/servers/create/types';
+import { StarDisplay } from '@/app/(app)/admin/feathercloud/products/_shared';
 
 export interface SpellPickerPaginationState {
     current_page: number;
@@ -53,6 +53,7 @@ export interface SpellPickerPaginationState {
 }
 
 interface OnlineSpell {
+    id?: string | number | null;
     identifier: string;
     name: string;
     description?: string;
@@ -62,6 +63,8 @@ interface OnlineSpell {
     tags: string[];
     verified: boolean;
     downloads: number;
+    average_rating?: number | null;
+    review_count?: number | null;
     latest_version?: { version: string };
 }
 
@@ -325,15 +328,22 @@ export function SpellPickerSheet({
                                             key={spell.id}
                                             type='button'
                                             onClick={() => onSelectSpell(spell)}
-                                            className='border-border/50 hover:border-primary hover:bg-primary/5 w-full cursor-pointer rounded-xl border p-3 text-left transition-all'
+                                            className='bg-card/80 hover:bg-card ring-border/40 w-full cursor-pointer rounded-2xl p-4 text-left shadow-sm ring-1 transition hover:shadow-md'
                                         >
-                                            <div className='flex flex-col'>
-                                                <span className='font-semibold'>{spell.name}</span>
-                                                {spell.description && (
-                                                    <span className='text-muted-foreground line-clamp-2 text-xs'>
-                                                        {spell.description}
+                                            <div className='flex items-start gap-3'>
+                                                <div className='bg-muted flex h-10 w-10 shrink-0 items-center justify-center rounded-xl'>
+                                                    <Sparkles className='text-muted-foreground h-4 w-4' />
+                                                </div>
+                                                <div className='min-w-0 flex-1'>
+                                                    <span className='block truncate text-sm font-semibold'>
+                                                        {spell.name}
                                                     </span>
-                                                )}
+                                                    {spell.description ? (
+                                                        <span className='text-muted-foreground mt-1 line-clamp-2 block text-xs leading-relaxed break-words'>
+                                                            {spell.description}
+                                                        </span>
+                                                    ) : null}
+                                                </div>
                                             </div>
                                         </button>
                                     ))
@@ -429,120 +439,133 @@ export function SpellPickerSheet({
                                 <EmptyState
                                     title={t('admin.marketplace.plugins.no_results')}
                                     description={t('admin.marketplace.spells.search_placeholder')}
-                                    icon={Settings}
+                                    icon={Sparkles}
                                 />
                             ) : (
-                                <div className='max-h-[min(52vh,480px)] space-y-4 overflow-y-auto pr-1'>
+                                <div className='max-h-[min(52vh,520px)] space-y-3 overflow-y-auto pr-1'>
                                     {onlineSpells.map((spell) => {
-                                        const IconComponent = ({ className }: { className?: string }) =>
-                                            spell.icon ? (
-                                                <div
-                                                    className={cn(
-                                                        'relative h-10 w-10 shrink-0 overflow-hidden rounded-lg',
-                                                        className,
-                                                    )}
-                                                >
-                                                    <Image
-                                                        src={spell.icon}
-                                                        alt={spell.name}
-                                                        fill
-                                                        className='object-cover'
-                                                        unoptimized
-                                                    />
-                                                </div>
-                                            ) : (
-                                                <Settings className={cn('h-10 w-10', className)} />
-                                            );
-
-                                        const badges: ResourceBadge[] = [
-                                            ...(installedNames.includes(spell.name)
-                                                ? [
-                                                      {
-                                                          label: t('admin.marketplace.plugins.installed'),
-                                                          className: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
-                                                      },
-                                                  ]
-                                                : []),
-                                            ...(spell.verified
-                                                ? [
-                                                      {
-                                                          label: t(
-                                                              'admin.marketplace.spells.grid.pterodactyl_verified',
-                                                          ),
-                                                          className:
-                                                              'bg-green-500/10 text-green-600 border-green-500/20',
-                                                      },
-                                                  ]
-                                                : []),
-                                            ...(spell.latest_version?.version
-                                                ? [
-                                                      {
-                                                          label: `v${spell.latest_version.version}`,
-                                                          className: 'bg-primary/10 text-primary border-primary/20',
-                                                      },
-                                                  ]
-                                                : []),
-                                        ];
+                                        const installed = installedNames.includes(spell.name);
+                                        const busy = installingId === spell.identifier;
+                                        const avg = Number(spell.average_rating || 0);
+                                        const reviewCount = Number(spell.review_count || 0);
 
                                         return (
-                                            <ResourceCard
+                                            <article
                                                 key={spell.identifier}
-                                                icon={IconComponent}
-                                                title={spell.name}
-                                                subtitle={
-                                                    spell.author
-                                                        ? t('admin.marketplace.common.by_author', {
-                                                              author: spell.author,
-                                                          })
-                                                        : undefined
-                                                }
-                                                badges={badges}
-                                                description={
-                                                    <div className='space-y-3'>
-                                                        <p className='text-muted-foreground line-clamp-3 text-sm leading-relaxed'>
-                                                            {spell.description ||
-                                                                t('admin.marketplace.spells.grid.no_description')}
-                                                        </p>
-                                                        {!spell.verified && (
-                                                            <div className='flex items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/10 p-2 text-[10px] text-amber-700'>
-                                                                <AlertCircle className='h-3 w-3 shrink-0' />
-                                                                <span>
-                                                                    {t('admin.marketplace.spells.grid.external_source')}
-                                                                </span>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                }
-                                                actions={
-                                                    <div className='flex w-full items-center gap-2'>
-                                                        <Button
-                                                            variant='default'
-                                                            className='flex-1'
-                                                            disabled={installingId === spell.identifier}
-                                                            onClick={() => void handleCloudInstall(spell)}
-                                                        >
-                                                            {installingId === spell.identifier ? (
-                                                                <RefreshCw className='mr-2 h-4 w-4 animate-spin' />
+                                                className='bg-card/80 ring-border/40 flex flex-col overflow-hidden rounded-2xl shadow-sm ring-1'
+                                            >
+                                                <div className='flex flex-1 flex-col gap-3 p-4'>
+                                                    <div className='flex items-start gap-3'>
+                                                        <div className='bg-muted relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl'>
+                                                            {spell.icon ? (
+                                                                <Image
+                                                                    src={spell.icon}
+                                                                    alt=''
+                                                                    fill
+                                                                    className='object-cover'
+                                                                    unoptimized
+                                                                />
                                                             ) : (
-                                                                <CloudDownload className='mr-2 h-4 w-4' />
+                                                                <Sparkles className='text-muted-foreground h-5 w-5' />
                                                             )}
-                                                            {t('admin.servers.form.spell_install_to_realm')}
-                                                        </Button>
-                                                        {spell.website && (
-                                                            <Button
-                                                                variant='outline'
-                                                                size='icon'
-                                                                type='button'
-                                                                onClick={() =>
-                                                                    window.open(spell.website as string, '_blank')
-                                                                }
-                                                            >
-                                                                <Globe className='h-4 w-4' />
-                                                            </Button>
-                                                        )}
+                                                        </div>
+                                                        <div className='min-w-0 flex-1'>
+                                                            <h3 className='truncate text-sm font-semibold'>
+                                                                {spell.name}
+                                                            </h3>
+                                                            <p className='text-muted-foreground truncate font-mono text-[11px]'>
+                                                                {spell.identifier}
+                                                            </p>
+                                                        </div>
+                                                        <div className='flex shrink-0 flex-col items-end gap-1'>
+                                                            {installed ? (
+                                                                <span className='rounded-md bg-blue-500/15 px-1.5 py-0.5 text-[10px] font-medium text-blue-600 dark:text-blue-400'>
+                                                                    {t('admin.marketplace.plugins.installed')}
+                                                                </span>
+                                                            ) : null}
+                                                            {spell.verified ? (
+                                                                <span className='rounded-md bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-medium text-emerald-600 dark:text-emerald-400'>
+                                                                    Verified
+                                                                </span>
+                                                            ) : null}
+                                                        </div>
                                                     </div>
-                                                }
-                                            />
+
+                                                    <p className='text-muted-foreground line-clamp-2 text-xs leading-relaxed break-words'>
+                                                        {spell.description ||
+                                                            t('admin.marketplace.spells.grid.no_description')}
+                                                    </p>
+
+                                                    <div className='text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px]'>
+                                                        {spell.author ? (
+                                                            <span>
+                                                                {t('admin.marketplace.common.by_author', {
+                                                                    author: spell.author,
+                                                                })}
+                                                            </span>
+                                                        ) : null}
+                                                        <span className='inline-flex items-center gap-1'>
+                                                            <CloudDownload className='h-3 w-3' />
+                                                            {Number(spell.downloads || 0).toLocaleString()}
+                                                        </span>
+                                                        <span className='inline-flex items-center gap-1.5'>
+                                                            <StarDisplay rating={avg} />
+                                                            <span>
+                                                                {avg > 0 ? avg.toFixed(1) : 'No ratings'}
+                                                                {reviewCount > 0 ? ` · ${reviewCount}` : ''}
+                                                            </span>
+                                                        </span>
+                                                    </div>
+
+                                                    {!spell.verified ? (
+                                                        <p className='text-[11px] text-amber-700 dark:text-amber-400'>
+                                                            {t('admin.marketplace.spells.grid.external_source')}
+                                                        </p>
+                                                    ) : null}
+                                                </div>
+
+                                                <div className='flex items-center gap-2 px-4 pb-4'>
+                                                    <Button
+                                                        size='sm'
+                                                        className='flex-1'
+                                                        disabled={busy}
+                                                        onClick={() => void handleCloudInstall(spell)}
+                                                    >
+                                                        {busy ? (
+                                                            <RefreshCw className='mr-1.5 h-3.5 w-3.5 animate-spin' />
+                                                        ) : (
+                                                            <CloudDownload className='mr-1.5 h-3.5 w-3.5' />
+                                                        )}
+                                                        {t('admin.servers.form.spell_install_to_realm')}
+                                                    </Button>
+                                                    <Button
+                                                        size='sm'
+                                                        variant='outline'
+                                                        asChild
+                                                        title='Reviews on marketplace'
+                                                    >
+                                                        <Link
+                                                            href={`/admin/feathercloud/spells`}
+                                                            target='_blank'
+                                                            rel='noopener noreferrer'
+                                                        >
+                                                            <Star className='h-3.5 w-3.5' />
+                                                        </Link>
+                                                    </Button>
+                                                    {spell.website ? (
+                                                        <Button
+                                                            size='sm'
+                                                            variant='outline'
+                                                            type='button'
+                                                            onClick={() =>
+                                                                window.open(spell.website as string, '_blank')
+                                                            }
+                                                        >
+                                                            <Globe className='h-3.5 w-3.5' />
+                                                        </Button>
+                                                    ) : null}
+                                                </div>
+                                            </article>
                                         );
                                     })}
                                 </div>

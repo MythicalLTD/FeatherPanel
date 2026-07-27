@@ -19,6 +19,7 @@ import * as React from 'react';
 import { useParams, useRouter, usePathname } from 'next/navigation';
 import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { formatBackupLimitLabel } from '@/lib/server-utils';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
 import {
@@ -364,7 +365,9 @@ export default function ServerSettingsPage() {
                                         {t('serverSettings.backupLimitReadOnlyLabel')}
                                     </Label>
                                     <div className='border-border/10 bg-muted/40 flex h-12 items-center rounded-xl border px-4 text-sm font-medium'>
-                                        {server?.backup_limit === 0 ? '∞' : String(server?.backup_limit ?? '—')}
+                                        {server?.backup_limit != null
+                                            ? formatBackupLimitLabel(server.backup_limit, t('common.disabled'))
+                                            : '—'}
                                     </div>
                                     <p className='text-muted-foreground ml-1 text-xs break-words'>
                                         {t('serverSettings.backupLimitReadOnlyHelp')}

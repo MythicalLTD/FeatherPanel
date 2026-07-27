@@ -16,6 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import DashboardShell from '@/components/layout/DashboardShell';
 import { Metadata } from 'next';
 import ChatbotWidget from '@/components/ai/ChatbotWidget';
+import { ServerAnnouncementBanner } from '@/components/server/ServerAnnouncementBanner';
 
 type Props = {
     params: Promise<{ uuidShort: string }>;
@@ -93,7 +94,10 @@ export default async function ServerLayout({
     return (
         <ServerProvider uuidShort={uuidShort} initialServer={server}>
             <DashboardShell>
-                <ServerSuspendedWrapper>{children}</ServerSuspendedWrapper>
+                <ServerSuspendedWrapper>
+                    <ServerAnnouncementBanner />
+                    {children}
+                </ServerSuspendedWrapper>
             </DashboardShell>
             <ChatbotWidget />
         </ServerProvider>

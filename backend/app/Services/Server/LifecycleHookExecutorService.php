@@ -17,13 +17,13 @@
 
 namespace App\Services\Server;
 
-use App\Helpers\WingsUrlHelper;
 use App\App;
 use GuzzleHttp\Client;
 use App\Chat\ServerActivity;
 use GuzzleHttp\Psr7\Request;
 use App\Services\Wings\Wings;
 use App\Config\ConfigInterface;
+use App\Helpers\WingsUrlHelper;
 use App\Chat\ServerLifecycleHook;
 use App\Chat\ServerLifecycleHookStep;
 use App\Plugins\Events\Events\ServerEvent;
@@ -99,6 +99,76 @@ class LifecycleHookExecutorService
         }
 
         return $result;
+    }
+
+    /**
+     * Execute the server-crash lifecycle hook when Wings reports a crash.
+     */
+    public function executeForServerCrash(array $server, array $node, ?array $actor = null): array
+    {
+        App::getInstance(true)->getLogger()->info('Server crash lifecycle hook requested for server ' . ($server['uuid'] ?? 'unknown'));
+        $enabled = App::getInstance(true)->getConfig()->getSetting(ConfigInterface::SERVER_LIFECYCLE_HOOKS_ENABLED, 'false') === 'true';
+        if (!$enabled) {
+            App::getInstance(true)->getLogger()->info('Server crash lifecycle hook skipped because feature is disabled for server ' . ($server['uuid'] ?? 'unknown'));
+
+            return [
+                'attempted' => false,
+                'pipelines' => [],
+            ];
+        }
+
+        $hook = $this->getActiveHookByServerAndType((int) $server['id'], 'server_crash');
+        if (!$hook) {
+            App::getInstance(true)->getLogger()->info('Server crash lifecycle hook not configured or inactive for server ' . ($server['uuid'] ?? 'unknown'));
+
+            return [
+                'attempted' => false,
+                'pipelines' => [],
+            ];
+        }
+
+        App::getInstance(true)->getLogger()->info('Executing server crash lifecycle hook for server ' . ($server['uuid'] ?? 'unknown'));
+        $pipelineResult = $this->executeHookPipeline($hook, $server, $node, 'crash', $actor);
+
+        return [
+            'attempted' => true,
+            'pipelines' => [$pipelineResult],
+        ];
+    }
+
+    /**
+     * Execute post-start lifecycle hooks when the server is detected as running.
+     */
+    public function executeForServerRunning(array $server, array $node, ?array $actor = null): array
+    {
+        App::getInstance(true)->getLogger()->info('Post-start lifecycle hook requested for server ' . ($server['uuid'] ?? 'unknown'));
+        $enabled = App::getInstance(true)->getConfig()->getSetting(ConfigInterface::SERVER_LIFECYCLE_HOOKS_ENABLED, 'false') === 'true';
+        if (!$enabled) {
+            App::getInstance(true)->getLogger()->info('Post-start lifecycle hook skipped because feature is disabled for server ' . ($server['uuid'] ?? 'unknown'));
+
+            return [
+                'attempted' => false,
+                'pipelines' => [],
+            ];
+        }
+
+        $hook = $this->getActiveHookByServerAndType((int) $server['id'], 'post_start');
+        if (!$hook) {
+            App::getInstance(true)->getLogger()->info('Post-start lifecycle hook not configured or inactive for server ' . ($server['uuid'] ?? 'unknown'));
+
+            return [
+                'attempted' => false,
+                'pipelines' => [],
+            ];
+        }
+
+        App::getInstance(true)->getLogger()->info('Executing post-start lifecycle hook for server ' . ($server['uuid'] ?? 'unknown'));
+        $pipelineResult = $this->executeHookPipeline($hook, $server, $node, 'server_running', $actor);
+
+        return [
+            'attempted' => true,
+            'pipelines' => [$pipelineResult],
+        ];
     }
 
     protected function executeHookPipeline(array $hook, array $server, array $node, string $powerAction, ?array $actor): array
@@ -268,6 +338,69 @@ class LifecycleHookExecutorService
         return ['sent' => true];
     }
 
+    protected function executeContainerShell(array $payload, array $server, array $node): array
+    {
+        $enabled = App::getInstance(true)->getConfig()->getSetting(ConfigInterface::SERVER_LIFECYCLE_HOOKS_CONTAINER_SHELL_ENABLED, 'false') === 'true';
+        if (!$enabled) {
+            throw new \Exception('Container Shell steps are disabled by the administrator');
+        }
+
+        $command = trim((string) ($payload['command'] ?? ''));
+        if ($command === '') {
+            throw new \Exception('Missing shell command');
+        }
+        if (strlen($command) > 4096) {
+            throw new \Exception('Shell command too long');
+        }
+
+        $timeout = (int) ($payload['timeout'] ?? 30);
+        if ($timeout < 1) {
+            $timeout = 30;
+        }
+        if ($timeout > 120) {
+            $timeout = 120;
+        }
+
+        $wings = new Wings(
+            $node['fqdn'],
+            $node['daemonListen'],
+            $node['scheme'],
+            $node['daemon_token'],
+            max(35, $timeout + 10),
+            WingsUrlHelper::isBehindProxy($node)
+        );
+        $response = $wings->getServer()->execInContainer($server['uuid'], $command, $timeout);
+        if (!$response->isSuccessful()) {
+            throw new \Exception('Failed to execute shell command in container: ' . $response->getError());
+        }
+
+        $data = $response->getData();
+        if (!is_array($data)) {
+            throw new \Exception('Invalid response from container shell exec');
+        }
+
+        if (!empty($data['timed_out'])) {
+            throw new \Exception('Container shell command timed out after ' . $timeout . ' seconds');
+        }
+
+        $exitCode = (int) ($data['exit_code'] ?? -1);
+        if ($exitCode !== 0) {
+            $stderr = trim((string) ($data['stderr'] ?? ''));
+            $stdout = trim((string) ($data['stdout'] ?? ''));
+            $detail = $stderr !== '' ? $stderr : $stdout;
+            if ($detail !== '') {
+                $detail = mb_substr($detail, 0, 500);
+                throw new \Exception('Container shell command exited with code ' . $exitCode . ': ' . $detail);
+            }
+            throw new \Exception('Container shell command exited with code ' . $exitCode);
+        }
+
+        return [
+            'exit_code' => $exitCode,
+            'duration_ms' => (int) ($data['duration_ms'] ?? 0),
+        ];
+    }
+
     protected function executeHttpRequest(array $payload): array
     {
         $url = trim((string) ($payload['url'] ?? ''));
@@ -395,8 +528,25 @@ class LifecycleHookExecutorService
         return match ($taskType) {
             'discord_webhook' => $this->executeDiscordWebhook($payload),
             'container_command' => $this->executeContainerCommand($payload, $server, $node),
+            'container_shell' => $this->executeContainerShell($payload, $server, $node),
             'http_request' => $this->executeHttpRequest($payload),
+            'sleep' => $this->executeSleep($payload),
             default => throw new \Exception('Unsupported lifecycle hook task type: ' . $taskType),
         };
+    }
+
+    protected function executeSleep(array $payload): array
+    {
+        $seconds = (int) ($payload['seconds'] ?? 0);
+        if ($seconds < 1) {
+            throw new \Exception('Invalid sleep duration');
+        }
+        if ($seconds > 300) {
+            throw new \Exception('Sleep duration exceeds maximum of 300 seconds');
+        }
+
+        sleep($seconds);
+
+        return ['slept' => $seconds];
     }
 }

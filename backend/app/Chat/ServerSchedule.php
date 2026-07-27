@@ -572,19 +572,22 @@ class ServerSchedule
         if (class_exists(CrontabSchedule::class)) {
             try {
                 $schedule = new CrontabSchedule($expression);
-                if (method_exists($schedule, 'getNextRunDate')) {
-                    $base = self::resolveBaseDateTime($referenceTime, $tz);
-                    $nextRun = $schedule->getNextRunDate($base, 0, false);
-                    $now = new \DateTime('now', $tz);
+                $base = self::resolveBaseDateTime($referenceTime, $tz);
+                $now = new \DateTime('now', $tz);
 
-                    // Ensure next run is strictly in the future to avoid schedules running instantly
-                    if ($nextRun <= $now) {
-                        $nextRun->modify('+1 second');
-                        $nextRun = $schedule->getNextRunDate($nextRun, 0, false);
+                $nextRun = clone $base;
+                $nextRun->modify('+1 minute');
+
+                // cron/cron exposes valid() rather than getNextRunDate(); scan forward
+                // far enough for monthly/yearly expressions (incl. leap-day gaps).
+                $limit = (clone $nextRun)->modify('+4 years');
+
+                while ($nextRun <= $limit) {
+                    if ($schedule->valid($nextRun) && $nextRun > $now) {
+                        // Persist as UTC literal so DB comparisons stay deterministic.
+                        return $nextRun->setTimezone($utc)->format('Y-m-d H:i:s');
                     }
-
-                    // Persist as UTC literal so DB comparisons stay deterministic.
-                    return $nextRun->setTimezone($utc)->format('Y-m-d H:i:s');
+                    $nextRun->modify('+1 minute');
                 }
             } catch (\Throwable $e) {
                 App::getInstance(true)->getLogger()->error('Failed to calculate next run time for expression ' . $expression . ': ' . $e->getMessage());
@@ -666,6 +669,10 @@ class ServerSchedule
 
     /**
      * Fallback calculation when external cron library is unavailable.
+     *
+     * Searches minute-by-minute up to 4 years ahead so monthly and yearly
+     * expressions (e.g. "0 4 1 * *" after the 1st) resolve correctly instead
+     * of incorrectly falling back to near-immediate execution.
      */
     private static function calculateNextRunTimeFallback(string $dayOfWeek, string $month, string $dayOfMonth, string $hour, string $minute, ?string $referenceTime = null, string $timezone = 'UTC'): string
     {
@@ -694,12 +701,11 @@ class ServerSchedule
         $nextRun->add(new \DateInterval('PT1M'));
 
         $found = false;
-        $attempts = 0;
-        $maxAttempts = 10080; // Prevent infinite loops (covers up to 7 days)
+        // 4 years covers leap-day schedules; previously 7 days caused monthly
+        // cron expressions whose next match was >7 days away to fall back to +1 day.
+        $limit = (clone $searchStart)->modify('+4 years');
 
-        while (!$found && $attempts < $maxAttempts) {
-            ++$attempts;
-
+        while ($nextRun <= $limit) {
             if (self::timeMatchesCron($nextRun, $dayOfWeek, $month, $dayOfMonth, $hour, $minute)) {
                 if ($nextRun > $currentTime) {
                     $found = true;
@@ -711,6 +717,12 @@ class ServerSchedule
         }
 
         if (!$found) {
+            // Unsatisfiable expression (e.g. 31 February); keep a deterministic
+            // placeholder rather than scheduling immediately.
+            App::getInstance(true)->getLogger()->warning(
+                'No matching cron run found within 4 years for expression '
+                . self::formatCronExpression($dayOfWeek, $month, $dayOfMonth, $hour, $minute)
+            );
             $nextRun = clone $currentTime;
             $nextRun->add(new \DateInterval('P1D'));
         }

@@ -20,6 +20,8 @@ import type { AxiosError } from 'axios';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import PermissionsClass from '@/lib/permissions';
+import { getCachedPluginPublicPages } from '@/hooks/usePluginPublicPages';
+import { isCloudflareChallengeAxios, isCloudflareChallengeResponseData } from '@/lib/cloudflare-challenge';
 
 export interface UserInfo {
     id: number;
@@ -32,6 +34,7 @@ export interface UserInfo {
         name: string;
         display_name: string;
         custom_badge?: string | null;
+        badge_icon?: string | null;
         color: string;
     };
     avatar: string;
@@ -71,24 +74,45 @@ interface SessionContextType {
 
 const SessionContext = createContext<SessionContextType | undefined>(undefined);
 
+function normalizePathname(pathname: string): string {
+    if (pathname.length > 1 && pathname.endsWith('/')) {
+        return pathname.slice(0, -1);
+    }
+    return pathname;
+}
+
+function isCorePublicNoAuthRoute(pathname: string): boolean {
+    return (
+        pathname === '/status' ||
+        pathname.startsWith('/status/') ||
+        pathname === '/knowledgebase' ||
+        pathname.startsWith('/knowledgebase/') ||
+        pathname === '/knowladgebase' ||
+        pathname.startsWith('/knowladgebase/')
+    );
+}
+
 export function SessionProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<UserInfo | null>(null);
     const [permissions, setPermissions] = useState<PermissionsList>([]);
     const [adminTicketStats, setAdminTicketStats] = useState<AdminTicketStats | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isSessionChecked, setIsSessionChecked] = useState(false);
+    const [pluginPublicPaths, setPluginPublicPaths] = useState<string[]>([]);
+    const [pluginPathsLoaded, setPluginPathsLoaded] = useState(false);
     const router = useRouter();
 
-    const isPublicNoAuthRoute = useCallback((pathname: string): boolean => {
-        return (
-            pathname === '/status' ||
-            pathname.startsWith('/status/') ||
-            pathname === '/knowledgebase' ||
-            pathname.startsWith('/knowledgebase/') ||
-            pathname === '/knowladgebase' ||
-            pathname.startsWith('/knowladgebase/')
-        );
-    }, []);
+    const isPublicNoAuthRoute = useCallback(
+        (pathname: string): boolean => {
+            if (isCorePublicNoAuthRoute(pathname)) {
+                return true;
+            }
+
+            const normalized = normalizePathname(pathname);
+            return pluginPublicPaths.some((path) => normalized === path || normalized.startsWith(path + '/'));
+        },
+        [pluginPublicPaths],
+    );
 
     const fetchSession = useCallback(
         async (force = false): Promise<boolean> => {
@@ -104,6 +128,15 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
             try {
                 const res = await api.get('/user/session');
+
+                // Cloudflare Under Attack / Precursor can return HTML instead of JSON.
+                // Do not wipe the session or treat the user as a guest.
+                if (isCloudflareChallengeAxios(res) || isCloudflareChallengeResponseData(res.data)) {
+                    console.warn('Session fetch blocked by Cloudflare challenge; preserving local session state');
+                    setIsSessionChecked(true);
+                    setIsLoading(false);
+                    return false;
+                }
 
                 if (
                     res.data &&
@@ -134,6 +167,35 @@ export function SessionProvider({ children }: { children: ReactNode }) {
                     return false;
                 }
             } catch (error) {
+                if (isCloudflareChallengeAxios(error)) {
+                    console.warn('Session fetch blocked by Cloudflare challenge; retrying once after clearance');
+                    try {
+                        await new Promise((resolve) => setTimeout(resolve, 1500));
+                        const retry = await api.get('/user/session');
+                        if (
+                            !isCloudflareChallengeAxios(retry) &&
+                            !isCloudflareChallengeResponseData(retry.data) &&
+                            retry.data?.success === true &&
+                            retry.data?.data?.user_info &&
+                            typeof retry.data.data.user_info === 'object'
+                        ) {
+                            setUser(retry.data.data.user_info as UserInfo);
+                            setPermissions((retry.data.data.permissions as PermissionsList) || []);
+                            setAdminTicketStats(
+                                (retry.data.data.admin_ticket_stats as AdminTicketStats | undefined) ?? null,
+                            );
+                            setIsSessionChecked(true);
+                            setIsLoading(false);
+                            return true;
+                        }
+                    } catch {
+                        // Fall through — keep existing session if any.
+                    }
+                    setIsSessionChecked(true);
+                    setIsLoading(false);
+                    return false;
+                }
+
                 const axiosError = error as AxiosError<{ error_code?: string; error_message?: string }>;
                 const errorCode = axiosError?.response?.data?.error_code;
                 if (
@@ -192,6 +254,33 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     };
 
     useEffect(() => {
+        let cancelled = false;
+
+        (async () => {
+            const pages = await getCachedPluginPublicPages();
+            if (!cancelled) {
+                setPluginPublicPaths(pages.filter((page) => page.enabled).map((page) => normalizePathname(page.path)));
+                setPluginPathsLoaded(true);
+            }
+        })();
+
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    useEffect(() => {
+        if (typeof window !== 'undefined' && isCorePublicNoAuthRoute(window.location.pathname)) {
+            setIsSessionChecked(true);
+            setIsLoading(false);
+            return;
+        }
+
+        // Wait for plugin public-page registry before deciding auth redirects.
+        if (!pluginPathsLoaded) {
+            return;
+        }
+
         if (typeof window !== 'undefined' && isPublicNoAuthRoute(window.location.pathname)) {
             setIsSessionChecked(true);
             setIsLoading(false);
@@ -199,7 +288,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         }
 
         fetchSession();
-    }, [fetchSession, isPublicNoAuthRoute]);
+    }, [fetchSession, isPublicNoAuthRoute, pluginPathsLoaded]);
 
     return (
         <SessionContext.Provider

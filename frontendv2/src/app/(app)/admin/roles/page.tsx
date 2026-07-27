@@ -45,7 +45,7 @@ import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { cn } from '@/lib/utils';
-import { RoleBadge } from '@/components/RoleBadge';
+import { RoleBadge, RoleIconAvatar } from '@/components/RoleBadge';
 import { isDefaultRole, type Role } from '@/lib/role-utils';
 
 interface Pagination {
@@ -195,6 +195,7 @@ export default function RolesPage() {
                 name: `${role.name}_copy`,
                 display_name: `${role.display_name} (Copy)`,
                 custom_badge: role.custom_badge ?? '',
+                badge_icon: role.badge_icon ?? '',
                 color: role.color,
             });
             const newRole = createData.data.role as Role;
@@ -325,12 +326,12 @@ export default function RolesPage() {
                                     className='flex flex-1 flex-col p-5 text-left'
                                 >
                                     <div className='flex items-start gap-3'>
-                                        <div
-                                            className='flex h-11 w-11 shrink-0 items-center justify-center rounded-xl shadow-sm'
-                                            style={{ backgroundColor: role.color }}
-                                        >
-                                            <Shield className='h-5 w-5 text-white' />
-                                        </div>
+                                        <RoleIconAvatar
+                                            role={role}
+                                            className='h-11 w-11'
+                                            iconClassName='h-5 w-5'
+                                            fallbackIcon={Shield}
+                                        />
                                         <div className='min-w-0 flex-1'>
                                             <div className='flex flex-wrap items-center gap-2'>
                                                 <h3 className='truncate text-base font-semibold'>

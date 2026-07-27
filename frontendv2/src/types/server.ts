@@ -561,8 +561,17 @@ export interface TaskUpdateRequest extends TaskCreateRequest {
     sequence_id?: number;
 }
 
-export type LifecycleHookType = 'pre_start' | 'pre_stop';
-export type LifecycleTaskType = 'discord_webhook' | 'container_command' | 'http_request';
+export const LIFECYCLE_HOOK_TYPES = ['pre_start', 'pre_stop', 'post_start', 'server_crash'] as const;
+export type LifecycleHookType = (typeof LIFECYCLE_HOOK_TYPES)[number];
+
+export function isLifecycleHookType(value: string): value is LifecycleHookType {
+    return (LIFECYCLE_HOOK_TYPES as readonly string[]).includes(value);
+}
+
+export function parseLifecycleHookType(value: string | null | undefined): LifecycleHookType {
+    return value && isLifecycleHookType(value) ? value : 'pre_start';
+}
+export type LifecycleTaskType = 'discord_webhook' | 'container_command' | 'container_shell' | 'http_request' | 'sleep';
 
 export interface LifecycleHookStep {
     id: number;

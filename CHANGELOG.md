@@ -1,5 +1,44 @@
 # Changelog
 
+## v1.3.7.5 STABLE
+
+### Added
+
+- Optional **Wings Remote URL** (`wings_remote_url`) under Admin → Settings → App so FeatherWings can call the panel via a DNS-only hostname when Cloudflare Precursor / Under Attack Mode blocks daemon traffic to App URL (fixes SFTP “wrong password” when Maximize Security is on). Re-fetch node config after changing. by @cursor
+- Mythic Cloud (Panels API) integration updates: OAuth link via `https://my.mythicalsystems.org/oauth2`, Panel API client defaulting to `https://panels.mythicalsystems.org` (configurable / `panels-dev`), handshake + finish routes, marketplace/eggs/pastes/issues client surfaces, and admin issue reporter. by @cursor
+- User self-service **account deletion** with admin-configurable verification (2FA and/or email OTP) and deletion modes (instant, delayed with cancellable grace period, or after active services expire). by @nayskutzu
+- **Proxmox Backup Server (PBS)** destination for Docker server backups: when Wings has `system.backups.pbs` enabled, new backups stream via `proxmox-backup-client` (pxar) instead of local tar.gz — no zip/archive on the Wings backup folder, with PBS chunk deduplication. Restore/delete use PBS snapshots; file download is disabled for PBS backups. by @cursor
+- AbuseIPDB integration: configure an API key under Admin → Settings → Security, check registering IPs (block / log / auto-ban), scan existing users for reported IPs, and optionally report a user's IP to AbuseIPDB when banning (with official category dropdown). by @nayskutzu
+- Roles can now use custom icon/image badges, uploadable from the role editor and shown on role badges throughout the panel. by @nayskutzu
+- Server **lifecycle hooks**: added **Server-crash Hook** pipeline that runs when Wings reports a crashed container (Discord webhooks, HTTP requests, container commands). by @nayskutzu
+- Server **lifecycle hooks**: added **Sleep** step type (1–300 seconds) that can be placed between other pipeline steps. by @nayskutzu
+- Server **lifecycle hooks**: added **Container Shell** step type that runs `/bin/sh -c` inside the Docker container via Wings docker exec (with configurable timeout and non-zero exit failure). Gated by admin setting `server_lifecycle_hooks_container_shell_enabled` (default off) under Settings → Servers. by @nayskutzu
+- Button in the admin are to mass start, restart, kill, stop servers by @nayskutzu
+- Roles can now have custom icons by @nayskutzu
+- Admins can send **targeted warnings** to users/servers (e.g. stopped for high CPU): in-panel banners on dashboard and server pages, optional email, plus a quick **Send Warning** action on the admin server Actions tab. by @nayskutzu
+
+### Improved
+
+- Notifications can now target everyone, a specific user, or a specific server (with optional email) instead of only global announcements. by @nayskutzu
+- Improved the file editor to use the Monaco Editor Engine or CodeMirror Editor for mobile devices. by @nayskutzu
+- Tickets will now be automatically closed once user data has been requested. by @nayskutzu
+- Security between the panel and the nodes was improved by using JWT scopes for the connections to prevent unauthorized access. by @nayskutzu
+- Fixed some issues with ticket times not being accurate! by @nayskutzu
+- Fixed some issues with Avatars sometimes not loading by @nayskutzu
+- Admin area dashboard was renamed from Dashboard to Admin Home! by @nayskutzu
+- You can now see the servers that are running on the node using the status page @nayskutzu
+- Migration to the new platform was completed. by @nayskutzu
+
+### Fixed
+
+- Cloudflare Under Attack Mode / challenge HTML no longer clears the panel session or empties permissions (admin appearing as a normal user, owned-server access errors, console JWT failures). by @cursor
+- Admin area stats were not loading correctly. by @nayskutzu
+- Fixed the issue with unlimited backup limit. by @nayskutzu
+- Issues related to port allocation were fixed. by @nayskutzu
+- Manual and scheduled server backups now honor custom backup names and exclude lists (patterns are sent to Wings in the correct format). by @nayskutzu
+- Fixed the issue with the next-run calculation for cron jobs. by @nayskutzu
+- Backups ignored the exclude list and backup names. by @nayskutzu
+
 ## v1.3.7.4 STABLE
 
 ### Added

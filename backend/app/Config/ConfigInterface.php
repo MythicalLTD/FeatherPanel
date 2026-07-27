@@ -24,6 +24,13 @@ interface ConfigInterface
      */
     public const APP_NAME = 'app_name';
     public const APP_URL = 'app_url';
+    /**
+     * Optional URL Wings uses for panel callbacks (SFTP auth, remote APIs).
+     * Use a DNS-only / non-proxied hostname when Cloudflare Precursor Maximize Security
+     * or Under Attack Mode blocks machine clients hitting APP_URL. Empty = use APP_URL.
+     * Must match JWT issuer claims sent to Wings; re-fetch node config after changing.
+     */
+    public const WINGS_REMOTE_URL = 'wings_remote_url';
     public const APP_DEVELOPER_MODE = 'app_developer_mode';
     public const APP_TIMEZONE = 'app_timezone';
     public const APP_LOGO_WHITE = 'app_logo_white';
@@ -130,6 +137,19 @@ interface ConfigInterface
     public const REQUIRE_TWO_FA_ADMINS = 'require_two_fa_admins';
 
     /**
+     * AbuseIPDB (https://docs.abuseipdb.com/).
+     */
+    public const ABUSEIPDB_ENABLED = 'abuseipdb_enabled';
+    public const ABUSEIPDB_API_KEY = 'abuseipdb_api_key';
+    public const ABUSEIPDB_CHECK_ON_REGISTER = 'abuseipdb_check_on_register';
+    /** Minimum abuseConfidenceScore (0-100) to treat an IP as reported. */
+    public const ABUSEIPDB_MIN_CONFIDENCE_SCORE = 'abuseipdb_min_confidence_score';
+    /** How far back (days) to consider reports when checking an IP. */
+    public const ABUSEIPDB_MAX_AGE_DAYS = 'abuseipdb_max_age_days';
+    /** What to do when a registering IP meets the score threshold: block | log | auto_ban */
+    public const ABUSEIPDB_REGISTER_ACTION = 'abuseipdb_register_action';
+
+    /**
      * Email Login (Passwordless authentication with 6-digit OTP).
      */
     public const EMAIL_LOGIN_ENABLED = 'email_login_enabled';
@@ -222,6 +242,11 @@ interface ConfigInterface
     public const SERVER_HIDE_IPS = 'server_hide_ips';
     /** When false, lifecycle hook UI and execution are disabled (default off until enabled by an administrator). */
     public const SERVER_LIFECYCLE_HOOKS_ENABLED = 'server_lifecycle_hooks_enabled';
+    /**
+     * When false, the lifecycle Container Shell (docker exec) step type cannot be created/updated
+     * and will not execute. Default off — docker exec is a security-sensitive capability.
+     */
+    public const SERVER_LIFECYCLE_HOOKS_CONTAINER_SHELL_ENABLED = 'server_lifecycle_hooks_container_shell_enabled';
 
     /**
      * File trash bin (soft-delete via FeatherWings).
@@ -245,6 +270,16 @@ interface ConfigInterface
     public const USER_ALLOW_FIRST_NAME_CHANGE = 'user_allow_first_name_change';
     public const USER_ALLOW_LAST_NAME_CHANGE = 'user_allow_last_name_change';
     public const USER_ALLOW_API_KEYS_CREATE = 'user_allow_api_keys_create';
+    /** Allow users to permanently delete their own account */
+    public const USER_ALLOW_ACCOUNT_DELETION = 'user_allow_account_deletion';
+    /** How deletions are processed: instant, delayed, after_services */
+    public const USER_ACCOUNT_DELETION_MODE = 'user_account_deletion_mode';
+    /** Days to wait before hard-deleting when mode is delayed */
+    public const USER_ACCOUNT_DELETION_DELAY_DAYS = 'user_account_deletion_delay_days';
+    /** Require TOTP 2FA verification for self-service deletion */
+    public const USER_ACCOUNT_DELETION_VERIFY_2FA = 'user_account_deletion_verify_2fa';
+    /** Require email OTP verification for self-service deletion */
+    public const USER_ACCOUNT_DELETION_VERIFY_EMAIL_OTP = 'user_account_deletion_verify_email_otp';
 
     /**
      * Subdomain Manager Configs.
@@ -254,7 +289,10 @@ interface ConfigInterface
     public const SUBDOMAIN_MAX_PER_SERVER = 'subdomain_max_per_server';
 
     /**
-     * FeatherCloud access.
+     * FeatherCloud / Mythic Panel API access.
+     *
+     * CLOUD_* = panel identity keys (FCPUB-/FCPRIV-) used as X-Panel-* when calling panels.mythicalsystems.org
+     * ACCESS_* = Mythic-issued callback keys (cloud_api_key/secret) for Mythic → panel auth
      */
     public const FEATHERCLOUD_ACCESS_PUBLIC_KEY = 'feathercloud_access_public_key';
     public const FEATHERCLOUD_ACCESS_PRIVATE_KEY = 'feathercloud_access_private_key';
@@ -262,6 +300,41 @@ interface ConfigInterface
     public const FEATHERCLOUD_CLOUD_PUBLIC_KEY = 'feathercloud_cloud_public_key';
     public const FEATHERCLOUD_CLOUD_PRIVATE_KEY = 'feathercloud_cloud_private_key';
     public const FEATHERCLOUD_CLOUD_LAST_ROTATED = 'feathercloud_cloud_last_rotated';
+    /** Mythic Panel API base (prod: https://panels.mythicalsystems.org, dev: https://panels-dev.mythicalsystems.org) */
+    public const FEATHERCLOUD_API_BASE_URL = 'feathercloud_api_base_url';
+    /** Mythic OAuth link page (https://my.mythicalsystems.org/oauth2) — not www, not panels */
+    public const FEATHERCLOUD_OAUTH_URL = 'feathercloud_oauth_url';
+    /** @deprecated Use FEATHERCLOUD_MEMBER_MAP / authorizer settings — never collect this in UI */
+    public const FEATHERCLOUD_MEMBER_USER_UUID = 'feathercloud_member_user_uuid';
+    /** Linked Mythic team uuid from OAuth / handshake */
+    public const FEATHERCLOUD_TEAM_UUID = 'feathercloud_team_uuid';
+    /** Mythic numeric user id of the admin who authorized the OAuth link */
+    public const FEATHERCLOUD_AUTHORIZER_MYTHIC_USER_ID = 'feathercloud_authorizer_mythic_user_id';
+    /** FeatherPanel user uuid of the admin who completed OAuth */
+    public const FEATHERCLOUD_AUTHORIZER_FEATHER_UUID = 'feathercloud_authorizer_feather_uuid';
+    /** JSON map: { by_email: {}, by_feather_uuid: {}, synced_at } for X-Panel-User-Uuid */
+    public const FEATHERCLOUD_MEMBER_MAP = 'feathercloud_member_map';
+    /** ISO timestamp when OAuth finish successfully linked Mythic */
+    public const FEATHERCLOUD_LINKED_AT = 'feathercloud_linked_at';
+    /** ISO timestamp when an admin intentionally started an OAuth relink flow */
+    public const FEATHERCLOUD_RELINK_PENDING_AT = 'feathercloud_relink_pending_at';
+    public const FEATHERCLOUD_CLOUD_ID = 'feathercloud_cloud_id';
+    public const FEATHERCLOUD_CLOUD_NAME = 'feathercloud_cloud_name';
+    public const FEATHERCLOUD_TEAM_NAME = 'feathercloud_team_name';
+    public const FEATHERCLOUD_TEAM_SLUG = 'feathercloud_team_slug';
+    public const FEATHERCLOUD_AUTHORIZER_EMAIL = 'feathercloud_authorizer_email';
+    public const FEATHERCLOUD_AUTHORIZER_NAME = 'feathercloud_authorizer_name';
+    public const FEATHERCLOUD_MARKETPLACE_ENABLED = 'feathercloud_marketplace_enabled';
+    public const FEATHERCLOUD_EGGS_ENABLED = 'feathercloud_eggs_enabled';
+    /** Mythic Eggs API base (prod: https://eggs.mythicalsystems.org, dev: https://eggs-dev.mythicalsystems.org) */
+    public const FEATHERCLOUD_EGGS_BASE_URL = 'feathercloud_eggs_base_url';
+    public const FEATHERCLOUD_PASTES_ENABLED = 'feathercloud_pastes_enabled';
+    public const FEATHERCLOUD_ISSUES_ENABLED = 'feathercloud_issues_enabled';
+    public const FEATHERCLOUD_LAST_SYNCED_AT = 'feathercloud_last_synced_at';
+    /** Mythic Translations API base (https://translate.mythicalsystems.org) — public, no panel keys */
+    public const FEATHERCLOUD_TRANSLATE_BASE_URL = 'feathercloud_translate_base_url';
+    /** Default Mythic translation project slug */
+    public const FEATHERCLOUD_TRANSLATE_PROJECT = 'feathercloud_translate_project';
 
     /**
      * Chatbot AI Settings.

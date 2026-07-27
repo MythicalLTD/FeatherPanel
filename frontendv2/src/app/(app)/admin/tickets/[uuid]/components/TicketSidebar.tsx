@@ -22,6 +22,8 @@ import { Clock, Eye, Info, Mail, RefreshCw, Server, Settings, TicketIcon, User }
 import Link from 'next/link';
 import { RoleBadge } from '@/components/RoleBadge';
 import { cn } from '@/lib/utils';
+import { useDateFormatOptions } from '@/contexts/PreferencesContext';
+import { formatDateInTz } from '@/lib/dateUtils';
 import { Ticket, UserData, UserMail } from '../page';
 import React from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -55,11 +57,10 @@ export function TicketSidebar({
     WidgetRenderer,
 }: TicketSidebarProps) {
     const { t } = useTranslation();
+    const dateOpts = useDateFormatOptions();
     const formatDateSafe = (value?: string | null, fallback = 'N/A') => {
-        if (!value || value === '0000-00-00 00:00:00') return fallback;
-        const timestamp = new Date(value).getTime();
-        if (!Number.isFinite(timestamp) || timestamp <= 0) return fallback;
-        return new Date(timestamp).toLocaleDateString();
+        const formatted = formatDateInTz(value, dateOpts);
+        return formatted === '-' ? fallback : formatted;
     };
 
     if (loadingSidebar) {
@@ -215,7 +216,7 @@ export function TicketSidebar({
                                         },
                                         {
                                             label: t('admin.tickets.sidebar.labels.registered'),
-                                            value: new Date(userDetails.first_seen).toLocaleDateString(),
+                                            value: formatDateInTz(userDetails.first_seen, dateOpts),
                                             icon: Clock,
                                         },
                                     ]
@@ -360,7 +361,7 @@ export function TicketSidebar({
                                     {t('admin.tickets.sidebar.actions.view_all_tickets')}
                                 </Button>
                             </Link>
-                            <Link href={`/admin/users/${userDetails.uuid}`}>
+                            <Link href={`/admin/users/${userDetails.uuid}/edit`}>
                                 <Button
                                     variant='outline'
                                     size='sm'
@@ -425,7 +426,7 @@ export function TicketSidebar({
                         <span className='text-muted-foreground text-xs font-medium'>
                             {t('admin.tickets.sidebar.meta.created')}
                         </span>
-                        <span className='text-xs font-bold'>{new Date(ticket.created_at).toLocaleDateString()}</span>
+                        <span className='text-xs font-bold'>{formatDateInTz(ticket.created_at, dateOpts)}</span>
                     </div>
                 </div>
             </Card>

@@ -38,6 +38,14 @@ class PluginUiEvent implements PluginEvent
     }
 
     /**
+     * Callback: array public pages from Frontend/public.json aggregations.
+     */
+    public static function onPublicPagesRetrieved(): string
+    {
+        return 'featherpanel:system:plugins:ui:public-pages:retrieved';
+    }
+
+    /**
      * Callback: string source, string message, array context metadata.
      */
     public static function onUiError(): string

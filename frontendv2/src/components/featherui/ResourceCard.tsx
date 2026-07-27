@@ -24,6 +24,7 @@ export interface ResourceBadge {
     label: string;
     className?: string;
     style?: React.CSSProperties;
+    iconUrl?: string;
 }
 
 interface ResourceCardProps {
@@ -41,6 +42,8 @@ interface ResourceCardProps {
     href?: string;
     onClick?: () => void;
     highlightClassName?: string;
+    titleClassName?: string;
+    layout?: 'horizontal' | 'stacked';
 }
 
 export function ResourceCard({
@@ -58,6 +61,8 @@ export function ResourceCard({
     href,
     onClick,
     highlightClassName,
+    titleClassName,
+    layout = 'horizontal',
 }: ResourceCardProps) {
     const renderBadges = () => {
         if (!badges) return null;
@@ -73,11 +78,15 @@ export function ResourceCard({
                 <span
                     key={i}
                     className={cn(
-                        'rounded-md border px-2 py-1 text-xs font-medium',
+                        'inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs font-medium',
                         badge.className || 'bg-secondary text-secondary-foreground border-transparent',
                     )}
                     style={badge.style}
                 >
+                    {badge.iconUrl && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={badge.iconUrl} alt='' className='h-3.5 w-3.5 shrink-0 rounded-sm object-cover' />
+                    )}
                     {badge.label}
                 </span>
             ));
@@ -108,10 +117,16 @@ export function ResourceCard({
                 />
             )}
 
-            <div className='relative z-10 flex flex-col gap-6 p-6 md:flex-row md:items-center'>
+            <div
+                className={cn(
+                    'relative z-10 flex flex-col gap-6 p-6',
+                    layout === 'horizontal' ? 'md:flex-row md:items-center' : 'sm:flex-row sm:items-start',
+                )}
+            >
                 <div
                     className={cn(
-                        'bg-primary/10 relative z-10 flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl transition-transform group-hover:scale-105 group-hover:rotate-2',
+                        'bg-primary/10 relative z-10 flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl transition-transform group-hover:scale-105',
+                        layout === 'horizontal' && 'group-hover:rotate-2',
                         iconWrapperClassName,
                     )}
                 >
@@ -125,7 +140,12 @@ export function ResourceCard({
 
                 <div className='min-w-0 flex-1 space-y-2'>
                     <div className='flex flex-wrap items-center gap-3'>
-                        <h3 className='text-foreground group-hover:text-primary truncate text-xl font-bold tracking-tight transition-colors'>
+                        <h3
+                            className={cn(
+                                'text-foreground group-hover:text-primary text-xl font-bold tracking-tight transition-colors',
+                                titleClassName ?? 'truncate',
+                            )}
+                        >
                             {title}
                         </h3>
                         {renderBadges()}
@@ -136,10 +156,19 @@ export function ResourceCard({
                         </div>
                     )}
 
-                    {description && <div className='flex flex-wrap items-center gap-x-6 gap-y-2'>{description}</div>}
+                    {description && <div className='w-full min-w-0'>{description}</div>}
                 </div>
 
-                {actions && <div className='flex items-center gap-2 md:self-center'>{actions}</div>}
+                {actions && (
+                    <div
+                        className={cn(
+                            'flex items-center gap-2',
+                            layout === 'stacked' ? 'w-full sm:w-auto sm:self-center' : 'md:self-center',
+                        )}
+                    >
+                        {actions}
+                    </div>
+                )}
             </div>
         </>
     );

@@ -144,4 +144,48 @@ return function (RouteCollection $routes): void {
         Rate::perMinute(10), // Default: Admin can override in ratelimit.json
         'user-api-key-sign'
     );
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'account-deletion-status',
+        '/api/user/account/deletion',
+        function (Request $request) {
+            return (new \App\Controllers\User\User\AccountDeletionController())->status($request);
+        },
+        ['GET'],
+        Rate::perMinute(30),
+        'user-account-deletion'
+    );
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'account-deletion-otp',
+        '/api/user/account/deletion/otp',
+        function (Request $request) {
+            return (new \App\Controllers\User\User\AccountDeletionController())->sendOtp($request);
+        },
+        ['POST'],
+        Rate::perMinute(3),
+        'user-account-deletion'
+    );
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'account-deletion-confirm',
+        '/api/user/account/deletion/confirm',
+        function (Request $request) {
+            return (new \App\Controllers\User\User\AccountDeletionController())->confirm($request);
+        },
+        ['POST'],
+        Rate::perMinute(5),
+        'user-account-deletion'
+    );
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'account-deletion-cancel',
+        '/api/user/account/deletion',
+        function (Request $request) {
+            return (new \App\Controllers\User\User\AccountDeletionController())->cancel($request);
+        },
+        ['DELETE'],
+        Rate::perMinute(10),
+        'user-account-deletion'
+    );
 };

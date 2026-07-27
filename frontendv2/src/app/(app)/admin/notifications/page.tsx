@@ -54,6 +54,8 @@ import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
 interface Notification {
     id: number;
+    user_id: number | null;
+    server_id: number | null;
     title: string;
     message_markdown: string;
     type: 'info' | 'warning' | 'danger' | 'success' | 'error';
@@ -62,6 +64,19 @@ interface Notification {
     created_at: string;
     updated_at: string | null;
     dismissed_at: string | null;
+}
+
+interface AdminUserOption {
+    id: number;
+    uuid: string;
+    username: string;
+    email: string;
+}
+
+interface AdminServerOption {
+    id: number;
+    name: string;
+    uuidShort: string;
 }
 
 interface Pagination {
@@ -108,10 +123,21 @@ export default function NotificationsPage() {
     const [newNotification, setNewNotification] = useState({
         title: '',
         message_markdown: '',
-        type: 'info' as Notification['type'],
+        type: 'warning' as Notification['type'],
         is_dismissible: true,
         is_sticky: false,
+        audience: 'global' as 'global' | 'user',
+        user_id: null as number | null,
+        server_id: null as number | null,
+        send_email: true,
     });
+
+    const [userSearch, setUserSearch] = useState('');
+    const [userOptions, setUserOptions] = useState<AdminUserOption[]>([]);
+    const [serverOptions, setServerOptions] = useState<AdminServerOption[]>([]);
+    const [loadingUsers, setLoadingUsers] = useState(false);
+    const [loadingServers, setLoadingServers] = useState(false);
+    const [selectedUserLabel, setSelectedUserLabel] = useState('');
 
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -174,11 +200,87 @@ export default function NotificationsPage() {
         };
     }, [page, pageSize, debouncedSearchQuery, refreshKey, t, fetchWidgets, hydrated]);
 
+    useEffect(() => {
+        if (!createOpen || newNotification.audience !== 'user') {
+            return;
+        }
+
+        const timer = setTimeout(async () => {
+            setLoadingUsers(true);
+            try {
+                const { data } = await axios.get('/api/admin/users', {
+                    params: {
+                        search: userSearch || undefined,
+                        page: 1,
+                        limit: 20,
+                    },
+                });
+                setUserOptions(data.data.users || []);
+            } catch (error) {
+                console.error('Error fetching users:', error);
+            } finally {
+                setLoadingUsers(false);
+            }
+        }, 350);
+
+        return () => clearTimeout(timer);
+    }, [createOpen, newNotification.audience, userSearch]);
+
+    useEffect(() => {
+        if (!createOpen || !newNotification.user_id) {
+            setServerOptions([]);
+            return;
+        }
+
+        const selected = userOptions.find((u) => u.id === newNotification.user_id);
+        if (!selected?.uuid) {
+            setServerOptions([]);
+            return;
+        }
+
+        const loadServers = async () => {
+            setLoadingServers(true);
+            try {
+                const { data } = await axios.get(`/api/admin/users/${selected.uuid}/servers`, {
+                    params: { page: 1, limit: 100 },
+                });
+                setServerOptions(
+                    (data.data.servers || []).map((s: AdminServerOption) => ({
+                        id: s.id,
+                        name: s.name,
+                        uuidShort: s.uuidShort,
+                    })),
+                );
+            } catch (error) {
+                console.error('Error fetching user servers:', error);
+                setServerOptions([]);
+            } finally {
+                setLoadingServers(false);
+            }
+        };
+
+        loadServers();
+    }, [createOpen, newNotification.user_id, userOptions]);
+
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (newNotification.audience === 'user' && !newNotification.user_id) {
+            toast.error(t('admin.notifications.messages.user_required'));
+            return;
+        }
+
         setIsSubmitting(true);
         try {
-            await axios.put('/api/admin/notifications', newNotification);
+            await axios.put('/api/admin/notifications', {
+                title: newNotification.title,
+                message_markdown: newNotification.message_markdown,
+                type: newNotification.type,
+                is_dismissible: newNotification.is_dismissible,
+                is_sticky: newNotification.is_sticky,
+                user_id: newNotification.audience === 'user' ? newNotification.user_id : null,
+                server_id: newNotification.audience === 'user' ? newNotification.server_id : null,
+                send_email: newNotification.audience === 'user' ? newNotification.send_email : false,
+            });
             toast.success(t('admin.notifications.messages.created'));
             setCreateOpen(false);
             resetNewNotification();
@@ -250,10 +352,18 @@ export default function NotificationsPage() {
         setNewNotification({
             title: '',
             message_markdown: '',
-            type: 'info',
+            type: 'warning',
             is_dismissible: true,
             is_sticky: false,
+            audience: 'global',
+            user_id: null,
+            server_id: null,
+            send_email: true,
         });
+        setUserSearch('');
+        setSelectedUserLabel('');
+        setUserOptions([]);
+        setServerOptions([]);
     };
 
     const openEdit = (notification: Notification) => {
@@ -391,6 +501,20 @@ export default function NotificationsPage() {
                             label: t(`admin.notifications.types.${notification.type}`),
                             className: getTypeColor(notification.type),
                         });
+
+                        if (notification.user_id) {
+                            badges.push({
+                                label: notification.server_id
+                                    ? t('admin.notifications.target.server')
+                                    : t('admin.notifications.target.user'),
+                                className: 'bg-orange-500/10 text-orange-600 border-orange-500/20',
+                            });
+                        } else {
+                            badges.push({
+                                label: t('admin.notifications.target.global'),
+                                className: 'bg-sky-500/10 text-sky-600 border-sky-500/20',
+                            });
+                        }
 
                         if (notification.is_sticky) {
                             badges.push({
@@ -532,6 +656,116 @@ export default function NotificationsPage() {
                                 <option value='success'>{t('admin.notifications.types.success')}</option>
                             </select>
                         </div>
+
+                        <div className='space-y-2'>
+                            <Label htmlFor='create-audience'>{t('admin.notifications.form.audience')}</Label>
+                            <select
+                                id='create-audience'
+                                className='border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50'
+                                value={newNotification.audience}
+                                onChange={(e) =>
+                                    setNewNotification({
+                                        ...newNotification,
+                                        audience: e.target.value as 'global' | 'user',
+                                        user_id: null,
+                                        server_id: null,
+                                    })
+                                }
+                            >
+                                <option value='global'>{t('admin.notifications.target.global')}</option>
+                                <option value='user'>{t('admin.notifications.target.user')}</option>
+                            </select>
+                        </div>
+
+                        {newNotification.audience === 'user' && (
+                            <>
+                                <div className='space-y-2'>
+                                    <Label htmlFor='create-user-search'>
+                                        {t('admin.notifications.form.target_user')}
+                                    </Label>
+                                    <Input
+                                        id='create-user-search'
+                                        value={userSearch}
+                                        onChange={(e) => setUserSearch(e.target.value)}
+                                        placeholder={t('admin.notifications.form.target_user_placeholder')}
+                                    />
+                                    {selectedUserLabel && (
+                                        <p className='text-muted-foreground text-xs'>
+                                            {t('admin.notifications.form.selected_user')}: {selectedUserLabel}
+                                        </p>
+                                    )}
+                                    <div className='border-border max-h-40 overflow-y-auto rounded-md border'>
+                                        {loadingUsers ? (
+                                            <p className='text-muted-foreground p-3 text-sm'>{t('common.loading')}</p>
+                                        ) : userOptions.length === 0 ? (
+                                            <p className='text-muted-foreground p-3 text-sm'>
+                                                {t('admin.notifications.form.no_users')}
+                                            </p>
+                                        ) : (
+                                            userOptions.map((user) => (
+                                                <button
+                                                    key={user.id}
+                                                    type='button'
+                                                    className={`hover:bg-muted/60 flex w-full flex-col items-start px-3 py-2 text-left text-sm ${
+                                                        newNotification.user_id === user.id ? 'bg-muted' : ''
+                                                    }`}
+                                                    onClick={() => {
+                                                        setNewNotification({
+                                                            ...newNotification,
+                                                            user_id: user.id,
+                                                            server_id: null,
+                                                        });
+                                                        setSelectedUserLabel(`${user.username} (${user.email})`);
+                                                    }}
+                                                >
+                                                    <span className='font-medium'>{user.username}</span>
+                                                    <span className='text-muted-foreground text-xs'>{user.email}</span>
+                                                </button>
+                                            ))
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className='space-y-2'>
+                                    <Label htmlFor='create-server'>{t('admin.notifications.form.target_server')}</Label>
+                                    <select
+                                        id='create-server'
+                                        className='border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50'
+                                        value={newNotification.server_id ?? ''}
+                                        disabled={!newNotification.user_id || loadingServers}
+                                        onChange={(e) =>
+                                            setNewNotification({
+                                                ...newNotification,
+                                                server_id: e.target.value ? Number(e.target.value) : null,
+                                            })
+                                        }
+                                    >
+                                        <option value=''>{t('admin.notifications.form.target_server_none')}</option>
+                                        {serverOptions.map((server) => (
+                                            <option key={server.id} value={server.id}>
+                                                {server.name} ({server.uuidShort})
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div className='flex items-center space-x-2'>
+                                    <Checkbox
+                                        id='create-send-email'
+                                        checked={newNotification.send_email}
+                                        onCheckedChange={(checked) =>
+                                            setNewNotification({
+                                                ...newNotification,
+                                                send_email: checked as boolean,
+                                            })
+                                        }
+                                    />
+                                    <Label htmlFor='create-send-email'>
+                                        {t('admin.notifications.form.send_email')}
+                                    </Label>
+                                </div>
+                            </>
+                        )}
 
                         <div className='space-y-2'>
                             <Label htmlFor='create-message'>{t('admin.notifications.form.message')}</Label>

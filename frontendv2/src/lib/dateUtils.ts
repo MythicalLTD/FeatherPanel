@@ -256,6 +256,24 @@ export function formatDateTimeInTz(
 }
 
 /**
+ * Format a time-only label (hours + minutes) in the user's timezone.
+ */
+export function formatTimeInTz(
+    value: string | number | Date | null | undefined,
+    options: FormatDateOptions = {},
+): string {
+    const date = parseApiDate(value);
+    if (!date) return '-';
+    const tz = getEffectiveTimezone(options.timeZone);
+    const locale = resolveDateFnsLocale(options.locale);
+    try {
+        return formatInTimeZone(date, tz, 'p', { locale });
+    } catch {
+        return format(date, 'p', { locale });
+    }
+}
+
+/**
  * Format an absolute date (no time component) in the user's timezone.
  */
 export function formatDateInTz(

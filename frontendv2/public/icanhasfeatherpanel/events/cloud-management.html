@@ -85,7 +85,7 @@ public static function processEvents(PluginEvents $evt): void
   <p class="muted"><strong>Callback parameters:</strong> array credentials data.</p>
 
   <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> credentials, last_rotated_at, private_key, public_key, source, stored_by</p>
+  <p class="muted"><strong>Data keys:</strong> credentials, last_rotated_at, mythic_user_id, private_key, public_key, source, stored_by, team_uuid</p>
 
   <h3>Emitted From</h3>
   <ul>
@@ -98,9 +98,9 @@ use App\Plugins\Events\Events\CloudManagementEvent;
 
 public static function processEvents(PluginEvents $evt): void
 {
-    $evt->on(CloudManagementEvent::onCloudCredentialsStored(), function ($credentials, $lastRotatedAt, $privateKey, $publicKey, $source, $storedBy) {
+    $evt->on(CloudManagementEvent::onCloudCredentialsStored(), function ($credentials, $lastRotatedAt, $mythicUserId, $privateKey, $publicKey, $source, $storedBy, $teamUuid) {
         // Handle featherpanel:admin:cloud:cloud:credentials:stored
-        // Data keys: credentials, last_rotated_at, private_key, public_key, source, stored_by
+        // Data keys: credentials, last_rotated_at, mythic_user_id, private_key, public_key, source, stored_by, team_uuid
     });
 }</code></pre>
 </article>

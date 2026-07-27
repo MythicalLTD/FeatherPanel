@@ -31,6 +31,7 @@ use App\Mail\templates\VerifyEmail;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Helpers\EmailDomainValidator;
 use App\Plugins\Events\Events\AuthEvent;
+use App\Helpers\AbuseIPDBRegistrationGuard;
 use App\Helpers\UserDeviceRegistrationGuard;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -224,6 +225,30 @@ class RegisterController
             return $deviceLimitResponse;
         }
 
+        $clientIp = CloudFlareRealIP::getRealIP();
+        $abuseDecision = AbuseIPDBRegistrationGuard::evaluate($clientIp);
+        if (AbuseIPDBRegistrationGuard::shouldBlock($abuseDecision)) {
+            global $eventManager;
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    AuthEvent::onAuthRegistrationFailed(),
+                    [
+                        'email' => $data['email'],
+                        'username' => $data['username'],
+                        'reason' => $abuseDecision['code'] ?? 'IP_REPUTATION_BLOCKED',
+                        'ip_address' => $clientIp,
+                        'abuse_confidence_score' => $abuseDecision['score'] ?? null,
+                    ]
+                );
+            }
+
+            return ApiResponse::error(
+                $abuseDecision['message'] ?? 'Registration blocked due to IP reputation',
+                $abuseDecision['code'] ?? 'IP_REPUTATION_BLOCKED',
+                403
+            );
+        }
+
         $tempPassword = $data['password'];
         $emailVerificationToken = $requiresEmailVerification ? bin2hex(random_bytes(32)) : null;
         // Create user
@@ -235,8 +260,8 @@ class RegisterController
             'last_name' => $data['last_name'],
             'uuid' => UUIDUtils::generateV4(),
             'remember_token' => User::generateAccountToken(),
-            'first_ip' => CloudFlareRealIP::getRealIP(),
-            'last_ip' => CloudFlareRealIP::getRealIP(),
+            'first_ip' => $clientIp,
+            'last_ip' => $clientIp,
             'mail_verify' => $emailVerificationToken,
         ];
         $user = User::createUser($userInfo);
@@ -265,11 +290,15 @@ class RegisterController
             ]);
         }
 
+        AbuseIPDBRegistrationGuard::applyAutoBanIfNeeded($userInfo['uuid'], $abuseDecision);
+
         // Fetch the complete user data from database (includes all fields with defaults)
         $createdUser = User::getUserByUuid($userInfo['uuid']);
         if (!$createdUser) {
             return ApiResponse::error('Failed to retrieve created user', 'USER_RETRIEVAL_FAILED', 500);
         }
+
+        $wasAutoBanned = ($createdUser['banned'] ?? 'false') === 'true';
 
         Welcome::send([
             'email' => $data['email'],
@@ -311,7 +340,7 @@ class RegisterController
 
         UserDeviceTracker::trackFromRequest($request, $createdUser);
 
-        if (!$requiresEmailVerification) {
+        if (!$requiresEmailVerification && !$wasAutoBanned) {
             // Automatically log in the user after registration
             // Set session/cookie
             if (isset($createdUser['remember_token'])) {
@@ -338,7 +367,7 @@ class RegisterController
                     'user' => $createdUser,
                 ]
             );
-            if (!$requiresEmailVerification) {
+            if (!$requiresEmailVerification && !$wasAutoBanned) {
                 // Also emit login success event since user is automatically logged in
                 $eventManager->emit(
                     AuthEvent::onAuthLoginSuccess(),
@@ -351,6 +380,14 @@ class RegisterController
 
         // Load user preferences
         $preferences = UserPreference::getPreferences($createdUser['uuid']);
+
+        if ($wasAutoBanned) {
+            return ApiResponse::error(
+                'Your account was created but suspended due to IP reputation. Contact support if you believe this is a mistake.',
+                'IP_REPUTATION_AUTO_BANNED',
+                403
+            );
+        }
 
         if ($requiresEmailVerification) {
             return ApiResponse::success([

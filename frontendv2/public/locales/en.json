@@ -196,7 +196,14 @@
 		},
 		"nav": {
 			"status": "Status",
-			"knowledgebase": "Knowledgebase"
+			"knowledgebase": "Knowledgebase",
+			"plans": "Plans"
+		}
+	},
+	"nodeStatus": {
+		"servers": {
+			"title": "Servers ({count})",
+			"empty": "No servers on this node"
 		}
 	},
 	"errors": {
@@ -272,6 +279,8 @@
 		"showing": "Showing {from} - {to} of {total} results",
 		"select_an_option": "Select an option",
 		"edit": "Edit",
+		"moveUp": "Move up",
+		"moveDown": "Move down",
 		"close": "Close",
 		"waitingData": "Waiting for data...",
 		"events": "events",
@@ -371,9 +380,9 @@
 		"username_length": "Username must be between {min} and {max} characters",
 		"email_length": "Email must be between {min} and {max} characters",
 		"password_length": "Password must be between {min} and {max} characters",
-				"captcha_required": "Please complete the CAPTCHA verification",
-				"verification_code_6_digits": "Verification code must be 6 digits",
-				"email_required": "Email is required"
+		"captcha_required": "Please complete the CAPTCHA verification",
+		"verification_code_6_digits": "Verification code must be 6 digits",
+		"email_required": "Email is required"
 	},
 	"dashboard": {
 		"title": "Dashboard",
@@ -614,6 +623,32 @@
 			"success": "Data request created successfully",
 			"failed": "Failed to create data request",
 			"ticketSystemDisabled": "The ticket system is currently disabled"
+		},
+		"deleteAccount": {
+			"title": "Delete Account",
+			"description": "Permanently delete your account and associated data. This action may be irreversible depending on panel settings.",
+			"pendingDescription": "Your account is scheduled for deletion. You can cancel before the scheduled time.",
+			"scheduledAt": "Scheduled for deletion on {date}",
+			"button": "Delete Account",
+			"cancelButton": "Cancel Deletion",
+			"confirmTitle": "Confirm Account Deletion",
+			"confirmDescription": "This will permanently delete your account. Complete the verification steps below to continue.",
+			"confirmButton": "Delete My Account",
+			"confirmPhrase": "Type DELETE to confirm",
+			"confirmPhrasePlaceholder": "DELETE",
+			"twoFaCode": "Two-Factor Code",
+			"twoFaCodePlaceholder": "Enter 2FA code",
+			"twoFaRequired": "Two-factor authentication is required to delete your account. Enable 2FA first.",
+			"emailOtp": "Email Verification Code",
+			"emailOtpPlaceholder": "Enter email code",
+			"sendOtp": "Send Code",
+			"otpSent": "Verification code sent to your email",
+			"otpFailed": "Failed to send verification code",
+			"successDeleted": "Your account has been deleted",
+			"successScheduled": "Account deletion has been scheduled",
+			"failed": "Failed to delete account",
+			"cancelSuccess": "Account deletion cancelled",
+			"cancelFailed": "Failed to cancel account deletion"
 		},
 		"sshKeys": {
 			"title": "SSH Keys",
@@ -906,6 +941,8 @@
 			"start": "Start selected",
 			"stop": "Stop selected",
 			"restart": "Restart selected",
+			"kill": "Kill selected",
+			"kill_confirm_description": "This will forcefully terminate {count} selected server(s). This may cause data corruption. Use Stop for a graceful shutdown instead.",
 			"success": "Power action sent to {count} servers.",
 			"partialSuccess": "Power action sent, but some servers failed.",
 			"error": "Failed to send power actions. Please try again."
@@ -947,11 +984,11 @@
 				"cpu_load": "CPU Load"
 			},
 			"logs": {
-				"uploading": "Uploading server logs to mclo.gs...",
+				"uploading": "Uploading server logs to MythicalSystems Paste...",
 				"upload_success": "Logs uploaded successfully",
 				"upload_failed": "Failed to upload logs",
 				"uploaded_title": "Server logs uploaded",
-				"uploaded_description": "Share this mclo.gs URL with support or anyone helping you debug.",
+				"uploaded_description": "Share this paste.mythicalsystems.org URL with support or anyone helping you debug.",
 				"url_copied": "Log URL copied to clipboard"
 			},
 			"terminal": {
@@ -1327,6 +1364,8 @@
 		"groups": {},
 		"items": {
 			"dashboard": "Dashboard",
+			"adminHome": "Admin Home",
+			"userDashboard": "User Dashboard",
 			"analytics": "Analytics & KPIs",
 			"users": "Users",
 			"roles": "Roles",
@@ -1361,6 +1400,7 @@
 			"ldapProviders": "LDAP Providers",
 			"rateLimits": "Rate Limits",
 			"blockedEmailDomains": "Blocked Email Domains",
+			"abuseipdb": "AbuseIPDB",
 			"databaseManagement": "Database Management",
 			"storageSense": "Storage Sense",
 			"pterodactylImporter": "Pterodactyl Importer",
@@ -1369,7 +1409,12 @@
 			"devPlugins": "Dev Plugins",
 			"logViewer": "Log Viewer",
 			"marketplace": "Marketplace",
+			"panelMarketplace": "Panel Marketplace",
 			"cloudManagement": "Cloud Management",
+			"cloudConnections": "Cloud Connections",
+			"myFeatherPanel": "MyFeatherPanel",
+			"reportIssue": "Report an Issue",
+			"suggestFeature": "Suggest a New Thing",
 			"knowledgebase": "Knowledge Base",
 			"knowledgebase_categories": "Categories",
 			"knowledgebase_articles": "Articles",
@@ -1734,8 +1779,8 @@
 		"name": "Backup Name",
 		"namePlaceholder": "Enter backup name",
 		"ignoreFiles": "Ignored Files",
-		"ignoreFilesPlaceholder": "Enter file patterns to ignore (one per line)",
-		"ignoreFilesHelp": "Specify files or directories to exclude from the backup. Use patterns like \"*.log\" or \"temp/*\".",
+		"ignoreFilesPlaceholder": "e.g. *.log or logs/* — press Enter or + to add",
+		"ignoreFilesHelp": "Add gitignore-style patterns (e.g. \"*.log\", \"logs/*\"). Leave empty to use .featherpanelignore in the server root (also accepts .pteroignore / .pelicanignore).",
 		"ignoreFilesList": "Ignored Files List",
 		"create": "Create Backup",
 		"restore": "Restore",
@@ -2098,7 +2143,7 @@
 		"restartServer": "Restart Server",
 		"killServer": "Kill Server",
 		"backupIgnoredFilesPlaceholder": "*.log, cache/*, temp/*",
-		"backupIgnoredFilesHelp": "Files or directories to ignore during backup (comma-separated).",
+		"backupIgnoredFilesHelp": "Gitignore-style patterns to exclude (comma-separated). Leave empty to use .featherpanelignore in the server root.",
 		"enterCommand": "say Server restarting...",
 		"commandHelp": "The command to execute on the server.",
 		"additionalDataHelp": "Additional data for this action.",
@@ -2594,7 +2639,7 @@
 	},
 	"lifecycleHooks": {
 		"title": "Lifecycle Hooks",
-		"description": "Configure pre-start and pre-stop pipelines that run before power actions.",
+		"description": "Configure pre-start, post-start, pre-stop, and server-crash pipelines.",
 		"export": "Export",
 		"import": "Import",
 		"addStep": "Add Step",
@@ -2608,17 +2653,21 @@
 		"noStepsDescription": "Add your first step to this hook pipeline.",
 		"noStepsReadOnly": "No steps are configured for this hook, or changes are disabled until the feature is enabled.",
 		"featureDisabledTitle": "Lifecycle hooks are disabled",
-		"featureDisabledBody": "Lifecycle hooks are off for this panel. An administrator can turn them on under Admin → Settings → Servers (Lifecycle Hooks Enabled), listed next to cron schedules. While off, the server sidebar entry is hidden, pipelines do not run on power actions, and you cannot add, edit, reorder, or delete steps.",
+		"featureDisabledBody": "Lifecycle hooks are off for this panel. An administrator can turn them on under Admin → Settings → Servers (Lifecycle Hooks Enabled), listed next to cron schedules. While off, the server sidebar entry is hidden, pipelines do not run on power actions, server status changes, or server crashes, and you cannot add, edit, reorder, or delete steps.",
 		"backToHooks": "Back to lifecycle hooks",
 		"stepNew": {
 			"title": "Add {hookType} step",
-			"description": "Configure one action to run in this hook pipeline before the server power action.",
+			"description": "Configure one action to run in this hook pipeline.",
+			"descriptionCrash": "Configure one action to run when Wings reports the server has crashed.",
+			"descriptionPostStart": "Configure one action to run when the server is detected as running.",
 			"formSectionTitle": "Step configuration",
 			"formSectionDescription": "Choose a task type and fill in the details. Validation runs when you save."
 		},
 		"stepEdit": {
 			"title": "Edit {hookType} step",
 			"description": "Update this step. Changes apply on the next power action that uses this hook.",
+			"descriptionCrash": "Update this step. Changes apply the next time Wings reports a server crash.",
+			"descriptionPostStart": "Update this step. Changes apply the next time the server is detected as running.",
 			"formSectionTitle": "Step configuration",
 			"formSectionDescription": "Adjust task type, payload, and failure behavior as needed.",
 			"notFoundTitle": "Step not found",
@@ -2632,13 +2681,26 @@
 		"deleteModalDescription": "This action cannot be undone.",
 		"hookTypes": {
 			"preStart": "Pre-start Hook",
-			"preStop": "Pre-stop Hook"
+			"preStop": "Pre-stop Hook",
+			"postStart": "Post-start Hook",
+			"serverCrash": "Server-crash Hook"
 		},
+		"hookSummaries": {
+			"preStart": "Runs before the server starts.",
+			"preStop": "Runs before the server stops.",
+			"postStart": "Runs when the server is detected as running.",
+			"serverCrash": "Runs when Wings reports the server has crashed."
+		},
+		"pipelineLabel": "Active pipeline",
 		"taskTypes": {
 			"containerCommand": "Container Command",
+			"containerShell": "Container Shell",
 			"discordWebhook": "Discord Webhook",
-			"httpRequest": "HTTP Request"
+			"httpRequest": "HTTP Request",
+			"sleep": "Sleep"
 		},
+		"sleepSummary": "Wait {seconds}s",
+		"shellTimeoutSummary": "{seconds}s timeout",
 		"discord": {
 			"embedBuilder": "Embed builder",
 			"livePreview": "Live preview",
@@ -2678,6 +2740,13 @@
 		"form": {
 			"taskType": "Task Type",
 			"command": "Command",
+			"containerCommandHint": "Sent to the server console (same as typing in the console).",
+			"shellCommand": "Shell command",
+			"shellCommandPlaceholder": "e.g. ls -la /home/container && echo done",
+			"containerShellHint": "Runs inside the Docker container via docker exec (/bin/sh -c). Requires the server to be running. Non-zero exit codes fail the step.",
+			"containerShellDisabledHint": "Container Shell is disabled by the administrator. Change this step to another task type, or ask an admin to enable it under Settings → Servers.",
+			"shellTimeout": "Timeout (seconds)",
+			"shellTimeoutHint": "Abort the shell command after 1–120 seconds if it has not finished.",
 			"webhookUrl": "Webhook URL",
 			"content": "Content",
 			"usernameOptional": "Username (optional)",
@@ -2686,6 +2755,8 @@
 			"headersJson": "Headers (JSON object)",
 			"queryParamsJson": "Query Params (JSON object)",
 			"bodyOptional": "Body (optional)",
+			"sleepSeconds": "Duration (seconds)",
+			"sleepSecondsHint": "Pause the pipeline for 1–300 seconds before the next step.",
 			"failureBehavior": "Failure behavior",
 			"stopOnFailure": "Stop pipeline on failure",
 			"continueOnFailure": "Continue pipeline on failure",
@@ -2698,8 +2769,12 @@
 			"importFailed": "Failed to import lifecycle hooks",
 			"importInvalid": "Invalid lifecycle hook import file",
 			"commandRequired": "Command is required",
+			"shellCommandRequired": "Shell command is required",
+			"shellTimeoutInvalid": "Shell timeout must be between 1 and 120 seconds",
+			"shellDisabled": "Container Shell steps are disabled by the administrator",
 			"webhookUrlRequired": "Webhook URL is required",
 			"urlRequired": "URL is required",
+			"sleepSecondsInvalid": "Sleep duration must be between 1 and 300 seconds",
 			"invalidJson": "Headers and query params must be valid JSON objects",
 			"discordNeedsContentOrEmbed": "Provide message content or at least one non-empty embed.",
 			"hookEnabled": "Lifecycle hook enabled",
@@ -2866,7 +2941,11 @@
 			"load_timeout": "File loading timed out. The file may be too large or the server is taking too long to respond.",
 			"unsaved_prompt": "You have unsaved changes in this file. Are you sure you want to leave without saving?",
 			"window_title": "File Editor",
-			"binary_not_supported": "This file type cannot be opened in the text editor. Download it from the file manager instead."
+			"binary_not_supported": "This file type cannot be opened in the text editor. Download it from the file manager instead.",
+			"engine_monaco": "Monaco Editor Engine v0.34.1",
+			"engine_codemirror": "CodeMirror Engine",
+			"switch_to_monaco": "Use Monaco",
+			"switch_to_codemirror": "Use CodeMirror"
 		},
 		"search": {
 			"files_placeholder": "Filter files in this folder...",
@@ -3852,6 +3931,42 @@
 				"other": "Other"
 			}
 		},
+		"abuseipdb": {
+			"title": "AbuseIPDB",
+			"description": "Scan user IPs against AbuseIPDB and configure reporting when banning accounts.",
+			"open_settings": "Security settings",
+			"status_title": "Integration status",
+			"status_failed": "Failed to load AbuseIPDB status",
+			"status_configured": "Configured",
+			"status_not_configured": "Not configured",
+			"status_summary": "Min score {score}% · Lookback {days} days · Register action: {action}",
+			"not_configured": "Enable AbuseIPDB and add an API key under Settings → Security first.",
+			"scan_title": "Scan users",
+			"min_score": "Minimum confidence score",
+			"max_age_days": "Max report age (days)",
+			"start_scan": "Start scan",
+			"scanning": "Scanning…",
+			"scan_failed": "AbuseIPDB scan failed",
+			"scan_complete": "Scan finished: {flagged} flagged IPs out of {checked} checked",
+			"scan_progress": "Checked {checked} of {total} unique IPs · {flagged} flagged",
+			"rate_limited": "AbuseIPDB rate limit reached. Wait and continue later.",
+			"no_results_title": "No flagged IPs yet",
+			"no_results_description": "Run a scan to check first and last IPs of panel users against AbuseIPDB.",
+			"check_title": "Check a single IP",
+			"check_placeholder": "Enter a public IPv4 or IPv6 address",
+			"check_button": "Check IP",
+			"check_failed": "Failed to check IP with AbuseIPDB",
+			"ip_required": "Enter an IP address to check",
+			"ban": {
+				"report_label": "Report IP to AbuseIPDB",
+				"report_help": "Submits the user's public first/last IP with the selected AbuseIPDB category.",
+				"category_label": "AbuseIPDB category",
+				"category_placeholder": "Select a report category",
+				"category_required": "Select an AbuseIPDB category to report this IP.",
+				"report_success": "Reported {count} IP(s) to AbuseIPDB",
+				"report_failed": "Failed to report IP to AbuseIPDB"
+			}
+		},
 		"affiliates": {
 			"title": "Recommended Partners",
 			"description": "Affiliate hosting partners for game and VDS infrastructure.",
@@ -3860,7 +3975,7 @@
 			"hide_this": "Hide this",
 			"hide_confirm": "Hide this section permanently on this browser?",
 			"hide_cancel_title": "Okay :(((",
-			"hide_cancel_description": "Just know that affiliates or sponsorships help us keep this project fully free. We would really appreciate if you buy from our affiliates or support us via cloud.mythical.systems, GitHub Sponsors, PayPal, or Stripe.",
+			"hide_cancel_description": "Just know that affiliates or sponsorships help us keep this project fully free. We would really appreciate if you buy from our affiliates or support us via my.mythicalsystems.org, GitHub Sponsors, PayPal, or Stripe.",
 			"load_failed": "Failed to load affiliate partners.",
 			"no_results": "No affiliate partners are available right now.",
 			"visit_partner": "Visit Partner",
@@ -3882,7 +3997,7 @@
 			"ddos_protection": "DDoS Protection",
 			"features": "Features",
 			"support_title": "Support FeatherPanel",
-			"support_description": "Affiliate purchases and sponsorships help us keep FeatherPanel free. You can support us with partner purchases, addons at cloud.mythical.systems, or direct donations.",
+			"support_description": "Affiliate purchases and sponsorships help us keep FeatherPanel free. You can support us with partner purchases, addons at my.mythicalsystems.org, or direct donations.",
 			"support_cloud": "Buy Addons",
 			"support_github": "GitHub Sponsors",
 			"support_paypal": "PayPal",
@@ -4185,7 +4300,9 @@
 				"permission_failed": "Failed to update permissions",
 				"cannot_remove_own_admin_root": "You cannot remove admin.root from your own role — that would lock you out of the panel.",
 				"duplicated": "Role duplicated successfully",
-				"duplicate_failed": "Failed to duplicate role"
+				"duplicate_failed": "Failed to duplicate role",
+				"badge_icon_uploaded": "Badge icon uploaded successfully",
+				"badge_icon_upload_failed": "Failed to upload badge icon"
 			},
 			"form": {
 				"create_title": "Create Role",
@@ -4194,6 +4311,10 @@
 				"display_name": "Display Name",
 				"custom_badge": "Custom Badge",
 				"custom_badge_hint": "Optional short label shown on user badges. Leave empty to use the display name.",
+				"badge_icon": "Badge Icon",
+				"badge_icon_hint": "Optional image shown on role badges and role cards. JPG, PNG, GIF, or WebP up to 5 MB.",
+				"badge_icon_upload": "Upload Icon",
+				"badge_icon_clear": "Remove Icon",
 				"color": "Color",
 				"submit_create": "Create Role",
 				"submit_update": "Save Changes",
@@ -5239,7 +5360,7 @@
 					"what_are_allocations_text": "Allocations are IP:Port pairs a node uses to host servers. Each server needs an allocation to run and accept traffic.",
 					"what_you_will_need": "What you’ll need",
 					"what_you_will_need_ip": "IP address (from your node)",
-					"what_you_will_need_port": "Port or port range (e.g., 25565 or 25565-25600)",
+					"what_you_will_need_port": "Port or port range (e.g., 25565 or 25565:25600)",
 					"what_you_will_need_alias": "IP alias (optional) for friendly hostname",
 					"what_you_will_need_notes": "Notes (optional) for admin context",
 					"popular_game_ranges": "Popular game ranges (examples)",
@@ -5258,7 +5379,7 @@
 					"include_default": "Include Default Port?",
 					"include_default_help": "Include port {port} in the range",
 					"exclude_default_help": "Start from port {port} (exclude {default})",
-					"port_range_help": "Enter a single port (e.g., 25565) or a range (e.g., 25565-25700) to create multiple allocations at once."
+					"port_range_help": "Enter a single port (e.g., 25565) or a range (e.g., 25565:25700) to create multiple allocations at once."
 				},
 				"edit": {
 					"title": "Edit Allocation",
@@ -5340,7 +5461,7 @@
 					"success": "Report generated successfully",
 					"upload_success": "Report uploaded successfully",
 					"upload_url": "Upload URL",
-					"upload_url_help": "Optional URL to upload the report to (e.g., bin.featherpanel.com).",
+					"upload_url_help": "Optional URL to upload the report to (e.g., https://pastes.mythicalsystems.org).",
 					"uploaded": "Report uploaded to {url}"
 				},
 				"docker": {
@@ -5595,7 +5716,8 @@
 				"delete": "Delete server",
 				"hard_delete": "Hard delete",
 				"transfer": "Transfer server",
-				"confirm_delete": "Confirm Delete"
+				"confirm_delete": "Confirm Delete",
+				"power": "Power actions"
 			},
 			"status": {},
 			"details": {
@@ -5659,6 +5781,8 @@
 				"fetch_failed": "Failed to fetch servers",
 				"fetch_details_failed": "Failed to fetch server details",
 				"delete_failed": "Failed to delete server",
+				"power_success": "Power action sent to {name}",
+				"power_failed": "Failed to send power action",
 				"hard_delete_warning_title": "Hard Delete Warning",
 				"hard_delete_warning_p1": "Hard deleting a server should only be used if:",
 				"hard_delete_item1": "You have lost connection to Wings (the node daemon)",
@@ -5799,7 +5923,7 @@
 				"allocation_limit": "Allocation Limit",
 				"allocation_limit_help": "The total number of allocations a user is allowed to create for this server.",
 				"backup_limit": "Backup Limit",
-				"backup_limit_help": "The total number of backups that can be created for this server.",
+				"backup_limit_help": "The total number of backups that can be created for this server (0 = disabled).",
 				"backup_retention_mode": "Backup retention override",
 				"backup_retention_mode_help": "Inherit uses the panel default (Admin → Settings → Servers). Hard limit blocks new backups when full. FIFO rolling removes the oldest unlocked backup so scheduled or manual backups can continue.",
 				"backup_retention_inherit": "Inherit panel default",
@@ -5970,6 +6094,19 @@
 					"suspend_failed": "Failed to suspend server",
 					"unsuspend_success": "Server unsuspended successfully",
 					"unsuspend_failed": "Failed to unsuspend server",
+					"warn_title": "Send Warning",
+					"warn_description": "Notify the owner that this server was stopped or needs attention (for example high CPU usage).",
+					"warn": "Send Warning",
+					"warn_confirm_title": "Warn Server Owner?",
+					"warn_confirm_description": "This creates an in-panel warning for {name} and can also email the owner.",
+					"warn_title_label": "Title",
+					"warn_message_label": "Message",
+					"warn_message_placeholder": "Your server was stopped due to high CPU usage. Please optimize your processes before starting it again.",
+					"warn_default_title": "Warning for {name}",
+					"warn_send_email": "Also send email to owner",
+					"warn_required": "Title and message are required",
+					"warn_success": "Warning sent successfully",
+					"warn_failed": "Failed to send warning",
 					"delete_title": "Delete Server",
 					"delete_description": "Permanently delete this server and all associated data",
 					"delete": "Delete Server",
@@ -6008,7 +6145,7 @@
 			},
 			"sidebar": {
 				"ticket_info": "Ticket Information",
-					"user_info_unavailable": "User info unavailable",
+				"user_info_unavailable": "User info unavailable",
 				"tabs": {},
 				"labels": {
 					"id": "ID",
@@ -6145,9 +6282,19 @@
 				"delete_success": "Status deleted successfully",
 				"delete_error": "Failed to delete status",
 				"delete_confirm": "Are you sure you want to delete this status?",
+				"defaultBadge": "Default for new tickets",
+				"levelLabel": "Level {level}",
+				"moveUp": "Move up",
+				"moveDown": "Move down",
+				"reorderSuccess": "Status order updated",
+				"reorderError": "Failed to update status order",
 				"form": {
 					"name": "Name",
-					"color": "Color"
+					"color": "Color",
+					"sortOrder": "Level",
+					"sortOrderDescription": "Lower numbers appear first in lists. New tickets use the status marked as default.",
+					"isDefault": "Default status for new tickets",
+					"isDefaultDescription": "Only one status can be the default. Reopened tickets also return to this status."
 				},
 				"help": {
 					"workflow": {
@@ -6270,12 +6417,25 @@
 			"update_to_latest_hint": "Update to latest stable build",
 			"docker_pull_offer_title": "Docker pull available",
 			"docker_pull_offer_hint": "The catalog may not resolve this channel or exact build tag. Trigger a Docker update to pull whatever your compose/stack targets.",
-			"unlisted_update_server_badge": "Not registered on the FeatherPanel update server",
-			"unlisted_update_server_hint": "This build’s version string is not listed in the public FeatherPanel version API. That is normal for development images, custom builds, or forks. Release metadata and comparisons to “latest stable” may be limited.",
+			"unlisted_update_server_badge": "Not registered on the MythicalSystems update server",
+			"unlisted_update_server_hint": "This build’s version string is not listed on update.mythicalsystems.org. That is normal for development images, custom builds, or forks. Release metadata and comparisons to “latest stable” may be limited.",
 			"update_description": "Security patches and performance optimizations",
 			"update_now": "Update System Now",
-			"recommended_php": "Recommended PHP Version: ",
-			"view_changelog": "View Detailed Changelog",
+			"recommended_php": "Supported PHP: ",
+			"running_php": "Running PHP: ",
+			"release_name": "Release",
+			"security_release": "Security release",
+			"latest_build": "Latest Build",
+			"view_on_github": "View on GitHub",
+			"no_releases_yet": "No published releases on the update server yet.",
+			"view_changelog": "Release notes & changelog",
+			"changelog_tab_current": "Current · {version}",
+			"changelog_tab_latest": "Latest · {version}",
+			"changelog_both_hint": "current and latest",
+			"release_notes_for": "Release notes for {version}",
+			"release_summary": "Summary",
+			"published_at": "Published {date}",
+			"no_changelog_entries": "No structured changelog entries for this release.",
 			"verify_integrity": "Verify Integrity",
 			"integrity_modal_title": "File integrity scan",
 			"integrity_modal_desc": "SHA-256 hashes of core backend code (app tree, public/index.php, composer metadata). Compare results to a baseline stored on the server after a known-good state.",
@@ -6662,7 +6822,7 @@
 			"index": {
 				"plugins": {
 					"title": "Plugins",
-					"description": "Addons that extend FeatherPanel with new features and functionality",
+					"description": "Mythic marketplace addons linked to this panel — browse team products and install .fpa releases",
 					"available": "Available"
 				},
 				"spells": {
@@ -6697,12 +6857,12 @@
 			"plugins": {
 				"title": "Plugins",
 				"installed": "Installed",
-				"subtitle": "Browse and install plugins from the online repository",
+				"subtitle": "Browse and install plugins from Mythic marketplace products linked to this panel",
 				"back": "Back to Marketplace",
 				"loading_error": "Failed to load online addons",
 				"cloud_missing": {
 					"title": "Cloud Account Missing",
-					"description": "FeatherCloud credentials are not configured. You cannot download premium plugins until you configure your cloud account credentials in Cloud Management.",
+					"description": "Mythic Cloud credentials are not configured. Link your panel in Cloud Management to browse and download marketplace products.",
 					"action": "Configure Cloud Account"
 				},
 				"cloud_connected": {
@@ -6890,26 +7050,48 @@
 			}
 		},
 		"cloud_management": {
-			"title": "FeatherCloud Cloud Management",
-			"subtitle": "Connect your FeatherPanel instance to FeatherCloud using secure credentials",
-			"refresh_status": "Refresh Status",
+			"title": "Cloud Connections",
+			"subtitle": "Connect Mythic Cloud in a couple of clicks — no API keys or user ids to paste.",
+			"refresh_status": "Refresh",
 			"rotate_keys": "Rotate Keys",
-			"link": "Link with FeatherCloud",
-			"relink": "Re-link",
-			"linking": "Linking...",
+			"connect_cta": "Connect Mythic Cloud",
+			"link": "Connect Mythic Cloud",
+			"relink": "Re-connect",
+			"linking": "Connecting...",
+			"disconnect": "Disconnect",
 			"connection_status": {
-				"connected": "Connected to FeatherCloud",
-				"not_connected": "Not Connected",
-				"connected_desc": "Your panel is successfully linked. You can access premium plugins, FeatherAI, and cloud intelligence services.",
-				"not_connected_desc": "Link your panel with FeatherCloud to access premium features and cloud services.",
+				"card_title": "Connection",
+				"connected": "Connected to Mythic Cloud",
+				"connected_to": "Connected to {team}",
+				"not_connected": "Not connected",
+				"connected_desc": "This panel can use Mythic marketplace, eggs, issues, pastes, and team cloud features.",
+				"not_connected_desc": "Authorize Mythic once. We'll store the link and map your team members by email automatically.",
 				"active": "Active",
-				"inactive": "Inactive"
+				"inactive": "Inactive",
+				"identity_only_hint": "Identity keys are present. Re-connect if marketplace callbacks are missing.",
+				"summary_ok": "Panel API summary is reachable."
+			},
+			"consent": {
+				"title": "About to connect Mythic Cloud",
+				"intro": "Mythic Cloud ↔ this panel. After you authorize, the panel can use the Mythic Panel API with the scopes below.",
+				"granted_title": "This panel will be able to:",
+				"denied_title": "This panel will NOT be able to:",
+				"acting_note": "Member actions (issues, reviews) run as your Mythic identity automatically via email match. Nobody ever types a Mythic user id.",
+				"cancel": "Cancel",
+				"authorize": "Authorize"
+			},
+			"disconnect_dialog": {
+				"title": "Disconnect Mythic Cloud?",
+				"description": "This fully removes the Mythic link — identity keys, team mapping, and authorizer identity. The panel will act as if it was never connected."
+			},
+			"mapping": {
+				"unmapped_hint": "Your panel account email is not matched to a Mythic team member yet. Ask your team owner to invite that email, then refresh — never enter a Mythic user id."
 			},
 			"credentials": {
 				"title": "Credential Information",
 				"description": "Last rotation timestamps for your cloud credentials",
-				"cloud_to_panel": "FeatherCloud → Panel",
-				"panel_to_cloud": "Panel → FeatherCloud",
+				"cloud_to_panel": "Mythic → Panel",
+				"panel_to_cloud": "Panel → Mythic",
 				"never_rotated": "Never rotated"
 			},
 			"features": {
@@ -6935,8 +7117,8 @@
 				"refresh": "Refresh",
 				"loading": "Loading cloud data...",
 				"team": "Team",
-				"total_credits": "Total Credits",
-				"total_purchases": "Total Purchases",
+				"total_credits": "Credits",
+				"total_purchases": "Purchases",
 				"team_members": "{count} team members"
 			},
 			"security": {
@@ -6960,11 +7142,11 @@
 			},
 			"oauth2": {
 				"title": "OAuth2 Integration",
-				"description": "Securely link your panel with FeatherCloud using OAuth2 authentication",
+				"description": "Securely link your panel with Mythic Cloud using OAuth2 authentication",
 				"how_it_works": "How it works:",
-				"step1": "You'll be redirected to FeatherCloud's OAuth2 authorization page",
+				"step1": "You'll be redirected to Mythic's OAuth2 authorization page",
 				"step2": "Your panel information (name, logo, URL) will be securely shared",
-				"step3": "FeatherCloud will generate and store the necessary credentials",
+				"step3": "Mythic will authorize the connection and return credentials",
 				"step4": "You'll be redirected back to your panel once the connection is established"
 			},
 			"rotate_dialog": {
@@ -6980,29 +7162,33 @@
 				"rotating": "Rotating..."
 			},
 			"messages": {
-				"credentials_load_failed": "Failed to load cloud credentials",
-				"credentials_rotated": "Keys rotated. Link with FeatherCloud again (OAuth) to restore cloud API access.",
+				"credentials_load_failed": "Failed to load cloud connection status",
+				"credentials_rotated": "Keys rotated. Connect Mythic Cloud again to restore access.",
 				"credentials_rotate_failed": "Failed to rotate cloud credentials",
-				"cloud_credentials_empty": "Cloud credentials are empty. Premium plugins cannot be downloaded until FeatherCloud credentials are configured.",
-				"oauth_link_failed": "Failed to generate OAuth2 link"
+				"cloud_credentials_empty": "Cloud credentials are empty until you finish OAuth.",
+				"oauth_link_failed": "Failed to start Mythic Cloud connection",
+				"disconnected": "Disconnected from Mythic Cloud",
+				"disconnect_failed": "Failed to disconnect"
 			},
 			"finish": {
-				"processing": "Processing OAuth2 Callback...",
-				"success": "Successfully Connected!",
-				"failed": "Connection Failed",
-				"processing_desc": "Please wait while we save your cloud credentials...",
-				"success_desc": "Your panel is now linked with FeatherCloud. You can now access premium plugins, FeatherAI, and cloud intelligence services.",
-				"linked_toast": "Your panel has been successfully linked with FeatherCloud!",
+				"processing": "Finishing connection...",
+				"success": "Connected!",
+				"failed": "Connection failed",
+				"cancelled": "Cancelled",
+				"processing_desc": "Saving your Mythic Cloud link…",
+				"success_desc": "Your panel is linked. Member actions will use your Mythic identity automatically.",
+				"cancelled_desc": "You cancelled Mythic authorization. Nothing was changed.",
+				"linked_toast": "Mythic Cloud connected",
 				"save_failed": "Failed to save cloud credentials",
-				"missing_params": "Missing required parameters: cloud_api_key and cloud_api_secret",
-				"whats_next": "What's Next?",
-				"next_step1": "Access premium plugins from the FeatherCloud marketplace",
-				"next_step2": "Use FeatherAI for intelligent automation and analysis",
-				"next_step3": "Benefit from cloud intelligence database for abuse prevention",
-				"error_desc": "Please try linking again from the Cloud Management page.",
-				"go_to_cloud": "Go to Cloud Management",
-				"return": "Return to Cloud Management",
-				"redirecting": "Redirecting automatically in 3 seconds..."
+				"missing_params": "Missing OAuth return parameters (public_identity_key, private_key, mythic_user_id, team_uuid). Try connecting again.",
+				"whats_next": "What's next?",
+				"next_step1": "Open Panel Marketplace for purchased products",
+				"next_step2": "Report issues or suggest features under MyFeatherPanel",
+				"next_step3": "Browse and import Mythic eggs",
+				"error_desc": "Try connecting again from Cloud Connections.",
+				"go_to_cloud": "Back to Cloud Connections",
+				"return": "Back to Cloud Connections",
+				"redirecting": "Redirecting…"
 			}
 		},
 		"users": {
@@ -7287,7 +7473,7 @@
 		},
 		"notifications": {
 			"title": "Notifications",
-			"subtitle": "Manage platform-wide announcements and alerts.",
+			"subtitle": "Manage platform-wide announcements and targeted user/server warnings.",
 			"search_placeholder": "Search notifications...",
 			"create": "Create Notification",
 			"no_results": "No notifications found",
@@ -7298,6 +7484,11 @@
 			"sticky": "Sticky",
 			"non_dismissible": "Non-dismissible",
 			"not_sticky": "Not Sticky",
+			"target": {
+				"global": "Everyone",
+				"user": "Specific user",
+				"server": "Specific server"
+			},
 			"types": {
 				"info": "Info",
 				"warning": "Warning",
@@ -7309,10 +7500,18 @@
 				"title": "Title",
 				"type": "Type",
 				"message": "Message (Markdown)",
+				"audience": "Audience",
+				"target_user": "Target user",
+				"target_user_placeholder": "Search by username or email...",
+				"selected_user": "Selected",
+				"no_users": "No users found",
+				"target_server": "Target server (optional)",
+				"target_server_none": "Whole account (no specific server)",
+				"send_email": "Also email the targeted user",
 				"dismissible": "Allow users to dismiss",
 				"sticky": "Sticky (Always visible)",
 				"create_title": "Create Notification",
-				"create_description": "Create a new notification to display to users.",
+				"create_description": "Create a global announcement or a targeted warning for a user/server.",
 				"edit_title": "Edit Notification",
 				"edit_description": "Update existing notification details.",
 				"view_title": "Notification Details",
@@ -7327,22 +7526,23 @@
 				"update_failed": "Failed to update notification",
 				"delete_failed": "Failed to delete notification",
 				"delete_confirm": "Are you sure you want to delete this notification?",
-				"fetch_failed": "Failed to fetch notifications"
+				"fetch_failed": "Failed to fetch notifications",
+				"user_required": "Select a user when targeting a specific account"
 			},
 			"help": {
 				"alerts": {
 					"title": "System Alerts",
-					"description": "Notifications are a powerful way to communicate with all users. Use them for maintenance announcements, policy updates, or important system news."
+					"description": "Use global notifications for maintenance announcements, or target a user/server for warnings like high CPU stops."
 				},
 				"markdown": {
 					"title": "Rich Content",
 					"description": "Messages support full Markdown syntax. You can use bold text, lists, and even code blocks to make your announcements clear and engaging."
 				},
 				"delivery": {
-					"title": "sticky & Dismissible",
-					"item1": "Sticky notifications remain at the top of the dashboard.",
-					"item2": "Dismissible alerts can be hidden by users once read.",
-					"item3": "Use non-dismissible for critical legal or system notices."
+					"title": "Targeting & Email",
+					"item1": "Global alerts appear for every user on the dashboard and server pages.",
+					"item2": "User/server warnings only appear for that owner, including on the related server.",
+					"item3": "Enable email when targeting a user to also send a warning email."
 				}
 			}
 		},
@@ -7656,6 +7856,35 @@
 					"label": "Email Domain Blocking",
 					"description": "Block registration from specific email domains (configured in Blocked Email Domains)."
 				},
+				"abuseipdb_enabled": {
+					"label": "AbuseIPDB Enabled",
+					"description": "Enable AbuseIPDB checks on registration, admin IP scanning, and optional reporting when banning users."
+				},
+				"abuseipdb_api_key": {
+					"label": "AbuseIPDB API Key",
+					"description": "Your AbuseIPDB API key from https://www.abuseipdb.com/account/api. Stored encrypted and never exposed publicly."
+				},
+				"abuseipdb_check_on_register": {
+					"label": "Check IPs on Registration",
+					"description": "Look up registering users' IPs on AbuseIPDB before creating the account."
+				},
+				"abuseipdb_min_confidence_score": {
+					"label": "Minimum Confidence Score",
+					"description": "Abuse confidence score (0–100) at which an IP is considered reported. AbuseIPDB recommends 75–100 for blocking."
+				},
+				"abuseipdb_max_age_days": {
+					"label": "Report Lookback (Days)",
+					"description": "Only consider AbuseIPDB reports from the last N days when checking an IP."
+				},
+				"abuseipdb_register_action": {
+					"label": "Action on Reported Registration IP",
+					"description": "What happens when a registering IP meets the confidence score threshold.",
+					"options": {
+						"block": "Block registration",
+						"log": "Allow and log only",
+						"auto_ban": "Create account and auto-ban"
+					}
+				},
 				"telemetry": {
 					"label": "Send Telemetry",
 					"description": "Help us improve FeatherPanel by sending anonymous usage data."
@@ -7898,7 +8127,13 @@
 			"info": {
 				"title": "Excluded Data",
 				"description": "The following items are excluded from migration to ensure a clean import.",
-				"items": [null, null, null, null, null],
+				"items": [
+					null,
+					null,
+					null,
+					null,
+					null
+				],
 				"footer": "Excluding this data significantly reduces migration time."
 			},
 			"create_key": {
@@ -7914,7 +8149,12 @@
 				"creating": "Creating..."
 			},
 			"warning_dialog": {
-				"items": [null, null, null, null]
+				"items": [
+					null,
+					null,
+					null,
+					null
+				]
 			}
 		},
 		"database_management": {

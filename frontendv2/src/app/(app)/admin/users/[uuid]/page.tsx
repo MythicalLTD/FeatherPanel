@@ -13,10 +13,13 @@ by the Free Software Foundation, either version 3 of the License, or
 See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
-'use client';
+import { redirect } from 'next/navigation';
 
-import NotFound from '@/components/common/NotFound';
+interface PageProps {
+    params: Promise<{ uuid: string }>;
+}
 
-export default function NotFoundPage() {
-    return <NotFound />;
+export default async function AdminUserProfilePage({ params }: PageProps) {
+    const { uuid } = await params;
+    redirect(`/admin/users/${uuid}/edit`);
 }

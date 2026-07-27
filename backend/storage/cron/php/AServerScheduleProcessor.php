@@ -39,8 +39,10 @@ use App\Chat\ServerActivity;
 use App\Chat\ServerSchedule;
 use App\Services\Wings\Wings;
 use App\Config\ConfigInterface;
+use App\Helpers\BackupIgnoreHelper;
 use App\Services\Backup\BackupFifoEviction;
 use App\Cli\Utils\MinecraftColorCodeSupport;
+use App\Services\Backup\BackupAdapterResolver;
 use App\Services\Server\LifecycleHookPowerGate;
 use App\Services\Server\LifecycleHookExecutorService;
 
@@ -449,10 +451,26 @@ class AServerScheduleProcessor implements TimeTask
         MinecraftColorCodeSupport::sendOutputWithNewLine('&aBacking up server: ' . $server['name']);
 
         try {
-            $ignoredFiles = $this->normalizeIgnoredFiles($ignoredFiles);
+            $ignoredFiles = BackupIgnoreHelper::normalizeForStorage($ignoredFiles);
             $currentBackups = count(Backup::getBackupsByServerId((int) $server['id']));
             $backupLimit = (int) ($server['backup_limit'] ?? 0);
-            $atBackupLimit = $backupLimit > 0 && $currentBackups >= $backupLimit;
+
+            if ($backupLimit === 0) {
+                MinecraftColorCodeSupport::sendOutputWithNewLine('&eSkipping backup: backups disabled for server: ' . $server['name']);
+                $app->getLogger()->info('Skipped scheduled backup for server ' . ($server['name'] ?? 'unknown') . ': backups disabled (backup_limit=0)');
+                ServerActivity::createActivity([
+                    'server_id' => $server['id'],
+                    'node_id' => $server['node_id'],
+                    'event' => 'schedule_backup_skipped_disabled',
+                    'metadata' => json_encode([
+                        'backup_limit' => 0,
+                    ]),
+                ]);
+
+                return;
+            }
+
+            $atBackupLimit = $currentBackups >= $backupLimit;
 
             if ($atBackupLimit && !BackupFifoEviction::isFifoRollingForServer($server)) {
                 MinecraftColorCodeSupport::sendOutputWithNewLine('&eSkipping backup: limit reached (' . $currentBackups . '/' . $backupLimit . ') for server: ' . $server['name'] . ')');
@@ -493,7 +511,7 @@ class AServerScheduleProcessor implements TimeTask
                 }
             }
 
-            $adapter = 'wings';
+            $adapter = BackupAdapterResolver::resolveDefault($wings);
             $backupUuid = $this->generateUuid();
             $backupName = 'Scheduled backup at ' . date('Y-m-d H:i:s');
 
@@ -710,26 +728,5 @@ class AServerScheduleProcessor implements TimeTask
         $data[8] = chr(ord($data[8]) & 0x3F | 0x80); // set bits 6-7 to 10
 
         return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
-    }
-
-    /**
-     * Normalize ignored files payload to valid JSON expected by Wings.
-     */
-    private function normalizeIgnoredFiles(string $payload): string
-    {
-        $payload = trim($payload);
-        if ($payload === '') {
-            return '[]';
-        }
-
-        $json = json_decode($payload, true);
-        if (json_last_error() === JSON_ERROR_NONE && is_array($json)) {
-            return json_encode(array_values(array_filter($json, fn ($item) => is_string($item) && $item !== '')));
-        }
-
-        $parts = preg_split('/[\r\n,]+/', $payload) ?: [];
-        $parts = array_values(array_filter(array_map(static fn ($part) => trim($part), $parts), static fn ($part) => $part !== ''));
-
-        return json_encode($parts);
     }
 }

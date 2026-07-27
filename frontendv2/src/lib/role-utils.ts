@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 export interface RoleBadgeSource {
     custom_badge?: string | null;
+    badge_icon?: string | null;
     display_name?: string;
     name?: string;
 }
@@ -24,6 +25,7 @@ export interface Role {
     name: string;
     display_name: string;
     custom_badge?: string | null;
+    badge_icon?: string | null;
     color: string;
     created_at: string;
     updated_at: string;
@@ -39,6 +41,7 @@ export interface RoleForm {
     name: string;
     display_name: string;
     custom_badge: string;
+    badge_icon: string;
     color: string;
 }
 

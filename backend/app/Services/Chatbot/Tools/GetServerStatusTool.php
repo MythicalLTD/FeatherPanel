@@ -17,11 +17,11 @@
 
 namespace App\Services\Chatbot\Tools;
 
-use App\Helpers\WingsUrlHelper;
 use App\App;
 use App\Chat\Server;
 use App\Services\Wings\Wings;
 use App\Helpers\ServerGateway;
+use App\Helpers\WingsUrlHelper;
 
 /**
  * Tool to get server status and information.

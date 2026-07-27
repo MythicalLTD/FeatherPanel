@@ -66,6 +66,11 @@ import {
     ModerationReasonValue,
     isModerationReasonValid,
 } from '@/components/admin/ModerationReasonFields';
+import {
+    AbuseIPDBBanReportFields,
+    AbuseIPDBReportValue,
+    isAbuseIPDBReportValid,
+} from '@/components/admin/AbuseIPDBBanReportFields';
 import { ModerationStatusCard } from '@/components/admin/ModerationStatusCard';
 import { copyToClipboard } from '@/lib/utils';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
@@ -79,6 +84,7 @@ interface UserRole {
     name: string;
     display_name: string;
     custom_badge?: string | null;
+    badge_icon?: string | null;
     color: string;
 }
 
@@ -210,6 +216,10 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
     const [banReason, setBanReason] = useState<ModerationReasonValue>({
         reason_category: '',
         reason_details: '',
+    });
+    const [abuseipdbReport, setAbuseipdbReport] = useState<AbuseIPDBReportValue>({
+        report_to_abuseipdb: false,
+        abuseipdb_categories: [],
     });
 
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-users-edit');
@@ -402,6 +412,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
         }
 
         setBanReason({ reason_category: '', reason_details: '' });
+        setAbuseipdbReport({ report_to_abuseipdb: false, abuseipdb_categories: [] });
         setBanDialogOpen(true);
     };
 
@@ -410,15 +421,41 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
             toast.error(t('admin.moderation.reason_required'));
             return;
         }
+        if (!isAbuseIPDBReportValid(abuseipdbReport)) {
+            toast.error(t('admin.abuseipdb.ban.category_required'));
+            return;
+        }
 
         setBanSubmitting(true);
         try {
-            const { data } = await axios.patch(`/api/admin/users/${user.uuid}`, {
+            const payload: Record<string, unknown> = {
                 banned: 'true',
                 ...banReason,
-            });
+            };
+            if (abuseipdbReport.report_to_abuseipdb) {
+                payload.report_to_abuseipdb = true;
+                payload.abuseipdb_categories = abuseipdbReport.abuseipdb_categories;
+            }
+
+            const { data } = await axios.patch(`/api/admin/users/${user.uuid}`, payload);
             if (data?.success) {
                 toast.success(t('admin.users.messages.banned'));
+                const reportResults = data?.data?.abuseipdb?.reported as
+                    Array<{ ip: string; success: boolean; error?: string }> | undefined;
+                if (Array.isArray(reportResults) && reportResults.length > 0) {
+                    const failed = reportResults.filter((r) => !r.success);
+                    const succeeded = reportResults.filter((r) => r.success);
+                    if (succeeded.length > 0) {
+                        toast.success(
+                            t('admin.abuseipdb.ban.report_success', {
+                                count: String(succeeded.length),
+                            }),
+                        );
+                    }
+                    if (failed.length > 0) {
+                        toast.error(failed[0]?.error || t('admin.abuseipdb.ban.report_failed'));
+                    }
+                }
                 setBanDialogOpen(false);
                 await fetchUser();
             } else {
@@ -1614,6 +1651,11 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <ModerationReasonFields value={banReason} onChange={setBanReason} disabled={banSubmitting} />
+                    <AbuseIPDBBanReportFields
+                        value={abuseipdbReport}
+                        onChange={setAbuseipdbReport}
+                        disabled={banSubmitting}
+                    />
                     <AlertDialogFooter>
                         <AlertDialogCancel disabled={banSubmitting}>{t('common.cancel')}</AlertDialogCancel>
                         <AlertDialogAction
@@ -1622,7 +1664,11 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                 void confirmBanUser();
                             }}
                             className='bg-red-600 hover:bg-red-700'
-                            disabled={banSubmitting || !isModerationReasonValid(banReason)}
+                            disabled={
+                                banSubmitting ||
+                                !isModerationReasonValid(banReason) ||
+                                !isAbuseIPDBReportValid(abuseipdbReport)
+                            }
                         >
                             {banSubmitting ? t('common.loading') : t('admin.users.edit.ban_user')}
                         </AlertDialogAction>

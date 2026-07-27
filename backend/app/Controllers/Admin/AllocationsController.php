@@ -229,7 +229,7 @@ class AllocationsController
                     new OA\Property(property: 'ip', type: 'string', description: 'IP address for the allocation', example: '192.168.1.100'),
                     new OA\Property(property: 'port', oneOf: [
                         new OA\Schema(type: 'integer', description: 'Single port number', minimum: 1, maximum: 65535),
-                        new OA\Schema(type: 'string', description: 'Port range in format start-end', example: '25565-25700'),
+                        new OA\Schema(type: 'string', description: 'Port range in format start:end or start-end (iptables-style)', example: '25565:25700'),
                     ]),
                     new OA\Property(property: 'ip_alias', type: 'string', nullable: true, description: 'Optional IP alias'),
                     new OA\Property(property: 'server_id', type: 'integer', nullable: true, description: 'Optional server ID to assign allocation to', minimum: 1),
@@ -324,15 +324,10 @@ class AllocationsController
         $portInput = $data['port'];
         $ports = [];
 
-        if (is_string($portInput) && strpos($portInput, '-') !== false) {
-            // Handle port range (e.g., "25565-25700")
-            $portRange = explode('-', $portInput);
-            if (count($portRange) !== 2) {
-                return ApiResponse::error('Invalid port range format. Use format: start-end (e.g., 25565-25700)', 'INVALID_PORT_RANGE', 400);
-            }
-
-            $startPort = (int) trim($portRange[0]);
-            $endPort = (int) trim($portRange[1]);
+        if (is_string($portInput) && preg_match('/^(\d+)\s*[:-]\s*(\d+)$/', trim($portInput), $portRange)) {
+            // Handle port range (e.g., "25565:25700" or "25565-25700")
+            $startPort = (int) $portRange[1];
+            $endPort = (int) $portRange[2];
 
             if ($startPort < 1 || $startPort > 65535 || $endPort < 1 || $endPort > 65535) {
                 return ApiResponse::error('Ports must be between 1 and 65535', 'INVALID_PORT_RANGE', 400);
@@ -352,6 +347,10 @@ class AllocationsController
             }
         } else {
             // Single port
+            if (is_string($portInput) && preg_match('/[:-]/', $portInput)) {
+                return ApiResponse::error('Invalid port range format. Use format: start:end or start-end (e.g., 25565:25700)', 'INVALID_PORT_RANGE', 400);
+            }
+
             if (!is_numeric($portInput) || (int) $portInput < 1 || (int) $portInput > 65535) {
                 return ApiResponse::error('Port must be a number between 1 and 65535', 'INVALID_PORT', 400);
             }

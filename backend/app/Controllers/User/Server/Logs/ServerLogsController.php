@@ -17,7 +17,6 @@
 
 namespace App\Controllers\User\Server\Logs;
 
-use App\Helpers\WingsUrlHelper;
 use App\App;
 use App\Chat\Server;
 use App\Helpers\LogHelper;
@@ -26,6 +25,7 @@ use App\Helpers\ApiResponse;
 use App\Services\Wings\Wings;
 use OpenApi\Attributes as OA;
 use App\Helpers\ServerGateway;
+use App\Helpers\WingsUrlHelper;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use App\Controllers\User\Server\CheckSubuserPermissionsTrait;
@@ -248,8 +248,8 @@ class ServerLogsController
 
     #[OA\Post(
         path: '/api/user/servers/{uuidShort}/logs/upload',
-        summary: 'Upload server logs to mclo.gs',
-        description: 'Upload the current server logs to mclo.gs paste service and return the shareable URL.',
+        summary: 'Upload server logs to MythicalSystems Paste',
+        description: 'Upload the current server logs to pastes.mythicalsystems.org and return the shareable URL.',
         tags: ['User - Server Logs'],
         parameters: [
             new OA\Parameter(
@@ -266,8 +266,8 @@ class ServerLogsController
                 description: 'Logs uploaded successfully',
                 content: new OA\JsonContent(
                     properties: [
-                        new OA\Property(property: 'id', type: 'string', description: 'mclo.gs paste ID'),
-                        new OA\Property(property: 'url', type: 'string', description: 'Full mclo.gs URL'),
+                        new OA\Property(property: 'id', type: 'string', description: 'Paste ID'),
+                        new OA\Property(property: 'url', type: 'string', description: 'Viewer URL (paste.mythicalsystems.org)'),
                         new OA\Property(property: 'raw', type: 'string', description: 'Raw paste URL'),
                     ]
                 )
@@ -360,8 +360,7 @@ class ServerLogsController
                 return ApiResponse::error('No logs available to upload', 'NO_LOGS', 400);
             }
 
-            // Upload to mclo.gs
-            $uploadResult = LogHelper::uploadToMcloGs($logContent);
+            $uploadResult = LogHelper::uploadPaste($logContent, 'featherpanel-server');
 
             if (!$uploadResult['success']) {
                 return ApiResponse::error($uploadResult['error'] ?? 'Failed to upload logs', 'UPLOAD_FAILED', 500);
@@ -373,7 +372,7 @@ class ServerLogsController
                 'raw' => $uploadResult['raw'],
             ], 'Logs uploaded successfully', 200);
         } catch (\Exception $e) {
-            App::getInstance(true)->getLogger()->error('Failed to upload logs to mclo.gs: ' . $e->getMessage());
+            App::getInstance(true)->getLogger()->error('Failed to upload logs to MythicalSystems Paste: ' . $e->getMessage());
 
             return ApiResponse::error('Failed to upload logs: ' . $e->getMessage(), 'UPLOAD_ERROR', 500);
         }
@@ -381,8 +380,8 @@ class ServerLogsController
 
     #[OA\Post(
         path: '/api/user/servers/{uuidShort}/install-logs/upload',
-        summary: 'Upload server installation logs to mclo.gs',
-        description: 'Upload the server installation logs to mclo.gs paste service and return the shareable URL.',
+        summary: 'Upload server installation logs to MythicalSystems Paste',
+        description: 'Upload the server installation logs to pastes.mythicalsystems.org and return the shareable URL.',
         tags: ['User - Server Logs'],
         parameters: [
             new OA\Parameter(
@@ -399,8 +398,8 @@ class ServerLogsController
                 description: 'Installation logs uploaded successfully',
                 content: new OA\JsonContent(
                     properties: [
-                        new OA\Property(property: 'id', type: 'string', description: 'mclo.gs paste ID'),
-                        new OA\Property(property: 'url', type: 'string', description: 'Full mclo.gs URL'),
+                        new OA\Property(property: 'id', type: 'string', description: 'Paste ID'),
+                        new OA\Property(property: 'url', type: 'string', description: 'Viewer URL (paste.mythicalsystems.org)'),
                         new OA\Property(property: 'raw', type: 'string', description: 'Raw paste URL'),
                     ]
                 )
@@ -483,8 +482,7 @@ class ServerLogsController
                 return ApiResponse::error('No installation logs available to upload', 'NO_LOGS', 400);
             }
 
-            // Upload to mclo.gs
-            $uploadResult = LogHelper::uploadToMcloGs($logContent);
+            $uploadResult = LogHelper::uploadPaste($logContent, 'featherpanel-install');
 
             if (!$uploadResult['success']) {
                 return ApiResponse::error($uploadResult['error'] ?? 'Failed to upload installation logs', 'UPLOAD_FAILED', 500);
@@ -496,7 +494,7 @@ class ServerLogsController
                 'raw' => $uploadResult['raw'],
             ], 'Installation logs uploaded successfully', 200);
         } catch (\Exception $e) {
-            App::getInstance(true)->getLogger()->error('Failed to upload installation logs to mclo.gs: ' . $e->getMessage());
+            App::getInstance(true)->getLogger()->error('Failed to upload installation logs to MythicalSystems Paste: ' . $e->getMessage());
 
             return ApiResponse::error('Failed to upload installation logs: ' . $e->getMessage(), 'UPLOAD_ERROR', 500);
         }

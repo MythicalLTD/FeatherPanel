@@ -65,6 +65,27 @@ class SystemService
     }
 
     /**
+     * Get backup destination capabilities for this Wings node.
+     *
+     * @return array{default_adapter?: string, pbs?: array{enabled?: bool, namespace?: string, configured?: bool}}
+     */
+    public function getBackupDestinations(): array
+    {
+        try {
+            return $this->connection->get('/api/system/backups');
+        } catch (\Throwable $e) {
+            // Older Wings builds may not expose this endpoint yet.
+            return [
+                'default_adapter' => 'wings',
+                'pbs' => [
+                    'enabled' => false,
+                    'configured' => false,
+                ],
+            ];
+        }
+    }
+
+    /**
      * Get Docker information.
      */
     public function getDockerInfo(): array

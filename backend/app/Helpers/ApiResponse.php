@@ -38,7 +38,7 @@ class ApiResponse
             'Content-Type' => 'application/json',
             'Access-Control-Allow-Origin' => '*',
             'Access-Control-Allow-Methods' => 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
-            'Access-Control-Allow-Headers' => 'Content-Type, Authorization, X-Requested-With',
+            'Access-Control-Allow-Headers' => 'Content-Type, Authorization, X-Requested-With, X-Panel-Public-Key, X-Panel-Private-Key, X-Api-Key, X-Api-Secret, X-Panel-User-Uuid',
             'Access-Control-Allow-Credentials' => 'true',
         ]);
     }
@@ -65,7 +65,7 @@ class ApiResponse
             'Content-Type' => 'application/json',
             'Access-Control-Allow-Origin' => '*',
             'Access-Control-Allow-Methods' => 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
-            'Access-Control-Allow-Headers' => 'Content-Type, Authorization, X-Requested-With',
+            'Access-Control-Allow-Headers' => 'Content-Type, Authorization, X-Requested-With, X-Panel-Public-Key, X-Panel-Private-Key, X-Api-Key, X-Api-Secret, X-Panel-User-Uuid',
             'Access-Control-Allow-Credentials' => 'true',
         ]);
     }
@@ -95,7 +95,7 @@ class ApiResponse
             'Content-Type' => 'application/json',
             'Access-Control-Allow-Origin' => '*',
             'Access-Control-Allow-Methods' => 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
-            'Access-Control-Allow-Headers' => 'Content-Type, Authorization, X-Requested-With',
+            'Access-Control-Allow-Headers' => 'Content-Type, Authorization, X-Requested-With, X-Panel-Public-Key, X-Panel-Private-Key, X-Api-Key, X-Api-Secret, X-Panel-User-Uuid',
             'Access-Control-Allow-Credentials' => 'true',
         ]);
     }
@@ -108,7 +108,7 @@ class ApiResponse
             'Content-Type' => 'application/json',
             'Access-Control-Allow-Origin' => '*',
             'Access-Control-Allow-Methods' => 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
-            'Access-Control-Allow-Headers' => 'Content-Type, Authorization, X-Requested-With',
+            'Access-Control-Allow-Headers' => 'Content-Type, Authorization, X-Requested-With, X-Panel-Public-Key, X-Panel-Private-Key, X-Api-Key, X-Api-Secret, X-Panel-User-Uuid',
             'Access-Control-Allow-Credentials' => 'true',
         ]);
     }

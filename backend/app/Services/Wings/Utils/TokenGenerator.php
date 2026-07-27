@@ -19,6 +19,7 @@ namespace App\Services\Wings\Utils;
 
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
+use App\Enums\NodeJwtScope;
 
 /**
  * Token Generator for Wings API.
@@ -110,10 +111,13 @@ class TokenGenerator
      */
     public function generateBackupDownloadToken(string $serverUuid, string $backupUuid, string $uniqueId = ''): string
     {
+        $uniqueId = $uniqueId ?: $this->generateUniqueId();
+
         $payload = [
+            'scope' => $this->formatScope(NodeJwtScope::BackupDownload),
             'server_uuid' => $serverUuid,
             'backup_uuid' => $backupUuid,
-            'unique_id' => $uniqueId ?: $this->generateUniqueId(),
+            'unique_id' => $uniqueId,
             'iat' => time(),
             'exp' => time() + $this->expiration,
             'jti' => $this->generateJti(),
@@ -135,10 +139,13 @@ class TokenGenerator
      */
     public function generateFileDownloadToken(string $serverUuid, string $filePath, string $uniqueId = ''): string
     {
+        $uniqueId = $uniqueId ?: $this->generateUniqueId();
+
         $payload = [
+            'scope' => $this->formatScope(NodeJwtScope::FileDownload),
             'file_path' => $filePath,
             'server_uuid' => $serverUuid,
-            'unique_id' => $uniqueId ?: $this->generateUniqueId(),
+            'unique_id' => $uniqueId,
             'iat' => time(),
             'exp' => time() + $this->expiration,
             'jti' => $this->generateJti(),
@@ -160,10 +167,13 @@ class TokenGenerator
      */
     public function generateFileUploadToken(string $serverUuid, string $userUuid, string $uniqueId = ''): string
     {
+        $uniqueId = $uniqueId ?: $this->generateUniqueId();
+
         $payload = [
+            'scope' => $this->formatScope(NodeJwtScope::FileUpload),
             'server_uuid' => $serverUuid,
             'user_uuid' => $userUuid,
-            'unique_id' => $uniqueId ?: $this->generateUniqueId(),
+            'unique_id' => $uniqueId,
             'iat' => time(),
             'exp' => time() + $this->expiration,
             'jti' => $this->generateJti(),
@@ -183,8 +193,12 @@ class TokenGenerator
      */
     public function generateTransferToken(string $serverUuid): string
     {
+        $uniqueId = $this->generateUniqueId();
+
         $payload = [
-            'subject' => $serverUuid,
+            'scope' => $this->formatScope(NodeJwtScope::ServerTransfer),
+            'sub' => $serverUuid,
+            'unique_id' => $uniqueId,
             'iat' => time(),
             'exp' => time() + $this->expiration,
             'jti' => $this->generateJti(),
@@ -206,13 +220,17 @@ class TokenGenerator
      */
     public function generateWebSocketToken(string $serverUuid, string $userUuid, array $permissions = []): string
     {
+        $jti = $this->generateJti();
+
         $payload = [
+            'scope' => $this->formatScope(NodeJwtScope::Websocket),
             'user_uuid' => $userUuid,
             'server_uuid' => $serverUuid,
             'permissions' => $permissions,
+            'unique_id' => $jti,
             'iat' => time(),
             'exp' => time() + $this->expiration,
-            'jti' => $this->generateJti(),
+            'jti' => $jti,
         ];
 
         return $this->encodeToken($payload);
@@ -352,6 +370,10 @@ class TokenGenerator
 
         if (!empty($operation)) {
             $additionalClaims['operation'] = $operation;
+        }
+
+        if ($operation === 'download') {
+            $additionalClaims['scope'] = NodeJwtScope::BackupDownload->value;
         }
 
         return $this->generateWingsApiToken(
@@ -528,6 +550,18 @@ class TokenGenerator
         } catch (\Exception $e) {
             throw new \Exception('Failed to encode token: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Format JWT scope claim values for Wings.
+     */
+    private function formatScope(NodeJwtScope ...$scopes): string
+    {
+        if ($scopes === []) {
+            throw new \InvalidArgumentException('Cannot generate a JWT without providing at least one scope.');
+        }
+
+        return implode(' ', array_map(static fn (NodeJwtScope $scope) => $scope->value, $scopes));
     }
 
     /**

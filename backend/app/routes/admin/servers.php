@@ -280,6 +280,23 @@ return function (RouteCollection $routes): void {
         ['POST']
     );
 
+    // Warn server owner
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-servers-warn',
+        '/api/admin/servers/{id}/warn',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid server ID', 'INVALID_SERVER_ID', 400);
+            }
+
+            return (new ServersController())->warn($request, (int) $id);
+        },
+        Permissions::ADMIN_SERVERS_EDIT,
+        ['POST']
+    );
+
     // Unsuspend a server
     App::getInstance(true)->registerAdminRoute(
         $routes,

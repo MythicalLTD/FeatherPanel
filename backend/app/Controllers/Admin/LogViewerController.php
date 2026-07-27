@@ -325,8 +325,8 @@ class LogViewerController
 
     #[OA\Post(
         path: '/api/admin/log-viewer/upload',
-        summary: 'Upload logs to mclo.gs',
-        description: 'Upload recent web and app logs to mclo.gs paste service and get shareable URLs. Requires ADMIN_ROOT permissions.',
+        summary: 'Upload logs to MythicalSystems Paste',
+        description: 'Upload recent web and app logs to pastes.mythicalsystems.org and get shareable URLs. Requires ADMIN_ROOT permissions.',
         tags: ['Admin - Log Viewer'],
         responses: [
             new OA\Response(
@@ -441,7 +441,7 @@ class LogViewerController
                 $webContent = $truncateContent(
                     LogHelper::readLastLines($webLogFile, $lineLimit),
                 );
-                $results['web'] = LogHelper::uploadToMcloGs($webContent);
+                $results['web'] = LogHelper::uploadPaste($webContent, 'featherpanel-web');
             } else {
                 // Do not fail the whole upload if web logs are missing – this is expected on some setups.
                 $results['web'] = [
@@ -456,7 +456,7 @@ class LogViewerController
                 $appContent = $truncateContent(
                     LogHelper::readLastLines($appLogFile, $lineLimit),
                 );
-                $results['app'] = LogHelper::uploadToMcloGs($appContent);
+                $results['app'] = LogHelper::uploadPaste($appContent, 'featherpanel-app');
             } else {
                 $results['app'] = [
                     'success' => false,
@@ -470,7 +470,7 @@ class LogViewerController
                 $mailContent = $truncateContent(
                     LogHelper::readLastLines($mailLogFile, $lineLimit),
                 );
-                $results['mail'] = LogHelper::uploadToMcloGs($mailContent);
+                $results['mail'] = LogHelper::uploadPaste($mailContent, 'featherpanel-mail');
             } else {
                 $results['mail'] = [
                     'success' => false,
@@ -484,7 +484,7 @@ class LogViewerController
                 $runnerContent = $truncateContent(
                     LogHelper::readLastLines($runnerLogFile, $lineLimit),
                 );
-                $results['runner'] = LogHelper::uploadToMcloGs($runnerContent);
+                $results['runner'] = LogHelper::uploadPaste($runnerContent, 'featherpanel-runner');
             } else {
                 $results['runner'] = [
                     'success' => false,

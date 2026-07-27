@@ -52,7 +52,7 @@ export default function MarketplacePage() {
             <div className='grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3'>
                 <ResourceCard
                     title={t('admin.marketplace.index.plugins.title')}
-                    description={t('admin.marketplace.index.plugins.description')}
+                    description='Team Mythic marketplace products — releases, .fpa downloads, and reviews.'
                     icon={Puzzle}
                     badges={[
                         {
@@ -60,7 +60,7 @@ export default function MarketplacePage() {
                             className: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
                         },
                     ]}
-                    onClick={() => router.push('/admin/feathercloud/plugins')}
+                    onClick={() => router.push('/admin/feathercloud/products')}
                     className='border-blue-500/20 hover:border-blue-500/40'
                     highlightClassName='bg-linear-to-br from-blue-500/10 via-transparent to-transparent'
                     iconClassName='text-blue-500'

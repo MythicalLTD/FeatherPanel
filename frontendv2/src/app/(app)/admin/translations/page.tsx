@@ -43,7 +43,7 @@ import {
     Check,
     X,
     FileCode,
-    Users,
+    ExternalLink,
     MoreHorizontal,
 } from 'lucide-react';
 import {
@@ -353,10 +353,20 @@ export default function TranslationsPage() {
                                     </DropdownMenuItem>
                                 )}
                                 <DropdownMenuItem
-                                    onClick={() => (location.href = 'https://github.com/featherpanel-com/translations')}
+                                    onClick={() =>
+                                        window.open(
+                                            'https://translate.mythicalsystems.org/featherpanel',
+                                            '_blank',
+                                            'noopener,noreferrer',
+                                        )
+                                    }
                                 >
-                                    <Users className='mr-2 h-4 w-4' />
+                                    <ExternalLink className='mr-2 h-4 w-4' />
                                     {t('admin.translations.community_made')}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => (location.href = '/admin/feathercloud/translations')}>
+                                    <Globe className='mr-2 h-4 w-4' />
+                                    Mythic Translate install
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>

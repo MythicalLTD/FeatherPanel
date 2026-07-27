@@ -17,17 +17,19 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useEffect, useState, useRef, useCallback, use, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Editor, OnMount } from '@monaco-editor/react';
+import type { OnMount } from '@monaco-editor/react';
 import { filesApi } from '@/lib/files-api';
 import { toast } from 'sonner';
-import { Save, Loader2, FileCode, Lock, CheckCircle2, Boxes } from 'lucide-react';
+import { Save, Loader2, FileCode, Lock, CheckCircle2, Boxes, Monitor, Smartphone } from 'lucide-react';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
+import { useFileEditorEngine } from '@/hooks/useFileEditorEngine';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/featherui/Button';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { FileTextEditor } from '@/components/server/files/FileTextEditor';
 import { MinecraftServerPropertiesEditor } from '@/components/server/files/editors/MinecraftServerPropertiesEditor';
 import { SpigotConfigurationEditor } from '@/components/server/files/editors/SpigotConfigurationEditor';
 import { OpsEditor } from '@/components/server/files/editors/OpsEditor';
@@ -68,6 +70,8 @@ export default function FileEditorPage({
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const editorRef = useRef<any>(null);
+
+    const { engine, toggleEngine } = useFileEditorEngine();
 
     const { hasPermission } = useServerPermissions(uuidShort);
     const canEdit = hasPermission('file.update');
@@ -331,34 +335,8 @@ export default function FileEditorPage({
         editorRef.current = editor;
     };
 
-    const getLanguage = (name: string) => {
-        const ext = name.split('.').pop()?.toLowerCase();
-        switch (ext) {
-            case 'js':
-            case 'jsx':
-                return 'javascript';
-            case 'ts':
-            case 'tsx':
-                return 'typescript';
-            case 'json':
-                return 'json';
-            case 'html':
-                return 'html';
-            case 'css':
-                return 'css';
-            case 'md':
-                return 'markdown';
-            case 'py':
-                return 'python';
-            case 'sh':
-                return 'shell';
-            case 'yml':
-            case 'yaml':
-                return 'yaml';
-            default:
-                return 'plaintext';
-        }
-    };
+    const editorEngineLabel =
+        engine === 'monaco' ? t('files.editor.engine_monaco') : t('files.editor.engine_codemirror');
 
     if (loading) {
         return (
@@ -477,11 +455,33 @@ export default function FileEditorPage({
                                     {fileName}
                                 </span>
                                 <span className='text-muted-foreground text-[10px] font-medium tracking-tighter uppercase'>
-                                    Monaco Editor Engine v0.34.1
+                                    {editorEngineLabel}
                                 </span>
                             </div>
                         </div>
-                        <div className='flex items-center gap-3'>
+                        <div className='flex flex-wrap items-center justify-end gap-2 sm:gap-3'>
+                            <Button
+                                size='sm'
+                                variant='outline'
+                                className='gap-2'
+                                onClick={toggleEngine}
+                                title={
+                                    engine === 'monaco'
+                                        ? t('files.editor.switch_to_codemirror')
+                                        : t('files.editor.switch_to_monaco')
+                                }
+                            >
+                                {engine === 'monaco' ? (
+                                    <Smartphone className='h-4 w-4' />
+                                ) : (
+                                    <Monitor className='h-4 w-4' />
+                                )}
+                                <span className='hidden sm:inline'>
+                                    {engine === 'monaco'
+                                        ? t('files.editor.switch_to_codemirror')
+                                        : t('files.editor.switch_to_monaco')}
+                                </span>
+                            </Button>
                             {shouldOfferMinecraftEditor && useRawEditor && (
                                 <Button
                                     size='sm'
@@ -542,33 +542,16 @@ export default function FileEditorPage({
                             </Button>
                         </div>
                     </div>
-                    <div className='relative h-full min-h-0 w-full flex-1'>
+                    <div className='relative h-full min-h-[50vh] w-full flex-1 sm:min-h-0'>
                         <div className='absolute inset-0'>
-                            <Editor
-                                height='100%'
-                                defaultLanguage={getLanguage(fileName)}
-                                value={content}
-                                theme={theme === 'dark' ? 'vs-dark' : 'light'}
-                                onMount={handleEditorMount}
-                                onChange={(value) => {
-                                    if (value !== undefined) {
-                                        setContent(value);
-                                    }
-                                }}
-                                options={{
-                                    minimap: { enabled: true },
-                                    fontSize: 14,
-                                    lineNumbers: 'on',
-                                    readOnly: !canEdit,
-                                    scrollBeyondLastLine: false,
-                                    automaticLayout: true,
-                                    padding: { top: 20 },
-                                    fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
-                                    fontLigatures: true,
-                                    cursorSmoothCaretAnimation: 'on',
-                                    cursorBlinking: 'expand',
-                                    smoothScrolling: true,
-                                }}
+                            <FileTextEditor
+                                engine={engine}
+                                fileName={fileName}
+                                content={content}
+                                canEdit={canEdit}
+                                theme={theme}
+                                onChange={setContent}
+                                onMonacoMount={handleEditorMount}
                             />
                         </div>
                     </div>

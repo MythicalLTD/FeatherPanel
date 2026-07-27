@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import axios, { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from 'axios';
 import { getClientSyncHeaders } from '@/lib/clientIdentity';
+import { isCloudflareChallengeAxios } from '@/lib/cloudflare-challenge';
 import { acquireWingsSlot, isWingsAdminNodeRequest, releaseWingsSlot } from '@/lib/wingsRequestQueue';
 
 type WingsQueuedAxiosRequestConfig = InternalAxiosRequestConfig & {
@@ -114,6 +115,11 @@ const attachCommonResponseInterceptor = (client: AxiosInstance) => {
     client.interceptors.response.use(
         (response) => response,
         (error: AxiosError<{ error_code?: string; error_message?: string }>) => {
+            // Never treat Cloudflare challenges as a logout — cookie may still be valid.
+            if (isCloudflareChallengeAxios(error)) {
+                return Promise.reject(error);
+            }
+
             // Handle common auth state errors
             const errorCode = error.response?.data?.error_code;
             const status = error.response?.status;

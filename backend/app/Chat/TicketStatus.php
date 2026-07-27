@@ -46,7 +46,7 @@ class TicketStatus
             $params['search'] = '%' . $search . '%';
         }
 
-        $sql .= ' ORDER BY name ASC LIMIT :limit OFFSET :offset';
+        $sql .= ' ORDER BY sort_order ASC, name ASC LIMIT :limit OFFSET :offset';
         $stmt = $pdo->prepare($sql);
 
         if (!empty($params)) {
@@ -79,6 +79,60 @@ class TicketStatus
         $stmt->execute(['id' => $id]);
 
         return $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
+    }
+
+    /**
+     * Get the status that should be assigned to newly created tickets.
+     *
+     * Prefers the row marked {@see is_default}, then the lowest sort_order.
+     */
+    public static function getDefault(): ?array
+    {
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare(
+            'SELECT * FROM ' . self::$table . ' WHERE is_default = 1 ORDER BY sort_order ASC, id ASC LIMIT 1'
+        );
+        $stmt->execute();
+        $default = $stmt->fetch(\PDO::FETCH_ASSOC);
+        if ($default) {
+            return $default;
+        }
+
+        $stmt = $pdo->prepare(
+            'SELECT * FROM ' . self::$table . ' ORDER BY sort_order ASC, id ASC LIMIT 1'
+        );
+        $stmt->execute();
+
+        return $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
+    }
+
+    /**
+     * Next sort_order value for a newly created status.
+     */
+    public static function getNextSortOrder(): int
+    {
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->query('SELECT COALESCE(MAX(sort_order), 0) + 10 FROM ' . self::$table);
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    /**
+     * Clear the default flag from all statuses, optionally keeping one row.
+     */
+    public static function clearDefaultFlag(?int $exceptId = null): void
+    {
+        $pdo = Database::getPdoConnection();
+        if ($exceptId !== null && $exceptId > 0) {
+            $stmt = $pdo->prepare(
+                'UPDATE ' . self::$table . ' SET is_default = 0 WHERE id != :except_id'
+            );
+            $stmt->execute(['except_id' => $exceptId]);
+
+            return;
+        }
+
+        $pdo->exec('UPDATE ' . self::$table . ' SET is_default = 0');
     }
 
     /**
@@ -127,16 +181,18 @@ class TicketStatus
             }
         }
 
-        $fields = ['name', 'color'];
-        $insert = [];
-        foreach ($fields as $field) {
-            if ($field === 'color') {
-                $insert[$field] = $data[$field] ?? '#000000';
-            } else {
-                $insert[$field] = $data[$field];
-            }
+        $insert = [
+            'name' => $data['name'],
+            'color' => $data['color'] ?? '#000000',
+            'sort_order' => isset($data['sort_order']) ? (int) $data['sort_order'] : self::getNextSortOrder(),
+            'is_default' => !empty($data['is_default']) ? 1 : 0,
+        ];
+
+        if ($insert['is_default'] === 1) {
+            self::clearDefaultFlag();
         }
 
+        $fields = array_keys($insert);
         $pdo = Database::getPdoConnection();
         $fieldList = '`' . implode('`, `', $fields) . '`';
         $placeholders = ':' . implode(', :', $fields);
@@ -144,7 +200,12 @@ class TicketStatus
         $stmt = $pdo->prepare($sql);
 
         if ($stmt->execute($insert)) {
-            return (int) $pdo->lastInsertId();
+            $id = (int) $pdo->lastInsertId();
+            if ($insert['is_default'] === 1) {
+                self::clearDefaultFlag($id);
+            }
+
+            return $id;
         }
 
         return false;
@@ -168,19 +229,31 @@ class TicketStatus
             return false;
         }
 
-        $fields = ['name', 'color'];
+        $fields = ['name', 'color', 'sort_order', 'is_default'];
         $set = [];
         $params = ['id' => $id];
 
         foreach ($fields as $field) {
-            if (array_key_exists($field, $data)) {
-                $params[$field] = $data[$field];
-                $set[] = "`$field` = :$field";
+            if (!array_key_exists($field, $data)) {
+                continue;
             }
+
+            if ($field === 'sort_order') {
+                $params[$field] = (int) $data[$field];
+            } elseif ($field === 'is_default') {
+                $params[$field] = !empty($data[$field]) ? 1 : 0;
+            } else {
+                $params[$field] = $data[$field];
+            }
+            $set[] = "`$field` = :$field";
         }
 
         if (empty($set)) {
             return false;
+        }
+
+        if (isset($params['is_default']) && $params['is_default'] === 1) {
+            self::clearDefaultFlag($id);
         }
 
         $pdo = Database::getPdoConnection();

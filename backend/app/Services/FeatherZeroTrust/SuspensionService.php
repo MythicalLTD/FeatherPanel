@@ -17,13 +17,13 @@
 
 namespace App\Services\FeatherZeroTrust;
 
-use App\Helpers\WingsUrlHelper;
 use App\App;
 use App\Chat\Node;
 use App\Chat\User;
 use App\Chat\Server;
 use App\Services\Wings\Wings;
 use App\Config\ConfigInterface;
+use App\Helpers\WingsUrlHelper;
 use App\Mail\templates\ServerBanned;
 use App\Helpers\ModerationReasonHelper;
 use App\Plugins\Events\Events\ServerEvent;

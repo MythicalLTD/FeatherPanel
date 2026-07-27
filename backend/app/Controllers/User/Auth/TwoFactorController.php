@@ -282,6 +282,15 @@ class TwoFactorController
 
             return ApiResponse::error('Invalid 2FA code', 'INVALID_CODE');
         }
+
+        // Logging in cancels a pending self-service account deletion request
+        if (\App\Services\User\UserDeletionService::hasPendingDeletion($userInfo)) {
+            \App\Services\User\UserDeletionService::cancelPendingDeletion($userInfo);
+            $userInfo['deletion_requested_at'] = null;
+            $userInfo['deletion_scheduled_at'] = null;
+            $userInfo['deletion_mode'] = null;
+        }
+
         // Set session/cookie and allow login
         $token = User::ensureRememberToken($userInfo['uuid'], $userInfo['remember_token'] ?? null);
         if ($token === false) {

@@ -86,4 +86,14 @@ return function (RouteCollection $routes): void {
         Permissions::ADMIN_ROLES_CREATE,
         ['PUT']
     );
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-roles-upload-badge-icon',
+        '/api/admin/roles/upload-badge-icon',
+        function (Request $request) {
+            return (new RolesController())->uploadBadgeIcon($request);
+        },
+        Permissions::ADMIN_ROLES_EDIT,
+        ['POST']
+    );
 };

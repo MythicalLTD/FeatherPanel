@@ -79,6 +79,7 @@ import { HeadlessModal } from '@/components/ui/headless-modal';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { TransferServerDialog } from '@/components/admin/TransferServerDialog';
+import { ServerPowerMenu, sendServerPowerAction } from '@/components/admin/ServerPowerMenu';
 
 function resolveAvatarSrc(avatar?: string): string | undefined {
     if (avatar && (avatar.startsWith('http') || avatar.startsWith('/'))) {
@@ -185,6 +186,7 @@ export default function ServersPage() {
     const [locationsList, setLocationsList] = useState<{ id: number; name: string; description?: string }[]>([]);
     const [selectedServerIds, setSelectedServerIds] = useState<number[]>([]);
     const [bulkPowerLoading, setBulkPowerLoading] = useState(false);
+    const [confirmBulkKill, setConfirmBulkKill] = useState(false);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -277,7 +279,7 @@ export default function ServersPage() {
 
     const selectedServers = servers.filter((server) => selectedServerIds.includes(server.id));
 
-    const handleBulkPowerAction = async (action: 'start' | 'stop' | 'restart') => {
+    const handleBulkPowerAction = async (action: 'start' | 'stop' | 'restart' | 'kill') => {
         if (selectedServers.length === 0) {
             return;
         }
@@ -286,8 +288,7 @@ export default function ServersPage() {
         try {
             const results = await Promise.all(
                 selectedServers.map((server) =>
-                    axios
-                        .post(`/api/user/servers/${server.uuidShort}/power/${action}`)
+                    sendServerPowerAction(server.uuidShort, action)
                         .then(() => true)
                         .catch(() => false),
                 ),
@@ -414,6 +415,12 @@ export default function ServersPage() {
     const formatCpu = (cpu: number) => {
         if (cpu === 0) return '∞';
         return `${cpu}%`;
+    };
+
+    const formatBackupLimit = (limit: number | undefined) => {
+        if (limit === undefined || limit === null) return '—';
+        if (limit === 0) return t('admin.servers.form.disabled');
+        return String(limit);
     };
 
     const fetchOwnerFilterUsers = useCallback(async (query: string) => {
@@ -699,6 +706,16 @@ export default function ServersPage() {
                             >
                                 {t('servers.restart')}
                             </Button>
+                            <Button
+                                type='button'
+                                variant='outline'
+                                size='sm'
+                                className='text-destructive hover:text-destructive'
+                                onClick={() => setConfirmBulkKill(true)}
+                                disabled={selectedServers.length === 0 || bulkPowerLoading}
+                            >
+                                {t('servers.console.kill')}
+                            </Button>
                         </div>
                     </div>
                     {pagination.totalPages > 1 && (
@@ -817,6 +834,11 @@ export default function ServersPage() {
                                                 checked={selectedServerIds.includes(server.id)}
                                                 onCheckedChange={() => toggleServerSelection(server.id)}
                                                 className='h-4 w-4'
+                                            />
+                                            <ServerPowerMenu
+                                                uuidShort={server.uuidShort}
+                                                serverName={server.name}
+                                                disabled={server.status === 'transferring'}
                                             />
                                             <Button
                                                 size='sm'
@@ -1127,7 +1149,7 @@ export default function ServersPage() {
                                                     />
                                                     <DetailItem
                                                         label={t('admin.servers.details.labels.backup_limit')}
-                                                        value={selectedServer?.backup_limit || '∞'}
+                                                        value={formatBackupLimit(selectedServer?.backup_limit)}
                                                     />
                                                 </div>
                                             </div>
@@ -1188,6 +1210,33 @@ export default function ServersPage() {
                     )}
                 </SheetContent>
             </Sheet>
+
+            <AlertDialog open={confirmBulkKill} onOpenChange={setConfirmBulkKill}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>{t('servers.console.kill_confirm_title')}</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {t('servers.bulk.kill_confirm_description', {
+                                count: String(selectedServers.length),
+                            })}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={bulkPowerLoading}>{t('common.cancel')}</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={(e) => {
+                                e.preventDefault();
+                                setConfirmBulkKill(false);
+                                void handleBulkPowerAction('kill');
+                            }}
+                            disabled={bulkPowerLoading}
+                            className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
+                        >
+                            {t('servers.console.kill_confirm')}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
 
             <AlertDialog
                 open={confirmDeleteId !== null}
