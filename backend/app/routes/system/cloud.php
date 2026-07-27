@@ -148,15 +148,33 @@ return static function (RouteCollection $routes): void {
                     }
 
                     $timestamp = gmdate('c');
-                    $config->setSetting(ConfigInterface::FEATHERCLOUD_CLOUD_PUBLIC_KEY, $panelPublic);
-                    $config->setSetting(ConfigInterface::FEATHERCLOUD_CLOUD_PRIVATE_KEY, $panelPrivate);
-                    $config->setSetting(ConfigInterface::FEATHERCLOUD_CLOUD_LAST_ROTATED, $timestamp);
+                    $storedPanelPublic = trim((string) ($config->getSetting(ConfigInterface::FEATHERCLOUD_CLOUD_PUBLIC_KEY, '') ?? ''));
+                    $storedPanelPrivate = trim((string) ($config->getSetting(ConfigInterface::FEATHERCLOUD_CLOUD_PRIVATE_KEY, '') ?? ''));
+                    $hasStoredIdentityPair = $storedPanelPublic !== '' && $storedPanelPrivate !== '';
+
+                    if ($hasStoredIdentityPair) {
+                        if (
+                            !hash_equals($storedPanelPublic, $panelPublic)
+                            || !hash_equals($storedPanelPrivate, $panelPrivate)
+                        ) {
+                            $logger->warning('Mythic panel-handshake: panel identity keys mismatch');
+
+                            return ApiResponse::error('Invalid panel credentials.', 'INVALID_PANEL_CREDENTIALS', 403);
+                        }
+                    } else {
+                        $config->setSetting(ConfigInterface::FEATHERCLOUD_CLOUD_PUBLIC_KEY, $panelPublic);
+                        $config->setSetting(ConfigInterface::FEATHERCLOUD_CLOUD_PRIVATE_KEY, $panelPrivate);
+                        $config->setSetting(ConfigInterface::FEATHERCLOUD_CLOUD_LAST_ROTATED, $timestamp);
+                    }
+
                     $config->setSetting(ConfigInterface::FEATHERCLOUD_LAST_SYNCED_AT, $timestamp);
                     if (!$config->getSetting(ConfigInterface::FEATHERCLOUD_LINKED_AT, null)) {
                         $config->setSetting(ConfigInterface::FEATHERCLOUD_LINKED_AT, $timestamp);
                     }
 
-                    $logger->info('Mythic panel-handshake: identity keys stored');
+                    $logger->info($hasStoredIdentityPair
+                        ? 'Mythic panel-handshake: existing identity keys verified'
+                        : 'Mythic panel-handshake: identity keys stored');
 
                     return ApiResponse::success([
                         'timestamp' => $timestamp,

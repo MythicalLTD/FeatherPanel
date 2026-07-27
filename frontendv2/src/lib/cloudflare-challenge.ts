@@ -20,6 +20,7 @@ const CHALLENGE_MARKERS = [
     'challenges.cloudflare.com',
     '__cf_chl_',
     'cf-chl-',
+    'enable javascript and cookies to continue',
 ];
 
 export function isCloudflareChallengeText(value: string | null | undefined): boolean {
@@ -29,7 +30,44 @@ export function isCloudflareChallengeText(value: string | null | undefined): boo
 }
 
 export function isCloudflareChallengeResponseData(data: unknown): boolean {
-    return typeof data === 'string' && isCloudflareChallengeText(data);
+    if (typeof data === 'string') {
+        return isCloudflareChallengeText(data);
+    }
+    return false;
+}
+
+/** Detect Cloudflare challenge / Precursor interstitial from an Axios response or error. */
+export function isCloudflareChallengeAxios(errorOrResponse: unknown): boolean {
+    if (!errorOrResponse || typeof errorOrResponse !== 'object') {
+        return false;
+    }
+
+    const maybeError = errorOrResponse as {
+        response?: { data?: unknown; headers?: Record<string, unknown>; status?: number };
+        data?: unknown;
+        headers?: Record<string, unknown>;
+        status?: number;
+    };
+
+    const response = maybeError.response ?? maybeError;
+    const data = response?.data;
+    if (isCloudflareChallengeResponseData(data)) {
+        return true;
+    }
+
+    const headers = response?.headers as Record<string, unknown> | undefined;
+    const contentType = String(headers?.['content-type'] ?? headers?.['Content-Type'] ?? '').toLowerCase();
+    if (contentType.includes('text/html') && typeof data === 'string') {
+        return isCloudflareChallengeText(data);
+    }
+
+    // Common CF challenge status when body is HTML interstitial
+    const status = response?.status;
+    if ((status === 403 || status === 503) && typeof data === 'string' && data.includes('<html')) {
+        return isCloudflareChallengeText(data) || data.toLowerCase().includes('cloudflare');
+    }
+
+    return false;
 }
 
 export function isCloudflareChallengeDocument(doc: Document | null | undefined): boolean {

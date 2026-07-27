@@ -355,6 +355,7 @@ class CloudManagementController
     {
         try {
             $config = $this->app->getConfig();
+            $config->setSetting(ConfigInterface::FEATHERCLOUD_RELINK_PENDING_AT, gmdate('c'));
 
             // Get panel information
             $panelName = $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel');
@@ -368,12 +369,12 @@ class CloudManagementController
             }
             $logoUrl = $config->getSetting(ConfigInterface::APP_LOGO_WHITE, 'https://github.com/featherpanel-com.png');
 
-            // Get or generate panel credentials
-            $panelPublic = $config->getSetting(ConfigInterface::FEATHERCLOUD_CLOUD_PUBLIC_KEY, '');
-            $panelPrivate = $config->getSetting(ConfigInterface::FEATHERCLOUD_CLOUD_PRIVATE_KEY, '');
+            // Reuse the existing identity pair for linked panels. Only create a new pair
+            // for a truly brand-new connection with no stored identity keys at all.
+            $panelPublic = trim((string) ($config->getSetting(ConfigInterface::FEATHERCLOUD_CLOUD_PUBLIC_KEY, '') ?? ''));
+            $panelPrivate = trim((string) ($config->getSetting(ConfigInterface::FEATHERCLOUD_CLOUD_PRIVATE_KEY, '') ?? ''));
 
-            // If credentials don't exist, generate them
-            if (empty($panelPublic) || empty($panelPrivate)) {
+            if ($panelPublic === '' && $panelPrivate === '') {
                 $panelPublic = 'FCPUB-' . strtoupper(bin2hex(random_bytes(18)));
                 $panelPrivate = 'FCPRIV-' . base64_encode(random_bytes(48));
                 $timestamp = gmdate('c');
@@ -386,6 +387,12 @@ class CloudManagementController
                     $request,
                     'generate_cloud_panel_credentials',
                     'Panel-issued FeatherCloud credentials were auto-generated for OAuth2 linking'
+                );
+            } elseif ($panelPublic === '' || $panelPrivate === '') {
+                return ApiResponse::error(
+                    'Panel identity keys are incomplete. Re-link or manually repair the existing connection instead of generating a replacement pair.',
+                    'INCOMPLETE_PANEL_CREDENTIALS',
+                    409
                 );
             }
 
@@ -521,11 +528,14 @@ class CloudManagementController
         }
 
         $config = $this->app->getConfig();
+        $storedIdentityPublic = trim((string) ($config->getSetting(ConfigInterface::FEATHERCLOUD_CLOUD_PUBLIC_KEY, '') ?? ''));
+        $storedIdentityPrivate = trim((string) ($config->getSetting(ConfigInterface::FEATHERCLOUD_CLOUD_PRIVATE_KEY, '') ?? ''));
+        $relinkPendingAt = $config->getSetting(ConfigInterface::FEATHERCLOUD_RELINK_PENDING_AT, null);
         if ($identityPublic === '') {
-            $identityPublic = trim((string) ($config->getSetting(ConfigInterface::FEATHERCLOUD_CLOUD_PUBLIC_KEY, '') ?? ''));
+            $identityPublic = $storedIdentityPublic;
         }
         if ($identityPrivate === '') {
-            $identityPrivate = trim((string) ($config->getSetting(ConfigInterface::FEATHERCLOUD_CLOUD_PRIVATE_KEY, '') ?? ''));
+            $identityPrivate = $storedIdentityPrivate;
         }
 
         if ($identityPublic === '' || $identityPrivate === '') {
@@ -546,10 +556,31 @@ class CloudManagementController
 
         try {
             $timestamp = gmdate('c');
+            $hasStoredIdentityPair = $storedIdentityPublic !== '' && $storedIdentityPrivate !== '';
+            $allowIdentityReplacement = self::isRecentPendingRelink($relinkPendingAt);
 
-            $config->setSetting(ConfigInterface::FEATHERCLOUD_CLOUD_PUBLIC_KEY, $identityPublic);
-            $config->setSetting(ConfigInterface::FEATHERCLOUD_CLOUD_PRIVATE_KEY, $identityPrivate);
-            $config->setSetting(ConfigInterface::FEATHERCLOUD_CLOUD_LAST_ROTATED, $timestamp);
+            if ($hasStoredIdentityPair) {
+                if (
+                    !hash_equals($storedIdentityPublic, $identityPublic)
+                    || !hash_equals($storedIdentityPrivate, $identityPrivate)
+                ) {
+                    if (!$allowIdentityReplacement) {
+                        return ApiResponse::error(
+                            'Invalid panel credentials.',
+                            'INVALID_PANEL_CREDENTIALS',
+                            403
+                        );
+                    }
+
+                    $config->setSetting(ConfigInterface::FEATHERCLOUD_CLOUD_PUBLIC_KEY, $identityPublic);
+                    $config->setSetting(ConfigInterface::FEATHERCLOUD_CLOUD_PRIVATE_KEY, $identityPrivate);
+                    $config->setSetting(ConfigInterface::FEATHERCLOUD_CLOUD_LAST_ROTATED, $timestamp);
+                }
+            } else {
+                $config->setSetting(ConfigInterface::FEATHERCLOUD_CLOUD_PUBLIC_KEY, $identityPublic);
+                $config->setSetting(ConfigInterface::FEATHERCLOUD_CLOUD_PRIVATE_KEY, $identityPrivate);
+                $config->setSetting(ConfigInterface::FEATHERCLOUD_CLOUD_LAST_ROTATED, $timestamp);
+            }
 
             if ($accessPublic !== '' && $accessPrivate !== '') {
                 $config->setSetting(ConfigInterface::FEATHERCLOUD_ACCESS_PUBLIC_KEY, $accessPublic);
@@ -559,6 +590,7 @@ class CloudManagementController
 
             $config->setSetting(ConfigInterface::FEATHERCLOUD_LAST_SYNCED_AT, $timestamp);
             $config->setSetting(ConfigInterface::FEATHERCLOUD_LINKED_AT, $timestamp);
+            $config->setSetting(ConfigInterface::FEATHERCLOUD_RELINK_PENDING_AT, null);
 
             $user = $request->attributes->get('user');
             $featherUuid = is_array($user) ? trim((string) ($user['uuid'] ?? '')) : '';
@@ -669,6 +701,7 @@ class CloudManagementController
             $config->setSetting(ConfigInterface::FEATHERCLOUD_CLOUD_PRIVATE_KEY, null);
             $config->setSetting(ConfigInterface::FEATHERCLOUD_CLOUD_LAST_ROTATED, null);
             $config->setSetting(ConfigInterface::FEATHERCLOUD_LAST_SYNCED_AT, null);
+            $config->setSetting(ConfigInterface::FEATHERCLOUD_RELINK_PENDING_AT, null);
             MythicMemberResolver::clearLinkState();
 
             $this->logCloudActivity(
@@ -921,6 +954,22 @@ class CloudManagementController
             $this->app->getLogger()->warning(
                 'Cloud activity log skipped (' . $name . '): ' . $exception->getMessage()
             );
+        }
+    }
+
+    private static function isRecentPendingRelink(mixed $value): bool
+    {
+        if (!is_string($value) || trim($value) === '') {
+            return false;
+        }
+
+        try {
+            $pendingAt = new \DateTimeImmutable($value);
+            $now = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+
+            return abs($now->getTimestamp() - $pendingAt->getTimestamp()) <= 1800;
+        } catch (\Throwable) {
+            return false;
         }
     }
 }

@@ -34,6 +34,7 @@ use App\Chat\ServerDatabase;
 use App\Chat\ServerVariable;
 use App\Helpers\ApiResponse;
 use App\Chat\SubdomainDomain;
+use App\Helpers\AppUrlHelper;
 use OpenApi\Attributes as OA;
 use App\Chat\DatabaseInstance;
 use App\Config\ConfigInterface;
@@ -917,7 +918,7 @@ class ServerUserController
             // Create JWT service instance
             $jwtService = new JwtService(
                 $token, // Node secret
-                App::getInstance(true)->getConfig()->getSetting(ConfigInterface::APP_URL, 'https://featherpanel.mythical.systems'), // Panel URL
+                AppUrlHelper::wingsRemoteUrl(), // Must match Wings `remote:` (issuer)
                 $wingsBaseUrl // Wings URL
             );
 

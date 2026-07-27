@@ -21,7 +21,6 @@ use App\Helpers\ApiResponse;
 use App\Controllers\Admin\NodesController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
-use App\Controllers\Admin\AffiliatesController;
 use App\Controllers\Admin\NodeStatusController;
 
 return function (RouteCollection $routes): void {
@@ -44,17 +43,6 @@ return function (RouteCollection $routes): void {
             return (new NodesController())->index($request);
         },
         Permissions::ADMIN_NODES_VIEW,
-    );
-
-    App::getInstance(true)->registerAdminRoute(
-        $routes,
-        'admin-nodes-affiliates',
-        '/api/admin/nodes/affiliates',
-        function (Request $request) {
-            return (new AffiliatesController())->list($request);
-        },
-        Permissions::ADMIN_NODES_VIEW,
-        ['GET']
     );
 
     App::getInstance(true)->registerAdminRoute(

@@ -6,7 +6,10 @@ use chrono;
 use std::collections::HashSet;
 
 use crate::proxmox::{ProxmoxClient, VmType, PowerAction};
-use super::create::{handle_create_task, handle_reinstall_task, send_vm_email};
+use super::create::{
+    handle_create_task, handle_reinstall_task, is_transient_proxmox_resize_error,
+    resize_retry_backoff_secs, send_vm_email,
+};
 
 
 pub async fn process_vm_task(pool: &MySqlPool, task_id: &str, encryption_key: &str, _debug_decrypt: bool) -> Result<()> {
@@ -136,6 +139,7 @@ pub async fn process_vm_task(pool: &MySqlPool, task_id: &str, encryption_key: &s
                                     let mut meta_mut = meta.clone();
                                     meta_mut["clone_retry"] = json!(retry_count + 1);
                                     meta_mut["current_step"] = json!("initial");
+                                    meta_mut["awaiting_resize"] = json!(false);
 
                                     sqlx::query("UPDATE featherpanel_vm_tasks SET status = 'pending', upid = '', vmid = ?, data = ? WHERE task_id = ?")
                                         .bind(new_vmid)
@@ -148,7 +152,67 @@ pub async fn process_vm_task(pool: &MySqlPool, task_id: &str, encryption_key: &s
                                     continue;
                                 }
                             }
-                            
+
+                            // Disk resize can fail with qemu-img "got timeout" under storage load.
+                            // Clear UPID and retry the resize step (do not bump vmid).
+                            let awaiting_resize = meta["awaiting_resize"].as_bool().unwrap_or(false);
+                            let should_retry_resize = (task_type == "create" || task_type == "reinstall")
+                                && current_step == "resize"
+                                && awaiting_resize
+                                && is_transient_proxmox_resize_error(err_str);
+
+                            if should_retry_resize {
+                                let retry_count: u64 = meta["resize_retry"].as_u64().unwrap_or(0);
+                                let max_retries: u64 = 5;
+
+                                if retry_count < max_retries {
+                                    let next_attempt = (retry_count as u32).saturating_add(1);
+                                    let wait = resize_retry_backoff_secs(next_attempt);
+                                    warn!(
+                                        "⚠️ Disk resize failed with transient Proxmox error (attempt {}/{}): {}. Waiting {}s then retrying resize...",
+                                        retry_count + 1,
+                                        max_retries,
+                                        error,
+                                        wait
+                                    );
+
+                                    let mut meta_mut = meta.clone();
+                                    meta_mut["resize_retry"] = json!(retry_count + 1);
+                                    meta_mut["awaiting_resize"] = json!(false);
+                                    meta_mut["current_step"] = json!("resize");
+
+                                    sqlx::query(
+                                        "UPDATE featherpanel_vm_tasks SET status = 'pending', upid = '', data = ? WHERE task_id = ?",
+                                    )
+                                    .bind(serde_json::to_string(&meta_mut)?)
+                                    .bind(task_id)
+                                    .execute(pool)
+                                    .await?;
+
+                                    tokio::time::sleep(tokio::time::Duration::from_secs(wait)).await;
+                                    continue;
+                                }
+
+                                let hinted = format!(
+                                    "{}. Tip: on the Proxmox node run `pvesm set <storage> --preallocation off` (e.g. `pvesm set raid1 --preallocation off`)",
+                                    error
+                                );
+                                error!("❌ Disk resize retries exhausted: {}", hinted);
+
+                                if task_type == "create" {
+                                    if let Some(instance_id) = meta["instance_id"].as_i64() {
+                                        let _ = sqlx::query("UPDATE featherpanel_vm_instances SET status = 'provisioning_failed' WHERE id = ?")
+                                            .bind(instance_id)
+                                            .execute(pool)
+                                            .await;
+                                        info!("⚠️ Marked VM instance {} as provisioning_failed", instance_id);
+                                    }
+                                }
+
+                                mark_failed(pool, task_id, &hinted).await?;
+                                return Ok(());
+                            }
+
                             // For create tasks, mark VM instance as damaged if it exists
                             if task_type == "create" {
                                 if let Some(instance_id) = meta["instance_id"].as_i64() {

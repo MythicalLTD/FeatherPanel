@@ -23,8 +23,8 @@ use App\Chat\Server;
 use App\Chat\Activity;
 use App\Chat\Allocation;
 use App\Chat\ServerTransfer;
+use App\Helpers\AppUrlHelper;
 use App\Services\Wings\Wings;
-use App\Config\ConfigInterface;
 use App\Helpers\WingsUrlHelper;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Plugins\Events\Events\ServerEvent;
@@ -166,8 +166,7 @@ class ServerTransferInitiator
             $newAdditionalAllocations = array_merge($newAdditionalAllocations, $pickResult['picked']);
         }
 
-        $config = App::getInstance(true)->getConfig();
-        $panelUrl = $config->getSetting(ConfigInterface::APP_URL, 'https://featherpanel.mythical.systems');
+        $panelUrl = AppUrlHelper::wingsRemoteUrl();
         $destinationUrl = WingsUrlHelper::buildFromNode($destinationNode);
 
         try {

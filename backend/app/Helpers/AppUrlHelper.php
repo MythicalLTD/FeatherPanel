@@ -37,6 +37,24 @@ class AppUrlHelper
         return rtrim((string) $appUrl, '/');
     }
 
+    /**
+     * Base URL Wings should call for panel APIs (SFTP auth, remote config, etc.).
+     * Prefer WINGS_REMOTE_URL when set so daemon traffic can bypass Cloudflare browser challenges.
+     */
+    public static function wingsRemoteUrl(): string
+    {
+        $configured = trim((string) (App::getInstance(true)->getConfig()->getSetting(
+            ConfigInterface::WINGS_REMOTE_URL,
+            ''
+        ) ?? ''));
+
+        if ($configured !== '') {
+            return rtrim($configured, '/');
+        }
+
+        return self::baseUrl();
+    }
+
     public static function apiUrl(string $path): string
     {
         $path = '/' . ltrim($path, '/');

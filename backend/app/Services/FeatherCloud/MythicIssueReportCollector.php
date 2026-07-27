@@ -337,7 +337,7 @@ class MythicIssueReportCollector
             }
 
             $header = "=== FeatherPanel {$type} log (last " . self::PANEL_LOG_LINES . " lines) ===\n";
-            $upload = LogHelper::uploadToMcloGs($header . $content);
+            $upload = LogHelper::uploadPaste($header . $content, 'featherpanel-issue');
             $results[$type] = $upload;
         }
 
@@ -407,7 +407,7 @@ class MythicIssueReportCollector
                 }
 
                 $header = "=== Wings node diagnostics: {$name} ({$fqdn}) ===\n";
-                $upload = LogHelper::uploadToMcloGs($header . $this->truncate($content));
+                $upload = LogHelper::uploadPaste($header . $this->truncate($content), 'featherpanel-issue');
                 if (!empty($upload['success'])) {
                     $entry['success'] = true;
                     $entry['url'] = $upload['url'] ?? null;

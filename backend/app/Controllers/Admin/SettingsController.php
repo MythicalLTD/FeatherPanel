@@ -170,6 +170,7 @@ class SettingsController
             'settings' => [
                 ConfigInterface::APP_NAME,
                 ConfigInterface::APP_URL,
+                ConfigInterface::WINGS_REMOTE_URL,
                 ConfigInterface::APP_LOGO_WHITE,
                 ConfigInterface::APP_LOGO_DARK,
                 ConfigInterface::APP_TIMEZONE,
@@ -525,6 +526,19 @@ class SettingsController
                 'required' => true,
                 'placeholder' => 'https://featherpanel.mythical.systems',
                 'validation' => 'required|string|max:255',
+                'options' => [],
+                'category' => 'app',
+            ],
+            ConfigInterface::WINGS_REMOTE_URL => [
+                'name' => ConfigInterface::WINGS_REMOTE_URL,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::WINGS_REMOTE_URL, ''),
+                'description' => 'Optional URL Wings uses for panel callbacks (SFTP auth, remote APIs). Set to a DNS-only (grey-cloud) hostname when Cloudflare Precursor Maximize Security or Under Attack Mode blocks daemon traffic to App URL. Leave empty to use App URL. Re-fetch each node config after changing.',
+                'type' => 'text',
+                'required' => false,
+                'placeholder' => 'https://panel-origin.example.com',
+                'validation' => 'nullable|string|max:255',
                 'options' => [],
                 'category' => 'app',
             ],

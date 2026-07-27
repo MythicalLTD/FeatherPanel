@@ -25,6 +25,15 @@ use App\Config\ConfigInterface;
  */
 class LogHelper
 {
+    /** MythicalSystems Paste API (mclo.gs-compatible). */
+    public const PASTE_API_BASE = 'https://pastes.mythicalsystems.org';
+
+    /** Web viewer host (paste.*, not pastes.*). */
+    public const PASTE_VIEWER_BASE = 'https://paste.mythicalsystems.org';
+
+    private const MAX_PASTE_BYTES = 10485760; // 10 MiB
+    private const MAX_PASTE_LINES = 25000;
+
     /**
      * Get the full path to a log file by type.
      *
@@ -126,23 +135,35 @@ class LogHelper
     }
 
     /**
-     * Upload log content to Mythic Panel paste API when linked, otherwise legacy paste host.
+     * Upload log content to MythicalSystems Paste API.
+     * Prefers linked Mythic Cloud (team paste quota) when available, otherwise
+     * posts anonymously to pastes.mythicalsystems.org (mclo.gs-compatible).
      *
      * @param string $content Log content to upload
+     * @param string $source Source name (domain / software)
      *
      * @return array Upload result with 'success', 'url', 'raw', 'id' or 'error'
      */
-    public static function uploadToMcloGs(string $content): array
+    public static function uploadPaste(string $content, string $source = 'featherpanel'): array
     {
-        $mythic = self::uploadToMythicPaste($content);
+        $content = self::truncateForPaste($content);
+
+        $mythic = self::uploadToMythicPaste($content, $source);
         if ($mythic !== null) {
             return $mythic;
         }
 
-        return [
-            'success' => false,
-            'error' => 'Mythic paste upload unavailable. Link Mythic Cloud and enable pastes, or configure panel credentials.',
-        ];
+        return self::uploadToPublicPasteApi($content, $source);
+    }
+
+    /**
+     * @deprecated Use uploadPaste()
+     *
+     * @return array{success: bool, id?: string, url?: string, raw?: string, error?: string}
+     */
+    public static function uploadToMcloGs(string $content): array
+    {
+        return self::uploadPaste($content);
     }
 
     /**
@@ -171,9 +192,31 @@ class LogHelper
     }
 
     /**
-     * @return array{success: bool, id?: string, url?: string, raw?: string, error?: string}|null
+     * Enforce Paste API limits client-side (10 MiB / 25,000 lines).
      */
-    private static function uploadToMythicPaste(string $content): ?array
+    private static function truncateForPaste(string $content): string
+    {
+        $lines = preg_split("/\r\n|\n|\r/", $content);
+        if ($lines === false) {
+            $lines = [$content];
+        }
+
+        if (count($lines) > self::MAX_PASTE_LINES) {
+            $lines = array_slice($lines, -self::MAX_PASTE_LINES);
+            $content = implode("\n", $lines);
+        }
+
+        if (strlen($content) > self::MAX_PASTE_BYTES) {
+            $content = substr($content, -self::MAX_PASTE_BYTES);
+        }
+
+        return $content;
+    }
+
+    /**
+     * @return array{success: bool, id?: string, url?: string, raw?: string, token?: string, error?: string}|null
+     */
+    private static function uploadToMythicPaste(string $content, string $source): ?array
     {
         try {
             $config = App::getInstance(true)->getConfig();
@@ -186,27 +229,122 @@ class LogHelper
                 return null;
             }
 
-            $data = $client->createPaste(['content' => $content]);
-            $id = (string) ($data['id'] ?? $data['key'] ?? '');
-            if ($id === '') {
-                return [
-                    'success' => false,
-                    'error' => 'Mythic paste response missing id',
-                ];
-            }
+            $data = $client->createPaste([
+                'content' => $content,
+                'source' => $source,
+            ]);
 
-            $base = $client->getBaseUrl();
-
-            return [
-                'success' => true,
-                'id' => $id,
-                'url' => $data['url'] ?? ('https://pastes.mythicalsystems.org/p/' . $id),
-                'raw' => $data['raw'] ?? ($base . '/raw/' . $id),
-            ];
+            return self::normalizePasteResponse($data, $client->getBaseUrl());
         } catch (\Throwable $e) {
-            App::getInstance(true)->getLogger()->warning('Mythic paste upload failed, falling back: ' . $e->getMessage());
+            App::getInstance(true)->getLogger()->warning('Mythic Cloud paste upload failed, using public Paste API: ' . $e->getMessage());
 
             return null;
         }
+    }
+
+    /**
+     * Anonymous / API-key paste upload via pastes.mythicalsystems.org.
+     *
+     * @return array{success: bool, id?: string, url?: string, raw?: string, token?: string, error?: string}
+     */
+    private static function uploadToPublicPasteApi(string $content, string $source): array
+    {
+        try {
+            $payload = json_encode([
+                'content' => $content,
+                'source' => $source,
+            ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+            if ($payload === false) {
+                return [
+                    'success' => false,
+                    'error' => 'Failed to encode paste payload',
+                ];
+            }
+
+            $ch = curl_init(self::PASTE_API_BASE . '/log');
+            if ($ch === false) {
+                return [
+                    'success' => false,
+                    'error' => 'Failed to initialize curl',
+                ];
+            }
+
+            curl_setopt_array($ch, [
+                CURLOPT_POST => true,
+                CURLOPT_HTTPHEADER => [
+                    'Content-Type: application/json',
+                    'Accept: application/json',
+                ],
+                CURLOPT_POSTFIELDS => $payload,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_TIMEOUT => 60,
+                CURLOPT_FOLLOWLOCATION => true,
+            ]);
+
+            $response = curl_exec($ch);
+            $httpCode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlError = curl_error($ch);
+            curl_close($ch);
+
+            if ($response === false) {
+                return [
+                    'success' => false,
+                    'error' => 'Curl error: ' . $curlError,
+                ];
+            }
+
+            $data = json_decode($response, true);
+            if (!is_array($data)) {
+                return [
+                    'success' => false,
+                    'error' => 'Invalid JSON response (HTTP ' . $httpCode . ')',
+                ];
+            }
+
+            if ($httpCode >= 400 || ($data['success'] ?? false) !== true) {
+                return [
+                    'success' => false,
+                    'error' => (string) ($data['error'] ?? $data['message'] ?? ('Paste API error (HTTP ' . $httpCode . ')')),
+                ];
+            }
+
+            return self::normalizePasteResponse($data, self::PASTE_API_BASE);
+        } catch (\Throwable $e) {
+            return [
+                'success' => false,
+                'error' => 'Exception: ' . $e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     *
+     * @return array{success: bool, id?: string, url?: string, raw?: string, token?: string, error?: string}
+     */
+    private static function normalizePasteResponse(array $data, string $apiBase): array
+    {
+        $id = (string) ($data['id'] ?? $data['key'] ?? '');
+        if ($id === '') {
+            return [
+                'success' => false,
+                'error' => 'Paste response missing id',
+            ];
+        }
+
+        $apiBase = rtrim($apiBase, '/');
+        $result = [
+            'success' => true,
+            'id' => $id,
+            'url' => (string) ($data['url'] ?? (self::PASTE_VIEWER_BASE . '/p/' . $id)),
+            'raw' => (string) ($data['raw'] ?? ($apiBase . '/raw/' . $id)),
+        ];
+
+        if (!empty($data['token']) && is_string($data['token'])) {
+            $result['token'] = $data['token'];
+        }
+
+        return $result;
     }
 }

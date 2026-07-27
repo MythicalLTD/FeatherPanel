@@ -24,6 +24,13 @@ interface ConfigInterface
      */
     public const APP_NAME = 'app_name';
     public const APP_URL = 'app_url';
+    /**
+     * Optional URL Wings uses for panel callbacks (SFTP auth, remote APIs).
+     * Use a DNS-only / non-proxied hostname when Cloudflare Precursor Maximize Security
+     * or Under Attack Mode blocks machine clients hitting APP_URL. Empty = use APP_URL.
+     * Must match JWT issuer claims sent to Wings; re-fetch node config after changing.
+     */
+    public const WINGS_REMOTE_URL = 'wings_remote_url';
     public const APP_DEVELOPER_MODE = 'app_developer_mode';
     public const APP_TIMEZONE = 'app_timezone';
     public const APP_LOGO_WHITE = 'app_logo_white';
@@ -309,6 +316,8 @@ interface ConfigInterface
     public const FEATHERCLOUD_MEMBER_MAP = 'feathercloud_member_map';
     /** ISO timestamp when OAuth finish successfully linked Mythic */
     public const FEATHERCLOUD_LINKED_AT = 'feathercloud_linked_at';
+    /** ISO timestamp when an admin intentionally started an OAuth relink flow */
+    public const FEATHERCLOUD_RELINK_PENDING_AT = 'feathercloud_relink_pending_at';
     public const FEATHERCLOUD_CLOUD_ID = 'feathercloud_cloud_id';
     public const FEATHERCLOUD_CLOUD_NAME = 'feathercloud_cloud_name';
     public const FEATHERCLOUD_TEAM_NAME = 'feathercloud_team_name';

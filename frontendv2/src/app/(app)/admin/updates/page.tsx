@@ -25,6 +25,7 @@ import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { Checkbox } from '@/components/ui/checkbox';
+import { ReleaseNotesPanel } from '@/components/admin/ReleaseNotesPanel';
 import { useAdminDashboard } from '@/hooks/useAdminDashboard';
 import { adminSettingsApi } from '@/lib/admin-settings-api';
 import { cn } from '@/lib/utils';
@@ -506,32 +507,92 @@ export default function AdminUpdatesPage() {
                     ) : null
                 }
             >
-                <div className='flex flex-wrap items-end gap-8'>
-                    <div>
-                        <p className='text-muted-foreground text-xs'>{t('admin_updates.panel.current')}</p>
-                        <p className='mt-1 text-lg font-medium'>{panelVersion?.current?.version || '—'}</p>
-                    </div>
-                    <div>
-                        <p className='text-muted-foreground text-xs'>{t('admin_updates.panel.latest')}</p>
-                        <p
-                            className={cn(
-                                'mt-1 text-lg font-medium',
-                                panelVersion?.update_available && 'text-amber-600 dark:text-amber-400',
-                            )}
-                        >
-                            {panelVersion?.latest?.version || panelVersion?.current?.version || '—'}
-                        </p>
-                    </div>
-                    <div>
-                        <p className='text-muted-foreground text-xs'>PHP</p>
-                        <p className='mt-1 text-lg font-medium'>{panelVersion?.current?.php_version || '—'}</p>
-                    </div>
-                    {!panelVersion?.update_available ? (
-                        <div className='text-muted-foreground ml-auto flex items-center gap-2 text-sm'>
-                            <CheckCircle2 className='h-4 w-4 text-emerald-500' />
-                            {t('admin_updates.panel.running_latest')}
+                <div className='space-y-4'>
+                    <div className='flex flex-wrap items-end gap-8'>
+                        <div>
+                            <p className='text-muted-foreground text-xs'>{t('admin_updates.panel.current')}</p>
+                            <p className='mt-1 text-lg font-medium'>{panelVersion?.current?.version || '—'}</p>
+                            {panelVersion?.current?.release_name ? (
+                                <p className='text-muted-foreground mt-0.5 text-xs'>
+                                    {panelVersion.current.release_name}
+                                </p>
+                            ) : null}
                         </div>
+                        <div>
+                            <p className='text-muted-foreground text-xs'>{t('admin_updates.panel.latest')}</p>
+                            <p
+                                className={cn(
+                                    'mt-1 text-lg font-medium',
+                                    panelVersion?.update_available && 'text-amber-600 dark:text-amber-400',
+                                )}
+                            >
+                                {panelVersion?.latest?.version || panelVersion?.current?.version || '—'}
+                            </p>
+                            {panelVersion?.latest?.release_name ? (
+                                <p className='text-muted-foreground mt-0.5 text-xs'>
+                                    {panelVersion.latest.release_name}
+                                </p>
+                            ) : null}
+                        </div>
+                        <div>
+                            <p className='text-muted-foreground text-xs'>{t('admin.version.release_type')}</p>
+                            <p className='mt-1 text-lg font-medium'>
+                                {panelVersion?.current?.type || panelVersion?.project?.default_type || 'Stable'}
+                            </p>
+                        </div>
+                        <div>
+                            <p className='text-muted-foreground text-xs'>PHP</p>
+                            <p className='mt-1 text-lg font-medium'>
+                                {panelVersion?.current?.php_version ||
+                                    [panelVersion?.project?.min_supported_php, panelVersion?.project?.max_supported_php]
+                                        .filter(Boolean)
+                                        .join('–') ||
+                                    '—'}
+                            </p>
+                            {panelVersion?.runtime_php ? (
+                                <p className='text-muted-foreground mt-0.5 text-xs'>
+                                    {t('admin.version.running_php')}
+                                    {panelVersion.runtime_php}
+                                </p>
+                            ) : null}
+                        </div>
+                        {!panelVersion?.update_available ? (
+                            <div className='text-muted-foreground ml-auto flex items-center gap-2 text-sm'>
+                                <CheckCircle2 className='h-4 w-4 text-emerald-500' />
+                                {t('admin_updates.panel.running_latest')}
+                            </div>
+                        ) : null}
+                    </div>
+                    {(panelVersion?.latest?.is_security_release ||
+                        panelVersion?.current?.is_security_release ||
+                        panelVersion?.current_listed_on_update_server === false) && (
+                        <div className='flex flex-wrap gap-2'>
+                            {(panelVersion?.latest?.is_security_release ||
+                                panelVersion?.current?.is_security_release) && (
+                                <span className='rounded-full border border-rose-500/30 bg-rose-500/10 px-2.5 py-1 text-[10px] font-semibold tracking-wide text-rose-500 uppercase'>
+                                    {t('admin.version.security_release')}
+                                </span>
+                            )}
+                            {panelVersion?.current_listed_on_update_server === false && (
+                                <span className='rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-[10px] font-semibold tracking-wide text-amber-600 uppercase dark:text-amber-400'>
+                                    {t('admin.version.unlisted_update_server_badge')}
+                                </span>
+                            )}
+                        </div>
+                    )}
+                    {panelVersion?.last_checked ? (
+                        <p className='text-muted-foreground text-xs'>
+                            {t('admin_updates.panel.last_checked', {
+                                date: new Date(panelVersion.last_checked).toLocaleString(),
+                            })}
+                        </p>
                     ) : null}
+                    <ReleaseNotesPanel
+                        current={panelVersion?.current}
+                        latest={panelVersion?.latest}
+                        updateAvailable={Boolean(panelVersion?.update_available)}
+                        defaultOpen={Boolean(panelVersion?.update_available)}
+                    />
                 </div>
             </PageCard>
 

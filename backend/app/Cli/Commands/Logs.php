@@ -32,7 +32,7 @@ class Logs extends App implements CommandBuilder
             exit;
         }
 
-        $app->send($app->color1 . 'Uploading logs to McloGs...');
+        $app->send($app->color1 . 'Uploading logs to MythicalSystems Paste...');
 
         $lineLimit = 10000;
 
@@ -42,7 +42,7 @@ class Logs extends App implements CommandBuilder
         if (file_exists($webLogFile) && filesize($webLogFile) > 0) {
             $app->send($app->color3 . 'Uploading web logs...');
             $webContent = LogHelper::readLastLines($webLogFile, $lineLimit);
-            $webResult = LogHelper::uploadToMcloGs($webContent);
+            $webResult = LogHelper::uploadPaste($webContent, 'featherpanel-web');
             if ($webResult['success']) {
                 $app->send('&aWeb logs uploaded: &f' . $webResult['url']);
             } else {
@@ -57,7 +57,7 @@ class Logs extends App implements CommandBuilder
         if (file_exists($appLogFile) && filesize($appLogFile) > 0) {
             $app->send($app->color3 . 'Uploading app logs...');
             $appContent = LogHelper::readLastLines($appLogFile, $lineLimit);
-            $appResult = LogHelper::uploadToMcloGs($appContent);
+            $appResult = LogHelper::uploadPaste($appContent, 'featherpanel-app');
             if ($appResult['success']) {
                 $app->send('&aApp logs uploaded: &f' . $appResult['url']);
             } else {
@@ -74,7 +74,7 @@ class Logs extends App implements CommandBuilder
 
     public static function getDescription(): string
     {
-        return 'Upload the logs to McloGs!';
+        return 'Upload the logs to MythicalSystems Paste!';
     }
 
     public static function getSubCommands(): array

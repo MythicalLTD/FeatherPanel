@@ -233,12 +233,13 @@ ERROR_HANDLER_ACTIVE=0
 
 upload_logs_on_fail() {
 	if command -v curl >/dev/null 2>&1; then
-		log_info "Uploading logs to mclo.gs for diagnostics..."
+		log_info "Uploading logs to MythicalSystems Paste for diagnostics..."
 		# Build a bounded excerpt from the *end* of the log file:
 		# - Line-based tails (e.g. last 4000 lines) drop the newest output when a few lines are huge
 		#   (docker/build spam), so the failure never appears in the upload.
 		# - Form-encoded POSTs can be truncated by limits; putting newest lines first (tac) keeps the
 		#   actual error at the top of the paste if the body is cut off.
+		# Paste API: https://pastes.mythicalsystems.org/log (mclo.gs-compatible; max ~10 MiB / 25k lines)
 		TAIL_FILE="${LOG_FILE}.tail.tmp"
 		rm -f "$TAIL_FILE" 2>/dev/null || true
 		if [ -f "$LOG_FILE" ] && [ -r "$LOG_FILE" ]; then
@@ -267,7 +268,10 @@ upload_logs_on_fail() {
 		if [ ! -s "$TAIL_FILE" ]; then
 			echo "(empty upload payload)" >"$TAIL_FILE" 2>/dev/null || true
 		fi
-		RESPONSE=$(curl -s --max-time 60 -X POST --data-urlencode "content@${TAIL_FILE}" "https://api.featherpanel.com/1/log")
+		RESPONSE=$(curl -s --max-time 60 -X POST \
+			--data-urlencode "content@${TAIL_FILE}" \
+			--data-urlencode "source=featherpanel-installer" \
+			"https://pastes.mythicalsystems.org/log")
 		rm -f "$TAIL_FILE" 2>/dev/null || true
 
 		# Parse JSON response

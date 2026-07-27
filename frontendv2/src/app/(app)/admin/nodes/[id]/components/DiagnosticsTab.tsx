@@ -232,7 +232,7 @@ export function DiagnosticsTab({ nodeId }: DiagnosticsTabProps) {
                                         type='url'
                                         value={options.uploadApiUrl}
                                         onChange={(e) => setOptions({ ...options, uploadApiUrl: e.target.value })}
-                                        placeholder='https://paste.mythical.systems'
+                                        placeholder='https://paste.mythicalsystems.org'
                                         className='h-10 font-mono text-sm'
                                     />
                                     <p className='text-muted-foreground mt-1.5 text-[10px] italic'>

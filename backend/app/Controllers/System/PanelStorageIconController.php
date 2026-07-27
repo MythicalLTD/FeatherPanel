@@ -23,13 +23,13 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Proxies FeatherCloud marketplace icons from api.featherpanel.com so the browser loads them
- * via this panel (same origin as /api), avoiding third-party hotlink and cross-site restrictions.
+ * Legacy storage-icon proxy endpoint.
+ *
+ * Previously proxied marketplace icons from api.featherpanel.com (EOL / offline).
+ * Mythic icons are absolute CDN URLs and do not use this route.
  */
 class PanelStorageIconController
 {
-    private const MAX_BYTES = 6291456; // 6 MiB
-
     public function getIcon(Request $request, string $filename): Response
     {
         $decoded = rawurldecode($filename);
@@ -40,58 +40,10 @@ class PanelStorageIconController
             return ApiResponse::error('Invalid icon filename', 'INVALID_ICON', 400);
         }
 
-        $url = PanelAssetUrl::upstreamBase() . rawurlencode($decoded);
-
-        $ch = curl_init($url);
-        if ($ch === false) {
-            return ApiResponse::error('Failed to fetch icon', 'ICON_FETCH', 502);
-        }
-
-        $body = '';
-        $code = 0;
-        $contentType = 'application/octet-stream';
-
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_MAXREDIRS => 5,
-            CURLOPT_TIMEOUT => 20,
-            CURLOPT_USERAGENT => 'FeatherPanel-IconProxy/1.0',
-            CURLOPT_HEADERFUNCTION => static function ($ch, $headerLine) use (&$contentType): int {
-                if (preg_match('/^content-type:\s*(.+)$/i', $headerLine, $m)) {
-                    $contentType = trim($m[1]);
-                }
-
-                return strlen($headerLine);
-            },
-        ]);
-
-        $body = curl_exec($ch);
-        $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-
-        if ($body === false || $code < 200 || $code >= 300) {
-            return ApiResponse::error('Icon not found', 'ICON_NOT_FOUND', 404);
-        }
-
-        $len = strlen($body);
-        if ($len === 0 || $len > self::MAX_BYTES) {
-            return ApiResponse::error('Invalid icon response', 'ICON_INVALID', 502);
-        }
-
-        if (!str_starts_with(strtolower($contentType), 'image/')) {
-            $finfo = new \finfo(FILEINFO_MIME_TYPE);
-            $detected = $finfo->buffer($body) ?: '';
-            if (str_starts_with($detected, 'image/')) {
-                $contentType = $detected;
-            } else {
-                $contentType = 'image/png';
-            }
-        }
-
-        return new Response($body, 200, [
-            'Content-Type' => $contentType,
-            'Cache-Control' => 'public, max-age=86400',
-        ]);
+        return ApiResponse::error(
+            'Legacy icon CDN (api.featherpanel.com) is offline. Use absolute Mythic CDN icon URLs.',
+            'LEGACY_ICON_CDN_GONE',
+            410,
+        );
     }
 }

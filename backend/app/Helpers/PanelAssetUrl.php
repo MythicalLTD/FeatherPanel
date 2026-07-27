@@ -18,25 +18,13 @@
 namespace App\Helpers;
 
 /**
- * Rewrites legacy FeatherCloud CDN icon URLs to this panel's proxy so browsers load them same-origin.
- * New Mythic product icons that already use absolute non-api.featherpanel.com URLs pass through unchanged.
+ * Normalizes marketplace / plugin icon URLs.
+ *
+ * Mythic product icons use absolute CDN hosts (e.g. r2.mythical.systems) and pass through.
+ * Legacy api.featherpanel.com icon URLs are EOL and are dropped (return null).
  */
 class PanelAssetUrl
 {
-    /** @var list<string> */
-    private const CLOUD_STORAGE_ICON_PREFIXES = [
-        'https://api.featherpanel.com/storage/icons/',
-        'http://api.featherpanel.com/storage/icons/',
-    ];
-
-    /** @deprecated Legacy icon CDN; Mythic marketplace icons typically use absolute CDN URLs. */
-    private const UPSTREAM_BASE = 'https://api.featherpanel.com/storage/icons/';
-
-    public static function upstreamBase(): string
-    {
-        return self::UPSTREAM_BASE;
-    }
-
     /**
      * @return non-falsy-string|null
      */
@@ -50,21 +38,9 @@ class PanelAssetUrl
             return null;
         }
 
-        foreach (self::CLOUD_STORAGE_ICON_PREFIXES as $prefix) {
-            if (str_starts_with($icon, $prefix)) {
-                $path = (string) (parse_url($icon, PHP_URL_PATH) ?? '');
-                $file = basename($path);
-                if ($file !== '' && self::isSafeIconBasename($file)) {
-                    return '/api/system/storage-icon/' . rawurlencode($file);
-                }
-            }
-        }
-
-        if (str_starts_with($icon, '/storage/icons/')) {
-            $file = basename($icon);
-            if ($file !== '' && self::isSafeIconBasename($file)) {
-                return '/api/system/storage-icon/' . rawurlencode($file);
-            }
+        // api.featherpanel.com is disconnected — never rewrite or proxy those URLs.
+        if (stripos($icon, 'api.featherpanel.com') !== false) {
+            return null;
         }
 
         return $icon;

@@ -17,13 +17,12 @@
 
 namespace App\Services\UserDataExport;
 
-use App\App;
 use App\Chat\Node;
 use App\Chat\Backup;
 use App\Chat\Database;
 use GuzzleHttp\Client;
+use App\Helpers\AppUrlHelper;
 use App\Services\Wings\Wings;
-use App\Config\ConfigInterface;
 use App\Helpers\WingsUrlHelper;
 use App\Services\Wings\Services\JwtService;
 
@@ -842,7 +841,7 @@ class UserDataExportService
         $baseWingsUrl = rtrim(WingsUrlHelper::buildFromNode($node), '/');
         $jwtService = new JwtService(
             (string) $node['daemon_token'],
-            App::getInstance(true)->getConfig()->getSetting(ConfigInterface::APP_URL, 'https://featherpanel.local'),
+            AppUrlHelper::wingsRemoteUrl(),
             $baseWingsUrl
         );
 

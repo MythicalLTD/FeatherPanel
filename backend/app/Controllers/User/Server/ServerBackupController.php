@@ -25,6 +25,7 @@ use App\Helpers\TimeHelper;
 use App\SubuserPermissions;
 use App\Chat\ServerActivity;
 use App\Helpers\ApiResponse;
+use App\Helpers\AppUrlHelper;
 use App\Services\Wings\Wings;
 use OpenApi\Attributes as OA;
 use App\Helpers\WingsUrlHelper;
@@ -1102,7 +1103,7 @@ class ServerBackupController
             // Create JWT service instance
             $jwtService = new \App\Services\Wings\Services\JwtService(
                 $token, // Node secret
-                App::getInstance(true)->getConfig()->getSetting(\App\Config\ConfigInterface::APP_URL, 'https://devsv.mythical.systems'), // Panel URL
+                AppUrlHelper::wingsRemoteUrl(), // Must match Wings `remote:` (issuer)
                 $wingsBaseUrl // Wings URL
             );
 

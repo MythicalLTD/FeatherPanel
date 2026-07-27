@@ -195,6 +195,21 @@ qm set 9001 --serial0 socket --vga serial0`}</code>
                     that ship proper cloud-init images and UEFI support.
                 </p>
 
+                <p className='font-medium'>5. Avoid disk resize timeouts (recommended)</p>
+                <p className='text-xs'>
+                    If creates fail with <code>qemu-img resize … failed: got timeout</code>, Proxmox is timing out while
+                    allocating qcow2 metadata on your storage. On the Proxmox node, disable metadata preallocation for
+                    the storage that holds VM disks (replace <code>raid1</code> with your storage ID from{' '}
+                    <code>pvesm status</code>):
+                </p>
+                <pre className='bg-muted/60 overflow-x-auto rounded-md p-3 text-xs'>
+                    <code>{`pvesm set raid1 --preallocation off`}</code>
+                </pre>
+                <p className='text-xs'>
+                    This is a common fix for intermittent resize timeouts under load and is safe for directory / NFS /
+                    qcow2-backed storages used by FeatherPanel provisioning.
+                </p>
+
                 <div className='bg-primary/5 border-primary/20 mt-6 rounded-lg border p-4'>
                     <p className='text-primary flex items-center gap-2 font-medium'>
                         <ShieldAlert className='h-4 w-4' />
