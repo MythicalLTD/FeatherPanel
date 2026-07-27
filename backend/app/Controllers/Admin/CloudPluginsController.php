@@ -24,6 +24,7 @@ use App\Helpers\ApiResponse;
 use App\Chat\InstalledPlugin;
 use OpenApi\Attributes as OA;
 use App\Helpers\PanelAssetUrl;
+use App\Helpers\AddonPackageHelper;
 use App\CloudFlare\CloudFlareRealIP;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -904,14 +905,11 @@ class CloudPluginsController
             $tempFile = sys_get_temp_dir() . '/' . uniqid('featherpanel_', true) . '.fpa';
             file_put_contents($tempFile, $fileContent);
 
-            // Extract
+            // Extract (ZipArchive: AES marketplace packages + legacy ZipCrypto)
             $tempDir = sys_get_temp_dir() . '/' . uniqid('featherpanel_', true);
-            @mkdir($tempDir, 0755, true);
-            $pwd = self::PASSWORD;
-            $unzipCommand = sprintf('unzip -P %s %s -d %s', escapeshellarg($pwd), escapeshellarg($tempFile), escapeshellarg($tempDir));
-            exec($unzipCommand, $out, $code);
+            $extracted = AddonPackageHelper::extract($tempFile, $tempDir, self::PASSWORD);
             @unlink($tempFile);
-            if ($code !== 0) {
+            if (!$extracted) {
                 @exec('rm -rf ' . escapeshellarg($tempDir));
 
                 return ApiResponse::error('Failed to extract addon package', 'ADDON_EXTRACT_FAILED', 422);
@@ -1330,12 +1328,9 @@ class CloudPluginsController
         file_put_contents($tempFile, $fileContent);
 
         $tempDir = sys_get_temp_dir() . '/' . uniqid('featherpanel_check_', true);
-        @mkdir($tempDir, 0755, true);
-        $pwd = self::PASSWORD;
-        $unzipCommand = sprintf('unzip -P %s %s conf.yml -d %s', escapeshellarg($pwd), escapeshellarg($tempFile), escapeshellarg($tempDir));
-        exec($unzipCommand, $out, $code);
+        $extracted = AddonPackageHelper::extract($tempFile, $tempDir, self::PASSWORD, ['conf.yml']);
 
-        if ($code === 0 && file_exists($tempDir . '/conf.yml')) {
+        if ($extracted && file_exists($tempDir . '/conf.yml')) {
             try {
                 $conf = \Symfony\Component\Yaml\Yaml::parseFile($tempDir . '/conf.yml');
                 $confDependencies = $conf['plugin']['dependencies'] ?? [];
