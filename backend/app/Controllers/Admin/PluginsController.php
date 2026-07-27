@@ -23,6 +23,7 @@ use App\Helpers\ApiResponse;
 use App\Chat\InstalledPlugin;
 use App\Plugins\PluginConfig;
 use OpenApi\Attributes as OA;
+use App\Helpers\AddonPackageHelper;
 use App\Helpers\PanelAssetUrl;
 use App\Config\ConfigInterface;
 use App\Plugins\PluginSettings;
@@ -742,14 +743,11 @@ class PluginsController
             $tempFile = sys_get_temp_dir() . '/' . uniqid('featherpanel_', true) . '.fpa';
             $file->move(dirname($tempFile), basename($tempFile));
 
-            // Extract
+            // Extract (ZipArchive: AES marketplace packages + legacy ZipCrypto)
             $tempDir = sys_get_temp_dir() . '/' . uniqid('featherpanel_', true);
-            @mkdir($tempDir, 0755, true);
-            $pwd = CloudPluginsController::PASSWORD;
-            $unzipCommand = sprintf('unzip -P %s %s -d %s', escapeshellarg($pwd), escapeshellarg($tempFile), escapeshellarg($tempDir));
-            exec($unzipCommand, $out, $code);
+            $extracted = AddonPackageHelper::extract($tempFile, $tempDir, CloudPluginsController::PASSWORD);
             @unlink($tempFile);
-            if ($code !== 0) {
+            if (!$extracted) {
                 @exec('rm -rf ' . escapeshellarg($tempDir));
 
                 return ApiResponse::error('Failed to extract addon package', 'ADDON_EXTRACT_FAILED', 422);
@@ -818,12 +816,9 @@ class PluginsController
             file_put_contents($tempFile, $fileContent);
 
             $tempDir = sys_get_temp_dir() . '/' . uniqid('featherpanel_', true);
-            @mkdir($tempDir, 0755, true);
-            $pwd = CloudPluginsController::PASSWORD;
-            $unzipCommand = sprintf('unzip -P %s %s -d %s', escapeshellarg($pwd), escapeshellarg($tempFile), escapeshellarg($tempDir));
-            exec($unzipCommand, $out, $code);
+            $extracted = AddonPackageHelper::extract($tempFile, $tempDir, CloudPluginsController::PASSWORD);
             @unlink($tempFile);
-            if ($code !== 0) {
+            if (!$extracted) {
                 @exec('rm -rf ' . escapeshellarg($tempDir));
 
                 return ApiResponse::error('Failed to extract addon package', 'ADDON_EXTRACT_FAILED', 422);

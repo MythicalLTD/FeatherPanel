@@ -32,6 +32,7 @@
 ### Fixed
 
 - Cloudflare Under Attack Mode / challenge HTML no longer clears the panel session or empties permissions (admin appearing as a normal user, owned-server access errors, console JWT failures). by @cursor
+- Marketplace/cloud `.fpa` installs failing with `ADDON_EXTRACT_FAILED`: Mythic packages use AES-256 (PKZIP 5.1) while Info-ZIP `unzip` only supports ZipCrypto — extraction now uses PHP `ZipArchive` (with unzip fallback). by @cursor
 - Admin area stats were not loading correctly. by @nayskutzu
 - Fixed the issue with unlimited backup limit. by @nayskutzu
 - Issues related to port allocation were fixed. by @nayskutzu
