@@ -1,4 +1,6 @@
 {
-  "upgrade": true,
-  "reject": ["eslint", "typescript"]
+	"upgrade": true,
+	"reject": [
+		"eslint"
+	]
 }

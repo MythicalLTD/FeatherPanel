@@ -22,7 +22,10 @@ use App\Chat\Server;
 use App\SubuserPermissions;
 use App\Chat\ServerActivity;
 use App\Helpers\ApiResponse;
+use App\Helpers\AppUrlHelper;
+use App\Helpers\WingsUrlHelper;
 use App\Services\Wings\Wings;
+use App\Services\Wings\Services\JwtService;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
 use App\Plugins\Events\Events\ServerEvent;
@@ -2107,8 +2110,8 @@ class ServerFilesController
 
     #[OA\Get(
         path: '/api/user/servers/{uuidShort}/download-file',
-        summary: 'Download file',
-        description: 'Download a file from the server with appropriate headers for file download.',
+        summary: 'Get file download URL',
+        description: 'Generate a secure one-time Wings download URL for a server file with JWT token authentication (same pattern as backup downloads).',
         tags: ['User - Server Files'],
         parameters: [
             new OA\Parameter(
@@ -2129,39 +2132,19 @@ class ServerFilesController
         responses: [
             new OA\Response(
                 response: 200,
-                description: 'File downloaded successfully',
-                content: new OA\MediaType(
-                    mediaType: 'application/octet-stream',
-                    schema: new OA\Schema(type: 'string', format: 'binary')
-                ),
-                headers: [
-                    new OA\Header(
-                        header: 'Content-Type',
-                        description: 'MIME type of the file',
-                        schema: new OA\Schema(type: 'string', example: 'text/plain')
-                    ),
-                    new OA\Header(
-                        header: 'Content-Disposition',
-                        description: 'Download attachment header',
-                        schema: new OA\Schema(type: 'string', example: 'attachment; filename="file.txt"')
-                    ),
-                    new OA\Header(
-                        header: 'Content-Length',
-                        description: 'File size in bytes',
-                        schema: new OA\Schema(type: 'string', example: '1024')
-                    ),
-                    new OA\Header(
-                        header: 'Cache-Control',
-                        description: 'Cache control header',
-                        schema: new OA\Schema(type: 'string', example: 'no-cache, no-store, must-revalidate')
-                    ),
-                ]
+                description: 'Download URL generated successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'download_url', type: 'string', description: 'Signed Wings file download URL'),
+                        new OA\Property(property: 'expires_in', type: 'integer', description: 'Token lifetime in seconds', example: 300),
+                    ]
+                )
             ),
             new OA\Response(response: 400, description: 'Bad request - Missing UUID or file path'),
             new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
             new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
             new OA\Response(response: 404, description: 'Not found - Server, node, or file not found'),
-            new OA\Response(response: 500, description: 'Internal server error - Failed to download file'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to generate download URL'),
         ]
     )]
     public function downloadFile(Request $request, string $serverUuid): Response
@@ -2183,56 +2166,30 @@ class ServerFilesController
             }
 
             $node = $this->validateNode($server['node_id']);
-
-            $wings = $this->createWingsConnection($node);
-
-            // Use the download method to get raw file content
-            $response = $wings->getServer()->downloadFile($server['uuid'], $path);
-
-            if (!$response->isSuccessful()) {
-                $error = $response->getError();
-
-                return ApiResponse::error('Failed to download file: ' . $error, 'WINGS_ERROR', $response->getStatusCode());
-            }
-
-            // Get the raw file content
-            $fileContent = $response->getRawBody();
-
-            // Empty files are valid - only return error if content is null (indicating an actual error)
-            // If fileContent is null (not just empty string), it might indicate an error
-            if ($fileContent === null) {
-                // Check if response indicates an error
-                $responseData = $response->getData();
-                if (is_array($responseData) && (isset($responseData['error']) || isset($responseData['error_message']))) {
-                    return ApiResponse::error('File content could not be retrieved', 'FILE_CONTENT_ERROR', 500);
-                }
-                // If no error indicated, treat as empty file
-                $fileContent = '';
-            }
-
-            // Get filename from path
             $filename = basename($path);
 
-            // Determine content type based on file extension
-            $contentType = $this->getMimeType($path);
+            $token = $node['daemon_token'];
+            $wingsBaseUrl = WingsUrlHelper::buildFromNode($node);
 
-            // Log activity
+            $jwtService = new JwtService(
+                $token,
+                AppUrlHelper::wingsRemoteUrl(),
+                $wingsBaseUrl
+            );
+
+            $jwtToken = $jwtService->generateFileDownloadToken($server['uuid'], $path);
+            $baseUrl = rtrim($wingsBaseUrl, '/');
+            $encodedFilePath = urlencode($path);
+            $downloadUrl = "{$baseUrl}/download/file?token={$jwtToken}&server={$server['uuid']}&file={$encodedFilePath}";
+
             $this->logActivity($server, $node, 'file_downloaded', [
                 'path' => $path,
                 'filename' => $filename,
-
-                'file_size' => strlen($fileContent),
-                'content_type' => $contentType,
             ], $user);
 
-            // Return file content with download headers
-            return new Response($fileContent, 200, [
-                'Content-Type' => $contentType,
-                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-                'Content-Length' => strlen($fileContent),
-                'Cache-Control' => 'no-cache, no-store, must-revalidate',
-                'Pragma' => 'no-cache',
-                'Expires' => '0',
+            return ApiResponse::success([
+                'download_url' => $downloadUrl,
+                'expires_in' => 300,
             ]);
         } catch (\Exception $e) {
             return $this->handleWingsError($e, 'download file');

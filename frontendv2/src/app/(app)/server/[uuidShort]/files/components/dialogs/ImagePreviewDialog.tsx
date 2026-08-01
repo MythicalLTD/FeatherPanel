@@ -19,7 +19,7 @@ import { Button } from '@/components/featherui/Button';
 import { Download, X, Loader2, AlertCircle } from 'lucide-react';
 import { FileObject } from '@/types/server';
 import { formatFileSize } from '@/lib/utils';
-import api from '@/lib/api';
+import { filesApi } from '@/lib/files-api';
 import { useTranslation } from '@/contexts/TranslationContext';
 
 interface ImagePreviewDialogProps {
@@ -58,14 +58,13 @@ export function ImagePreviewDialog({
             setError(null);
             try {
                 const filePath = currentDirectory === '/' ? file.name : `${currentDirectory}/${file.name}`;
-                const response = await api.get(
-                    `/user/servers/${uuid}/download-file?path=${encodeURIComponent(filePath)}`,
-                    {
-                        responseType: 'blob',
-                    },
-                );
-
-                const url = URL.createObjectURL(response.data);
+                const downloadUrl = await filesApi.getDownloadUrl(uuid, filePath);
+                const response = await fetch(downloadUrl);
+                if (!response.ok) {
+                    throw new Error(`Download failed with status ${response.status}`);
+                }
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
                 setBlobUrl(url);
             } catch (err) {
                 console.error('Failed to fetch image:', err);

@@ -29,7 +29,7 @@ import axios from 'axios';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useSession } from '@/contexts/SessionContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import { cn } from '@/lib/utils';
+import { cn, isEnabled } from '@/lib/utils';
 import { useNavigation } from '@/hooks/useNavigation';
 import { useTranslation } from '@/contexts/TranslationContext';
 import type { NavigationItem } from '@/types/navigation';
@@ -78,7 +78,13 @@ function SidebarContent({
 }: {
     mobile?: boolean;
     collapsed: boolean;
-    settings: { app_name?: string; app_version?: string; app_logo_white?: string; app_logo_dark?: string } | null;
+    settings: {
+        app_name?: string;
+        app_version?: string;
+        app_logo_white?: string;
+        app_logo_dark?: string;
+        ticket_system_enabled?: string;
+    } | null;
     pathname: string;
     router: ReturnType<typeof useRouter>;
     setMobileOpen: (open: boolean) => void;
@@ -94,6 +100,7 @@ function SidebarContent({
     const [collapsedSubmenus, setCollapsedSubmenus] = useState<string[]>([]);
     const [unreadTicketCount, setUnreadTicketCount] = useState(0);
     const adminOpenTicketCount = adminTicketStats?.open_count ?? 0;
+    const ticketsEnabled = isEnabled(settings?.ticket_system_enabled);
 
     useEffect(() => {
         const saved = localStorage.getItem('featherpanel_collapsed_groups');
@@ -116,6 +123,11 @@ function SidebarContent({
     }, []);
 
     useEffect(() => {
+        if (!ticketsEnabled) {
+            setUnreadTicketCount(0);
+            return;
+        }
+
         const fetchUnreadTicketCount = async () => {
             try {
                 const { data } = await axios.get('/api/user/tickets', {
@@ -150,7 +162,7 @@ function SidebarContent({
                 window.removeEventListener('featherpanel:ticket-replied', onTicketReplied);
             }
         };
-    }, [pathname]);
+    }, [pathname, ticketsEnabled]);
 
     const toggleGroup = (group: string) => {
         const newCollapsed = collapsedGroups.includes(group)

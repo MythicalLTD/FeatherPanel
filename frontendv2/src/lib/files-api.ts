@@ -340,8 +340,12 @@ export const filesApi = {
         await api.post(`/user/servers/${uuid}/wipe-all-files`);
     },
 
-    getDownloadUrl: (uuid: string, path: string): string => {
-        return `/api/user/servers/${uuid}/download-file?path=${encodeURIComponent(path)}`;
+    getDownloadUrl: async (uuid: string, path: string): Promise<string> => {
+        const res = await api.get<ApiResponse<{ download_url: string; expires_in: number }>>(
+            `/user/servers/${uuid}/download-file`,
+            { params: { path } },
+        );
+        return res.data.data.download_url;
     },
     compressFiles: async (
         uuid: string,
