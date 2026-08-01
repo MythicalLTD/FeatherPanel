@@ -263,6 +263,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         const root = document.documentElement;
         root.classList.remove('light', 'dark');
         root.classList.add(theme);
+        root.style.colorScheme = theme;
         localStorage.setItem('theme', theme);
 
         const accentHSL = ACCENT_COLORS[accentColor as keyof typeof ACCENT_COLORS] || ACCENT_COLORS.purple;

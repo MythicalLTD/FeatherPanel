@@ -152,9 +152,32 @@ class ServerFastDlController
                 $data['directory'] = 'fastdl';
             }
 
-            // Rebuild FastDL URL based on node (Wings) host/port instead of panel URL
-            if (isset($data['enabled']) && $data['enabled']) {
-                $data['url'] = $this->buildFastDlUrl($node, $server, (string) $data['directory']);
+            // Prefer panel-persisted state (survives Wings sync/restart), fall back to Wings
+            $panelEnabled = !empty($server['fastdl_enabled']);
+            $directory = !empty($server['fastdl_directory'])
+                ? (string) $server['fastdl_directory']
+                : (string) ($data['directory'] ?? 'fastdl');
+            if ($directory === '') {
+                $directory = 'fastdl';
+            }
+            $data['directory'] = $directory;
+
+            // Heal Wings after daemon restart: panel is source of truth
+            if ($panelEnabled && empty($data['enabled'])) {
+                $heal = $wings->getServer()->enableFastDl($server['uuid'], ['directory' => $directory]);
+                if ($heal->isSuccessful()) {
+                    $data['enabled'] = true;
+                }
+            } elseif (!$panelEnabled && !empty($data['enabled'])) {
+                // Legacy Wings-only enable (pre-persistence): import into panel so it survives restarts
+                $this->persistFastDlState($server, true, $directory);
+                $data['enabled'] = true;
+            } else {
+                $data['enabled'] = $panelEnabled;
+            }
+
+            if (!empty($data['enabled'])) {
+                $data['url'] = $this->buildFastDlUrl($node, $server, $directory);
                 $data['command'] = 'sv_downloadurl "' . $data['url'] . '"';
             } else {
                 $data['url'] = null;
@@ -273,9 +296,11 @@ class ServerFastDlController
                 $responseData['directory'] = $data['directory'] ?? 'fastdl';
             }
 
-            // Always rebuild FastDL URL from node info (ignore any URL from Wings)
+            $responseData['enabled'] = true;
             $responseData['url'] = $this->buildFastDlUrl($node, $server, (string) $responseData['directory']);
             $responseData['command'] = 'sv_downloadurl "' . $responseData['url'] . '"';
+
+            $this->persistFastDlState($server, true, (string) $responseData['directory']);
 
             $this->logActivity(
                 $server,
@@ -381,8 +406,11 @@ class ServerFastDlController
                 $responseData['directory'] = 'fastdl';
             }
 
-            // Clear command when disabled
+            $responseData['enabled'] = false;
+            $responseData['url'] = null;
             $responseData['command'] = null;
+
+            $this->persistFastDlState($server, false, (string) $responseData['directory']);
 
             $this->logActivity(
                 $server,
@@ -506,14 +534,16 @@ class ServerFastDlController
                 $responseData['directory'] = 'fastdl';
             }
 
-            // Rebuild URL/command from node host/port when enabled, clear when disabled
-            if (isset($responseData['enabled']) && $responseData['enabled']) {
+            $enabled = !empty($responseData['enabled']);
+            if ($enabled) {
                 $responseData['url'] = $this->buildFastDlUrl($node, $server, (string) $responseData['directory']);
                 $responseData['command'] = 'sv_downloadurl "' . $responseData['url'] . '"';
             } else {
                 $responseData['url'] = null;
                 $responseData['command'] = null;
             }
+
+            $this->persistFastDlState($server, $enabled, (string) $responseData['directory']);
 
             $this->logActivity(
                 $server,
@@ -543,14 +573,35 @@ class ServerFastDlController
     }
 
     /**
-     * Build the public FastDL URL from node (Wings) host/port and directory.
+     * Persist FastDL enabled/directory on the server so Wings sync restores it after restart.
+     */
+    private function persistFastDlState(array $server, bool $enabled, string $directory): void
+    {
+        $dir = trim($directory) !== '' ? trim($directory) : 'fastdl';
+        Server::updateServerById((int) $server['id'], [
+            'fastdl_enabled' => $enabled ? 1 : 0,
+            'fastdl_directory' => $dir,
+        ]);
+    }
+
+    /**
+     * Build the public FastDL download URL.
      *
-     * We intentionally do NOT use the panel/remote URL here – this is the \"wings\" side.
+     * Uses the node FQDN and FastDL bind port (default 80), NOT the Wings API port.
+     * FastDL nginx serves plain HTTP; omit the port when it is 80 or the node is behind a proxy.
      */
     private function buildFastDlUrl(array $node, array $server, string $directory): string
     {
-        $base = rtrim(WingsUrlHelper::buildFromNode($node), '/');
+        $host = rtrim((string) ($node['fqdn'] ?? 'localhost'), '/');
         $dir = trim($directory) !== '' ? trim($directory) : 'fastdl';
+        $port = (int) ($node['fastdl_port'] ?? 80);
+        if ($port < 1 || $port > 65535) {
+            $port = 80;
+        }
+
+        // FastDL nginx is HTTP-only; omit :80 (and any port when behind a reverse proxy on 80/443).
+        $omitPort = WingsUrlHelper::isBehindProxy($node) || $port === 80;
+        $base = $omitPort ? 'http://' . $host : 'http://' . $host . ':' . $port;
 
         return $base . '/' . $server['uuid'] . '/' . $dir;
     }

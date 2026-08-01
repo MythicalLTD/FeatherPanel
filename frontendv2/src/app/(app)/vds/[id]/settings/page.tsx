@@ -239,7 +239,7 @@ export default function VdsSettingsPage() {
                         toast.loading(s.message, { id: toastId });
                     }
                 } catch {
-                    // Ignore transient polling errors — keep polling.
+                    // Ignore transient polling errors keep polling.
                 }
                 setTimeout(() => {
                     void poll();

@@ -166,7 +166,7 @@ class DiscordController
             );
         }
 
-        // Discord OAuth proves email ownership — auto-link and log in existing accounts
+        // Discord OAuth proves email ownership auto-link and log in existing accounts
         if (!empty($discordEmail) && filter_var($discordEmail, FILTER_VALIDATE_EMAIL)) {
             $emailUser = User::getUserByEmail($discordEmail);
             if ($emailUser !== null && ($emailUser['deleted'] ?? 'false') !== 'true') {
@@ -180,7 +180,7 @@ class DiscordController
             }
         }
 
-        // User not linked yet — offer registration only when no matching account exists
+        // User not linked yet offer registration only when no matching account exists
         $registrationEnabled = $config->getSetting(ConfigInterface::REGISTRATION_ENABLED, 'true') === 'true';
         $matchingUser = $this->findMatchingUserForDiscord($discordUsername, $discordEmail);
 
@@ -200,7 +200,7 @@ class DiscordController
             return new RedirectResponse('/auth/register?discord_link_token=' . $tempToken);
         }
 
-        // Registration is disabled or a matching account already exists — link to existing account
+        // Registration is disabled or a matching account already exists link to existing account
         $tempToken = bin2hex(random_bytes(32));
 
         // Store Discord data with temporary token (10 minute expiration for linking)
@@ -508,7 +508,7 @@ class DiscordController
             }
             $emailValue = $discordEmail;
         } else {
-            // No usable Discord email — cannot provision without a valid email address
+            // No usable Discord email cannot provision without a valid email address
             $app->getLogger()->warning('Discord auto-provision: no valid email from Discord for user: ' . $discordUsername);
 
             return null;

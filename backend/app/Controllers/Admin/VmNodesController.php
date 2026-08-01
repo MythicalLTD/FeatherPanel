@@ -776,7 +776,7 @@ class VmNodesController
     }
 
     /**
-     * GET /api/admin/vm-nodes/{id}/proxmox-vms — List all VMs (and templates) from Proxmox for template picker.
+     * GET /api/admin/vm-nodes/{id}/proxmox-vms List all VMs (and templates) from Proxmox for template picker.
      */
     public function proxmoxVms(Request $request, int $id): Response
     {
@@ -846,7 +846,7 @@ class VmNodesController
     }
 
     /**
-     * GET /api/admin/vm-nodes/{id}/bridges — List Proxmox bridge interfaces for VM network selection.
+     * GET /api/admin/vm-nodes/{id}/bridges List Proxmox bridge interfaces for VM network selection.
      */
     public function bridges(Request $request, int $id): Response
     {
@@ -935,7 +935,7 @@ class VmNodesController
     }
 
     /**
-     * GET /api/admin/vm-nodes/{id}/cluster-nodes — List available Proxmox cluster nodes.
+     * GET /api/admin/vm-nodes/{id}/cluster-nodes List available Proxmox cluster nodes.
      */
     public function clusterNodes(Request $request, int $id): Response
     {
@@ -1008,7 +1008,7 @@ class VmNodesController
     }
 
     /**
-     * GET /api/admin/vm-nodes/{id}/storage — List Proxmox storage (for VM disk) that supports images/rootdir.
+     * GET /api/admin/vm-nodes/{id}/storage List Proxmox storage (for VM disk) that supports images/rootdir.
      */
     public function storage(Request $request, int $id): Response
     {
@@ -1097,7 +1097,7 @@ class VmNodesController
     }
 
     /**
-     * GET /api/admin/vm-nodes/{id}/backup-storage — List Proxmox storage (for vzdump backups).
+     * GET /api/admin/vm-nodes/{id}/backup-storage List Proxmox storage (for vzdump backups).
      */
     public function backupStorage(Request $request, int $id): Response
     {
@@ -1594,7 +1594,7 @@ class VmNodesController
     }
 
     /**
-     * GET /api/admin/vm-nodes/{id}/free-ips — IPs not assigned to any VM instance.
+     * GET /api/admin/vm-nodes/{id}/free-ips IPs not assigned to any VM instance.
      */
     public function freeIps(Request $request, int $id): Response
     {
@@ -1608,7 +1608,7 @@ class VmNodesController
     }
 
     /**
-     * GET /api/admin/vm-nodes/{id}/templates — VM templates for this node (for create-server form).
+     * GET /api/admin/vm-nodes/{id}/templates VM templates for this node (for create-server form).
      */
     public function templates(Request $request, int $id): Response
     {
@@ -1626,7 +1626,7 @@ class VmNodesController
     }
 
     /**
-     * POST /api/admin/vm-nodes/{id}/templates — Create a VM template for this node.
+     * POST /api/admin/vm-nodes/{id}/templates Create a VM template for this node.
      */
     public function createTemplate(Request $request, int $id): Response
     {
@@ -1672,7 +1672,7 @@ class VmNodesController
     }
 
     /**
-     * PATCH /api/admin/vm-templates/{id} — Update a VM template.
+     * PATCH /api/admin/vm-templates/{id} Update a VM template.
      */
     public function updateTemplate(Request $request, int $templateId): Response
     {
@@ -1705,7 +1705,7 @@ class VmNodesController
     }
 
     /**
-     * DELETE /api/admin/vm-templates/{id} — Delete a VM template.
+     * DELETE /api/admin/vm-templates/{id} Delete a VM template.
      */
     public function deleteTemplate(Request $request, int $templateId): Response
     {

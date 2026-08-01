@@ -189,7 +189,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
                             return true;
                         }
                     } catch {
-                        // Fall through — keep existing session if any.
+                        // Fall through keep existing session if any.
                     }
                     setIsSessionChecked(true);
                     setIsLoading(false);

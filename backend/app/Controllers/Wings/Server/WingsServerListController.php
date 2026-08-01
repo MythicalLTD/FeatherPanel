@@ -377,6 +377,10 @@ class WingsServerListController
                     'requires_rebuild' => false,
                 ],
                 'file_trash' => WingsFileTrashConfig::forWings(),
+                'fastdl' => [
+                    'enabled' => !empty($server['fastdl_enabled']),
+                    'directory' => (string) ($server['fastdl_directory'] ?? 'fastdl'),
+                ],
             ];
             $listMounts = Mount::getWingsMountsForServer((int) $server['id']);
             if ($listMounts !== []) {
@@ -404,7 +408,7 @@ class WingsServerListController
             $data[] = $serverConfig;
         }
 
-        // Build pagination links from APP_URL — not the request host (often localhost behind proxies).
+        // Build pagination links from APP_URL not the request host (often localhost behind proxies).
         $baseUrl = AppUrlHelper::apiUrl('/remote/servers');
         $links = [
             'first' => $baseUrl . '?page=1',

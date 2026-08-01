@@ -110,9 +110,13 @@ export function useWingsWebSocket({
     const reconnectTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
     const reconnectAttemptsRef = useRef(0);
     const connectionBlockedRef = useRef(false);
+    const intentionalCloseRef = useRef(false);
+    const isRefreshingTokenRef = useRef(false);
+    const isConnectingRef = useRef(false);
     const lastStatsRequestTimeRef = useRef<number | null>(null);
     const consoleOutputQueueRef = useRef<string[]>([]);
     const consoleFlushRafRef = useRef<number | null>(null);
+    const establishConnectionRef = useRef<(() => Promise<void>) | null>(null);
 
     // Store callbacks in refs to avoid triggering useEffect on every render
     const onMessageRef = useRef(onMessage);
@@ -186,20 +190,45 @@ export function useWingsWebSocket({
         consoleOutputQueueRef.current = [];
     }, []);
 
-    const scheduleReconnect = useCallback((establishConnection: () => void) => {
-        if (connectionBlockedRef.current || reconnectAttemptsRef.current >= MAX_RECONNECT_ATTEMPTS) {
-            setConnectionStatus('error');
-            return;
+    const clearReconnectTimer = useCallback(() => {
+        if (reconnectTimeoutRef.current) {
+            clearTimeout(reconnectTimeoutRef.current);
+            reconnectTimeoutRef.current = undefined;
         }
-
-        reconnectAttemptsRef.current += 1;
-        const delay = Math.min(RECONNECT_BASE_DELAY_MS * reconnectAttemptsRef.current, RECONNECT_MAX_DELAY_MS);
-
-        reconnectTimeoutRef.current = setTimeout(() => {
-            console.log('[Wings WS] Attempting reconnection...');
-            establishConnection();
-        }, delay);
     }, []);
+
+    const closeSocketIntentionally = useCallback(() => {
+        intentionalCloseRef.current = true;
+        clearReconnectTimer();
+        if (wsRef.current) {
+            const ws = wsRef.current;
+            wsRef.current = null;
+            try {
+                ws.close();
+            } catch {
+                // ignore
+            }
+        }
+    }, [clearReconnectTimer]);
+
+    const scheduleReconnect = useCallback(
+        (establishConnection: () => void) => {
+            if (connectionBlockedRef.current || reconnectAttemptsRef.current >= MAX_RECONNECT_ATTEMPTS) {
+                setConnectionStatus('error');
+                return;
+            }
+
+            clearReconnectTimer();
+            reconnectAttemptsRef.current += 1;
+            const delay = Math.min(RECONNECT_BASE_DELAY_MS * reconnectAttemptsRef.current, RECONNECT_MAX_DELAY_MS);
+
+            reconnectTimeoutRef.current = setTimeout(() => {
+                console.log('[Wings WS] Attempting reconnection...');
+                establishConnection();
+            }, delay);
+        },
+        [clearReconnectTimer],
+    );
 
     const sendCommand = useCallback(
         (command: string) => {
@@ -229,29 +258,34 @@ export function useWingsWebSocket({
         [serverUuid],
     );
 
+    /**
+     * Do not re-auth on the same socket — close and reconnect with a fresh JWT
+     * (matches useServersWebSocket / CHANGELOG guidance).
+     */
     const refreshToken = useCallback(async () => {
+        if (isRefreshingTokenRef.current || connectionBlockedRef.current) {
+            return;
+        }
+
         try {
-            console.log('[Wings WS] Refreshing token...');
-            const response = await axios.post<WingsJWTResponse>(`/api/user/servers/${serverUuid}/jwt`);
+            isRefreshingTokenRef.current = true;
+            console.log('[Wings WS] Token refresh: closing socket and reconnecting...');
+            setIsConnected(false);
+            setConnectionStatus('connecting');
+            closeSocketIntentionally();
 
-            if (response.data.success && wsRef.current?.readyState === WebSocket.OPEN) {
-                const { token } = response.data.data;
-                jwtTokenRef.current = token;
-
-                // Re-authenticate with new token
-                wsRef.current.send(
-                    JSON.stringify({
-                        event: 'auth',
-                        args: [token],
-                    }),
-                );
-
-                console.log('[Wings WS] Token refreshed successfully');
+            const establish = establishConnectionRef.current;
+            if (establish) {
+                await establish();
             }
+            console.log('[Wings WS] Token refresh reconnect started');
         } catch (error) {
             console.error('[Wings WS] Failed to refresh token:', error);
+            setConnectionStatus('error');
+        } finally {
+            isRefreshingTokenRef.current = false;
         }
-    }, [serverUuid]);
+    }, [closeSocketIntentionally]);
 
     useEffect(() => {
         if (!serverUuid) return;
@@ -259,16 +293,27 @@ export function useWingsWebSocket({
         let isCleanedUp = false;
         connectionBlockedRef.current = false;
         reconnectAttemptsRef.current = 0;
+        intentionalCloseRef.current = false;
+        isRefreshingTokenRef.current = false;
+        isConnectingRef.current = false;
 
         const establishConnection = async () => {
             // Don't connect if we've already cleaned up or connecting is disabled
             if (isCleanedUp || !shouldConnect || connectionBlockedRef.current) return;
+            if (isConnectingRef.current) return;
 
+            isConnectingRef.current = true;
+            intentionalCloseRef.current = false;
+            clearReconnectTimer();
             setConnectionStatus('connecting');
 
             try {
                 // Get JWT token and connection string from API
                 const response = await axios.post<WingsJWTResponse>(`/api/user/servers/${serverUuid}/jwt`);
+
+                if (isCleanedUp || !shouldConnect || connectionBlockedRef.current) {
+                    return;
+                }
 
                 if (!response.data.success) {
                     throw new Error(response.data.error_message || 'Failed to get JWT token');
@@ -282,8 +327,13 @@ export function useWingsWebSocket({
                 // Close any existing connection before creating a new one
                 if (wsRef.current) {
                     console.log('[Wings WS] Closing existing connection');
-                    wsRef.current.close();
+                    const existing = wsRef.current;
                     wsRef.current = null;
+                    try {
+                        existing.close();
+                    } catch {
+                        // ignore
+                    }
                 }
 
                 // Connect to Wings WebSocket
@@ -291,6 +341,9 @@ export function useWingsWebSocket({
                 wsRef.current = ws;
 
                 ws.onopen = () => {
+                    if (isCleanedUp || ws !== wsRef.current) {
+                        return;
+                    }
                     console.log('[Wings WS] Connection opened, authenticating...');
 
                     // Send authentication with JWT token
@@ -303,6 +356,10 @@ export function useWingsWebSocket({
                 };
 
                 ws.onmessage = (event) => {
+                    if (isCleanedUp || ws !== wsRef.current) {
+                        return;
+                    }
+
                     try {
                         const data = JSON.parse(event.data) as WingsMessage;
 
@@ -319,17 +376,18 @@ export function useWingsWebSocket({
                         if (data.event === 'auth_error' || data.event === 'auth error') {
                             console.error('[Wings WS] Authentication failed');
                             setConnectionStatus('error');
+                            intentionalCloseRef.current = false;
                             ws.close();
                             return;
                         }
 
-                        // Handle token expiring - refresh token
+                        // Handle token expiring — full reconnect with new JWT (not in-place re-auth)
                         if (data.event === 'token expiring') {
-                            console.log('[Wings WS] Token expiring, refreshing...');
-                            refreshToken();
+                            console.log('[Wings WS] Token expiring, refreshing via reconnect...');
                             if (onTokenExpiringRef.current) {
                                 onTokenExpiringRef.current();
                             }
+                            void refreshToken();
                             return;
                         }
 
@@ -337,6 +395,21 @@ export function useWingsWebSocket({
                         if (data.event === 'token expired') {
                             console.error('[Wings WS] Token expired');
                             setConnectionStatus('error');
+                            intentionalCloseRef.current = false;
+                            ws.close();
+                            return;
+                        }
+
+                        // JWT errors are fatal — close and reconnect (do not leave a half-alive session)
+                        if (data.event === 'jwt error') {
+                            const raw = (data.args?.[0] as string) || 'WebSocket authentication error.';
+                            console.error('[Wings WS] JWT error:', raw);
+                            if (onConsoleOutputRef.current) {
+                                enqueueConsoleOutput(`\u001b[31m[JWT] ${raw}\u001b[0m`);
+                            }
+                            setIsConnected(false);
+                            setConnectionStatus('error');
+                            intentionalCloseRef.current = false;
                             ws.close();
                             return;
                         }
@@ -352,12 +425,6 @@ export function useWingsWebSocket({
                             const raw =
                                 (data.args?.[0] as string) || 'An error occurred while handling a daemon request.';
                             enqueueConsoleOutput(`\u001b[31m${raw}\u001b[0m`);
-                            return;
-                        }
-
-                        if (data.event === 'jwt error' && onConsoleOutputRef.current) {
-                            const raw = (data.args?.[0] as string) || 'WebSocket authentication error.';
-                            enqueueConsoleOutput(`\u001b[31m[JWT] ${raw}\u001b[0m`);
                             return;
                         }
 
@@ -469,16 +536,29 @@ export function useWingsWebSocket({
                 };
 
                 ws.onclose = () => {
+                    // Ignore stale closes from sockets we already replaced or intentionally nulled
+                    if (ws !== wsRef.current) {
+                        return;
+                    }
+
                     console.log('[Wings WS] Disconnected');
                     setIsConnected(false);
-                    setConnectionStatus('disconnected');
                     setPing(null);
                     setStats(null);
+                    wsRef.current = null;
 
-                    // Only attempt reconnection if not cleaned up and connecting is still enabled
-                    if (!isCleanedUp && shouldConnect) {
-                        scheduleReconnect(establishConnection);
+                    const wasIntentional = intentionalCloseRef.current;
+                    intentionalCloseRef.current = false;
+
+                    if (wasIntentional || isCleanedUp || !shouldConnect || isRefreshingTokenRef.current) {
+                        if (!isRefreshingTokenRef.current && !isCleanedUp) {
+                            setConnectionStatus('disconnected');
+                        }
+                        return;
                     }
+
+                    setConnectionStatus('disconnected');
+                    scheduleReconnect(establishConnection);
                 };
             } catch (err) {
                 console.error('[Wings WS] Connection failed:', err);
@@ -494,8 +574,12 @@ export function useWingsWebSocket({
                 if (!isCleanedUp && shouldConnect) {
                     scheduleReconnect(establishConnection);
                 }
+            } finally {
+                isConnectingRef.current = false;
             }
         };
+
+        establishConnectionRef.current = establishConnection;
 
         if (shouldConnect) {
             establishConnection();
@@ -507,23 +591,35 @@ export function useWingsWebSocket({
         return () => {
             console.log('[Wings WS] Cleaning up connection');
             isCleanedUp = true;
+            establishConnectionRef.current = null;
             clearConsoleOutputQueue();
-            if (reconnectTimeoutRef.current) {
-                clearTimeout(reconnectTimeoutRef.current);
-            }
+            clearReconnectTimer();
+            intentionalCloseRef.current = true;
             if (wsRef.current) {
                 wsRef.current.close();
                 wsRef.current = null;
             }
         };
-    }, [serverUuid, refreshToken, shouldConnect, enqueueConsoleOutput, clearConsoleOutputQueue, scheduleReconnect]);
+    }, [
+        serverUuid,
+        refreshToken,
+        shouldConnect,
+        enqueueConsoleOutput,
+        clearConsoleOutputQueue,
+        scheduleReconnect,
+        clearReconnectTimer,
+    ]);
 
     const reconnect = useCallback(() => {
-        if (wsRef.current) {
-            wsRef.current.close();
+        reconnectAttemptsRef.current = 0;
+        connectionBlockedRef.current = false;
+        closeSocketIntentionally();
+        setConnectionStatus('connecting');
+        const establish = establishConnectionRef.current;
+        if (establish) {
+            void establish();
         }
-        // The useEffect will handle reconnection
-    }, []);
+    }, [closeSocketIntentionally]);
 
     const requestStats = useCallback(() => {
         if (wsRef.current?.readyState === WebSocket.OPEN) {

@@ -159,6 +159,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                     amber: '0 0% 9%'
                   };
                   document.documentElement.classList.add(theme);
+                  document.documentElement.style.colorScheme = theme;
                   document.documentElement.style.setProperty('--primary', colors[accentColor] || colors.purple);
                   document.documentElement.style.setProperty('--ring', colors[accentColor] || colors.purple);
                   document.documentElement.style.setProperty('--primary-foreground', foregrounds[accentColor] || '0 0% 98%');

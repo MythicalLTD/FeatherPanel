@@ -56,6 +56,17 @@ export function AdvancedTab({ form, setForm, errors }: AdvancedTabProps) {
                                 }
                             />
                         </div>
+                        <div className='space-y-2'>
+                            <Label className='text-sm font-semibold'>{t('admin.node.form.fastdl_port')}</Label>
+                            <Input
+                                type='number'
+                                value={form.fastdl_port}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                    setForm({ ...form, fastdl_port: parseInt(e.target.value) || 80 })
+                                }
+                            />
+                            <p className='text-muted-foreground text-xs'>{t('admin.node.form.fastdl_port_help')}</p>
+                        </div>
                     </div>
                     <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
                         <div className='space-y-2'>

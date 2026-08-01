@@ -2563,7 +2563,7 @@ class ServersController
         Activity::createActivity([
             'user_uuid' => $staffUser['uuid'],
             'name' => 'suspend_server',
-            'context' => 'Suspended server ' . $server['name'] . ' — ' . $parsed['reason'],
+            'context' => 'Suspended server ' . $server['name'] . ' ' . $parsed['reason'],
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
@@ -2736,7 +2736,7 @@ class ServersController
         Activity::createActivity([
             'user_uuid' => $currentUser['uuid'] ?? '',
             'name' => 'warn_server',
-            'context' => 'Sent warning to server: ' . $server['name'] . ' — ' . $title,
+            'context' => 'Sent warning to server: ' . $server['name'] . ' ' . $title,
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 

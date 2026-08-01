@@ -1037,7 +1037,7 @@
 				"presets": {
 					"hide_ipv4": {
 						"title": "Hide IPv4 addresses",
-						"desc": "Replaces IPv4 addresses (and optional :port) with [IP] — useful when sharing logs or streaming."
+						"desc": "Replaces IPv4 addresses (and optional :port) with [IP] useful when sharing logs or streaming."
 					},
 					"hide_email": {
 						"title": "Hide email addresses",
@@ -1779,7 +1779,7 @@
 		"name": "Backup Name",
 		"namePlaceholder": "Enter backup name",
 		"ignoreFiles": "Ignored Files",
-		"ignoreFilesPlaceholder": "e.g. *.log or logs/* — press Enter or + to add",
+		"ignoreFilesPlaceholder": "e.g. *.log or logs/* press Enter or + to add",
 		"ignoreFilesHelp": "Add gitignore-style patterns (e.g. \"*.log\", \"logs/*\"). Leave empty to use .featherpanelignore in the server root (also accepts .pteroignore / .pelicanignore).",
 		"ignoreFilesList": "Ignored Files List",
 		"create": "Create Backup",
@@ -4035,7 +4035,7 @@
 			"wings_no_nodes": "No nodes found",
 			"wings_no_node_selected": "Select a Wings node above to view its logs",
 			"wings_fetching": "Fetching from Wings...",
-			"wings_empty": "No Wings logs available — node may be offline or logs are empty",
+			"wings_empty": "No Wings logs available node may be offline or logs are empty",
 			"wings_no_node_status": "No node selected",
 			"wings_auto_refresh_interval": "Auto-refreshing every 30s",
 			"wings_uploaded": "Uploaded:",
@@ -4056,7 +4056,7 @@
 				"cleared": "Logs cleared successfully",
 				"clear_failed": "Failed to clear logs",
 				"fetch_nodes_failed": "Failed to fetch nodes",
-				"wings_fetch_failed": "Failed to fetch Wings logs — node may be offline",
+				"wings_fetch_failed": "Failed to fetch Wings logs node may be offline",
 				"wings_upload_failed": "Failed to upload Wings logs",
 				"wings_upload_success": "Wings logs uploaded successfully",
 				"wings_upload_no_url": "Upload succeeded but no URL was returned"
@@ -4298,7 +4298,7 @@
 				"permission_added": "Permission added successfully",
 				"permission_removed": "Permission removed successfully",
 				"permission_failed": "Failed to update permissions",
-				"cannot_remove_own_admin_root": "You cannot remove admin.root from your own role — that would lock you out of the panel.",
+				"cannot_remove_own_admin_root": "You cannot remove admin.root from your own role that would lock you out of the panel.",
 				"duplicated": "Role duplicated successfully",
 				"duplicate_failed": "Failed to duplicate role",
 				"badge_icon_uploaded": "Badge icon uploaded successfully",
@@ -5221,6 +5221,8 @@
 				"disk_overallocate": "Disk Over-Allocation",
 				"daemon_port": "Daemon Port",
 				"daemon_sftp_port": "Daemon SFTP Port",
+				"fastdl_port": "FastDL Port",
+				"fastdl_port_help": "Public nginx FastDL listen port (default 80). Used in sv_downloadurl not the Wings API port.",
 				"sftp_subdomain": "SFTP Hostname (optional)",
 				"sftp_subdomain_placeholder": "sftp.node.domain.de",
 				"sftp_subdomain_help": "Used for user-facing SFTP connection details. Leave empty to use node FQDN/IP.",
@@ -5285,7 +5287,7 @@
 			"mass_transfer": {
 				"button": "Mass move servers",
 				"title": "Mass move servers",
-				"description": "Move servers from {node} to another node. Free allocations on the destination are assigned automatically — no need to pick an IP for each server.",
+				"description": "Move servers from {node} to another node. Free allocations on the destination are assigned automatically no need to pick an IP for each server.",
 				"destination_node": "Destination node",
 				"select_destination": "Select destination node...",
 				"transferable": "Can move",
@@ -6822,7 +6824,7 @@
 			"index": {
 				"plugins": {
 					"title": "Plugins",
-					"description": "Mythic marketplace addons linked to this panel — browse team products and install .fpa releases",
+					"description": "Mythic marketplace addons linked to this panel browse team products and install .fpa releases",
 					"available": "Available"
 				},
 				"spells": {
@@ -7051,7 +7053,7 @@
 		},
 		"cloud_management": {
 			"title": "Cloud Connections",
-			"subtitle": "Connect Mythic Cloud in a couple of clicks — no API keys or user ids to paste.",
+			"subtitle": "Connect Mythic Cloud in a couple of clicks no API keys or user ids to paste.",
 			"refresh_status": "Refresh",
 			"rotate_keys": "Rotate Keys",
 			"connect_cta": "Connect Mythic Cloud",
@@ -7082,10 +7084,10 @@
 			},
 			"disconnect_dialog": {
 				"title": "Disconnect Mythic Cloud?",
-				"description": "This fully removes the Mythic link — identity keys, team mapping, and authorizer identity. The panel will act as if it was never connected."
+				"description": "This fully removes the Mythic link identity keys, team mapping, and authorizer identity. The panel will act as if it was never connected."
 			},
 			"mapping": {
-				"unmapped_hint": "Your panel account email is not matched to a Mythic team member yet. Ask your team owner to invite that email, then refresh — never enter a Mythic user id."
+				"unmapped_hint": "Your panel account email is not matched to a Mythic team member yet. Ask your team owner to invite that email, then refresh never enter a Mythic user id."
 			},
 			"credentials": {
 				"title": "Credential Information",
@@ -7383,7 +7385,7 @@
 				},
 				"potential_alts": {
 					"title": "Potential Alt Accounts",
-					"description": "These users may be alternate accounts based on shared IP addresses (panel activity, server activity, first/last IP) and browser sync identifiers collected across the panel. Matches are indicative only — shared networks, VPNs, and family devices can produce false positives.",
+					"description": "These users may be alternate accounts based on shared IP addresses (panel activity, server activity, first/last IP) and browser sync identifiers collected across the panel. Matches are indicative only shared networks, VPNs, and family devices can produce false positives.",
 					"source_ips": "IPs used by this account",
 					"source_devices": "Browser sync IDs seen for this account",
 					"user": "User",
@@ -7814,7 +7816,7 @@
 				},
 				"reforge_captcha_secret_key": {
 					"label": "reForge Captcha secret key",
-					"description": "Private secret key from the reForge Captcha dashboard. Used only on the server for POST /api/verify — never expose it in the browser."
+					"description": "Private secret key from the reForge Captcha dashboard. Used only on the server for POST /api/verify never expose it in the browser."
 				},
 				"reforge_captcha_widget_type": {
 					"label": "reForge Captcha widget type",
@@ -8546,7 +8548,7 @@
 					"no_schema_desc": "The plugin developer needs to add a config section to conf.yml",
 					"spell_restrictions": {
 						"title": "Server Sidebar Spell Restrictions",
-						"description": "Allow-list only: select the server types (spells) where this plugin should appear in the sidebar. Leave empty to show on all server types. To hide the plugin from specific eggs, select every spell except those — do not select only the eggs you want to block.",
+						"description": "Allow-list only: select the server types (spells) where this plugin should appear in the sidebar. Leave empty to show on all server types. To hide the plugin from specific eggs, select every spell except those do not select only the eggs you want to block.",
 						"loading": "Loading spells...",
 						"no_spells": "No spells found",
 						"save": "Save Spell Restrictions",
@@ -9727,7 +9729,7 @@
 		"pressEnterToSend": "Press Enter to send, Shift+Enter for new line",
 		"conversations": "Conversations",
 		"closeChat": "Close chat",
-		"welcomeVds": "Hi {name}! 👋 I'm your FeatherPanel VDS AI. I can help you manage your virtual servers — check status, control power, manage backups, and more!",
+		"welcomeVds": "Hi {name}! 👋 I'm your FeatherPanel VDS AI. I can help you manage your virtual servers check status, control power, manage backups, and more!",
 		"you": "You",
 		"toolActionSuccess": "Action '{action}' completed successfully",
 		"toolActionFailed": "Action '{action}' failed",

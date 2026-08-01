@@ -62,7 +62,7 @@ export function getPluginIframeThemeOverrideCss(theme: 'light' | 'dark'): string
                 /* Strip the iframe's own page-level background so the panel's
                    custom backdrop (gradients, glass, etc.) shows through.
                    Plugin cards/components keep their own backgrounds. Applied
-                   in BOTH themes — in light mode this happens to be invisible,
+                   in BOTH themes in light mode this happens to be invisible,
                    in dark mode it removed the solid slab that broke the panel bg. */
                 html,
                 html[data-fp-theme="light"],

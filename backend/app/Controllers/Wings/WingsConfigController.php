@@ -31,7 +31,7 @@ use Symfony\Component\HttpFoundation\Response;
 class WingsConfigController
 {
     /**
-     * GET /api/remote/config — return full Wings config.yml as YAML for the authenticated node.
+     * GET /api/remote/config return full Wings config.yml as YAML for the authenticated node.
      */
     public function getConfig(Request $request): Response
     {

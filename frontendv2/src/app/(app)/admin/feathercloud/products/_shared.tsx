@@ -27,7 +27,7 @@ export const FEATHERPANEL_CATEGORY_SLUG = 'featherpanel-plugins';
 export interface StoreProduct {
     id?: number | string;
     name?: string;
-    /** Marketplace product slug — use for Mythic API / detail routes. */
+    /** Marketplace product slug use for Mythic API / detail routes. */
     slug?: string;
     /**
      * Panel-facing plugin id from Mythic (`featherpanel_plugin_identifier` or slug fallback).

@@ -312,7 +312,7 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
                         <SheetTitle>{t('admin.vdsNodes.templates.create_title')}</SheetTitle>
                         <p className='text-muted-foreground text-sm'>
                             {t('admin.vdsNodes.templates.create_desc_select') ||
-                                'Select a VM from Proxmox — name and VMID will be filled. Use a VM you converted to template in Proxmox.'}
+                                'Select a VM from Proxmox name and VMID will be filled. Use a VM you converted to template in Proxmox.'}
                         </p>
                     </SheetHeader>
                     <form onSubmit={handleCreate} className='mt-6 space-y-4'>
@@ -333,11 +333,11 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
                                     onChange={(e) => handleProxmoxVmSelect(e.target.value)}
                                 >
                                     <option value=''>
-                                        {t('admin.vdsNodes.templates.select_vm_placeholder') || '— Select a VM —'}
+                                        {t('admin.vdsNodes.templates.select_vm_placeholder') || 'Select a VM —'}
                                     </option>
                                     {proxmoxVms.map((vm) => (
                                         <option key={vm.vmid} value={vm.vmid}>
-                                            {vm.name} (VMID {vm.vmid}){vm.template ? ' — Template' : ''}
+                                            {vm.name} (VMID {vm.vmid}){vm.template ? ' Template' : ''}
                                         </option>
                                     ))}
                                 </Select>
@@ -409,7 +409,7 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
                                 />
                                 <p className='text-muted-foreground mt-1 text-xs'>
                                     {t('admin.vdsNodes.templates.field_lxc_root_password_help') ||
-                                        'Optional. Informational only — FeatherPanel does not change the root password on the container; this is just shown to users as the default password for this template.'}
+                                        'Optional. Informational only FeatherPanel does not change the root password on the container; this is just shown to users as the default password for this template.'}
                                 </p>
                             </div>
                         )}

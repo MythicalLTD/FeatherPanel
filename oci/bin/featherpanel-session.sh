@@ -30,7 +30,7 @@ featherpanel_oci_print_banner() {
     if [ -n "$app_url" ]; then
         echo "  Panel URL (app_url): $app_url"
     else
-        echo "  Panel URL: not in .env yet — open http://<this-host>/ or set FEATHERPANEL_APP_URL"
+        echo "  Panel URL: not in .env yet open http://<this-host>/ or set FEATHERPANEL_APP_URL"
     fi
     echo "  HTTP (in container):  http://127.0.0.1/"
     echo "------------------------------------------------------------"

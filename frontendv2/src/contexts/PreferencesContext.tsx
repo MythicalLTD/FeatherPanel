@@ -103,7 +103,7 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
                     }
                 }
             } catch {
-                // Non-critical — fall back to browser detection.
+                // Non-critical fall back to browser detection.
             } finally {
                 if (!cancelled) setReady(true);
             }
@@ -161,7 +161,7 @@ export function usePreferences(): PreferencesContextValue {
 
 /**
  * Convenience hook returning only the effective timezone string.
- * Safe to call outside `PreferencesProvider` — falls back to the
+ * Safe to call outside `PreferencesProvider` falls back to the
  * browser-detected zone in that case rather than throwing, so date helpers
  * embedded in plugin code keep working.
  */

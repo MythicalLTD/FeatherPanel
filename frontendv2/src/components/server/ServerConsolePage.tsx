@@ -102,6 +102,7 @@ export default function ServerConsolePage() {
 
     useEffect(() => {
         hasRequestedLogsRef.current = false;
+        hasInitializedStatus.current = false;
     }, [serverUuid]);
 
     useEffect(() => {
@@ -371,6 +372,13 @@ export default function ServerConsolePage() {
 
         return () => clearInterval(interval);
     }, [connectionStatus, requestStats, requestLogs]);
+
+    // Allow log history re-fetch after a full reconnect (token refresh / drop)
+    useEffect(() => {
+        if (connectionStatus === 'disconnected' || connectionStatus === 'error') {
+            hasRequestedLogsRef.current = false;
+        }
+    }, [connectionStatus]);
 
     useEffect(() => {
         if (cpuData.length === 0) {

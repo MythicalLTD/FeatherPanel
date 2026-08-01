@@ -114,6 +114,7 @@ export interface NodeData {
     daemon_token: string;
     daemonListen: number;
     daemonSFTP: number;
+    fastdl_port?: number;
     daemonBase: string;
     public_ip_v4?: string | null;
     public_ip_v6?: string | null;

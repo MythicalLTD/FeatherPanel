@@ -31,7 +31,7 @@ use Symfony\Component\HttpFoundation\Request;
  */
 class MythicMemberResolver
 {
-    public const UNMAPPED_MESSAGE = 'Link your Mythic account or ask your team owner to invite a matching email. Member actions run as your Mythic identity automatically — you never need to enter a Mythic user id.';
+    public const UNMAPPED_MESSAGE = 'Link your Mythic account or ask your team owner to invite a matching email. Member actions run as your Mythic identity automatically you never need to enter a Mythic user id.';
 
     /**
      * @param array<string, mixed>|null $user FeatherPanel user row from auth middleware
@@ -200,7 +200,7 @@ class MythicMemberResolver
 
     /**
      * Wipe all Mythic link state (team, authorizer, member map, display metadata).
-     * Does not touch panel identity / access keys — caller clears those separately.
+     * Does not touch panel identity / access keys caller clears those separately.
      */
     public static function clearLinkState(): void
     {

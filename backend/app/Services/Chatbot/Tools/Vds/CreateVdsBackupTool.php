@@ -31,7 +31,7 @@ use App\Services\Chatbot\Tools\ToolInterface;
 
 /**
  * Tool to create a backup of a VDS instance.
- * Mirrors VmUserBackupController::createBackup() — actually calls Proxmox.
+ * Mirrors VmUserBackupController::createBackup() actually calls Proxmox.
  */
 class CreateVdsBackupTool implements ToolInterface
 {

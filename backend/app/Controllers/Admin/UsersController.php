@@ -1045,7 +1045,7 @@ class UsersController
             }
         }
 
-        // Check if user has any servers / VMs — delegated to shared service below
+        // Check if user has any servers / VMs delegated to shared service below
         $result = \App\Services\User\UserDeletionService::hardDelete(
             $user,
             $request->attributes->get('user'),
@@ -1621,7 +1621,7 @@ class UsersController
 
         $queueId = MailQueue::create($queueData);
         if ($queueId === true) {
-            return ApiResponse::error('SMTP disabled — skipping enqueue/send', 'SMTP_DISABLED', 400);
+            return ApiResponse::error('SMTP disabled skipping enqueue/send', 'SMTP_DISABLED', 400);
         }
         if ($queueId === false) {
             return ApiResponse::error('Failed to queue email', 'FAILED_TO_QUEUE_EMAIL', 500);

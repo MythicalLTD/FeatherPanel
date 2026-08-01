@@ -68,7 +68,7 @@ type TFunction = (key: string) => string;
 
 /** Totals for the signed-in user (game servers include subuser access). Pass only from dashboard shell; omit to always show Servers / VDS links. */
 export type MainNavResourceCounts = {
-    /** Null while loading — links stay visible until counts resolve. */
+    /** Null while loading links stay visible until counts resolve. */
     gameServersTotal: number | null;
     vmInstancesTotal: number | null;
 };

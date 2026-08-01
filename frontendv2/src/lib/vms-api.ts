@@ -51,7 +51,7 @@ export interface VmPagination {
     total_pages: number;
     has_next: boolean;
     has_prev: boolean;
-    // `from` and `to` are not returned by the backend — compute them locally
+    // `from` and `to` are not returned by the backend compute them locally
     from?: number;
     to?: number;
 }

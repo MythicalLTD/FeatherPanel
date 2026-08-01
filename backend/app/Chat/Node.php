@@ -53,6 +53,7 @@ class Node
         'daemon_token',
         'daemonListen',
         'daemonSFTP',
+        'fastdl_port',
         'daemonBase',
         'public_ip_v4',
         'public_ip_v6',
@@ -104,6 +105,10 @@ class Node
 
         if (isset($data['daemonSFTP']) && (!is_numeric($data['daemonSFTP']) || (int) $data['daemonSFTP'] < 1)) {
             $errors[] = 'Daemon SFTP port must be a positive number';
+        }
+
+        if (isset($data['fastdl_port']) && (!is_numeric($data['fastdl_port']) || (int) $data['fastdl_port'] < 1 || (int) $data['fastdl_port'] > 65535)) {
+            $errors[] = 'FastDL port must be a number between 1 and 65535';
         }
 
         if (isset($data['public_ip_v4']) && $data['public_ip_v4'] !== null && $data['public_ip_v4'] !== '') {
@@ -813,6 +818,10 @@ class Node
         $uploadLimit = (int) ($node['upload_size'] ?? 100);
         $dataPath = $node['daemonBase'] ?? '/var/lib/featherpanel/volumes';
         $sftpPort = (int) ($node['daemonSFTP'] ?? 2022);
+        $fastdlPort = (int) ($node['fastdl_port'] ?? 80);
+        if ($fastdlPort < 1 || $fastdlPort > 65535) {
+            $fastdlPort = 80;
+        }
 
         $remote = rtrim($panelUrl, '/');
 
@@ -832,6 +841,11 @@ class Node
         $yaml .= '  data: ' . $dataPath . "\n";
         $yaml .= "  sftp:\n";
         $yaml .= '    bind_port: ' . $sftpPort . "\n";
+        $yaml .= "  fastdl:\n";
+        $yaml .= "    enabled: false\n";
+        $yaml .= '    bind_port: ' . $fastdlPort . "\n";
+        $yaml .= '    public_hostname: ' . $fqdn . "\n";
+        $yaml .= "    nginx_config_path: /etc/nginx/sites-available/featherwings-fastdl\n";
         $allowedMounts = Mount::getAllowedSourcesForNode((int) ($node['id'] ?? 0));
         $yaml .= rtrim(Yaml::dump(['allowed_mounts' => $allowedMounts], 3, 2, Yaml::DUMP_EMPTY_ARRAY_AS_SEQUENCE)) . "\n";
         $yaml .= "remote: '" . $remote . "'\n";

@@ -150,7 +150,7 @@ class MythicIssueReportCollector
             return 'docker';
         }
 
-        // Traditional installer / bare PHP host — closest valid enum value.
+        // Traditional installer / bare PHP host closest valid enum value.
         return 'bare_metal';
     }
 
@@ -441,7 +441,7 @@ class MythicIssueReportCollector
                 $lines[] = "- Panel {$type} log: {$result['url']}";
             } else {
                 $err = $result['error'] ?? 'unavailable';
-                $lines[] = "- Panel {$type} log: (not attached — {$err})";
+                $lines[] = "- Panel {$type} log: (not attached {$err})";
             }
         }
 
@@ -454,7 +454,7 @@ class MythicIssueReportCollector
                     $lines[] = "- Node {$label}: {$node['url']}";
                 } else {
                     $err = $node['error'] ?? 'unavailable';
-                    $lines[] = "- Node {$label}: (not attached — {$err})";
+                    $lines[] = "- Node {$label}: (not attached {$err})";
                 }
             }
         }

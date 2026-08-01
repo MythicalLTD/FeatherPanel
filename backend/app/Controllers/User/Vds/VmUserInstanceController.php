@@ -196,7 +196,7 @@ class VmUserInstanceController
             $decoded = $subuser ? json_decode($subuser['permissions'] ?? '[]', true) : [];
             $vmInstance['permissions'] = is_array($decoded) ? $decoded : [];
         } elseif ($isPanelVmAdmin) {
-            // Staff accessing /vds/:id (e.g. orphaned instance with no owner) — match VmGateway API access.
+            // Staff accessing /vds/:id (e.g. orphaned instance with no owner) match VmGateway API access.
             $vmInstance['permissions'] = $fullPerms;
         } else {
             $vmInstance['permissions'] = [];

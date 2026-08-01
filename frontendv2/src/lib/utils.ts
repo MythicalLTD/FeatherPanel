@@ -37,7 +37,7 @@ export function resolveAttachmentUrl(url: string | null | undefined): string | n
             return `${parsed.pathname}${parsed.search}`;
         }
     } catch {
-        // Not a valid absolute URL — return as-is for relative paths without a leading slash.
+        // Not a valid absolute URL return as-is for relative paths without a leading slash.
     }
 
     return trimmed;

@@ -65,7 +65,7 @@ class PlayerStatusService
         $ip = $server['ip'] ?? '';
         $port = (int) ($server['port'] ?? 0);
 
-        // Resolve the actual query IP — if allocation IP is 0.0.0.0, use node public IP or FQDN
+        // Resolve the actual query IP if allocation IP is 0.0.0.0, use node public IP or FQDN
         $queryIp = self::resolveQueryIp($ip, $server);
         $displayAddress = $queryIp . ':' . $port;
 
@@ -118,7 +118,7 @@ class PlayerStatusService
                 return $cached;
             }
 
-            // No cached data — return a basic response so the widget knows the game type
+            // No cached data return a basic response so the widget knows the game type
             $data = [
                 'player_count' => 0,
                 'max_players' => 0,
@@ -138,7 +138,7 @@ class PlayerStatusService
             return $data;
         }
 
-        // Build player list — fall back to LogParser if GameQ returns empty names
+        // Build player list fall back to LogParser if GameQ returns empty names
         $players = $queryResult['players'] ?? [];
 
         if (empty($players) && ($queryResult['player_count'] ?? 0) > 0) {
@@ -183,7 +183,7 @@ class PlayerStatusService
             return $cached;
         }
 
-        // Cache miss — fetch server data from DB and trigger a fresh query
+        // Cache miss fetch server data from DB and trigger a fresh query
         $server = self::fetchServerData($uuidShort);
 
         if ($server === null) {
@@ -385,7 +385,7 @@ class PlayerStatusService
             return $nodeFqdn;
         }
 
-        // Last resort — return the original IP (will likely fail but at least won't crash)
+        // Last resort return the original IP (will likely fail but at least won't crash)
         return $allocationIp;
     }
 }

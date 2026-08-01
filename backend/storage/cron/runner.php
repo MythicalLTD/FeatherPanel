@@ -60,7 +60,7 @@ App::sendOutputWithNewLine('&7Starting App cron runner.');
  * Force PHP's default timezone to UTC for the cron runner.
  *
  * Cron jobs use `date('Y-m-d H:i:s')` (and friends) to generate timestamps
- * that are stored in DATETIME columns — those columns are interpreted as
+ * that are stored in DATETIME columns those columns are interpreted as
  * UTC by the frontend, so the cron context must also be UTC, regardless of
  * the admin-configured `app_timezone` panel setting (which is a display
  * preference, not a storage policy).

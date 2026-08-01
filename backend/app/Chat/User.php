@@ -80,7 +80,7 @@ class User
             $insert[$field] = $data[$field] ?? null;
         }
 
-        // remember_token has no DB default — always generate one if not supplied
+        // remember_token has no DB default always generate one if not supplied
         $fields[] = 'remember_token';
         $insert['remember_token'] = $data['remember_token'] ?? self::generateAccountToken();
 

@@ -3623,7 +3623,7 @@ class SettingsController
 
         if ($queueId === true) {
             return ApiResponse::error(
-                'SMTP disabled — skipping enqueue/send',
+                'SMTP disabled skipping enqueue/send',
                 'SMTP_DISABLED',
                 400,
             );

@@ -52,7 +52,7 @@ export default function MarketplacePage() {
             <div className='grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3'>
                 <ResourceCard
                     title={t('admin.marketplace.index.plugins.title')}
-                    description='Team Mythic marketplace products — releases, .fpa downloads, and reviews.'
+                    description='Team Mythic marketplace products releases, .fpa downloads, and reviews.'
                     icon={Puzzle}
                     badges={[
                         {

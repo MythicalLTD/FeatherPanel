@@ -880,7 +880,7 @@ class MailTemplatesController
         $queueId = MailQueue::create($queueData);
 
         if ($queueId === true) {
-            return ApiResponse::error('SMTP disabled — skipping enqueue/send', 'SMTP_DISABLED', 400);
+            return ApiResponse::error('SMTP disabled skipping enqueue/send', 'SMTP_DISABLED', 400);
         }
         if ($queueId === false) {
             return ApiResponse::error('Failed to queue test email', 'FAILED_TO_QUEUE_EMAIL', 500);

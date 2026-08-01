@@ -113,7 +113,7 @@ export default function VmsPage() {
                 <p className='text-muted-foreground mt-1 text-sm'>{t('vms.description')}</p>
             </div>
 
-            {/* Controls — two rows on mobile, one row on desktop */}
+            {/* Controls two rows on mobile, one row on desktop */}
             <div className='border-border/50 bg-card/50 space-y-2 rounded-2xl border p-3 backdrop-blur-xl'>
                 {/* Row 1: search */}
                 <input

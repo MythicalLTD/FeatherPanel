@@ -82,6 +82,7 @@ export default function CreateNodePage() {
         upload_size: 100,
         daemonListen: 8443,
         daemonSFTP: 2022,
+        fastdl_port: 80,
         daemonBase: '/var/lib/featherpanel/volumes',
         public_ip_v4: '',
         public_ip_v6: '',
@@ -224,6 +225,7 @@ export default function CreateNodePage() {
                 upload_size: Number(form.upload_size),
                 daemonListen: Number(form.daemonListen),
                 daemonSFTP: Number(form.daemonSFTP),
+                fastdl_port: Number(form.fastdl_port) || 80,
                 public_ip_v4: trimmedIPv4 === '' ? null : trimmedIPv4,
                 public_ip_v6: trimmedIPv6 === '' ? null : trimmedIPv6,
                 sftp_subdomain: trimmedSftpSubdomain === '' ? null : trimmedSftpSubdomain,
@@ -542,6 +544,21 @@ export default function CreateNodePage() {
                                                 setForm({ ...form, daemonSFTP: parseInt(e.target.value) || 0 })
                                             }
                                         />
+                                    </div>
+                                    <div className='space-y-2'>
+                                        <Label className='text-sm font-semibold'>
+                                            {t('admin.node.form.fastdl_port')}
+                                        </Label>
+                                        <Input
+                                            type='number'
+                                            value={form.fastdl_port}
+                                            onChange={(e) =>
+                                                setForm({ ...form, fastdl_port: parseInt(e.target.value) || 80 })
+                                            }
+                                        />
+                                        <p className='text-muted-foreground text-xs'>
+                                            {t('admin.node.form.fastdl_port_help')}
+                                        </p>
                                     </div>
                                 </div>
                                 <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>

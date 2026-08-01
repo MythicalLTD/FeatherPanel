@@ -760,7 +760,7 @@ export default function DashboardPage() {
                             onClick={() => addToLeft(id)}
                             className='bg-background border-border hover:border-primary/40 rounded-lg border px-3 py-1.5 text-xs transition-colors'
                         >
-                            {blockLabel(id)} — {t('dashboard.layout.add_to_main')}
+                            {blockLabel(id)} {t('dashboard.layout.add_to_main')}
                         </button>
                     ))}
                     {rightAvailable.map((id) => (
@@ -770,7 +770,7 @@ export default function DashboardPage() {
                             onClick={() => addToRight(id)}
                             className='bg-background border-border hover:border-primary/40 rounded-lg border px-3 py-1.5 text-xs transition-colors'
                         >
-                            {blockLabel(id)} — {t('dashboard.layout.add_to_side')}
+                            {blockLabel(id)} {t('dashboard.layout.add_to_side')}
                         </button>
                     ))}
                 </div>

@@ -95,7 +95,7 @@ export default function PublicPluginPage({ page }: PublicPluginPageProps) {
                 iframeDoc.head.appendChild(style);
             }
         } catch {
-            // Cross-origin / sandbox limitations — theme URL param still applies.
+            // Cross-origin / sandbox limitations theme URL param still applies.
         }
     };
 

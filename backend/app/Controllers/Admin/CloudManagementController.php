@@ -396,7 +396,7 @@ class CloudManagementController
                 );
             }
 
-            // OAuth lives on my.mythicalsystems.org — Panel API is panels.mythicalsystems.org
+            // OAuth lives on my.mythicalsystems.org Panel API is panels.mythicalsystems.org
             $callbackUrl = rtrim($panelUrl, '/') . '/admin/cloud-management/finish';
             $oauth2BaseUrl = FeatherCloudClient::resolveOAuthUrl();
             $params = [
@@ -628,7 +628,7 @@ class CloudManagementController
             $this->logCloudActivity(
                 $request,
                 'oauth2_cloud_credentials_saved',
-                'Mythic Cloud OAuth finish — identity keys + mythic_user_id + team_uuid saved'
+                'Mythic Cloud OAuth finish identity keys + mythic_user_id + team_uuid saved'
             );
 
             global $eventManager;
@@ -677,7 +677,7 @@ class CloudManagementController
                     new OA\Property(
                         property: 'wipe_identity_keys',
                         type: 'boolean',
-                        description: 'Ignored — disconnect always wipes identity keys for a clean unlink'
+                        description: 'Ignored disconnect always wipes identity keys for a clean unlink'
                     ),
                 ]
             )
@@ -693,7 +693,7 @@ class CloudManagementController
         try {
             $config = $this->app->getConfig();
 
-            // Full wipe — act as if Mythic was never linked.
+            // Full wipe act as if Mythic was never linked.
             $config->setSetting(ConfigInterface::FEATHERCLOUD_ACCESS_PUBLIC_KEY, null);
             $config->setSetting(ConfigInterface::FEATHERCLOUD_ACCESS_PRIVATE_KEY, null);
             $config->setSetting(ConfigInterface::FEATHERCLOUD_ACCESS_LAST_ROTATED, null);
@@ -733,7 +733,7 @@ class CloudManagementController
     #[OA\Put(
         path: '/api/admin/cloud/settings',
         summary: 'Update Mythic Cloud client settings',
-        description: 'Configure Panel API base URL, OAuth URL, and module flags. Mythic member ids are resolved automatically — never collected from admins.',
+        description: 'Configure Panel API base URL, OAuth URL, and module flags. Mythic member ids are resolved automatically never collected from admins.',
         tags: ['Admin - FeatherCloud'],
         requestBody: new OA\RequestBody(
             required: true,
@@ -760,7 +760,7 @@ class CloudManagementController
             return ApiResponse::error('Invalid JSON payload provided.', 'INVALID_JSON_PAYLOAD', 400);
         }
 
-        // Reject manual Mythic user-id writes — mapping is automatic via OAuth + email sync.
+        // Reject manual Mythic user-id writes mapping is automatic via OAuth + email sync.
         if (array_key_exists('member_user_uuid', $payload)) {
             return ApiResponse::error(
                 MythicMemberResolver::UNMAPPED_MESSAGE,

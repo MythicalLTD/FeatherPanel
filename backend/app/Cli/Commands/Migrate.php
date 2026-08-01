@@ -27,6 +27,16 @@ class Migrate extends App implements CommandBuilder
 {
     private const PLUGIN_NAMESPACE_PREFIX = 'addon:';
 
+    /**
+     * Former plugin identifiers whose migration rows should count for the current identifier.
+     * Key = current addon folder / identifier, value = legacy identifiers.
+     *
+     * @var array<string, list<string>>
+     */
+    private const PLUGIN_IDENTIFIER_ALIASES = [
+        'featherimages' => ['imagehosting'],
+    ];
+
     public static function execute(array $args): void
     {
         $cliApp = App::getInstance();
@@ -132,13 +142,9 @@ class Migrate extends App implements CommandBuilder
                 : self::PLUGIN_NAMESPACE_PREFIX . $addonName . ':' . $migrationName;
 
             /**
-             * Check if the migration was already executed.
+             * Check if the migration was already executed (including renamed plugin identifiers).
              */
-            $stmt = $db->getPdo()->prepare("SELECT COUNT(*) FROM featherpanel_migrations WHERE script = :script AND migrated = 'true'");
-            $stmt->execute(['script' => $scriptIdentifier]);
-            $migrationExists = $stmt->fetchColumn();
-
-            if ($migrationExists > 0) {
+            if (self::migrationAlreadyExecuted($db->getPdo(), $scriptIdentifier, $addonName, $migrationName)) {
                 $cliApp->send('&7&l⏭️  Skipped: &r&7' . $displayName . ' &8(already executed)');
                 ++$skippedMigrations;
                 continue;
@@ -263,6 +269,56 @@ class Migrate extends App implements CommandBuilder
         }
 
         return $directories;
+    }
+
+    /**
+     * Whether a migration script is already recorded as executed.
+     * Also accepts legacy addon identifiers and rewrites them to the current key.
+     */
+    private static function migrationAlreadyExecuted(
+        \PDO $pdo,
+        string $scriptIdentifier,
+        ?string $addonName,
+        string $migrationName,
+    ): bool {
+        $candidates = [$scriptIdentifier];
+
+        if ($addonName !== null && isset(self::PLUGIN_IDENTIFIER_ALIASES[$addonName])) {
+            foreach (self::PLUGIN_IDENTIFIER_ALIASES[$addonName] as $legacyAddon) {
+                $candidates[] = self::PLUGIN_NAMESPACE_PREFIX . $legacyAddon . ':' . $migrationName;
+            }
+        }
+
+        $placeholders = implode(', ', array_fill(0, count($candidates), '?'));
+        $stmt = $pdo->prepare(
+            "SELECT script FROM featherpanel_migrations WHERE migrated = 'true' AND script IN ({$placeholders}) LIMIT 1"
+        );
+        $stmt->execute($candidates);
+        $matchedScript = $stmt->fetchColumn();
+
+        if ($matchedScript === false) {
+            return false;
+        }
+
+        // Normalize legacy rows to the current addon identifier so future runs stay clean.
+        if ($matchedScript !== $scriptIdentifier) {
+            $existsStmt = $pdo->prepare(
+                "SELECT COUNT(*) FROM featherpanel_migrations WHERE script = :script AND migrated = 'true'"
+            );
+            $existsStmt->execute(['script' => $scriptIdentifier]);
+            if ((int) $existsStmt->fetchColumn() > 0) {
+                $delete = $pdo->prepare('DELETE FROM featherpanel_migrations WHERE script = :old_script');
+                $delete->execute(['old_script' => $matchedScript]);
+            } else {
+                $update = $pdo->prepare('UPDATE featherpanel_migrations SET script = :new_script WHERE script = :old_script');
+                $update->execute([
+                    'new_script' => $scriptIdentifier,
+                    'old_script' => $matchedScript,
+                ]);
+            }
+        }
+
+        return true;
     }
 
     /**

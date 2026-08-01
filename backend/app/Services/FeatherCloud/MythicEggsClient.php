@@ -164,7 +164,7 @@ class MythicEggsClient
     }
 
     /**
-     * Public egg reviews list — camelCase meta (averageRating, reviewCount).
+     * Public egg reviews list camelCase meta (averageRating, reviewCount).
      *
      * @return array{data: list<array<string, mixed>>, meta: array<string, mixed>}
      */

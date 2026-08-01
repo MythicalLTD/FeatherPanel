@@ -1,6 +1,10 @@
 @import 'tailwindcss';
 @plugin '@tailwindcss/typography';
 
+/* Class-based dark mode (matches ThemeContext / html.dark). Without this, Tailwind v4
+   keys `dark:` off prefers-color-scheme — so OS light + panel dark = white text on light panels. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
     --background: 0 0% 100%;
     --foreground: 0 0% 9%;

@@ -48,7 +48,7 @@ export function useFavoriteServerUuids() {
                     if (!cancelled) setFavoriteUuids(next);
                 }
             } catch {
-                /* ignore — favorites are non-critical */
+                /* ignore favorites are non-critical */
             } finally {
                 if (!cancelled) setReady(true);
             }

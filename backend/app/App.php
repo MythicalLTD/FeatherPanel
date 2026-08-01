@@ -168,8 +168,8 @@ class App
         // which honour `date_default_timezone_set`. If we leave this on the
         // admin-configured panel timezone (e.g. Europe/Paris), those helpers
         // emit local-time literals, MySQL stores them verbatim into DATETIME
-        // columns, and the frontend — which now correctly interprets every API
-        // datetime as UTC — ends up displaying them shifted by the panel
+        // columns, and the frontend which now correctly interprets every API
+        // datetime as UTC ends up displaying them shifted by the panel
         // offset (e.g. a row created "now" gets labelled "in 2 hours").
         //
         // The `app_timezone` setting is retained as a display fallback in the

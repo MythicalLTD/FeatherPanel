@@ -260,7 +260,7 @@ class AccountDeletionController
         } elseif ($mode === UserDeletionService::MODE_AFTER_SERVICES) {
             $modeLabel = 'Delete after active services expire';
             if (!$services['has_any']) {
-                // No services left — delete immediately
+                // No services left delete immediately
                 $result = UserDeletionService::hardDelete($user, $user, 'User deleted their own account (no active services)');
                 if (!$result['success']) {
                     return ApiResponse::error($result['error'] ?? 'Failed to delete account', $result['code'] ?? 'DELETE_FAILED', 409);

@@ -577,7 +577,7 @@ async fn handle_delete_task(
         }
         
         // Step 3: Delete the VM from Proxmox (purge=1) and wait for the task so disks
-        // (cloud-init, EFI, data volumes) are actually removed — otherwise JSON returns
+        // (cloud-init, EFI, data volumes) are actually removed otherwise JSON returns
         // before Proxmox finishes and space/orphans can linger.
         info!("🗑️ Deleting VM {} from Proxmox...", vmid);
         match client.delete_vm(&target_node, vmid as u32, vm_type).await {

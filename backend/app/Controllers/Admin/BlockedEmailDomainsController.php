@@ -218,7 +218,7 @@ class BlockedEmailDomainsController
 
         $result = BlockedEmailDomain::importFromRemoteUrl($url);
         if ($result === false) {
-            return ApiResponse::error('Could not download or import from this URL (HTTP error, size limit, or network failure). Redirects are not followed — use the final URL.', 'IMPORT_URL_FAILED', 502);
+            return ApiResponse::error('Could not download or import from this URL (HTTP error, size limit, or network failure). Redirects are not followed use the final URL.', 'IMPORT_URL_FAILED', 502);
         }
 
         EmailDomainValidator::invalidateBlockedDomainsCache();
