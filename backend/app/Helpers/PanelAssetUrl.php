@@ -38,7 +38,7 @@ class PanelAssetUrl
             return null;
         }
 
-        // api.featherpanel.com is disconnected — never rewrite or proxy those URLs.
+        // api.featherpanel.com is disconnected never rewrite or proxy those URLs.
         if (stripos($icon, 'api.featherpanel.com') !== false) {
             return null;
         }

@@ -412,7 +412,7 @@ export default function VdsConsolePage() {
               ? instance.memory * 1024 * 1024
               : null);
     // Proxmox returns disk=0 for QEMU VMs when the guest agent isn't reporting
-    // filesystem usage — treat 0 as "no data" (null) rather than "0 bytes used".
+    // filesystem usage treat 0 as "no data" (null) rather than "0 bytes used".
     const diskUsed = vmStatus?.disk ? vmStatus.disk : null;
     // Same for maxdisk: fall back to the DB-stored disk_gb when Proxmox returns 0.
     const diskMax =

@@ -154,7 +154,7 @@ export default function ArticlePage({ params }: { params: Promise<{ id: string }
             <WidgetRenderer widgets={getWidgets('dashboard-knowledgebase-article', 'before-article-content')} />
             <div className='bg-card/50 text-card-foreground border-border/50 overflow-hidden rounded-xl border backdrop-blur-xl'>
                 <div className='p-6 sm:p-8'>
-                    {/* Use semantic colors only — prose-blue + dark:prose-invert can yield light headings on light cards */}
+                    {/* Use semantic colors only prose-blue + dark:prose-invert can yield light headings on light cards */}
                     <div
                         className={cn(
                             'prose prose-sm max-w-none',

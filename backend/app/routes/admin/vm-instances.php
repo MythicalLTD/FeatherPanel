@@ -35,7 +35,7 @@ return function (RouteCollection $routes): void {
         ['GET']
     );
 
-    // Create VM instance (server) — returns 202 with creation_id; poll creation-status until active/failed
+    // Create VM instance (server) returns 202 with creation_id; poll creation-status until active/failed
     App::getInstance(true)->registerAdminRoute(
         $routes,
         'admin-vm-instances-create',
@@ -246,7 +246,7 @@ return function (RouteCollection $routes): void {
         ['POST']
     );
 
-    // Reinstall VM instance — starts async clone, returns 202 + reinstall_id
+    // Reinstall VM instance starts async clone, returns 202 + reinstall_id
     App::getInstance(true)->registerAdminRoute(
         $routes,
         'admin-vm-instances-reinstall',

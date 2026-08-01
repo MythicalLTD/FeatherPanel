@@ -79,7 +79,7 @@ export default function VdsSubusersPage() {
             }
         } catch (error) {
             const axiosError = error as AxiosError<{ message: string }>;
-            // 403 means subuser trying to access — redirect
+            // 403 means subuser trying to access redirect
             if (axiosError.response?.status === 403) {
                 toast.error(t('vds.subusers.owner_only'));
                 router.push(`/vds/${id}`);

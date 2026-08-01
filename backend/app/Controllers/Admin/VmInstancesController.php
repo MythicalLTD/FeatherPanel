@@ -2586,7 +2586,7 @@ class VmInstancesController
         Activity::createActivity([
             'user_uuid' => $admin['uuid'] ?? null,
             'name' => 'vm_instance_suspend',
-            'context' => 'Suspended VM instance ' . ($instance['hostname'] ?? $id) . ' — ' . $parsed['reason'],
+            'context' => 'Suspended VM instance ' . ($instance['hostname'] ?? $id) . ' ' . $parsed['reason'],
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 

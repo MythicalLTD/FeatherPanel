@@ -29,7 +29,7 @@ use App\Services\Chatbot\Tools\ToolInterface;
 
 /**
  * Tool to restore a VDS instance from a backup.
- * Mirrors VmUserBackupController::restoreBackup() — actually calls Proxmox.
+ * Mirrors VmUserBackupController::restoreBackup() actually calls Proxmox.
  */
 class RestoreVdsBackupTool implements ToolInterface
 {
@@ -44,7 +44,7 @@ class RestoreVdsBackupTool implements ToolInterface
     {
         $userUuid = $user['uuid'] ?? '';
 
-        // Require explicit confirmation — this overwrites all data
+        // Require explicit confirmation this overwrites all data
         $confirm = $params['confirm'] ?? false;
         if ($confirm !== true) {
             return [
@@ -177,7 +177,7 @@ class RestoreVdsBackupTool implements ToolInterface
 
     public function getDescription(): string
     {
-        return 'Restore a VDS instance from a backup. Destructive — overwrites all current data. Requires confirm: true. Use get_vds_backups first to find the volid and storage.';
+        return 'Restore a VDS instance from a backup. Destructive overwrites all current data. Requires confirm: true. Use get_vds_backups first to find the volid and storage.';
     }
 
     public function getParameters(): array

@@ -32,7 +32,7 @@ class MailQueue
         $app = \App\App::getInstance(false, true);
         $config = new \App\Config\ConfigFactory($app->getDatabase()->getPdo());
         if ($config->getSetting(\App\Config\ConfigInterface::SMTP_ENABLED, 'false') !== 'true') {
-            $app->getLogger()->warning('SMTP disabled — skipping enqueue/send');
+            $app->getLogger()->warning('SMTP disabled skipping enqueue/send');
 
             return true;
         }

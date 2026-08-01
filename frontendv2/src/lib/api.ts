@@ -115,7 +115,7 @@ const attachCommonResponseInterceptor = (client: AxiosInstance) => {
     client.interceptors.response.use(
         (response) => response,
         (error: AxiosError<{ error_code?: string; error_message?: string }>) => {
-            // Never treat Cloudflare challenges as a logout — cookie may still be valid.
+            // Never treat Cloudflare challenges as a logout cookie may still be valid.
             if (isCloudflareChallengeAxios(error)) {
                 return Promise.reject(error);
             }

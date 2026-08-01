@@ -62,7 +62,7 @@ export function loadRecaptchaV3Script(siteKey: string): Promise<void> {
     });
 }
 
-/** Runs reCAPTCHA v3 `execute` (intended at submit time — token is short-lived). */
+/** Runs reCAPTCHA v3 `execute` (intended at submit time token is short-lived). */
 export async function executeRecaptchaV3(siteKey: string, action: string): Promise<string | null> {
     if (!siteKey.trim()) {
         return null;

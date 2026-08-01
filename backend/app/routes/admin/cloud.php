@@ -415,7 +415,7 @@ return function (RouteCollection $routes): void {
         ['DELETE'],
     );
 
-    // Mythic Translations (public upstream — no panel keys)
+    // Mythic Translations (public upstream no panel keys)
     App::getInstance(true)->registerAdminRoute(
         $routes,
         'admin-cloud-translations-settings',

@@ -88,7 +88,7 @@ export function parseApiDate(value: string | number | Date | null | undefined): 
  * Map a TranslationContext locale code (e.g. `en`, `pt-BR`, `pt_BR`) to a
  * `date-fns` locale object. Falls back to `enUS` for unknown values.
  *
- * Keep the table small but representative — extra locales can be added on
+ * Keep the table small but representative extra locales can be added on
  * demand once they are introduced in the translation system.
  */
 const DATE_FNS_LOCALES: Record<string, Locale> = {
@@ -166,7 +166,7 @@ export interface FormatDateOptions {
 }
 
 /**
- * Compact relative labels (e.g. narrow `30 min ago`) via Intl — locale-aware where the
+ * Compact relative labels (e.g. narrow `30 min ago`) via Intl locale-aware where the
  * runtime supports it; falls back to {@link formatDistanceToNowStrict} on failure.
  */
 function formatRelativeTimeIntlNarrow(date: Date, now: Date, localeCode: string | null | undefined): string {
@@ -250,7 +250,7 @@ export function formatDateTimeInTz(
     try {
         return formatInTimeZone(date, tz, 'PPp', { locale });
     } catch {
-        // Invalid timezone — fall back to the browser's local zone.
+        // Invalid timezone fall back to the browser's local zone.
         return format(date, 'PPp', { locale });
     }
 }

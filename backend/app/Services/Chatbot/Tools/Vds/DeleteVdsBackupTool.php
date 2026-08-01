@@ -28,7 +28,7 @@ use App\Services\Chatbot\Tools\ToolInterface;
 
 /**
  * Tool to delete a specific VDS backup.
- * Mirrors VmUserBackupController::deleteBackup() — actually calls Proxmox.
+ * Mirrors VmUserBackupController::deleteBackup() actually calls Proxmox.
  */
 class DeleteVdsBackupTool implements ToolInterface
 {

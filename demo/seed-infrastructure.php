@@ -5,7 +5,7 @@ declare(strict_types=1);
 
 /**
  * Seeds demo infrastructure: location, Wings node, allocations, realm, and spell.
- * Idempotent — safe to run on every bootstrap/reset cycle.
+ * Idempotent safe to run on every bootstrap/reset cycle.
  */
 
 define('APP_PUBLIC', '/var/www/html');
@@ -177,7 +177,7 @@ if (!$spellExists) {
         'realm_id' => (int) $realm['id'],
         'author' => 'FeatherPanel Demo',
         'name' => $spellName,
-        'description' => 'Minimal demo spell — create a server and explore the panel.',
+        'description' => 'Minimal demo spell create a server and explore the panel.',
         'docker_images' => json_encode(['Java 21' => $dockerImage], JSON_THROW_ON_ERROR),
         'default_docker_image' => $dockerImage,
         'startup' => 'java -version && echo "FeatherPanel demo server is running" && sleep infinity',

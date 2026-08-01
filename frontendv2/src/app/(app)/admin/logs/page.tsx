@@ -470,7 +470,7 @@ export default function AdminLogsPage() {
                 });
                 if (res.data.success) {
                     const content: string = res.data.data?.diagnostics?.content ?? '';
-                    // The diagnostics endpoint wraps logs in a report — extract just the log section if present
+                    // The diagnostics endpoint wraps logs in a report extract just the log section if present
                     const logSection = (() => {
                         const marker = /={3,}\s*logs?\s*={3,}/i;
                         const idx = content.search(marker);

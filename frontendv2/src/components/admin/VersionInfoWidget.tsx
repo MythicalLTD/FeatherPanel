@@ -106,7 +106,7 @@ export function VersionInfoWidget({ version, loading }: VersionInfoWidgetProps) 
         return () => window.clearInterval(interval);
     }, [updateInProgress]);
 
-    // Panel is reachable again after Docker update — stop "System update ongoing" and reload loop.
+    // Panel is reachable again after Docker update stop "System update ongoing" and reload loop.
     useEffect(() => {
         if (typeof window === 'undefined') return;
         if (!version?.last_checked) return;

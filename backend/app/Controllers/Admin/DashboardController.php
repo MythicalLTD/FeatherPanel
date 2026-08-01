@@ -562,7 +562,7 @@ class DashboardController
             );
         }
 
-        // Dev images and builds not listed on the update server — still expose APP_VERSION in the UI.
+        // Dev images and builds not listed on the update server still expose APP_VERSION in the UI.
         if ($versionInfo['current'] === null) {
             $norm = $this->normalizeVersionString($currentVersion);
             if ($norm === '' || strcasecmp($norm, 'unknown') === 0) {
@@ -576,7 +576,7 @@ class DashboardController
             );
             $isDevChannel = \in_array($channel, ['development', 'dev'], true);
 
-            // Plain dotted numeric versions only — anything else is treated as a development-style build.
+            // Plain dotted numeric versions only anything else is treated as a development-style build.
             $isPlainSemver = (bool) preg_match('/^\d+(\.\d+)*$/', $norm);
 
             $type = 'Stable';

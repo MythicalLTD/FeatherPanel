@@ -283,11 +283,11 @@ export function VmTemplatePickerSheet({
                                         onChange={(e) => handleProxmoxVmSelect(e.target.value)}
                                     >
                                         <option value=''>
-                                            {t('admin.vdsNodes.templates.select_vm_placeholder') || '— Select a VM —'}
+                                            {t('admin.vdsNodes.templates.select_vm_placeholder') || 'Select a VM —'}
                                         </option>
                                         {proxmoxVms.map((vm) => (
                                             <option key={vm.vmid} value={vm.vmid}>
-                                                {vm.name} (VMID {vm.vmid}){vm.template ? ' — Template' : ''}
+                                                {vm.name} (VMID {vm.vmid}){vm.template ? ' Template' : ''}
                                             </option>
                                         ))}
                                     </Select>

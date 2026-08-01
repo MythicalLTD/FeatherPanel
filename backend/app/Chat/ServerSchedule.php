@@ -550,7 +550,7 @@ class ServerSchedule
      * suitable for storing in a `TIMESTAMP next_run_at` column.
      *
      * The cron expression is interpreted in `$timezone` (e.g. "Europe/Paris"),
-     * so "0 3 * * *" means 03:00 local for the schedule owner — not 03:00 UTC.
+     * so "0 3 * * *" means 03:00 local for the schedule owner not 03:00 UTC.
      * The returned literal is in UTC so that the database comparison
      * `next_run_at <= UTC_TIMESTAMP()` in `getDueSchedules()` is sound
      * regardless of which zone the schedule was authored in.

@@ -50,7 +50,7 @@ pub async fn send_email(config: &SmtpConfig, to: &str, subject: &str, body: &str
                 .parse()
                 .with_context(|| {
                     format!(
-                        "Invalid From address '{}' — check smtp_from ('{}') and app_name ('{}')",
+                        "Invalid From address '{}' check smtp_from ('{}') and app_name ('{}')",
                         from_header, config.from, config.from_name
                     )
                 })?,

@@ -342,7 +342,7 @@ export default function EditServerPage() {
                             serverLocation = locRes.data.data.location as Location;
                         }
                     } catch {
-                        /* ignore — legacy or missing location */
+                        /* ignore legacy or missing location */
                     }
                 }
 

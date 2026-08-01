@@ -133,7 +133,7 @@ class GameServerQuery
      * Query a Minecraft Java Edition server using the Server List Ping (SLP) protocol.
      *
      * This uses the same protocol as the Minecraft client's server list.
-     * Works on the game port directly — no enable-query needed.
+     * Works on the game port directly no enable-query needed.
      *
      * @param string $host Server IP/hostname
      * @param int $port Server port (game port)

@@ -620,7 +620,7 @@ class CloudDataController
 
         unset($payload['auto_collect'], $payload['include_node_diagnostics'], $payload['include_panel_logs']);
 
-        // Mythic rejects non-string plugins/extensions/counts and invalid install_type — always normalize.
+        // Mythic rejects non-string plugins/extensions/counts and invalid install_type always normalize.
         if (isset($payload['diagnostics']) && is_array($payload['diagnostics'])) {
             $payload['diagnostics'] = MythicIssueReportCollector::normalizeDiagnosticsForMythic($payload['diagnostics']);
         }
@@ -667,7 +667,7 @@ class CloudDataController
             return ApiResponse::error('Title is required', 'TITLE_REQUIRED', 400);
         }
 
-        // Strip legacy "[Feature]" prefix — suggestions board does not use GitHub labels.
+        // Strip legacy "[Feature]" prefix suggestions board does not use GitHub labels.
         $stripped = preg_replace('/^\[feature\]\s*/i', '', $title);
         if (is_string($stripped) && trim($stripped) !== '') {
             $title = trim($stripped);
@@ -679,7 +679,7 @@ class CloudDataController
             $body = ($body !== '' ? $body . "\n\n" : '') . "Why this helps:\n" . $why;
         }
 
-        // Light environment context only (no panel/node logs) — append to body.
+        // Light environment context only (no panel/node logs) append to body.
         $autoCollect = filter_var($payload['auto_collect'] ?? true, FILTER_VALIDATE_BOOLEAN);
         if ($autoCollect) {
             try {

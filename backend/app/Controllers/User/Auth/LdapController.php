@@ -376,7 +376,7 @@ class LdapController
             $domainRejection = EmailDomainValidator::getRejection($app->getConfig(), $ldapUser['email']);
             if ($domainRejection !== null) {
                 $app->getLogger()->warning(
-                    'LDAP: Skipped email sync — domain policy. User UUID: ' . ($userInfo['uuid'] ?? 'unknown')
+                    'LDAP: Skipped email sync domain policy. User UUID: ' . ($userInfo['uuid'] ?? 'unknown')
                     . ', Attempted email: ' . $ldapUser['email'] . ', Reason: ' . $domainRejection['code']
                 );
             } else {

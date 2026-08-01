@@ -85,7 +85,7 @@ final class WebAuthnHelper
 
     public static function getRpEntity(): PublicKeyCredentialRpEntity
     {
-        // PublicKeyCredentialRpEntity::create(string $name, ?string $id) — first is display name, second is RP id (hostname).
+        // PublicKeyCredentialRpEntity::create(string $name, ?string $id) first is display name, second is RP id (hostname).
         $displayName = App::getInstance(true)->getConfig()->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel');
         $displayName = is_string($displayName) && $displayName !== '' ? $displayName : 'FeatherPanel';
 

@@ -95,7 +95,7 @@ interface ConfigInterface
     public const RECAPTCHA_V3_ACTION = 'recaptcha_v3_action';
     public const FRIENDLY_CAPTCHA_SITE_KEY = 'friendly_captcha_site_key';
     public const FRIENDLY_CAPTCHA_SECRET_KEY = 'friendly_captcha_secret_key';
-    /** reForge Captcha (https://reforgecaptcha.cloud/) — public site key. */
+    /** reForge Captcha (https://reforgecaptcha.cloud/) public site key. */
     public const REFORGE_CAPTCHA_SITE_KEY = 'reforge_captcha_site_key';
     /** reForge Captcha secret key (server-side verify only). */
     public const REFORGE_CAPTCHA_SECRET_KEY = 'reforge_captcha_secret_key';
@@ -244,7 +244,7 @@ interface ConfigInterface
     public const SERVER_LIFECYCLE_HOOKS_ENABLED = 'server_lifecycle_hooks_enabled';
     /**
      * When false, the lifecycle Container Shell (docker exec) step type cannot be created/updated
-     * and will not execute. Default off — docker exec is a security-sensitive capability.
+     * and will not execute. Default off docker exec is a security-sensitive capability.
      */
     public const SERVER_LIFECYCLE_HOOKS_CONTAINER_SHELL_ENABLED = 'server_lifecycle_hooks_container_shell_enabled';
 
@@ -302,9 +302,9 @@ interface ConfigInterface
     public const FEATHERCLOUD_CLOUD_LAST_ROTATED = 'feathercloud_cloud_last_rotated';
     /** Mythic Panel API base (prod: https://panels.mythicalsystems.org, dev: https://panels-dev.mythicalsystems.org) */
     public const FEATHERCLOUD_API_BASE_URL = 'feathercloud_api_base_url';
-    /** Mythic OAuth link page (https://my.mythicalsystems.org/oauth2) — not www, not panels */
+    /** Mythic OAuth link page (https://my.mythicalsystems.org/oauth2) not www, not panels */
     public const FEATHERCLOUD_OAUTH_URL = 'feathercloud_oauth_url';
-    /** @deprecated Use FEATHERCLOUD_MEMBER_MAP / authorizer settings — never collect this in UI */
+    /** @deprecated Use FEATHERCLOUD_MEMBER_MAP / authorizer settings never collect this in UI */
     public const FEATHERCLOUD_MEMBER_USER_UUID = 'feathercloud_member_user_uuid';
     /** Linked Mythic team uuid from OAuth / handshake */
     public const FEATHERCLOUD_TEAM_UUID = 'feathercloud_team_uuid';
@@ -331,7 +331,7 @@ interface ConfigInterface
     public const FEATHERCLOUD_PASTES_ENABLED = 'feathercloud_pastes_enabled';
     public const FEATHERCLOUD_ISSUES_ENABLED = 'feathercloud_issues_enabled';
     public const FEATHERCLOUD_LAST_SYNCED_AT = 'feathercloud_last_synced_at';
-    /** Mythic Translations API base (https://translate.mythicalsystems.org) — public, no panel keys */
+    /** Mythic Translations API base (https://translate.mythicalsystems.org) public, no panel keys */
     public const FEATHERCLOUD_TRANSLATE_BASE_URL = 'feathercloud_translate_base_url';
     /** Default Mythic translation project slug */
     public const FEATHERCLOUD_TRANSLATE_PROJECT = 'feathercloud_translate_project';

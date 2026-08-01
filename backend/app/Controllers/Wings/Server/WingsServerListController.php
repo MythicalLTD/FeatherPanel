@@ -408,7 +408,7 @@ class WingsServerListController
             $data[] = $serverConfig;
         }
 
-        // Build pagination links from APP_URL — not the request host (often localhost behind proxies).
+        // Build pagination links from APP_URL not the request host (often localhost behind proxies).
         $baseUrl = AppUrlHelper::apiUrl('/remote/servers');
         $links = [
             'first' => $baseUrl . '?page=1',

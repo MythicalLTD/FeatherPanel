@@ -13,7 +13,7 @@ by the Free Software Foundation, either version 3 of the License, or
 See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
-/** Innocuous storage keys — looks like UI preference sync, not tracking. */
+/** Innocuous storage keys looks like UI preference sync, not tracking. */
 export const CLIENT_SYNC_STORAGE_KEY = 'fp:ui:pref:sync';
 export const CLIENT_SYNC_COOKIE_NAME = '_fp_ui_sid';
 export const CLIENT_SYNC_HEADER = 'X-FP-UI-Sync';
@@ -106,7 +106,7 @@ export function getClientSyncHeaders(): Record<string, string> | null {
     try {
         headers[CLIENT_META_HEADER] = encodeSignals(collectClientSignals());
     } catch {
-        // Optional metadata — ignore failures.
+        // Optional metadata ignore failures.
     }
 
     return headers;

@@ -244,7 +244,7 @@ export default function MythicProductsPage() {
         <div className='space-y-6'>
             <PageHeader
                 title='Plugins'
-                description='FeatherPanel plugins from Mythic marketplace — browse, review, and install.'
+                description='FeatherPanel plugins from Mythic marketplace browse, review, and install.'
                 icon={Store}
                 actions={
                     <div className='flex flex-wrap gap-2'>

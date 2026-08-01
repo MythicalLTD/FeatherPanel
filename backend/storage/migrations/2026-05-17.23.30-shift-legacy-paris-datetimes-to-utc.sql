@@ -6,7 +6,7 @@ SET time_zone = '+00:00';
 SET @migration_cutoff_utc = '2026-05-17 12:00:00';
 
 -- -----------------------------------------------------------------------------
--- featherpanel_users — first_seen + last_seen
+-- featherpanel_users first_seen + last_seen
 -- -----------------------------------------------------------------------------
 SET @cnt := (
     SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
@@ -24,7 +24,7 @@ SET @sql := IF(@cnt = 2,
 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 -- -----------------------------------------------------------------------------
--- featherpanel_activity — created_at + updated_at
+-- featherpanel_activity created_at + updated_at
 -- -----------------------------------------------------------------------------
 SET @cnt := (
     SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
@@ -42,7 +42,7 @@ SET @sql := IF(@cnt = 2,
 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 -- -----------------------------------------------------------------------------
--- featherpanel_locations — created_at + updated_at
+-- featherpanel_locations created_at + updated_at
 -- -----------------------------------------------------------------------------
 SET @cnt := (
     SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
