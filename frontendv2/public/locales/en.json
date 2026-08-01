@@ -5221,6 +5221,8 @@
 				"disk_overallocate": "Disk Over-Allocation",
 				"daemon_port": "Daemon Port",
 				"daemon_sftp_port": "Daemon SFTP Port",
+				"fastdl_port": "FastDL Port",
+				"fastdl_port_help": "Public nginx FastDL listen port (default 80). Used in sv_downloadurl — not the Wings API port.",
 				"sftp_subdomain": "SFTP Hostname (optional)",
 				"sftp_subdomain_placeholder": "sftp.node.domain.de",
 				"sftp_subdomain_help": "Used for user-facing SFTP connection details. Leave empty to use node FQDN/IP.",

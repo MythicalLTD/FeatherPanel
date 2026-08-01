@@ -302,9 +302,30 @@ export function WidgetRenderer({ widgets, height = '400px', context }: WidgetRen
 
     const getCardIcon = (widget: PluginWidget) => widget.card?.header?.icon ?? widget.icon;
 
+    /** Map plugin iframe config to valid DOM attrs; keep layout-only keys out of the element. */
+    const getIframeDomProps = (widget: PluginWidget) => {
+        const { minHeight, maxHeight, ariaLabel, referrerPolicy, ...domAttrs } = widget.iframe ?? {};
+        const resolvedMinHeight = minHeight || height;
+
+        return {
+            containerStyle: { minHeight: resolvedMinHeight } as React.CSSProperties,
+            iframeStyle: {
+                minHeight: resolvedMinHeight,
+                ...(maxHeight ? { maxHeight } : {}),
+                background: 'transparent',
+            } as React.CSSProperties,
+            ariaLabel,
+            referrerPolicy: referrerPolicy as React.HTMLAttributeReferrerPolicy | undefined,
+            domAttrs,
+        };
+    };
+
     return (
         <div className='grid w-full grid-cols-12 gap-4'>
-            {widgets.map((widget) => (
+            {widgets.map((widget) => {
+                const iframeProps = getIframeDomProps(widget);
+
+                return (
                 <div key={widget.id} className={cn('w-full min-w-0 transition-all', getGridClass(widget))}>
                     {shouldRenderAsCard(widget) ? (
                         <Card
@@ -351,10 +372,7 @@ export function WidgetRenderer({ widgets, height = '400px', context }: WidgetRen
                                     widget.classes?.content,
                                 )}
                             >
-                                <div
-                                    className='relative h-full w-full'
-                                    style={{ minHeight: widget.iframe?.minHeight || height }}
-                                >
+                                <div className='relative h-full w-full' style={iframeProps.containerStyle}>
                                     {loadingStates[widget.id] !== false && (
                                         <div className='bg-background/50 absolute inset-0 z-20 flex items-center justify-center backdrop-blur-sm transition-all duration-300'>
                                             <div className='flex flex-col items-center space-y-4'>
@@ -401,14 +419,10 @@ export function WidgetRenderer({ widgets, height = '400px', context }: WidgetRen
                                                 loadingStates[widget.id] ? 'opacity-0' : 'opacity-100',
                                                 widget.classes?.iframe,
                                             )}
-                                            style={{
-                                                minHeight: widget.iframe?.minHeight || height,
-                                                background: 'transparent',
-                                            }}
-                                            {...widget.iframe}
-                                            referrerPolicy={
-                                                widget.iframe?.referrerPolicy as React.HTMLAttributeReferrerPolicy
-                                            }
+                                            style={iframeProps.iframeStyle}
+                                            {...iframeProps.domAttrs}
+                                            aria-label={iframeProps.ariaLabel}
+                                            referrerPolicy={iframeProps.referrerPolicy}
                                             onLoad={(event) => handleIframeLoad(widget.id, event.currentTarget)}
                                             onError={() => handleIframeError(widget.id)}
                                             {...{ allowtransparency: 'true' }}
@@ -425,10 +439,7 @@ export function WidgetRenderer({ widgets, height = '400px', context }: WidgetRen
                         </Card>
                     ) : (
                         <div className={cn('relative w-full', widget.classes?.card)}>
-                            <div
-                                className='relative h-full w-full'
-                                style={{ minHeight: widget.iframe?.minHeight || height }}
-                            >
+                            <div className='relative h-full w-full' style={iframeProps.containerStyle}>
                                 {!errorStates[widget.id] && widgetSrcs[widget.id] && (
                                     <iframe
                                         key={`${widget.id}-${theme}-${widgetSrcs[widget.id]}`}
@@ -439,14 +450,10 @@ export function WidgetRenderer({ widgets, height = '400px', context }: WidgetRen
                                             loadingStates[widget.id] ? 'opacity-0' : 'opacity-100',
                                             widget.classes?.iframe,
                                         )}
-                                        style={{
-                                            minHeight: widget.iframe?.minHeight || height,
-                                            background: 'transparent',
-                                        }}
-                                        {...widget.iframe}
-                                        referrerPolicy={
-                                            widget.iframe?.referrerPolicy as React.HTMLAttributeReferrerPolicy
-                                        }
+                                        style={iframeProps.iframeStyle}
+                                        {...iframeProps.domAttrs}
+                                        aria-label={iframeProps.ariaLabel}
+                                        referrerPolicy={iframeProps.referrerPolicy}
                                         onLoad={(event) => handleIframeLoad(widget.id, event.currentTarget)}
                                         onError={() => handleIframeError(widget.id)}
                                         {...{ allowtransparency: 'true' }}
@@ -456,7 +463,8 @@ export function WidgetRenderer({ widgets, height = '400px', context }: WidgetRen
                         </div>
                     )}
                 </div>
-            ))}
+                );
+            })}
         </div>
     );
 }

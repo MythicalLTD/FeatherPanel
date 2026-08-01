@@ -29,6 +29,15 @@ class DatabaseManagmentController
 {
     private const PLUGIN_NAMESPACE_PREFIX = 'addon:';
 
+    /**
+     * Former plugin identifiers whose migration rows should count for the current identifier.
+     *
+     * @var array<string, list<string>>
+     */
+    private const PLUGIN_IDENTIFIER_ALIASES = [
+        'featherimages' => ['imagehosting'],
+    ];
+
     #[OA\Get(
         path: '/api/admin/databases/management/status',
         summary: 'Get database status',
@@ -197,9 +206,7 @@ class DatabaseManagmentController
                     ++$skipped;
                     continue;
                 }
-                $stmt = $pdo->prepare("SELECT COUNT(*) FROM featherpanel_migrations WHERE script = :script AND migrated = 'true'");
-                $stmt->execute(['script' => $scriptIdentifier]);
-                if ((int) $stmt->fetchColumn() > 0) {
+                if ($this->migrationAlreadyExecuted($pdo, $scriptIdentifier, $addonName, $migrationName)) {
                     $lines[] = '⏭️  Skipped: ' . $displayName . ' (already executed)';
                     ++$skipped;
                     continue;
@@ -367,6 +374,55 @@ class DatabaseManagmentController
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to delete phpMyAdmin: ' . $e->getMessage(), 500);
         }
+    }
+
+    /**
+     * Whether a migration script is already recorded as executed.
+     * Also accepts legacy addon identifiers and rewrites them to the current key.
+     */
+    private function migrationAlreadyExecuted(
+        \PDO $pdo,
+        string $scriptIdentifier,
+        ?string $addonName,
+        string $migrationName
+    ): bool {
+        $candidates = [$scriptIdentifier];
+
+        if ($addonName !== null && isset(self::PLUGIN_IDENTIFIER_ALIASES[$addonName])) {
+            foreach (self::PLUGIN_IDENTIFIER_ALIASES[$addonName] as $legacyAddon) {
+                $candidates[] = self::PLUGIN_NAMESPACE_PREFIX . $legacyAddon . ':' . $migrationName;
+            }
+        }
+
+        $placeholders = implode(', ', array_fill(0, count($candidates), '?'));
+        $stmt = $pdo->prepare(
+            "SELECT script FROM featherpanel_migrations WHERE migrated = 'true' AND script IN ({$placeholders}) LIMIT 1"
+        );
+        $stmt->execute($candidates);
+        $matchedScript = $stmt->fetchColumn();
+
+        if ($matchedScript === false) {
+            return false;
+        }
+
+        if ($matchedScript !== $scriptIdentifier) {
+            $existsStmt = $pdo->prepare(
+                "SELECT COUNT(*) FROM featherpanel_migrations WHERE script = :script AND migrated = 'true'"
+            );
+            $existsStmt->execute(['script' => $scriptIdentifier]);
+            if ((int) $existsStmt->fetchColumn() > 0) {
+                $delete = $pdo->prepare('DELETE FROM featherpanel_migrations WHERE script = :old_script');
+                $delete->execute(['old_script' => $matchedScript]);
+            } else {
+                $update = $pdo->prepare('UPDATE featherpanel_migrations SET script = :new_script WHERE script = :old_script');
+                $update->execute([
+                    'new_script' => $scriptIdentifier,
+                    'old_script' => $matchedScript,
+                ]);
+            }
+        }
+
+        return true;
     }
 
     /**

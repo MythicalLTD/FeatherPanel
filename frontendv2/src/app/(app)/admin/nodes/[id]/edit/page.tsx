@@ -80,6 +80,7 @@ export interface NodeForm {
     upload_size: number;
     daemonListen: number;
     daemonSFTP: number;
+    fastdl_port: number;
     daemonBase: string;
     public_ip_v4: string;
     public_ip_v6: string;
@@ -138,6 +139,7 @@ export default function EditNodePage() {
         upload_size: 100,
         daemonListen: 8443,
         daemonSFTP: 2022,
+        fastdl_port: 80,
         daemonBase: '/var/lib/featherpanel/volumes',
         public_ip_v4: '',
         public_ip_v6: '',
@@ -208,6 +210,7 @@ export default function EditNodePage() {
                 upload_size: node.upload_size,
                 daemonListen: node.daemonListen,
                 daemonSFTP: node.daemonSFTP,
+                fastdl_port: node.fastdl_port ?? 80,
                 daemonBase: node.daemonBase,
                 public_ip_v4: node.public_ip_v4 || '',
                 public_ip_v6: node.public_ip_v6 || '',
@@ -381,6 +384,11 @@ system:
   data: ${form.daemonBase || '/var/lib/featherpanel/volumes'}
   sftp:
     bind_port: ${form.daemonSFTP || 2022}
+  fastdl:
+    enabled: false
+    bind_port: ${form.fastdl_port || 80}
+    public_hostname: ${form.fqdn || 'localhost'}
+    nginx_config_path: /etc/nginx/sites-available/featherwings-fastdl
 allowed_mounts: []
 remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://panel.example.com'}'`;
         return yaml;
@@ -460,6 +468,7 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
                 upload_size: Number(form.upload_size),
                 daemonListen: Number(form.daemonListen),
                 daemonSFTP: Number(form.daemonSFTP),
+                fastdl_port: Number(form.fastdl_port) || 80,
                 public_ip_v4: trimmedIPv4 === '' ? null : trimmedIPv4,
                 public_ip_v6: trimmedIPv6 === '' ? null : trimmedIPv6,
                 sftp_subdomain: trimmedSftpSubdomain === '' ? null : trimmedSftpSubdomain,

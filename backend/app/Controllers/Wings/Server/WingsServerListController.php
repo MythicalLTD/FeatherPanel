@@ -377,6 +377,10 @@ class WingsServerListController
                     'requires_rebuild' => false,
                 ],
                 'file_trash' => WingsFileTrashConfig::forWings(),
+                'fastdl' => [
+                    'enabled' => !empty($server['fastdl_enabled']),
+                    'directory' => (string) ($server['fastdl_directory'] ?? 'fastdl'),
+                ],
             ];
             $listMounts = Mount::getWingsMountsForServer((int) $server['id']);
             if ($listMounts !== []) {
