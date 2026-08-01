@@ -279,7 +279,7 @@ class Migrate extends App implements CommandBuilder
         \PDO $pdo,
         string $scriptIdentifier,
         ?string $addonName,
-        string $migrationName
+        string $migrationName,
     ): bool {
         $candidates = [$scriptIdentifier];
 

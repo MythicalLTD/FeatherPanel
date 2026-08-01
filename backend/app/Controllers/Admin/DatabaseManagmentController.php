@@ -384,7 +384,7 @@ class DatabaseManagmentController
         \PDO $pdo,
         string $scriptIdentifier,
         ?string $addonName,
-        string $migrationName
+        string $migrationName,
     ): bool {
         $candidates = [$scriptIdentifier];
 
