@@ -440,6 +440,20 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
             [hslFromVar, hslaFromVar, terminalBufferBackground],
         );
 
+        const fitTerminal = useCallback(() => {
+            const host = terminalRef.current;
+            const fitAddon = fitAddonRef.current;
+            if (!host || !fitAddon) return;
+            // FitAddon parseInt(getComputedStyle.width) treats unresolved "100%" as 100px.
+            // Skip until the host has a real pixel width.
+            if (host.clientWidth < 50) return;
+            try {
+                fitAddon.fit();
+            } catch {
+                // ignore fit errors during teardown / layout thrash
+            }
+        }, []);
+
         useEffect(() => {
             const savedHistory = localStorage.getItem('featherpanel_terminal_history');
             if (savedHistory) {
@@ -521,14 +535,27 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
             terminal.loadAddon(clipboardAddon);
 
             terminal.open(terminalRef.current);
-            fitAddon.fit();
-            applyTerminalTheme(terminal);
-
             terminalInstanceRef.current = terminal;
             fitAddonRef.current = fitAddon;
 
+            applyTerminalTheme(terminal);
+
+            // Defer fit until layout has a real pixel width (avoids FitAddon "100%" → 100px on mobile)
+            let fitRaf1 = 0;
+            let fitRaf2 = 0;
+            fitRaf1 = requestAnimationFrame(() => {
+                fitRaf2 = requestAnimationFrame(() => {
+                    fitTerminal();
+                });
+            });
+
+            void document.fonts?.ready?.then(() => {
+                fitTerminal();
+            });
+
             const themeObserver = new MutationObserver(() => {
                 applyTerminalTheme(terminal);
+                fitTerminal();
             });
             themeObserver.observe(document.documentElement, {
                 attributes: true,
@@ -552,16 +579,26 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
             });
 
             const handleResize = () => {
-                fitAddon.fit();
+                fitTerminal();
             };
             window.addEventListener('resize', handleResize);
 
+            const resizeObserver = new ResizeObserver(() => {
+                fitTerminal();
+            });
+            resizeObserver.observe(terminalRef.current);
+
             return () => {
+                cancelAnimationFrame(fitRaf1);
+                cancelAnimationFrame(fitRaf2);
                 themeObserver.disconnect();
+                resizeObserver.disconnect();
                 window.removeEventListener('resize', handleResize);
                 terminal.dispose();
+                terminalInstanceRef.current = null;
+                fitAddonRef.current = null;
             };
-        }, [applyTerminalTheme]);
+        }, [applyTerminalTheme, fitTerminal]);
 
         const sendCommand = () => {
             if (!commandInput.trim() || !onSendCommand) return;
@@ -682,8 +719,8 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
         }, [canSend]);
 
         useEffect(() => {
-            fitAddonRef.current?.fit();
-        }, [showSettings, showQuickRules, showHistory]);
+            fitTerminal();
+        }, [showSettings, showQuickRules, showHistory, fitTerminal]);
 
         return (
             <Card className='border-border/50 bg-card/50 w-full min-w-0 overflow-hidden shadow-sm backdrop-blur-xl'>
@@ -889,8 +926,8 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                             ref={terminalRef}
                             className={
                                 fullHeight
-                                    ? 'h-[calc(100dvh-132px)] w-full'
-                                    : 'h-[min(22rem,calc(100dvh-12rem))] w-full sm:h-[min(48rem,68vh)] 2xl:h-[min(58rem,72vh)]'
+                                    ? 'bg-secondary h-[calc(100dvh-132px)] w-full min-w-0 overflow-hidden'
+                                    : 'bg-secondary h-[min(22rem,calc(100dvh-12rem))] w-full min-w-0 overflow-hidden sm:h-[min(40rem,58vh)] 2xl:h-[min(48rem,64vh)]'
                             }
                         />
                         {showScrollButton && (
@@ -908,7 +945,7 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                     </div>
                 </CardContent>
                 {onSendCommand && (
-                    <CardFooter className='border-border/50 bg-muted/10 flex w-full min-w-0 flex-col items-stretch gap-2 border-t px-3 py-2 sm:px-4 sm:py-2.5'>
+                    <CardFooter className='border-border/50 bg-card flex w-full min-w-0 flex-col items-stretch gap-1.5 border-t px-3 py-2 sm:px-4 sm:py-2.5'>
                         <div className='flex w-full min-w-0 items-center gap-2'>
                             <Input
                                 value={commandInput}
@@ -1026,9 +1063,23 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                 </div>
 
                 <style jsx global>{`
+                    .xterm {
+                        width: 100% !important;
+                        height: 100% !important;
+                        background-color: hsl(var(--secondary)) !important;
+                    }
+                    .xterm-viewport {
+                        overflow-x: hidden !important;
+                        background-color: hsl(var(--secondary)) !important;
+                        scrollbar-width: thin;
+                        scrollbar-color: hsl(var(--muted-foreground) / 0.3) transparent;
+                    }
+                    .xterm-screen {
+                        background-color: hsl(var(--secondary)) !important;
+                    }
                     .xterm-viewport::-webkit-scrollbar {
                         width: 8px;
-                        height: 8px;
+                        height: 0;
                     }
                     .xterm-viewport::-webkit-scrollbar-track {
                         background-color: transparent;
@@ -1039,10 +1090,6 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                     }
                     .xterm-viewport::-webkit-scrollbar-thumb:hover {
                         background-color: hsl(var(--muted-foreground) / 0.5);
-                    }
-                    .xterm-viewport {
-                        scrollbar-width: thin;
-                        scrollbar-color: hsl(var(--muted-foreground) / 0.3) transparent;
                     }
                 `}</style>
             </Card>

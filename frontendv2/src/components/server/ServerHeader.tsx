@@ -130,9 +130,12 @@ export default function ServerHeader({
                 return 'bg-green-500/10 text-green-500 border-green-500/20';
             case 'starting':
                 return 'bg-blue-500/10 text-blue-500 border-blue-500/20';
+            case 'installing':
+                return 'bg-blue-500/10 text-blue-500 border-blue-500/20';
             case 'stopping':
                 return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20';
             case 'offline':
+            case 'stopped':
                 return 'bg-gray-500/10 text-gray-500 border-gray-500/20';
             default:
                 return 'bg-red-500/10 text-red-500 border-red-500/20';

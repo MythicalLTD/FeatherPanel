@@ -2312,19 +2312,7 @@ class ServerUserController
             return $fullPermissions;
         }
 
-        // Check if user is a subuser
-        $subuser = Subuser::getSubuserByUserAndServer($userId, $serverId);
-        if ($subuser) {
-            // Get actual subuser permissions from database
-            $subuserPerms = json_decode($subuser['permissions'] ?? '[]', true) ?: [];
-
-            // Always include websocket.connect - it's required for JWT/WebSocket access
-            // The actual permission checks happen in generateServerJwt via checkPermission
-            // Here we just return what they're allowed to do
-            return $subuserPerms;
-        }
-
-        // Staff with server access (same gate as ServerMiddleware for non-owner routes)
+        // Staff with server access get full permissions even if they are also a subuser
         if (
             PermissionHelper::hasPermission($userUuid, Permissions::ADMIN_SERVERS_VIEW)
             || PermissionHelper::hasPermission($userUuid, Permissions::ADMIN_SERVERS_EDIT)
@@ -2333,7 +2321,24 @@ class ServerUserController
             return $fullPermissions;
         }
 
-        // User is neither owner nor subuser
+        // Check if user is a subuser
+        $subuser = Subuser::getSubuserByUserAndServer($userId, $serverId);
+        if ($subuser) {
+            $subuserPerms = json_decode($subuser['permissions'] ?? '[]', true) ?: [];
+            if (!is_array($subuserPerms)) {
+                $subuserPerms = [];
+            }
+
+            // Always include websocket.connect — required for Wings JWT/WebSocket access.
+            // generateServerJwt already gates on this permission before minting.
+            if (!in_array(SubuserPermissions::WEBSOCKET_CONNECT, $subuserPerms, true) && !in_array('*', $subuserPerms, true)) {
+                $subuserPerms[] = SubuserPermissions::WEBSOCKET_CONNECT;
+            }
+
+            return array_values(array_unique($subuserPerms));
+        }
+
+        // User is neither owner nor subuser nor staff
         return [];
     }
 
