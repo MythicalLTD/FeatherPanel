@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.3.7.6 STABLE
+
+### Fixed
+
+- Codemirror crash on the code editor page was fixed. by @nayskutzu
+- File manager downloads now use signed Wings URLs (same as backups) instead of proxying the whole file through PHP, fixing large-file failures caused by the default 30s Guzzle/cURL timeout. by @cursor
+- PBS backups no longer show **0 MiB** when snapshot-list size is missing: Wings parses logical size from `proxmox-backup-client` output. New PBS archives default to `root.pxar` (PVE-style `root.pxar.didx` in PBS UI); restore still accepts legacy `server.pxar`. by @cursor
+
 ## v1.3.7.5 STABLE
 
 ### Added

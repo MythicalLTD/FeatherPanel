@@ -699,8 +699,8 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 ? `${currentDirectory || '/'}${filename}`
                 : `${currentDirectory || '/'}/${filename}`;
 
-            const url = `/api/user/servers/${uuidShort}/download-file?path=${encodeURIComponent(path)}`;
-            window.open(url, '_blank');
+            const downloadUrl = await filesApi.getDownloadUrl(uuidShort, path);
+            window.open(downloadUrl, '_blank');
             setActionFile(null);
         } catch {
             toast.error(t('files.messages.failed_download'));

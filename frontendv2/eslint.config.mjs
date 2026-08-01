@@ -51,6 +51,8 @@ const eslintConfig = defineConfig([
         'next-env.d.ts',
         // Ignore generated documentation files
         'src/app/(docs)/**',
+        // CJS preload for TypeScript 7 + typescript-eslint side-by-side
+        'scripts/eslint-ts6-shim.cjs',
     ]),
 ]);
 

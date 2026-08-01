@@ -26,10 +26,23 @@ const nextConfig: NextConfig = {
 
     experimental: {
         // Filesystem cache balloons RAM on large apps; use webpack dev by default instead.
-        turbopackFileSystemCacheForDev: false,
+        turbopackFileSystemCacheForDev: true,
+        // TypeScript 7 has no programmatic compiler API; Next must shell out to `tsc`.
+        useTypeScriptCli: true,
     },
 
     webpack: (config: WebpackConfiguration, { dev }) => {
+        // Keep a single physical CodeMirror copy if webpack resolves nested deps differently.
+        config.resolve = config.resolve ?? {};
+        config.resolve.alias = {
+            ...(typeof config.resolve.alias === 'object' && !Array.isArray(config.resolve.alias)
+                ? config.resolve.alias
+                : {}),
+            '@codemirror/state': path.resolve(__dirname, 'node_modules/@codemirror/state'),
+            '@codemirror/view': path.resolve(__dirname, 'node_modules/@codemirror/view'),
+            '@codemirror/language': path.resolve(__dirname, 'node_modules/@codemirror/language'),
+        };
+
         if (dev) {
             // Keep dev compilation single-threaded to avoid spawning many hungry workers.
             config.parallelism = 1;
