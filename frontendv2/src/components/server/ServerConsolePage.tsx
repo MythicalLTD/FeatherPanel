@@ -79,16 +79,6 @@ function replaceLegacyPanelNameInConsoleOutput(text: string, appDisplayName: str
     return text.replace(/Pterodactyl/gi, name);
 }
 
-/** Minecraft / common egg lines that mean the process finished booting. */
-function looksLikeServerReady(text: string): boolean {
-    return (
-        /Done\s*\([^)]*\)\s*!/i.test(text) ||
-        /\bListening on\b/i.test(text) ||
-        /\bServer started\b/i.test(text) ||
-        /\bTimings Reset\b/i.test(text)
-    );
-}
-
 export default function ServerConsolePage() {
     const { t } = useTranslation();
     const { settings } = useSettings();
@@ -99,10 +89,6 @@ export default function ServerConsolePage() {
     const terminalRef = useRef<ServerTerminalRef>(null);
     const pendingActionResolveRef = useRef<(() => void) | null>(null);
     const hasRequestedLogsRef = useRef(false);
-    const logsGraceUntilRef = useRef(0);
-    const lastLiveConsoleAtRef = useRef(0);
-    const statusInferredRef = useRef(false);
-    const installActiveRef = useRef(false);
 
     const prevNetworkRef = useRef({ rx: 0, tx: 0, timestamp: 0 });
 
@@ -114,52 +100,15 @@ export default function ServerConsolePage() {
     const [showLogDialog, setShowLogDialog] = useState(false);
     const [uploadedLogs, setUploadedLogs] = useState<{ id: string; url: string; raw: string } | null>(null);
 
-    const LOGS_GRACE_MS = 2000;
-
-    const isOfflineLike = (status: string) => status === 'offline' || status === 'stopped';
-
-    const applyRemoteStatus = useCallback((status: string) => {
-        const normalized = (status || '').toLowerCase();
-
-        if (normalized === 'running' || normalized === 'starting' || normalized === 'stopping') {
-            installActiveRef.current = false;
-            statusInferredRef.current = false;
-            setServerStatus(normalized);
-            return;
-        }
-
-        if (installActiveRef.current && isOfflineLike(normalized)) {
-            setServerStatus('installing');
-            return;
-        }
-
-        // Once console activity proved the process is up, ignore Wings stuck on offline
-        // (stats poll often keeps reporting offline/0 resources while Minecraft is running).
-        if (statusInferredRef.current && isOfflineLike(normalized)) {
-            return;
-        }
-
-        statusInferredRef.current = false;
-        setServerStatus(normalized || 'offline');
-    }, []);
-
     useEffect(() => {
         hasRequestedLogsRef.current = false;
         hasInitializedStatus.current = false;
-        installActiveRef.current = false;
-        statusInferredRef.current = false;
-        logsGraceUntilRef.current = 0;
-        lastLiveConsoleAtRef.current = 0;
     }, [serverUuid]);
 
     useEffect(() => {
         if (server?.status && !hasInitializedStatus.current) {
             const timer = setTimeout(() => {
-                const initial = (server.status || 'offline').toLowerCase();
-                if (initial === 'installing') {
-                    installActiveRef.current = true;
-                }
-                setServerStatus(initial);
+                setServerStatus(server.status);
                 hasInitializedStatus.current = true;
             }, 0);
             return () => clearTimeout(timer);
@@ -296,122 +245,88 @@ export default function ServerConsolePage() {
             if (terminalRef.current) {
                 terminalRef.current.writeln(filtered);
             }
-
-            // Infer process state from console when Wings is stuck on offline.
-            // Ready markers (Done!, etc.) apply even during the log-history grace window
-            // so a replay of a finished boot still unlocks the UI.
-            const ready = looksLikeServerReady(filtered);
-            const now = Date.now();
-            const pastGrace = now >= logsGraceUntilRef.current;
-
-            if (ready || pastGrace) {
-                lastLiveConsoleAtRef.current = now;
-                setServerStatus((prev) => {
-                    if (installActiveRef.current) {
-                        return 'installing';
-                    }
-                    if (ready) {
-                        statusInferredRef.current = true;
-                        return 'running';
-                    }
-                    if (isOfflineLike(prev) || prev === 'starting') {
-                        statusInferredRef.current = true;
-                        return prev === 'starting' ? prev : 'starting';
-                    }
-                    return prev;
-                });
-            }
         },
         [processLog, consoleFilters, consoleAppDisplayName],
     );
 
-    const handleStatusUpdate = useCallback(
-        (status: string) => {
-            applyRemoteStatus(status);
-            if (pendingActionResolveRef.current) {
-                pendingActionResolveRef.current();
-                pendingActionResolveRef.current = null;
-            }
-        },
-        [applyRemoteStatus],
-    );
+    const handleStatusUpdate = useCallback((status: string) => {
+        setServerStatus(status);
+        if (pendingActionResolveRef.current) {
+            pendingActionResolveRef.current();
+            pendingActionResolveRef.current = null;
+        }
+    }, []);
 
-    const handleStatsUpdate = useCallback(
-        (stats: WingsStats) => {
-            const timestamp = new Date().getTime();
+    const handleStatsUpdate = useCallback((stats: WingsStats) => {
+        const timestamp = new Date().getTime();
 
-            if (stats.state) {
-                applyRemoteStatus(stats.state);
-            }
+        if (stats.state) {
+            setServerStatus(stats.state);
+        }
 
-            if (stats.uptime) {
-                setWingsUptime(formatUptime(stats.uptime));
-            }
+        if (stats.uptime) {
+            setWingsUptime(formatUptime(stats.uptime));
+        }
 
-            if (stats.cpu_absolute !== undefined && stats.cpu_absolute !== null) {
-                const cpuValue = Number(stats.cpu_absolute) || 0;
-                setCurrentCpu(cpuValue);
-                setCpuData((prev) => {
-                    const newData = [...prev, { timestamp, value: cpuValue }];
-                    return newData.slice(-maxDataPoints);
-                });
-            }
+        if (stats.cpu_absolute !== undefined && stats.cpu_absolute !== null) {
+            const cpuValue = Number(stats.cpu_absolute) || 0;
+            setCurrentCpu(cpuValue);
+            setCpuData((prev) => {
+                const newData = [...prev, { timestamp, value: cpuValue }];
+                return newData.slice(-maxDataPoints);
+            });
+        }
 
-            if (stats.memory_bytes !== undefined && stats.memory_bytes !== null) {
-                const memoryMiB = Number(stats.memory_bytes) / (1024 * 1024);
-                setCurrentMemory(memoryMiB);
-                setMemoryData((prev) => {
-                    const newData = [...prev, { timestamp, value: memoryMiB }];
-                    return newData.slice(-maxDataPoints);
-                });
-            }
+        if (stats.memory_bytes !== undefined && stats.memory_bytes !== null) {
+            const memoryMiB = Number(stats.memory_bytes) / (1024 * 1024);
+            setCurrentMemory(memoryMiB);
+            setMemoryData((prev) => {
+                const newData = [...prev, { timestamp, value: memoryMiB }];
+                return newData.slice(-maxDataPoints);
+            });
+        }
 
-            if (stats.disk_bytes !== undefined && stats.disk_bytes !== null) {
-                const diskMiB = Number(stats.disk_bytes) / (1024 * 1024);
-                setCurrentDisk(diskMiB);
-                setDiskData((prev) => {
-                    const newData = [...prev, { timestamp, value: diskMiB }];
-                    return newData.slice(-maxDataPoints);
-                });
-            }
+        if (stats.disk_bytes !== undefined && stats.disk_bytes !== null) {
+            const diskMiB = Number(stats.disk_bytes) / (1024 * 1024);
+            setCurrentDisk(diskMiB);
+            setDiskData((prev) => {
+                const newData = [...prev, { timestamp, value: diskMiB }];
+                return newData.slice(-maxDataPoints);
+            });
+        }
 
-            if (stats.network && stats.network.rx_bytes !== undefined && stats.network.tx_bytes !== undefined) {
-                const currentRxBytes = Number(stats.network.rx_bytes);
-                const currentTxBytes = Number(stats.network.tx_bytes);
-                const now = new Date().getTime();
+        if (stats.network && stats.network.rx_bytes !== undefined && stats.network.tx_bytes !== undefined) {
+            const currentRxBytes = Number(stats.network.rx_bytes);
+            const currentTxBytes = Number(stats.network.tx_bytes);
+            const now = new Date().getTime();
 
-                if (prevNetworkRef.current.timestamp > 0) {
-                    const timeDiff = (now - prevNetworkRef.current.timestamp) / 1000;
-                    if (timeDiff > 0) {
-                        const rxRate = Math.max(0, currentRxBytes - prevNetworkRef.current.rx) / timeDiff;
-                        const txRate = Math.max(0, currentTxBytes - prevNetworkRef.current.tx) / timeDiff;
+            if (prevNetworkRef.current.timestamp > 0) {
+                const timeDiff = (now - prevNetworkRef.current.timestamp) / 1000;
+                if (timeDiff > 0) {
+                    const rxRate = Math.max(0, currentRxBytes - prevNetworkRef.current.rx) / timeDiff;
+                    const txRate = Math.max(0, currentTxBytes - prevNetworkRef.current.tx) / timeDiff;
 
-                        setCurrentNetworkRx(rxRate);
-                        setCurrentNetworkTx(txRate);
+                    setCurrentNetworkRx(rxRate);
+                    setCurrentNetworkTx(txRate);
 
-                        const totalRate = rxRate + txRate;
-                        setNetworkData((prev) => {
-                            const newData = [...prev, { timestamp, value: totalRate }];
-                            return newData.slice(-maxDataPoints);
-                        });
-                    }
+                    const totalRate = rxRate + txRate;
+                    setNetworkData((prev) => {
+                        const newData = [...prev, { timestamp, value: totalRate }];
+                        return newData.slice(-maxDataPoints);
+                    });
                 }
-
-                prevNetworkRef.current = {
-                    rx: currentRxBytes,
-                    tx: currentTxBytes,
-                    timestamp: now,
-                };
             }
-        },
-        [applyRemoteStatus],
-    );
+
+            prevNetworkRef.current = {
+                rx: currentRxBytes,
+                tx: currentTxBytes,
+                timestamp: now,
+            };
+        }
+    }, []);
 
     const handleInstallOutput = useCallback(
         (output: string) => {
-            installActiveRef.current = true;
-            statusInferredRef.current = false;
-            setServerStatus('installing');
             if (!terminalRef.current) return;
             terminalRef.current.writeln(replaceLegacyPanelNameInConsoleOutput(output, consoleAppDisplayName));
         },
@@ -419,16 +334,12 @@ export default function ServerConsolePage() {
     );
 
     const handleInstallStarted = useCallback(() => {
-        installActiveRef.current = true;
-        statusInferredRef.current = false;
-        setServerStatus('installing');
         if (terminalRef.current) {
             terminalRef.current.writeln('\u001b[33m[FeatherPanel] Install started...\u001b[0m');
         }
     }, []);
 
     const handleInstallCompleted = useCallback(() => {
-        installActiveRef.current = false;
         if (terminalRef.current) {
             terminalRef.current.writeln('\u001b[32m[FeatherPanel] Install completed.\u001b[0m');
         }
@@ -452,7 +363,6 @@ export default function ServerConsolePage() {
 
         if (!hasRequestedLogsRef.current) {
             hasRequestedLogsRef.current = true;
-            logsGraceUntilRef.current = Date.now() + LOGS_GRACE_MS;
             requestLogs();
         }
 
@@ -491,8 +401,6 @@ export default function ServerConsolePage() {
                 restart: 'stopping',
                 kill: 'stopping',
             };
-            installActiveRef.current = false;
-            statusInferredRef.current = false;
             setServerStatus(optimisticStatus[action]);
 
             return new Promise<void>((resolve) => {

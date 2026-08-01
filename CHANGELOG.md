@@ -8,6 +8,9 @@
 - File manager downloads now use signed Wings URLs (same as backups) instead of proxying the whole file through PHP, fixing large-file failures caused by the default 30s Guzzle/cURL timeout. by @cursor
 - PBS backups no longer show **0 MiB** when snapshot-list size is missing: Wings parses logical size from `proxmox-backup-client` output. New PBS archives default to `root.pxar` (PVE-style `root.pxar.didx` in PBS UI); restore still accepts legacy `server.pxar`. by @cursor
 - FastDL generated `sv_downloadurl` no longer uses the Wings API port (e.g. `:8080`); it uses the node FQDN and FastDL bind port (default 80, omit `:80`). FastDL enable/directory is persisted on the server and synced to Wings so it survives restart/power cycles. by @cursor
+- Issues with stuck console connections were fixed. by @nayskutzu
+- Issues with console on mobile devices were fixed. by @nayskutzu
+
 
 ## v1.3.7.5 STABLE
 
