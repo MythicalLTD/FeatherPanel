@@ -17,8 +17,8 @@
 
 namespace App\Helpers;
 
-use App\Cache\Cache;
 use App\Chat\User;
+use App\Cache\Cache;
 use App\Chat\Permission;
 
 class PermissionHelper

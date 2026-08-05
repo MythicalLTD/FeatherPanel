@@ -98,3 +98,17 @@ set_error_handler(function ($errno, $errstr, $errfile, $errline) {
 
 // Load the main autoloader
 require_once __DIR__ . '/../storage/packages/autoload.php';
+
+// Application path constants used by Cache and related code
+if (!defined('APP_STORAGE_DIR')) {
+    define('APP_STORAGE_DIR', __DIR__ . '/../storage/');
+}
+if (!defined('APP_CACHE_DIR')) {
+    define('APP_CACHE_DIR', APP_STORAGE_DIR . 'caches');
+}
+if (!defined('APP_ADDONS_DIR')) {
+    define('APP_ADDONS_DIR', APP_STORAGE_DIR . 'addons');
+}
+if (!defined('PHPUNIT_RUNNING')) {
+    define('PHPUNIT_RUNNING', true);
+}

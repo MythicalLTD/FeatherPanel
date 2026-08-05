@@ -797,6 +797,7 @@ class Node
                 $storedSecret = App::getInstance(true)->decryptValue($row['daemon_token'] ?? '');
                 if ($storedId === $tokenId && $storedSecret === $tokenSecret) {
                     Cache::put($cacheKey, (int) $row['id'], 5);
+
                     return self::decryptSensitiveFields($row);
                 }
             }

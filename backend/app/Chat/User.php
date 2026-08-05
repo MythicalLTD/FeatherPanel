@@ -31,6 +31,8 @@ class User
      */
     private static string $table = 'featherpanel_users';
 
+    private static ?array $columnsCache = null;
+
     /**
      * Create a new user.
      *
@@ -473,8 +475,6 @@ class User
 
         return AvatarHelper::enrichUser($stmt->fetch(\PDO::FETCH_ASSOC) ?: null);
     }
-
-    private static ?array $columnsCache = null;
 
     public static function getColumns(): array
     {

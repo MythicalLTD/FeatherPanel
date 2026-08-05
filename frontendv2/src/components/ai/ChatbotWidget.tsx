@@ -87,7 +87,12 @@ function VdsChatbotWidget() {
 
             {isOpen && (
                 <Suspense fallback={null}>
-                    <ChatbotContainer open={isOpen} onClose={() => setIsOpen(false)} mode='vds' vdsInstance={instance} />
+                    <ChatbotContainer
+                        open={isOpen}
+                        onClose={() => setIsOpen(false)}
+                        mode='vds'
+                        vdsInstance={instance}
+                    />
                 </Suspense>
             )}
         </>
