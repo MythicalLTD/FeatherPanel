@@ -38,6 +38,28 @@ function normalizePathname(pathname: string): string {
     return pathname;
 }
 
+/**
+ * Reject incomplete percent-encodings (%f, %) and sequences that are not valid
+ * UTF-8 after decoding (%ff, %A0, overlong UTF-8, etc.).
+ *
+ * Next.js production routing calls decodeURIComponent on dynamic segments and
+ * can return 500 / abort the response for these (Cloudflare 520 via Caddy).
+ * Catch them here so we always return a clean 400.
+ */
+function isMalformedPercentEncoding(pathname: string): boolean {
+    // Incomplete or non-hex percent escape: "%", "%f", "%zz", "%g0"
+    if (/%(?![0-9A-Fa-f]{2})/.test(pathname)) {
+        return true;
+    }
+
+    try {
+        decodeURIComponent(pathname);
+        return false;
+    } catch {
+        return true;
+    }
+}
+
 function isStaticPublicRoute(pathname: string): boolean {
     return STATIC_PUBLIC_ROUTES.some((route) => pathname === route || pathname.startsWith(route + '/'));
 }
@@ -105,6 +127,19 @@ async function applyStatusPageIframeHeaders(request: NextRequest, response: Next
 
 export async function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl;
+
+    // Prefer the raw request path so we still see %xx before URL parsers normalize it.
+    let rawPathname = pathname;
+    try {
+        rawPathname = new URL(request.url).pathname;
+    } catch {
+        return new NextResponse('Bad Request', { status: 400 });
+    }
+
+    if (isMalformedPercentEncoding(rawPathname) || isMalformedPercentEncoding(pathname)) {
+        return new NextResponse('Bad Request', { status: 400 });
+    }
+
     const normalizedPath = normalizePathname(pathname);
 
     const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';

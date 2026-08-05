@@ -34,6 +34,7 @@ import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { useDeveloperMode } from '@/hooks/useDeveloperMode';
 import { toast } from 'sonner';
 import { Code, ArrowLeft, Save, Lock, Loader2 } from 'lucide-react';
+import { safeBack } from '@/lib/safe-back';
 
 interface DependencyItem {
     type: 'php' | 'php-ext' | 'plugin';
@@ -267,7 +268,7 @@ export default function CreatePluginPage() {
                     description={t('admin.dev.plugins.create.description')}
                     icon={Code}
                     actions={
-                        <Button variant='outline' onClick={() => router.back()}>
+                        <Button variant='outline' onClick={() => safeBack(router)}>
                             <ArrowLeft className='mr-2 h-4 w-4' />
                             {t('common.back')}
                         </Button>
@@ -860,7 +861,7 @@ export default function CreatePluginPage() {
                     </PageCard>
 
                     <div className='flex justify-end gap-2 pt-4'>
-                        <Button type='button' variant='outline' onClick={() => router.back()}>
+                        <Button type='button' variant='outline' onClick={() => safeBack(router)}>
                             {t('common.cancel')}
                         </Button>
                         <Button type='submit' loading={loading}>

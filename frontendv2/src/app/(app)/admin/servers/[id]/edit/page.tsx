@@ -76,6 +76,7 @@ import {
     SpellVariable,
     CustomVariable,
 } from './types';
+import { safeBack } from '@/lib/safe-back';
 
 const initialFormData: ServerFormData = {
     name: '',
@@ -145,6 +146,7 @@ export default function EditServerPage() {
     const [suspensionReason, setSuspensionReason] = useState<string | null>(null);
     const [suspendedAt, setSuspendedAt] = useState<string | null>(null);
     const [suspendedBy, setSuspendedBy] = useState<{ uuid?: string | null; username?: string | null } | null>(null);
+    const [serverStatus, setServerStatus] = useState<string | null>(null);
 
     const [location, setLocation] = useState<Location | null>(null);
     const [node, setNode] = useState<Node | null>(null);
@@ -439,6 +441,7 @@ export default function EditServerPage() {
                 setSuspensionReason(server.suspension_reason ?? null);
                 setSuspendedAt(server.suspended_at ?? null);
                 setSuspendedBy(server.suspended_by ?? null);
+                setServerStatus(server.status ?? null);
                 setNode(serverNode || null);
                 setLocation(serverLocation);
 
@@ -1061,7 +1064,7 @@ export default function EditServerPage() {
                 icon={Server}
                 actions={
                     <div className='flex gap-2'>
-                        <Button variant='outline' onClick={() => router.back()}>
+                        <Button variant='outline' onClick={() => safeBack(router)}>
                             <ArrowLeft className='mr-2 h-4 w-4' />
                             {t('common.back')}
                         </Button>
@@ -1173,6 +1176,7 @@ export default function EditServerPage() {
                         <ActionsTab
                             serverId={serverId}
                             serverName={form.name}
+                            serverStatus={serverStatus}
                             isSuspended={isSuspended}
                             suspensionReason={suspensionReason}
                             suspendedAt={suspendedAt}

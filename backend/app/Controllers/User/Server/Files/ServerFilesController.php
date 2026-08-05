@@ -155,6 +155,13 @@ class ServerFilesController
                 required: false,
                 schema: new OA\Schema(type: 'string', default: '/')
             ),
+            new OA\Parameter(
+                name: 'search',
+                in: 'query',
+                description: 'Case-insensitive filename substring filter applied before the list item limit',
+                required: false,
+                schema: new OA\Schema(type: 'string')
+            ),
         ],
         responses: [
             new OA\Response(
@@ -163,6 +170,9 @@ class ServerFilesController
                 content: new OA\JsonContent(
                     properties: [
                         new OA\Property(property: 'contents', type: 'array', items: new OA\Items(ref: '#/components/schemas/ServerFileItem')),
+                        new OA\Property(property: 'limited', type: 'boolean', description: 'True when more matching items exist beyond the returned limit'),
+                        new OA\Property(property: 'limit', type: 'integer', description: 'Maximum number of items returned'),
+                        new OA\Property(property: 'total', type: 'integer', description: 'Number of matching items before applying the limit'),
                     ]
                 )
             ),
@@ -187,6 +197,7 @@ class ServerFilesController
             }
 
             $path = $this->getPathFromQuery();
+            $search = trim((string) ($_GET['search'] ?? ''));
 
             $wings = $this->createWingsConnection($node);
             $response = $wings->getServer()->listDirectory($server['uuid'], $path, true);
@@ -207,20 +218,40 @@ class ServerFilesController
             // Log activity
             $this->logActivity($server, $node, 'files_listed', [
                 'path' => $path,
-
+                'search' => $search !== '' ? $search : null,
             ], $user);
 
             $contents = $response->getData();
-            if (is_array($contents)) {
-                $contents = array_values(array_slice($contents, 0, self::MAX_LIST_ITEMS));
-            } else {
+            if (!is_array($contents)) {
                 $contents = [];
             }
 
+            // Filter the full Wings listing by name before applying the display cap.
+            // Client-side filtering only saw the first MAX_LIST_ITEMS and missed the rest.
+            if ($search !== '') {
+                $needle = mb_strtolower($search);
+                $contents = array_values(array_filter($contents, static function ($item) use ($needle): bool {
+                    if (!is_array($item)) {
+                        return false;
+                    }
+                    $name = (string) ($item['name'] ?? '');
+                    if ($name === '' && isset($item['path'])) {
+                        $name = basename((string) $item['path']);
+                    }
+
+                    return $name !== '' && mb_stripos($name, $needle) !== false;
+                }));
+            }
+
+            $total = count($contents);
+            $limited = $total > self::MAX_LIST_ITEMS;
+            $contents = array_values(array_slice($contents, 0, self::MAX_LIST_ITEMS));
+
             return ApiResponse::success([
                 'contents' => $contents,
-                'limited' => true,
+                'limited' => $limited,
                 'limit' => self::MAX_LIST_ITEMS,
+                'total' => $total,
             ], 'Files fetched successfully');
         } catch (\Exception $e) {
             return $this->handleWingsError($e, 'fetch files');
@@ -362,11 +393,11 @@ class ServerFilesController
             ], $user);
 
             $results = $response->getData();
-            if (is_array($results)) {
-                $results = array_values(array_slice($results, 0, self::MAX_LIST_ITEMS));
-            } else {
+            if (!is_array($results)) {
                 $results = [];
             }
+
+            $results = array_values(array_slice($results, 0, self::MAX_LIST_ITEMS));
 
             return ApiResponse::success($results, 'File search completed successfully');
         } catch (\Exception $e) {

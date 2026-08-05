@@ -63,6 +63,7 @@ import { SelfUpdateTab } from '../components/SelfUpdateTab';
 import { UtilizationResponse, DockerResponse, SystemInfoResponse, NodeData, Location } from '../types';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { safeBack } from '@/lib/safe-back';
 
 export interface NodeForm {
     name: string;
@@ -529,7 +530,7 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
                 icon={Server}
                 actions={
                     <div className='flex flex-wrap gap-2'>
-                        <Button variant='outline' onClick={() => router.back()}>
+                        <Button variant='outline' onClick={() => safeBack(router)}>
                             <ArrowLeft className='mr-2 h-4 w-4' />
                             {t('common.back')}
                         </Button>

@@ -13,6 +13,7 @@ docs/
 nginx.conf
 backend/public/addons/*
 backend/public/components/*
+backend/public/pma/
 install.log
 featherwings/
 count-results/

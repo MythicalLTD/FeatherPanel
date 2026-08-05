@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "64f02867c8945dcc5bc312f6c3b028dc",
+    "content-hash": "1e4501866fb16a8e6c20a0399c0e36bd",
     "packages": [
         {
             "name": "beberlei/assert",
@@ -840,16 +840,16 @@
         },
         {
             "name": "ifsnop/mysqldump-php",
-            "version": "v2.12",
+            "version": "v2.13",
             "source": {
                 "type": "git",
                 "url": "https://github.com/ifsnop/mysqldump-php.git",
-                "reference": "2d3a43fc0c49f23bf7dee392b0dd1f8c799f89d3"
+                "reference": "d328c86e17f3a2d8d45d2c9846bd13b6713dcb20"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/ifsnop/mysqldump-php/zipball/2d3a43fc0c49f23bf7dee392b0dd1f8c799f89d3",
-                "reference": "2d3a43fc0c49f23bf7dee392b0dd1f8c799f89d3",
+                "url": "https://api.github.com/repos/ifsnop/mysqldump-php/zipball/d328c86e17f3a2d8d45d2c9846bd13b6713dcb20",
+                "reference": "d328c86e17f3a2d8d45d2c9846bd13b6713dcb20",
                 "shasum": ""
             },
             "require": {
@@ -893,109 +893,9 @@
             ],
             "support": {
                 "issues": "https://github.com/ifsnop/mysqldump-php/issues",
-                "source": "https://github.com/ifsnop/mysqldump-php/tree/v2.12"
+                "source": "https://github.com/ifsnop/mysqldump-php/tree/v2.13"
             },
-            "time": "2023-04-12T07:43:14+00:00"
-        },
-        {
-            "name": "krymosoftware/gameq",
-            "version": "4.0.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/SoftCreatRMedia/GameQ.git",
-                "reference": "5aa3c6e774b8f50439ba1c8e47cff8200f4a7862"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/SoftCreatRMedia/GameQ/zipball/5aa3c6e774b8f50439ba1c8e47cff8200f4a7862",
-                "reference": "5aa3c6e774b8f50439ba1c8e47cff8200f4a7862",
-                "shasum": ""
-            },
-            "require": {
-                "ext-bz2": "*",
-                "ext-simplexml": "*",
-                "ext-xml": "*",
-                "php": ">=8.1"
-            },
-            "require-dev": {
-                "corneltek/getoptionkit": "~2",
-                "ext-curl": "*",
-                "phpstan/extension-installer": "^1.4",
-                "phpstan/phpstan": "^1.12",
-                "phpstan/phpstan-deprecation-rules": "^1.2",
-                "phpstan/phpstan-phpunit": "^1.4",
-                "phpunit/php-invoker": "*",
-                "phpunit/phpunit": "^9.0",
-                "squizlabs/php_codesniffer": "3.*@stable"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-4": {
-                    "GameQ\\": "src/GameQ/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "LGPL-3.0+"
-            ],
-            "authors": [
-                {
-                    "name": "Austin Bischoff",
-                    "email": "austin.bischoff@gmail.com",
-                    "homepage": "https://github.com/Austinb",
-                    "role": "Packagist/Composer Maintainer, Developer"
-                },
-                {
-                    "name": "Krymo Software",
-                    "email": "info@krymo.software",
-                    "homepage": "https://krymo.software",
-                    "role": "Fork Maintainer, Developer"
-                },
-                {
-                    "name": "Christoph Kretzschmar",
-                    "email": "blackskyliner@googlemail.com",
-                    "homepage": "https://github.com/Blackskyliner",
-                    "role": "Developer"
-                },
-                {
-                    "name": "Marcel Bößendörfer",
-                    "email": "m.boessendoerfer@marbis.net",
-                    "homepage": "https://github.com/nitrado",
-                    "role": "Developer"
-                },
-                {
-                    "name": "Alexander Hambalgo",
-                    "homepage": "http://balgo.users.sourceforge.net/",
-                    "role": "Developer"
-                },
-                {
-                    "name": "Holger",
-                    "homepage": "http://icet33.users.sourceforge.net/",
-                    "role": "Developer"
-                },
-                {
-                    "name": "Sebastian Weidenbach",
-                    "homepage": "http://sebastianwe.users.sourceforge.net/",
-                    "role": "Developer"
-                },
-                {
-                    "name": "Patrick Henninger",
-                    "email": "privat@skyraptor.eu",
-                    "homepage": "https://skyraptor.eu",
-                    "role": "Developer"
-                }
-            ],
-            "description": "A maintained fork of the famous PHP Gameserver Status Query Library GameQ by Austinb",
-            "keywords": [
-                "gameq",
-                "serverstatus"
-            ],
-            "support": {
-                "issues": "https://github.com/KrymoSoftware/GameQ/issues",
-                "source": "https://github.com/KrymoSoftware/GameQ",
-                "wiki": "https://github.com/Austinb/GameQ/wiki"
-            },
-            "time": "2024-09-27T18:19:15+00:00"
+            "time": "2026-08-02T19:39:47+00:00"
         },
         {
             "name": "nikic/php-parser",
@@ -2090,6 +1990,129 @@
                 "source": "https://github.com/ralouphie/getallheaders/tree/develop"
             },
             "time": "2019-03-08T08:55:37+00:00"
+        },
+        {
+            "name": "softcreatr/gameq",
+            "version": "5.0.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/SoftCreatRMedia/GameQ.git",
+                "reference": "552d9e19befa46d060757acddb864d873fd126e7"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/SoftCreatRMedia/GameQ/zipball/552d9e19befa46d060757acddb864d873fd126e7",
+                "reference": "552d9e19befa46d060757acddb864d873fd126e7",
+                "shasum": ""
+            },
+            "require": {
+                "ext-curl": "*",
+                "ext-libxml": "*",
+                "ext-simplexml": "*",
+                "ext-xml": "*",
+                "php": "^8.1"
+            },
+            "require-dev": {
+                "corneltek/getoptionkit": "^2.7",
+                "php-parallel-lint/php-parallel-lint": "^1.4",
+                "phpstan/extension-installer": "^1.4",
+                "phpstan/phpstan": "^2.2",
+                "phpstan/phpstan-deprecation-rules": "^2.0",
+                "phpstan/phpstan-phpunit": "^2.0",
+                "phpstan/phpstan-strict-rules": "^2.0",
+                "phpunit/phpunit": "^10.5 || ^11.5 || ^12.5 || ^13.1",
+                "roave/backward-compatibility-check": "^8.1",
+                "squizlabs/php_codesniffer": "^4.0"
+            },
+            "suggest": {
+                "ext-bz2": "Required to decode compressed Source/A2S split responses."
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "GameQ\\": "src/GameQ/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "LGPL-3.0-or-later"
+            ],
+            "authors": [
+                {
+                    "name": "Austin Bischoff",
+                    "email": "austin.bischoff@gmail.com",
+                    "homepage": "https://github.com/Austinb",
+                    "role": "Packagist/Composer Maintainer, Developer"
+                },
+                {
+                    "name": "SoftCreatR Media",
+                    "email": "info@softcreatr.dev",
+                    "homepage": "https://softcreatr.dev",
+                    "role": "Fork Maintainer, Developer"
+                },
+                {
+                    "name": "Krymo Software",
+                    "email": "info@krymo.software",
+                    "homepage": "https://krymo.software",
+                    "role": "Fork Maintainer, Developer"
+                },
+                {
+                    "name": "Christoph Kretzschmar",
+                    "email": "blackskyliner@googlemail.com",
+                    "homepage": "https://github.com/Blackskyliner",
+                    "role": "Developer"
+                },
+                {
+                    "name": "Marcel Bößendörfer",
+                    "email": "m.boessendoerfer@marbis.net",
+                    "homepage": "https://github.com/nitrado",
+                    "role": "Developer"
+                },
+                {
+                    "name": "Alexander Hambalgo",
+                    "homepage": "http://balgo.users.sourceforge.net/",
+                    "role": "Developer"
+                },
+                {
+                    "name": "Holger",
+                    "homepage": "http://icet33.users.sourceforge.net/",
+                    "role": "Developer"
+                },
+                {
+                    "name": "Sebastian Weidenbach",
+                    "homepage": "http://sebastianwe.users.sourceforge.net/",
+                    "role": "Developer"
+                },
+                {
+                    "name": "Patrick Henninger",
+                    "email": "privat@skyraptor.eu",
+                    "homepage": "https://skyraptor.eu",
+                    "role": "Developer"
+                }
+            ],
+            "description": "A maintained PHP game-server status query library based on GameQ by Austinb",
+            "keywords": [
+                "game server",
+                "gameq",
+                "query",
+                "server status"
+            ],
+            "support": {
+                "issues": "https://github.com/SoftCreatRMedia/GameQ/issues",
+                "source": "https://github.com/SoftCreatRMedia/GameQ",
+                "wiki": "https://github.com/SoftCreatRMedia/GameQ/wiki"
+            },
+            "funding": [
+                {
+                    "url": "https://ecologi.com/softcreatr?r=61212ab3fc69b8eb8a2014f4",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://github.com/softcreatr",
+                    "type": "github"
+                }
+            ],
+            "time": "2026-08-03T02:12:17+00:00"
         },
         {
             "name": "spomky-labs/cbor-php",
@@ -5137,11 +5160,11 @@
         },
         {
             "name": "phpstan/phpstan",
-            "version": "2.2.7",
+            "version": "2.2.8",
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/692db47b9dddb0487934e5236e77d48594aef921",
-                "reference": "692db47b9dddb0487934e5236e77d48594aef921",
+                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/e285254e60f33c21902efef4a926ca0987c06804",
+                "reference": "e285254e60f33c21902efef4a926ca0987c06804",
                 "shasum": ""
             },
             "require": {
@@ -5197,7 +5220,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-07-29T17:39:32+00:00"
+            "time": "2026-08-04T22:21:45+00:00"
         },
         {
             "name": "phpunit/php-code-coverage",

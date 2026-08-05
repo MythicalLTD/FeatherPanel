@@ -20,6 +20,7 @@ import { Wifi, Cpu, Clock, Activity, HardDrive, Database, ArrowDown, ArrowUp } f
 import { toast } from 'sonner';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { formatMib, formatCpu as formatCpuGlobal, cn, formatFileSize } from '@/lib/utils';
+import { getUsagePercentage, getProgressColor } from '@/lib/server-utils';
 import { Progress } from '@/components/ui/progress';
 
 interface ServerInfoCardsProps {
@@ -70,6 +71,13 @@ export default function ServerInfoCards({
         if (disk === 0) return t('servers.console.info_cards.unlimited');
         return formatMib(disk);
     };
+
+    const cpuPercent = getUsagePercentage(cpuUsage, cpuLimit);
+    const memoryPercent = getUsagePercentage(memoryUsage, memoryLimit);
+    const diskPercent = getUsagePercentage(diskUsage, diskLimit);
+    const diskOverLimit = diskLimit > 0 && diskUsage > diskLimit;
+    const memoryOverLimit = memoryLimit > 0 && memoryUsage > memoryLimit;
+    const cpuOverLimit = cpuLimit > 0 && cpuUsage > cpuLimit;
 
     const handleCopy = async (text: string) => {
         try {
@@ -170,9 +178,17 @@ export default function ServerInfoCards({
                                 <Cpu className='h-3 w-3' />
                                 {t('servers.cpu')}
                             </span>
-                            <span className='font-medium'>{cpuUsage.toFixed(1)}%</span>
+                            <span className={cn('font-medium', cpuOverLimit && 'text-destructive')}>
+                                {cpuUsage.toFixed(1)}%
+                            </span>
                         </div>
-                        {cpuLimit > 0 && <Progress value={(cpuUsage / cpuLimit) * 100} className='h-1.5' />}
+                        {cpuLimit > 0 && (
+                            <Progress
+                                value={cpuPercent}
+                                className='h-1.5'
+                                indicatorClassName={getProgressColor(cpuPercent)}
+                            />
+                        )}
                         <p className='text-muted-foreground mt-1 text-right text-[10px]'>
                             {t('servers.console.info_cards.limit', { limit: formatCpu(cpuLimit) })}
                         </p>
@@ -184,9 +200,17 @@ export default function ServerInfoCards({
                                 <Database className='h-3 w-3' />
                                 {t('servers.memory')}
                             </span>
-                            <span className='font-medium'>{formatMib(memoryUsage)}</span>
+                            <span className={cn('font-medium', memoryOverLimit && 'text-destructive')}>
+                                {formatMib(memoryUsage)}
+                            </span>
                         </div>
-                        {memoryLimit > 0 && <Progress value={(memoryUsage / memoryLimit) * 100} className='h-1.5' />}
+                        {memoryLimit > 0 && (
+                            <Progress
+                                value={memoryPercent}
+                                className='h-1.5'
+                                indicatorClassName={getProgressColor(memoryPercent)}
+                            />
+                        )}
                         <p className='text-muted-foreground mt-1 text-right text-[10px]'>
                             {t('servers.console.info_cards.limit', { limit: formatMemory(memoryLimit) })}
                         </p>
@@ -198,9 +222,17 @@ export default function ServerInfoCards({
                                 <HardDrive className='h-3 w-3' />
                                 {t('servers.disk')}
                             </span>
-                            <span className='font-medium'>{formatMib(diskUsage)}</span>
+                            <span className={cn('font-medium', diskOverLimit && 'text-destructive')}>
+                                {formatMib(diskUsage)}
+                            </span>
                         </div>
-                        {diskLimit > 0 && <Progress value={(diskUsage / diskLimit) * 100} className='h-1.5' />}
+                        {diskLimit > 0 && (
+                            <Progress
+                                value={diskPercent}
+                                className='h-1.5'
+                                indicatorClassName={getProgressColor(diskPercent)}
+                            />
+                        )}
                         <p className='text-muted-foreground mt-1 text-right text-[10px]'>
                             {t('servers.console.info_cards.limit', { limit: formatDisk(diskLimit) })}
                         </p>

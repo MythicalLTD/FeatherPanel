@@ -56,7 +56,7 @@ import {
     trashStatsFromList,
     type TrashFolderStats,
 } from '@/lib/feather-trash';
-import { Download, X, Upload, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Download, X, Upload, CheckCircle2, AlertCircle, Info } from 'lucide-react';
 import React, { use } from 'react';
 import { Button } from '@/components/featherui/Button';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -174,6 +174,9 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
         activePulls,
         searchQuery,
         setSearchQuery,
+        listLimited,
+        listLimit,
+        listTotal,
         refresh,
         refreshIgnored,
         navigate,
@@ -1548,6 +1551,18 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
 
                         <WidgetRenderer widgets={getWidgets('server-files', 'before-files-list')} />
 
+                        {listLimited && searchResults === null ? (
+                            <div className='flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100'>
+                                <Info className='mt-0.5 h-4 w-4 shrink-0 text-amber-400' />
+                                <p>
+                                    {t('files.list.truncated', {
+                                        shown: String(Math.min(listLimit, listTotal || files.length)),
+                                        total: String(listTotal || files.length),
+                                    })}
+                                </p>
+                            </div>
+                        ) : null}
+
                         <ArchiveBrowsePanel
                             open={archiveBrowseOpen}
                             onOpenChange={handleArchiveBrowseOpenChange}
@@ -1579,6 +1594,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                             onSelectAll={handleSelectAllToggle}
                             onModifierClick={handleModifierClick}
                             anchorName={anchorName}
+                            isSearching={Boolean(searchQuery.trim()) || searchResults !== null}
                             onNavigate={(name) => {
                                 if (name === FEATHER_TRASH_DIR) {
                                     router.push(`/server/${uuidShort}/files/trash`);

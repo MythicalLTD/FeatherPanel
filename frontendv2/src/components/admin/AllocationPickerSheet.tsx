@@ -32,6 +32,7 @@ export interface PickerAllocation {
     ip: string;
     port: number;
     ip_alias?: string | null;
+    notes?: string | null;
     server_id: number | null;
     node_id: number;
 }
@@ -64,6 +65,7 @@ function mapCreatedToAllocation(row: CreatedAllocationRow, nodeId: number): Pick
         ip: row.ip,
         port: typeof row.port === 'string' ? parseInt(String(row.port).split('-')[0] || '0', 10) : row.port,
         ip_alias: row.ip_alias ?? undefined,
+        notes: row.notes ?? undefined,
         server_id: row.server_id ?? null,
         node_id: row.node_id ?? nodeId,
     };
@@ -241,6 +243,14 @@ export function AllocationPickerSheet({
                                                     {allocation.ip_alias && (
                                                         <div className='text-muted-foreground mt-0.5 text-xs'>
                                                             {allocation.ip_alias}
+                                                        </div>
+                                                    )}
+                                                    {allocation.notes && (
+                                                        <div
+                                                            className='text-muted-foreground mt-0.5 truncate text-xs italic'
+                                                            title={allocation.notes}
+                                                        >
+                                                            {allocation.notes}
                                                         </div>
                                                     )}
                                                 </div>

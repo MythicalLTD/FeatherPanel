@@ -36,6 +36,7 @@ import { isEnabled } from '@/lib/utils';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { useSettings } from '@/contexts/SettingsContext';
 import type { Task, TaskCreateRequest, TaskUpdateRequest, Schedule, SchedulePagination } from '@/types/server';
+import { safeBack } from '@/lib/safe-back';
 
 export default function ServerTasksPage() {
     const { uuidShort, id: scheduleId } = useParams() as { uuidShort: string; id: string };
@@ -288,7 +289,7 @@ export default function ServerTasksPage() {
                 </div>
                 <h1 className='text-2xl font-black tracking-tight uppercase'>{t('common.accessDenied')}</h1>
                 <p className='text-muted-foreground mt-2'>{t('common.noPermission')}</p>
-                <Button variant='outline' className='mt-8' onClick={() => router.back()}>
+                <Button variant='outline' className='mt-8' onClick={() => safeBack(router)}>
                     {t('common.goBack')}
                 </Button>
             </div>
@@ -321,7 +322,7 @@ export default function ServerTasksPage() {
                         <Button
                             variant='glass'
                             size='default'
-                            onClick={() => router.back()}
+                            onClick={() => safeBack(router)}
                             disabled={loading}
                             className='order-2 sm:order-1'
                         >

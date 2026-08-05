@@ -29,6 +29,7 @@ import { usePluginRoutes } from '@/hooks/usePluginRoutes';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { isCloudflareChallengeDocument, withCacheBuster } from '@/lib/cloudflare-challenge';
 import { getPluginIframeThemeOverrideCss } from '@/lib/pluginIframeThemeCss';
+import { safeBack } from '@/lib/safe-back';
 
 interface PluginPageProps {
     context: 'admin' | 'client' | 'server' | 'vds';
@@ -72,6 +73,7 @@ export default function PluginPage({ context, serverUuid, vdsId }: PluginPagePro
             // injected CSS so the panel backdrop still shows through.
             const root = iframeDoc.documentElement;
             root.setAttribute('data-fp-theme', theme);
+            root.style.colorScheme = theme;
             if (theme === 'light') {
                 root.classList.add('light');
                 root.classList.remove('dark');
@@ -391,7 +393,7 @@ export default function PluginPage({ context, serverUuid, vdsId }: PluginPagePro
                         <h2 className='text-2xl font-bold tracking-tight'>{t('errors.404.title')}</h2>
                         <p className='text-muted-foreground text-sm leading-relaxed'>{t('errors.404.message')}</p>
                         <div className='flex flex-col justify-center gap-3 pt-4 sm:flex-row'>
-                            <Button onClick={() => router.back()} variant='outline'>
+                            <Button onClick={() => safeBack(router, '/dashboard')} variant='outline'>
                                 <ArrowLeft className='mr-2 h-4 w-4' />
                                 {t('errors.404.go_back')}
                             </Button>
@@ -476,7 +478,10 @@ export default function PluginPage({ context, serverUuid, vdsId }: PluginPagePro
                         'h-full w-full border-0 transition-all duration-500',
                         iframeLoading ? 'scale-95 opacity-0' : 'scale-100 opacity-100',
                     )}
-                    style={{ background: 'transparent' }}
+                    style={{
+                        background: 'transparent',
+                        colorScheme: theme,
+                    }}
                     onLoad={onIframeLoad}
                     onError={onIframeError}
                     {...{ allowtransparency: 'true' }}

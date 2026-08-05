@@ -22,6 +22,13 @@
 	header X-XSS-Protection "1; mode=block"
 	header Referrer-Policy "strict-origin-when-cross-origin"
 
+	# Incomplete percent-encoding (/%f, /%, /%zz) — reject before Next.js.
+	# Invalid UTF-8 sequences like %ff are handled in frontendv2/src/proxy.ts.
+	@bad_pct path_regexp %(?![0-9A-Fa-f]{2})
+	handle @bad_pct {
+		respond "Bad Request" 400
+	}
+
 	@api path /api*
 	handle @api {
 		reverse_proxy backend:80

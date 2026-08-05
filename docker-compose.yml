@@ -81,6 +81,7 @@ services:
       - featherpanel_logs:/var/www/html/storage/logs
       - featherpanel_translations:/var/www/html/public/translations
       - featherpanel_addons:/var/www/html/storage/addons
+      - featherpanel_pma:/var/www/html/public/pma
     networks:
       - featherpanel_network
 
@@ -163,6 +164,8 @@ volumes:
   featherpanel_translations:
     driver: local
   featherpanel_addons:
+    driver: local
+  featherpanel_pma:
     driver: local
 
 networks:

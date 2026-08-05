@@ -872,9 +872,9 @@ class ServerDatabaseController
             return $permissionCheck;
         }
 
-        // Check if phpMyAdmin is installed
-        $pmaPath = dirname(__DIR__, 4) . '/public/pma';
-        $isInstalled = is_dir($pmaPath) && file_exists($pmaPath . '/index.php');
+        // Check if phpMyAdmin is installed (also syncs the persisted install marker)
+        \App\Helpers\PhpMyAdmin::ensureInstalled();
+        $isInstalled = \App\Helpers\PhpMyAdmin::isInstalled();
 
         return ApiResponse::success([
             'installed' => $isInstalled,

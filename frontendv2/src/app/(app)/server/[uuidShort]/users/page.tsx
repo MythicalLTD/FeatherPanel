@@ -48,6 +48,7 @@ import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { cn, isEnabled } from '@/lib/utils';
 import type { Subuser, SubuserPagination, SubusersResponse, SubuserPermissionsResponse } from '@/types/server';
+import { safeBack } from '@/lib/safe-back';
 
 export default function ServerSubusersPage() {
     const { uuidShort } = useParams() as { uuidShort: string };
@@ -311,7 +312,7 @@ export default function ServerSubusersPage() {
                 </div>
                 <h1 className='text-2xl font-black tracking-tight uppercase'>{t('common.accessDenied')}</h1>
                 <p className='text-muted-foreground mt-2'>{t('common.noPermission')}</p>
-                <Button variant='outline' className='mt-8' onClick={() => router.back()}>
+                <Button variant='outline' className='mt-8' onClick={() => safeBack(router)}>
                     {t('common.goBack')}
                 </Button>
             </div>

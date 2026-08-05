@@ -34,6 +34,12 @@ class PhpMyAdmin
     ];
 
     /**
+     * Marker file stored on the persisted config volume so Docker/source updates
+     * can reinstall phpMyAdmin if the public/pma tree was wiped.
+     */
+    private const INSTALLED_MARKER = 'phpmyadmin.installed';
+
+    /**
      * Download and extract phpMyAdmin to the public directory.
      *
      * @throws \Exception If download or extraction fails
@@ -46,11 +52,18 @@ class PhpMyAdmin
         $targetFolderName = 'pma';
         $targetPath = $publicDir . '/' . $targetFolderName;
 
-        // Check if pma folder already exists
-        if (is_dir($targetPath)) {
+        // Check if a usable install already exists (empty volume dirs don't count)
+        if (self::isInstalled()) {
             $logger->info('phpMyAdmin already exists at ' . $targetPath);
+            self::writeInstalledMarker();
 
             return;
+        }
+
+        // Empty mount points / leftover dirs block extract+rename — clear them first
+        if (is_dir($targetPath)) {
+            $logger->info('Removing incomplete phpMyAdmin directory at ' . $targetPath);
+            self::deleteDirectory($targetPath);
         }
 
         // Create public directory if it doesn't exist
@@ -126,6 +139,7 @@ class PhpMyAdmin
             // Copy token authentication files
             self::copyTokenFiles($targetPath, $logger);
 
+            self::writeInstalledMarker();
             $logger->info('phpMyAdmin successfully downloaded and extracted to ' . $targetPath);
         } finally {
             // Clean up temporary file
@@ -149,6 +163,29 @@ class PhpMyAdmin
     }
 
     /**
+     * Reinstall phpMyAdmin when a prior install marker exists but files are missing
+     * (typical after a Docker image recreate before the pma volume was added).
+     *
+     * @throws \Exception If reinstall fails
+     */
+    public static function ensureInstalled(): void
+    {
+        if (self::isInstalled()) {
+            self::writeInstalledMarker();
+
+            return;
+        }
+
+        if (!self::hasInstalledMarker()) {
+            return;
+        }
+
+        $logger = App::getInstance(true)->getLogger();
+        $logger->info('phpMyAdmin marker present but files missing — reinstalling');
+        self::downloadPhpMyAdmin();
+    }
+
+    /**
      * Delete phpMyAdmin installation.
      *
      * @throws \Exception If deletion fails
@@ -162,6 +199,7 @@ class PhpMyAdmin
         // Check if phpMyAdmin is installed
         if (!is_dir($targetPath)) {
             $logger->info('phpMyAdmin is not installed, nothing to delete');
+            self::clearInstalledMarker();
 
             return;
         }
@@ -169,7 +207,44 @@ class PhpMyAdmin
         // Delete the directory recursively
         $logger->info('Deleting phpMyAdmin installation from ' . $targetPath);
         self::deleteDirectory($targetPath);
+        self::clearInstalledMarker();
         $logger->info('phpMyAdmin successfully deleted');
+    }
+
+    /**
+     * Absolute path to the persisted install marker.
+     */
+    private static function getInstalledMarkerPath(): string
+    {
+        return dirname(__DIR__, 2) . '/storage/config/' . self::INSTALLED_MARKER;
+    }
+
+    private static function hasInstalledMarker(): bool
+    {
+        return is_file(self::getInstalledMarkerPath());
+    }
+
+    private static function writeInstalledMarker(): void
+    {
+        $path = self::getInstalledMarkerPath();
+        $dir = dirname($path);
+        if (!is_dir($dir) && !@mkdir($dir, 0755, true) && !is_dir($dir)) {
+            App::getInstance(true)->getLogger()->warning('Failed to create config dir for phpMyAdmin marker');
+
+            return;
+        }
+
+        if (@file_put_contents($path, self::PMA_VERSION . "\n") === false) {
+            App::getInstance(true)->getLogger()->warning('Failed to write phpMyAdmin install marker');
+        }
+    }
+
+    private static function clearInstalledMarker(): void
+    {
+        $path = self::getInstalledMarkerPath();
+        if (is_file($path)) {
+            @unlink($path);
+        }
     }
 
     /**

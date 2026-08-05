@@ -27,25 +27,23 @@ interface PageHeaderProps {
 
 export function PageHeader({ title, description, icon: Icon, actions, className }: PageHeaderProps) {
     return (
-        <div className={cn('flex flex-col justify-between gap-6 pt-4 md:flex-row md:items-end', className)}>
-            <div className='flex min-w-0 flex-1 items-center gap-6'>
+        <div className={cn('flex flex-wrap items-end justify-between gap-x-6 gap-y-4 pt-4', className)}>
+            <div className='flex max-w-full min-w-0 items-center gap-4 sm:gap-6'>
                 {Icon && (
-                    <div className='bg-primary/10 text-primary border-primary/20 flex h-20 w-20 shrink-0 items-center justify-center rounded-[2.5rem] border'>
-                        <Icon className='h-10 w-10' />
+                    <div className='bg-primary/10 text-primary border-primary/20 flex h-14 w-14 shrink-0 items-center justify-center rounded-3xl border sm:h-20 sm:w-20 sm:rounded-[2.5rem]'>
+                        <Icon className='h-7 w-7 sm:h-10 sm:w-10' />
                     </div>
                 )}
-                <div className='min-w-0 space-y-2'>
-                    <h1 className='text-4xl font-black tracking-tight break-words uppercase'>{title}</h1>
+                <div className='min-w-0 space-y-1 sm:space-y-2'>
+                    <h1 className='text-2xl font-black tracking-tight uppercase sm:text-3xl lg:text-4xl'>{title}</h1>
                     {description && (
-                        <div className='text-muted-foreground flex min-w-0 items-center gap-3'>
-                            <div className='text-lg font-medium [overflow-wrap:anywhere] break-words opacity-80'>
-                                {description}
-                            </div>
+                        <div className='text-muted-foreground text-sm font-medium [overflow-wrap:anywhere] opacity-80 sm:text-base lg:text-lg'>
+                            {description}
                         </div>
                     )}
                 </div>
             </div>
-            {actions && <div className='flex shrink-0 items-center gap-2'>{actions}</div>}
+            {actions && <div className='flex max-w-full flex-wrap items-center gap-2'>{actions}</div>}
         </div>
     );
 }

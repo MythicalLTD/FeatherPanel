@@ -1073,9 +1073,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                                         <Button
                                                             size='sm'
                                                             variant='ghost'
-                                                            onClick={() =>
-                                                                (window.location.href = `/server/${server.uuidShort}`)
-                                                            }
+                                                            onClick={() => router.push(`/server/${server.uuidShort}`)}
                                                         >
                                                             <ExternalLink className='h-4 w-4' />
                                                         </Button>
@@ -1083,7 +1081,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                                             size='sm'
                                                             variant='ghost'
                                                             onClick={() =>
-                                                                (window.location.href = `/admin/servers/${server.id}/edit`)
+                                                                router.push(`/admin/servers/${server.id}/edit`)
                                                             }
                                                         >
                                                             <Edit className='h-4 w-4' />

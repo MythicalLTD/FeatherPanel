@@ -15,7 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -54,12 +54,16 @@ import {
     ChevronRight,
     Loader2,
     Megaphone,
+    RefreshCw,
+    Activity,
 } from 'lucide-react';
 import { ApiNode, ApiAllocation } from '@/types/adminServerTypes';
+import type { ServerRuntimeInfo } from '@/types/server';
 
 interface ActionsTabProps {
     serverId: string;
     serverName: string;
+    serverStatus?: string | null;
     isSuspended: boolean;
     suspensionReason?: string | null;
     suspendedAt?: string | null;
@@ -76,6 +80,7 @@ const emptyReason: ModerationReasonValue = {
 export function ActionsTab({
     serverId,
     serverName,
+    serverStatus,
     isSuspended,
     suspensionReason,
     suspendedAt,
@@ -110,6 +115,60 @@ export function ActionsTab({
     const [warnTitle, setWarnTitle] = useState('');
     const [warnMessage, setWarnMessage] = useState('');
     const [warnSendEmail, setWarnSendEmail] = useState(true);
+
+    const [runtimeLoading, setRuntimeLoading] = useState(false);
+    const [reconciling, setReconciling] = useState(false);
+    const [reconcileDialogOpen, setReconcileDialogOpen] = useState(false);
+    const [wingsState, setWingsState] = useState<string | null>(serverStatus ?? null);
+    const [runtime, setRuntime] = useState<ServerRuntimeInfo | null>(null);
+
+    const fetchRuntime = useCallback(async () => {
+        setRuntimeLoading(true);
+        try {
+            const { data } = await axios.get(`/api/admin/servers/${serverId}/runtime`);
+            if (data?.success && data?.data) {
+                setWingsState(data.data.state ?? null);
+                setRuntime((data.data.runtime as ServerRuntimeInfo) ?? null);
+            }
+        } catch (error) {
+            console.error('Error fetching Wings runtime:', error);
+            setRuntime(null);
+            toast.error(t('admin.servers.edit.actions.runtime_unknown'));
+        } finally {
+            setRuntimeLoading(false);
+        }
+    }, [serverId, t]);
+
+    useEffect(() => {
+        void fetchRuntime();
+    }, [fetchRuntime]);
+
+    const handleReconcile = async () => {
+        setReconciling(true);
+        try {
+            const { data } = await axios.post(`/api/admin/servers/${serverId}/reconcile`);
+            const message = data?.data?.message || data?.message || t('admin.servers.edit.actions.reconcile_success');
+            toast.success(String(message));
+            if (data?.data?.runtime) {
+                setRuntime(data.data.runtime as ServerRuntimeInfo);
+            }
+            if (data?.data?.state) {
+                setWingsState(String(data.data.state));
+            }
+            setReconcileDialogOpen(false);
+            onRefresh();
+            void fetchRuntime();
+        } catch (error: unknown) {
+            console.error('Error reconciling server runtime:', error);
+            const message =
+                axios.isAxiosError(error) && error.response?.data?.message
+                    ? String(error.response.data.message)
+                    : t('admin.servers.edit.actions.reconcile_failed');
+            toast.error(message);
+        } finally {
+            setReconciling(false);
+        }
+    };
 
     const handleSuspend = async () => {
         if (!isModerationReasonValid(suspendReason)) {
@@ -268,6 +327,61 @@ export function ActionsTab({
 
     return (
         <div className='space-y-6'>
+            <PageCard
+                title={t('admin.servers.edit.actions.runtime_title')}
+                description={t('admin.servers.edit.actions.runtime_description')}
+            >
+                <div className='space-y-4'>
+                    <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
+                        <div className='space-y-2'>
+                            <div className='flex flex-wrap items-center gap-2'>
+                                <span className='text-sm'>{t('admin.servers.edit.actions.runtime_status')}:</span>
+                                <Badge variant={runtime?.healthy === false ? 'destructive' : 'default'}>
+                                    {runtimeLoading
+                                        ? '…'
+                                        : runtime?.healthy === false
+                                          ? t('admin.servers.edit.actions.runtime_unhealthy')
+                                          : t('admin.servers.edit.actions.runtime_healthy')}
+                                </Badge>
+                                {runtime?.status && (
+                                    <Badge variant='outline' className='font-mono text-xs'>
+                                        {runtime.status}
+                                    </Badge>
+                                )}
+                            </div>
+                            <div className='text-muted-foreground flex flex-wrap items-center gap-2 text-sm'>
+                                <span>{t('admin.servers.edit.actions.runtime_state')}:</span>
+                                <code className='bg-muted rounded px-1.5 py-0.5 text-xs'>
+                                    {wingsState || serverStatus || '—'}
+                                </code>
+                            </div>
+                            {runtime?.message ? (
+                                <p className='text-muted-foreground text-sm'>
+                                    <span className='font-medium'>
+                                        {t('admin.servers.edit.actions.runtime_message')}:
+                                    </span>{' '}
+                                    {runtime.message}
+                                </p>
+                            ) : null}
+                        </div>
+                        <div className='flex flex-wrap gap-2'>
+                            <Button variant='outline' onClick={() => void fetchRuntime()} loading={runtimeLoading}>
+                                <RefreshCw className='mr-2 h-4 w-4' />
+                                {t('admin.servers.edit.actions.runtime_refresh')}
+                            </Button>
+                            <Button
+                                variant='destructive'
+                                onClick={() => setReconcileDialogOpen(true)}
+                                loading={reconciling}
+                            >
+                                <Activity className='mr-2 h-4 w-4' />
+                                {t('admin.servers.edit.actions.reconcile')}
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            </PageCard>
+
             <PageCard
                 title={t('admin.servers.edit.actions.suspension_title')}
                 description={t('admin.servers.edit.actions.suspension_description')}
@@ -575,6 +689,24 @@ export function ActionsTab({
                         >
                             {transferring ? <Loader2 className='mr-2 h-4 w-4 animate-spin' /> : null}
                             {t('admin.servers.transfer.submit')}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            <AlertDialog open={reconcileDialogOpen} onOpenChange={setReconcileDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>{t('admin.servers.edit.actions.reconcile_confirm_title')}</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {t('admin.servers.edit.actions.reconcile_confirm_description', { name: serverName })}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={reconciling}>{t('common.cancel')}</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => void handleReconcile()} disabled={reconciling}>
+                            {reconciling ? <Loader2 className='mr-2 h-4 w-4 animate-spin' /> : null}
+                            {t('admin.servers.edit.actions.reconcile')}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

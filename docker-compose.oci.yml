@@ -9,6 +9,7 @@
 # - Attachments: /data/attachments (symlinked to /var/www/html/public/attachments)
 # - Translations: /data/translations (symlinked to /var/www/html/public/translations)
 # - Addons: /data/addons (symlinked to /var/www/html/storage/addons)
+# - phpMyAdmin: /data/pma (symlinked to /var/www/html/public/pma)
 # - Config (.env): /data/config (symlinked to /var/www/html/storage/config)
 # - Logs: /data/logs (symlinked to /var/www/html/storage/logs)
 # - Backups: /data/backups (symlinked to /var/www/html/storage/backups)

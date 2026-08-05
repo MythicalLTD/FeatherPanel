@@ -52,6 +52,7 @@ import type { LifecycleHook, LifecycleHookStep, LifecycleHookType, LifecycleTask
 import { LIFECYCLE_HOOK_TYPES } from '@/types/server';
 import { computeMovedSequence } from './form-utils';
 import { LifecycleHookCard } from './LifecycleHookCard';
+import { safeBack } from '@/lib/safe-back';
 
 type LifecycleHookResponse = {
     success: boolean;
@@ -491,7 +492,7 @@ export default function ServerLifecycleHooksPage() {
                 </div>
                 <h1 className='text-2xl font-black tracking-tight uppercase'>{t('common.accessDenied')}</h1>
                 <p className='text-muted-foreground mt-2'>{t('common.noPermission')}</p>
-                <Button variant='outline' className='mt-8' onClick={() => router.back()}>
+                <Button variant='outline' className='mt-8' onClick={() => safeBack(router)}>
                     {t('common.goBack')}
                 </Button>
             </div>

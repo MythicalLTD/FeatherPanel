@@ -336,31 +336,53 @@ class SystemService
      *
      * Falls back to basic system info when the Wings daemon does not expose
      * the /api/system/utilization endpoint (standard Pterodactyl Wings).
+     *
+     * @param int $maxRetries Maximum Wings HTTP retry attempts (default: 3)
      */
-    public function getSystemUtilization(): array
+    public function getSystemUtilization(int $maxRetries = 3): array
     {
         try {
-            return $this->connection->get('/api/system/utilization');
+            return $this->connection->get('/api/system/utilization', [], $maxRetries);
         } catch (WingsRequestException $e) {
             // The utilization endpoint is a FeatherPanel-specific Wings extension.
             // If Wings returns 404 for it, fall back to /api/system so the node
             // is still reported as healthy with whatever data is available.
-            $systemInfo = $this->connection->get('/api/system?v=2');
+            $systemInfo = $this->connection->get('/api/system?v=2', [], $maxRetries);
 
-            return [
-                'memory_total'    => $systemInfo['system']['memory_bytes'] ?? 0,
-                'memory_used'     => 0,
-                'swap_total'      => 0,
-                'swap_used'       => 0,
-                'disk_total'      => 0,
-                'disk_used'       => 0,
-                'cpu_percent'     => 0.0,
-                'load_average1'   => 0.0,
-                'load_average5'   => 0.0,
-                'load_average15'  => 0.0,
-                'disk_details'    => [],
-            ];
+            return self::utilizationFromSystemInfo($systemInfo);
         }
+    }
+
+    /**
+     * Fail-fast utilization probe for status dashboards (no retries).
+     */
+    public function getSystemUtilizationForStatus(): array
+    {
+        return $this->getSystemUtilization(0);
+    }
+
+    /**
+     * Map /api/system?v=2 payload into a utilization-shaped array.
+     *
+     * @param array<string, mixed> $systemInfo
+     *
+     * @return array<string, mixed>
+     */
+    public static function utilizationFromSystemInfo(array $systemInfo): array
+    {
+        return [
+            'memory_total' => $systemInfo['system']['memory_bytes'] ?? 0,
+            'memory_used' => 0,
+            'swap_total' => 0,
+            'swap_used' => 0,
+            'disk_total' => 0,
+            'disk_used' => 0,
+            'cpu_percent' => 0.0,
+            'load_average1' => 0.0,
+            'load_average5' => 0.0,
+            'load_average15' => 0.0,
+            'disk_details' => [],
+        ];
     }
 
     /**

@@ -65,8 +65,38 @@ handle_local_changes_before_update() {
     fi
 
     step "Discarding local changes..."
+    preserve_runtime_dirs
     git -C "$PANEL_DIR" reset --hard HEAD
-    git -C "$PANEL_DIR" clean -fd
+    # Keep runtime installs (phpMyAdmin, attachments, addons, components)
+    git -C "$PANEL_DIR" clean -fd \
+        -e 'backend/public/pma' \
+        -e 'backend/public/attachments' \
+        -e 'backend/public/addons' \
+        -e 'backend/public/components' \
+        -e 'backend/storage/addons' \
+        -e 'backend/storage/config'
+    restore_runtime_dirs
+}
+
+preserve_runtime_dirs() {
+    PMA_UPDATE_BACKUP=""
+    if [ -f "${BACKEND_DIR}/public/pma/index.php" ]; then
+        PMA_UPDATE_BACKUP="$(mktemp -d /tmp/featherpanel-pma-XXXXXX)"
+        cp -a "${BACKEND_DIR}/public/pma/." "${PMA_UPDATE_BACKUP}/"
+        mkdir -p "${BACKEND_DIR}/storage/config"
+        printf '%s\n' 'preserved' > "${BACKEND_DIR}/storage/config/phpmyadmin.installed"
+    fi
+}
+
+restore_runtime_dirs() {
+    if [ -n "${PMA_UPDATE_BACKUP:-}" ] && [ -d "${PMA_UPDATE_BACKUP}" ] && [ -f "${PMA_UPDATE_BACKUP}/index.php" ]; then
+        mkdir -p "${BACKEND_DIR}/public/pma"
+        if [ ! -f "${BACKEND_DIR}/public/pma/index.php" ]; then
+            cp -a "${PMA_UPDATE_BACKUP}/." "${BACKEND_DIR}/public/pma/"
+        fi
+        rm -rf "${PMA_UPDATE_BACKUP}"
+        PMA_UPDATE_BACKUP=""
+    fi
 }
 
 require_root() {
@@ -94,13 +124,15 @@ set_runtime_permissions() {
         "${BACKEND_DIR}/storage/config" \
         "${BACKEND_DIR}/public/attachments" \
         "${BACKEND_DIR}/public/addons" \
-        "${BACKEND_DIR}/public/components"
+        "${BACKEND_DIR}/public/components" \
+        "${BACKEND_DIR}/public/pma"
 
     chown -R www-data:www-data \
         "${BACKEND_DIR}/storage" \
         "${BACKEND_DIR}/public/attachments" \
         "${BACKEND_DIR}/public/addons" \
-        "${BACKEND_DIR}/public/components"
+        "${BACKEND_DIR}/public/components" \
+        "${BACKEND_DIR}/public/pma"
 
     chmod -R u+rwX,g+rwX,o-rwx "${BACKEND_DIR}/storage"
     chown -R www-data:www-data /var/www/featherpanel/*
@@ -112,6 +144,7 @@ update_repo() {
         exit 1
     fi
     handle_local_changes_before_update
+    preserve_runtime_dirs
     git -C "$PANEL_DIR" fetch --all --prune
     if [ "$PANEL_GIT_REF_TYPE" = "tag" ]; then
         git -C "$PANEL_DIR" fetch --tags --force
@@ -119,14 +152,22 @@ update_repo() {
     else
         git -C "$PANEL_DIR" checkout -f "$PANEL_GIT_REF" || git -C "$PANEL_DIR" checkout -f -B "$PANEL_GIT_REF" "origin/$PANEL_GIT_REF"
         git -C "$PANEL_DIR" reset --hard "origin/$PANEL_GIT_REF"
-        git -C "$PANEL_DIR" clean -fd
+        git -C "$PANEL_DIR" clean -fd \
+            -e 'backend/public/pma' \
+            -e 'backend/public/attachments' \
+            -e 'backend/public/addons' \
+            -e 'backend/public/components' \
+            -e 'backend/storage/addons' \
+            -e 'backend/storage/config'
     fi
+    restore_runtime_dirs
 }
 
 update_backend() {
     step "Installing backend dependencies and running migrations..."
     COMPOSER_ALLOW_SUPERUSER=1 composer install --working-dir="$BACKEND_DIR" --no-interaction --prefer-dist
     run_as_www_data "cd '${PANEL_DIR}' && php app migrate"
+    run_as_www_data "cd '${PANEL_DIR}' && php app module ensure pma" || true
 }
 
 update_frontend() {

@@ -116,7 +116,14 @@ export interface ServerStats {
     network_rx_bytes: number;
     network_tx_bytes: number;
     uptime: number;
-    state: 'running' | 'starting' | 'stopping' | 'stopped' | 'offline';
+    state: 'running' | 'starting' | 'stopping' | 'stopped' | 'offline' | 'error';
+}
+
+export interface ServerRuntimeInfo {
+    healthy: boolean;
+    status: 'ok' | 'unresponsive' | 'desynced' | 'recovered' | string;
+    message?: string;
+    checked_at?: number;
 }
 
 export interface Server {
@@ -135,7 +142,8 @@ export interface Server {
         | 'starting'
         | 'stopping'
         | 'stopped'
-        | 'offline';
+        | 'offline'
+        | 'error';
     suspended: number; // 0 = not suspended, 1 = suspended
     user_id: number;
     owner_id: number;
@@ -143,6 +151,7 @@ export interface Server {
     realm_id: number;
     spell_id: number;
     folder_id?: number | null;
+    runtime?: ServerRuntimeInfo;
 
     // Limits
     memory: number;
@@ -685,6 +694,9 @@ export interface FileObject {
 
 export interface FilesResponse {
     contents: FileObject[];
+    limited?: boolean;
+    limit?: number;
+    total?: number;
 }
 
 export interface FileUploadStatus {

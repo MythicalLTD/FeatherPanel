@@ -550,6 +550,22 @@ fi
 
 refresh_compose_from_upstream
 
+PMA_BACKUP="${PANEL_ROOT}/.pma-update-backup"
+rm -rf "$PMA_BACKUP"
+if docker ps --format '{{.Names}}' 2>/dev/null | grep -qx featherpanel_backend; then
+	if docker exec featherpanel_backend test -f /var/www/html/public/pma/index.php 2>/dev/null; then
+		log "featherpanel-docker-updater: backing up phpMyAdmin before container recreate"
+		mkdir -p "$PMA_BACKUP"
+		if docker cp featherpanel_backend:/var/www/html/public/pma/. "$PMA_BACKUP/" >>"$LOG_FILE" 2>&1; then
+			docker exec featherpanel_backend sh -c 'mkdir -p /var/www/html/storage/config && printf "%s\n" "preserved" > /var/www/html/storage/config/phpmyadmin.installed' >>"$LOG_FILE" 2>&1 || true
+			log "featherpanel-docker-updater: phpMyAdmin backup ready at ${PMA_BACKUP}"
+		else
+			log "featherpanel-docker-updater: warning: phpMyAdmin backup failed (continuing)"
+			rm -rf "$PMA_BACKUP"
+		fi
+	fi
+fi
+
 {
 	log "featherpanel-docker-updater: docker compose down"
 	docker compose -f "$COMPOSE_FILE" down
@@ -558,7 +574,35 @@ refresh_compose_from_upstream
 log "featherpanel-docker-updater: docker compose up (--pull always)"
 if ! docker compose -f "$COMPOSE_FILE" up -d --pull always --remove-orphans >>"$LOG_FILE" 2>&1; then
 	log "featherpanel-docker-updater: ERROR docker compose up failed (see ${LOG_FILE})"
+	rm -rf "$PMA_BACKUP"
 	exit 1
+fi
+
+if [ -d "$PMA_BACKUP" ] && [ -f "$PMA_BACKUP/index.php" ]; then
+	log "featherpanel-docker-updater: restoring phpMyAdmin into persisted volume"
+	restored=0
+	for _ in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do
+		if docker ps --format '{{.Names}}' 2>/dev/null | grep -qx featherpanel_backend; then
+			if docker exec featherpanel_backend test -f /var/www/html/public/pma/index.php 2>/dev/null; then
+				log "featherpanel-docker-updater: phpMyAdmin already present after recreate"
+				restored=1
+				break
+			fi
+			mkdir -p "$PMA_BACKUP"
+			if docker exec featherpanel_backend mkdir -p /var/www/html/public/pma >>"$LOG_FILE" 2>&1 \
+				&& docker cp "$PMA_BACKUP/." featherpanel_backend:/var/www/html/public/pma/ >>"$LOG_FILE" 2>&1; then
+				docker exec featherpanel_backend sh -c 'mkdir -p /var/www/html/storage/config && printf "%s\n" "preserved" > /var/www/html/storage/config/phpmyadmin.installed' >>"$LOG_FILE" 2>&1 || true
+				log "featherpanel-docker-updater: phpMyAdmin restored successfully"
+				restored=1
+				break
+			fi
+		fi
+		sleep 2
+	done
+	if [ "$restored" -ne 1 ]; then
+		log "featherpanel-docker-updater: warning: could not restore phpMyAdmin backup (marker left for boot ensure)"
+	fi
+	rm -rf "$PMA_BACKUP"
 fi
 
 log "featherpanel-docker-updater: pruning dangling Docker images (safe / not volumes)"

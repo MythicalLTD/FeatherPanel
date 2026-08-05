@@ -232,7 +232,7 @@ ENVFILE
 
 # Ensure data directories are writable when running as non-root
 ensure_data_dirs() {
-    local dirs="/home/container/data /home/container/data/mysql /home/container/data/redis /home/container/data/uploads /home/container/data/backups /home/container/data/config /home/container/data/logs /home/container/data/attachments /home/container/data/translations /home/container/data/addons /home/container/data/mysql/run"
+    local dirs="/home/container/data /home/container/data/mysql /home/container/data/redis /home/container/data/uploads /home/container/data/backups /home/container/data/config /home/container/data/logs /home/container/data/attachments /home/container/data/translations /home/container/data/addons /home/container/data/pma /home/container/data/mysql/run"
     for dir in $dirs; do
         if [ -d "$dir" ]; then
             chmod 777 "$dir" 2>/dev/null || true
@@ -354,6 +354,13 @@ if [ "$(id -u)" -eq 0 ]; then
     chown -R www-data:www-data "$PUBLIC_ADDONS" "$PUBLIC_COMPONENTS" 2>/dev/null || true
 fi
 echo "Addon symlinks resynced."
+
+echo "Ensuring phpMyAdmin installation..."
+if php cli module ensure pma; then
+    echo "phpMyAdmin ensure completed."
+else
+    echo "phpMyAdmin ensure skipped."
+fi
 
 # Start services that depend on initialization
 sleep 2
@@ -639,12 +646,12 @@ sleep 2
 echo "MariaDB initialized!"
 
 # Ensure all data directories exist
-mkdir -p /home/container/data/{mysql,redis,uploads,backups,config,logs,attachments,translations,addons}
-chmod -R 777 /home/container/data/{mysql,redis,uploads,backups,config,logs,attachments,translations,addons}
+mkdir -p /home/container/data/{mysql,redis,uploads,backups,config,logs,attachments,translations,addons,pma}
+chmod -R 777 /home/container/data/{mysql,redis,uploads,backups,config,logs,attachments,translations,addons,pma}
 if [ "$RUN_AS_ROOT" -eq 1 ]; then
     chown -R mysql:mysql /home/container/data/mysql 2>/dev/null || true
     chown redis:redis /home/container/data/redis 2>/dev/null || true
-    chown -R www-data:www-data /home/container/data/uploads /home/container/data/backups /home/container/data/config /home/container/data/logs /home/container/data/attachments /home/container/data/translations /home/container/data/addons 2>/dev/null || true
+    chown -R www-data:www-data /home/container/data/uploads /home/container/data/backups /home/container/data/config /home/container/data/logs /home/container/data/attachments /home/container/data/translations /home/container/data/addons /home/container/data/pma 2>/dev/null || true
 fi
 
 # Create symlinks for persistence
@@ -654,6 +661,15 @@ ln -sf /home/container/data/addons /var/www/html/storage/addons 2>/dev/null || t
 ln -sf /home/container/data/config /var/www/html/storage/config 2>/dev/null || true
 ln -sf /home/container/data/logs /var/www/html/storage/logs 2>/dev/null || true
 ln -sf /home/container/data/backups /var/www/html/storage/backups 2>/dev/null || true
+
+# Persist phpMyAdmin across image updates (migrate existing install into the data volume once)
+if [ -d /var/www/html/public/pma ] && [ ! -L /var/www/html/public/pma ]; then
+    if [ -f /var/www/html/public/pma/index.php ] && [ ! -f /home/container/data/pma/index.php ]; then
+        cp -a /var/www/html/public/pma/. /home/container/data/pma/ 2>/dev/null || true
+    fi
+    rm -rf /var/www/html/public/pma
+fi
+ln -sfn /home/container/data/pma /var/www/html/public/pma 2>/dev/null || true
 
 # Create symlink for async-runner config (expects /app/config/.env)
 ln -sf /home/container/data/config /app/config 2>/dev/null || true

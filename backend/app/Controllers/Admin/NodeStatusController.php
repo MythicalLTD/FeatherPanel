@@ -19,9 +19,7 @@ namespace App\Controllers\Admin;
 
 use App\Chat\Node;
 use App\Helpers\ApiResponse;
-use App\Services\Wings\Wings;
 use OpenApi\Attributes as OA;
-use App\Helpers\WingsUrlHelper;
 use App\Helpers\NodeStatusHelper;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -70,6 +68,7 @@ class NodeStatusController
     public function getGlobalStatus(Request $request): Response
     {
         $allNodes = Node::getAllNodes();
+        $probes = NodeStatusHelper::probeNodesUtilization($allNodes);
 
         $globalStats = [
             'total_nodes' => count($allNodes),
@@ -87,75 +86,64 @@ class NodeStatusController
         $healthyNodeCount = 0;
 
         foreach ($allNodes as $node) {
+            $nodeId = (int) $node['id'];
+            $probe = $probes[$nodeId] ?? [
+                'status' => 'unhealthy',
+                'utilization' => null,
+                'error' => 'Probe result missing',
+            ];
+
+            $servers = NodeStatusHelper::buildServersForNode($nodeId, true);
+
             $nodeData = [
-                'id' => $node['id'],
+                'id' => $nodeId,
                 'uuid' => $node['uuid'],
                 'name' => $node['name'],
                 'fqdn' => $node['fqdn'],
                 'location_id' => $node['location_id'],
-                'status' => 'unhealthy',
-                'utilization' => null,
-                'error' => null,
+                'status' => $probe['status'],
+                'utilization' => $probe['utilization'],
+                'error' => $probe['error'],
+                'servers' => $servers,
+                'server_count' => count($servers),
+                'total_players' => NodeStatusHelper::sumPlayerCounts($servers),
             ];
 
-            $nodeData['servers'] = NodeStatusHelper::buildServersForNode((int) $node['id'], true);
-            $nodeData['server_count'] = count($nodeData['servers']);
-            $nodeData['total_players'] = 0;
-            foreach ($nodeData['servers'] as $serverEntry) {
-                $nodeData['total_players'] += (int) ($serverEntry['player_count'] ?? 0);
-            }
+            if ($probe['status'] === 'healthy' && is_array($probe['utilization']) && $probe['utilization'] !== []) {
+                ++$globalStats['healthy_nodes'];
+                ++$healthyNodeCount;
 
-            try {
-                $wings = new Wings(
-                    $node['fqdn'],
-                    $node['daemonListen'],
-                    $node['scheme'],
-                    $node['daemon_token'],
-                    10, // Short timeout for status checks
-                    WingsUrlHelper::isBehindProxy($node)
-                );
+                $utilization = $probe['utilization'];
 
-                $utilization = $wings->getSystem()->getSystemUtilization();
+                if (isset($utilization['memory_total'])) {
+                    $globalStats['total_memory'] += $utilization['memory_total'];
+                    $globalStats['used_memory'] += $utilization['memory_used'] ?? 0;
+                }
 
-                if (is_array($utilization) && !empty($utilization)) {
-                    $nodeData['status'] = 'healthy';
-                    $nodeData['utilization'] = $utilization;
+                if (isset($utilization['disk_total'])) {
+                    $globalStats['total_disk'] += $utilization['disk_total'];
+                    $globalStats['used_disk'] += $utilization['disk_used'] ?? 0;
+                }
 
-                    // Aggregate stats
-                    ++$globalStats['healthy_nodes'];
-                    ++$healthyNodeCount;
-
-                    if (isset($utilization['memory_total'])) {
-                        $globalStats['total_memory'] += $utilization['memory_total'];
-                        $globalStats['used_memory'] += $utilization['memory_used'] ?? 0;
-                    }
-
-                    if (isset($utilization['disk_total'])) {
-                        $globalStats['total_disk'] += $utilization['disk_total'];
-                        $globalStats['used_disk'] += $utilization['disk_used'] ?? 0;
-                    }
-
-                    if (isset($utilization['cpu_percent'])) {
-                        $globalStats['total_cpu_percent'] += $utilization['cpu_percent'];
-                    }
-                } else {
-                    ++$globalStats['unhealthy_nodes'];
+                if (isset($utilization['cpu_percent'])) {
+                    $globalStats['total_cpu_percent'] += $utilization['cpu_percent'];
+                }
+            } else {
+                ++$globalStats['unhealthy_nodes'];
+                if ($nodeData['error'] === null) {
                     $nodeData['error'] = 'Failed to fetch utilization data';
                 }
-            } catch (\Exception $e) {
-                ++$globalStats['unhealthy_nodes'];
-                $nodeData['error'] = $e->getMessage();
+                $nodeData['status'] = 'unhealthy';
+                $nodeData['utilization'] = null;
             }
 
             $nodesWithStatus[] = $nodeData;
         }
 
-        // Calculate average CPU
         if ($healthyNodeCount > 0) {
             $globalStats['avg_cpu_percent'] = round($globalStats['total_cpu_percent'] / $healthyNodeCount, 2);
         }
 
-        // Remove total_cpu_percent from response (internal calculation only)
         unset($globalStats['total_cpu_percent']);
 
         return ApiResponse::success([

@@ -96,4 +96,5 @@ export interface ApiAllocation {
     ip: string;
     port: number;
     ip_alias?: string;
+    notes?: string | null;
 }

@@ -35,6 +35,7 @@ import { isEnabled } from '@/lib/utils';
 import { listSupportedTimezones } from '@/lib/dateUtils';
 import { useUserTimezone } from '@/contexts/PreferencesContext';
 import type { ScheduleCreateRequest } from '@/types/server';
+import { safeBack } from '@/lib/safe-back';
 
 export default function CreateSchedulePage() {
     const { uuidShort } = useParams() as { uuidShort: string };
@@ -122,7 +123,7 @@ export default function CreateSchedulePage() {
                 </div>
                 <h1 className='text-2xl font-black tracking-tight uppercase'>{t('common.accessDenied')}</h1>
                 <p className='text-muted-foreground mt-2'>{t('common.noPermission')}</p>
-                <Button variant='outline' className='mt-8' onClick={() => router.back()}>
+                <Button variant='outline' className='mt-8' onClick={() => safeBack(router)}>
                     {t('common.goBack')}
                 </Button>
             </div>
@@ -139,7 +140,7 @@ export default function CreateSchedulePage() {
                         <Button
                             variant='glass'
                             size='default'
-                            onClick={() => router.back()}
+                            onClick={() => safeBack(router)}
                             disabled={saving}
                             className='order-2 sm:order-1'
                         >
@@ -386,7 +387,7 @@ export default function CreateSchedulePage() {
                         type='button'
                         variant='glass'
                         size='default'
-                        onClick={() => router.back()}
+                        onClick={() => safeBack(router)}
                         disabled={saving}
                         className='w-full text-[10px]'
                     >

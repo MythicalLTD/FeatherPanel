@@ -846,6 +846,22 @@ class ServerService
     }
 
     /**
+     * Force Docker runtime reconciliation for a server stuck in starting/stopping
+     * or desynchronized from containerd (FeatherPanel#199).
+     */
+    public function reconcileServer(string $serverUuid): WingsResponse
+    {
+        try {
+            // Recovery can terminate/remove containers with Docker timeouts; allow up to 60s.
+            $response = $this->connection->post("/api/servers/{$serverUuid}/reconcile", [], [], 3, 60);
+
+            return new WingsResponse($response, 200);
+        } catch (\Exception $e) {
+            return new WingsResponse(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
      * Get server install logs.
      */
     public function getServerInstallLogs(string $serverUuid): WingsResponse

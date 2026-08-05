@@ -65,7 +65,7 @@ use App\Services\Subdomain\SubdomainCleanupService;
         new OA\Property(property: 'description', type: 'string', nullable: true, description: 'Server description'),
         new OA\Property(property: 'startup', type: 'string', description: 'Server startup command'),
         new OA\Property(property: 'image', type: 'string', description: 'Server Docker image'),
-        new OA\Property(property: 'status', type: 'string', description: 'Server status', enum: ['installing', 'install_failed', 'suspended', 'running', 'stopping', 'stopped', 'starting', 'restarting', 'backuping', 'restoring_backup', 'deleting_backup', 'transferring', 'offline']),
+        new OA\Property(property: 'status', type: 'string', description: 'Server status', enum: ['installing', 'install_failed', 'suspended', 'running', 'stopping', 'stopped', 'starting', 'restarting', 'backuping', 'restoring_backup', 'deleting_backup', 'transferring', 'offline', 'error']),
         new OA\Property(property: 'node_id', type: 'integer', description: 'Node ID'),
         new OA\Property(property: 'owner_id', type: 'integer', description: 'Owner user ID'),
         new OA\Property(property: 'memory', type: 'integer', description: 'Memory limit in MB'),
@@ -3120,6 +3120,162 @@ class ServersController
             $logger->error('Failed to cancel server transfer: ' . $e->getMessage());
 
             return ApiResponse::error('Failed to cancel transfer: ' . $e->getMessage(), 'CANCEL_FAILED', 500);
+        }
+    }
+
+    /**
+     * Force Docker runtime reconciliation via Wings (FeatherPanel#199).
+     */
+    #[OA\Post(
+        path: '/api/admin/servers/{id}/reconcile',
+        summary: 'Force runtime reconcile',
+        description: 'Asks Wings to recover a server stuck in starting/stopping or desynchronized from Docker/containerd.',
+        tags: ['Admin - Servers'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Reconciliation completed'),
+            new OA\Response(response: 404, description: 'Server or node not found'),
+            new OA\Response(response: 409, description: 'Server is busy (install/transfer/restore)'),
+            new OA\Response(response: 500, description: 'Wings reconciliation failed'),
+        ]
+    )]
+    public function reconcile(Request $request, int $id): Response
+    {
+        $server = Server::getServerById($id);
+        if (!$server) {
+            return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+        }
+
+        $node = Node::getNodeById((int) $server['node_id']);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+
+        try {
+            $wings = new Wings(
+                $node['fqdn'],
+                $node['daemonListen'],
+                $node['scheme'],
+                $node['daemon_token'],
+                60,
+                WingsUrlHelper::isBehindProxy($node)
+            );
+            $response = $wings->getServer()->reconcileServer($server['uuid']);
+            if (!$response->isSuccessful()) {
+                $status = $response->getStatusCode();
+                if ($status === 409) {
+                    return ApiResponse::error($response->getError() ?: 'Server is busy', 'SERVER_BUSY', 409);
+                }
+
+                return ApiResponse::error(
+                    'Failed to reconcile server runtime: ' . $response->getError(),
+                    'WINGS_ERROR',
+                    $status >= 400 ? $status : 500
+                );
+            }
+
+            $data = $response->getData();
+            if (!is_array($data)) {
+                $data = [];
+            }
+
+            $newState = $data['state'] ?? 'offline';
+            if (is_string($newState) && $newState !== '') {
+                Server::updateServerById($id, [
+                    'status' => $newState,
+                    'updated_at' => date('Y-m-d H:i:s'),
+                ]);
+            }
+
+            Activity::createActivity([
+                'user_uuid' => $request->attributes->get('user')['uuid'],
+                'name' => 'reconcile_server',
+                'context' => 'Forced runtime reconcile for server ' . $server['name'] . ' (state=' . ($data['state'] ?? 'unknown') . ')',
+                'ip_address' => CloudFlareRealIP::getRealIP(),
+            ]);
+
+            return ApiResponse::success([
+                'action' => $data['action'] ?? 'force_recovered',
+                'status' => $data['status'] ?? null,
+                'message' => $data['message'] ?? null,
+                'state' => $data['state'] ?? $newState,
+                'runtime' => $data['runtime'] ?? null,
+            ], 'Server runtime reconciled', 200);
+        } catch (\Exception $e) {
+            App::getInstance(true)->getLogger()->error('Failed to reconcile server runtime: ' . $e->getMessage());
+
+            return ApiResponse::error('Failed to reconcile server runtime: ' . $e->getMessage(), 'RECONCILE_FAILED', 500);
+        }
+    }
+
+    /**
+     * Fetch live Wings process state and runtime health for an admin server.
+     */
+    #[OA\Get(
+        path: '/api/admin/servers/{id}/runtime',
+        summary: 'Get Wings runtime health',
+        description: 'Returns the live Wings process state and runtime health (Docker desync detection).',
+        tags: ['Admin - Servers'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Runtime health'),
+            new OA\Response(response: 404, description: 'Server or node not found'),
+            new OA\Response(response: 500, description: 'Failed to query Wings'),
+        ]
+    )]
+    public function runtime(Request $request, int $id): Response
+    {
+        $server = Server::getServerById($id);
+        if (!$server) {
+            return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+        }
+
+        $node = Node::getNodeById((int) $server['node_id']);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+
+        try {
+            $wings = new Wings(
+                $node['fqdn'],
+                $node['daemonListen'],
+                $node['scheme'],
+                $node['daemon_token'],
+                15,
+                WingsUrlHelper::isBehindProxy($node)
+            );
+            $response = $wings->getServer()->getServer($server['uuid']);
+            if (!$response->isSuccessful()) {
+                return ApiResponse::error(
+                    'Failed to fetch Wings runtime: ' . $response->getError(),
+                    'WINGS_ERROR',
+                    $response->getStatusCode() >= 400 ? $response->getStatusCode() : 500
+                );
+            }
+
+            $data = $response->getData();
+            if (!is_array($data)) {
+                $data = [];
+            }
+
+            return ApiResponse::success([
+                'state' => $data['state'] ?? $server['status'] ?? 'offline',
+                'is_suspended' => $data['is_suspended'] ?? (bool) ($server['suspended'] ?? false),
+                'runtime' => $data['runtime'] ?? [
+                    'healthy' => true,
+                    'status' => 'ok',
+                    'message' => '',
+                ],
+                'panel_status' => $server['status'] ?? null,
+            ], 'Runtime health retrieved', 200);
+        } catch (\Exception $e) {
+            App::getInstance(true)->getLogger()->error('Failed to fetch Wings runtime: ' . $e->getMessage());
+
+            return ApiResponse::error('Failed to fetch Wings runtime: ' . $e->getMessage(), 'RUNTIME_FETCH_FAILED', 500);
         }
     }
 

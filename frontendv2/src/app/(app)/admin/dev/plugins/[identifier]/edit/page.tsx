@@ -32,6 +32,7 @@ import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { useDeveloperMode } from '@/hooks/useDeveloperMode';
 import { toast } from 'sonner';
 import { Code, ArrowLeft, Save, Loader2, Lock } from 'lucide-react';
+import { safeBack } from '@/lib/safe-back';
 
 interface DependencyItem {
     type: 'php' | 'php-ext' | 'plugin';
@@ -277,7 +278,7 @@ export default function EditPluginPage() {
                     description={t('admin.dev.plugins.edit.description')}
                     icon={Code}
                     actions={
-                        <Button variant='outline' onClick={() => router.back()}>
+                        <Button variant='outline' onClick={() => safeBack(router)}>
                             <ArrowLeft className='mr-2 h-4 w-4' />
                             {t('common.back')}
                         </Button>

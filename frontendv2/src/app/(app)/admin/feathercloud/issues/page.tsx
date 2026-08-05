@@ -16,6 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import React, { useCallback, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { Bug, CheckCircle2, FileText, Loader2, Server, Send } from 'lucide-react';
@@ -26,6 +27,7 @@ import { Input } from '@/components/featherui/Input';
 import { Textarea } from '@/components/featherui/Textarea';
 
 export default function MythicIssuesPage() {
+    const router = useRouter();
     const [title, setTitle] = useState('');
     const [body, setBody] = useState('');
     const [steps, setSteps] = useState('');
@@ -132,9 +134,7 @@ export default function MythicIssuesPage() {
                 </PageCard>
             ) : credentialsError ? (
                 <PageCard title='Not linked' description={credentialsError} icon={Bug}>
-                    <Button onClick={() => (window.location.href = '/admin/cloud-management')}>
-                        Open Cloud Connections
-                    </Button>
+                    <Button onClick={() => router.push('/admin/cloud-management')}>Open Cloud Connections</Button>
                 </PageCard>
             ) : (
                 <>

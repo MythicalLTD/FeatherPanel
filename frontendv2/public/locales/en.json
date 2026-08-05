@@ -887,7 +887,8 @@
 			"install_failed": "Install Failed",
 			"suspended": "Suspended",
 			"restoring_backup": "Restoring Backup",
-			"transferring": "Transferring"
+			"transferring": "Transferring",
+			"error": "Runtime Error"
 		},
 		"suspended_banner": {
 			"title": "Server Suspended",
@@ -2824,7 +2825,10 @@
 			"header_actions": "Actions",
 			"empty": {},
 			"empty_description": "This directory is empty.",
-			"empty_title": "No Files Found"
+			"empty_title": "No Files Found",
+			"empty_search_title": "No Matching Files",
+			"empty_search_description": "No files in this folder match your search.",
+			"truncated": "Showing {shown} of {total} items. Use search to find files beyond this limit."
 		},
 		"trash": {
 			"title": "Trash",
@@ -5336,7 +5340,7 @@
 			"allocations": {
 				"title": "Allocations",
 				"description": "Managing allocations for node: {name}",
-				"search_placeholder": "Search allocations...",
+				"search_placeholder": "Search by IP, port, alias, or notes...",
 				"create_allocation": "Create Allocation",
 				"delete_unused": "Delete Unused",
 				"delete_selected": "Delete Selected",
@@ -5346,6 +5350,8 @@
 				"ip_alias": "IP Alias",
 				"server": "Server",
 				"notes": "Notes",
+				"notes_placeholder": "e.g. Velocity, Dynmap, Geyser, Simple Voice Chat…",
+				"notes_help": "Optional label for what this port is used for. Informational only — does not affect how the allocation works. Prefer notes over IP Alias for documentation.",
 				"assigned": "Assigned",
 				"available": "Available",
 				"view_details": "View allocation details",
@@ -5363,8 +5369,8 @@
 					"what_you_will_need": "What you’ll need",
 					"what_you_will_need_ip": "IP address (from your node)",
 					"what_you_will_need_port": "Port or port range (e.g., 25565 or 25565:25600)",
-					"what_you_will_need_alias": "IP alias (optional) for friendly hostname",
-					"what_you_will_need_notes": "Notes (optional) for admin context",
+					"what_you_will_need_alias": "IP alias (optional) for friendly hostname shown to users",
+					"what_you_will_need_notes": "Notes (optional) to document what the port is for (e.g. Velocity, Dynmap, Geyser)",
 					"popular_game_ranges": "Popular game ranges (examples)",
 					"recommendation": "Recommendation: pre-create generous ranges (e.g., 25565-25900) to avoid running out during peak times.",
 					"protocols_and_firewall": "Protocols & Firewall",
@@ -6123,7 +6129,21 @@
 					"hard_delete_target_node_warning": "FILES WILL NOT BE DELETED ON THE TARGET NODE!!!!!!!",
 					"hard_delete_restore_warning": "DO NOT RUN THIS IF YOU STILL MAYBE HAVE A WAY TO RESTORE FILES.",
 					"delete_success": "Server deleted successfully",
-					"delete_failed": "Failed to delete server"
+					"delete_failed": "Failed to delete server",
+					"runtime_title": "Docker Runtime",
+					"runtime_description": "Detect and recover servers stuck when Docker and containerd become desynchronized.",
+					"runtime_healthy": "Healthy",
+					"runtime_unhealthy": "Unhealthy",
+					"runtime_status": "Runtime status",
+					"runtime_state": "Process state",
+					"runtime_message": "Details",
+					"runtime_unknown": "Unable to query Wings runtime health",
+					"runtime_refresh": "Refresh",
+					"reconcile": "Force Reconcile",
+					"reconcile_confirm_title": "Force runtime reconcile?",
+					"reconcile_confirm_description": "This will ask Wings to terminate stale Docker state for {name}, clear a wedged power lock, and mark the server offline so it can be started again.",
+					"reconcile_success": "Runtime reconcile completed",
+					"reconcile_failed": "Failed to reconcile server runtime"
 				}
 			}
 		},

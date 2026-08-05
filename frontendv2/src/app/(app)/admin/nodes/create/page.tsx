@@ -33,6 +33,7 @@ import { cn } from '@/lib/utils';
 import { Server, ArrowLeft, Save, Search as SearchIcon, MapPin, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
+import { safeBack } from '@/lib/safe-back';
 
 interface Location {
     id: number;
@@ -300,7 +301,7 @@ export default function CreateNodePage() {
                 description={t('admin.node.form.create_description')}
                 icon={Server}
                 actions={
-                    <Button variant='outline' onClick={() => router.back()}>
+                    <Button variant='outline' onClick={() => safeBack(router)}>
                         <ArrowLeft className='mr-2 h-4 w-4' />
                         {t('common.back')}
                     </Button>

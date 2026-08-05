@@ -281,11 +281,10 @@ class DatabaseManagmentController
     public function installPhpMyAdmin(Request $request): Response
     {
         try {
-            $publicDir = dirname(__DIR__, 3) . '/public';
-            $targetPath = $publicDir . '/pma';
+            // Check if a usable phpMyAdmin install already exists
+            if (PhpMyAdmin::isInstalled()) {
+                PhpMyAdmin::ensureInstalled();
 
-            // Check if phpMyAdmin is already installed
-            if (is_dir($targetPath)) {
                 return ApiResponse::success([
                     'message' => 'phpMyAdmin is already installed',
                     'already_installed' => true,
@@ -326,6 +325,8 @@ class DatabaseManagmentController
     public function checkPhpMyAdminStatus(Request $request): Response
     {
         try {
+            // Sync install marker while files still exist so panel updates can restore PMA
+            PhpMyAdmin::ensureInstalled();
             $isInstalled = PhpMyAdmin::isInstalled();
 
             return ApiResponse::success([

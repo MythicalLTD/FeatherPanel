@@ -16,6 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import axios, { isAxiosError } from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { PageHeader } from '@/components/featherui/PageHeader';
@@ -63,6 +64,7 @@ interface TranslationFile {
 }
 
 export default function TranslationsPage() {
+    const router = useRouter();
     const { t } = useTranslation();
     const { theme } = useTheme();
     const [loading, setLoading] = useState(true);
@@ -364,7 +366,7 @@ export default function TranslationsPage() {
                                     <ExternalLink className='mr-2 h-4 w-4' />
                                     {t('admin.translations.community_made')}
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => (location.href = '/admin/feathercloud/translations')}>
+                                <DropdownMenuItem onClick={() => router.push('/admin/feathercloud/translations')}>
                                     <Globe className='mr-2 h-4 w-4' />
                                     Mythic Translate install
                                 </DropdownMenuItem>

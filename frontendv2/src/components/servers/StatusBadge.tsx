@@ -31,6 +31,7 @@ export function StatusBadge({ status, t, liveConnected }: StatusBadgeProps) {
         stopping: 'bg-orange-500/10 text-orange-600 border-orange-500/20',
         transferring: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
         suspended: 'bg-red-500/20 text-red-600 border-red-500/30 font-bold',
+        error: 'bg-red-600/20 text-red-700 border-red-600/40 font-bold',
     };
 
     const displayStatus = t ? t(`servers.status.${status}`) : status;

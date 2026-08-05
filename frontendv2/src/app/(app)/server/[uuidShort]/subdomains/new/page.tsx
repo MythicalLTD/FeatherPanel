@@ -31,6 +31,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import type { SubdomainCreateRequest, SubdomainOverview } from '@/types/server';
+import { safeBack } from '@/lib/safe-back';
 
 export default function CreateSubdomainPage() {
     const { uuidShort } = useParams() as { uuidShort: string };
@@ -118,7 +119,7 @@ export default function CreateSubdomainPage() {
                 </div>
                 <h1 className='text-2xl font-black tracking-tight uppercase'>{t('common.accessDenied')}</h1>
                 <p className='text-muted-foreground mt-2'>{t('common.noPermission')}</p>
-                <Button variant='outline' className='mt-8' onClick={() => router.back()}>
+                <Button variant='outline' className='mt-8' onClick={() => safeBack(router)}>
                     {t('common.goBack')}
                 </Button>
             </div>
@@ -146,7 +147,7 @@ export default function CreateSubdomainPage() {
                     variant='outline'
                     size='default'
                     className='mt-8 h-14 rounded-2xl px-10'
-                    onClick={() => router.back()}
+                    onClick={() => safeBack(router)}
                 >
                     {t('common.goBack')}
                 </Button>
@@ -165,7 +166,7 @@ export default function CreateSubdomainPage() {
                         <Button
                             variant='ghost'
                             size='default'
-                            onClick={() => router.back()}
+                            onClick={() => safeBack(router)}
                             disabled={saving}
                             className='order-2 sm:order-1'
                         >

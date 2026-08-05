@@ -42,6 +42,7 @@ import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { EmptyState } from '@/components/featherui/EmptyState';
+import { safeBack } from '@/lib/safe-back';
 
 export default function CreateServerImportPage() {
     const { uuidShort } = useParams();
@@ -144,7 +145,7 @@ export default function CreateServerImportPage() {
                     description={t('common.noPermission')}
                     icon={Upload}
                     action={
-                        <Button variant='secondary' onClick={() => window.history.back()}>
+                        <Button variant='secondary' onClick={() => safeBack(router)}>
                             {t('common.goBack')}
                         </Button>
                     }
@@ -160,7 +161,7 @@ export default function CreateServerImportPage() {
                 description={t('serverImport.featureDisabledDescription')}
                 icon={Upload}
                 action={
-                    <Button variant='secondary' onClick={() => window.history.back()}>
+                    <Button variant='secondary' onClick={() => safeBack(router)}>
                         {t('common.goBack')}
                     </Button>
                 }

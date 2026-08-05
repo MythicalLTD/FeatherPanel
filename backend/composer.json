@@ -45,7 +45,7 @@
 		"cron/cron": "^1.9",
 		"cloudflare/sdk": "dev-master#541fb4e2c9942a3b660bb6a0db676f7c851c144c",
 		"ifsnop/mysqldump-php": "^2.12",
-		"krymosoftware/gameq": "^4.0",
+		"softcreatr/gameq": "^5.0.1",
 		"web-auth/webauthn-lib": "^5.2"
 	},
 	"require-dev": {
