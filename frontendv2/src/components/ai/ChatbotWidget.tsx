@@ -15,15 +15,16 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { usePathname } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import ChatbotContainer from './ChatbotContainer';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useVmInstance } from '@/contexts/VmInstanceContext';
 import { useTheme } from '@/contexts/ThemeContext';
+
+const ChatbotContainer = lazy(() => import('./ChatbotContainer'));
 
 function ChatbotOpenButton({ onClick }: { onClick: () => void }) {
     const { t } = useTranslation();
@@ -84,7 +85,11 @@ function VdsChatbotWidget() {
                 </div>
             )}
 
-            <ChatbotContainer open={isOpen} onClose={() => setIsOpen(false)} mode='vds' vdsInstance={instance} />
+            {isOpen && (
+                <Suspense fallback={null}>
+                    <ChatbotContainer open={isOpen} onClose={() => setIsOpen(false)} mode='vds' vdsInstance={instance} />
+                </Suspense>
+            )}
         </>
     );
 }
@@ -142,7 +147,11 @@ export default function ChatbotWidget() {
                     </div>
                 )}
 
-                <ChatbotContainer open={isOpen} onClose={() => setIsOpen(false)} mode='dashboard' />
+                {isOpen && (
+                    <Suspense fallback={null}>
+                        <ChatbotContainer open={isOpen} onClose={() => setIsOpen(false)} mode='dashboard' />
+                    </Suspense>
+                )}
             </>
         );
     }
@@ -158,7 +167,11 @@ export default function ChatbotWidget() {
                 </div>
             )}
 
-            <ChatbotContainer open={isOpen} onClose={() => setIsOpen(false)} mode='server' />
+            {isOpen && (
+                <Suspense fallback={null}>
+                    <ChatbotContainer open={isOpen} onClose={() => setIsOpen(false)} mode='server' />
+                </Suspense>
+            )}
         </>
     );
 }

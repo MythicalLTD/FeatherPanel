@@ -3356,6 +3356,14 @@ class SettingsController
 
         // Log the activity
         if (!empty($updatedSettings)) {
+            if (
+                in_array(ConfigInterface::CUSTOM_CSS, $updatedSettings, true)
+                || in_array(ConfigInterface::CUSTOM_JS, $updatedSettings, true)
+            ) {
+                \App\Cache\Cache::forget('plugin_css_bundle');
+                \App\Cache\Cache::forget('plugin_js_bundle');
+            }
+
             Activity::createActivity([
                 'user_uuid' => $request->attributes->get('user')['uuid'] ?? null,
                 'name' => 'update_settings',

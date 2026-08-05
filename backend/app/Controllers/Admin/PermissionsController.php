@@ -21,6 +21,7 @@ use App\Permissions;
 use App\Chat\Activity;
 use App\Chat\Permission;
 use App\Helpers\ApiResponse;
+use App\Helpers\PermissionHelper;
 use OpenApi\Attributes as OA;
 use App\CloudFlare\CloudFlareRealIP;
 use Symfony\Component\HttpFoundation\Request;
@@ -269,6 +270,7 @@ class PermissionsController
         if (!$id) {
             return ApiResponse::error('Failed to create permission', 'PERMISSION_CREATE_FAILED', 400);
         }
+        PermissionHelper::clearRolePermissionCache((int) $data['role_id']);
         $permission = Permission::getById($id);
         // Log activity
         $admin = $request->attributes->get('user');
@@ -378,6 +380,10 @@ class PermissionsController
         if (!$success) {
             return ApiResponse::error('Failed to update permission', 'PERMISSION_UPDATE_FAILED', 400);
         }
+        PermissionHelper::clearRolePermissionCache((int) ($permission['role_id'] ?? 0));
+        if (isset($data['role_id'])) {
+            PermissionHelper::clearRolePermissionCache((int) $data['role_id']);
+        }
         $permission = Permission::getById($id);
         // Log activity
         $admin = $request->attributes->get('user');
@@ -459,6 +465,7 @@ class PermissionsController
         if (!$success) {
             return ApiResponse::error('Failed to delete permission', 'PERMISSION_DELETE_FAILED', 400);
         }
+        PermissionHelper::clearRolePermissionCache((int) ($permission['role_id'] ?? 0));
         // Log activity
         $admin = $request->attributes->get('user');
         Activity::createActivity([

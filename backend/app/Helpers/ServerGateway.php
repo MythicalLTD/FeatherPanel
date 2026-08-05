@@ -24,22 +24,34 @@ use App\Chat\Subuser;
 
 class ServerGateway
 {
-    public static function canUserAccessServer(string $userUuid, string $serverUuid): bool
-    {
-        // Admin-level permissions short-circuit
+    /**
+     * @param array|null $user Optional already-loaded user row
+     * @param array|null $server Optional already-loaded server row
+     */
+    public static function canUserAccessServer(
+        string $userUuid,
+        string $serverUuid,
+        ?array $user = null,
+        ?array $server = null,
+    ): bool {
+        $user = $user ?? User::getUserByUuid($userUuid);
+        if (!$user) {
+            return false;
+        }
+
+        // One permission-node fetch covers all three admin checks
+        $nodes = PermissionHelper::getPermissionNodesForRole((int) ($user['role_id'] ?? 0));
         if (
-            PermissionHelper::hasPermission($userUuid, Permissions::ADMIN_SERVERS_VIEW)
-            || PermissionHelper::hasPermission($userUuid, Permissions::ADMIN_SERVERS_EDIT)
-            || PermissionHelper::hasPermission($userUuid, Permissions::ADMIN_SERVERS_DELETE)
+            in_array('admin.root', $nodes, true)
+            || in_array(Permissions::ADMIN_SERVERS_VIEW, $nodes, true)
+            || in_array(Permissions::ADMIN_SERVERS_EDIT, $nodes, true)
+            || in_array(Permissions::ADMIN_SERVERS_DELETE, $nodes, true)
         ) {
             return true;
         }
 
-        // Fetch user and server once to avoid duplicate queries and null dereferences
-        $user = User::getUserByUuid($userUuid);
-        $server = Server::getServerByUuid($serverUuid);
-
-        if (!$user || !$server) {
+        $server = $server ?? Server::getServerByUuid($serverUuid);
+        if (!$server) {
             return false;
         }
 
@@ -50,10 +62,7 @@ class ServerGateway
 
         // Subuser membership check
         $subuser = Subuser::getSubuserByUserAndServer((int) $user['id'], (int) $server['id']);
-        if ($subuser !== null) {
-            return true;
-        }
 
-        return false;
+        return $subuser !== null;
     }
 }

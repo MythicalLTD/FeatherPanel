@@ -474,13 +474,19 @@ class User
         return AvatarHelper::enrichUser($stmt->fetch(\PDO::FETCH_ASSOC) ?: null);
     }
 
+    private static ?array $columnsCache = null;
+
     public static function getColumns(): array
     {
+        if (self::$columnsCache !== null) {
+            return self::$columnsCache;
+        }
+
         $pdo = Database::getPdoConnection();
         $stmt = $pdo->prepare('SHOW COLUMNS FROM ' . self::$table);
         $stmt->execute();
 
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        return self::$columnsCache = $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 
     /**

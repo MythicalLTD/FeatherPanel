@@ -17,26 +17,28 @@
 
 namespace App\Helpers;
 
+use App\Cache\Cache;
 use App\Chat\User;
 use App\Chat\Permission;
 
 class PermissionHelper
 {
+    /** @var array<int, list<string>> Request-scoped permission node cache keyed by role_id */
+    private static array $rolePermissionCache = [];
+
     /**
      * Checks if a user has a specific permission.
+     *
+     * @param array|null $user Optional already-loaded user row to avoid a redundant UUID lookup
      */
-    public static function hasPermission(string $userUuid, string $permission): bool
+    public static function hasPermission(string $userUuid, string $permission, ?array $user = null): bool
     {
-        $user = User::getUserByUuid($userUuid);
+        $user = $user ?? User::getUserByUuid($userUuid);
         if (!$user || !isset($user['role_id'])) {
             return false;
         }
 
-        $roleId = $user['role_id'];
-        $permissions = Permission::getPermissionsByRoleId((int) $roleId);
-
-        // Build a flat array of permission strings
-        $permissionNodes = array_map(fn ($perm) => $perm['permission'], $permissions);
+        $permissionNodes = self::getPermissionNodesForRole((int) $user['role_id']);
 
         // Root permission always grants access
         if (in_array('admin.root', $permissionNodes, true)) {
@@ -44,5 +46,45 @@ class PermissionHelper
         }
 
         return in_array($permission, $permissionNodes, true);
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function getPermissionNodesForRole(int $roleId): array
+    {
+        if ($roleId <= 0) {
+            return [];
+        }
+
+        if (isset(self::$rolePermissionCache[$roleId])) {
+            return self::$rolePermissionCache[$roleId];
+        }
+
+        $cacheKey = 'role_permissions:' . $roleId;
+        $cached = Cache::get($cacheKey);
+        if (is_array($cached)) {
+            return self::$rolePermissionCache[$roleId] = array_values($cached);
+        }
+
+        $permissions = Permission::getPermissionsByRoleId($roleId);
+        $permissionNodes = array_values(array_map(
+            static fn ($perm) => (string) $perm['permission'],
+            $permissions
+        ));
+
+        self::$rolePermissionCache[$roleId] = $permissionNodes;
+        Cache::put($cacheKey, $permissionNodes, 5);
+
+        return $permissionNodes;
+    }
+
+    /**
+     * Invalidate cached permissions for a role (call after create/update/delete).
+     */
+    public static function clearRolePermissionCache(int $roleId): void
+    {
+        unset(self::$rolePermissionCache[$roleId]);
+        Cache::forget('role_permissions:' . $roleId);
     }
 }

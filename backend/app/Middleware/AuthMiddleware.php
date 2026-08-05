@@ -44,7 +44,12 @@ class AuthMiddleware implements MiddlewareInterface
                 return ApiResponse::error('Account is deleted', 'ACCOUNT_DELETED', 403, []);
             }
 
-            User::updateUser($userInfo['uuid'], ['last_ip' => CloudFlareRealIP::getRealIP()]);
+            $realIp = CloudFlareRealIP::getRealIP();
+            // Avoid a SHOW COLUMNS + UPDATE on every request when the IP has not changed
+            if (($userInfo['last_ip'] ?? null) !== $realIp) {
+                User::updateUser($userInfo['uuid'], ['last_ip' => $realIp]);
+                $userInfo['last_ip'] = $realIp;
+            }
             UserDeviceTracker::trackFromRequest($request, $userInfo);
             // Attach user info to the request attributes for downstream use
             $request->attributes->set('user', $userInfo);

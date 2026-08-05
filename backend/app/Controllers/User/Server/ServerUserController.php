@@ -336,18 +336,20 @@ class ServerUserController
                 $subuserMap[(int) $subuser['server_id']] = $subuser;
             }
 
-            // Get subuser servers individually
+            // Get subuser servers in one query instead of N getServerById calls
             $subuserServers = [];
-            foreach ($subuserServerIds as $serverId) {
-                $server = Server::getServerById($serverId);
-                if ($server) {
-                    // Apply search filter
-                    if (
-                        empty($search)
-                        || stripos($server['name'], $search) !== false
-                        || stripos($server['description'] ?? '', $search) !== false
-                    ) {
-                        $subuserServers[] = $server;
+            if ($subuserServerIds !== []) {
+                $serversById = Server::getServersByIds($subuserServerIds);
+                foreach ($subuserServerIds as $serverId) {
+                    $server = $serversById[$serverId] ?? null;
+                    if ($server) {
+                        if (
+                            empty($search)
+                            || stripos($server['name'], $search) !== false
+                            || stripos($server['description'] ?? '', $search) !== false
+                        ) {
+                            $subuserServers[] = $server;
+                        }
                     }
                 }
             }
@@ -373,6 +375,50 @@ class ServerUserController
             $total = $totalServers;
         }
 
+        // Prefetch related data for the current page (avoids N+1 queries)
+        $nodeIds = [];
+        $realmIds = [];
+        $spellIds = [];
+        $allocationIds = [];
+        $ownerIds = [];
+        foreach ($servers as $s) {
+            if (!empty($s['node_id'])) {
+                $nodeIds[(int) $s['node_id']] = true;
+            }
+            if (!empty($s['realms_id'])) {
+                $realmIds[(int) $s['realms_id']] = true;
+            }
+            if (!empty($s['spell_id'])) {
+                $spellIds[(int) $s['spell_id']] = true;
+            }
+            if (!empty($s['allocation_id'])) {
+                $allocationIds[(int) $s['allocation_id']] = true;
+            }
+            if ($viewAll && !empty($s['owner_id'])) {
+                $ownerIds[(int) $s['owner_id']] = true;
+            }
+        }
+        $nodesById = Node::getNodesByIds(array_keys($nodeIds));
+        $locationIds = [];
+        foreach ($nodesById as $n) {
+            if (!empty($n['location_id'])) {
+                $locationIds[(int) $n['location_id']] = true;
+            }
+        }
+        $locationsById = Location::getByIds(array_keys($locationIds));
+        $realmsById = \App\Chat\Realm::getByIds(array_keys($realmIds));
+        $spellsById = Spell::getSpellsByIds(array_keys($spellIds));
+        $allocationsById = Allocation::getAllocationsByIds(array_keys($allocationIds));
+        $ownersById = [];
+        if ($ownerIds !== []) {
+            foreach (array_keys($ownerIds) as $ownerId) {
+                $owner = \App\Chat\User::getUserById($ownerId);
+                if ($owner) {
+                    $ownersById[$ownerId] = $owner;
+                }
+            }
+        }
+
         // Add related data to each server.
         foreach ($servers as &$server) {
             // Check if user is a subuser of this server (only when not viewing all)
@@ -382,7 +428,7 @@ class ServerUserController
                 $server['subuser_permissions'] = [];
                 $server['subuser_id'] = null;
                 // Add owner information for admin view
-                $owner = \App\Chat\User::getUserById($server['owner_id']);
+                $owner = $ownersById[(int) $server['owner_id']] ?? null;
                 $server['owner'] = $owner ? [
                     'id' => $owner['id'],
                     'username' => $owner['username'],
@@ -405,7 +451,7 @@ class ServerUserController
                 }
             }
 
-            $node = Node::getNodeById($server['node_id']);
+            $node = $nodesById[(int) $server['node_id']] ?? null;
             $server['node'] = [
                 'name' => $node['name'] ?? null,
                 'maintenance_mode' => $node['maintenance_mode'] ?? null,
@@ -415,8 +461,8 @@ class ServerUserController
 
             // Get location information from node
             $location = null;
-            if (isset($node['location_id']) && $node['location_id'] > 0) {
-                $locationData = Location::getById((int) $node['location_id']);
+            if ($node && isset($node['location_id']) && $node['location_id'] > 0) {
+                $locationData = $locationsById[(int) $node['location_id']] ?? null;
                 if ($locationData) {
                     $location = [
                         'id' => $locationData['id'] ?? null,
@@ -428,23 +474,23 @@ class ServerUserController
             }
             $server['location'] = $location;
 
-            $server['realm'] = \App\Chat\Realm::getById($server['realms_id']);
+            $realm = $realmsById[(int) $server['realms_id']] ?? null;
             $server['realm'] = [
-                'name' => $server['realm']['name'] ?? null,
-                'description' => $server['realm']['description'] ?? null,
-                'logo' => $server['realm']['logo'] ?? null,
+                'name' => $realm['name'] ?? null,
+                'description' => $realm['description'] ?? null,
+                'logo' => $realm['logo'] ?? null,
             ];
-            $server['spell'] = Spell::getSpellById($server['spell_id']);
+            $spell = $spellsById[(int) $server['spell_id']] ?? null;
             $server['spell'] = [
-                'name' => $server['spell']['name'] ?? null,
-                'description' => $server['spell']['description'] ?? null,
-                'banner' => $server['spell']['banner'] ?? null,
+                'name' => $spell['name'] ?? null,
+                'description' => $spell['description'] ?? null,
+                'banner' => $spell['banner'] ?? null,
             ];
-            $server['allocation'] = Allocation::getAllocationById($server['allocation_id']);
+            $allocation = $allocationsById[(int) $server['allocation_id']] ?? null;
             $server['allocation'] = [
-                'ip' => $server['allocation']['ip'] ?? null,
-                'port' => $server['allocation']['port'] ?? null,
-                'ip_alias' => $server['allocation']['ip_alias'] ?? null,
+                'ip' => $allocation['ip'] ?? null,
+                'port' => $allocation['port'] ?? null,
+                'ip_alias' => $allocation['ip_alias'] ?? null,
             ];
 
             unset(

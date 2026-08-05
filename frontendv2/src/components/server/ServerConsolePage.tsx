@@ -15,7 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import axios from 'axios';
 import { useWingsWebSocket } from '@/hooks/useWingsWebSocket';
@@ -178,10 +178,26 @@ export default function ServerConsolePage() {
         fetchWidgets();
     }, [fetchWidgets]);
 
+    const compiledConsoleFilters = useMemo(() => {
+        return consoleFilters
+            .filter((rule) => rule.enabled && rule.pattern)
+            .map((rule) => {
+                try {
+                    return {
+                        ...rule,
+                        regex: new RegExp(rule.pattern, rule.flags || 'g'),
+                    };
+                } catch {
+                    return null;
+                }
+            })
+            .filter((rule): rule is ConsoleFilterRule & { regex: RegExp } => rule !== null);
+    }, [consoleFilters]);
+
     const handleConsoleOutput = useCallback(
         (output: string) => {
             const applyFilters = (text: string): string => {
-                if (!consoleFilters.length) return text;
+                if (!compiledConsoleFilters.length) return text;
 
                 const colorToAnsi: Record<NonNullable<ConsoleFilterRule['color']>, string> = {
                     red: '\u001b[31m',
@@ -200,30 +216,26 @@ export default function ServerConsolePage() {
                     .map((line) => {
                         let currentLine: string | null = line;
 
-                        for (const rule of consoleFilters) {
-                            if (!rule.enabled || !rule.pattern || currentLine === null) continue;
+                        for (const rule of compiledConsoleFilters) {
+                            if (currentLine === null) continue;
 
-                            let regex: RegExp | null = null;
-                            try {
-                                regex = new RegExp(rule.pattern, rule.flags || 'g');
-                            } catch {
-                                continue;
-                            }
+                            // Reset lastIndex for global regexes reused across lines
+                            rule.regex.lastIndex = 0;
 
                             if (rule.type === 'hide') {
-                                if (regex.test(currentLine)) {
+                                if (rule.regex.test(currentLine)) {
                                     currentLine = null;
                                     break;
                                 }
                             } else if (rule.type === 'replace') {
                                 currentLine = currentLine.replace(
-                                    regex,
+                                    rule.regex,
                                     rule.replacement !== undefined ? rule.replacement : '',
                                 );
                             } else if (rule.type === 'color') {
                                 const color = rule.color || 'yellow';
                                 const ansiColor = colorToAnsi[color];
-                                currentLine = currentLine.replace(regex, (match) => {
+                                currentLine = currentLine.replace(rule.regex, (match) => {
                                     return `${ansiColor}${match}${resetAnsi}`;
                                 });
                             }
@@ -246,7 +258,7 @@ export default function ServerConsolePage() {
                 terminalRef.current.writeln(filtered);
             }
         },
-        [processLog, consoleFilters, consoleAppDisplayName],
+        [processLog, compiledConsoleFilters, consoleAppDisplayName],
     );
 
     const handleStatusUpdate = useCallback((status: string) => {

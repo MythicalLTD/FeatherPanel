@@ -18,12 +18,9 @@
 namespace App\Middleware;
 
 use App\App;
-use App\Chat\User;
 use App\Chat\Server;
-use App\Permissions;
 use App\Helpers\ApiResponse;
 use App\Helpers\ServerGateway;
-use App\Helpers\PermissionHelper;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -73,12 +70,9 @@ class ServerMiddleware implements MiddlewareInterface
             ]);
         }
 
-        // Check if user can access the server (owner or subuser)
+        // Owner, subuser, or admin server permissions (checked once inside ServerGateway)
         if (!$this->userCanAccessServer($user, $server)) {
-            // Maybe the user is admin? If not, deny access
-            if (!PermissionHelper::hasPermission($user['uuid'], Permissions::ADMIN_SERVERS_VIEW) && !PermissionHelper::hasPermission($user['uuid'], Permissions::ADMIN_SERVERS_EDIT) && !PermissionHelper::hasPermission($user['uuid'], Permissions::ADMIN_SERVERS_DELETE)) {
-                return ApiResponse::error('Access denied: Server not accessible by user', 'ACCESS_DENIED', 403, []);
-            }
+            return ApiResponse::error('Access denied: Server not accessible by user', 'ACCESS_DENIED', 403, []);
         }
 
         if (isset($server['suspended']) && $server['suspended'] == 1) {
@@ -128,8 +122,8 @@ class ServerMiddleware implements MiddlewareInterface
     private function userCanAccessServer(array $user, array $server): bool
     {
         try {
-            // Use ServerGateway to check access (handles both owners and subusers)
-            return ServerGateway::canUserAccessServer($user['uuid'], $server['uuid']);
+            // Pass already-loaded rows to avoid duplicate user/server queries
+            return ServerGateway::canUserAccessServer($user['uuid'], $server['uuid'], $user, $server);
         } catch (\Exception $e) {
             // Log the error but deny access for security
             App::getInstance(true)->getLogger()->error('Error checking server access: ' . $e->getMessage());

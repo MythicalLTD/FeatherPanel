@@ -99,6 +99,63 @@ class Allocation
     }
 
     /**
+     * Fetch allocations by IDs, keyed by id.
+     *
+     * @param int[] $ids
+     *
+     * @return array<int, array>
+     */
+    public static function getAllocationsByIds(array $ids): array
+    {
+        $ids = array_values(array_unique(array_filter(array_map('intval', $ids), static fn (int $id): bool => $id > 0)));
+        if ($ids === []) {
+            return [];
+        }
+
+        $pdo = Database::getPdoConnection();
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE id IN (' . $placeholders . ')');
+        $stmt->execute($ids);
+
+        $map = [];
+        foreach ($stmt->fetchAll(\PDO::FETCH_ASSOC) as $row) {
+            $map[(int) $row['id']] = $row;
+        }
+
+        return $map;
+    }
+
+    /**
+     * Fetch allocations for many servers, grouped by server_id.
+     *
+     * @param int[] $serverIds
+     *
+     * @return array<int, list<array>>
+     */
+    public static function getByServerIds(array $serverIds): array
+    {
+        $serverIds = array_values(array_unique(array_filter(array_map('intval', $serverIds), static fn (int $id): bool => $id > 0)));
+        if ($serverIds === []) {
+            return [];
+        }
+
+        $pdo = Database::getPdoConnection();
+        $placeholders = implode(',', array_fill(0, count($serverIds), '?'));
+        $stmt = $pdo->prepare(
+            'SELECT * FROM ' . self::$table
+            . ' WHERE server_id IN (' . $placeholders . ') ORDER BY created_at DESC'
+        );
+        $stmt->execute($serverIds);
+
+        $grouped = [];
+        foreach ($stmt->fetchAll(\PDO::FETCH_ASSOC) as $row) {
+            $grouped[(int) $row['server_id']][] = $row;
+        }
+
+        return $grouped;
+    }
+
+    /**
      * Get allocations by node ID.
      */
     public static function getByNodeId(int $nodeId, int $limit = 10, int $offset = 0): array

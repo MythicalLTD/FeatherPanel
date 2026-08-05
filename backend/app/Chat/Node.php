@@ -18,6 +18,7 @@
 namespace App\Chat;
 
 use App\App;
+use App\Cache\Cache;
 use Symfony\Component\Yaml\Yaml;
 
 /**
@@ -263,6 +264,33 @@ class Node
         }
 
         return $row;
+    }
+
+    /**
+     * Fetch nodes by IDs, keyed by id.
+     *
+     * @param int[] $ids
+     *
+     * @return array<int, array>
+     */
+    public static function getNodesByIds(array $ids): array
+    {
+        $ids = array_values(array_unique(array_filter(array_map('intval', $ids), static fn (int $id): bool => $id > 0)));
+        if ($ids === []) {
+            return [];
+        }
+
+        $pdo = Database::getPdoConnection();
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE id IN (' . $placeholders . ')');
+        $stmt->execute($ids);
+
+        $map = [];
+        foreach ($stmt->fetchAll(\PDO::FETCH_ASSOC) as $row) {
+            $map[(int) $row['id']] = self::decryptSensitiveFields($row);
+        }
+
+        return $map;
     }
 
     /**
@@ -744,6 +772,22 @@ class Node
                 return null;
             }
 
+            // Cache only the matched node ID (never tokens) to skip full-table decrypt scans
+            $cacheKey = 'wings_auth_node:' . hash('sha256', $tokenId . "\0" . $tokenSecret);
+            $cachedNodeId = Cache::get($cacheKey);
+            if (is_numeric($cachedNodeId) && (int) $cachedNodeId > 0) {
+                $cachedNode = self::getNodeById((int) $cachedNodeId);
+                // getNodeById already decrypts tokens — compare plaintext
+                if (
+                    $cachedNode !== null
+                    && ($cachedNode['daemon_token_id'] ?? '') === $tokenId
+                    && ($cachedNode['daemon_token'] ?? '') === $tokenSecret
+                ) {
+                    return $cachedNode;
+                }
+                Cache::forget($cacheKey);
+            }
+
             $pdo = Database::getPdoConnection();
             $stmt = $pdo->prepare('SELECT * FROM ' . self::$table);
             $stmt->execute();
@@ -752,6 +796,7 @@ class Node
                 $storedId = App::getInstance(true)->decryptValue($row['daemon_token_id'] ?? '');
                 $storedSecret = App::getInstance(true)->decryptValue($row['daemon_token'] ?? '');
                 if ($storedId === $tokenId && $storedSecret === $tokenSecret) {
+                    Cache::put($cacheKey, (int) $row['id'], 5);
                     return self::decryptSensitiveFields($row);
                 }
             }
@@ -764,29 +809,7 @@ class Node
 
     public static function isWingsAuthValid(string $tokenId, string $tokenSecret): bool
     {
-        try {
-            if (empty($tokenId) || empty($tokenSecret)) {
-                return false;
-            }
-
-            $pdo = Database::getPdoConnection();
-            $stmt = $pdo->prepare('SELECT daemon_token_id, daemon_token FROM featherpanel_nodes');
-            $stmt->execute();
-
-            while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
-                $storedId = App::getInstance(true)->decryptValue($row['daemon_token_id'] ?? '');
-                $storedSecret = App::getInstance(true)->decryptValue($row['daemon_token'] ?? '');
-                if ($storedId === $tokenId && $storedSecret === $tokenSecret) {
-                    return true;
-                }
-            }
-        } catch (\Exception $e) {
-            App::getInstance(true)->getLogger()->error('Wings auth validation failed: ' . $e->getMessage());
-
-            return false;
-        }
-
-        return false;
+        return self::getNodeByWingsAuth($tokenId, $tokenSecret) !== null;
     }
 
     public static function count(array $conditions = []): int

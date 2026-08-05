@@ -201,9 +201,16 @@ export function useFileManager(serverUuid: string) {
 
     useEffect(() => {
         refreshPulls();
+    }, [refreshPulls]);
+
+    // Only poll while downloads are active; otherwise avoid a 5s timer for the whole visit
+    useEffect(() => {
+        if (activePulls.length === 0) {
+            return;
+        }
         const interval = setInterval(refreshPulls, 5000);
         return () => clearInterval(interval);
-    }, [refreshPulls]);
+    }, [activePulls.length, refreshPulls]);
 
     const cancelPull = async (id: string) => {
         try {

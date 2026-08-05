@@ -271,15 +271,6 @@ class App
         $context->fromRequest($request);
         $matcher = new UrlMatcher($this->routes, $context);
 
-        // Log all registered routes at startup
-        $routeList = [];
-        foreach ($this->routes as $name => $route) {
-            $routeList[] = [
-                'name' => $name,
-                'path' => $route->getPath(),
-                'methods' => $route->getMethods(),
-            ];
-        }
         try {
             $parameters = $matcher->match($request->getPathInfo());
             $controller = $parameters['_controller'];
