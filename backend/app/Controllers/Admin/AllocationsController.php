@@ -375,27 +375,28 @@ class AllocationsController
 
         // Check for existing allocations and prepare batch data
         $allocationsToCreate = [];
-        $existingPorts = [];
+        $existingPorts = Allocation::getExistingPortsForIp($nodeId, $data['ip'], $ports);
+        $existingPortSet = array_fill_keys($existingPorts, true);
         $useCustomId = isset($data['id']) && count($ports) === 1; // Only use custom ID for single port allocations
 
         foreach ($ports as $index => $port) {
-            if (!Allocation::isUniqueIpPort($nodeId, $data['ip'], $port)) {
-                $existingPorts[] = $port;
-            } else {
-                $allocationData = [
-                    'node_id' => $nodeId,
-                    'ip' => $data['ip'],
-                    'port' => $port,
-                    'ip_alias' => $data['ip_alias'] ?? null,
-                    'server_id' => $data['server_id'] ?? null,
-                    'notes' => $data['notes'] ?? null,
-                ];
-                // Only use custom ID for the first allocation if it's a single port
-                if ($useCustomId && $index === 0) {
-                    $allocationData['id'] = $data['id'];
-                }
-                $allocationsToCreate[] = $allocationData;
+            if (isset($existingPortSet[$port])) {
+                continue;
             }
+
+            $allocationData = [
+                'node_id' => $nodeId,
+                'ip' => $data['ip'],
+                'port' => $port,
+                'ip_alias' => $data['ip_alias'] ?? null,
+                'server_id' => $data['server_id'] ?? null,
+                'notes' => $data['notes'] ?? null,
+            ];
+            // Only use custom ID for the first allocation if it's a single port
+            if ($useCustomId && $index === 0) {
+                $allocationData['id'] = $data['id'];
+            }
+            $allocationsToCreate[] = $allocationData;
         }
 
         // If all ports already exist, return error
@@ -409,17 +410,23 @@ class AllocationsController
             return ApiResponse::error('Failed to create allocations', 'ALLOCATION_CREATE_FAILED', 400);
         }
 
-        // Get created allocations
+        // Fetch created rows in one query (avoid N getById round-trips for large ranges)
+        $createdById = Allocation::getAllocationsByIds($createdIds);
         $createdAllocations = [];
         foreach ($createdIds as $id) {
-            $allocation = Allocation::getById($id);
-            if ($allocation) {
-                $createdAllocations[] = $allocation;
+            if (isset($createdById[$id])) {
+                $createdAllocations[] = $createdById[$id];
             }
         }
 
+        // Cap payload size so creating ~1000 ports does not time out / 502 on pretty JSON
+        $responseAllocations = $createdAllocations;
+        if (count($responseAllocations) > 100) {
+            $responseAllocations = array_slice($responseAllocations, 0, 100);
+        }
+
         // Prepare response message
-        $createdCount = count($createdAllocations);
+        $createdCount = count($createdIds);
         $totalRequested = count($ports);
         $skippedCount = count($existingPorts);
 
@@ -447,15 +454,15 @@ class AllocationsController
             $eventManager->emit(
                 AllocationsEvent::onAllocationCreated(),
                 [
-                    'allocations' => $createdAllocations,
-                    'created_count' => count($createdAllocations),
+                    'allocations' => $responseAllocations,
+                    'created_count' => $createdCount,
                     'created_by' => $admin,
                 ]
             );
         }
 
         return ApiResponse::success([
-            'allocations' => $createdAllocations,
+            'allocations' => $responseAllocations,
             'created_count' => $createdCount,
             'total_requested' => $totalRequested,
             'skipped_count' => $skippedCount,
@@ -839,7 +846,7 @@ class AllocationsController
     #[OA\Get(
         path: '/api/admin/allocations/available',
         summary: 'Get available allocations',
-        description: 'Retrieve a paginated list of allocations that are not assigned to any server.',
+        description: 'Retrieve a paginated list of allocations that are not assigned to any server. Optionally filter by node.',
         tags: ['Admin - Allocations'],
         parameters: [
             new OA\Parameter(
@@ -855,6 +862,13 @@ class AllocationsController
                 description: 'Number of records per page',
                 required: false,
                 schema: new OA\Schema(type: 'integer', minimum: 1, maximum: 100, default: 10)
+            ),
+            new OA\Parameter(
+                name: 'node_id',
+                in: 'query',
+                description: 'Filter available allocations to a specific node',
+                required: false,
+                schema: new OA\Schema(type: 'integer', minimum: 1)
             ),
         ],
         responses: [
@@ -880,6 +894,8 @@ class AllocationsController
     {
         $page = (int) $request->query->get('page', 1);
         $limit = (int) $request->query->get('limit', 10);
+        $nodeId = $request->query->get('node_id', null);
+        $nodeId = $nodeId !== null && $nodeId !== '' ? (int) $nodeId : null;
 
         // Validate pagination parameters
         if ($page < 1) {
@@ -891,11 +907,14 @@ class AllocationsController
         if ($limit > 100) {
             $limit = 100;
         }
+        if ($nodeId !== null && $nodeId <= 0) {
+            $nodeId = null;
+        }
 
         $offset = ($page - 1) * $limit;
 
-        $allocations = Allocation::getAvailable($limit, $offset);
-        $total = Allocation::getAvailableCount();
+        $allocations = Allocation::getAvailable($limit, $offset, $nodeId);
+        $total = Allocation::getAvailableCount($nodeId);
 
         return ApiResponse::success([
             'allocations' => $allocations,

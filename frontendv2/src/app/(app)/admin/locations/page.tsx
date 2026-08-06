@@ -435,6 +435,10 @@ export default function LocationsPage() {
     };
 
     const handleViewNodes = (location: Location) => {
+        if (location.type === 'vps') {
+            router.push(`/admin/vds-nodes?location_id=${location.id}`);
+            return;
+        }
         router.push(`/admin/nodes?location_id=${location.id}`);
     };
 

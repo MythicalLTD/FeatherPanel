@@ -105,13 +105,13 @@ class AutoAllocateTool implements ToolInterface
             ];
         }
 
-        // Get available free allocations
-        $availableAllocations = Allocation::getAvailable(100, 0);
+        // Get available free allocations on this server's node only
+        $availableAllocations = Allocation::getAvailable(100, 0, (int) $server['node_id']);
 
         if (empty($availableAllocations)) {
             return [
                 'success' => false,
-                'error' => 'No free allocations available',
+                'error' => 'No free allocations available on this node',
                 'action_type' => 'auto_allocate',
             ];
         }

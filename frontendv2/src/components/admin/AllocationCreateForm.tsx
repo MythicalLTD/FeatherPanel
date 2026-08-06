@@ -104,8 +104,9 @@ export function AllocationCreateForm({ nodeId, onCreated, onCancel, showFooter =
                 node_id: nodeId,
                 port,
             });
+            const createdCount = Number(data?.data?.created_count ?? 0);
             const created = (data?.data?.allocations || []) as CreatedAllocationRow[];
-            if (!created.length) {
+            if (!created.length && createdCount <= 0) {
                 toast.error(t('admin.node.allocations.messages.create_failed'));
                 return;
             }

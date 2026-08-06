@@ -44,6 +44,7 @@ import {
     Shield,
     Network,
     ArrowLeftRight,
+    X,
 } from 'lucide-react';
 import { MassTransferServersDialog } from '@/components/admin/MassTransferServersDialog';
 
@@ -103,13 +104,10 @@ export default function NodesPage() {
         NODES_LIST_FILTERS_DEFAULTS,
     );
     const { searchQuery, page, pageSize } = filters;
-    const locationIdFilter = urlLocationId || filters.locationId || '';
-
-    useEffect(() => {
-        if (urlLocationId && urlLocationId !== filters.locationId) {
-            patchFilters({ locationId: urlLocationId, page: 1 });
-        }
-    }, [urlLocationId, filters.locationId, patchFilters]);
+    // Location filter must come from the URL only. Persisting it without a visible clear
+    // control left the list empty (e.g. after Locations → View nodes) while dashboard
+    // status still showed all nodes via an unfiltered endpoint.
+    const locationIdFilter = urlLocationId;
 
     const [loading, setLoading] = useState(true);
     const [nodes, setNodes] = useState<Node[]>([]);
@@ -158,6 +156,41 @@ export default function NodesPage() {
         };
         fetchLocations();
     }, []);
+
+    useEffect(() => {
+        if (!locationIdFilter) {
+            return;
+        }
+
+        let cancelled = false;
+        const fetchLocation = async () => {
+            try {
+                const { data } = await axios.get(`/api/admin/locations/${locationIdFilter}`);
+                const location = data.data?.location;
+                if (!cancelled && location?.id) {
+                    setLocations((prev) =>
+                        prev.some((l) => l.id === location.id)
+                            ? prev
+                            : [...prev, { id: location.id, name: location.name }],
+                    );
+                }
+            } catch (error) {
+                console.error('Error fetching filtered location:', error);
+            }
+        };
+        void fetchLocation();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [locationIdFilter]);
+
+    useEffect(() => {
+        if (loading || pagination.totalPages <= 0 || page <= pagination.totalPages) {
+            return;
+        }
+        patchFilters({ page: pagination.totalPages });
+    }, [loading, pagination.totalPages, page, patchFilters]);
 
     const checkNodeHealth = useCallback(async (nodeId: number) => {
         try {
@@ -303,6 +336,20 @@ export default function NodesPage() {
                         className='h-11 w-full pl-10'
                     />
                 </div>
+                {locationIdFilter ? (
+                    <Button
+                        variant='outline'
+                        className='h-11 shrink-0 gap-2'
+                        onClick={() => {
+                            patchFilters({ page: 1 });
+                            router.replace('/admin/nodes');
+                        }}
+                    >
+                        <MapPin className='h-4 w-4' />
+                        {currentLocation?.name || t('admin.servers.filters.location')}
+                        <X className='h-4 w-4' />
+                    </Button>
+                ) : null}
             </div>
 
             <WidgetRenderer widgets={getWidgets('admin-nodes', 'before-list')} />
@@ -341,12 +388,31 @@ export default function NodesPage() {
                 <EmptyState
                     icon={Server}
                     title={t('admin.node.no_results')}
-                    description={t('admin.node.search_placeholder')}
+                    description={
+                        locationIdFilter || searchQuery
+                            ? t('admin.node.search_placeholder')
+                            : t('admin.node.description')
+                    }
                     action={
-                        <Button onClick={() => router.push('/admin/nodes/create')}>
-                            <Plus className='mr-2 h-4 w-4' />
-                            {t('admin.node.create')}
-                        </Button>
+                        locationIdFilter || searchQuery ? (
+                            <Button
+                                variant='outline'
+                                onClick={() => {
+                                    patchFilters({ searchQuery: '', page: 1 });
+                                    if (locationIdFilter) {
+                                        router.replace('/admin/nodes');
+                                    }
+                                }}
+                            >
+                                <X className='mr-2 h-4 w-4' />
+                                {t('admin.servers.filters.clear')}
+                            </Button>
+                        ) : (
+                            <Button onClick={() => router.push('/admin/nodes/create')}>
+                                <Plus className='mr-2 h-4 w-4' />
+                                {t('admin.node.create')}
+                            </Button>
+                        )
                     }
                 />
             ) : (
