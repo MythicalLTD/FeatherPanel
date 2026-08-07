@@ -177,7 +177,11 @@ export default function ChatbotContainer({ open, onClose, mode = 'server', vdsIn
     const { settings } = useSettings();
     const { theme } = useTheme();
     const lastConversationStorageKey = `featherpanel_chatbot_last_conversation_${mode}`;
-    const logoUrl = theme === 'dark' ? settings?.app_logo_dark || '/logo.png' : settings?.app_logo_white || '/logo.png';
+    const customAvatar = settings?.chatbot_avatar_url?.trim();
+    const logoUrl =
+        customAvatar ||
+        (theme === 'dark' ? settings?.app_logo_dark || '/logo.png' : settings?.app_logo_white || '/logo.png');
+    const assistantName = settings?.chatbot_display_name?.trim() || t('chatbot.title');
     const slashQuery = inputMessage.startsWith('/') ? inputMessage.trim().toLowerCase() : '';
     const commandSuggestions = useMemo(() => {
         if (!slashQuery) return [];
@@ -1147,7 +1151,7 @@ export default function ChatbotContainer({ open, onClose, mode = 'server', vdsIn
                                                     <div className='bg-background ring-primary/15 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl p-1.5 shadow-sm ring-1'>
                                                         <Image
                                                             src={logoUrl}
-                                                            alt={settings?.app_name || t('chatbot.title')}
+                                                            alt={assistantName}
                                                             width={28}
                                                             height={28}
                                                             className='h-7 w-7 object-contain'
@@ -1156,13 +1160,15 @@ export default function ChatbotContainer({ open, onClose, mode = 'server', vdsIn
                                                     </div>
                                                     <div className='min-w-0 flex-1'>
                                                         <h2 className='text-foreground text-sm font-semibold'>
-                                                            {t('chatbot.title')}
+                                                            {assistantName}
                                                         </h2>
-                                                        {chatModelName && chatModelName !== t('chatbot.title') && (
-                                                            <p className='text-muted-foreground truncate text-xs'>
-                                                                {chatModelName}
-                                                            </p>
-                                                        )}
+                                                        {chatModelName &&
+                                                            chatModelName !== assistantName &&
+                                                            chatModelName !== t('chatbot.title') && (
+                                                                <p className='text-muted-foreground truncate text-xs'>
+                                                                    {chatModelName}
+                                                                </p>
+                                                            )}
                                                         <div className='mt-1 flex items-center gap-1.5'>
                                                             <span className='h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_0_3px_rgba(16,185,129,0.14)]' />
                                                             <span className='text-muted-foreground text-[11px]'>
@@ -1344,9 +1350,7 @@ export default function ChatbotContainer({ open, onClose, mode = 'server', vdsIn
                                                                     <div className='bg-background ring-primary/15 mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-3xl p-3 shadow-sm ring-1'>
                                                                         <Image
                                                                             src={logoUrl}
-                                                                            alt={
-                                                                                settings?.app_name || t('chatbot.title')
-                                                                            }
+                                                                            alt={assistantName}
                                                                             width={40}
                                                                             height={40}
                                                                             className='h-10 w-10 object-contain'
@@ -1354,7 +1358,7 @@ export default function ChatbotContainer({ open, onClose, mode = 'server', vdsIn
                                                                         />
                                                                     </div>
                                                                     <h3 className='text-foreground mb-2 text-lg font-semibold'>
-                                                                        {t('chatbot.title')}
+                                                                        {assistantName}
                                                                     </h3>
                                                                     <p className='text-muted-foreground text-sm'>
                                                                         {t('chatbot.description')}
@@ -1376,10 +1380,7 @@ export default function ChatbotContainer({ open, onClose, mode = 'server', vdsIn
                                                                             <div className='bg-background ring-primary/15 flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl p-1.5 shadow-sm ring-1'>
                                                                                 <Image
                                                                                     src={logoUrl}
-                                                                                    alt={
-                                                                                        settings?.app_name ||
-                                                                                        t('chatbot.title')
-                                                                                    }
+                                                                                    alt={assistantName}
                                                                                     width={24}
                                                                                     height={24}
                                                                                     className='h-6 w-6 object-contain'
@@ -1685,6 +1686,8 @@ export default function ChatbotContainer({ open, onClose, mode = 'server', vdsIn
                                                                                         )}
                                                                                     </span>
                                                                                     {message.model &&
+                                                                                        message.model !==
+                                                                                            assistantName &&
                                                                                         message.model !==
                                                                                             t('chatbot.title') && (
                                                                                             <span className='bg-muted/70 rounded-full px-2 py-0.5'>

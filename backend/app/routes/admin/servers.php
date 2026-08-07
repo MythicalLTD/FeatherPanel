@@ -314,6 +314,40 @@ return function (RouteCollection $routes): void {
         ['POST']
     );
 
+    // Force Docker runtime reconciliation
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-servers-reconcile',
+        '/api/admin/servers/{id}/reconcile',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid server ID', 'INVALID_SERVER_ID', 400);
+            }
+
+            return (new ServersController())->reconcile($request, (int) $id);
+        },
+        Permissions::ADMIN_SERVERS_EDIT,
+        ['POST']
+    );
+
+    // Live Wings runtime health
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-servers-runtime',
+        '/api/admin/servers/{id}/runtime',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid server ID', 'INVALID_SERVER_ID', 400);
+            }
+
+            return (new ServersController())->runtime($request, (int) $id);
+        },
+        Permissions::ADMIN_SERVERS_VIEW,
+        ['GET']
+    );
+
     // Server activities (paginated)
     App::getInstance(true)->registerAdminRoute(
         $routes,

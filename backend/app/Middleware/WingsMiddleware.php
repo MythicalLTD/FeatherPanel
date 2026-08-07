@@ -33,16 +33,20 @@ class WingsMiddleware implements MiddlewareInterface
         }
 
         $token = str_replace('Bearer ', '', $token);
-        $tokenId = explode('.', $token)[0];
-        $tokenSecret = explode('.', $token)[1];
+        $parts = explode('.', $token, 2);
+        $tokenId = $parts[0] ?? '';
+        $tokenSecret = $parts[1] ?? '';
 
-        if (!Node::isWingsAuthValid($tokenId, $tokenSecret)) {
+        // Single decrypt scan (cached); attach node so controllers skip re-auth
+        $node = Node::getNodeByWingsAuth($tokenId, $tokenSecret);
+        if ($node === null) {
             return ApiResponse::error('You are not authorized to hit this endpoint!', 'INVALID_WINGS_TOKEN', 401, []);
         }
 
         $request->attributes->set('wings_token', $token);
         $request->attributes->set('wings_token_id', $tokenId);
         $request->attributes->set('wings_token_secret', $tokenSecret);
+        $request->attributes->set('wings_node', $node);
 
         return $next($request);
     }

@@ -18,6 +18,7 @@
 namespace App\Chat;
 
 use App\App;
+use App\Cache\Cache;
 
 class UserDevice
 {
@@ -197,6 +198,13 @@ class UserDevice
         }
 
         $deviceHash = self::hashClientToken($clientToken);
+
+        // Skip the SELECT when this device was seen recently (same 10-minute window as DB throttle)
+        $throttleKey = 'device_seen:' . $userUuid . ':' . $deviceHash;
+        if (Cache::get($throttleKey) !== null) {
+            return true;
+        }
+
         $signalHash = null;
         $signalsJson = null;
 
@@ -217,6 +225,8 @@ class UserDevice
         if ($existing) {
             $lastSeen = strtotime((string) ($existing['last_seen'] ?? ''));
             if ($lastSeen !== false && (time() - $lastSeen) < 600) {
+                Cache::put($throttleKey, 1, 10);
+
                 return true;
             }
 
@@ -236,7 +246,12 @@ class UserDevice
                 $params['signals'] = $signalsJson;
             }
 
-            return $update->execute($params);
+            $ok = $update->execute($params);
+            if ($ok) {
+                Cache::put($throttleKey, 1, 10);
+            }
+
+            return $ok;
         }
 
         $insert = $pdo->prepare(
@@ -245,7 +260,7 @@ class UserDevice
                VALUES (:user_uuid, :device_hash, :signal_hash, :signals, :ip_address, :user_agent, NOW(), NOW(), 1)'
         );
 
-        return $insert->execute([
+        $ok = $insert->execute([
             'user_uuid' => $userUuid,
             'device_hash' => $deviceHash,
             'signal_hash' => $signalHash,
@@ -253,6 +268,11 @@ class UserDevice
             'ip_address' => $ipAddress !== '' ? $ipAddress : null,
             'user_agent' => $userAgent !== null && strlen($userAgent) > 512 ? substr($userAgent, 0, 512) : $userAgent,
         ]);
+        if ($ok) {
+            Cache::put($throttleKey, 1, 10);
+        }
+
+        return $ok;
     }
 
     public static function deleteUserData(string $userUuid): bool

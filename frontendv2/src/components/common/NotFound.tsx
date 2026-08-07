@@ -23,6 +23,7 @@ import ThemeCustomizer from '@/components/layout/ThemeCustomizer';
 import BackgroundWrapper from '@/components/theme/BackgroundWrapper';
 import { PanelBrandingFooter } from '@/components/branding/PanelBrandingFooter';
 import { Home, ArrowLeft, FileQuestion } from 'lucide-react';
+import { safeBack } from '@/lib/safe-back';
 
 export default function NotFound() {
     const router = useRouter();
@@ -53,7 +54,11 @@ export default function NotFound() {
                             </p>
 
                             <div className='flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:justify-center'>
-                                <Button onClick={() => router.back()} variant='outline' className='w-full sm:w-auto'>
+                                <Button
+                                    onClick={() => safeBack(router, '/dashboard')}
+                                    variant='outline'
+                                    className='w-full sm:w-auto'
+                                >
                                     <ArrowLeft className='mr-2 h-4 w-4' />
                                     {t('errors.404.go_back')}
                                 </Button>

@@ -18,6 +18,7 @@
 namespace App\Controllers\System;
 
 use App\App;
+use App\Cache\Cache;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -42,7 +43,7 @@ class PluginJsController
                     new OA\Header(
                         header: 'Cache-Control',
                         description: 'Cache control header',
-                        schema: new OA\Schema(type: 'string', example: 'no-store, no-cache, must-revalidate, max-age=0')
+                        schema: new OA\Schema(type: 'string', example: 'public, max-age=60')
                     ),
                 ]
             ),
@@ -51,37 +52,52 @@ class PluginJsController
     )]
     public function index(Request $request): Response
     {
-        $jsContent = "// Plugin JavaScript\n";
+        $cacheKey = 'plugin_js_bundle';
+        $cached = Cache::get($cacheKey);
+        if (is_array($cached) && isset($cached['body'], $cached['etag'])) {
+            $jsContent = (string) $cached['body'];
+            $etag = (string) $cached['etag'];
+        } else {
+            $jsContent = "// Plugin JavaScript\n";
 
-        // Append plugin JS
-        $pluginDir = __DIR__ . '/../../../storage/addons';
-        if (is_dir($pluginDir)) {
-            $plugins = array_diff(scandir($pluginDir), ['.', '..']);
-            foreach ($plugins as $plugin) {
-                $jsPath = $pluginDir . "/$plugin/Frontend/index.js";
-                if (file_exists($jsPath)) {
-                    $jsContent .= "\n// Plugin: $plugin\n";
-                    $jsContent .= "(function() {\n";
-                    $jsContent .= "  // Plugin scope: $plugin\n";
-                    $jsContent .= file_get_contents($jsPath) . "\n";
-                    $jsContent .= "})();\n";
+            $pluginDir = __DIR__ . '/../../../storage/addons';
+            if (is_dir($pluginDir)) {
+                $plugins = array_diff(scandir($pluginDir), ['.', '..']);
+                foreach ($plugins as $plugin) {
+                    $jsPath = $pluginDir . "/$plugin/Frontend/index.js";
+                    if (file_exists($jsPath)) {
+                        $jsContent .= "\n// Plugin: $plugin\n";
+                        $jsContent .= "(function() {\n";
+                        $jsContent .= "  // Plugin scope: $plugin\n";
+                        $jsContent .= file_get_contents($jsPath) . "\n";
+                        $jsContent .= "})();\n";
+                    }
                 }
             }
+
+            $jsContent .= "\n// ===== FeatherPanel: Start of Custom JS =====\n";
+            $jsContent .= "// This section is reserved for user-defined or system-injected JavaScript.\n";
+            $jsContent .= App::getInstance(true)->getConfig()->getSetting(
+                ConfigInterface::CUSTOM_JS,
+                "// dummy script - does nothing\n// Feel free to override the 'custom_js' setting in your configuration."
+            ) . "\n";
+            $jsContent .= "// ===== FeatherPanel: End of Custom JS =====\n";
+
+            $etag = '"' . hash('sha256', $jsContent) . '"';
+            Cache::put($cacheKey, ['body' => $jsContent, 'etag' => $etag], 2);
         }
 
-        $jsContent .= "\n// ===== FeatherPanel: Start of Custom JS =====\n";
-        $jsContent .= "// This section is reserved for user-defined or system-injected JavaScript.\n";
-        $jsContent .= App::getInstance(true)->getConfig()->getSetting(
-            ConfigInterface::CUSTOM_JS,
-            "// dummy script - does nothing\n// Feel free to override the 'custom_js' setting in your configuration."
-        ) . "\n";
-        $jsContent .= "// ===== FeatherPanel: End of Custom JS =====\n";
+        if ($request->headers->get('If-None-Match') === $etag) {
+            return new Response('', 304, [
+                'ETag' => $etag,
+                'Cache-Control' => 'public, max-age=60',
+            ]);
+        }
 
         return new Response($jsContent, 200, [
             'Content-Type' => 'application/javascript',
-            'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
-            'Pragma' => 'no-cache',
-            'Expires' => '0',
+            'ETag' => $etag,
+            'Cache-Control' => 'public, max-age=60',
         ]);
     }
 }

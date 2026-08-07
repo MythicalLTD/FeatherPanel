@@ -34,6 +34,7 @@ import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { listSupportedTimezones } from '@/lib/dateUtils';
 import { useUserTimezone } from '@/contexts/PreferencesContext';
 import type { Schedule, ScheduleUpdateRequest } from '@/types/server';
+import { safeBack } from '@/lib/safe-back';
 
 export default function EditSchedulePage() {
     const { uuidShort, id } = useParams() as { uuidShort: string; id: string };
@@ -144,7 +145,7 @@ export default function EditSchedulePage() {
                 </div>
                 <h1 className='text-2xl font-black tracking-tight uppercase'>{t('common.accessDenied')}</h1>
                 <p className='text-muted-foreground mt-2'>{t('common.noPermission')}</p>
-                <Button variant='outline' className='mt-8' onClick={() => router.back()}>
+                <Button variant='outline' className='mt-8' onClick={() => safeBack(router)}>
                     {t('common.goBack')}
                 </Button>
             </div>
@@ -165,7 +166,7 @@ export default function EditSchedulePage() {
                         <Button
                             variant='glass'
                             size='default'
-                            onClick={() => router.back()}
+                            onClick={() => safeBack(router)}
                             disabled={saving}
                             className='order-2 sm:order-1'
                         >
@@ -414,7 +415,7 @@ export default function EditSchedulePage() {
                         type='button'
                         variant='glass'
                         size='default'
-                        onClick={() => router.back()}
+                        onClick={() => safeBack(router)}
                         disabled={saving}
                         className='w-full text-[10px]'
                     >

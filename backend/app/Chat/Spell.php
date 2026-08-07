@@ -158,6 +158,33 @@ class Spell
     }
 
     /**
+     * Fetch spells by IDs, keyed by id.
+     *
+     * @param int[] $ids
+     *
+     * @return array<int, array>
+     */
+    public static function getSpellsByIds(array $ids): array
+    {
+        $ids = array_values(array_unique(array_filter(array_map('intval', $ids), static fn (int $id): bool => $id > 0)));
+        if ($ids === []) {
+            return [];
+        }
+
+        $pdo = Database::getPdoConnection();
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE id IN (' . $placeholders . ')');
+        $stmt->execute($ids);
+
+        $map = [];
+        foreach ($stmt->fetchAll(\PDO::FETCH_ASSOC) as $row) {
+            $map[(int) $row['id']] = $row;
+        }
+
+        return $map;
+    }
+
+    /**
      * Fetch a spell by UUID.
      */
     public static function getSpellByUuid(string $uuid): ?array

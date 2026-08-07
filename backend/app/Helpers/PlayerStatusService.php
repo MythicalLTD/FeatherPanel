@@ -176,10 +176,9 @@ class PlayerStatusService
      */
     public static function getPlayerStatus(string $uuidShort): ?array
     {
-        $cacheKey = self::buildCacheKey($uuidShort);
-        $cached = Cache::get($cacheKey);
+        $cached = self::getCachedPlayerStatus($uuidShort);
 
-        if ($cached !== null && \is_array($cached)) {
+        if ($cached !== null) {
             return $cached;
         }
 
@@ -191,6 +190,26 @@ class PlayerStatusService
         }
 
         return self::queryServer($server);
+    }
+
+    /**
+     * Read player status from cache only (no live GameQ / DB query on miss).
+     *
+     * Used by status dashboards so a cache miss cannot block the HTTP request.
+     *
+     * @param string $uuidShort The server's short UUID
+     *
+     * @return array|null Cached player status data or null if unavailable
+     */
+    public static function getCachedPlayerStatus(string $uuidShort): ?array
+    {
+        if ($uuidShort === '') {
+            return null;
+        }
+
+        $cached = Cache::get(self::buildCacheKey($uuidShort));
+
+        return ($cached !== null && \is_array($cached)) ? $cached : null;
     }
 
     /**

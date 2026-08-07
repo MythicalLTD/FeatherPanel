@@ -66,6 +66,30 @@ export interface ArchiveExtractDragPayload {
     entries: string[];
 }
 
+export interface ShareFileResult {
+    public_id: string;
+    url: string;
+    delete_key: string;
+    expires_at?: string;
+    password_protected?: boolean;
+    size?: number;
+    filename?: string;
+}
+
+export interface ShareFileResponse extends Partial<ShareFileResult> {
+    background?: boolean;
+    identifier?: string | null;
+}
+
+export interface ShareJob {
+    identifier: string;
+    file: string;
+    status: string;
+    progress: number;
+    error?: string;
+    result?: ShareFileResult;
+}
+
 export interface AdvancedFileSearchFilters {
     directory?: string;
     pattern?: string;
@@ -143,13 +167,21 @@ const toAbsolutePath = (root: string, path: string): string => {
 };
 
 export const filesApi = {
-    getFiles: async (uuid: string, directory: string = '/'): Promise<FileObject[]> => {
+    getFiles: async (
+        uuid: string,
+        directory: string = '/',
+        search?: string,
+    ): Promise<{ contents: FileObject[]; limited: boolean; limit: number; total: number }> => {
         const response = await api.get<ApiResponse<FilesResponse>>(`/user/servers/${uuid}/files`, {
-            params: { path: directory },
+            params: {
+                path: directory,
+                ...(search?.trim() ? { search: search.trim() } : {}),
+            },
         });
 
+        const payload = response.data.data;
         // Map fields for UI consistency; never expose the internal trash directory in the UI
-        const mapped = response.data.data.contents.map((f) => {
+        const mapped = (payload.contents ?? []).map((f) => {
             const isFile = f.file !== undefined ? f.file : f.isFile !== undefined ? f.isFile : !f.directory;
             return {
                 ...f,
@@ -159,7 +191,12 @@ export const filesApi = {
                 mimetype: f.mime || f.mimetype,
             };
         });
-        return filterFeatherTrashFiles(mapped);
+        return {
+            contents: filterFeatherTrashFiles(mapped),
+            limited: Boolean(payload.limited),
+            limit: payload.limit ?? 250,
+            total: payload.total ?? mapped.length,
+        };
     },
 
     searchFiles: async (uuid: string, filters: AdvancedFileSearchFilters): Promise<FileObject[]> => {
@@ -246,7 +283,7 @@ export const filesApi = {
 
         if (targetName) {
             const siblings = await filesApi.getFiles(uuid, root || '/');
-            expectedCopiedName = inferNextCopyName(file, new Set(siblings.map((entry) => entry.name)));
+            expectedCopiedName = inferNextCopyName(file, new Set(siblings.contents.map((entry) => entry.name)));
         }
 
         await api.post(`/user/servers/${uuid}/copy-files`, {
@@ -279,7 +316,7 @@ export const filesApi = {
         const existingByDirectory = new Map<string, Set<string>>();
         for (const directory of destinationDirectories) {
             const siblings = await filesApi.getFiles(uuid, directory);
-            existingByDirectory.set(directory, new Set(siblings.map((item) => item.name)));
+            existingByDirectory.set(directory, new Set(siblings.contents.map((item) => item.name)));
         }
 
         const normalizedUpdates = absoluteUpdates.map((entry) => {
@@ -399,6 +436,35 @@ export const filesApi = {
             foreground: false,
             useHeader: true,
         });
+    },
+
+    shareFile: async (
+        uuid: string,
+        options: {
+            file: string;
+            ttl_days: 1 | 5;
+            password?: string;
+            delete_key?: string;
+            background?: boolean;
+        },
+    ): Promise<ShareFileResponse> => {
+        const response = await api.post<ApiResponse<ShareFileResponse>>(`/user/servers/${uuid}/share-file`, options);
+        return response.data.data;
+    },
+
+    getShareJobs: async (uuid: string): Promise<ShareJob[]> => {
+        const response = await api.get<ApiResponse<{ shares?: ShareJob[] } | ShareJob[]>>(
+            `/user/servers/${uuid}/share-jobs`,
+        );
+        const data = response.data.data;
+        if (Array.isArray(data)) {
+            return data;
+        }
+        return data?.shares || [];
+    },
+
+    deleteShareJob: async (uuid: string, id: string): Promise<void> => {
+        await api.delete(`/user/servers/${uuid}/share-jobs/${id}`);
     },
 
     getPullFiles: async (uuid: string): Promise<{ Identifier: string; Progress: number }[]> => {

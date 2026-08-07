@@ -15,7 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { filesApi } from '@/lib/files-api';
 import { filterFeatherTrashFiles, isFeatherTrashEntry } from '@/lib/feather-trash';
@@ -42,9 +42,30 @@ export function useFileManager(serverUuid: string) {
     const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
     const [ignoredPatterns, setIgnoredPatterns] = useState<string[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
+    const [listLimited, setListLimited] = useState(false);
+    const [listLimit, setListLimit] = useState(250);
+    const [listTotal, setListTotal] = useState(0);
+    const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // Current directory from URL or default to /
     const currentDirectory = sanitizeDirectoryPath(searchParams?.get('path'));
+
+    // Debounce search so we filter on the server (full directory) instead of
+    // only the first 250 client-loaded items.
+    useEffect(() => {
+        if (searchDebounceRef.current) {
+            clearTimeout(searchDebounceRef.current);
+        }
+        searchDebounceRef.current = setTimeout(() => {
+            setDebouncedSearch(searchQuery.trim());
+        }, 250);
+        return () => {
+            if (searchDebounceRef.current) {
+                clearTimeout(searchDebounceRef.current);
+            }
+        };
+    }, [searchQuery]);
 
     // Load ignored patterns
     const refreshIgnored = useCallback(() => {
@@ -70,18 +91,16 @@ export function useFileManager(serverUuid: string) {
         setLoading(true);
         setError(null);
         try {
-            // Add timeout to prevent hanging
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
-
             const data = await Promise.race([
-                filesApi.getFiles(serverUuid, currentDirectory || undefined),
+                filesApi.getFiles(serverUuid, currentDirectory || undefined, debouncedSearch || undefined),
                 new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Request timeout')), 15000)),
             ]);
 
-            clearTimeout(timeoutId);
-            const sorted = sortFiles(data);
+            const sorted = sortFiles(data.contents);
             setFiles(sorted);
+            setListLimited(data.limited);
+            setListLimit(data.limit);
+            setListTotal(data.total);
             setSelectedFiles([]);
         } catch (err) {
             console.error(err);
@@ -112,33 +131,26 @@ export function useFileManager(serverUuid: string) {
         } finally {
             setLoading(false);
         }
-    }, [serverUuid, currentDirectory, t]);
+    }, [serverUuid, currentDirectory, debouncedSearch, t]);
 
-    // Only refresh when serverUuid or currentDirectory actually changes
+    // Refresh when directory or server-side search changes
     useEffect(() => {
         refresh();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [serverUuid, currentDirectory]);
+    }, [serverUuid, currentDirectory, debouncedSearch]);
 
-    // Filtering logic
+    // Filtering logic — name search is server-side; only apply local ignore rules here
     const filteredFiles = useMemo(() => {
         let result = filterFeatherTrashFiles(files);
 
-        // Apply ignored patterns
         if (ignoredPatterns.length > 0) {
             result = result.filter((file) => {
                 return !ignoredPatterns.some((pattern) => file.name.includes(pattern));
             });
         }
 
-        // Apply search query
-        if (searchQuery.trim()) {
-            const query = searchQuery.toLowerCase();
-            result = result.filter((file) => file.name.toLowerCase().includes(query));
-        }
-
         return result;
-    }, [files, ignoredPatterns, searchQuery]);
+    }, [files, ignoredPatterns]);
 
     const navigate = (path: string) => {
         const params = new URLSearchParams(searchParams?.toString() ?? '');
@@ -153,6 +165,7 @@ export function useFileManager(serverUuid: string) {
             params.set('path', sanitizedPath);
         }
         setSearchQuery('');
+        setDebouncedSearch('');
         router.push(`?${params.toString()}`);
     };
 
@@ -188,9 +201,16 @@ export function useFileManager(serverUuid: string) {
 
     useEffect(() => {
         refreshPulls();
+    }, [refreshPulls]);
+
+    // Only poll while downloads are active; otherwise avoid a 5s timer for the whole visit
+    useEffect(() => {
+        if (activePulls.length === 0) {
+            return;
+        }
         const interval = setInterval(refreshPulls, 5000);
         return () => clearInterval(interval);
-    }, [refreshPulls]);
+    }, [activePulls.length, refreshPulls]);
 
     const cancelPull = async (id: string) => {
         try {
@@ -212,6 +232,9 @@ export function useFileManager(serverUuid: string) {
         activePulls,
         searchQuery,
         setSearchQuery,
+        listLimited,
+        listLimit,
+        listTotal,
         setSelectedFiles,
         refresh,
         refreshIgnored,

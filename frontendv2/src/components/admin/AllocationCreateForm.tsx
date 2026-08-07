@@ -104,8 +104,9 @@ export function AllocationCreateForm({ nodeId, onCreated, onCancel, showFooter =
                 node_id: nodeId,
                 port,
             });
+            const createdCount = Number(data?.data?.created_count ?? 0);
             const created = (data?.data?.allocations || []) as CreatedAllocationRow[];
-            if (!created.length) {
+            if (!created.length && createdCount <= 0) {
                 toast.error(t('admin.node.allocations.messages.create_failed'));
                 return;
             }
@@ -284,11 +285,12 @@ export function AllocationCreateForm({ nodeId, onCreated, onCancel, showFooter =
             <div className='space-y-2'>
                 <Label className='text-sm font-semibold'>{t('admin.node.allocations.notes')}</Label>
                 <Textarea
-                    placeholder='Notes...'
+                    placeholder={t('admin.node.allocations.notes_placeholder')}
                     value={createForm.notes}
                     className='min-h-25'
                     onChange={(e) => setCreateForm((prev) => ({ ...prev, notes: e.target.value }))}
                 />
+                <p className='text-muted-foreground text-[10px] italic'>{t('admin.node.allocations.notes_help')}</p>
             </div>
 
             {showFooter && (

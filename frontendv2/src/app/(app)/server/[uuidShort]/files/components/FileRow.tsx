@@ -32,6 +32,7 @@ import {
     File as FileIcon,
     Fingerprint,
     PackageSearch,
+    Share2,
     type LucideIcon,
 } from 'lucide-react';
 import { isTrashShortcut } from '@/lib/feather-trash';
@@ -272,6 +273,7 @@ export function FileRow({
         }
         if (file.isFile && canDownload) {
             items.push({ key: 'download', label: t('files.row.download'), Icon: Download });
+            items.push({ key: 'share', label: t('files.row.share'), Icon: Share2 });
         }
         if (canEdit) {
             items.push({ key: 'copy', label: t('files.row.copy'), Icon: Copy });

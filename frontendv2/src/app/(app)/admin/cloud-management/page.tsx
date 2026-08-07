@@ -26,6 +26,7 @@ import {
     CheckCircle2,
     Cloud,
     Coins,
+    Crown,
     ExternalLink,
     Link2,
     Loader2,
@@ -34,6 +35,7 @@ import {
     X,
     XCircle,
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
@@ -75,16 +77,25 @@ interface CloudLinkSettings {
     has_identity_keys?: boolean;
     team_uuid?: string | null;
     team_name?: string | null;
+    team_slug?: string | null;
     cloud_name?: string | null;
     mythic_user_id?: string | null;
     mythic_user_email?: string | null;
     mythic_user_name?: string | null;
     current_user_mapped?: boolean;
     last_synced_at?: string | null;
+    premium?: {
+        active?: boolean;
+        manage_url?: string;
+        features?: {
+            higher_limits?: boolean;
+        };
+    };
 }
 
 export default function CloudManagementPage() {
     const { t } = useTranslation();
+    const router = useRouter();
     const { fetchSummary } = useFeatherCloud();
 
     const [linked, setLinked] = useState(false);
@@ -251,6 +262,17 @@ export default function CloudManagementPage() {
                                             Mythic ID {linkInfo.mythic_user_id}
                                         </span>
                                     )}
+                                    {linkInfo.premium?.active ? (
+                                        <span className='bg-primary/10 text-primary border-primary/20 inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs font-medium'>
+                                            <Crown className='h-3 w-3' />
+                                            {t('admin.cloud_management.premium.active_badge')}
+                                        </span>
+                                    ) : (
+                                        <span className='bg-muted text-muted-foreground inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs'>
+                                            <Crown className='h-3 w-3' />
+                                            {t('admin.cloud_management.premium.inactive_badge')}
+                                        </span>
+                                    )}
                                 </div>
                                 {credits !== null && (
                                     <p className='text-muted-foreground flex items-center gap-1.5 text-sm'>
@@ -289,6 +311,30 @@ export default function CloudManagementPage() {
                                     )}
                                     Sync now
                                 </Button>
+                                <Button
+                                    variant='outline'
+                                    size='sm'
+                                    onClick={() => router.push('/admin/featherpanel-premium')}
+                                >
+                                    <Crown className='mr-2 h-4 w-4' />
+                                    {t('admin.cloud_management.premium.open_page')}
+                                </Button>
+                                {!linkInfo.premium?.active && (
+                                    <Button
+                                        variant='outline'
+                                        size='sm'
+                                        onClick={() =>
+                                            window.open(
+                                                linkInfo.premium?.manage_url || 'https://my.mythicalsystems.org/clouds',
+                                                '_blank',
+                                                'noopener,noreferrer',
+                                            )
+                                        }
+                                    >
+                                        <ExternalLink className='mr-2 h-4 w-4' />
+                                        {t('admin.cloud_management.premium.get')}
+                                    </Button>
+                                )}
                                 <Button variant='outline' size='sm' onClick={openMythicClouds}>
                                     <ExternalLink className='mr-2 h-4 w-4' />
                                     Open Mythic Clouds

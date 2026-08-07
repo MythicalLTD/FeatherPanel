@@ -80,6 +80,7 @@ export default function PublicPluginPage({ page }: PublicPluginPageProps) {
 
             const root = iframeDoc.documentElement;
             root.setAttribute('data-fp-theme', theme);
+            root.style.colorScheme = theme;
             if (theme === 'light') {
                 root.classList.add('light');
                 root.classList.remove('dark');
@@ -181,6 +182,7 @@ export default function PublicPluginPage({ page }: PublicPluginPageProps) {
                     src={iframeSrc}
                     title={page.name}
                     className='h-full min-h-0 w-full border-0'
+                    style={{ background: 'transparent', colorScheme: theme }}
                     onLoad={onIframeLoad}
                 />
             )}

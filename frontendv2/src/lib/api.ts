@@ -58,8 +58,9 @@ const handleAuthStateFailure = () => {
     });
 
     // Redirect unauthenticated users directly to login.
+    // Absolute URL: full reload is intentional after clearing auth storage.
     if (!window.location.pathname.startsWith('/auth')) {
-        window.location.href = '/auth/login';
+        window.location.href = window.location.origin + '/auth/login';
     }
 };
 

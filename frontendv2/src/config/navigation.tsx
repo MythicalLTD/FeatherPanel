@@ -138,6 +138,17 @@ export const getAdminNavigationItems = (
                     group: 'overview',
                 },
                 {
+                    id: 'admin-myfeatherpanel-premium',
+                    name: t('navigation.items.featherpanelPremium'),
+                    title: t('navigation.items.featherpanelPremium'),
+                    url: '/admin/featherpanel-premium',
+                    icon: Crown,
+                    isActive: false,
+                    category: 'admin',
+                    permission: Permissions.ADMIN_SETTINGS_VIEW,
+                    group: 'overview',
+                },
+                {
                     id: 'admin-myfeatherpanel-report-issue',
                     name: t('navigation.items.reportIssue'),
                     title: t('navigation.items.reportIssue'),

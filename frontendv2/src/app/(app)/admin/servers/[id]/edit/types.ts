@@ -76,6 +76,7 @@ export interface Allocation {
     ip: string;
     port: number;
     ip_alias?: string | null;
+    notes?: string | null;
     server_id: number | null;
     node_id: number;
     is_primary?: boolean;

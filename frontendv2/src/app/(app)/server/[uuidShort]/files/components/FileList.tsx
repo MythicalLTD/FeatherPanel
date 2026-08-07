@@ -40,6 +40,7 @@ interface FileListProps {
     serverUuid: string;
     currentDirectory: string;
     anchorName?: string | null;
+    isSearching?: boolean;
 }
 
 export function FileList({
@@ -62,6 +63,7 @@ export function FileList({
     serverUuid,
     currentDirectory,
     anchorName = null,
+    isSearching = false,
 }: FileListProps) {
     const { t } = useTranslation();
 
@@ -104,10 +106,10 @@ export function FileList({
 
                 <div className='relative z-10 space-y-2 text-center'>
                     <h3 className='bg-linear-to-br from-white to-white/40 bg-clip-text text-xl font-bold text-transparent'>
-                        {t('files.list.empty_title')}
+                        {isSearching ? t('files.list.empty_search_title') : t('files.list.empty_title')}
                     </h3>
                     <p className='mx-auto max-w-[280px] text-sm leading-relaxed text-white/40'>
-                        {t('files.list.empty_description')}
+                        {isSearching ? t('files.list.empty_search_description') : t('files.list.empty_description')}
                     </p>
                 </div>
             </div>

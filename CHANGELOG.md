@@ -1,13 +1,36 @@
 # Changelog
 
+## v1.3.7.7 STABLE
+
+### Added
+
+- **FeatherPanel Premium** entitlement from Mythic by @nayskutzu
+- **Share files via temp uploads** from the server file manager. by @nayskutzu
+- Admin **Force Reconcile** for Docker/containerd desync (FeatherPanel#199): Actions tab shows live Wings runtime health and can call Wings `POST /api/servers/{uuid}/reconcile`. Panel accepts Wings process state `error`, badges/labels it as Runtime Error, and allows Start from `error` like offline.
+- Allocation **notes** are shown in node allocation lists, admin server allocation lists, and allocation pickers so admins can document port usage (e.g. Velocity, Dynmap, Geyser) without overloading IP Alias. by @nayskutzu
+
+### Fixed
+
+- Cancel / Go back no longer uses browser history, so after visiting an external site (or opening a bookmarked panel page) you stay in the panel instead of being sent to Amazon/Google/etc. by @nayskutzu
+- phpMyAdmin installs are no longer wiped when an administrator presses Update: PMA now lives on a Docker volume (and OCI `/data/pma`), source updates exclude `public/pma` from `git clean`, and a config marker auto-restores the install if files are missing. by @nayskutzu
+- File manager search now filters the full directory on the server before the 250-item display limit, so matches outside the first loaded page (e.g. `fy_*` maps after many `de_*` files) are found. by @nayskutzu
+- Requests with incomplete or invalid percent-encoding in the path (e.g. `/%f`, `/%ff`, `/server/%A0`) no longer 500 / abort the Next.js response (Cloudflare 520 / Caddy broken pipe); they return 400 instead. by @nayskutzu
+- Admin page headers no longer crush titles into vertical letter stacks when many action buttons are present (e.g. Plugins). by @nayskutzu
+- Optimized how the admin area is pulling node data! by @nayskutzu
+
+### Improved
+
+- The ai chatbot now supports the ability to read player count and online players. by @nayskutzu
+- Allocation notes create/edit help text clarifies that notes are informational labels for what a port is used for. by @nayskutzu
+
 ## v1.3.7.6 STABLE
 
 ### Fixed
 
 - Codemirror crash on the code editor page was fixed. by @nayskutzu
-- File manager downloads now use signed Wings URLs (same as backups) instead of proxying the whole file through PHP, fixing large-file failures caused by the default 30s Guzzle/cURL timeout. by @cursor
-- PBS backups no longer show **0 MiB** when snapshot-list size is missing: Wings parses logical size from `proxmox-backup-client` output. New PBS archives default to `root.pxar` (PVE-style `root.pxar.didx` in PBS UI); restore still accepts legacy `server.pxar`. by @cursor
-- FastDL generated `sv_downloadurl` no longer uses the Wings API port (e.g. `:8080`); it uses the node FQDN and FastDL bind port (default 80, omit `:80`). FastDL enable/directory is persisted on the server and synced to Wings so it survives restart/power cycles. by @cursor
+- File manager downloads now use signed Wings URLs (same as backups) instead of proxying the whole file through PHP, fixing large-file failures caused by the default 30s Guzzle/cURL timeout. by @nayskutzu
+- PBS backups no longer show **0 MiB** when snapshot-list size is missing: Wings parses logical size from `proxmox-backup-client` output. New PBS archives default to `root.pxar` (PVE-style `root.pxar.didx` in PBS UI); restore still accepts legacy `server.pxar`. by @nayskutzu
+- FastDL generated `sv_downloadurl` no longer uses the Wings API port (e.g. `:8080`); it uses the node FQDN and FastDL bind port (default 80, omit `:80`). FastDL enable/directory is persisted on the server and synced to Wings so it survives restart/power cycles. by @nayskutzu
 - Issues with stuck console connections were fixed. by @nayskutzu
 - Issues with console on mobile devices were fixed. by @nayskutzu
 
@@ -16,10 +39,10 @@
 
 ### Added
 
-- Optional **Wings Remote URL** (`wings_remote_url`) under Admin → Settings → App so FeatherWings can call the panel via a DNS-only hostname when Cloudflare Precursor / Under Attack Mode blocks daemon traffic to App URL (fixes SFTP “wrong password” when Maximize Security is on). Re-fetch node config after changing. by @cursor
-- Mythic Cloud (Panels API) integration updates: OAuth link via `https://my.mythicalsystems.org/oauth2`, Panel API client defaulting to `https://panels.mythicalsystems.org` (configurable / `panels-dev`), handshake + finish routes, marketplace/eggs/pastes/issues client surfaces, and admin issue reporter. by @cursor
+- Optional **Wings Remote URL** (`wings_remote_url`) under Admin → Settings → App so FeatherWings can call the panel via a DNS-only hostname when Cloudflare Prenayskutzu / Under Attack Mode blocks daemon traffic to App URL (fixes SFTP “wrong password” when Maximize Security is on). Re-fetch node config after changing. by @nayskutzu
+- Mythic Cloud (Panels API) integration updates: OAuth link via `https://my.mythicalsystems.org/oauth2`, Panel API client defaulting to `https://panels.mythicalsystems.org` (configurable / `panels-dev`), handshake + finish routes, marketplace/eggs/pastes/issues client surfaces, and admin issue reporter. by @nayskutzu
 - User self-service **account deletion** with admin-configurable verification (2FA and/or email OTP) and deletion modes (instant, delayed with cancellable grace period, or after active services expire). by @nayskutzu
-- **Proxmox Backup Server (PBS)** destination for Docker server backups: when Wings has `system.backups.pbs` enabled, new backups stream via `proxmox-backup-client` (pxar) instead of local tar.gz — no zip/archive on the Wings backup folder, with PBS chunk deduplication. Restore/delete use PBS snapshots; file download is disabled for PBS backups. by @cursor
+- **Proxmox Backup Server (PBS)** destination for Docker server backups: when Wings has `system.backups.pbs` enabled, new backups stream via `proxmox-backup-client` (pxar) instead of local tar.gz — no zip/archive on the Wings backup folder, with PBS chunk deduplication. Restore/delete use PBS snapshots; file download is disabled for PBS backups. by @nayskutzu
 - AbuseIPDB integration: configure an API key under Admin → Settings → Security, check registering IPs (block / log / auto-ban), scan existing users for reported IPs, and optionally report a user's IP to AbuseIPDB when banning (with official category dropdown). by @nayskutzu
 - Roles can now use custom icon/image badges, uploadable from the role editor and shown on role badges throughout the panel. by @nayskutzu
 - Server **lifecycle hooks**: added **Server-crash Hook** pipeline that runs when Wings reports a crashed container (Discord webhooks, HTTP requests, container commands). by @nayskutzu
@@ -43,8 +66,8 @@
 
 ### Fixed
 
-- Cloudflare Under Attack Mode / challenge HTML no longer clears the panel session or empties permissions (admin appearing as a normal user, owned-server access errors, console JWT failures). by @cursor
-- Marketplace/cloud `.fpa` installs failing with `ADDON_EXTRACT_FAILED`: Mythic packages use AES-256 (PKZIP 5.1) while Info-ZIP `unzip` only supports ZipCrypto — extraction now uses PHP `ZipArchive` (with unzip fallback). by @cursor
+- Cloudflare Under Attack Mode / challenge HTML no longer clears the panel session or empties permissions (admin appearing as a normal user, owned-server access errors, console JWT failures). by @nayskutzu
+- Marketplace/cloud `.fpa` installs failing with `ADDON_EXTRACT_FAILED`: Mythic packages use AES-256 (PKZIP 5.1) while Info-ZIP `unzip` only supports ZipCrypto — extraction now uses PHP `ZipArchive` (with unzip fallback). by @nayskutzu
 - Admin area stats were not loading correctly. by @nayskutzu
 - Fixed the issue with unlimited backup limit. by @nayskutzu
 - Issues related to port allocation were fixed. by @nayskutzu
@@ -757,7 +780,7 @@
 - Introduced FeatherPanel Zero Trust Security: servers are now automatically scanned for malware and threats, enhancing protection and peace of mind! by @nayskutzu
 - FeatherPanel Thread Intelligence Server (TIS): introduces advanced real-time malware and threat detection, empowering your panel with cutting-edge active protection and intelligent security analytics for all managed servers. Powerd by FeatherWings TIS and FeatherCloud TIS! by @nayskutzu
 - Added support for a FeatherPanel plugin export ignore file, allowing you to exclude packages and third-party dependencies that are used during plugin development but should not be included in the final exported plugin. by @nayskutzu
-- Add cursor pointer to non-disabled buttons to improve UI clarity. by @puttydotexe
+- Add nayskutzu pointer to non-disabled buttons to improve UI clarity. by @puttydotexe
 - Introduced context-aware tooltips for various admin actions throughout FeatherPanel menus, providing clearer guidance and an improved user experience! by @nayskutzu
 - Two-factor setup now redirects to the intended page after successful verification (short delay for UX). by @puttydotexe
 - OTP input updated to allow numeric entry with autocomplete for easier entry on devices. by @puttydotexe
@@ -1078,7 +1101,7 @@
 - Added a new `settings` CLI command to allow toggling settings directly from the command line for easy configuration management.
 - Added a new `users` CLI command for managing users from the CLI, including creating, updating, and deleting user accounts.
 - Added comprehensive unit tests for more core admin controllers.
-- Added initial `.cursor/rules/*` files, enabling extensive and fine-grained codebase navigation and enforcing coding standards across CLI commands, controllers, chat models, and routes for improved consistency and contributor onboarding.
+- Added initial `.nayskutzu/rules/*` files, enabling extensive and fine-grained codebase navigation and enforcing coding standards across CLI commands, controllers, chat models, and routes for improved consistency and contributor onboarding.
 - Added "Pull file" support to the file manager, enabling users to pull/download files directly from remote URLs into the server. Manage and monitor remote downloads in real time from the Active Downloads panel.
 - Added automatic route indexing for plugins: Rather than requiring each plugin to register its own API routes during the app ready event, the route indexer now automatically discovers and loads routes from a `Routes` folder within each plugin. This simplifies plugin development—just place your route files in a `Routes` directory in your plugin, and they’ll be auto-registered without manual setup!
 - Added full support for PostgreSQL databases, enabling seamless integration and management alongside MySQL and MariaDB.

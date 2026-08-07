@@ -22,6 +22,7 @@ export * from './ImagePreviewDialog';
 export * from './PermissionsDialog';
 export * from './MoveCopyDialog';
 export * from './PullFileDialog';
+export * from './ShareFileDialog';
 export * from './WipeAllDialog';
 export * from './IgnoredContentDialog';
 export * from './CompressDialog';

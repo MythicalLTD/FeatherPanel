@@ -15,21 +15,26 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { usePathname } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import ChatbotContainer from './ChatbotContainer';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useVmInstance } from '@/contexts/VmInstanceContext';
 import { useTheme } from '@/contexts/ThemeContext';
 
+const ChatbotContainer = lazy(() => import('./ChatbotContainer'));
+
 function ChatbotOpenButton({ onClick }: { onClick: () => void }) {
     const { t } = useTranslation();
     const { settings } = useSettings();
     const { theme } = useTheme();
-    const logoUrl = theme === 'dark' ? settings?.app_logo_dark || '/logo.png' : settings?.app_logo_white || '/logo.png';
+    const customAvatar = settings?.chatbot_avatar_url?.trim();
+    const logoUrl =
+        customAvatar ||
+        (theme === 'dark' ? settings?.app_logo_dark || '/logo.png' : settings?.app_logo_white || '/logo.png');
+    const assistantName = settings?.chatbot_display_name?.trim() || t('chatbot.title');
 
     return (
         <Button
@@ -39,7 +44,7 @@ function ChatbotOpenButton({ onClick }: { onClick: () => void }) {
         >
             <Image
                 src={logoUrl}
-                alt={settings?.app_name || t('chatbot.title')}
+                alt={assistantName}
                 width={34}
                 height={34}
                 className='h-8 w-8 object-contain md:h-9 md:w-9'
@@ -84,7 +89,16 @@ function VdsChatbotWidget() {
                 </div>
             )}
 
-            <ChatbotContainer open={isOpen} onClose={() => setIsOpen(false)} mode='vds' vdsInstance={instance} />
+            {isOpen && (
+                <Suspense fallback={null}>
+                    <ChatbotContainer
+                        open={isOpen}
+                        onClose={() => setIsOpen(false)}
+                        mode='vds'
+                        vdsInstance={instance}
+                    />
+                </Suspense>
+            )}
         </>
     );
 }
@@ -142,7 +156,11 @@ export default function ChatbotWidget() {
                     </div>
                 )}
 
-                <ChatbotContainer open={isOpen} onClose={() => setIsOpen(false)} mode='dashboard' />
+                {isOpen && (
+                    <Suspense fallback={null}>
+                        <ChatbotContainer open={isOpen} onClose={() => setIsOpen(false)} mode='dashboard' />
+                    </Suspense>
+                )}
             </>
         );
     }
@@ -158,7 +176,11 @@ export default function ChatbotWidget() {
                 </div>
             )}
 
-            <ChatbotContainer open={isOpen} onClose={() => setIsOpen(false)} mode='server' />
+            {isOpen && (
+                <Suspense fallback={null}>
+                    <ChatbotContainer open={isOpen} onClose={() => setIsOpen(false)} mode='server' />
+                </Suspense>
+            )}
         </>
     );
 }

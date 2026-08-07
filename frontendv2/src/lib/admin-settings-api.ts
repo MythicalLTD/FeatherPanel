@@ -19,7 +19,7 @@ import axios from 'axios';
 export interface BaseSetting {
     name: string;
     description: string;
-    type: 'text' | 'select' | 'textarea' | 'toggle' | 'number' | 'password';
+    type: 'text' | 'select' | 'textarea' | 'toggle' | 'number' | 'password' | 'image';
     required: boolean;
     placeholder: string;
     validation: string;
@@ -64,7 +64,14 @@ export interface PasswordSetting extends BaseSetting {
     sensitive: true;
 }
 
-export type Setting = TextSetting | SelectSetting | TextareaSetting | ToggleSetting | NumberSetting | PasswordSetting;
+export interface ImageSetting extends BaseSetting {
+    type: 'image';
+    value: string;
+    options: string[];
+}
+
+export type Setting =
+    TextSetting | SelectSetting | TextareaSetting | ToggleSetting | NumberSetting | PasswordSetting | ImageSetting;
 
 // Category Types
 export interface CategoryConfig {

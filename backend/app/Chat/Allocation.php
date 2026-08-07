@@ -99,6 +99,63 @@ class Allocation
     }
 
     /**
+     * Fetch allocations by IDs, keyed by id.
+     *
+     * @param int[] $ids
+     *
+     * @return array<int, array>
+     */
+    public static function getAllocationsByIds(array $ids): array
+    {
+        $ids = array_values(array_unique(array_filter(array_map('intval', $ids), static fn (int $id): bool => $id > 0)));
+        if ($ids === []) {
+            return [];
+        }
+
+        $pdo = Database::getPdoConnection();
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE id IN (' . $placeholders . ')');
+        $stmt->execute($ids);
+
+        $map = [];
+        foreach ($stmt->fetchAll(\PDO::FETCH_ASSOC) as $row) {
+            $map[(int) $row['id']] = $row;
+        }
+
+        return $map;
+    }
+
+    /**
+     * Fetch allocations for many servers, grouped by server_id.
+     *
+     * @param int[] $serverIds
+     *
+     * @return array<int, list<array>>
+     */
+    public static function getByServerIds(array $serverIds): array
+    {
+        $serverIds = array_values(array_unique(array_filter(array_map('intval', $serverIds), static fn (int $id): bool => $id > 0)));
+        if ($serverIds === []) {
+            return [];
+        }
+
+        $pdo = Database::getPdoConnection();
+        $placeholders = implode(',', array_fill(0, count($serverIds), '?'));
+        $stmt = $pdo->prepare(
+            'SELECT * FROM ' . self::$table
+            . ' WHERE server_id IN (' . $placeholders . ') ORDER BY created_at DESC'
+        );
+        $stmt->execute($serverIds);
+
+        $grouped = [];
+        foreach ($stmt->fetchAll(\PDO::FETCH_ASSOC) as $row) {
+            $grouped[(int) $row['server_id']][] = $row;
+        }
+
+        return $grouped;
+    }
+
+    /**
      * Get allocations by node ID.
      */
     public static function getByNodeId(int $nodeId, int $limit = 10, int $offset = 0): array
@@ -145,10 +202,18 @@ class Allocation
     /**
      * Get available allocations (not assigned to any server).
      */
-    public static function getAvailable(int $limit = 10, int $offset = 0): array
+    public static function getAvailable(int $limit = 10, int $offset = 0, ?int $nodeId = null): array
     {
         $pdo = Database::getPdoConnection();
-        $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE server_id IS NULL ORDER BY created_at DESC LIMIT :limit OFFSET :offset');
+        $sql = 'SELECT * FROM ' . self::$table . ' WHERE server_id IS NULL';
+        if ($nodeId !== null && $nodeId > 0) {
+            $sql .= ' AND node_id = :node_id';
+        }
+        $sql .= ' ORDER BY created_at DESC LIMIT :limit OFFSET :offset';
+        $stmt = $pdo->prepare($sql);
+        if ($nodeId !== null && $nodeId > 0) {
+            $stmt->bindValue('node_id', $nodeId, \PDO::PARAM_INT);
+        }
         $stmt->bindValue('limit', $limit, \PDO::PARAM_INT);
         $stmt->bindValue('offset', $offset, \PDO::PARAM_INT);
         $stmt->execute();
@@ -206,10 +271,17 @@ class Allocation
     /**
      * Get count of available allocations.
      */
-    public static function getAvailableCount(): int
+    public static function getAvailableCount(?int $nodeId = null): int
     {
         $pdo = Database::getPdoConnection();
-        $stmt = $pdo->prepare('SELECT COUNT(*) FROM ' . self::$table . ' WHERE server_id IS NULL');
+        $sql = 'SELECT COUNT(*) FROM ' . self::$table . ' WHERE server_id IS NULL';
+        if ($nodeId !== null && $nodeId > 0) {
+            $sql .= ' AND node_id = :node_id';
+        }
+        $stmt = $pdo->prepare($sql);
+        if ($nodeId !== null && $nodeId > 0) {
+            $stmt->bindValue('node_id', $nodeId, \PDO::PARAM_INT);
+        }
         $stmt->execute();
 
         return (int) $stmt->fetchColumn();
@@ -382,13 +454,11 @@ class Allocation
                 $insert = [];
 
                 foreach ($fields as $field) {
-                    if (isset($allocation[$field])) {
+                    if (array_key_exists($field, $allocation) && $allocation[$field] !== '') {
                         $insert[$field] = $allocation[$field];
                     } else {
                         // Set default values for optional fields
-                        if ($field === 'ip_alias' || $field === 'notes') {
-                            $insert[$field] = null;
-                        } elseif ($field === 'server_id') {
+                        if ($field === 'ip_alias' || $field === 'notes' || $field === 'server_id') {
                             $insert[$field] = null;
                         }
                     }
@@ -399,7 +469,26 @@ class Allocation
                     continue;
                 }
 
-                if ($stmt->execute($insert)) {
+                $stmt->bindValue(':node_id', (int) $insert['node_id'], \PDO::PARAM_INT);
+                $stmt->bindValue(':ip', (string) $insert['ip']);
+                if ($insert['ip_alias'] === null) {
+                    $stmt->bindValue(':ip_alias', null, \PDO::PARAM_NULL);
+                } else {
+                    $stmt->bindValue(':ip_alias', (string) $insert['ip_alias']);
+                }
+                $stmt->bindValue(':port', (int) $insert['port'], \PDO::PARAM_INT);
+                if ($insert['server_id'] === null) {
+                    $stmt->bindValue(':server_id', null, \PDO::PARAM_NULL);
+                } else {
+                    $stmt->bindValue(':server_id', (int) $insert['server_id'], \PDO::PARAM_INT);
+                }
+                if ($insert['notes'] === null) {
+                    $stmt->bindValue(':notes', null, \PDO::PARAM_NULL);
+                } else {
+                    $stmt->bindValue(':notes', (string) $insert['notes']);
+                }
+
+                if ($stmt->execute()) {
                     $createdIds[] = (int) $pdo->lastInsertId();
                 }
             }
@@ -409,6 +498,7 @@ class Allocation
             return $createdIds;
         } catch (\Exception $e) {
             $pdo->rollBack();
+            App::getInstance(true)->getLogger()->error('Failed to create allocations batch: ' . $e->getMessage());
 
             return [];
         }
@@ -685,6 +775,30 @@ class Allocation
         $stmt->execute($params);
 
         return (int) $stmt->fetchColumn() === 0;
+    }
+
+    /**
+     * Return ports that already exist for a node + IP (batch uniqueness check).
+     *
+     * @param int[] $ports
+     *
+     * @return int[]
+     */
+    public static function getExistingPortsForIp(int $nodeId, string $ip, array $ports): array
+    {
+        $ports = array_values(array_unique(array_filter(array_map('intval', $ports), static fn (int $port): bool => $port > 0)));
+        if ($nodeId <= 0 || $ip === '' || $ports === []) {
+            return [];
+        }
+
+        $pdo = Database::getPdoConnection();
+        $placeholders = implode(',', array_fill(0, count($ports), '?'));
+        $stmt = $pdo->prepare(
+            'SELECT port FROM ' . self::$table . ' WHERE node_id = ? AND ip = ? AND port IN (' . $placeholders . ')'
+        );
+        $stmt->execute([$nodeId, $ip, ...$ports]);
+
+        return array_map('intval', $stmt->fetchAll(\PDO::FETCH_COLUMN));
     }
 
     /**

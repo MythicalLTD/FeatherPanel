@@ -716,6 +716,67 @@ class ServerService
         }
     }
 
+    /**
+     * Share a server file via temp uploads (multipart upload runs on Wings).
+     *
+     * @param array{
+     *     file: string,
+     *     ttl_days: int,
+     *     password?: string|null,
+     *     delete_key?: string|null,
+     *     token?: string|null,
+     *     foreground?: bool,
+     *     background?: bool
+     * } $payload
+     */
+    public function shareFile(string $serverUuid, array $payload, int $timeout = 600): WingsResponse
+    {
+        try {
+            $response = $this->connection->post(
+                "/api/servers/{$serverUuid}/files/share",
+                $payload,
+                [],
+                1,
+                $timeout
+            );
+
+            // Background jobs return { identifier }; completed shares return public_id/url.
+            $status = isset($response['identifier']) && !isset($response['public_id']) ? 202 : 200;
+
+            return new WingsResponse($response, $status);
+        } catch (\Exception $e) {
+            return new WingsResponse(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * List active temp upload share jobs.
+     */
+    public function getShareJobs(string $serverUuid): WingsResponse
+    {
+        try {
+            $response = $this->connection->get("/api/servers/{$serverUuid}/files/share");
+
+            return new WingsResponse($response, 200);
+        } catch (\Exception $e) {
+            return new WingsResponse(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Cancel a temp upload share job.
+     */
+    public function deleteShareJob(string $serverUuid, string $shareId): WingsResponse
+    {
+        try {
+            $response = $this->connection->delete("/api/servers/{$serverUuid}/files/share/{$shareId}");
+
+            return new WingsResponse($response, 204);
+        } catch (\Exception $e) {
+            return new WingsResponse(['error' => $e->getMessage()], 500);
+        }
+    }
+
     // ========================================
     // Backup Methods
     // ========================================
@@ -840,6 +901,22 @@ class ServerService
             $response = $this->connection->post("/api/servers/{$serverUuid}/sync");
 
             return new WingsResponse($response, 204);
+        } catch (\Exception $e) {
+            return new WingsResponse(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Force Docker runtime reconciliation for a server stuck in starting/stopping
+     * or desynchronized from containerd (FeatherPanel#199).
+     */
+    public function reconcileServer(string $serverUuid): WingsResponse
+    {
+        try {
+            // Recovery can terminate/remove containers with Docker timeouts; allow up to 60s.
+            $response = $this->connection->post("/api/servers/{$serverUuid}/reconcile", [], [], 3, 60);
+
+            return new WingsResponse($response, 200);
         } catch (\Exception $e) {
             return new WingsResponse(['error' => $e->getMessage()], 500);
         }

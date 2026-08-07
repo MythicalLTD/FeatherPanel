@@ -30,6 +30,7 @@ import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { useVdsPermissions } from '@/hooks/useVdsPermissions';
 import { useDeveloperMode } from '@/hooks/useDeveloperMode';
 import { useMainNavResourceCounts } from '@/hooks/useMainNavResourceCounts';
+import { applySidebarCustomization, parseSidebarNavigationConfig, type SidebarScope } from '@/lib/sidebarCustomization';
 
 const normalizeSpellId = (spellId: number | string | null | undefined): number | null => {
     if (spellId === null || spellId === undefined) return null;
@@ -235,7 +236,13 @@ export function useNavigation() {
                 items.push(...pluginItems);
             }
 
-            return items.filter((item) => !item.permission || hasPermission(item.permission));
+            const filtered = items.filter((item) => !item.permission || hasPermission(item.permission));
+            return applySidebarCustomization(
+                filtered,
+                parseSidebarNavigationConfig(settings?.sidebar_navigation_config),
+                'admin',
+                'admin',
+            );
         }
 
         if (isServer && serverUuid) {
@@ -258,7 +265,13 @@ export function useNavigation() {
                 items.push(...serverPlugins);
             }
 
-            return items.filter((item) => !item.permission || hasServerPermission(item.permission));
+            const filtered = items.filter((item) => !item.permission || hasServerPermission(item.permission));
+            return applySidebarCustomization(
+                filtered,
+                parseSidebarNavigationConfig(settings?.sidebar_navigation_config),
+                'server',
+                'server',
+            );
         }
 
         if (isVds && vdsId) {
@@ -290,7 +303,13 @@ export function useNavigation() {
             items.push(...pluginItems);
         }
 
-        return items.filter((item) => !item.permission || hasPermission(item.permission));
+        const filtered = items.filter((item) => !item.permission || hasPermission(item.permission));
+        return applySidebarCustomization(
+            filtered,
+            parseSidebarNavigationConfig(settings?.sidebar_navigation_config),
+            'main' satisfies SidebarScope,
+            'main',
+        );
     }, [
         pathname,
         hasPermission,

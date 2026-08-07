@@ -52,6 +52,9 @@ class Module extends App implements CommandBuilder
                 case 'install':
                     self::installModule($app, $args[2] ?? null);
                     break;
+                case 'ensure':
+                    self::ensureModule($app, $args[2] ?? null);
+                    break;
                 case 'list':
                     self::listModules($app);
                     break;
@@ -60,12 +63,12 @@ class Module extends App implements CommandBuilder
                     break;
                 default:
                     $app->send('&cInvalid subcommand: ' . $subCommand);
-                    $app->send('&7Available subcommands: install, list, uninstall');
+                    $app->send('&7Available subcommands: install, ensure, list, uninstall');
                     $app->send('&7Usage: php fuse module <subcommand> [module]');
                     break;
             }
         } else {
-            $app->send('&cPlease specify a subcommand: install, list, uninstall');
+            $app->send('&cPlease specify a subcommand: install, ensure, list, uninstall');
             $app->send('&7Usage: php fuse module <subcommand> [module]');
         }
 
@@ -74,13 +77,14 @@ class Module extends App implements CommandBuilder
 
     public static function getDescription(): string
     {
-        return 'Manage FeatherPanel modules (install, list, uninstall)';
+        return 'Manage FeatherPanel modules (install, ensure, list, uninstall)';
     }
 
     public static function getSubCommands(): array
     {
         return [
             'install' => 'Install a module (usage: module install <module>)',
+            'ensure' => 'Reinstall a module if its install marker exists but files are missing (usage: module ensure <module>)',
             'list' => 'List available and installed modules',
             'uninstall' => 'Uninstall a module (usage: module uninstall <module>)',
         ];
@@ -111,6 +115,10 @@ class Module extends App implements CommandBuilder
         // Check if already installed
         if (self::isModuleInstalled($moduleName)) {
             $module = self::AVAILABLE_MODULES[$moduleName];
+            if ($moduleName === 'pma') {
+                // Persist marker so future panel updates can restore if files are wiped
+                PhpMyAdmin::ensureInstalled();
+            }
             $app->send('&eModule "' . $module['name'] . '" is already installed');
 
             return;
@@ -132,6 +140,49 @@ class Module extends App implements CommandBuilder
         } catch (\Exception $e) {
             $app->send('&c&l❌ Installation failed: &r' . $e->getMessage());
             \App\App::getInstance(true)->getLogger()->error('Module installation failed: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Ensure a previously installed module is present (used after panel updates).
+     */
+    private static function ensureModule(App $app, ?string $moduleName): void
+    {
+        if ($moduleName === null) {
+            $app->send('&cError: Module name is required');
+            $app->send('&7Usage: php fuse module ensure <module>');
+            $app->send('&7Available modules: ' . implode(', ', array_keys(self::AVAILABLE_MODULES)));
+
+            return;
+        }
+
+        $moduleName = strtolower($moduleName);
+
+        if (!isset(self::AVAILABLE_MODULES[$moduleName])) {
+            $app->send('&cError: Unknown module "' . $moduleName . '"');
+            $app->send('&7Available modules: ' . implode(', ', array_keys(self::AVAILABLE_MODULES)));
+
+            return;
+        }
+
+        $module = self::AVAILABLE_MODULES[$moduleName];
+
+        try {
+            if ($moduleName === 'pma') {
+                PhpMyAdmin::ensureInstalled();
+                if (PhpMyAdmin::isInstalled()) {
+                    $app->send('&a' . $module['name'] . ' is installed');
+                } else {
+                    $app->send('&7' . $module['name'] . ' is not marked for install — nothing to do');
+                }
+
+                return;
+            }
+
+            $app->send('&eEnsure is not implemented for module "' . $moduleName . '"');
+        } catch (\Exception $e) {
+            $app->send('&c&l❌ Ensure failed: &r' . $e->getMessage());
+            \App\App::getInstance(true)->getLogger()->error('Module ensure failed: ' . $e->getMessage());
         }
     }
 

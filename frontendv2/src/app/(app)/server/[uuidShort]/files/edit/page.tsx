@@ -39,6 +39,7 @@ import { WhitelistEditor } from '@/components/server/files/editors/WhitelistEdit
 import { BukkitConfigurationEditor } from '@/components/server/files/editors/BukkitConfigurationEditor';
 import { CommandsEditor } from '@/components/server/files/editors/CommandsEditor';
 import { isBinaryLikeFileName } from '@/lib/binary-like-file-names';
+import { safeBack } from '@/lib/safe-back';
 
 export default function FileEditorPage({
     params,
@@ -517,7 +518,12 @@ export default function FileEditorPage({
                             <Button
                                 variant='ghost'
                                 size='sm'
-                                onClick={() => router.back()}
+                                onClick={() =>
+                                    safeBack(
+                                        router,
+                                        `/server/${uuidShort}/files?directory=${encodeURIComponent(directory || '/')}`,
+                                    )
+                                }
                                 className='text-muted-foreground hover:text-foreground'
                             >
                                 {t('files.editor.cancel')}

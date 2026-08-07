@@ -16,7 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useEffect } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 
 interface SelfTestResponse {
     success: boolean;
@@ -94,6 +94,7 @@ async function checkSystemHealth(): Promise<boolean> {
 
 export default function SystemHealthCheck() {
     const pathname = usePathname();
+    const router = useRouter();
 
     useEffect(() => {
         if (pathname === '/maintenance') {
@@ -107,7 +108,7 @@ export default function SystemHealthCheck() {
             const healthy = await checkSystemHealth();
             if (!cancelled && !healthy) {
                 console.error('System health check reported not_ready');
-                window.location.href = '/maintenance';
+                router.replace('/maintenance');
             }
         };
 
@@ -129,7 +130,7 @@ export default function SystemHealthCheck() {
                 window.clearInterval(intervalId);
             }
         };
-    }, [pathname]);
+    }, [pathname, router]);
 
     return null;
 }

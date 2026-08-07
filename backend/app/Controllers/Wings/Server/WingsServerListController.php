@@ -105,15 +105,17 @@ class WingsServerListController
         $search = $request->query->get('search', '');
 
         // Get Wings authentication attributes from request
-        $tokenId = $request->attributes->get('wings_token_id');
-        $tokenSecret = $request->attributes->get('wings_token_secret');
+        $node = $request->attributes->get('wings_node');
+        if (!$node || !is_array($node)) {
+            $tokenId = $request->attributes->get('wings_token_id');
+            $tokenSecret = $request->attributes->get('wings_token_secret');
 
-        if (!$tokenId || !$tokenSecret) {
-            return ApiResponse::error('Invalid Wings authentication', 'INVALID_WINGS_AUTH', 403);
+            if (!$tokenId || !$tokenSecret) {
+                return ApiResponse::error('Invalid Wings authentication', 'INVALID_WINGS_AUTH', 403);
+            }
+
+            $node = Node::getNodeByWingsAuth($tokenId, $tokenSecret);
         }
-
-        // Get node info
-        $node = Node::getNodeByWingsAuth($tokenId, $tokenSecret);
 
         if (!$node) {
             return ApiResponse::error('Invalid Wings authentication', 'INVALID_WINGS_AUTH', 403);
@@ -124,21 +126,42 @@ class WingsServerListController
         $total = Server::getCount(search: $search, nodeId: $node['id']);
         $lastPage = max(1, (int) ceil($total / $perPage));
 
+        // Prefetch related rows for this page (avoids N+1 per server)
+        $spellIds = [];
+        $realmIds = [];
+        $allocationIds = [];
+        $serverIds = [];
+        foreach ($servers as $s) {
+            $serverIds[] = (int) $s['id'];
+            if (!empty($s['spell_id'])) {
+                $spellIds[(int) $s['spell_id']] = true;
+            }
+            if (!empty($s['realms_id'])) {
+                $realmIds[(int) $s['realms_id']] = true;
+            }
+            if (!empty($s['allocation_id'])) {
+                $allocationIds[(int) $s['allocation_id']] = true;
+            }
+        }
+        $spellsById = Spell::getSpellsByIds(array_keys($spellIds));
+        $realmsById = Realm::getByIds(array_keys($realmIds));
+        $allocationsById = Allocation::getAllocationsByIds(array_keys($allocationIds));
+        $allocationsByServerId = Allocation::getByServerIds($serverIds);
+
         // Build the response data
         $data = [];
         foreach ($servers as $server) {
-            // Get related data for each server
-            $node = Node::getNodeById($server['node_id']);
-            $allocation = Allocation::getAllocationById($server['allocation_id']);
-            $spell = Spell::getSpellById($server['spell_id']);
-            $realm = Realm::getById($server['realms_id']);
+            // All servers on this endpoint share the authenticated node
+            $allocation = $allocationsById[(int) $server['allocation_id']] ?? null;
+            $spell = $spellsById[(int) $server['spell_id']] ?? null;
+            $realm = $realmsById[(int) $server['realms_id']] ?? null;
 
-            if (!$node || !$allocation || !$spell || !$realm) {
+            if (!$allocation || !$spell || !$realm) {
                 continue; // Skip servers with missing related data
             }
 
             // Get all allocations for this server
-            $allAllocations = Allocation::getByServerId($server['id']);
+            $allAllocations = $allocationsByServerId[(int) $server['id']] ?? [];
 
             // Get server variables
             $serverVariables = ServerVariable::getServerVariablesWithDetails($server['id']);

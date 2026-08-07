@@ -399,6 +399,9 @@ export function AllocationsTab({ nodeId, nodeName }: AllocationsTabProps) {
                                         {t('admin.node.allocations.ip_alias')}
                                     </th>
                                     <th className='text-muted-foreground px-4 py-3 text-left font-medium'>
+                                        {t('admin.node.allocations.notes')}
+                                    </th>
+                                    <th className='text-muted-foreground px-4 py-3 text-left font-medium'>
                                         {t('admin.node.allocations.server')}
                                     </th>
                                     <th className='text-muted-foreground px-4 py-3 text-right font-medium'>
@@ -409,13 +412,13 @@ export function AllocationsTab({ nodeId, nodeName }: AllocationsTabProps) {
                             <tbody className='divide-border/50 divide-y'>
                                 {loading ? (
                                     <tr>
-                                        <td colSpan={7} className='px-4 py-8 text-center'>
+                                        <td colSpan={8} className='px-4 py-8 text-center'>
                                             <Loader2 className='text-primary mx-auto h-6 w-6 animate-spin' />
                                         </td>
                                     </tr>
                                 ) : allocations.length === 0 ? (
                                     <tr>
-                                        <td colSpan={7} className='text-muted-foreground px-4 py-8 text-center italic'>
+                                        <td colSpan={8} className='text-muted-foreground px-4 py-8 text-center italic'>
                                             {t('admin.node.allocations.no_results')}
                                         </td>
                                     </tr>
@@ -448,6 +451,12 @@ export function AllocationsTab({ nodeId, nodeName }: AllocationsTabProps) {
                                             <td className='px-4 py-3 font-mono'>{allocation.port}</td>
                                             <td className='text-muted-foreground max-w-[150px] truncate px-4 py-3'>
                                                 {allocation.ip_alias || '-'}
+                                            </td>
+                                            <td
+                                                className='text-muted-foreground max-w-[200px] truncate px-4 py-3'
+                                                title={allocation.notes || undefined}
+                                            >
+                                                {allocation.notes || '-'}
                                             </td>
                                             <td className='px-4 py-3'>
                                                 {allocation.server_id ? (
@@ -740,11 +749,14 @@ export function AllocationsTab({ nodeId, nodeName }: AllocationsTabProps) {
                     <div className='space-y-2'>
                         <Label className='text-sm font-semibold'>{t('admin.node.allocations.notes')}</Label>
                         <Textarea
-                            placeholder='Notes...'
+                            placeholder={t('admin.node.allocations.notes_placeholder')}
                             value={editForm.notes}
                             className='min-h-[120px]'
                             onChange={(e) => setEditForm((prev) => ({ ...prev, notes: e.target.value }))}
                         />
+                        <p className='text-muted-foreground text-[10px] italic'>
+                            {t('admin.node.allocations.notes_help')}
+                        </p>
                     </div>
                 </div>
                 <SheetFooter>

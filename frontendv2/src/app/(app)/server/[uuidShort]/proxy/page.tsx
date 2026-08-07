@@ -33,6 +33,7 @@ import type { Proxy, ProxiesResponse } from '@/types/server';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
+import { safeBack } from '@/lib/safe-back';
 
 export default function ServerProxyPage() {
     const { uuidShort } = useParams();
@@ -115,7 +116,7 @@ export default function ServerProxyPage() {
                     description={t('common.noPermission')}
                     icon={Globe}
                     action={
-                        <Button variant='secondary' onClick={() => window.history.back()}>
+                        <Button variant='secondary' onClick={() => safeBack(router)}>
                             {t('common.goBack')}
                         </Button>
                     }
@@ -131,7 +132,7 @@ export default function ServerProxyPage() {
                 description={t('serverProxy.featureDisabledDescription')}
                 icon={ArrowRightLeft}
                 action={
-                    <Button variant='secondary' onClick={() => window.history.back()}>
+                    <Button variant='secondary' onClick={() => safeBack(router)}>
                         {t('common.goBack')}
                     </Button>
                 }

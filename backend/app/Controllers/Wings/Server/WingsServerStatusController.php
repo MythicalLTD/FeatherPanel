@@ -32,10 +32,10 @@ use App\Services\Server\LifecycleHookExecutorService;
     type: 'object',
     properties: [
         new OA\Property(property: 'data', type: 'object', properties: [
-            new OA\Property(property: 'new_state', type: 'string', enum: ['offline', 'starting', 'running', 'stopping', 'stopped', 'installing', 'install_failed', 'update_failed', 'backup_failed', 'crashed', 'suspended'], description: 'New server state'),
+            new OA\Property(property: 'new_state', type: 'string', enum: ['offline', 'starting', 'running', 'stopping', 'stopped', 'installing', 'install_failed', 'update_failed', 'backup_failed', 'crashed', 'suspended', 'error'], description: 'New server state'),
             new OA\Property(property: 'error', type: 'string', description: 'Error message if applicable'),
         ]),
-        new OA\Property(property: 'state', type: 'string', enum: ['offline', 'starting', 'running', 'stopping', 'stopped', 'installing', 'install_failed', 'update_failed', 'backup_failed', 'crashed', 'suspended'], description: 'Server state (fallback format)'),
+        new OA\Property(property: 'state', type: 'string', enum: ['offline', 'starting', 'running', 'stopping', 'stopped', 'installing', 'install_failed', 'update_failed', 'backup_failed', 'crashed', 'suspended', 'error'], description: 'Server state (fallback format)'),
     ]
 )]
 #[OA\Schema(
@@ -143,6 +143,7 @@ class WingsServerStatusController
             'backup_failed',
             'crashed',
             'suspended',
+            'error',
         ];
 
         if (!in_array($state, $validStates)) {

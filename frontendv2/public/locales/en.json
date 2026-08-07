@@ -280,6 +280,15 @@
 		"select_an_option": "Select an option",
 		"edit": "Edit",
 		"moveUp": "Move up",
+		"image_attachment": {
+			"upload": "Upload image",
+			"uploading": "Uploading…",
+			"uploaded": "Image uploaded",
+			"upload_failed": "Failed to upload image",
+			"too_large": "Image must be 5MB or smaller",
+			"clear": "Clear",
+			"hint": "JPG, PNG, GIF, or WebP up to 5MB. You can still paste a URL below."
+		},
 		"moveDown": "Move down",
 		"close": "Close",
 		"waitingData": "Waiting for data...",
@@ -887,7 +896,8 @@
 			"install_failed": "Install Failed",
 			"suspended": "Suspended",
 			"restoring_backup": "Restoring Backup",
-			"transferring": "Transferring"
+			"transferring": "Transferring",
+			"error": "Runtime Error"
 		},
 		"suspended_banner": {
 			"title": "Server Suspended",
@@ -1411,7 +1421,8 @@
 			"marketplace": "Marketplace",
 			"panelMarketplace": "Panel Marketplace",
 			"cloudManagement": "Cloud Management",
-			"cloudConnections": "Cloud Connections",
+            "cloudConnections": "Cloud Connections",
+			"featherpanelPremium": "FeatherPanel Premium",
 			"myFeatherPanel": "MyFeatherPanel",
 			"reportIssue": "Report an Issue",
 			"suggestFeature": "Suggest a New Thing",
@@ -2824,7 +2835,10 @@
 			"header_actions": "Actions",
 			"empty": {},
 			"empty_description": "This directory is empty.",
-			"empty_title": "No Files Found"
+			"empty_title": "No Files Found",
+			"empty_search_title": "No Matching Files",
+			"empty_search_description": "No files in this folder match your search.",
+			"truncated": "Showing {shown} of {total} items. Use search to find files beyond this limit."
 		},
 		"trash": {
 			"title": "Trash",
@@ -3735,6 +3749,7 @@
 			"edit": "Edit",
 			"rename": "Rename",
 			"download": "Download",
+			"share": "Share",
 			"copy": "Copy",
 			"move": "Move",
 			"hash": "File Hash",
@@ -3856,6 +3871,34 @@
 				"success": "File pull initiated successfully",
 				"error": "Failed to pull file",
 				"url_required": "Please enter a URL"
+			},
+			"share": {
+				"title": "Share File",
+				"description": "Upload {name} as a temp upload and get a public link.",
+				"ttl_label": "Expires after",
+				"ttl_1": "1 day",
+				"ttl_5": "5 days",
+				"password_label": "Download password (optional)",
+				"password_placeholder": "Min 4 characters",
+				"password_min": "Password must be at least 4 characters",
+				"delete_key_label": "Custom delete key (optional)",
+				"delete_key_placeholder": "Min 8 characters, or leave blank for a random key",
+				"delete_key_min": "Delete key must be at least 8 characters",
+				"share_button": "Share",
+				"sharing": "Sharing…",
+				"cancel": "Cancel",
+				"close": "Close",
+				"starting": "Starting share upload…",
+				"background": "Large file share started waiting for upload to finish…",
+				"success": "File shared successfully",
+				"error": "Failed to share file",
+				"result_hint": "Save the delete key now it will not be shown again.",
+				"url_label": "Share URL",
+				"delete_key_result_label": "Delete key",
+				"copy_url": "Copy share URL",
+				"copy_delete_key": "Copy delete key",
+				"copied": "Copied to clipboard",
+				"copy_failed": "Failed to copy"
 			},
 			"wipe": {
 				"title": "Wipe All Files",
@@ -5336,7 +5379,7 @@
 			"allocations": {
 				"title": "Allocations",
 				"description": "Managing allocations for node: {name}",
-				"search_placeholder": "Search allocations...",
+				"search_placeholder": "Search by IP, port, alias, or notes...",
 				"create_allocation": "Create Allocation",
 				"delete_unused": "Delete Unused",
 				"delete_selected": "Delete Selected",
@@ -5346,6 +5389,8 @@
 				"ip_alias": "IP Alias",
 				"server": "Server",
 				"notes": "Notes",
+				"notes_placeholder": "e.g. Velocity, Dynmap, Geyser, Simple Voice Chat…",
+				"notes_help": "Optional label for what this port is used for. Informational only does not affect how the allocation works. Prefer notes over IP Alias for documentation.",
 				"assigned": "Assigned",
 				"available": "Available",
 				"view_details": "View allocation details",
@@ -5363,8 +5408,8 @@
 					"what_you_will_need": "What you’ll need",
 					"what_you_will_need_ip": "IP address (from your node)",
 					"what_you_will_need_port": "Port or port range (e.g., 25565 or 25565:25600)",
-					"what_you_will_need_alias": "IP alias (optional) for friendly hostname",
-					"what_you_will_need_notes": "Notes (optional) for admin context",
+					"what_you_will_need_alias": "IP alias (optional) for friendly hostname shown to users",
+					"what_you_will_need_notes": "Notes (optional) to document what the port is for (e.g. Velocity, Dynmap, Geyser)",
 					"popular_game_ranges": "Popular game ranges (examples)",
 					"recommendation": "Recommendation: pre-create generous ranges (e.g., 25565-25900) to avoid running out during peak times.",
 					"protocols_and_firewall": "Protocols & Firewall",
@@ -6123,7 +6168,21 @@
 					"hard_delete_target_node_warning": "FILES WILL NOT BE DELETED ON THE TARGET NODE!!!!!!!",
 					"hard_delete_restore_warning": "DO NOT RUN THIS IF YOU STILL MAYBE HAVE A WAY TO RESTORE FILES.",
 					"delete_success": "Server deleted successfully",
-					"delete_failed": "Failed to delete server"
+					"delete_failed": "Failed to delete server",
+					"runtime_title": "Docker Runtime",
+					"runtime_description": "Detect and recover servers stuck when Docker and containerd become desynchronized.",
+					"runtime_healthy": "Healthy",
+					"runtime_unhealthy": "Unhealthy",
+					"runtime_status": "Runtime status",
+					"runtime_state": "Process state",
+					"runtime_message": "Details",
+					"runtime_unknown": "Unable to query Wings runtime health",
+					"runtime_refresh": "Refresh",
+					"reconcile": "Force Reconcile",
+					"reconcile_confirm_title": "Force runtime reconcile?",
+					"reconcile_confirm_description": "This will ask Wings to terminate stale Docker state for {name}, clear a wedged power lock, and mark the server offline so it can be started again.",
+					"reconcile_success": "Runtime reconcile completed",
+					"reconcile_failed": "Failed to reconcile server runtime"
 				}
 			}
 		},
@@ -7051,6 +7110,68 @@
 				"fetch_failed": "Failed to fetch community translations"
 			}
 		},
+		"featherpanel_premium": {
+			"title": "FeatherPanel Premium",
+			"subtitle": "Unlock AI branding and powered-by customization with a Mythic team Premium subscription.",
+			"refresh": "Refresh entitlement",
+			"load_failed": "Failed to load FeatherPanel Premium status",
+			"save_failed": "Failed to save Premium settings",
+			"saved": "Premium settings saved",
+			"premium_required": "An active FeatherPanel Premium subscription is required",
+			"open_cloud": "Open Cloud Connections",
+			"get_premium": "Get FeatherPanel Premium",
+			"manage_on_mythic": "Manage on Mythic",
+			"your_team": "your team",
+			"status": {
+				"card_title": "Subscription status",
+				"active": "Premium is active",
+				"inactive": "Premium is not active",
+				"not_linked": "Link Mythic Cloud first so this panel can read your team's Premium entitlement.",
+				"active_desc": "Premium is active for {team}. Customize your AI assistant and FeatherPanel branding below.",
+				"inactive_desc": "Subscribe on Mythic to rename the AI assistant, customize sidebar items/links, and hide the powered-by footer.",
+				"higher_limits": "Premium limits are active on Mythic (paste, temp files, and Panel API).",
+				"checked_at": "Last checked",
+				"expires_at": "Cache valid until",
+				"using_cache": "Mythic could not be reached — using cached Premium entitlement until {expires}."
+			},
+			"customize": {
+				"card_title": "Premium customization",
+				"description": "These settings apply across the panel for all users. Clearing a field restores the FeatherPanel default.",
+				"ai_name": "AI assistant name",
+				"ai_name_placeholder": "FeatherPanel AI",
+				"ai_name_help": "Shown in the chat header and assistant bubbles. Leave empty for the default name.",
+				"ai_avatar": "AI assistant picture",
+				"ai_avatar_help": "Upload an image or paste a URL. Leave empty to use your panel logo.",
+				"show_powered_by": "Show “Powered by FeatherPanel”",
+				"show_powered_by_help": "Turn off to hide FeatherPanel branding in the sidebar and related surfaces.",
+				"save": "Save changes"
+			},
+			"sidebar": {
+				"card_title": "Custom sidebar",
+				"description": "Hide or reorder navigation items (including plugins) and add custom links. Panel name and logos stay free under Settings → App.",
+				"free_branding_hint": "Need to change the panel name or sidebar logo?",
+				"open_app_settings": "Open App settings",
+				"scopes": {
+					"admin": "Admin",
+					"main": "Dashboard",
+					"server": "Server"
+				},
+				"reset_scope": "Reset this sidebar",
+				"items": "Navigation items",
+				"items_help": "Toggle visibility and reorder items — including plugin sidebar entries. Order updates display priority.",
+				"custom_links": "Custom links",
+				"custom_links_help": "Add external or internal links to the sidebar. Use Lucide icon names like external-link or book-open.",
+				"add_link": "Add link",
+				"no_links": "No custom links yet.",
+				"link_name": "Label",
+				"link_id": "ID",
+				"link_url": "URL",
+				"link_group": "Group",
+				"link_icon": "Lucide icon",
+				"open_new_tab": "Open in new tab",
+				"remove_link": "Remove"
+			}
+		},
 		"cloud_management": {
 			"title": "Cloud Connections",
 			"subtitle": "Connect Mythic Cloud in a couple of clicks no API keys or user ids to paste.",
@@ -7061,6 +7182,13 @@
 			"relink": "Re-connect",
 			"linking": "Connecting...",
 			"disconnect": "Disconnect",
+			"premium": {
+				"active_badge": "Premium active",
+				"inactive_badge": "Premium inactive",
+				"manage": "Manage Premium",
+				"get": "Get Premium",
+				"open_page": "FeatherPanel Premium"
+			},
 			"connection_status": {
 				"card_title": "Connection",
 				"connected": "Connected to Mythic Cloud",

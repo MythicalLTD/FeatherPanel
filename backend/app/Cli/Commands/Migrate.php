@@ -367,6 +367,9 @@ class Migrate extends App implements CommandBuilder
     {
         $obsoleteAddons = [
             'yetanotherbadupdate',
+            'whitelabel',
+            'navlayout',
+            'notsofeatherai',
         ];
 
         $addonsRoot = __DIR__ . '/../../../storage/addons/';
@@ -384,7 +387,10 @@ class Migrate extends App implements CommandBuilder
             } catch (\Throwable $e) {
                 $cliApp->send('&c&l❌ Failed to remove obsolete addon directory: &r&f' . $addon);
                 $cliApp->send('&c&l   Error: &r' . $e->getMessage());
-                exit;
+
+                // Don't exit on error removing addon directory (fail gracefully).
+                // Just proceed to the next one.
+                continue;
             }
         }
     }

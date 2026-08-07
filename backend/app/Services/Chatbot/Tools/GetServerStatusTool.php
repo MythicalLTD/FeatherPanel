@@ -114,7 +114,10 @@ class GetServerStatusTool implements ToolInterface
             if ($serverResponse->isSuccessful()) {
                 $serverData = $serverResponse->getData();
                 $status = $serverData['state'] ?? 'unknown';
-                $resources = $serverData['resources'] ?? null;
+                $resources = $serverData['utilization'] ?? $serverData['resources'] ?? null;
+                if (isset($serverData['runtime']) && is_array($serverData['runtime'])) {
+                    $responseRuntime = $serverData['runtime'];
+                }
             }
         } catch (\Exception $e) {
             // If Wings is unavailable, use database status
@@ -129,6 +132,10 @@ class GetServerStatusTool implements ToolInterface
             'status' => $status,
             'description' => $server['description'] ?? null,
         ];
+
+        if (isset($responseRuntime)) {
+            $response['runtime'] = $responseRuntime;
+        }
 
         // Add resource limits
         if (isset($server['memory'])) {

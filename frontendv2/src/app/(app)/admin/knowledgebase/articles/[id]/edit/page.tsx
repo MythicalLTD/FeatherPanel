@@ -62,6 +62,7 @@ import { toast } from 'sonner';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { copyToClipboard, formatFileSize } from '@/lib/utils';
+import { safeBack } from '@/lib/safe-back';
 
 interface Category {
     id: number;
@@ -401,7 +402,7 @@ export default function ArticleEditPage({ params }: { params: Promise<{ id: stri
                 icon={FileText}
                 actions={
                     <div className='flex items-center gap-2'>
-                        <Button variant='outline' onClick={() => router.back()}>
+                        <Button variant='outline' onClick={() => safeBack(router)}>
                             <ChevronLeft className='mr-2 h-4 w-4' />
                             {t('common.back')}
                         </Button>

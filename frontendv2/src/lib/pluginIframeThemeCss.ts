@@ -13,20 +13,24 @@
  * See the LICENSE file or <https://www.gnu.org/licenses/>.
  */
 
-/** CSS injected into same-origin plugin iframes so panel theme matches the shell. */
+/**
+ * CSS injected into same-origin plugin iframes so panel theme matches the shell.
+ *
+ * Transparent iframe canvases only work when the iframe's used color-scheme
+ * matches the embedding document. A mismatch forces an opaque UA Canvas
+ * (white for light, near-black for dark) — see CSS Color Adjustment §3.1.
+ * The panel sets `html.style.colorScheme` from ThemeContext; we must mirror
+ * that on the iframe document (and the <iframe> element) or dark mode shows
+ * a white slab behind plugin widgets.
+ */
 export function getPluginIframeThemeOverrideCss(theme: 'light' | 'dark'): string {
-    // Light: `color-scheme: light` + `html.light` (set by host) so Tailwind/shadcn
-    // light tokens and UA defaults match the panel.
-    // Dark: host sets `html.dark` for correct semantic colors; we still avoid
-    // `color-scheme: dark` on :root (extra UA canvas behind transparent pixels).
-    const colorSchemeBlock =
-        theme === 'light'
-            ? `
+    // Match the parent document's color-scheme so the iframe canvas stays
+    // transparent and the panel backdrop (gradients / gold glow) shows through.
+    const colorSchemeBlock = `
                 :root {
-                    color-scheme: light;
+                    color-scheme: ${theme};
                 }
-            `
-            : '';
+            `;
 
     // Dark: strip only the outer shell (direct children of body). Inner routes
     // and cards keep `bg-card` / etc. so typography matches dark theme without
@@ -61,9 +65,7 @@ export function getPluginIframeThemeOverrideCss(theme: 'light' | 'dark'): string
                 }
                 /* Strip the iframe's own page-level background so the panel's
                    custom backdrop (gradients, glass, etc.) shows through.
-                   Plugin cards/components keep their own backgrounds. Applied
-                   in BOTH themes in light mode this happens to be invisible,
-                   in dark mode it removed the solid slab that broke the panel bg. */
+                   Safe only because color-scheme matches the parent above. */
                 html,
                 html[data-fp-theme="light"],
                 html[data-fp-theme="dark"],

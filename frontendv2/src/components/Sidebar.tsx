@@ -572,6 +572,39 @@ function SidebarContent({
                                     }
 
                                     const targetUrl = item.pluginRedirect || item.url;
+                                    const openExternal = Boolean(item.openInNewTab) || /^https?:\/\//i.test(targetUrl);
+                                    const itemClassName = cn(
+                                        navItemBase,
+                                        active ? navItemActive : navItemIdle,
+                                        topLevelItemPad,
+                                        'group relative overflow-visible',
+                                    );
+
+                                    if (openExternal) {
+                                        return (
+                                            <a
+                                                key={item.id}
+                                                href={targetUrl}
+                                                target='_blank'
+                                                rel='noopener noreferrer'
+                                                onClick={() => {
+                                                    if (mobile) setMobileOpen(false);
+                                                }}
+                                                className={itemClassName}
+                                                title={collapsed && !mobile ? undefined : item.name}
+                                                aria-label={item.name}
+                                            >
+                                                {renderIcon(item, '', topIconSize)}
+                                                {(!collapsed || mobile) && (
+                                                    <span className='truncate'>{item.name}</span>
+                                                )}
+                                                {item.badge && (!collapsed || mobile) && (
+                                                    <span className={badgeClass}>{item.badge}</span>
+                                                )}
+                                                {renderCollapsedLabel(item.name)}
+                                            </a>
+                                        );
+                                    }
 
                                     return (
                                         <Link
@@ -581,12 +614,7 @@ function SidebarContent({
                                             onClick={() => {
                                                 if (mobile) setMobileOpen(false);
                                             }}
-                                            className={cn(
-                                                navItemBase,
-                                                active ? navItemActive : navItemIdle,
-                                                topLevelItemPad,
-                                                'group relative overflow-visible',
-                                            )}
+                                            className={itemClassName}
                                             title={collapsed && !mobile ? undefined : item.name}
                                             aria-label={item.name}
                                         >

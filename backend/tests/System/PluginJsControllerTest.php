@@ -40,14 +40,13 @@ class PluginJsControllerTest extends TestCase
         $this->assertEquals('application/javascript', $response->headers->get('Content-Type'));
     }
 
-    public function testIndexReturnsNoCacheHeaders()
+    public function testIndexReturnsCacheHeaders()
     {
         $request = Request::create('/api/system/plugin-js', 'GET');
         $response = $this->controller->index($request);
 
-        // Should have no-cache headers
-        $this->assertStringContainsString('no-cache', $response->headers->get('Cache-Control'));
-        $this->assertEquals('no-cache', $response->headers->get('Pragma'));
+        $this->assertStringContainsString('max-age=60', $response->headers->get('Cache-Control'));
+        $this->assertNotEmpty($response->headers->get('ETag'));
     }
 
     public function testIndexReturnsValidJavaScriptString()

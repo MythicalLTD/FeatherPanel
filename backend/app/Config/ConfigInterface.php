@@ -56,7 +56,7 @@ interface ConfigInterface
     public const APP_THEME_LOCK = 'app_theme_lock';
     public const APP_BACKGROUND_TYPE_DEFAULT = 'app_background_type_default';
     public const APP_BACKGROUND_TYPE_LOCK = 'app_background_type_lock';
-    /** When false, hide FeatherPanel "powered by" branding across the panel (typically via White Label addon). */
+    /** When false, hide FeatherPanel "powered by" branding (FeatherPanel Premium / Mythic entitlement). */
     public const BRANDING_SHOW_POWERED_BY = 'branding_show_powered_by';
     public const APP_BACKDROP_BLUR_DEFAULT = 'app_backdrop_blur_default';
     public const APP_BACKDROP_BLUR_LOCK = 'app_backdrop_blur_lock';
@@ -337,6 +337,25 @@ interface ConfigInterface
     public const FEATHERCLOUD_TRANSLATE_PROJECT = 'feathercloud_translate_project';
 
     /**
+     * FeatherPanel Premium (team-scoped Mythic entitlement from GET /panel/summary).
+     */
+    public const FEATHERPANEL_PREMIUM_ACTIVE = 'featherpanel_premium_active';
+    /** JSON object of entitlement feature flags */
+    public const FEATHERPANEL_PREMIUM_FEATURES = 'featherpanel_premium_features';
+    public const FEATHERPANEL_PREMIUM_CHECKED_AT = 'featherpanel_premium_checked_at';
+    /** ISO timestamp when the cached active grant expires if Mythic cannot be reached */
+    public const FEATHERPANEL_PREMIUM_EXPIRES_AT = 'featherpanel_premium_expires_at';
+    /** ISO timestamp of the last failed Mythic entitlement refresh (grace cache in use) */
+    public const FEATHERPANEL_PREMIUM_LAST_FAILURE_AT = 'featherpanel_premium_last_failure_at';
+
+    /**
+     * Temp uploads (public file sharing from server file manager via Wings).
+     */
+    public const TEMP_FILES_ENABLED = 'temp_files_enabled';
+    /** Optional temp uploads API token (tf_…). Empty = anonymous 15GB; set = 30GB. */
+    public const TEMP_FILES_API_TOKEN = 'temp_files_api_token';
+
+    /**
      * Chatbot AI Settings.
      */
     public const CHATBOT_ENABLED = 'chatbot_enabled';
@@ -360,6 +379,16 @@ interface ConfigInterface
     public const CHATBOT_GROK_MODEL = 'chatbot_grok_model';
     public const CHATBOT_SYSTEM_PROMPT = 'chatbot_system_prompt';
     public const CHATBOT_USER_PROMPT = 'chatbot_user_prompt';
+    /** Premium: custom AI display name (empty = default FeatherPanel AI) */
+    public const CHATBOT_DISPLAY_NAME = 'chatbot_display_name';
+    /** Premium: custom AI avatar URL (empty = panel logo) */
+    public const CHATBOT_AVATAR_URL = 'chatbot_avatar_url';
+
+    /**
+     * Premium custom sidebar navigation (hide / order / custom links JSON).
+     * Panel name + logos stay free via App settings.
+     */
+    public const SIDEBAR_NAVIGATION_CONFIG = 'sidebar_navigation_config';
 
     /**
      * Status Page Settings.

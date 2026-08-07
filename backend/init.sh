@@ -123,6 +123,14 @@ fi
 chown -R www-data:www-data "$PUBLIC_ADDONS" "$PUBLIC_COMPONENTS" 2>/dev/null || true
 echo "Addon symlinks resynced."
 
+# Restore phpMyAdmin if it was installed before an image recreate wiped public/pma
+echo "Ensuring phpMyAdmin installation..."
+if php /var/www/html/cli module ensure pma; then
+	echo "phpMyAdmin ensure completed."
+else
+	echo "phpMyAdmin ensure skipped."
+fi
+
 # Setup cron jobs (fallback method)
 echo "Setting up cron jobs..."
 /usr/local/bin/setup-cron.sh

@@ -31,6 +31,8 @@ class User
      */
     private static string $table = 'featherpanel_users';
 
+    private static ?array $columnsCache = null;
+
     /**
      * Create a new user.
      *
@@ -476,11 +478,15 @@ class User
 
     public static function getColumns(): array
     {
+        if (self::$columnsCache !== null) {
+            return self::$columnsCache;
+        }
+
         $pdo = Database::getPdoConnection();
         $stmt = $pdo->prepare('SHOW COLUMNS FROM ' . self::$table);
         $stmt->execute();
 
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        return self::$columnsCache = $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 
     /**

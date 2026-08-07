@@ -42,6 +42,7 @@ import {
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { cn } from '@/lib/utils';
+import { safeBack } from '@/lib/safe-back';
 
 interface Location {
     id: number;
@@ -301,7 +302,7 @@ export default function CreateVdsNodePage() {
                 description={t('admin.vdsNodes.form.create_description')}
                 icon={Server}
                 actions={
-                    <Button variant='outline' onClick={() => router.back()}>
+                    <Button variant='outline' onClick={() => safeBack(router)}>
                         <ArrowLeft className='mr-2 h-4 w-4' />
                         {t('common.back')}
                     </Button>

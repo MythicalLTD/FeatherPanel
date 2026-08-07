@@ -297,7 +297,8 @@ export default function SettingsTab() {
 
     const handleLinkDiscord = () => {
         setDiscordLinkErrorMessage(null);
-        window.location.href = '/api/user/auth/discord/link';
+        // Hard navigation required: backend OAuth endpoint redirects off-site.
+        window.location.href = window.location.origin + '/api/user/auth/discord/link';
     };
 
     const handleUnlinkDiscord = async () => {
@@ -325,7 +326,9 @@ export default function SettingsTab() {
         }
 
         setOidcLinkErrorMessage(null);
-        window.location.href = `/api/user/auth/oidc/link?provider=${encodeURIComponent(selectedOidcProvider)}`;
+        // Hard navigation required: backend OAuth endpoint redirects off-site.
+        window.location.href =
+            window.location.origin + '/api/user/auth/oidc/link?provider=' + encodeURIComponent(selectedOidcProvider);
     };
 
     const handleUnlinkOidc = async () => {

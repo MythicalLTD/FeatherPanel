@@ -121,7 +121,7 @@ export default function ServerHeader({
         }
     };
 
-    const isOfflineStatus = (status: string) => status === 'stopped' || status === 'offline';
+    const isOfflineStatus = (status: string) => status === 'stopped' || status === 'offline' || status === 'error';
     const isRunningStatus = (status: string) => status === 'running' || status === 'starting';
 
     const getStatusColor = (status: string) => {
@@ -137,6 +137,8 @@ export default function ServerHeader({
             case 'offline':
             case 'stopped':
                 return 'bg-gray-500/10 text-gray-500 border-gray-500/20';
+            case 'error':
+                return 'bg-red-600/20 text-red-600 border-red-600/40';
             default:
                 return 'bg-red-500/10 text-red-500 border-red-500/20';
         }
@@ -149,7 +151,9 @@ export default function ServerHeader({
                     <div className='space-y-2'>
                         <h1 className='text-xl font-bold tracking-tight sm:text-3xl'>{serverName}</h1>
                         <div className='text-muted-foreground flex flex-wrap items-center gap-3 text-sm'>
-                            <Badge className={getStatusColor(serverStatus)}>{serverStatus.toUpperCase()}</Badge>
+                            <Badge className={getStatusColor(serverStatus)}>
+                                {t(`servers.status.${serverStatus}`, { defaultValue: serverStatus.toUpperCase() })}
+                            </Badge>
                             {serverUuidShort && (
                                 <span className='flex items-center gap-1'>
                                     <span className='opacity-50'>#</span>

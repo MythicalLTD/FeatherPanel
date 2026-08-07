@@ -99,13 +99,9 @@ export default function VdsNodesPage() {
         VDS_NODES_LIST_FILTERS_DEFAULTS,
     );
     const { searchQuery, page, pageSize } = filters;
-    const locationIdFilter = urlLocationId || filters.locationId || '';
-
-    useEffect(() => {
-        if (urlLocationId && urlLocationId !== filters.locationId) {
-            patchFilters({ locationId: urlLocationId, page: 1 });
-        }
-    }, [urlLocationId, filters.locationId, patchFilters]);
+    // Location filter must come from the URL only — sticky localStorage locationId
+    // hid nodes with no clear-filter UI (same bug as /admin/nodes).
+    const locationIdFilter = urlLocationId;
 
     const [loading, setLoading] = useState(true);
     const [vmNodes, setVmNodes] = useState<VmNode[]>([]);

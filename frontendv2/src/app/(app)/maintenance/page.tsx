@@ -16,10 +16,12 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/contexts/TranslationContext';
 
 export default function MaintenancePage() {
+    const router = useRouter();
     const { t } = useTranslation();
     return (
         <div className='bg-background selection:bg-primary/20 relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-4 text-center'>
@@ -65,7 +67,7 @@ export default function MaintenancePage() {
                     <Button
                         variant='outline'
                         size='lg'
-                        onClick={() => (window.location.href = '/')}
+                        onClick={() => router.push('/')}
                         className='group hover:border-primary/50 hover:bg-primary/5 hover:text-primary relative overflow-hidden transition-all hover:scale-105'
                     >
                         <div className='absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-white/10 to-transparent group-hover:animate-[shimmer_2s_infinite]' />

@@ -25,6 +25,7 @@ use App\Config\ConfigInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use App\Services\FeatherCloud\FeatherCloudClient;
+use App\Services\FeatherCloud\FeatherPanelPremium;
 use App\Services\FeatherCloud\MythicMemberResolver;
 use App\Services\FeatherCloud\FeatherCloudException;
 
@@ -120,11 +121,19 @@ class CloudV1Controller
             $client = $client->withMemberUserUuid($mythicUserId);
         }
 
-        $summary = $client->getSummary();
+        try {
+            $summary = $client->getSummary();
+            FeatherPanelPremium::persistFromSummary($summary);
+        } catch (FeatherCloudException $e) {
+            // Keep cached Premium through Mythic outages until expires_at.
+            FeatherPanelPremium::retainOnUpstreamFailure($e);
+            throw $e;
+        }
+
         $products = $client->getPurchasedProducts(1, 100);
 
-        Cache::put(self::CACHE_SUMMARY, $summary, 60);
-        Cache::put(self::CACHE_PRODUCTS, $products, 60);
+        Cache::put(self::CACHE_SUMMARY, $summary, 600);
+        Cache::put(self::CACHE_PRODUCTS, $products, 600);
 
         // Refresh email→Mythic member map when possible.
         $membersSynced = 0;
@@ -155,6 +164,7 @@ class CloudV1Controller
             'members_synced' => $membersSynced,
             'team_uuid' => $config->getSetting(ConfigInterface::FEATHERCLOUD_TEAM_UUID, '') ?: null,
             'mythic_user_id' => $mythicUserId !== '' ? $mythicUserId : null,
+            'premium' => FeatherPanelPremium::statusPayload(),
         ];
     }
 }

@@ -114,6 +114,7 @@ export default function ServerFilesIDEPage({
     const [expandedDirectories, setExpandedDirectories] = useState<Set<string>>(new Set());
     const [filesLoading, setFilesLoading] = useState(true);
     const [fileFilter, setFileFilter] = useState('');
+    const [debouncedFileFilter, setDebouncedFileFilter] = useState('');
 
     const [content, setContent] = useState('');
     const [originalContent, setOriginalContent] = useState('');
@@ -142,11 +143,13 @@ export default function ServerFilesIDEPage({
 
     const hasUnsavedChanges = useMemo(() => content !== originalContent, [content, originalContent]);
 
-    const filteredFiles = useMemo(() => {
-        if (!fileFilter.trim()) return files;
-        const lower = fileFilter.toLowerCase();
-        return files.filter((f) => f.name.toLowerCase().includes(lower));
-    }, [files, fileFilter]);
+    useEffect(() => {
+        const timeout = setTimeout(() => setDebouncedFileFilter(fileFilter.trim()), 250);
+        return () => clearTimeout(timeout);
+    }, [fileFilter]);
+
+    // Server-side search already applied when fetching; keep alias for existing UI bindings
+    const filteredFiles = files;
 
     const [contextMenu, setContextMenu] = useState<{
         x: number;
@@ -156,13 +159,13 @@ export default function ServerFilesIDEPage({
     } | null>(null);
 
     const fetchDirectory = useCallback(
-        async (directory: string) => {
+        async (directory: string, search?: string) => {
             if (!uuidShort || !canRead) return;
             setFilesLoading(true);
             try {
                 const dir = normalizeDirectory(directory || '/');
-                const data = await filesApi.getFiles(uuidShort, dir || '/');
-                const sorted = [...data].sort((a, b) => {
+                const data = await filesApi.getFiles(uuidShort, dir || '/', search || undefined);
+                const sorted = [...data.contents].sort((a, b) => {
                     if (a.isFile === b.isFile) return a.name.localeCompare(b.name);
                     return a.isFile ? 1 : -1; // folders first
                 });
@@ -205,8 +208,8 @@ export default function ServerFilesIDEPage({
 
     useEffect(() => {
         if (!uuidShort || !canRead) return;
-        fetchDirectory(currentDirectory || '/');
-    }, [uuidShort, canRead, currentDirectory, fetchDirectory]);
+        fetchDirectory(currentDirectory || '/', debouncedFileFilter || undefined);
+    }, [uuidShort, canRead, currentDirectory, debouncedFileFilter, fetchDirectory]);
 
     useEffect(() => {
         if (!initialFile || !isBinaryLikeFileName(initialFile)) return;

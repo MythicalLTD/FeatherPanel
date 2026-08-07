@@ -24,7 +24,6 @@ use App\Helpers\ApiResponse;
 use App\Services\Wings\Wings;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
-use App\Helpers\WingsUrlHelper;
 use App\Helpers\NodeStatusHelper;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -93,6 +92,7 @@ class NodeStatusController
         // Get node status if enabled
         if ($showNodeStatus || $showLoadUsage || $showIndividualNodes) {
             $allNodes = Node::getAllNodes();
+            $probes = NodeStatusHelper::probeNodesUtilization($allNodes);
 
             $globalStats = [
                 'total_nodes' => count($allNodes),
@@ -113,26 +113,29 @@ class NodeStatusController
             $healthyNodeCount = 0;
 
             foreach ($allNodes as $node) {
-                $nodeData = [
-                    'id' => $node['id'],
-                    'name' => $node['name'],
+                $nodeId = (int) $node['id'];
+                $probe = $probes[$nodeId] ?? [
                     'status' => 'unhealthy',
+                    'utilization' => null,
+                    'error' => null,
+                ];
+
+                $nodeData = [
+                    'id' => $nodeId,
+                    'name' => $node['name'],
+                    'status' => $probe['status'] === 'healthy' ? 'healthy' : 'unhealthy',
                 ];
 
                 if ($showIndividualNodes) {
                     $nodeData['fqdn'] = $node['fqdn'];
                     $nodeData['servers'] = NodeStatusHelper::buildServersForNode(
-                        (int) $node['id'],
+                        $nodeId,
                         $showPlayerCount
                     );
                     $nodeData['server_count'] = count($nodeData['servers']);
 
                     if ($showPlayerCount) {
-                        $totalPlayers = 0;
-                        foreach ($nodeData['servers'] as $serverEntry) {
-                            $totalPlayers += (int) ($serverEntry['player_count'] ?? 0);
-                        }
-                        $nodeData['total_players'] = $totalPlayers;
+                        $nodeData['total_players'] = NodeStatusHelper::sumPlayerCounts($nodeData['servers']);
                     }
                 }
 
@@ -140,77 +143,59 @@ class NodeStatusController
                     $nodeData['utilization'] = null;
                 }
 
-                try {
-                    $wings = new Wings(
-                        $node['fqdn'],
-                        $node['daemonListen'],
-                        $node['scheme'],
-                        $node['daemon_token'],
-                        10, // Short timeout for status checks
-                        WingsUrlHelper::isBehindProxy($node)
-                    );
+                if ($probe['status'] === 'healthy' && is_array($probe['utilization']) && $probe['utilization'] !== []) {
+                    $nodeData['status'] = 'healthy';
+                    ++$globalStats['healthy_nodes'];
+                    ++$healthyNodeCount;
 
-                    $utilization = $wings->getSystem()->getSystemUtilization();
+                    if ($showLoadUsage || $showIndividualNodes) {
+                        $nodeData['utilization'] = $probe['utilization'];
 
-                    if (is_array($utilization) && !empty($utilization)) {
-                        $nodeData['status'] = 'healthy';
-                        ++$globalStats['healthy_nodes'];
-                        ++$healthyNodeCount;
-
-                        if ($showLoadUsage || $showIndividualNodes) {
-                            $nodeData['utilization'] = $utilization;
-
-                            if ($showRawValues) {
-                                // Add CPU core count from Wings system info
-                                try {
-                                    $cpuCount = $wings->getSystem()->getCpuCount();
-                                    $nodeData['cpu_count'] = $cpuCount;
-                                } catch (\Exception $e) {
-                                    $nodeData['cpu_count'] = null;
-                                }
-                            }
-
-                            // Aggregate stats for global view
-                            if ($showLoadUsage) {
-                                if (isset($utilization['memory_total'])) {
-                                    $globalStats['total_memory'] += $utilization['memory_total'];
-                                    $globalStats['used_memory'] += $utilization['memory_used'] ?? 0;
-                                }
-
-                                if (isset($utilization['disk_total'])) {
-                                    $globalStats['total_disk'] += $utilization['disk_total'];
-                                    $globalStats['used_disk'] += $utilization['disk_used'] ?? 0;
-                                }
-
-                                if (isset($utilization['cpu_percent'])) {
-                                    $globalStats['total_cpu_percent'] += $utilization['cpu_percent'];
-                                }
+                        if ($showRawValues) {
+                            // Add CPU core count from Wings system info
+                            try {
+                                $wings = Wings::fromNode($node, NodeStatusHelper::STATUS_PROBE_TIMEOUT);
+                                $nodeData['cpu_count'] = $wings->getSystem()->getCpuCount();
+                            } catch (\Exception $e) {
+                                $nodeData['cpu_count'] = null;
                             }
                         }
-                    } else {
-                        ++$globalStats['unhealthy_nodes'];
+
+                        if ($showLoadUsage) {
+                            $utilization = $probe['utilization'];
+
+                            if (isset($utilization['memory_total'])) {
+                                $globalStats['total_memory'] += $utilization['memory_total'];
+                                $globalStats['used_memory'] += $utilization['memory_used'] ?? 0;
+                            }
+
+                            if (isset($utilization['disk_total'])) {
+                                $globalStats['total_disk'] += $utilization['disk_total'];
+                                $globalStats['used_disk'] += $utilization['disk_used'] ?? 0;
+                            }
+
+                            if (isset($utilization['cpu_percent'])) {
+                                $globalStats['total_cpu_percent'] += $utilization['cpu_percent'];
+                            }
+                        }
                     }
-                } catch (\Exception $e) {
+                } else {
                     ++$globalStats['unhealthy_nodes'];
                 }
 
-                // Only include individual nodes if enabled
                 if ($showIndividualNodes) {
                     $nodesWithStatus[] = $nodeData;
                 }
             }
 
-            // Calculate average CPU if showing load usage
             if ($showLoadUsage && $healthyNodeCount > 0) {
                 $globalStats['avg_cpu_percent'] = round($globalStats['total_cpu_percent'] / $healthyNodeCount, 2);
             }
 
-            // Remove internal calculation field
             if (isset($globalStats['total_cpu_percent'])) {
                 unset($globalStats['total_cpu_percent']);
             }
 
-            // Build response based on what's enabled
             if ($showNodeStatus || $showLoadUsage) {
                 $responseData['data']['global'] = $globalStats;
             }

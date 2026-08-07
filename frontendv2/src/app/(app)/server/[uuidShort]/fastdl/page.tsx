@@ -16,7 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import * as React from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import axios, { AxiosError } from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -33,6 +33,7 @@ import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { isEnabled } from '@/lib/utils';
 import { copyToClipboard } from '@/lib/utils';
+import { safeBack } from '@/lib/safe-back';
 
 interface FastDlConfig {
     enabled: boolean;
@@ -49,6 +50,7 @@ interface FastDlResponse {
 
 export default function ServerFastDlPage() {
     const params = useParams();
+    const router = useRouter();
     const uuidShort = params.uuidShort as string;
     const { t } = useTranslation();
     const { settings, loading: settingsLoading } = useSettings();
@@ -204,7 +206,7 @@ export default function ServerFastDlPage() {
                     description={t('common.noPermission')}
                     icon={Download}
                     action={
-                        <Button variant='secondary' onClick={() => window.history.back()}>
+                        <Button variant='secondary' onClick={() => safeBack(router)}>
                             {t('common.goBack')}
                         </Button>
                     }
@@ -220,7 +222,7 @@ export default function ServerFastDlPage() {
                 description={t('serverFastDl.featureDisabledDescription')}
                 icon={Download}
                 action={
-                    <Button variant='secondary' onClick={() => window.history.back()}>
+                    <Button variant='secondary' onClick={() => safeBack(router)}>
                         {t('common.goBack')}
                     </Button>
                 }

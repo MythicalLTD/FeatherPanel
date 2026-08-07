@@ -18,6 +18,7 @@
 namespace App\Controllers\System;
 
 use App\App;
+use App\Cache\Cache;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -42,7 +43,7 @@ class PluginCssController
                     new OA\Header(
                         header: 'Cache-Control',
                         description: 'Cache control header',
-                        schema: new OA\Schema(type: 'string', example: 'no-store, no-cache, must-revalidate, max-age=0')
+                        schema: new OA\Schema(type: 'string', example: 'public, max-age=60')
                     ),
                 ]
             ),
@@ -51,35 +52,49 @@ class PluginCssController
     )]
     public function index(Request $request): Response
     {
-        $cssContent = "/* Plugin CSS */\n";
+        $cacheKey = 'plugin_css_bundle';
+        $cached = Cache::get($cacheKey);
+        if (is_array($cached) && isset($cached['body'], $cached['etag'])) {
+            $cssContent = (string) $cached['body'];
+            $etag = (string) $cached['etag'];
+        } else {
+            $cssContent = "/* Plugin CSS */\n";
 
-        // Append plugin CSS
-        $pluginDir = __DIR__ . '/../../../storage/addons';
-        if (is_dir($pluginDir)) {
-            $plugins = array_diff(scandir($pluginDir), ['.', '..']);
-            foreach ($plugins as $plugin) {
-                $cssPath = $pluginDir . "/$plugin/Frontend/index.css";
-                if (file_exists($cssPath)) {
-                    $cssContent .= "\n/* Plugin: $plugin */\n";
-                    $cssContent .= file_get_contents($cssPath) . "\n";
+            $pluginDir = __DIR__ . '/../../../storage/addons';
+            if (is_dir($pluginDir)) {
+                $plugins = array_diff(scandir($pluginDir), ['.', '..']);
+                foreach ($plugins as $plugin) {
+                    $cssPath = $pluginDir . "/$plugin/Frontend/index.css";
+                    if (file_exists($cssPath)) {
+                        $cssContent .= "\n/* Plugin: $plugin */\n";
+                        $cssContent .= file_get_contents($cssPath) . "\n";
+                    }
                 }
             }
+
+            $cssContent .= "\n/* ===== FeatherPanel: Start of Custom CSS ===== */\n";
+            $cssContent .= "/* This section is reserved for user-defined or system-injected CSS. */\n";
+            $cssContent .= App::getInstance(true)->getConfig()->getSetting(
+                ConfigInterface::CUSTOM_CSS,
+                "/* dummy css - does nothing */\n/* Feel free to override the 'custom_css' setting in your configuration. */"
+            ) . "\n";
+            $cssContent .= "/* ===== FeatherPanel: End of Custom CSS ===== */\n";
+
+            $etag = '"' . hash('sha256', $cssContent) . '"';
+            Cache::put($cacheKey, ['body' => $cssContent, 'etag' => $etag], 2);
         }
 
-        $cssContent .= "\n/* ===== FeatherPanel: Start of Custom CSS ===== */\n";
-        $cssContent .= "/* This section is reserved for user-defined or system-injected CSS. */\n";
-        $cssContent .= App::getInstance(true)->getConfig()->getSetting(
-            ConfigInterface::CUSTOM_CSS,
-            "/* dummy css - does nothing */\n/* Feel free to override the 'custom_css' setting in your configuration. */"
-        ) . "\n";
-        $cssContent .= "/* ===== FeatherPanel: End of Custom CSS ===== */\n";
+        if ($request->headers->get('If-None-Match') === $etag) {
+            return new Response('', 304, [
+                'ETag' => $etag,
+                'Cache-Control' => 'public, max-age=60',
+            ]);
+        }
 
         return new Response($cssContent, 200, [
             'Content-Type' => 'text/css',
-            // No cache
-            'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
-            'Pragma' => 'no-cache',
-            'Expires' => '0',
+            'ETag' => $etag,
+            'Cache-Control' => 'public, max-age=60',
         ]);
     }
 }

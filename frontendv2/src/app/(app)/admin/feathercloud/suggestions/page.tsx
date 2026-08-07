@@ -16,6 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import React, { useCallback, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { CheckCircle2, FileText, Lightbulb, Loader2, Send } from 'lucide-react';
@@ -26,6 +27,7 @@ import { Input } from '@/components/featherui/Input';
 import { Textarea } from '@/components/featherui/Textarea';
 
 export default function FeatherCloudSuggestionsPage() {
+    const router = useRouter();
     const [title, setTitle] = useState('');
     const [body, setBody] = useState('');
     const [why, setWhy] = useState('');
@@ -125,9 +127,7 @@ export default function FeatherCloudSuggestionsPage() {
                 </PageCard>
             ) : credentialsError ? (
                 <PageCard title='Not linked' description={credentialsError} icon={Lightbulb}>
-                    <Button onClick={() => (window.location.href = '/admin/cloud-management')}>
-                        Open Cloud Connections
-                    </Button>
+                    <Button onClick={() => router.push('/admin/cloud-management')}>Open Cloud Connections</Button>
                 </PageCard>
             ) : (
                 <>

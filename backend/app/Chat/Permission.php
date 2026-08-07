@@ -118,7 +118,7 @@ class Permission
         return $stmt->execute(['id' => $id]);
     }
 
-    public static function getPermissionsByRoleId(int $roleId, int $limit = 10, int $offset = 0): array
+    public static function getPermissionsByRoleId(int $roleId, int $limit = 10000, int $offset = 0): array
     {
         $pdo = Database::getPdoConnection();
         $sql = 'SELECT * FROM ' . self::$table . ' WHERE role_id = :role_id ORDER BY id ASC LIMIT :limit OFFSET :offset';

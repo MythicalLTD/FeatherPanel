@@ -368,7 +368,7 @@ export default function LoginForm() {
             if (response.success) {
                 setSuccess(t('auth.discordLinking.success'));
                 setTimeout(() => {
-                    location.href = '/dashboard';
+                    router.push('/dashboard');
                 }, 1500);
             } else {
                 setError(response.message || t('common.error'));
@@ -382,11 +382,14 @@ export default function LoginForm() {
     };
 
     const handleDiscordLogin = () => {
-        window.location.href = '/api/user/auth/discord/login';
+        // Hard navigation required: backend OAuth endpoint redirects off-site.
+        window.location.href = window.location.origin + '/api/user/auth/discord/login';
     };
 
     const handleOidcLogin = (providerUuid: string) => {
-        window.location.href = `/api/user/auth/oidc/login?provider=${encodeURIComponent(providerUuid)}`;
+        // Hard navigation required: backend OAuth endpoint redirects off-site.
+        window.location.href =
+            window.location.origin + '/api/user/auth/oidc/login?provider=' + encodeURIComponent(providerUuid);
     };
 
     const handleLdapLogin = async (e: React.FormEvent) => {

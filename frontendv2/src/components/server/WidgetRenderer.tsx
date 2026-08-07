@@ -170,9 +170,10 @@ export function WidgetRenderer({ widgets, height = '400px', context }: WidgetRen
             }
 
             // Same strategy as PluginPage: light → html.light; dark → html.dark
-            // plus injected shell transparency so the panel backdrop shows through.
+            // plus matching color-scheme so the iframe canvas stays transparent.
             const root = iframeDoc.documentElement;
             root.setAttribute('data-fp-theme', theme);
+            root.style.colorScheme = theme;
             if (theme === 'light') {
                 root.classList.add('light');
                 root.classList.remove('dark');
@@ -312,7 +313,10 @@ export function WidgetRenderer({ widgets, height = '400px', context }: WidgetRen
             iframeStyle: {
                 minHeight: resolvedMinHeight,
                 ...(maxHeight ? { maxHeight } : {}),
+                // Must match parent `html.style.colorScheme` or Chromium paints
+                // an opaque white/dark Canvas instead of letting the backdrop through.
                 background: 'transparent',
+                colorScheme: theme,
             } as React.CSSProperties,
             ariaLabel,
             referrerPolicy: referrerPolicy as React.HTMLAttributeReferrerPolicy | undefined,

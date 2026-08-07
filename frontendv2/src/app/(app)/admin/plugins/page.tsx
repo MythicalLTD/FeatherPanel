@@ -826,7 +826,7 @@ export default function PluginsPage() {
                     icon={Puzzle}
                 />
             ) : (
-                <div className='grid gap-4 sm:grid-cols-2 xl:grid-cols-3'>
+                <div className='grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-3'>
                     {filteredPlugins.map((plugin) => {
                         const update = storeUpdates[plugin.identifier];
                         const needsUpdate = Boolean(update?.update_available);

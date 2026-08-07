@@ -37,6 +37,7 @@ import {
 } from '../../form-utils';
 import type { LifecycleHookType } from '@/types/server';
 import { parseLifecycleHookType } from '@/types/server';
+import { safeBack } from '@/lib/safe-back';
 
 type HooksApi = {
     success: boolean;
@@ -197,7 +198,7 @@ export default function NewLifecycleHookStepPage() {
             <div className='flex flex-col items-center justify-center py-24 text-center'>
                 <Lock className='mb-4 h-10 w-10 text-red-500' />
                 <p className='text-muted-foreground'>{t('common.noPermission')}</p>
-                <Button variant='outline' className='mt-6' type='button' onClick={() => router.back()}>
+                <Button variant='outline' className='mt-6' type='button' onClick={() => safeBack(router)}>
                     {t('common.goBack')}
                 </Button>
             </div>

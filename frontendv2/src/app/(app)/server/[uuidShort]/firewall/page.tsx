@@ -16,7 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import * as React from 'react';
-import { useParams, usePathname } from 'next/navigation';
+import { useParams, usePathname, useRouter } from 'next/navigation';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
@@ -41,10 +41,12 @@ import type {
     AllocationItem,
     AllocationsResponse,
 } from '@/types/server';
+import { safeBack } from '@/lib/safe-back';
 
 export default function ServerFirewallPage() {
     const params = useParams();
     const pathname = usePathname();
+    const router = useRouter();
     const uuidShort = params.uuidShort as string;
     const { t } = useTranslation();
     const { settings, loading: settingsLoading } = useSettings();
@@ -313,7 +315,7 @@ export default function ServerFirewallPage() {
                 </div>
                 <h1 className='text-2xl font-black tracking-tight uppercase'>{t('common.accessDenied')}</h1>
                 <p className='text-muted-foreground mt-2'>{t('common.noPermission')}</p>
-                <Button variant='outline' className='mt-8' onClick={() => window.history.back()}>
+                <Button variant='outline' className='mt-8' onClick={() => safeBack(router)}>
                     {t('common.goBack')}
                 </Button>
             </div>
@@ -327,7 +329,7 @@ export default function ServerFirewallPage() {
                 title={t('serverFirewall.featureDisabled')}
                 description={t('serverFirewall.featureDisabledDescription')}
                 action={
-                    <Button variant='outline' size='default' onClick={() => window.history.back()}>
+                    <Button variant='outline' size='default' onClick={() => safeBack(router)}>
                         {t('common.goBack')}
                     </Button>
                 }

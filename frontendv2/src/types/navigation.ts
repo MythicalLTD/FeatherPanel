@@ -36,6 +36,9 @@ export interface NavigationItem {
     priority?: number;
     badge?: string;
     children?: NavigationItem[]; // Optional submenu items
+    /** Premium custom / external link */
+    openInNewTab?: boolean;
+    isCustom?: boolean;
 }
 
 export interface NavigationGroup {

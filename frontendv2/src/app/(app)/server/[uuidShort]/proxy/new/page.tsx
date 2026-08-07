@@ -45,6 +45,7 @@ import { cn, isEnabled } from '@/lib/utils';
 import type { AllocationItem, AllocationsResponse, ProxyCreateRequest, DnsVerifyResponse } from '@/types/server';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { EmptyState } from '@/components/featherui/EmptyState';
+import { safeBack } from '@/lib/safe-back';
 
 export default function CreateProxyPage() {
     const { uuidShort } = useParams() as { uuidShort: string };
@@ -172,7 +173,7 @@ export default function CreateProxyPage() {
                     description={t('common.noPermission')}
                     icon={ArrowRightLeft}
                     action={
-                        <Button variant='secondary' onClick={() => router.back()}>
+                        <Button variant='secondary' onClick={() => safeBack(router)}>
                             {t('common.goBack')}
                         </Button>
                     }
@@ -188,7 +189,7 @@ export default function CreateProxyPage() {
                 description={t('serverProxy.featureDisabledDescription')}
                 icon={ArrowRightLeft}
                 action={
-                    <Button variant='secondary' onClick={() => router.back()}>
+                    <Button variant='secondary' onClick={() => safeBack(router)}>
                         {t('common.goBack')}
                     </Button>
                 }
@@ -205,7 +206,7 @@ export default function CreateProxyPage() {
                 description={t('serverProxy.createModalDescription')}
                 actions={
                     <div className='flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-3'>
-                        <Button variant='glass' size='default' onClick={() => router.back()} disabled={saving}>
+                        <Button variant='glass' size='default' onClick={() => safeBack(router)} disabled={saving}>
                             {t('common.cancel')}
                         </Button>
                         <Button

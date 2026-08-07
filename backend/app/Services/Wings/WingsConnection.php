@@ -165,6 +165,50 @@ class WingsConnection
     }
 
     /**
+     * Make an async GET request (no retries). Used for parallel status probes.
+     *
+     * @param string $endpoint The API endpoint (without base URL)
+     * @param array $headers Additional headers to include
+     *
+     * @return \GuzzleHttp\Promise\PromiseInterface Resolves to response array
+     */
+    public function getAsync(string $endpoint, array $headers = []): \GuzzleHttp\Promise\PromiseInterface
+    {
+        $url = $this->baseUrl . $endpoint;
+        $requestHeaders = array_merge($this->defaultHeaders, $headers);
+        $request = new Request('GET', $url, $requestHeaders);
+
+        $connectTimeout = min(10, $this->timeout);
+        $options = [
+            'timeout' => $this->timeout,
+            'connect_timeout' => $connectTimeout,
+            'curl' => [
+                CURLOPT_TIMEOUT => $this->timeout,
+                CURLOPT_CONNECTTIMEOUT => $connectTimeout,
+            ],
+        ];
+
+        return $this->client->sendAsync($request, $options)->then(
+            function ($response) use ($endpoint) {
+                $httpCode = $response->getStatusCode();
+                $responseBody = $response->getBody()->getContents();
+                $responseData = json_decode($responseBody, true);
+
+                if ($httpCode >= 400) {
+                    $this->handleHttpError($httpCode, $responseData, $endpoint);
+                }
+
+                return $responseData ?? [];
+            },
+            function ($reason) {
+                $message = $reason instanceof \Throwable ? $reason->getMessage() : (string) $reason;
+
+                throw new WingsConnectionException('Request failed: ' . $message);
+            }
+        );
+    }
+
+    /**
      * Make a GET request to the Wings API and return raw response.
      * Useful for file downloads and other non-JSON responses.
      *
@@ -447,10 +491,14 @@ class WingsConnection
                 // Send request asynchronously with per-request timeout options
                 // Always apply timeout - use per-request timeout if provided, otherwise use default
                 // This ensures timeout is always set correctly (like pelican's ->timeout() chaining)
+                // Cap connect timeout so short status probes cannot sit on TCP connect for 10s
+                $connectTimeout = min(10, $requestTimeout);
                 $options = [
                     'timeout' => $requestTimeout,
+                    'connect_timeout' => $connectTimeout,
                     'curl' => [
                         CURLOPT_TIMEOUT => $requestTimeout,
+                        CURLOPT_CONNECTTIMEOUT => $connectTimeout,
                     ],
                 ];
                 $response = $this->client->sendAsync($request, $options)->wait();
