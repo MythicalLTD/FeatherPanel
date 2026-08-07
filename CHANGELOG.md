@@ -4,6 +4,8 @@
 
 ### Added
 
+- **FeatherPanel Premium** entitlement from Mythic by @nayskutzu
+- **Share files via temp uploads** from the server file manager. by @nayskutzu
 - Admin **Force Reconcile** for Docker/containerd desync (FeatherPanel#199): Actions tab shows live Wings runtime health and can call Wings `POST /api/servers/{uuid}/reconcile`. Panel accepts Wings process state `error`, badges/labels it as Runtime Error, and allows Start from `error` like offline.
 - Allocation **notes** are shown in node allocation lists, admin server allocation lists, and allocation pickers so admins can document port usage (e.g. Velocity, Dynmap, Geyser) without overloading IP Alias. by @nayskutzu
 

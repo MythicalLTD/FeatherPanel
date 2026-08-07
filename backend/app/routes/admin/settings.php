@@ -84,6 +84,17 @@ return function (RouteCollection $routes): void {
     );
     App::getInstance(true)->registerAdminRoute(
         $routes,
+        'admin-settings-upload-image',
+        '/api/admin/settings/upload-image',
+        function (Request $request) {
+            return (new SettingsController())->uploadImage($request);
+        },
+        Permissions::ADMIN_SETTINGS_EDIT,
+        ['POST']
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
         'admin-settings-email-test',
         '/api/admin/settings/email/test',
         function (Request $request) {

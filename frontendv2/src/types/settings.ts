@@ -59,6 +59,12 @@ export interface AppSettings {
     reforge_captcha_min_score?: string;
     app_url: string;
     branding_show_powered_by?: string;
+    /** Premium: custom AI display name (empty = i18n default) */
+    chatbot_display_name?: string;
+    /** Premium: custom AI avatar URL (empty = panel logo) */
+    chatbot_avatar_url?: string;
+    /** Premium: JSON sidebar hide/order/custom links */
+    sidebar_navigation_config?: string;
     app_logo_white: string;
     app_logo_dark: string;
     app_support_url: string;

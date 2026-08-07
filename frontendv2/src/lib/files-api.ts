@@ -66,6 +66,30 @@ export interface ArchiveExtractDragPayload {
     entries: string[];
 }
 
+export interface ShareFileResult {
+    public_id: string;
+    url: string;
+    delete_key: string;
+    expires_at?: string;
+    password_protected?: boolean;
+    size?: number;
+    filename?: string;
+}
+
+export interface ShareFileResponse extends Partial<ShareFileResult> {
+    background?: boolean;
+    identifier?: string | null;
+}
+
+export interface ShareJob {
+    identifier: string;
+    file: string;
+    status: string;
+    progress: number;
+    error?: string;
+    result?: ShareFileResult;
+}
+
 export interface AdvancedFileSearchFilters {
     directory?: string;
     pattern?: string;
@@ -412,6 +436,35 @@ export const filesApi = {
             foreground: false,
             useHeader: true,
         });
+    },
+
+    shareFile: async (
+        uuid: string,
+        options: {
+            file: string;
+            ttl_days: 1 | 5;
+            password?: string;
+            delete_key?: string;
+            background?: boolean;
+        },
+    ): Promise<ShareFileResponse> => {
+        const response = await api.post<ApiResponse<ShareFileResponse>>(`/user/servers/${uuid}/share-file`, options);
+        return response.data.data;
+    },
+
+    getShareJobs: async (uuid: string): Promise<ShareJob[]> => {
+        const response = await api.get<ApiResponse<{ shares?: ShareJob[] } | ShareJob[]>>(
+            `/user/servers/${uuid}/share-jobs`,
+        );
+        const data = response.data.data;
+        if (Array.isArray(data)) {
+            return data;
+        }
+        return data?.shares || [];
+    },
+
+    deleteShareJob: async (uuid: string, id: string): Promise<void> => {
+        await api.delete(`/user/servers/${uuid}/share-jobs/${id}`);
     },
 
     getPullFiles: async (uuid: string): Promise<{ Identifier: string; Progress: number }[]> => {

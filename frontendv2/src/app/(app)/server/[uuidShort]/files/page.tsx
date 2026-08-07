@@ -35,6 +35,7 @@ import {
     PermissionsDialog,
     MoveCopyDialog,
     PullFileDialog,
+    ShareFileDialog,
     WipeAllDialog,
     IgnoredContentDialog,
     CompressDialog,
@@ -206,6 +207,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
     const [renameOpen, setRenameOpen] = useState(false);
     const [deleteOpen, setDeleteOpen] = useState(false);
     const [pullFileOpen, setPullFileOpen] = useState(false);
+    const [shareFileOpen, setShareFileOpen] = useState(false);
     const [wipeAllOpen, setWipeAllOpen] = useState(false);
     const [ignoredOpen, setIgnoredOpen] = useState(false);
     const [previewOpen, setPreviewOpen] = useState(false);
@@ -669,6 +671,9 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 break;
             case 'download':
                 handleDownload(file.name);
+                break;
+            case 'share':
+                setShareFileOpen(true);
                 break;
             case 'compress':
                 handleCompress(usesSelection ? selectedFiles : [file.name]);
@@ -1687,6 +1692,13 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 uuid={uuidShort}
                 root={currentDirectory || '/'}
                 onSuccess={refresh}
+            />
+            <ShareFileDialog
+                open={shareFileOpen}
+                onOpenChange={setShareFileOpen}
+                uuid={uuidShort}
+                filePath={actionFile ? joinPath(currentDirectory || '/', actionFile.name) : ''}
+                fileName={actionFile?.name || ''}
             />
             <WipeAllDialog open={wipeAllOpen} onOpenChange={setWipeAllOpen} uuid={uuidShort} onSuccess={refresh} />
             <IgnoredContentDialog

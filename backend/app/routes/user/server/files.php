@@ -370,6 +370,56 @@ return function (RouteCollection $routes): void {
 
     App::getInstance(true)->registerServerRoute(
         $routes,
+        'session-server-share-file',
+        '/api/user/servers/{uuidShort}/share-file',
+        function (Request $request, array $args) {
+            $uuidShort = $args['uuidShort'] ?? null;
+
+            return (new ServerFilesController())->shareFile($request, $uuidShort);
+        },
+        'uuidShort',
+        ['POST'],
+        Rate::perMinute(10),
+        'user-server-files'
+    );
+
+    App::getInstance(true)->registerServerRoute(
+        $routes,
+        'session-server-share-jobs',
+        '/api/user/servers/{uuidShort}/share-jobs',
+        function (Request $request, array $args) {
+            $uuidShort = $args['uuidShort'] ?? null;
+
+            return (new ServerFilesController())->getShareJobs($request, $uuidShort);
+        },
+        'uuidShort',
+        ['GET'],
+        Rate::perMinute(30),
+        'user-server-files'
+    );
+
+    App::getInstance(true)->registerServerRoute(
+        $routes,
+        'session-server-delete-share-job',
+        '/api/user/servers/{uuidShort}/share-jobs/{shareId}',
+        function (Request $request, array $args) {
+            $uuidShort = $args['uuidShort'] ?? null;
+            $shareId = $args['shareId'] ?? null;
+
+            if (!$shareId) {
+                return ApiResponse::error('Missing share job ID', 'MISSING_SHARE_ID', 400);
+            }
+
+            return (new ServerFilesController())->deleteShareJob($request, $uuidShort, $shareId);
+        },
+        'uuidShort',
+        ['DELETE'],
+        Rate::perMinute(10),
+        'user-server-files'
+    );
+
+    App::getInstance(true)->registerServerRoute(
+        $routes,
         'session-server-upload-file',
         '/api/user/servers/{uuidShort}/upload-file',
         function (Request $request, array $args) {

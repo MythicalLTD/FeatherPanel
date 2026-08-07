@@ -159,6 +159,7 @@ class SettingsController
         ConfigInterface::FRIENDLY_CAPTCHA_SECRET_KEY,
         ConfigInterface::REFORGE_CAPTCHA_SECRET_KEY,
         ConfigInterface::ABUSEIPDB_API_KEY,
+        ConfigInterface::TEMP_FILES_API_TOKEN,
         // Add other sensitive settings here
     ];
 
@@ -190,6 +191,8 @@ class SettingsController
                 ConfigInterface::APP_BACKDROP_DARKEN_LOCK,
                 ConfigInterface::APP_BACKGROUND_IMAGE_FIT_DEFAULT,
                 ConfigInterface::APP_BACKGROUND_IMAGE_FIT_LOCK,
+                ConfigInterface::TEMP_FILES_ENABLED,
+                ConfigInterface::TEMP_FILES_API_TOKEN,
             ],
         ],
         'links' => [
@@ -434,7 +437,7 @@ class SettingsController
                 'value' => $this->app
                     ->getConfig()
                     ->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
-                'description' => 'The name of the application',
+                'description' => 'The name of the application (shown in the sidebar and browser title)',
                 'type' => 'text',
                 'required' => true,
                 'placeholder' => 'FeatherPanel',
@@ -448,10 +451,10 @@ class SettingsController
                     ->getConfig()
                     ->getSetting(ConfigInterface::APP_BACKGROUND_IMAGE_URL, ''),
                 'description' => 'Default background image URL for all users (leave empty to use theme defaults)',
-                'type' => 'text',
+                'type' => 'image',
                 'required' => false,
                 'placeholder' => 'https://example.com/background.jpg',
-                'validation' => 'string|max:255',
+                'validation' => 'string|max:2048',
                 'options' => [],
                 'category' => 'app',
             ],
@@ -476,11 +479,11 @@ class SettingsController
                         ConfigInterface::APP_LOGO_WHITE,
                         'https://github.com/mythicalltd.png',
                     ),
-                'description' => 'The logo of the application (For white mode)',
-                'type' => 'text',
+                'description' => 'The logo of the application (sidebar & UI, light mode)',
+                'type' => 'image',
                 'required' => true,
                 'placeholder' => 'https://github.com/mythicalltd.png',
-                'validation' => 'required|string|max:255',
+                'validation' => 'required|string|max:2048',
                 'options' => [],
                 'category' => 'app',
             ],
@@ -505,11 +508,11 @@ class SettingsController
                         ConfigInterface::APP_LOGO_DARK,
                         'https://github.com/featherpanel-com.png',
                     ),
-                'description' => 'The logo of the application (For dark mode)',
-                'type' => 'text',
+                'description' => 'The logo of the application (sidebar & UI, dark mode)',
+                'type' => 'image',
                 'required' => true,
                 'placeholder' => 'https://github.com/featherpanel-com.png',
-                'validation' => 'required|string|max:255',
+                'validation' => 'required|string|max:2048',
                 'options' => [],
                 'category' => 'app',
             ],
@@ -538,6 +541,32 @@ class SettingsController
                 'type' => 'text',
                 'required' => false,
                 'placeholder' => 'https://panel-origin.example.com',
+                'validation' => 'nullable|string|max:255',
+                'options' => [],
+                'category' => 'app',
+            ],
+            ConfigInterface::TEMP_FILES_ENABLED => [
+                'name' => ConfigInterface::TEMP_FILES_ENABLED,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::TEMP_FILES_ENABLED, 'true'),
+                'description' => 'Allow users to share server files via temp uploads (uploaded from Wings, not through the panel).',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'true',
+                'validation' => 'required|string|max:255',
+                'options' => ['true', 'false'],
+                'category' => 'app',
+            ],
+            ConfigInterface::TEMP_FILES_API_TOKEN => [
+                'name' => ConfigInterface::TEMP_FILES_API_TOKEN,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::TEMP_FILES_API_TOKEN, ''),
+                'description' => 'Optional temp uploads API token (tf_…). Empty = anonymous uploads (15 GB max). With token = 30 GB max.',
+                'type' => 'text',
+                'required' => false,
+                'placeholder' => 'tf_…',
                 'validation' => 'nullable|string|max:255',
                 'options' => [],
                 'category' => 'app',
@@ -3483,6 +3512,87 @@ class SettingsController
         return ApiResponse::success([
             'system_prompt' => $systemPrompt,
         ]);
+    }
+
+    #[OA\Post(
+        path: '/api/admin/settings/upload-image',
+        summary: 'Upload an image attachment for settings fields',
+        description: 'Upload a JPG/PNG/GIF/WebP image (max 5MB) into /attachments/settings and return its public URL.',
+        tags: ['Admin - Settings'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['image'],
+                    properties: [
+                        new OA\Property(property: 'image', type: 'string', format: 'binary'),
+                    ]
+                )
+            )
+        ),
+        responses: [
+            new OA\Response(response: 201, description: 'Image uploaded successfully'),
+            new OA\Response(response: 400, description: 'Bad request'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 500, description: 'Failed to save file'),
+        ]
+    )]
+    public function uploadImage(Request $request): Response
+    {
+        if (!$request->files->has('image')) {
+            return ApiResponse::error('No image file provided', 'NO_FILE_PROVIDED', 400);
+        }
+
+        $file = $request->files->get('image');
+        if (!$file || !$file->isValid()) {
+            return ApiResponse::error('Invalid file upload', 'INVALID_FILE', 400);
+        }
+
+        if ($file->getSize() > 5 * 1024 * 1024) {
+            return ApiResponse::error('File size too large. Maximum size is 5MB', 'FILE_TOO_LARGE', 400);
+        }
+
+        $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        if (!in_array($file->getMimeType(), $allowedTypes, true)) {
+            return ApiResponse::error('Invalid file type. Allowed types: JPG, PNG, GIF, WebP', 'INVALID_FILE_TYPE', 400);
+        }
+
+        $attachmentsDir = APP_PUBLIC . '/attachments/settings/';
+        if (!is_dir($attachmentsDir) && !mkdir($attachmentsDir, 0755, true) && !is_dir($attachmentsDir)) {
+            return ApiResponse::error('Failed to create attachments directory', 'SAVE_FAILED', 500);
+        }
+
+        $extension = $file->guessExtension() ?: 'png';
+        $filename = uniqid('settings_', true) . '.' . $extension;
+        $filePath = $attachmentsDir . $filename;
+
+        try {
+            $file->move($attachmentsDir, $filename);
+            @chmod($filePath, 0644);
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to save file: ' . $e->getMessage(), 'SAVE_FAILED', 500);
+        }
+
+        $baseUrl = $this->app->getConfig()->getSetting(
+            ConfigInterface::APP_URL,
+            'https://featherpanel.mythical.systems'
+        );
+        $url = rtrim((string) $baseUrl, '/') . '/attachments/settings/' . $filename;
+
+        $admin = $request->attributes->get('user');
+        Activity::createActivity([
+            'user_uuid' => $admin['uuid'] ?? null,
+            'name' => 'upload_settings_image',
+            'context' => 'Uploaded settings image: ' . $filename,
+            'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        return ApiResponse::success([
+            'url' => $url,
+            'filename' => $filename,
+        ], 'Image uploaded successfully', 201);
     }
 
     #[OA\Post(

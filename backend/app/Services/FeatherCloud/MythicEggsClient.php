@@ -83,7 +83,18 @@ class MythicEggsClient
      */
     public function listEggs(array $query = []): array
     {
-        $decoded = $this->getJson('eggs', $query);
+        try {
+            $decoded = $this->getJson('eggs', $query);
+        } catch (FeatherCloudException $e) {
+            // Co-hosted eggs web historically shadowed GET /eggs as /{id}=eggs (404).
+            // Fall back to the full catalog and paginate locally so community eggs still list.
+            if ($e->getHttpStatusCode() === 404 || $e->getErrorCode() === 'EGG_NOT_FOUND') {
+                return $this->listEggsFromCatalogJson($query);
+            }
+
+            throw $e;
+        }
+
         if (isset($decoded['data']) && is_array($decoded['data'])) {
             return [
                 'data' => array_values(array_filter($decoded['data'], 'is_array')),
@@ -93,10 +104,7 @@ class MythicEggsClient
 
         // GET /eggs.json style bare array
         if (array_is_list($decoded)) {
-            return [
-                'data' => array_values(array_filter($decoded, 'is_array')),
-                'meta' => [],
-            ];
+            return $this->paginateCatalogList(array_values(array_filter($decoded, 'is_array')), $query);
         }
 
         throw new FeatherCloudException('Unexpected eggs list response shape', 'INVALID_RESPONSE', 502);
@@ -183,6 +191,89 @@ class MythicEggsClient
         return [
             'data' => $list,
             'meta' => is_array($decoded['meta'] ?? null) ? $decoded['meta'] : [],
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $query
+     *
+     * @return array{data: list<array<string, mixed>>, meta: array<string, mixed>}
+     */
+    private function listEggsFromCatalogJson(array $query): array
+    {
+        $decoded = $this->getJson('eggs.json');
+        if (!is_array($decoded)) {
+            throw new FeatherCloudException('Unexpected eggs.json response shape', 'INVALID_RESPONSE', 502);
+        }
+
+        $eggs = array_is_list($decoded)
+            ? array_values(array_filter($decoded, 'is_array'))
+            : (isset($decoded['data']) && is_array($decoded['data'])
+                ? array_values(array_filter($decoded['data'], 'is_array'))
+                : []);
+
+        return $this->paginateCatalogList($eggs, $query);
+    }
+
+    /**
+     * @param list<array<string, mixed>> $eggs
+     * @param array<string, mixed> $query
+     *
+     * @return array{data: list<array<string, mixed>>, meta: array<string, mixed>}
+     */
+    private function paginateCatalogList(array $eggs, array $query): array
+    {
+        $q = strtolower(trim((string) ($query['q'] ?? '')));
+        $category = strtolower(trim((string) ($query['category'] ?? '')));
+        $channel = strtolower(trim((string) ($query['channel'] ?? '')));
+        $page = max(1, (int) ($query['page'] ?? 1));
+        $perPage = min(500, max(1, (int) ($query['per_page'] ?? 50)));
+
+        $filtered = array_values(array_filter($eggs, static function (array $egg) use ($q, $category, $channel): bool {
+            if ($channel !== '' && strtolower((string) ($egg['channel'] ?? '')) !== $channel) {
+                return false;
+            }
+            if ($category !== '' && strtolower((string) ($egg['category'] ?? '')) !== $category) {
+                return false;
+            }
+            if ($q === '') {
+                return true;
+            }
+
+            $haystack = strtolower(implode(' ', [
+                (string) ($egg['name'] ?? ''),
+                (string) ($egg['description'] ?? ''),
+                (string) ($egg['id'] ?? ''),
+                (string) ($egg['category'] ?? ''),
+                (string) ($egg['channel'] ?? ''),
+            ]));
+
+            return str_contains($haystack, $q);
+        }));
+
+        usort($filtered, static function (array $a, array $b): int {
+            $downloads = ((int) ($b['downloadCount'] ?? 0)) <=> ((int) ($a['downloadCount'] ?? 0));
+            if ($downloads !== 0) {
+                return $downloads;
+            }
+
+            return strcasecmp((string) ($a['name'] ?? ''), (string) ($b['name'] ?? ''));
+        });
+
+        $total = count($filtered);
+        $lastPage = max(1, (int) ceil($total / $perPage));
+        $page = min($page, $lastPage);
+        $slice = array_slice($filtered, ($page - 1) * $perPage, $perPage);
+
+        return [
+            'data' => $slice,
+            'meta' => [
+                'total' => $total,
+                'page' => $page,
+                'per_page' => $perPage,
+                'last_page' => $lastPage,
+                'source' => 'eggs.json',
+            ],
         ];
     }
 

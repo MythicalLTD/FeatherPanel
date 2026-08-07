@@ -25,6 +25,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use App\Services\FeatherCloud\MythicEggsClient;
 use App\Services\FeatherCloud\FeatherCloudClient;
+use App\Services\FeatherCloud\FeatherPanelPremium;
 use App\Services\FeatherCloud\MythicMemberResolver;
 use App\Services\FeatherCloud\FeatherCloudException;
 use App\Services\FeatherCloud\MythicIssueReportCollector;
@@ -35,10 +36,16 @@ class CloudDataController
     public function getSummary(Request $request): Response
     {
         return $this->proxy(static function (FeatherCloudClient $client): array {
-            $data = $client->getSummary();
-            App::getInstance(true)->getConfig()->setSetting(ConfigInterface::FEATHERCLOUD_LAST_SYNCED_AT, gmdate('c'));
+            try {
+                $data = $client->getSummary();
+                FeatherPanelPremium::persistFromSummary($data);
+                App::getInstance(true)->getConfig()->setSetting(ConfigInterface::FEATHERCLOUD_LAST_SYNCED_AT, gmdate('c'));
 
-            return $data;
+                return $data;
+            } catch (FeatherCloudException $e) {
+                FeatherPanelPremium::retainOnUpstreamFailure($e);
+                throw $e;
+            }
         }, 'Cloud summary retrieved successfully');
     }
 

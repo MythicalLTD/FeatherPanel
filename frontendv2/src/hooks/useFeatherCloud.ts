@@ -33,6 +33,19 @@ export interface CloudSummary {
         total_credits: number;
         total_purchases: number;
     };
+    entitlements?: {
+        featherpanel_premium?: {
+            active: boolean;
+            features: {
+                remove_branding: boolean;
+                rename_ai_agent: boolean;
+                custom_sidebar: boolean;
+                higher_limits: boolean;
+                priority_support: boolean;
+                priority_suggestions: boolean;
+            };
+        };
+    };
 }
 
 export interface CreditsData {

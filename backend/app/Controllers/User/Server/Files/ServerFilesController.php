@@ -2016,6 +2016,264 @@ class ServerFilesController
     }
 
     #[OA\Post(
+        path: '/api/user/servers/{uuidShort}/share-file',
+        summary: 'Share a server file via temp uploads',
+        description: 'Uploads a server file from Wings as a temp upload (multipart) and returns a public share URL and delete key. Large files may return a background job identifier; poll share-jobs until complete.',
+        tags: ['User - Server Files'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['file', 'ttl_days'],
+                properties: [
+                    new OA\Property(property: 'file', type: 'string', description: 'Path to the file on the server'),
+                    new OA\Property(property: 'ttl_days', type: 'integer', enum: [1, 5], description: 'How long the share remains available'),
+                    new OA\Property(property: 'password', type: 'string', nullable: true, description: 'Optional download password (min 4 chars)'),
+                    new OA\Property(property: 'delete_key', type: 'string', nullable: true, description: 'Optional custom delete key (min 8 chars)'),
+                    new OA\Property(property: 'background', type: 'boolean', nullable: true, description: 'Force background upload even for small files'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'File shared successfully'),
+            new OA\Response(response: 202, description: 'Background share started'),
+            new OA\Response(response: 400, description: 'Bad request'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 404, description: 'Not found'),
+            new OA\Response(response: 500, description: 'Internal server error'),
+        ]
+    )]
+    public function shareFile(Request $request, string $serverUuid): Response
+    {
+        try {
+            $user = $this->validateUser($request);
+            $server = $this->validateServer($serverUuid);
+            $node = $this->validateNode($server['node_id']);
+
+            $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::FILE_READ_CONTENT);
+            if ($permissionCheck !== null) {
+                return $permissionCheck;
+            }
+
+            $config = App::getInstance(true)->getConfig();
+            if (($config->getSetting(ConfigInterface::TEMP_FILES_ENABLED, 'true') ?? 'true') !== 'true') {
+                return ApiResponse::error('Temp uploads sharing is disabled', 'TEMP_FILES_DISABLED', 403);
+            }
+
+            $data = json_decode($request->getContent(), true);
+            if (!is_array($data)) {
+                return ApiResponse::error('Invalid JSON body', 'INVALID_JSON', 400);
+            }
+
+            $file = trim((string) ($data['file'] ?? ''));
+            if ($file === '') {
+                return ApiResponse::error('File path is required', 'MISSING_FILE', 400);
+            }
+
+            $ttlDays = (int) ($data['ttl_days'] ?? 0);
+            if (!in_array($ttlDays, [1, 5], true)) {
+                return ApiResponse::error('ttl_days must be 1 or 5', 'INVALID_TTL', 400);
+            }
+
+            $password = isset($data['password']) ? (string) $data['password'] : '';
+            if ($password !== '' && strlen($password) < 4) {
+                return ApiResponse::error('password must be at least 4 characters', 'INVALID_PASSWORD', 400);
+            }
+
+            $deleteKey = isset($data['delete_key']) ? (string) $data['delete_key'] : '';
+            if ($deleteKey !== '' && strlen($deleteKey) < 8) {
+                return ApiResponse::error('delete_key must be at least 8 characters', 'INVALID_DELETE_KEY', 400);
+            }
+
+            $token = trim((string) ($config->getSetting(ConfigInterface::TEMP_FILES_API_TOKEN, '') ?? ''));
+
+            $payload = [
+                'file' => ltrim($file, '/'),
+                'ttl_days' => $ttlDays,
+            ];
+            if ($password !== '') {
+                $payload['password'] = $password;
+            }
+            if ($deleteKey !== '') {
+                $payload['delete_key'] = $deleteKey;
+            }
+            if ($token !== '') {
+                $payload['token'] = $token;
+            }
+            if (!empty($data['background'])) {
+                $payload['background'] = true;
+            }
+
+            $wings = $this->createWingsConnection($node);
+            $response = $wings->getServer()->shareFile($server['uuid'], $payload);
+
+            if (!$response->isSuccessful()) {
+                $error = $response->getError();
+
+                return ApiResponse::error('Failed to share file: ' . $error, 'WINGS_ERROR', $response->getStatusCode());
+            }
+
+            $result = $response->getData();
+            if (!is_array($result)) {
+                $result = [];
+            }
+
+            $isBackground = $response->getStatusCode() === 202 || (isset($result['identifier']) && !isset($result['public_id']));
+
+            if ($isBackground) {
+                $this->logActivity($server, $node, 'file_share_started', [
+                    'path' => $file,
+                    'ttl_days' => $ttlDays,
+                    'identifier' => $result['identifier'] ?? null,
+                    'password_protected' => $password !== '',
+                ], $user);
+
+                return ApiResponse::success([
+                    'identifier' => $result['identifier'] ?? null,
+                    'background' => true,
+                ], 'File share started', 202);
+            }
+
+            $this->logActivity($server, $node, 'file_shared', [
+                'path' => $file,
+                'ttl_days' => $ttlDays,
+                'public_id' => $result['public_id'] ?? null,
+                'url' => $result['url'] ?? null,
+                'password_protected' => !empty($result['password_protected']) || $password !== '',
+            ], $user);
+
+            return ApiResponse::success([
+                'public_id' => $result['public_id'] ?? null,
+                'url' => $result['url'] ?? null,
+                'delete_key' => $result['delete_key'] ?? null,
+                'expires_at' => $result['expires_at'] ?? null,
+                'password_protected' => !empty($result['password_protected']),
+                'size' => $result['size'] ?? null,
+                'filename' => $result['filename'] ?? basename($file),
+                'background' => false,
+            ], 'File shared successfully');
+        } catch (\Exception $e) {
+            return $this->handleWingsError($e, 'share file');
+        }
+    }
+
+    #[OA\Get(
+        path: '/api/user/servers/{uuidShort}/share-jobs',
+        summary: 'List temp upload share jobs',
+        description: 'Retrieve active temp upload share jobs for the server.',
+        tags: ['User - Server Files'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Share jobs retrieved successfully'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 500, description: 'Internal server error'),
+        ]
+    )]
+    public function getShareJobs(Request $request, string $serverUuid): Response
+    {
+        try {
+            $this->validateUser($request);
+            $server = $this->validateServer($serverUuid);
+            $node = $this->validateNode($server['node_id']);
+
+            $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::FILE_READ);
+            if ($permissionCheck !== null) {
+                return $permissionCheck;
+            }
+
+            $wings = $this->createWingsConnection($node);
+            $response = $wings->getServer()->getShareJobs($server['uuid']);
+
+            if (!$response->isSuccessful()) {
+                $error = $response->getError();
+
+                return ApiResponse::error('Failed to get share jobs: ' . $error, 'WINGS_ERROR', $response->getStatusCode());
+            }
+
+            return ApiResponse::success($response->getData(), 'Share jobs retrieved successfully');
+        } catch (\Exception $e) {
+            return $this->handleWingsError($e, 'get share jobs');
+        }
+    }
+
+    #[OA\Delete(
+        path: '/api/user/servers/{uuidShort}/share-jobs/{shareId}',
+        summary: 'Cancel a temp upload share job',
+        description: 'Cancels an in-progress temp upload share job.',
+        tags: ['User - Server Files'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'shareId',
+                in: 'path',
+                description: 'Share job identifier',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Share job cancelled'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 500, description: 'Internal server error'),
+        ]
+    )]
+    public function deleteShareJob(Request $request, string $serverUuid, string $shareId): Response
+    {
+        try {
+            $user = $this->validateUser($request);
+            $server = $this->validateServer($serverUuid);
+            $node = $this->validateNode($server['node_id']);
+
+            $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::FILE_READ_CONTENT);
+            if ($permissionCheck !== null) {
+                return $permissionCheck;
+            }
+
+            $wings = $this->createWingsConnection($node);
+            $response = $wings->getServer()->deleteShareJob($server['uuid'], $shareId);
+
+            if (!$response->isSuccessful()) {
+                $error = $response->getError();
+
+                return ApiResponse::error('Failed to cancel share job: ' . $error, 'WINGS_ERROR', $response->getStatusCode());
+            }
+
+            $this->logActivity($server, $node, 'file_share_cancelled', [
+                'identifier' => $shareId,
+            ], $user);
+
+            return ApiResponse::success([], 'Share job cancelled');
+        } catch (\Exception $e) {
+            return $this->handleWingsError($e, 'cancel share job');
+        }
+    }
+
+    #[OA\Post(
         path: '/api/user/servers/{uuidShort}/upload-file',
         summary: 'Upload file',
         description: 'Upload a file to the server. Content-Type must not be application/json.',

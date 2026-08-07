@@ -26,6 +26,7 @@ use App\CloudFlare\CloudFlareRealIP;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use App\Services\FeatherCloud\FeatherCloudClient;
+use App\Services\FeatherCloud\FeatherPanelPremium;
 use App\Plugins\Events\Events\CloudManagementEvent;
 use App\Services\FeatherCloud\MythicMemberResolver;
 use App\Services\FeatherCloud\FeatherCloudException;
@@ -305,6 +306,7 @@ class CloudManagementController
 
             $user = $request->attributes->get('user');
             MythicMemberResolver::clearLinkState();
+            FeatherPanelPremium::clear();
             $this->logCloudActivity(
                 $request,
                 'rotate_cloud_credentials',
@@ -618,6 +620,18 @@ class CloudManagementController
                         $featherUuid !== '' ? $featherUuid : null
                     );
                     $membersSynced = (int) ($sync['synced'] ?? 0);
+
+                    try {
+                        $summaryClient = $mythicUserId !== ''
+                            ? $client->withMemberUserUuid($mythicUserId)
+                            : $client;
+                        FeatherPanelPremium::persistFromSummary($summaryClient->getSummary());
+                    } catch (\Throwable $premiumException) {
+                        FeatherPanelPremium::retainOnUpstreamFailure($premiumException);
+                        $this->app->getLogger()->warning(
+                            'Mythic OAuth save succeeded but Premium entitlement sync failed: ' . $premiumException->getMessage()
+                        );
+                    }
                 }
             } catch (\Throwable $syncException) {
                 $this->app->getLogger()->warning(
@@ -703,6 +717,7 @@ class CloudManagementController
             $config->setSetting(ConfigInterface::FEATHERCLOUD_LAST_SYNCED_AT, null);
             $config->setSetting(ConfigInterface::FEATHERCLOUD_RELINK_PENDING_AT, null);
             MythicMemberResolver::clearLinkState();
+            FeatherPanelPremium::clear();
 
             $this->logCloudActivity(
                 $request,
@@ -924,6 +939,7 @@ class CloudManagementController
             'pastes_enabled' => ($config->getSetting(ConfigInterface::FEATHERCLOUD_PASTES_ENABLED, 'true') ?? 'true') === 'true',
             'issues_enabled' => ($config->getSetting(ConfigInterface::FEATHERCLOUD_ISSUES_ENABLED, 'true') ?? 'true') === 'true',
             'last_synced_at' => $config->getSetting(ConfigInterface::FEATHERCLOUD_LAST_SYNCED_AT, null),
+            'premium' => FeatherPanelPremium::statusPayload(),
             'defaults' => [
                 'api_base_url_prod' => FeatherCloudClient::DEFAULT_PROD_BASE_URL,
                 'api_base_url_dev' => FeatherCloudClient::DEFAULT_DEV_BASE_URL,

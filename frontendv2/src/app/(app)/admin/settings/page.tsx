@@ -50,6 +50,7 @@ import {
     Link2,
 } from 'lucide-react';
 import { copyToClipboard, cn } from '@/lib/utils';
+import { ImageAttachmentField } from '@/components/featherui/ImageAttachmentField';
 
 interface LogData {
     success: boolean;
@@ -206,6 +207,24 @@ function SettingFieldRow({
                 </Select>
                 <p className='text-muted-foreground text-sm'>{description}</p>
             </div>
+        );
+    }
+
+    if (
+        settingKey === 'app_logo_white' ||
+        settingKey === 'app_logo_dark' ||
+        settingKey === 'app_background_image_url' ||
+        (currentSetting as { type?: string }).type === 'image'
+    ) {
+        return (
+            <ImageAttachmentField
+                id={settingKey}
+                label={formattedName}
+                description={description}
+                value={String(currentSetting.value ?? '')}
+                onChange={(url) => onSettingChange(settingKey, url)}
+                placeholder={currentSetting.placeholder}
+            />
         );
     }
 

@@ -30,7 +30,11 @@ function ChatbotOpenButton({ onClick }: { onClick: () => void }) {
     const { t } = useTranslation();
     const { settings } = useSettings();
     const { theme } = useTheme();
-    const logoUrl = theme === 'dark' ? settings?.app_logo_dark || '/logo.png' : settings?.app_logo_white || '/logo.png';
+    const customAvatar = settings?.chatbot_avatar_url?.trim();
+    const logoUrl =
+        customAvatar ||
+        (theme === 'dark' ? settings?.app_logo_dark || '/logo.png' : settings?.app_logo_white || '/logo.png');
+    const assistantName = settings?.chatbot_display_name?.trim() || t('chatbot.title');
 
     return (
         <Button
@@ -40,7 +44,7 @@ function ChatbotOpenButton({ onClick }: { onClick: () => void }) {
         >
             <Image
                 src={logoUrl}
-                alt={settings?.app_name || t('chatbot.title')}
+                alt={assistantName}
                 width={34}
                 height={34}
                 className='h-8 w-8 object-contain md:h-9 md:w-9'

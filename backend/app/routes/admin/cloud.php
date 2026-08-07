@@ -141,6 +141,27 @@ return function (RouteCollection $routes): void {
         ['POST'],
     );
 
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-featherpanel-premium-get',
+        '/api/admin/featherpanel-premium',
+        static function (Request $request) {
+            return (new \App\Controllers\Admin\FeatherPanelPremiumController())->show($request);
+        },
+        Permissions::ADMIN_SETTINGS_VIEW,
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-featherpanel-premium-post',
+        '/api/admin/featherpanel-premium',
+        static function (Request $request) {
+            return (new \App\Controllers\Admin\FeatherPanelPremiumController())->update($request);
+        },
+        Permissions::ADMIN_SETTINGS_EDIT,
+        ['POST'],
+    );
+
     // Cloud Data Endpoints (Admin Root Only)
     App::getInstance(true)->registerAdminRoute(
         $routes,
