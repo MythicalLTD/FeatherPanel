@@ -23,8 +23,9 @@
 	header Referrer-Policy "strict-origin-when-cross-origin"
 
 	# Incomplete percent-encoding (/%f, /%, /%zz) — reject before Next.js.
+	# RE2 (no lookaheads): bare %, % + non-hex, or % + one hex then non-hex/end.
 	# Invalid UTF-8 sequences like %ff are handled in frontendv2/src/proxy.ts.
-	@bad_pct path_regexp %(?![0-9A-Fa-f]{2})
+	@bad_pct path_regexp %([^0-9A-Fa-f]|[0-9A-Fa-f]([^0-9A-Fa-f]|$)|$)
 	handle @bad_pct {
 		respond "Bad Request" 400
 	}

@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.3.7.8 STABLE
+
+### Fixed
+
+- Hotfix: frontend Caddy no longer crashes on startup from an invalid `path_regexp` using Perl lookaheads (RE2-incompatible). Panels stuck with `caddy entered FATAL state` after v1.3.7.7 recover after updating. by @nayskutzu
+
 ## v1.3.7.7 STABLE
 
 ### Added
