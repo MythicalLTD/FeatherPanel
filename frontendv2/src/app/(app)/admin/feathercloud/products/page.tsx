@@ -352,8 +352,7 @@ export default function MythicProductsPage() {
                         <p className='text-muted-foreground text-sm'>
                             <span className='text-foreground font-medium'>{filtered.length}</span>
                             {' / '}
-                            <span className='text-foreground font-medium'>{catalog.length}</span>
-                            {' '}
+                            <span className='text-foreground font-medium'>{catalog.length}</span>{' '}
                             {t('admin.marketplace.plugins.catalog_suffix')}
                             {updatesAvailable > 0 ? (
                                 <>
@@ -405,7 +404,8 @@ export default function MythicProductsPage() {
 
                     {loading ? (
                         <div className='text-muted-foreground flex items-center gap-2 text-sm'>
-                            <Loader2 className='h-4 w-4 animate-spin' /> {t('admin.marketplace.plugins.loading_catalog')}
+                            <Loader2 className='h-4 w-4 animate-spin' />{' '}
+                            {t('admin.marketplace.plugins.loading_catalog')}
                         </div>
                     ) : filtered.length === 0 ? (
                         <EmptyState
@@ -501,13 +501,19 @@ export default function MythicProductsPage() {
                                                         {installed && local?.version ? (
                                                             <p className='text-muted-foreground mt-1 text-[11px]'>
                                                                 {latest
-                                                                    ? t('admin.marketplace.plugins.labels.versions_line', {
-                                                                          installed: local.version,
-                                                                          store: latest,
-                                                                      })
-                                                                    : t('admin.marketplace.plugins.labels.installed_version', {
-                                                                          version: local.version,
-                                                                      })}
+                                                                    ? t(
+                                                                          'admin.marketplace.plugins.labels.versions_line',
+                                                                          {
+                                                                              installed: local.version,
+                                                                              store: latest,
+                                                                          },
+                                                                      )
+                                                                    : t(
+                                                                          'admin.marketplace.plugins.labels.installed_version',
+                                                                          {
+                                                                              version: local.version,
+                                                                          },
+                                                                      )}
                                                             </p>
                                                         ) : latest ? (
                                                             <p className='text-muted-foreground mt-1 text-[11px]'>
@@ -532,7 +538,9 @@ export default function MythicProductsPage() {
                                                             {t('admin.marketplace.plugins.labels.by_author', {
                                                                 author:
                                                                     p.seller?.name ||
-                                                                    t('admin.marketplace.plugins.labels.default_seller'),
+                                                                    t(
+                                                                        'admin.marketplace.plugins.labels.default_seller',
+                                                                    ),
                                                             })}
                                                         </span>
                                                     </div>

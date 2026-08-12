@@ -162,6 +162,7 @@ class GetServerStatusTool implements ToolInterface
                 'cpu_absolute' => $resources['cpu_absolute'] ?? null,
                 'disk_bytes' => $resources['disk_bytes'] ?? null,
                 'network' => $resources['network'] ?? null,
+                'disk_io' => $resources['disk_io'] ?? null,
             ];
         }
 

@@ -340,15 +340,21 @@ export default function MythicTranslationsPage() {
 
             <div className='grid gap-3 sm:grid-cols-3'>
                 <div className='bg-card/60 rounded-2xl px-4 py-3'>
-                    <p className='text-muted-foreground text-xs'>{t('admin.feathercloud.translations.stats.locales')}</p>
+                    <p className='text-muted-foreground text-xs'>
+                        {t('admin.feathercloud.translations.stats.locales')}
+                    </p>
                     <p className='mt-1 text-sm font-medium'>{stats.total}</p>
                 </div>
                 <div className='bg-card/60 rounded-2xl px-4 py-3'>
-                    <p className='text-muted-foreground text-xs'>{t('admin.feathercloud.translations.stats.complete')}</p>
+                    <p className='text-muted-foreground text-xs'>
+                        {t('admin.feathercloud.translations.stats.complete')}
+                    </p>
                     <p className='mt-1 text-sm font-medium'>{stats.complete}</p>
                 </div>
                 <div className='bg-card/60 rounded-2xl px-4 py-3'>
-                    <p className='text-muted-foreground text-xs'>{t('admin.feathercloud.translations.stats.installed')}</p>
+                    <p className='text-muted-foreground text-xs'>
+                        {t('admin.feathercloud.translations.stats.installed')}
+                    </p>
                     <p className='mt-1 text-sm font-medium'>{stats.installed}</p>
                 </div>
             </div>
@@ -406,7 +412,10 @@ export default function MythicTranslationsPage() {
                                 key: 'in_progress' as const,
                                 labelKey: 'admin.feathercloud.translations.filters.in_progress',
                             },
-                            { key: 'installed' as const, labelKey: 'admin.feathercloud.translations.filters.installed' },
+                            {
+                                key: 'installed' as const,
+                                labelKey: 'admin.feathercloud.translations.filters.installed',
+                            },
                         ] as const
                     ).map((item) => (
                         <Button

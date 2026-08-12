@@ -324,10 +324,7 @@ export function isProductFree(product?: StoreProduct | null): boolean {
     return Boolean(product.is_free || Number(product.effective_price ?? product.price ?? 0) <= 0);
 }
 
-export function formatPrice(
-    product?: StoreProduct | null,
-    labels?: { free?: string; empty?: string },
-): string {
+export function formatPrice(product?: StoreProduct | null, labels?: { free?: string; empty?: string }): string {
     if (!product) return labels?.empty ?? '—';
     if (isProductFree(product)) return labels?.free ?? 'Free';
     return `${product.currency?.symbol || '€'}${String(product.effective_price ?? product.price ?? '0.00')}`;

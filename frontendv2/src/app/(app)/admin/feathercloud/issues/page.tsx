@@ -98,15 +98,11 @@ export default function MythicIssuesPage() {
             if (axios.isAxiosError(err)) {
                 const code = err.response?.data?.error_code;
                 if (code === 'MEMBER_UUID_REQUIRED') {
-                    toast.error(
-                        err.response?.data?.message || t('admin.feathercloud.common.member_uuid_required'),
-                    );
+                    toast.error(err.response?.data?.message || t('admin.feathercloud.common.member_uuid_required'));
                     return;
                 }
                 if (code === 'CLOUD_CREDENTIALS_NOT_CONFIGURED') {
-                    setCredentialsError(
-                        err.response?.data?.message || t('admin.feathercloud.common.not_linked_short'),
-                    );
+                    setCredentialsError(err.response?.data?.message || t('admin.feathercloud.common.not_linked_short'));
                     return;
                 }
                 toast.error(err.response?.data?.message || t('admin.feathercloud.issues.failed'));

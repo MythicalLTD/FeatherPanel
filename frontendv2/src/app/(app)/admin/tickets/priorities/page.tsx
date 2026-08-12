@@ -19,18 +19,7 @@ import { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
-import {
-    Flag,
-    Plus,
-    Pencil,
-    Trash2,
-    Search,
-    Zap,
-    Palette,
-    AlertTriangle,
-    ChevronUp,
-    ChevronDown,
-} from 'lucide-react';
+import { Flag, Plus, Pencil, Trash2, Search, Zap, Palette, AlertTriangle, ChevronUp, ChevronDown } from 'lucide-react';
 import { PageCard } from '@/components/featherui/PageCard';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { ResourceCard } from '@/components/featherui/ResourceCard';

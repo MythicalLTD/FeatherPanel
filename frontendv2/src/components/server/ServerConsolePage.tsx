@@ -53,6 +53,10 @@ interface WingsStats {
         rx_bytes: number;
         tx_bytes: number;
     };
+    disk_io?: {
+        read_bytes: number;
+        write_bytes: number;
+    };
     state?: string;
 }
 
@@ -91,6 +95,9 @@ export default function ServerConsolePage() {
     const hasRequestedLogsRef = useRef(false);
 
     const prevNetworkRef = useRef({ rx: 0, tx: 0, timestamp: 0 });
+    const prevDiskIoRef = useRef({ read: 0, write: 0, timestamp: 0 });
+    const smoothNetworkRef = useRef({ rx: 0, tx: 0 });
+    const smoothDiskIoRef = useRef({ read: 0, write: 0 });
 
     const hasInitializedStatus = useRef(false);
 
@@ -119,6 +126,7 @@ export default function ServerConsolePage() {
     const [memoryData, setMemoryData] = useState<Array<{ timestamp: number; value: number }>>([]);
     const [diskData, setDiskData] = useState<Array<{ timestamp: number; value: number }>>([]);
     const [networkData, setNetworkData] = useState<Array<{ timestamp: number; value: number }>>([]);
+    const [diskIoData, setDiskIoData] = useState<Array<{ timestamp: number; value: number }>>([]);
     const maxDataPoints = 60;
 
     const [currentCpu, setCurrentCpu] = useState(0);
@@ -126,6 +134,8 @@ export default function ServerConsolePage() {
     const [currentDisk, setCurrentDisk] = useState(0);
     const [currentNetworkRx, setCurrentNetworkRx] = useState(0);
     const [currentNetworkTx, setCurrentNetworkTx] = useState(0);
+    const [currentDiskIoRead, setCurrentDiskIoRead] = useState(0);
+    const [currentDiskIoWrite, setCurrentDiskIoWrite] = useState(0);
 
     const [consoleFilters, setConsoleFilters] = useState<ConsoleFilterRule[]>([]);
     const hasLoadedFilters = useRef(false);
@@ -271,6 +281,8 @@ export default function ServerConsolePage() {
 
     const handleStatsUpdate = useCallback((stats: WingsStats) => {
         const timestamp = new Date().getTime();
+        // Light EMA so bursty Wings samples don't make rates / charts jump every tick.
+        const smoothRate = (previous: number, next: number, alpha = 0.35) => previous * (1 - alpha) + next * alpha;
 
         if (stats.state) {
             setServerStatus(stats.state);
@@ -318,10 +330,15 @@ export default function ServerConsolePage() {
                     const rxRate = Math.max(0, currentRxBytes - prevNetworkRef.current.rx) / timeDiff;
                     const txRate = Math.max(0, currentTxBytes - prevNetworkRef.current.tx) / timeDiff;
 
-                    setCurrentNetworkRx(rxRate);
-                    setCurrentNetworkTx(txRate);
+                    smoothNetworkRef.current = {
+                        rx: smoothRate(smoothNetworkRef.current.rx, rxRate),
+                        tx: smoothRate(smoothNetworkRef.current.tx, txRate),
+                    };
 
-                    const totalRate = rxRate + txRate;
+                    setCurrentNetworkRx(smoothNetworkRef.current.rx);
+                    setCurrentNetworkTx(smoothNetworkRef.current.tx);
+
+                    const totalRate = smoothNetworkRef.current.rx + smoothNetworkRef.current.tx;
                     setNetworkData((prev) => {
                         const newData = [...prev, { timestamp, value: totalRate }];
                         return newData.slice(-maxDataPoints);
@@ -332,6 +349,40 @@ export default function ServerConsolePage() {
             prevNetworkRef.current = {
                 rx: currentRxBytes,
                 tx: currentTxBytes,
+                timestamp: now,
+            };
+        }
+
+        if (stats.disk_io?.read_bytes !== undefined && stats.disk_io?.write_bytes !== undefined) {
+            const currentReadBytes = Number(stats.disk_io.read_bytes);
+            const currentWriteBytes = Number(stats.disk_io.write_bytes);
+            const now = new Date().getTime();
+
+            if (prevDiskIoRef.current.timestamp > 0) {
+                const timeDiff = (now - prevDiskIoRef.current.timestamp) / 1000;
+                if (timeDiff > 0) {
+                    const readRate = Math.max(0, currentReadBytes - prevDiskIoRef.current.read) / timeDiff;
+                    const writeRate = Math.max(0, currentWriteBytes - prevDiskIoRef.current.write) / timeDiff;
+
+                    smoothDiskIoRef.current = {
+                        read: smoothRate(smoothDiskIoRef.current.read, readRate),
+                        write: smoothRate(smoothDiskIoRef.current.write, writeRate),
+                    };
+
+                    setCurrentDiskIoRead(smoothDiskIoRef.current.read);
+                    setCurrentDiskIoWrite(smoothDiskIoRef.current.write);
+
+                    const totalRate = smoothDiskIoRef.current.read + smoothDiskIoRef.current.write;
+                    setDiskIoData((prev) => {
+                        const newData = [...prev, { timestamp, value: totalRate }];
+                        return newData.slice(-maxDataPoints);
+                    });
+                }
+            }
+
+            prevDiskIoRef.current = {
+                read: currentReadBytes,
+                write: currentWriteBytes,
                 timestamp: now,
             };
         }
@@ -400,6 +451,7 @@ export default function ServerConsolePage() {
                 setMemoryData([{ timestamp, value: 0 }]);
                 setDiskData([{ timestamp, value: 0 }]);
                 setNetworkData([{ timestamp, value: 0 }]);
+                setDiskIoData([{ timestamp, value: 0 }]);
             }, 0);
             return () => clearTimeout(timer);
         }
@@ -572,7 +624,7 @@ export default function ServerConsolePage() {
     }
 
     return (
-        <div className='space-y-6 pb-8'>
+        <div className='space-y-4 pb-8'>
             <WidgetRenderer widgets={getWidgets('server-console', 'top-of-page')} />
 
             <ServerHeader
@@ -596,8 +648,8 @@ export default function ServerConsolePage() {
 
             <WidgetRenderer widgets={getWidgets('server-console', 'after-header')} />
 
-            <div className='grid grid-cols-1 items-start gap-4 xl:grid-cols-12 xl:gap-5 2xl:gap-6'>
-                <div className='flex min-w-0 flex-col gap-5 xl:col-span-9'>
+            <div className='grid grid-cols-1 items-stretch gap-4 xl:grid-cols-12 xl:gap-5 2xl:gap-6'>
+                <div className='flex h-full min-h-0 min-w-0 flex-col gap-4 xl:col-span-9'>
                     {shouldConnectToWings && connectionStatus !== 'connected' && (
                         <Card className={`border-2 ${connectionInfo.bgColor}`}>
                             <CardContent className='p-4'>
@@ -662,21 +714,25 @@ export default function ServerConsolePage() {
                     )}
 
                     {shouldConnectToWings && (
-                        <ServerTerminal
-                            ref={terminalRef}
-                            onSendCommand={sendCommand}
-                            canSendCommands={connectionStatus === 'connected' && hasPermission('control.console')}
-                            serverStatus={serverStatus}
-                            filters={consoleFilters}
-                            onFiltersChange={setConsoleFilters}
-                            onUploadLogs={canConnect && hasPermission('activity.read') ? handleUploadLogs : undefined}
-                        />
+                        <div className='flex min-h-0 flex-1 flex-col'>
+                            <ServerTerminal
+                                ref={terminalRef}
+                                onSendCommand={sendCommand}
+                                canSendCommands={connectionStatus === 'connected' && hasPermission('control.console')}
+                                serverStatus={serverStatus}
+                                filters={consoleFilters}
+                                onFiltersChange={setConsoleFilters}
+                                onUploadLogs={
+                                    canConnect && hasPermission('activity.read') ? handleUploadLogs : undefined
+                                }
+                            />
+                        </div>
                     )}
 
                     <WidgetRenderer widgets={getWidgets('server-console', 'after-terminal')} />
                 </div>
 
-                <div className='min-w-0 space-y-5 xl:col-span-3'>
+                <div className='min-w-0 space-y-4 xl:col-span-3'>
                     <PlayerStatusWidget uuidShort={serverUuid} />
 
                     {shouldConnectToWings && (
@@ -697,6 +753,8 @@ export default function ServerConsolePage() {
                             diskUsage={currentDisk}
                             networkRx={currentNetworkRx}
                             networkTx={currentNetworkTx}
+                            diskIoRead={currentDiskIoRead}
+                            diskIoWrite={currentDiskIoWrite}
                             className='xl:grid-cols-1'
                         />
                     )}
@@ -713,6 +771,7 @@ export default function ServerConsolePage() {
                     memoryData={memoryData}
                     diskData={diskData}
                     networkData={networkData}
+                    diskIoData={diskIoData}
                     cpuLimit={server.cpu || 0}
                     memoryLimit={server.memory || 0}
                     diskLimit={server.disk || 0}

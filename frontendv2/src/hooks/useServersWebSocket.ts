@@ -37,6 +37,10 @@ interface WingsStats {
         rx_bytes: number;
         tx_bytes: number;
     };
+    disk_io?: {
+        read_bytes: number;
+        write_bytes: number;
+    };
     state: string;
     uptime: number;
 }
@@ -64,6 +68,8 @@ export interface ServerLiveData {
         diskUsage: number; // Bytes
         networkRx: number; // Bytes
         networkTx: number; // Bytes
+        diskIoRead: number; // Bytes (cumulative)
+        diskIoWrite: number; // Bytes (cumulative)
         state: string;
         uptime: number;
     } | null;
@@ -303,6 +309,8 @@ export function useServersWebSocket() {
                                         diskUsage: stats.disk_bytes || 0,
                                         networkRx: stats.network?.rx_bytes || 0,
                                         networkTx: stats.network?.tx_bytes || 0,
+                                        diskIoRead: stats.disk_io?.read_bytes || 0,
+                                        diskIoWrite: stats.disk_io?.write_bytes || 0,
                                         state: stats.state || '',
                                         uptime: stats.uptime || 0,
                                     },

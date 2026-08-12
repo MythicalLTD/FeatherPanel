@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- Frontend Docker/dev builds no longer fail on Google Fonts 404s or CSS `url()` font resolution. Inter and Nunito are loaded via `next/font/local` from `src/fonts/`. by @nayskutzu
 - Missing translations were added. by @nayskutzu
 - Editing a file and clicking Cancel/back now returns to the folder you were in instead of the server root. by @nayskutzu
 - File manager and backup downloads no longer use `window.open` after an async signed-URL request (popup blockers silently blocked downloads); they use a hidden iframe so Wings `Content-Disposition: attachment` downloads start reliably. by @nayskutzu
@@ -13,9 +14,14 @@
 - Installing phpMyAdmin no longer fails with `Failed to delete directory: .../public/pma` when that path is a Docker volume mount — the installer clears and writes into the mount instead of trying to remove it. by @nayskutzu
 - Marketplace/plugin updates no longer wipe addon `Storage/` uploads (e.g. Digital File Store product images and downloadable files). Existing Storage is backed up and restored during plugin reinstall. by @nayskutzu
 
+### Added
+
+- Disk IO for the server page was added. by @nayskutzu
+
 ### Improved
 
 - Digital File Store (BillingFilesStore): durable media path under `storage/data/`, public portal nav page, marketplace-style storefront, admin product search, and per-file remove. by @nayskutzu
+- Imrpoved the design of the console server page. by @nayskutzu
 
 ## v1.3.7.8 STABLE
 

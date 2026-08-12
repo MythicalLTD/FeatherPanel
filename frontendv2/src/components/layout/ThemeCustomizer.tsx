@@ -80,7 +80,7 @@ export default function ThemeCustomizer() {
         {
             name: 'Modern (Inter)',
             value: 'inter' as const,
-            preview: "'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+            preview: "var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
         },
         {
             name: 'System UI',
@@ -90,7 +90,7 @@ export default function ThemeCustomizer() {
         {
             name: 'Rounded (Nunito)',
             value: 'rounded' as const,
-            preview: "'Nunito', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+            preview: "var(--font-nunito), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
         },
     ];
 

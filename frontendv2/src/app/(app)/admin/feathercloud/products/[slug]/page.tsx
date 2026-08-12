@@ -337,7 +337,10 @@ export default function ProductDetailPage() {
                                             />
                                             <span>
                                                 {t('admin.marketplace.plugins.detail.rating_summary', {
-                                                    rating: avg > 0 ? avg.toFixed(1) : t('admin.marketplace.plugins.labels.empty_price'),
+                                                    rating:
+                                                        avg > 0
+                                                            ? avg.toFixed(1)
+                                                            : t('admin.marketplace.plugins.labels.empty_price'),
                                                     count: String(reviewCount),
                                                 })}
                                             </span>
@@ -405,7 +408,8 @@ export default function ProductDetailPage() {
                     <section className='min-h-[280px]'>
                         {loading ? (
                             <div className='text-muted-foreground flex items-center gap-2 text-sm'>
-                                <Loader2 className='h-4 w-4 animate-spin' /> {t('admin.marketplace.plugins.detail.refreshing')}
+                                <Loader2 className='h-4 w-4 animate-spin' />{' '}
+                                {t('admin.marketplace.plugins.detail.refreshing')}
                             </div>
                         ) : tab === 'overview' ? (
                             <div className='space-y-6'>

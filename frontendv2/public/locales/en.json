@@ -986,10 +986,14 @@
 				"network_title": "Network",
 				"resources_title": "Resources",
 				"network_rx": "Inbound",
-				"network_tx": "Outbound"
+				"network_tx": "Outbound",
+				"disk_io_title": "Disk I/O",
+				"disk_io_read": "Read",
+				"disk_io_write": "Write"
 			},
 			"performance": {
 				"network": "Network",
+				"disk_io": "Disk I/O",
 				"no_data": "No data",
 				"cpu_load": "CPU Load"
 			},

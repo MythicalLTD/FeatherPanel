@@ -14,7 +14,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
 import './globals.css';
-import { Inter, Nunito } from 'next/font/google';
+import localFont from 'next/font/local';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { SettingsProvider } from '@/contexts/SettingsContext';
 import { TranslationProvider } from '@/contexts/TranslationContext';
@@ -25,23 +25,34 @@ import AppContent from '@/components/common/AppContent';
 import { Toaster } from 'sonner';
 
 import type { Metadata } from 'next';
-
-const inter = Inter({
-    subsets: ['latin'],
-    weight: ['400', '500', '600', '700'],
-    variable: '--font-inter',
-    display: 'swap',
-});
-
-const nunito = Nunito({
-    subsets: ['latin'],
-    weight: ['400', '500', '600', '700'],
-    variable: '--font-nunito',
-    display: 'swap',
-});
 import { cookies } from 'next/headers';
 import { settingsApi } from '@/lib/settings-api';
 import { ANALYTICS_COOKIE_NAME } from '@/lib/analytics-cookie';
+
+// Self-hosted (no Google Fonts at build time). Paths are relative to this file.
+const inter = localFont({
+    src: [
+        { path: '../../fonts/Inter-400.woff2', weight: '400', style: 'normal' },
+        { path: '../../fonts/Inter-500.woff2', weight: '500', style: 'normal' },
+        { path: '../../fonts/Inter-600.woff2', weight: '600', style: 'normal' },
+        { path: '../../fonts/Inter-700.woff2', weight: '700', style: 'normal' },
+    ],
+    variable: '--font-inter',
+    display: 'swap',
+    fallback: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+});
+
+const nunito = localFont({
+    src: [
+        { path: '../../fonts/Nunito-400.woff2', weight: '400', style: 'normal' },
+        { path: '../../fonts/Nunito-500.woff2', weight: '500', style: 'normal' },
+        { path: '../../fonts/Nunito-600.woff2', weight: '600', style: 'normal' },
+        { path: '../../fonts/Nunito-700.woff2', weight: '700', style: 'normal' },
+    ],
+    variable: '--font-nunito',
+    display: 'swap',
+    fallback: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+});
 
 export async function generateMetadata(): Promise<Metadata> {
     const data = await settingsApi.getPublicSettings();
@@ -175,9 +186,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                   // Initialize font preference for UI.
                   const savedFont = localStorage.getItem('fontFamily');
                   var fontStacks = {
-                    inter: "'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+                    inter: "var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
                     system: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-                    rounded: "'Nunito', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+                    rounded: "var(--font-nunito), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
                   };
                   if (savedFont && fontStacks[savedFont]) {
                     document.documentElement.style.setProperty('--app-font-family', fontStacks[savedFont]);
