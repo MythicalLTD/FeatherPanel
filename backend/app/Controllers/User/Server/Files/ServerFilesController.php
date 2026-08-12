@@ -2466,7 +2466,7 @@ class ServerFilesController
                 $wingsBaseUrl
             );
 
-            $jwtToken = $jwtService->generateFileDownloadToken($server['uuid'], $path);
+            $jwtToken = $jwtService->generateFileDownloadToken($server['uuid'], $user['uuid'], $path);
             $baseUrl = rtrim($wingsBaseUrl, '/');
             $encodedFilePath = urlencode($path);
             $downloadUrl = "{$baseUrl}/download/file?token={$jwtToken}&server={$server['uuid']}&file={$encodedFilePath}";

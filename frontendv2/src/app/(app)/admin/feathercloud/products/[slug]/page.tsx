@@ -24,6 +24,7 @@ import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Textarea } from '@/components/featherui/Textarea';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/contexts/TranslationContext';
 import {
     type DetailMeta,
     type DetailTab,
@@ -51,10 +52,11 @@ export default function ProductDetailPage() {
     const slug = decodeURIComponent(String(routeParams.slug || ''));
     const router = useRouter();
     const searchParams = useSearchParams();
+    const { t } = useTranslation();
 
     const initialTab = ((): DetailTab => {
-        const t = searchParams.get('tab');
-        if (t === 'versions' || t === 'reviews' || t === 'questions') return t;
+        const tabParam = searchParams.get('tab');
+        if (tabParam === 'versions' || tabParam === 'reviews' || tabParam === 'questions') return tabParam;
         return 'overview';
     })();
     const [tab, setTab] = useState<DetailTab>(initialTab);
@@ -98,12 +100,12 @@ export default function ProductDetailPage() {
                 setItem(null);
             }
         } catch (err) {
-            toast.error(mythicCloudErrorMessage(err, 'Failed to load product details'));
+            toast.error(mythicCloudErrorMessage(err, t('admin.marketplace.plugins.detail.load_failed'), t));
             setItem(null);
         } finally {
             setLoading(false);
         }
-    }, [slug, loadInstalledPlugins]);
+    }, [slug, loadInstalledPlugins, t]);
 
     useEffect(() => {
         void load();
@@ -123,29 +125,42 @@ export default function ProductDetailPage() {
 
     const install = async () => {
         if (!item || !canInstallItem(item)) {
-            toast.error('This product cannot be installed from the panel.');
+            toast.error(t('admin.marketplace.plugins.toasts.cannot_install'));
             return;
         }
         if (installed && !updateAvailable) {
-            toast.info('This plugin is already up to date.');
+            toast.info(t('admin.marketplace.plugins.toasts.already_up_to_date'));
             return;
         }
         setInstalling(true);
         try {
             const version = await resolveInstallVersion(slug, item);
             if (!version) {
-                toast.error('No downloadable release found.');
+                toast.error(t('admin.marketplace.plugins.toasts.no_release'));
                 return;
             }
             await downloadAndInstall(slug, version);
             toast.success(
                 updateAvailable
-                    ? `Updated ${product?.name || slug} to v${version}`
-                    : `Installed ${product?.name || slug}`,
+                    ? t('admin.marketplace.plugins.toasts.updated', {
+                          name: product?.name || slug,
+                          version,
+                      })
+                    : t('admin.marketplace.plugins.toasts.installed', {
+                          name: product?.name || slug,
+                      }),
             );
             await loadInstalledPlugins();
         } catch (err) {
-            toast.error(await parseBlobError(err, updateAvailable ? 'Update failed' : 'Install failed'));
+            toast.error(
+                await parseBlobError(
+                    err,
+                    updateAvailable
+                        ? t('admin.marketplace.plugins.toasts.update_failed')
+                        : t('admin.marketplace.plugins.toasts.install_failed'),
+                    t,
+                ),
+            );
         } finally {
             setInstalling(false);
         }
@@ -153,7 +168,7 @@ export default function ProductDetailPage() {
 
     const submitReview = async () => {
         if (comment.trim().length < 5) {
-            toast.error('Comment is required (5–1000 characters)');
+            toast.error(t('admin.marketplace.plugins.detail.comment_required'));
             return;
         }
         setSavingReview(true);
@@ -162,12 +177,12 @@ export default function ProductDetailPage() {
                 rating,
                 comment: comment.trim(),
             });
-            toast.success('Review saved');
+            toast.success(t('admin.marketplace.plugins.detail.review_saved'));
             setComment('');
             setTab('reviews');
             await load();
         } catch (err) {
-            toast.error(mythicCloudErrorMessage(err, 'Failed to save review'));
+            toast.error(mythicCloudErrorMessage(err, t('admin.marketplace.plugins.detail.review_failed'), t));
         } finally {
             setSavingReview(false);
         }
@@ -175,7 +190,7 @@ export default function ProductDetailPage() {
 
     const submitQuestion = async () => {
         if (!questionBody.trim()) {
-            toast.error('Enter a question');
+            toast.error(t('admin.marketplace.plugins.detail.enter_question'));
             return;
         }
         setSavingQuestion(true);
@@ -183,12 +198,12 @@ export default function ProductDetailPage() {
             await axios.post(`/api/admin/cloud/data/store/products/${encodeURIComponent(slug)}/questions`, {
                 body: questionBody.trim(),
             });
-            toast.success('Question submitted');
+            toast.success(t('admin.marketplace.plugins.detail.question_submitted'));
             setQuestionBody('');
             setTab('questions');
             await load();
         } catch (err) {
-            toast.error(mythicCloudErrorMessage(err, 'Failed to submit question'));
+            toast.error(mythicCloudErrorMessage(err, t('admin.marketplace.plugins.detail.question_failed'), t));
         } finally {
             setSavingQuestion(false);
         }
@@ -197,14 +212,14 @@ export default function ProductDetailPage() {
     return (
         <div className='space-y-6'>
             <PageHeader
-                title={product?.name || 'Plugin'}
-                description={product?.tagline || 'Mythic marketplace plugin details'}
+                title={product?.name || t('admin.marketplace.plugins.detail.fallback_title')}
+                description={product?.tagline || t('admin.marketplace.plugins.detail.fallback_description')}
                 icon={Package}
                 actions={
                     <div className='flex flex-wrap gap-2'>
                         <Button variant='outline' size='sm' onClick={() => router.push('/admin/feathercloud/products')}>
                             <ArrowLeft className='mr-2 h-4 w-4' />
-                            Back to plugins
+                            {t('admin.marketplace.plugins.detail.back')}
                         </Button>
                         <Button
                             size='sm'
@@ -224,7 +239,11 @@ export default function ProductDetailPage() {
                             ) : (
                                 <Download className='mr-2 h-4 w-4' />
                             )}
-                            {updateAvailable ? `Update to v${latest}` : installed ? 'Installed' : 'Install'}
+                            {updateAvailable
+                                ? t('admin.marketplace.plugins.actions.update_to', { version: latest })
+                                : installed
+                                  ? t('admin.marketplace.plugins.labels.installed')
+                                  : t('admin.marketplace.plugins.actions.install')}
                         </Button>
                     </div>
                 }
@@ -232,21 +251,21 @@ export default function ProductDetailPage() {
 
             {loading && !product ? (
                 <div className='text-muted-foreground flex items-center gap-2 text-sm'>
-                    <Loader2 className='h-4 w-4 animate-spin' /> Loading product…
+                    <Loader2 className='h-4 w-4 animate-spin' /> {t('admin.marketplace.plugins.detail.loading')}
                 </div>
             ) : !product ? (
                 <div className='bg-muted/40 rounded-2xl px-6 py-16 text-center'>
                     <Package className='text-muted-foreground mx-auto mb-3 h-10 w-10' />
-                    <p className='font-medium'>Product not found</p>
+                    <p className='font-medium'>{t('admin.marketplace.plugins.detail.not_found_title')}</p>
                     <p className='text-muted-foreground mt-1 text-sm'>
-                        This plugin could not be loaded from the Mythic store.
+                        {t('admin.marketplace.plugins.detail.not_found_description')}
                     </p>
                     <Button
                         className='mt-4'
                         variant='outline'
                         onClick={() => router.push('/admin/feathercloud/products')}
                     >
-                        Return to catalog
+                        {t('admin.marketplace.plugins.detail.return_catalog')}
                     </Button>
                 </div>
             ) : (
@@ -275,30 +294,61 @@ export default function ProductDetailPage() {
                                         <p className='text-muted-foreground font-mono text-sm'>{identifier}</p>
                                     ) : null}
                                     <div className='text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1 text-sm'>
-                                        <span className='text-foreground font-medium'>{formatPrice(product)}</span>
-                                        {latest ? <span>Store v{latest}</span> : null}
-                                        {local?.version ? <span>Installed v{local.version}</span> : null}
+                                        <span className='text-foreground font-medium'>
+                                            {formatPrice(product, {
+                                                free: t('admin.marketplace.plugins.labels.free'),
+                                                empty: t('admin.marketplace.plugins.labels.empty_price'),
+                                            })}
+                                        </span>
+                                        {latest ? (
+                                            <span>
+                                                {t('admin.marketplace.plugins.labels.store_version', {
+                                                    version: latest,
+                                                })}
+                                            </span>
+                                        ) : null}
+                                        {local?.version ? (
+                                            <span>
+                                                {t('admin.marketplace.plugins.labels.installed_version', {
+                                                    version: local.version,
+                                                })}
+                                            </span>
+                                        ) : null}
                                         {updateAvailable ? (
                                             <span className='rounded-md bg-amber-500/15 px-1.5 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400'>
-                                                Update available
+                                                {t('admin.marketplace.plugins.labels.update_available')}
                                             </span>
                                         ) : installed ? (
                                             <span className='rounded-md bg-blue-500/15 px-1.5 py-0.5 text-xs font-medium text-blue-600 dark:text-blue-400'>
-                                                Installed
+                                                {t('admin.marketplace.plugins.labels.installed')}
                                             </span>
                                         ) : null}
                                         {item?.owned ? (
                                             <span className='rounded-md bg-emerald-500/15 px-1.5 py-0.5 text-xs font-medium text-emerald-600 dark:text-emerald-400'>
-                                                Owned
+                                                {t('admin.marketplace.plugins.labels.owned')}
                                             </span>
                                         ) : null}
                                         <span className='inline-flex items-center gap-1.5'>
-                                            <StarDisplay rating={avg} />
+                                            <StarDisplay
+                                                rating={avg}
+                                                ariaLabel={t('admin.marketplace.plugins.detail.rating_stars', {
+                                                    value: String(avg),
+                                                })}
+                                            />
                                             <span>
-                                                {avg > 0 ? avg.toFixed(1) : '—'} ({reviewCount})
+                                                {t('admin.marketplace.plugins.detail.rating_summary', {
+                                                    rating: avg > 0 ? avg.toFixed(1) : t('admin.marketplace.plugins.labels.empty_price'),
+                                                    count: String(reviewCount),
+                                                })}
                                             </span>
                                         </span>
-                                        {product.seller?.name ? <span>by {product.seller.name}</span> : null}
+                                        {product.seller?.name ? (
+                                            <span>
+                                                {t('admin.marketplace.plugins.labels.by_author', {
+                                                    author: product.seller.name,
+                                                })}
+                                            </span>
+                                        ) : null}
                                     </div>
                                 </div>
                             </div>
@@ -308,25 +358,25 @@ export default function ProductDetailPage() {
                             {[
                                 {
                                     key: 'overview' as const,
-                                    label: 'Overview',
+                                    label: t('admin.marketplace.plugins.detail.tabs.overview'),
                                     count: null as number | null,
                                     withStar: false,
                                 },
                                 {
                                     key: 'versions' as const,
-                                    label: 'Versions',
+                                    label: t('admin.marketplace.plugins.detail.tabs.versions'),
                                     count: meta?.versions_count ?? versions.length,
                                     withStar: false,
                                 },
                                 {
                                     key: 'reviews' as const,
-                                    label: 'Reviews',
+                                    label: t('admin.marketplace.plugins.detail.tabs.reviews'),
                                     count: reviewCount,
                                     withStar: true,
                                 },
                                 {
                                     key: 'questions' as const,
-                                    label: 'Q&A',
+                                    label: t('admin.marketplace.plugins.detail.tabs.questions'),
                                     count: meta?.question_count ?? questions.length,
                                     withStar: false,
                                 },
@@ -355,7 +405,7 @@ export default function ProductDetailPage() {
                     <section className='min-h-[280px]'>
                         {loading ? (
                             <div className='text-muted-foreground flex items-center gap-2 text-sm'>
-                                <Loader2 className='h-4 w-4 animate-spin' /> Refreshing…
+                                <Loader2 className='h-4 w-4 animate-spin' /> {t('admin.marketplace.plugins.detail.refreshing')}
                             </div>
                         ) : tab === 'overview' ? (
                             <div className='space-y-6'>
@@ -381,8 +431,7 @@ export default function ProductDetailPage() {
                             <div className='space-y-4'>
                                 {versions.length === 0 ? (
                                     <p className='text-muted-foreground text-sm'>
-                                        No version history loaded yet. Install still uses the latest release when
-                                        available.
+                                        {t('admin.marketplace.plugins.detail.no_versions')}
                                     </p>
                                 ) : (
                                     versions.map((ver) => (
@@ -400,7 +449,9 @@ export default function ProductDetailPage() {
                                             {ver.changelog ? (
                                                 <MarkdownBody content={String(ver.changelog)} />
                                             ) : (
-                                                <p className='text-muted-foreground text-sm'>No changelog.</p>
+                                                <p className='text-muted-foreground text-sm'>
+                                                    {t('admin.marketplace.plugins.detail.no_changelog')}
+                                                </p>
                                             )}
                                         </div>
                                     ))
@@ -411,37 +462,59 @@ export default function ProductDetailPage() {
                                 <div className='bg-muted/25 space-y-4 rounded-2xl p-4 sm:p-5'>
                                     <div>
                                         <p className='text-muted-foreground mb-2 text-xs font-semibold tracking-wide uppercase'>
-                                            Your rating
+                                            {t('admin.marketplace.plugins.detail.your_rating')}
                                         </p>
-                                        <StarRatingInput value={rating} onChange={setRating} disabled={savingReview} />
+                                        <StarRatingInput
+                                            value={rating}
+                                            onChange={setRating}
+                                            disabled={savingReview}
+                                            groupLabel={t('admin.marketplace.plugins.detail.rating_input')}
+                                            starLabel={(count) =>
+                                                t(
+                                                    count === 1
+                                                        ? 'admin.marketplace.plugins.detail.star_one'
+                                                        : 'admin.marketplace.plugins.detail.star_other',
+                                                    { count: String(count) },
+                                                )
+                                            }
+                                        />
                                     </div>
                                     <div>
                                         <p className='text-muted-foreground mb-2 text-xs font-semibold tracking-wide uppercase'>
-                                            Comment
+                                            {t('admin.marketplace.plugins.detail.comment')}
                                         </p>
                                         <Textarea
                                             rows={3}
                                             value={comment}
                                             onChange={(e) => setComment(e.target.value)}
-                                            placeholder='Share your experience (5–1000 characters)'
+                                            placeholder={t('admin.marketplace.plugins.detail.comment_placeholder')}
                                         />
                                     </div>
                                     <Button onClick={() => void submitReview()} disabled={savingReview}>
                                         {savingReview ? <Loader2 className='mr-2 h-4 w-4 animate-spin' /> : null}
-                                        Save review
+                                        {t('admin.marketplace.plugins.detail.save_review')}
                                     </Button>
                                 </div>
 
                                 {reviews.length === 0 ? (
-                                    <p className='text-muted-foreground text-sm'>No reviews yet. Be the first.</p>
+                                    <p className='text-muted-foreground text-sm'>
+                                        {t('admin.marketplace.plugins.detail.no_reviews')}
+                                    </p>
                                 ) : (
                                     <ul className='space-y-3'>
                                         {reviews.map((r) => (
                                             <li key={String(r.id)} className='bg-muted/20 rounded-xl px-4 py-3 text-sm'>
                                                 <div className='flex flex-wrap items-center gap-2'>
-                                                    <StarDisplay rating={Number(r.rating || 0)} />
+                                                    <StarDisplay
+                                                        rating={Number(r.rating || 0)}
+                                                        ariaLabel={t('admin.marketplace.plugins.detail.rating_stars', {
+                                                            value: String(r.rating || 0),
+                                                        })}
+                                                    />
                                                     <span className='font-medium'>
-                                                        {r.user?.username || r.user?.name || 'User'}
+                                                        {r.user?.username ||
+                                                            r.user?.name ||
+                                                            t('admin.marketplace.plugins.detail.user')}
                                                     </span>
                                                     {r.created_at ? (
                                                         <span className='text-muted-foreground text-xs'>
@@ -464,7 +537,7 @@ export default function ProductDetailPage() {
                                         rows={3}
                                         value={questionBody}
                                         onChange={(e) => setQuestionBody(e.target.value)}
-                                        placeholder='Ask a question about this plugin…'
+                                        placeholder={t('admin.marketplace.plugins.detail.question_placeholder')}
                                         className='flex-1'
                                     />
                                     <Button onClick={() => void submitQuestion()} disabled={savingQuestion}>
@@ -473,19 +546,23 @@ export default function ProductDetailPage() {
                                         ) : (
                                             <MessageCircle className='mr-2 h-4 w-4' />
                                         )}
-                                        Ask
+                                        {t('admin.marketplace.plugins.detail.ask')}
                                     </Button>
                                 </div>
                                 {questions.length === 0 ? (
-                                    <p className='text-muted-foreground text-sm'>No questions yet.</p>
+                                    <p className='text-muted-foreground text-sm'>
+                                        {t('admin.marketplace.plugins.detail.no_questions')}
+                                    </p>
                                 ) : (
                                     <ul className='space-y-4'>
                                         {questions.map((q) => (
                                             <li key={String(q.id)} className='bg-muted/20 rounded-xl px-4 py-3 text-sm'>
                                                 <p className='font-medium'>
-                                                    {q.user?.username || 'User'}
+                                                    {q.user?.username || t('admin.marketplace.plugins.detail.user')}
                                                     {q.is_team_member ? (
-                                                        <span className='text-primary ml-2 text-xs'>Seller</span>
+                                                        <span className='text-primary ml-2 text-xs'>
+                                                            {t('admin.marketplace.plugins.detail.seller')}
+                                                        </span>
                                                     ) : null}
                                                 </p>
                                                 <p className='text-muted-foreground mt-1'>{q.body}</p>
@@ -494,10 +571,13 @@ export default function ProductDetailPage() {
                                                         {q.replies!.map((reply) => (
                                                             <li key={String(reply.id)}>
                                                                 <p className='text-xs font-semibold'>
-                                                                    {reply.user?.username || 'User'}
+                                                                    {reply.user?.username ||
+                                                                        t('admin.marketplace.plugins.detail.user')}
                                                                     {reply.is_team_member ? (
                                                                         <span className='text-primary ml-2'>
-                                                                            Seller
+                                                                            {t(
+                                                                                'admin.marketplace.plugins.detail.seller',
+                                                                            )}
                                                                         </span>
                                                                     ) : null}
                                                                 </p>

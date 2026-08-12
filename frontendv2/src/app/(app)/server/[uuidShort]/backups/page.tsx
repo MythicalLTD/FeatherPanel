@@ -47,6 +47,7 @@ import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { cn, formatMib } from '@/lib/utils';
+import { triggerSignedUrlDownload } from '@/lib/trigger-signed-download';
 import { formatBackupLimitLabel, isBackupLimitDisabled } from '@/lib/server-utils';
 
 import { Button } from '@/components/featherui/Button';
@@ -299,7 +300,7 @@ export default function ServerBackupsPage() {
         try {
             const { data } = await axios.get(`/api/user/servers/${uuidShort}/backups/${backup.uuid}/download`);
             if (data.success) {
-                window.open(data.data.download_url, '_blank');
+                triggerSignedUrlDownload(data.data.download_url);
                 toast.success(t('serverBackups.downloadSuccess'));
             } else {
                 toast.error(data.message || t('serverBackups.downloadFailed'));

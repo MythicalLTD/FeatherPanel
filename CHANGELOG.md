@@ -1,5 +1,22 @@
 # Changelog
 
+## v1.3.7.9 STABLE
+
+### Fixed
+
+- Missing translations were added. by @nayskutzu
+- Editing a file and clicking Cancel/back now returns to the folder you were in instead of the server root. by @nayskutzu
+- File manager and backup downloads no longer use `window.open` after an async signed-URL request (popup blockers silently blocked downloads); they use a hidden iframe so Wings `Content-Disposition: attachment` downloads start reliably. by @nayskutzu
+- File download signed JWTs now include `user_uuid`, matching Wings revocation checks. Missing that claim made Wings return 404 on `/download/file` so clicks appeared to do nothing. by @nayskutzu
+- Deleting a firewall rule no longer shows a false error when the rule was actually removed (delete now returns 200 with a JSON body instead of 204). by @nayskutzu
+- Ticket priorities now sort by severity level (Low → Medium → High) instead of alphabetically (High → Low → Medium). Admins can also reorder priorities. (FeatherPanel#125) by @nayskutzu
+- Installing phpMyAdmin no longer fails with `Failed to delete directory: .../public/pma` when that path is a Docker volume mount — the installer clears and writes into the mount instead of trying to remove it. by @nayskutzu
+- Marketplace/plugin updates no longer wipe addon `Storage/` uploads (e.g. Digital File Store product images and downloadable files). Existing Storage is backed up and restored during plugin reinstall. by @nayskutzu
+
+### Improved
+
+- Digital File Store (BillingFilesStore): durable media path under `storage/data/`, public portal nav page, marketplace-style storefront, admin product search, and per-file remove. by @nayskutzu
+
 ## v1.3.7.8 STABLE
 
 ### Fixed

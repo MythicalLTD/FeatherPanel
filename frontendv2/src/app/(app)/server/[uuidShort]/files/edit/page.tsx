@@ -518,12 +518,14 @@ export default function FileEditorPage({
                             <Button
                                 variant='ghost'
                                 size='sm'
-                                onClick={() =>
-                                    safeBack(
-                                        router,
-                                        `/server/${uuidShort}/files?directory=${encodeURIComponent(directory || '/')}`,
-                                    )
-                                }
+                                onClick={() => {
+                                    const dir = directory || '/';
+                                    const fallback =
+                                        dir === '/'
+                                            ? `/server/${uuidShort}/files`
+                                            : `/server/${uuidShort}/files?path=${encodeURIComponent(dir)}`;
+                                    safeBack(router, fallback);
+                                }}
                                 className='text-muted-foreground hover:text-foreground'
                             >
                                 {t('files.editor.cancel')}

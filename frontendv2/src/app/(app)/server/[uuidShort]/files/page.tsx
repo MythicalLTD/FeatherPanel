@@ -47,6 +47,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { isEnabled } from '@/lib/utils';
 import { toast } from 'sonner';
 import { filesApi, ARCHIVE_EXTRACT_DRAG_MIME } from '@/lib/files-api';
+import { triggerSignedUrlDownload } from '@/lib/trigger-signed-download';
 import { isBinaryLikeFileName } from '@/lib/binary-like-file-names';
 import { FileObject } from '@/types/server';
 import {
@@ -708,7 +709,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 : `${currentDirectory || '/'}/${filename}`;
 
             const downloadUrl = await filesApi.getDownloadUrl(uuidShort, path);
-            window.open(downloadUrl, '_blank');
+            triggerSignedUrlDownload(downloadUrl);
             setActionFile(null);
         } catch {
             toast.error(t('files.messages.failed_download'));

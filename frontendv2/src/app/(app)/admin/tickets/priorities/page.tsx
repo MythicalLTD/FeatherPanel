@@ -15,11 +15,22 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
-import { Flag, Plus, Pencil, Trash2, Search, Zap, Palette, AlertTriangle } from 'lucide-react';
+import {
+    Flag,
+    Plus,
+    Pencil,
+    Trash2,
+    Search,
+    Zap,
+    Palette,
+    AlertTriangle,
+    ChevronUp,
+    ChevronDown,
+} from 'lucide-react';
 import { PageCard } from '@/components/featherui/PageCard';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
@@ -36,7 +47,20 @@ interface Priority {
     id: number;
     name: string;
     color: string;
+    sort_order: number;
 }
+
+type PriorityForm = {
+    name: string;
+    color: string;
+    sort_order: string;
+};
+
+const EMPTY_FORM: PriorityForm = {
+    name: '',
+    color: '#5B8DEF',
+    sort_order: '',
+};
 
 export default function TicketPrioritiesPage() {
     const { t } = useTranslation();
@@ -50,18 +74,18 @@ export default function TicketPrioritiesPage() {
     const [editingPriority, setEditingPriority] = useState<Priority | null>(null);
 
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [reorderingId, setReorderingId] = useState<number | null>(null);
     const [refreshKey, setRefreshKey] = useState(0);
 
-    const [form, setForm] = useState({
-        name: '',
-        color: '#5B8DEF',
-    });
+    const [form, setForm] = useState<PriorityForm>(EMPTY_FORM);
 
     useEffect(() => {
         const fetchPriorities = async () => {
             setLoading(true);
             try {
-                const { data } = await axios.get('/api/admin/tickets/priorities');
+                const { data } = await axios.get('/api/admin/tickets/priorities', {
+                    params: { limit: 100, page: 1 },
+                });
                 setPriorities(data.data.priorities || []);
             } catch (error) {
                 console.error('Error fetching priorities:', error);
@@ -77,16 +101,34 @@ export default function TicketPrioritiesPage() {
         fetchWidgets();
     }, [fetchWidgets]);
 
-    const filteredPriorities = priorities.filter((p) => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
+    const sortedPriorities = useMemo(
+        () => [...priorities].sort((a, b) => a.sort_order - b.sort_order || a.id - b.id),
+        [priorities],
+    );
+
+    const filteredPriorities = sortedPriorities.filter((priority) =>
+        priority.name.toLowerCase().includes(searchQuery.toLowerCase()),
+    );
+
+    const nextSortOrder = useMemo(() => {
+        if (sortedPriorities.length === 0) return 10;
+        return Math.max(...sortedPriorities.map((priority) => priority.sort_order ?? 0)) + 10;
+    }, [sortedPriorities]);
+
+    const buildPayload = () => ({
+        name: form.name,
+        color: form.color,
+        sort_order: form.sort_order.trim() === '' ? nextSortOrder : Number(form.sort_order),
+    });
 
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSubmitting(true);
         try {
-            await axios.put('/api/admin/tickets/priorities', form);
+            await axios.put('/api/admin/tickets/priorities', buildPayload());
             toast.success(t('admin.tickets.priorities.create_success') || t('common.success'));
             setCreateOpen(false);
-            setForm({ name: '', color: '#5B8DEF' });
+            resetForm();
             setRefreshKey((prev) => prev + 1);
         } catch (error) {
             console.error('Error creating priority:', error);
@@ -102,11 +144,10 @@ export default function TicketPrioritiesPage() {
 
         setIsSubmitting(true);
         try {
-            await axios.patch(`/api/admin/tickets/priorities/${editingPriority.id}`, form);
+            await axios.patch(`/api/admin/tickets/priorities/${editingPriority.id}`, buildPayload());
             toast.success(t('admin.tickets.priorities.update_success') || t('common.success'));
             setEditOpen(false);
-            setEditingPriority(null);
-            setForm({ name: '', color: '#5B8DEF' });
+            resetForm();
             setRefreshKey((prev) => prev + 1);
         } catch (error) {
             console.error('Error updating priority:', error);
@@ -130,19 +171,92 @@ export default function TicketPrioritiesPage() {
         }
     };
 
+    const handleMove = async (priority: Priority, direction: -1 | 1) => {
+        const ordered = [...sortedPriorities];
+        const index = ordered.findIndex((item) => item.id === priority.id);
+        const swapIndex = index + direction;
+        if (index < 0 || swapIndex < 0 || swapIndex >= ordered.length) return;
+
+        const current = ordered[index];
+        const neighbor = ordered[swapIndex];
+
+        setReorderingId(priority.id);
+        try {
+            await Promise.all([
+                axios.patch(`/api/admin/tickets/priorities/${current.id}`, { sort_order: neighbor.sort_order }),
+                axios.patch(`/api/admin/tickets/priorities/${neighbor.id}`, { sort_order: current.sort_order }),
+            ]);
+            toast.success(t('admin.tickets.priorities.reorderSuccess'));
+            setRefreshKey((prev) => prev + 1);
+        } catch (error) {
+            console.error('Error reordering priorities:', error);
+            toast.error(t('admin.tickets.priorities.reorderError'));
+        } finally {
+            setReorderingId(null);
+        }
+    };
+
     const openEdit = (priority: Priority) => {
         setEditingPriority(priority);
         setForm({
             name: priority.name,
             color: priority.color,
+            sort_order: String(priority.sort_order ?? 0),
         });
         setEditOpen(true);
     };
 
     const resetForm = () => {
-        setForm({ name: '', color: '#5B8DEF' });
+        setForm({ ...EMPTY_FORM, sort_order: String(nextSortOrder) });
         setEditingPriority(null);
     };
+
+    const renderPriorityFormFields = (idPrefix: 'create' | 'edit') => (
+        <>
+            <div className='space-y-2'>
+                <Label htmlFor={`${idPrefix}-name`}>{t('admin.tickets.priorities.form.name')}</Label>
+                <Input
+                    id={`${idPrefix}-name`}
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    required
+                />
+            </div>
+
+            <div className='space-y-2'>
+                <Label htmlFor={`${idPrefix}-sort-order`}>{t('admin.tickets.priorities.form.sortOrder')}</Label>
+                <Input
+                    id={`${idPrefix}-sort-order`}
+                    type='number'
+                    min={0}
+                    value={form.sort_order}
+                    onChange={(e) => setForm({ ...form, sort_order: e.target.value })}
+                    placeholder={String(nextSortOrder)}
+                />
+                <p className='text-muted-foreground text-xs'>
+                    {t('admin.tickets.priorities.form.sortOrderDescription')}
+                </p>
+            </div>
+
+            <div className='space-y-2'>
+                <Label htmlFor={`${idPrefix}-color`}>{t('admin.tickets.priorities.form.color')}</Label>
+                <div className='flex gap-2'>
+                    <Input
+                        type='color'
+                        id={`${idPrefix}-color`}
+                        value={form.color}
+                        onChange={(e) => setForm({ ...form, color: e.target.value })}
+                        className='h-11 w-12 p-1'
+                    />
+                    <Input
+                        value={form.color}
+                        onChange={(e) => setForm({ ...form, color: e.target.value })}
+                        className='flex-1'
+                    />
+                </div>
+            </div>
+        </>
+    );
 
     return (
         <>
@@ -199,16 +313,40 @@ export default function TicketPrioritiesPage() {
                     />
                 ) : (
                     <div className='grid grid-cols-1 gap-4'>
-                        {filteredPriorities.map((priority) => (
+                        {filteredPriorities.map((priority, index) => (
                             <ResourceCard
                                 key={priority.id}
                                 icon={Flag}
                                 title={priority.name}
-                                subtitle={priority.color}
+                                subtitle={t('admin.tickets.priorities.levelLabel').replace(
+                                    '{level}',
+                                    String(priority.sort_order),
+                                )}
                                 iconClassName='text-primary'
                                 style={{ borderLeft: `4px solid ${priority.color}` }}
+                                description={<span className='text-muted-foreground text-sm'>{priority.color}</span>}
                                 actions={
                                     <div className='flex items-center gap-2'>
+                                        <Button
+                                            size='sm'
+                                            variant='ghost'
+                                            type='button'
+                                            aria-label={t('admin.tickets.priorities.moveUp')}
+                                            disabled={reorderingId !== null || index === 0}
+                                            onClick={() => void handleMove(priority, -1)}
+                                        >
+                                            <ChevronUp className='h-4 w-4' />
+                                        </Button>
+                                        <Button
+                                            size='sm'
+                                            variant='ghost'
+                                            type='button'
+                                            aria-label={t('admin.tickets.priorities.moveDown')}
+                                            disabled={reorderingId !== null || index === filteredPriorities.length - 1}
+                                            onClick={() => void handleMove(priority, 1)}
+                                        >
+                                            <ChevronDown className='h-4 w-4' />
+                                        </Button>
                                         <Button size='sm' variant='ghost' onClick={() => openEdit(priority)}>
                                             <Pencil className='h-4 w-4' />
                                         </Button>
@@ -234,34 +372,7 @@ export default function TicketPrioritiesPage() {
                             <SheetDescription>{t('admin.tickets.priorities.subtitle')}</SheetDescription>
                         </SheetHeader>
                         <form onSubmit={handleCreate} className='space-y-4'>
-                            <div className='space-y-2'>
-                                <Label htmlFor='create-name'>{t('admin.tickets.priorities.form.name')}</Label>
-                                <Input
-                                    id='create-name'
-                                    value={form.name}
-                                    onChange={(e) => setForm({ ...form, name: e.target.value })}
-                                    required
-                                />
-                            </div>
-
-                            <div className='space-y-2'>
-                                <Label htmlFor='create-color'>{t('admin.tickets.priorities.form.color')}</Label>
-                                <div className='flex gap-2'>
-                                    <Input
-                                        type='color'
-                                        id='create-color'
-                                        value={form.color}
-                                        onChange={(e) => setForm({ ...form, color: e.target.value })}
-                                        className='h-11 w-12 p-1'
-                                    />
-                                    <Input
-                                        value={form.color}
-                                        onChange={(e) => setForm({ ...form, color: e.target.value })}
-                                        className='flex-1'
-                                    />
-                                </div>
-                            </div>
-
+                            {renderPriorityFormFields('create')}
                             <SheetFooter>
                                 <Button type='submit' loading={isSubmitting}>
                                     {t('common.create')}
@@ -279,34 +390,7 @@ export default function TicketPrioritiesPage() {
                         </SheetHeader>
                         {editingPriority && (
                             <form onSubmit={handleUpdate} className='space-y-4'>
-                                <div className='space-y-2'>
-                                    <Label htmlFor='edit-name'>{t('admin.tickets.priorities.form.name')}</Label>
-                                    <Input
-                                        id='edit-name'
-                                        value={form.name}
-                                        onChange={(e) => setForm({ ...form, name: e.target.value })}
-                                        required
-                                    />
-                                </div>
-
-                                <div className='space-y-2'>
-                                    <Label htmlFor='edit-color'>{t('admin.tickets.priorities.form.color')}</Label>
-                                    <div className='flex gap-2'>
-                                        <Input
-                                            type='color'
-                                            id='edit-color'
-                                            value={form.color}
-                                            onChange={(e) => setForm({ ...form, color: e.target.value })}
-                                            className='h-11 w-12 p-1'
-                                        />
-                                        <Input
-                                            value={form.color}
-                                            onChange={(e) => setForm({ ...form, color: e.target.value })}
-                                            className='flex-1'
-                                        />
-                                    </div>
-                                </div>
-
+                                {renderPriorityFormFields('edit')}
                                 <SheetFooter>
                                     <Button type='submit' loading={isSubmitting}>
                                         {t('common.save')}

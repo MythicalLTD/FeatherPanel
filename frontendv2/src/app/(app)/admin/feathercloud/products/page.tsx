@@ -39,6 +39,7 @@ import { Input } from '@/components/featherui/Input';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/contexts/TranslationContext';
 import {
     FEATHERPANEL_CATEGORY_SLUG,
     type InstalledPluginInfo,
@@ -53,6 +54,7 @@ import {
     hasPluginUpdate,
     isFeatherPanelPlugin,
     isPluginInstalled,
+    isProductFree,
     mythicCloudErrorMessage,
     parseBlobError,
     pluginIdentifier,
@@ -64,6 +66,7 @@ import {
 
 export default function MythicProductsPage() {
     const router = useRouter();
+    const { t } = useTranslation();
     const [loading, setLoading] = useState(true);
     const [items, setItems] = useState<StoreItem[]>([]);
     const [installedPlugins, setInstalledPlugins] = useState<Map<string, InstalledPluginInfo>>(new Map());
@@ -105,17 +108,16 @@ export default function MythicProductsPage() {
                 const code = err.response?.data?.error_code;
                 if (code === 'CLOUD_CREDENTIALS_NOT_CONFIGURED' || err.response?.status === 503) {
                     setCredentialsError(
-                        err.response?.data?.message ||
-                            'Mythic Cloud is not linked. Connect under MyFeatherPanel → Cloud Connections.',
+                        err.response?.data?.message || t('admin.marketplace.plugins.credentials_error'),
                     );
                     return;
                 }
             }
-            toast.error(mythicCloudErrorMessage(err, 'Failed to load Mythic store'));
+            toast.error(mythicCloudErrorMessage(err, t('admin.marketplace.plugins.loading_error'), t));
         } finally {
             setLoading(false);
         }
-    }, [loadInstalledPlugins]);
+    }, [loadInstalledPlugins, t]);
 
     useEffect(() => {
         void loadStore();
@@ -140,7 +142,7 @@ export default function MythicProductsPage() {
         return catalog.filter((item) => {
             const p = item.product;
             if (!p) return false;
-            const free = p.is_free || Number(p.effective_price ?? p.price ?? 0) <= 0;
+            const free = isProductFree(p);
             if (priceFilter === 'free' && !free) return false;
             if (priceFilter === 'paid' && free) return false;
             if (!q) return true;
@@ -176,31 +178,44 @@ export default function MythicProductsPage() {
     const installOrUpdate = async (slug: string) => {
         const item = catalog.find((i) => productSlug(i.product) === slug);
         if (!item || !canInstallItem(item)) {
-            toast.error('This product cannot be installed from the panel.');
+            toast.error(t('admin.marketplace.plugins.toasts.cannot_install'));
             return;
         }
         const updating = hasPluginUpdate(item.product, installedPlugins);
         const installed = isPluginInstalled(item.product, installedPlugins);
         if (installed && !updating) {
-            toast.info('This plugin is already up to date.');
+            toast.info(t('admin.marketplace.plugins.toasts.already_up_to_date'));
             return;
         }
         setInstallingSlug(slug);
         try {
             const version = await resolveInstallVersion(slug, item);
             if (!version) {
-                toast.error('No downloadable release found.');
+                toast.error(t('admin.marketplace.plugins.toasts.no_release'));
                 return;
             }
             await downloadAndInstall(slug, version);
             toast.success(
                 updating
-                    ? `Updated ${item.product?.name || slug} to v${version}`
-                    : `Installed ${item.product?.name || slug}`,
+                    ? t('admin.marketplace.plugins.toasts.updated', {
+                          name: item.product?.name || slug,
+                          version,
+                      })
+                    : t('admin.marketplace.plugins.toasts.installed', {
+                          name: item.product?.name || slug,
+                      }),
             );
             await loadInstalledPlugins();
         } catch (err) {
-            toast.error(await parseBlobError(err, updating ? 'Update failed' : 'Install failed'));
+            toast.error(
+                await parseBlobError(
+                    err,
+                    updating
+                        ? t('admin.marketplace.plugins.toasts.update_failed')
+                        : t('admin.marketplace.plugins.toasts.install_failed'),
+                    t,
+                ),
+            );
         } finally {
             setInstallingSlug(null);
         }
@@ -209,7 +224,7 @@ export default function MythicProductsPage() {
     const installSelected = async () => {
         const slugs = [...selected].filter((s) => actionableSlugs.includes(s));
         if (slugs.length === 0) {
-            toast.error('Select at least one installable or updatable plugin.');
+            toast.error(t('admin.marketplace.plugins.toasts.select_actionable'));
             return;
         }
         setBulkInstalling(true);
@@ -235,16 +250,49 @@ export default function MythicProductsPage() {
         setBulkInstalling(false);
         setSelected(new Set());
         await loadInstalledPlugins();
-        if (installedCount) toast.success(`Installed ${installedCount} plugin${installedCount === 1 ? '' : 's'}`);
-        if (updatedCount) toast.success(`Updated ${updatedCount} plugin${updatedCount === 1 ? '' : 's'}`);
-        if (fail) toast.error(`${fail} action${fail === 1 ? '' : 's'} failed`);
+        if (installedCount) {
+            toast.success(
+                t(
+                    installedCount === 1
+                        ? 'admin.marketplace.plugins.toasts.bulk_installed_one'
+                        : 'admin.marketplace.plugins.toasts.bulk_installed_other',
+                    { count: String(installedCount) },
+                ),
+            );
+        }
+        if (updatedCount) {
+            toast.success(
+                t(
+                    updatedCount === 1
+                        ? 'admin.marketplace.plugins.toasts.bulk_updated_one'
+                        : 'admin.marketplace.plugins.toasts.bulk_updated_other',
+                    { count: String(updatedCount) },
+                ),
+            );
+        }
+        if (fail) {
+            toast.error(
+                t(
+                    fail === 1
+                        ? 'admin.marketplace.plugins.toasts.bulk_failed_one'
+                        : 'admin.marketplace.plugins.toasts.bulk_failed_other',
+                    { count: String(fail) },
+                ),
+            );
+        }
+    };
+
+    const priceFilterLabel = (key: 'all' | 'free' | 'paid') => {
+        if (key === 'all') return t('admin.marketplace.plugins.filters.all');
+        if (key === 'free') return t('admin.marketplace.plugins.filters.free');
+        return t('admin.marketplace.plugins.filters.paid');
     };
 
     return (
         <div className='space-y-6'>
             <PageHeader
-                title='Plugins'
-                description='FeatherPanel plugins from Mythic marketplace browse, review, and install.'
+                title={t('admin.marketplace.plugins.title')}
+                description={t('admin.marketplace.plugins.subtitle')}
                 icon={Store}
                 actions={
                     <div className='flex flex-wrap gap-2'>
@@ -254,19 +302,25 @@ export default function MythicProductsPage() {
                             onClick={() => router.push('/admin/feathercloud/marketplace')}
                         >
                             <ArrowLeft className='mr-2 h-4 w-4' />
-                            Marketplace
+                            {t('admin.marketplace.plugins.marketplace')}
                         </Button>
                         <Button variant='outline' size='sm' onClick={() => void loadStore()} disabled={loading}>
                             <RefreshCw className={cn('mr-2 h-4 w-4', loading && 'animate-spin')} />
-                            Refresh
+                            {t('admin.marketplace.plugins.refresh')}
                         </Button>
                     </div>
                 }
             />
 
             {credentialsError ? (
-                <PageCard title='Not linked' description={credentialsError} icon={Package}>
-                    <Button onClick={() => router.push('/admin/cloud-management')}>Open Cloud Connections</Button>
+                <PageCard
+                    title={t('admin.marketplace.plugins.not_linked.title')}
+                    description={credentialsError}
+                    icon={Package}
+                >
+                    <Button onClick={() => router.push('/admin/cloud-management')}>
+                        {t('admin.marketplace.plugins.not_linked.action')}
+                    </Button>
                 </PageCard>
             ) : (
                 <>
@@ -276,7 +330,7 @@ export default function MythicProductsPage() {
                             <Input
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
-                                placeholder='Search FeatherPanel plugins…'
+                                placeholder={t('admin.marketplace.plugins.search_placeholder')}
                                 className='pl-9'
                             />
                         </div>
@@ -288,7 +342,7 @@ export default function MythicProductsPage() {
                                     variant={priceFilter === key ? 'default' : 'outline'}
                                     onClick={() => setPriceFilter(key)}
                                 >
-                                    {key === 'all' ? 'All' : key === 'free' ? 'Free' : 'Paid'}
+                                    {priceFilterLabel(key)}
                                 </Button>
                             ))}
                         </div>
@@ -296,14 +350,21 @@ export default function MythicProductsPage() {
 
                     <div className='flex flex-wrap items-center justify-between gap-3'>
                         <p className='text-muted-foreground text-sm'>
-                            <span className='text-foreground font-medium'>{filtered.length}</span> of{' '}
-                            <span className='text-foreground font-medium'>{catalog.length}</span> in FeatherPanel
-                            Plugins
+                            <span className='text-foreground font-medium'>{filtered.length}</span>
+                            {' / '}
+                            <span className='text-foreground font-medium'>{catalog.length}</span>
+                            {' '}
+                            {t('admin.marketplace.plugins.catalog_suffix')}
                             {updatesAvailable > 0 ? (
                                 <>
                                     {' · '}
                                     <span className='font-medium text-amber-600 dark:text-amber-400'>
-                                        {updatesAvailable} update{updatesAvailable === 1 ? '' : 's'} available
+                                        {t(
+                                            updatesAvailable === 1
+                                                ? 'admin.marketplace.plugins.updates_available_one'
+                                                : 'admin.marketplace.plugins.updates_available_other',
+                                            { count: String(updatesAvailable) },
+                                        )}
                                     </span>
                                 </>
                             ) : null}
@@ -316,7 +377,7 @@ export default function MythicProductsPage() {
                                 disabled={actionableSlugs.length === 0}
                             >
                                 <CheckSquare className='mr-2 h-4 w-4' />
-                                Select actionable
+                                {t('admin.marketplace.plugins.select_actionable')}
                             </Button>
                             <Button
                                 size='sm'
@@ -325,7 +386,7 @@ export default function MythicProductsPage() {
                                 disabled={!selected.size}
                             >
                                 <Square className='mr-2 h-4 w-4' />
-                                Clear
+                                {t('admin.marketplace.plugins.clear_selection')}
                             </Button>
                             <Button
                                 size='sm'
@@ -337,22 +398,22 @@ export default function MythicProductsPage() {
                                 ) : (
                                     <Download className='mr-2 h-4 w-4' />
                                 )}
-                                Apply selected ({selected.size})
+                                {t('admin.marketplace.plugins.apply_selected', { count: String(selected.size) })}
                             </Button>
                         </div>
                     </div>
 
                     {loading ? (
                         <div className='text-muted-foreground flex items-center gap-2 text-sm'>
-                            <Loader2 className='h-4 w-4 animate-spin' /> Loading catalog…
+                            <Loader2 className='h-4 w-4 animate-spin' /> {t('admin.marketplace.plugins.loading_catalog')}
                         </div>
                     ) : filtered.length === 0 ? (
                         <EmptyState
-                            title='No plugins found'
+                            title={t('admin.marketplace.plugins.empty.title')}
                             description={
                                 catalog.length === 0
-                                    ? 'Mythic returned no FeatherPanel plugins for this cloud. Re-link Cloud Connections if curl shows products.'
-                                    : 'No plugins match your search or price filter.'
+                                    ? t('admin.marketplace.plugins.empty.no_products')
+                                    : t('admin.marketplace.plugins.empty.no_match')
                             }
                             icon={Store}
                         />
@@ -370,8 +431,11 @@ export default function MythicProductsPage() {
                                 const latest = storeLatestVersion(p);
                                 const actionable = installable && (!installed || updateAvailable);
                                 const busy = installingSlug === slug || bulkInstalling;
-                                const priceLabel = formatPrice(p);
-                                const isFree = priceLabel === 'Free';
+                                const priceLabel = formatPrice(p, {
+                                    free: t('admin.marketplace.plugins.labels.free'),
+                                    empty: t('admin.marketplace.plugins.labels.empty_price'),
+                                });
+                                const isFree = isProductFree(p);
                                 const checked = selected.has(slug);
                                 const avg = Number(p.average_rating || 0);
                                 const reviewCount = Number(p.review_count || 0);
@@ -436,12 +500,20 @@ export default function MythicProductsPage() {
                                                         </p>
                                                         {installed && local?.version ? (
                                                             <p className='text-muted-foreground mt-1 text-[11px]'>
-                                                                Installed v{local.version}
-                                                                {latest ? ` · Store v${latest}` : ''}
+                                                                {latest
+                                                                    ? t('admin.marketplace.plugins.labels.versions_line', {
+                                                                          installed: local.version,
+                                                                          store: latest,
+                                                                      })
+                                                                    : t('admin.marketplace.plugins.labels.installed_version', {
+                                                                          version: local.version,
+                                                                      })}
                                                             </p>
                                                         ) : latest ? (
                                                             <p className='text-muted-foreground mt-1 text-[11px]'>
-                                                                Latest v{latest}
+                                                                {t('admin.marketplace.plugins.labels.latest_version', {
+                                                                    version: latest,
+                                                                })}
                                                             </p>
                                                         ) : null}
                                                     </div>
@@ -457,30 +529,41 @@ export default function MythicProductsPage() {
                                                             />
                                                         ) : null}
                                                         <span className='truncate'>
-                                                            by {p.seller?.name || 'MythicalSystems'}
+                                                            {t('admin.marketplace.plugins.labels.by_author', {
+                                                                author:
+                                                                    p.seller?.name ||
+                                                                    t('admin.marketplace.plugins.labels.default_seller'),
+                                                            })}
                                                         </span>
                                                     </div>
                                                     <div className='flex shrink-0 items-center gap-1'>
                                                         {updateAvailable ? (
                                                             <span className='rounded-md bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-400'>
-                                                                Update
+                                                                {t('admin.marketplace.plugins.labels.update')}
                                                             </span>
                                                         ) : installed ? (
                                                             <span className='rounded-md bg-blue-500/15 px-1.5 py-0.5 text-[10px] font-medium text-blue-600 dark:text-blue-400'>
-                                                                Installed
+                                                                {t('admin.marketplace.plugins.labels.installed')}
                                                             </span>
                                                         ) : null}
                                                         {item.owned ? (
                                                             <span className='rounded-md bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-medium text-emerald-600 dark:text-emerald-400'>
-                                                                Owned
+                                                                {t('admin.marketplace.plugins.labels.owned')}
                                                             </span>
                                                         ) : null}
                                                     </div>
                                                 </div>
                                                 <div className='flex items-center gap-1.5 text-[11px]'>
-                                                    <StarDisplay rating={avg} />
+                                                    <StarDisplay
+                                                        rating={avg}
+                                                        ariaLabel={t('admin.marketplace.plugins.detail.rating_stars', {
+                                                            value: String(avg),
+                                                        })}
+                                                    />
                                                     <span className='text-muted-foreground'>
-                                                        {avg > 0 ? avg.toFixed(1) : 'No ratings'}
+                                                        {avg > 0
+                                                            ? avg.toFixed(1)
+                                                            : t('admin.marketplace.plugins.labels.no_ratings')}
                                                         {reviewCount > 0 ? ` · ${reviewCount}` : ''}
                                                     </span>
                                                 </div>
@@ -506,13 +589,13 @@ export default function MythicProductsPage() {
                                                 onClick={() => goDetail(slug)}
                                             >
                                                 <Info className='mr-1 h-3.5 w-3.5' />
-                                                Info
+                                                {t('admin.marketplace.plugins.labels.info')}
                                             </Button>
                                             <Button
                                                 size='sm'
                                                 variant='outline'
                                                 onClick={() => goDetail(slug, 'reviews')}
-                                                title='Reviews'
+                                                title={t('admin.marketplace.plugins.labels.reviews')}
                                             >
                                                 <Star
                                                     className={cn(
@@ -529,10 +612,12 @@ export default function MythicProductsPage() {
                                                 onClick={() => void installOrUpdate(slug)}
                                                 title={
                                                     updateAvailable
-                                                        ? `Update to v${latest}`
+                                                        ? t('admin.marketplace.plugins.actions.update_to', {
+                                                              version: latest,
+                                                          })
                                                         : installed
-                                                          ? 'Already up to date'
-                                                          : 'Install'
+                                                          ? t('admin.marketplace.plugins.actions.already_up_to_date')
+                                                          : t('admin.marketplace.plugins.actions.install')
                                                 }
                                             >
                                                 {installingSlug === slug ? (

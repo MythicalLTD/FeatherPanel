@@ -472,7 +472,7 @@ class ServerFirewallController
             ),
         ],
         responses: [
-            new OA\Response(response: 204, description: 'Firewall rule deleted successfully'),
+            new OA\Response(response: 200, description: 'Firewall rule deleted successfully'),
             new OA\Response(response: 400, description: 'Bad request'),
             new OA\Response(response: 401, description: 'Unauthorized'),
             new OA\Response(response: 403, description: 'Forbidden'),
@@ -542,7 +542,10 @@ class ServerFirewallController
                 'server_uuid' => $server['uuid'],
             ]);
 
-            return ApiResponse::success([], 'Firewall rule deleted successfully', 204);
+            // Use 200 (not 204): ApiResponse always sends a JSON body with success/message,
+            // and 204 No Content must not include a body — clients then see an empty payload
+            // and treat a successful delete as an error until reload.
+            return ApiResponse::success([], 'Firewall rule deleted successfully', 200);
         } catch (\Exception $e) {
             App::getInstance(true)->getLogger()->error('Failed to delete firewall rule: ' . $e->getMessage());
 

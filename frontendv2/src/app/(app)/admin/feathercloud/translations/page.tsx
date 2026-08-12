@@ -36,6 +36,7 @@ import { EmptyState } from '@/components/featherui/EmptyState';
 import { Input } from '@/components/featherui/Input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/contexts/TranslationContext';
 
 interface LocaleContributor {
     user?: { id?: number; name?: string; profilePhotoUrl?: string | null };
@@ -110,6 +111,7 @@ const MYTHIC_TRANSLATE_URL = 'https://translate.mythicalsystems.org/featherpanel
 
 export default function MythicTranslationsPage() {
     const router = useRouter();
+    const { t } = useTranslation();
     const [project, setProject] = useState('featherpanel');
     const [projectInfo, setProjectInfo] = useState<ProjectInfo | null>(null);
     const [locales, setLocales] = useState<LocaleRow[]>([]);
@@ -170,14 +172,14 @@ export default function MythicTranslationsPage() {
         } catch (err) {
             toast.error(
                 axios.isAxiosError(err)
-                    ? err.response?.data?.message || 'Failed to load locales'
-                    : 'Failed to load locales',
+                    ? err.response?.data?.message || t('admin.feathercloud.translations.load_failed')
+                    : t('admin.feathercloud.translations.load_failed'),
             );
             setLocales([]);
         } finally {
             setLoading(false);
         }
-    }, [loadInstalled]);
+    }, [loadInstalled, t]);
 
     useEffect(() => {
         void load();
@@ -227,9 +229,13 @@ export default function MythicTranslationsPage() {
             a.click();
             a.remove();
             URL.revokeObjectURL(url);
-            toast.success(`Downloaded ${locale}.json`);
+            toast.success(t('admin.feathercloud.translations.download_success', { locale }));
         } catch (err) {
-            toast.error(axios.isAxiosError(err) ? err.response?.data?.message || 'Download failed' : 'Download failed');
+            toast.error(
+                axios.isAxiosError(err)
+                    ? err.response?.data?.message || t('admin.feathercloud.translations.download_failed')
+                    : t('admin.feathercloud.translations.download_failed'),
+            );
         } finally {
             setBusyLocale(null);
         }
@@ -241,10 +247,14 @@ export default function MythicTranslationsPage() {
             await axios.post(
                 `/api/admin/cloud/translations/projects/${encodeURIComponent(project)}/locales/${encodeURIComponent(locale)}/install`,
             );
-            toast.success(`Installed ${locale} into panel translations`);
+            toast.success(t('admin.feathercloud.translations.install_success', { locale }));
             await loadInstalled();
         } catch (err) {
-            toast.error(axios.isAxiosError(err) ? err.response?.data?.message || 'Install failed' : 'Install failed');
+            toast.error(
+                axios.isAxiosError(err)
+                    ? err.response?.data?.message || t('admin.feathercloud.translations.install_failed')
+                    : t('admin.feathercloud.translations.install_failed'),
+            );
         } finally {
             setBusyLocale(null);
         }
@@ -253,7 +263,7 @@ export default function MythicTranslationsPage() {
     const bulkInstall = async () => {
         const codes = [...selected];
         if (codes.length === 0) {
-            toast.error('Select at least one locale');
+            toast.error(t('admin.feathercloud.translations.select_one'));
             return;
         }
         setBulkBusy(true);
@@ -272,15 +282,33 @@ export default function MythicTranslationsPage() {
         setBulkBusy(false);
         setSelected(new Set());
         await loadInstalled();
-        if (ok) toast.success(`Installed ${ok} locale${ok === 1 ? '' : 's'}`);
-        if (fail) toast.error(`${fail} install${fail === 1 ? '' : 's'} failed`);
+        if (ok) {
+            toast.success(
+                t(
+                    ok === 1
+                        ? 'admin.feathercloud.translations.bulk_installed_one'
+                        : 'admin.feathercloud.translations.bulk_installed_other',
+                    { count: String(ok) },
+                ),
+            );
+        }
+        if (fail) {
+            toast.error(
+                t(
+                    fail === 1
+                        ? 'admin.feathercloud.translations.bulk_failed_one'
+                        : 'admin.feathercloud.translations.bulk_failed_other',
+                    { count: String(fail) },
+                ),
+            );
+        }
     };
 
     return (
         <div className='space-y-6'>
             <PageHeader
-                title={projectInfo?.name || 'Translations'}
-                description='Install community locales here, or contribute on Mythic Translate.'
+                title={projectInfo?.name || t('admin.feathercloud.translations.title')}
+                description={t('admin.feathercloud.translations.subtitle')}
                 icon={Languages}
                 actions={
                     <div className='flex flex-wrap gap-2'>
@@ -290,21 +318,21 @@ export default function MythicTranslationsPage() {
                             onClick={() => router.push('/admin/feathercloud/marketplace')}
                         >
                             <ArrowLeft className='mr-2 h-4 w-4' />
-                            Marketplace
+                            {t('admin.feathercloud.translations.marketplace')}
                         </Button>
                         <Button variant='outline' size='sm' onClick={() => router.push('/admin/translations')}>
-                            Local files
+                            {t('admin.feathercloud.translations.local_files')}
                         </Button>
                         <Button
                             size='sm'
                             onClick={() => window.open(MYTHIC_TRANSLATE_URL, '_blank', 'noopener,noreferrer')}
                         >
                             <ExternalLink className='mr-2 h-4 w-4' />
-                            Contribute
+                            {t('admin.feathercloud.translations.contribute')}
                         </Button>
                         <Button variant='outline' size='sm' onClick={() => void load()} disabled={loading}>
                             <RefreshCw className={cn('mr-2 h-4 w-4', loading && 'animate-spin')} />
-                            Refresh
+                            {t('admin.feathercloud.translations.refresh')}
                         </Button>
                     </div>
                 }
@@ -312,15 +340,15 @@ export default function MythicTranslationsPage() {
 
             <div className='grid gap-3 sm:grid-cols-3'>
                 <div className='bg-card/60 rounded-2xl px-4 py-3'>
-                    <p className='text-muted-foreground text-xs'>Locales</p>
+                    <p className='text-muted-foreground text-xs'>{t('admin.feathercloud.translations.stats.locales')}</p>
                     <p className='mt-1 text-sm font-medium'>{stats.total}</p>
                 </div>
                 <div className='bg-card/60 rounded-2xl px-4 py-3'>
-                    <p className='text-muted-foreground text-xs'>Complete</p>
+                    <p className='text-muted-foreground text-xs'>{t('admin.feathercloud.translations.stats.complete')}</p>
                     <p className='mt-1 text-sm font-medium'>{stats.complete}</p>
                 </div>
                 <div className='bg-card/60 rounded-2xl px-4 py-3'>
-                    <p className='text-muted-foreground text-xs'>Installed here</p>
+                    <p className='text-muted-foreground text-xs'>{t('admin.feathercloud.translations.stats.installed')}</p>
                     <p className='mt-1 text-sm font-medium'>{stats.installed}</p>
                 </div>
             </div>
@@ -345,7 +373,7 @@ export default function MythicTranslationsPage() {
                         onClick={() => window.open(MYTHIC_TRANSLATE_URL, '_blank', 'noopener,noreferrer')}
                     >
                         <ExternalLink className='mr-2 h-4 w-4' />
-                        Open on Mythic Translate
+                        {t('admin.feathercloud.translations.open_on_mythic')}
                     </Button>
                     {projectInfo.githubRepoUrl ? (
                         <Button
@@ -353,7 +381,7 @@ export default function MythicTranslationsPage() {
                             variant='outline'
                             onClick={() => window.open(projectInfo.githubRepoUrl!, '_blank', 'noopener,noreferrer')}
                         >
-                            GitHub
+                            {t('admin.feathercloud.translations.github')}
                         </Button>
                     ) : null}
                 </div>
@@ -365,17 +393,20 @@ export default function MythicTranslationsPage() {
                     <Input
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        placeholder='Search locales…'
+                        placeholder={t('admin.feathercloud.translations.search_placeholder')}
                         className='pl-9'
                     />
                 </div>
                 <div className='flex flex-wrap gap-2'>
                     {(
                         [
-                            { key: 'all' as const, label: 'All' },
-                            { key: 'complete' as const, label: 'Complete' },
-                            { key: 'in_progress' as const, label: 'In progress' },
-                            { key: 'installed' as const, label: 'Installed' },
+                            { key: 'all' as const, labelKey: 'admin.feathercloud.translations.filters.all' },
+                            { key: 'complete' as const, labelKey: 'admin.feathercloud.translations.filters.complete' },
+                            {
+                                key: 'in_progress' as const,
+                                labelKey: 'admin.feathercloud.translations.filters.in_progress',
+                            },
+                            { key: 'installed' as const, labelKey: 'admin.feathercloud.translations.filters.installed' },
                         ] as const
                     ).map((item) => (
                         <Button
@@ -384,7 +415,7 @@ export default function MythicTranslationsPage() {
                             variant={filter === item.key ? 'default' : 'outline'}
                             onClick={() => setFilter(item.key)}
                         >
-                            {item.label}
+                            {t(item.labelKey)}
                         </Button>
                     ))}
                     {selected.size > 0 ? (
@@ -394,7 +425,9 @@ export default function MythicTranslationsPage() {
                             ) : (
                                 <Download className='mr-2 h-4 w-4' />
                             )}
-                            Install selected ({selected.size})
+                            {t('admin.feathercloud.translations.install_selected', {
+                                count: String(selected.size),
+                            })}
                         </Button>
                     ) : null}
                 </div>
@@ -402,17 +435,17 @@ export default function MythicTranslationsPage() {
 
             {loading ? (
                 <div className='text-muted-foreground flex items-center gap-2 py-16 text-sm'>
-                    <Loader2 className='h-4 w-4 animate-spin' /> Loading locales…
+                    <Loader2 className='h-4 w-4 animate-spin' /> {t('admin.feathercloud.translations.loading')}
                 </div>
             ) : filtered.length === 0 ? (
                 <EmptyState
-                    title='No locales'
-                    description='No published locales match your search or filter. Contribute missing languages on Mythic Translate.'
+                    title={t('admin.feathercloud.translations.empty_title')}
+                    description={t('admin.feathercloud.translations.empty_description')}
                     icon={Languages}
                     action={
                         <Button onClick={() => window.open(MYTHIC_TRANSLATE_URL, '_blank', 'noopener,noreferrer')}>
                             <ExternalLink className='mr-2 h-4 w-4' />
-                            Open Mythic Translate
+                            {t('admin.feathercloud.translations.open_mythic')}
                         </Button>
                     }
                 />
@@ -460,12 +493,12 @@ export default function MythicTranslationsPage() {
                                         <div className='flex shrink-0 flex-col items-end gap-1'>
                                             {installed ? (
                                                 <span className='rounded-md bg-blue-500/15 px-1.5 py-0.5 text-[10px] font-medium text-blue-600 dark:text-blue-400'>
-                                                    Installed
+                                                    {t('admin.feathercloud.translations.labels.installed')}
                                                 </span>
                                             ) : null}
                                             {row.isBaseLanguage ? (
                                                 <span className='rounded-md bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-medium text-emerald-600 dark:text-emerald-400'>
-                                                    Base
+                                                    {t('admin.feathercloud.translations.labels.base')}
                                                 </span>
                                             ) : null}
                                         </div>
@@ -473,7 +506,9 @@ export default function MythicTranslationsPage() {
 
                                     <div>
                                         <div className='mb-1 flex items-center justify-between text-[11px]'>
-                                            <span className='text-muted-foreground'>Completion</span>
+                                            <span className='text-muted-foreground'>
+                                                {t('admin.feathercloud.translations.labels.completion')}
+                                            </span>
                                             <span className='font-medium'>{completion}%</span>
                                         </div>
                                         <div className='bg-muted h-1.5 overflow-hidden rounded-full'>
@@ -494,7 +529,10 @@ export default function MythicTranslationsPage() {
                                     <div className='text-muted-foreground flex flex-wrap gap-x-3 gap-y-1 text-[11px]'>
                                         {total > 0 ? (
                                             <span>
-                                                {translated.toLocaleString()} / {total.toLocaleString()} keys
+                                                {t('admin.feathercloud.translations.labels.keys', {
+                                                    translated: translated.toLocaleString(),
+                                                    total: total.toLocaleString(),
+                                                })}
                                             </span>
                                         ) : null}
                                         {row.source ? <span className='capitalize'>{row.source}</span> : null}
@@ -518,7 +556,7 @@ export default function MythicTranslationsPage() {
                                             <span className='truncate'>
                                                 {row.lastContributor?.name ||
                                                     contributors[0]?.user?.name ||
-                                                    'Community'}
+                                                    t('admin.feathercloud.translations.labels.community')}
                                                 {contributors.length > 1 ? ` +${contributors.length - 1}` : ''}
                                             </span>
                                         </div>
@@ -538,21 +576,25 @@ export default function MythicTranslationsPage() {
                                         ) : (
                                             <Download className='mr-1.5 h-3.5 w-3.5' />
                                         )}
-                                        Download
+                                        {t('admin.feathercloud.translations.download')}
                                     </Button>
                                     <Button
                                         size='sm'
                                         disabled={busy}
                                         onClick={() => void installLocale(code)}
-                                        title={installed ? 'Reinstall / overwrite' : 'Install'}
+                                        title={
+                                            installed
+                                                ? t('admin.feathercloud.translations.reinstall')
+                                                : t('admin.feathercloud.translations.install')
+                                        }
                                     >
                                         {installed ? (
                                             <>
                                                 <CheckCircle2 className='mr-1.5 h-3.5 w-3.5' />
-                                                Update
+                                                {t('admin.feathercloud.translations.update')}
                                             </>
                                         ) : (
-                                            'Install'
+                                            t('admin.feathercloud.translations.install')
                                         )}
                                     </Button>
                                 </div>

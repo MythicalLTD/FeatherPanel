@@ -1014,6 +1014,7 @@ class CloudPluginsController
             $pluginDir = APP_ADDONS_DIR . '/' . $identifier;
             $isUpdate = file_exists($pluginDir);
             $oldVersion = null;
+            $storageBackup = null;
 
             // If updating, backup settings and get old version
             if ($isUpdate) {
@@ -1028,11 +1029,25 @@ class CloudPluginsController
                     $settingsBackup = [];
                 }
 
+                // Preserve plugin Storage/ (uploaded media, product files, etc.) across updates.
+                // Without this, marketplace/plugin updates wipe user data under the addon tree.
+                $storageDir = $pluginDir . '/Storage';
+                if (is_dir($storageDir)) {
+                    $storageBackup = sys_get_temp_dir() . '/fp-plugin-storage-' . $identifier . '-' . bin2hex(random_bytes(8));
+                    @exec('cp -a ' . escapeshellarg($storageDir) . ' ' . escapeshellarg($storageBackup));
+                    if (!is_dir($storageBackup)) {
+                        $storageBackup = null;
+                    }
+                }
+
                 // Remove old plugin directory
                 @exec('rm -rf ' . escapeshellarg($pluginDir));
             }
 
             if (!@mkdir($pluginDir, 0755, true)) {
+                if ($storageBackup !== null) {
+                    @exec('rm -rf ' . escapeshellarg($storageBackup));
+                }
                 @exec('rm -rf ' . escapeshellarg($tempDir));
 
                 return ApiResponse::error('Failed to create addon directory', 'ADDON_DIR_FAILED', 500);
@@ -1041,6 +1056,15 @@ class CloudPluginsController
             $copyCmd = sprintf('cp -r %s/* %s', escapeshellarg($tempDir), escapeshellarg($pluginDir));
             exec($copyCmd);
             @exec('rm -rf ' . escapeshellarg($tempDir));
+
+            if ($storageBackup !== null && is_dir($storageBackup)) {
+                $restoreTarget = $pluginDir . '/Storage';
+                if (!is_dir($restoreTarget)) {
+                    @mkdir($restoreTarget, 0755, true);
+                }
+                @exec('cp -a ' . escapeshellarg($storageBackup) . '/. ' . escapeshellarg($restoreTarget) . '/');
+                @exec('rm -rf ' . escapeshellarg($storageBackup));
+            }
 
             // Expose public assets at public/addons/{identifier} using ln -s (fallback to copy)
             $pluginPublic = $pluginDir . '/Public';

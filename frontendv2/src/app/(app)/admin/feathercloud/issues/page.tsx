@@ -25,9 +25,11 @@ import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Textarea } from '@/components/featherui/Textarea';
+import { useTranslation } from '@/contexts/TranslationContext';
 
 export default function MythicIssuesPage() {
     const router = useRouter();
+    const { t } = useTranslation();
     const [title, setTitle] = useState('');
     const [body, setBody] = useState('');
     const [steps, setSteps] = useState('');
@@ -48,15 +50,14 @@ export default function MythicIssuesPage() {
                 const code = err.response?.data?.error_code;
                 if (code === 'CLOUD_CREDENTIALS_NOT_CONFIGURED' || err.response?.status === 503) {
                     setCredentialsError(
-                        err.response?.data?.message ||
-                            'Mythic Cloud is not linked. Connect under MyFeatherPanel → Cloud Connections first.',
+                        err.response?.data?.message || t('admin.feathercloud.common.credentials_error'),
                     );
                 }
             }
         } finally {
             setChecking(false);
         }
-    }, []);
+    }, [t]);
 
     useEffect(() => {
         checkLink();
@@ -64,11 +65,11 @@ export default function MythicIssuesPage() {
 
     const submitIssue = async () => {
         if (!title.trim()) {
-            toast.error('Add a short title');
+            toast.error(t('admin.feathercloud.issues.title_required'));
             return;
         }
         setSubmitting(true);
-        setProgress('Collecting panel logs, node diagnostics, and environment info…');
+        setProgress(t('admin.feathercloud.issues.progress'));
         try {
             const response = await axios.post(
                 '/api/admin/cloud/data/report',
@@ -84,33 +85,34 @@ export default function MythicIssuesPage() {
                 { timeout: 180000 },
             );
             if (response.data?.success) {
-                toast.success('Issue sent with automatic diagnostics');
+                toast.success(t('admin.feathercloud.issues.success'));
                 setTitle('');
                 setBody('');
                 setSteps('');
                 setExpected('');
                 setActual('');
             } else {
-                throw new Error(response.data?.message || 'Failed to create issue');
+                throw new Error(response.data?.message || t('admin.feathercloud.issues.failed'));
             }
         } catch (err) {
             if (axios.isAxiosError(err)) {
                 const code = err.response?.data?.error_code;
                 if (code === 'MEMBER_UUID_REQUIRED') {
                     toast.error(
-                        err.response?.data?.message ||
-                            'Link your Mythic account or ask your team owner to invite a matching email.',
+                        err.response?.data?.message || t('admin.feathercloud.common.member_uuid_required'),
                     );
                     return;
                 }
                 if (code === 'CLOUD_CREDENTIALS_NOT_CONFIGURED') {
-                    setCredentialsError(err.response?.data?.message || 'Mythic Cloud is not linked.');
+                    setCredentialsError(
+                        err.response?.data?.message || t('admin.feathercloud.common.not_linked_short'),
+                    );
                     return;
                 }
-                toast.error(err.response?.data?.message || 'Failed to create issue');
+                toast.error(err.response?.data?.message || t('admin.feathercloud.issues.failed'));
                 return;
             }
-            toast.error('Failed to create issue');
+            toast.error(t('admin.feathercloud.issues.failed'));
         } finally {
             setSubmitting(false);
             setProgress(null);
@@ -120,86 +122,92 @@ export default function MythicIssuesPage() {
     return (
         <div className='space-y-6 md:space-y-8'>
             <PageHeader
-                title='Report an Issue'
-                description='Always filed on featherpanel. Panel logs, every node’s diagnostics, and environment details are attached automatically.'
+                title={t('admin.feathercloud.issues.title')}
+                description={t('admin.feathercloud.issues.subtitle')}
                 icon={Bug}
             />
 
             {checking ? (
-                <PageCard title='Checking connection' icon={Loader2}>
+                <PageCard title={t('admin.feathercloud.common.checking_connection')} icon={Loader2}>
                     <div className='text-muted-foreground flex items-center gap-2 text-sm'>
                         <Loader2 className='h-4 w-4 animate-spin' />
-                        Checking Mythic Cloud link…
+                        {t('admin.feathercloud.common.checking_link')}
                     </div>
                 </PageCard>
             ) : credentialsError ? (
-                <PageCard title='Not linked' description={credentialsError} icon={Bug}>
-                    <Button onClick={() => router.push('/admin/cloud-management')}>Open Cloud Connections</Button>
+                <PageCard
+                    title={t('admin.feathercloud.common.not_linked_title')}
+                    description={credentialsError}
+                    icon={Bug}
+                >
+                    <Button onClick={() => router.push('/admin/cloud-management')}>
+                        {t('admin.feathercloud.common.open_cloud_connections')}
+                    </Button>
                 </PageCard>
             ) : (
                 <>
-                    <PageCard title='What we attach automatically' icon={FileText}>
+                    <PageCard title={t('admin.feathercloud.issues.auto_attach_title')} icon={FileText}>
                         <ul className='text-muted-foreground space-y-2 text-sm'>
                             <li className='flex gap-2'>
                                 <CheckCircle2 className='text-primary mt-0.5 h-4 w-4 shrink-0' />
-                                Project locked to <span className='text-foreground font-medium'>featherpanel</span>
+                                {t('admin.feathercloud.issues.auto_attach_1')}
                             </li>
                             <li className='flex gap-2'>
                                 <CheckCircle2 className='text-primary mt-0.5 h-4 w-4 shrink-0' />
-                                Panel app / web / mail / runner logs (uploaded as pastes)
+                                {t('admin.feathercloud.issues.auto_attach_2')}
                             </li>
                             <li className='flex gap-2'>
                                 <Server className='text-primary mt-0.5 h-4 w-4 shrink-0' />
-                                Wings diagnostics + recent logs for every node
+                                {t('admin.feathercloud.issues.auto_attach_3')}
                             </li>
                             <li className='flex gap-2'>
                                 <CheckCircle2 className='text-primary mt-0.5 h-4 w-4 shrink-0' />
-                                Version, PHP, OS, counts, plugins, and extensions
+                                {t('admin.feathercloud.issues.auto_attach_4')}
                             </li>
                         </ul>
                     </PageCard>
 
-                    <PageCard title='Describe the bug' icon={Send}>
+                    <PageCard title={t('admin.feathercloud.issues.form_title')} icon={Send}>
                         <div className='space-y-4'>
                             <div>
                                 <label className='text-muted-foreground mb-1 block text-xs font-semibold uppercase'>
-                                    Title
+                                    {t('admin.feathercloud.issues.field_title')}
                                 </label>
                                 <Input
                                     value={title}
                                     onChange={(e) => setTitle(e.target.value)}
-                                    placeholder='Short summary of what went wrong'
+                                    placeholder={t('admin.feathercloud.issues.field_title_placeholder')}
                                     disabled={submitting}
                                 />
                             </div>
                             <div>
                                 <label className='text-muted-foreground mb-1 block text-xs font-semibold uppercase'>
-                                    What happened?
+                                    {t('admin.feathercloud.issues.what_happened')}
                                 </label>
                                 <Textarea
                                     value={body}
                                     onChange={(e) => setBody(e.target.value)}
                                     rows={4}
-                                    placeholder='Describe the problem in your own words'
+                                    placeholder={t('admin.feathercloud.issues.what_happened_placeholder')}
                                     disabled={submitting}
                                 />
                             </div>
                             <div className='grid gap-4 md:grid-cols-3'>
                                 <div>
                                     <label className='text-muted-foreground mb-1 block text-xs font-semibold uppercase'>
-                                        Steps to reproduce
+                                        {t('admin.feathercloud.issues.steps')}
                                     </label>
                                     <Textarea
                                         value={steps}
                                         onChange={(e) => setSteps(e.target.value)}
                                         rows={4}
-                                        placeholder='1. …'
+                                        placeholder={t('admin.feathercloud.issues.steps_placeholder')}
                                         disabled={submitting}
                                     />
                                 </div>
                                 <div>
                                     <label className='text-muted-foreground mb-1 block text-xs font-semibold uppercase'>
-                                        Expected
+                                        {t('admin.feathercloud.issues.expected')}
                                     </label>
                                     <Textarea
                                         value={expected}
@@ -210,7 +218,7 @@ export default function MythicIssuesPage() {
                                 </div>
                                 <div>
                                     <label className='text-muted-foreground mb-1 block text-xs font-semibold uppercase'>
-                                        Actual
+                                        {t('admin.feathercloud.issues.actual')}
                                     </label>
                                     <Textarea
                                         value={actual}
@@ -234,7 +242,9 @@ export default function MythicIssuesPage() {
                                 ) : (
                                     <Send className='mr-2 h-4 w-4' />
                                 )}
-                                {submitting ? 'Collecting & sending…' : 'Send issue to Mythic'}
+                                {submitting
+                                    ? t('admin.feathercloud.issues.sending')
+                                    : t('admin.feathercloud.issues.send')}
                             </Button>
                         </div>
                     </PageCard>

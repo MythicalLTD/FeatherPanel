@@ -60,15 +60,19 @@ class PhpMyAdmin
             return;
         }
 
-        // Empty mount points / leftover dirs block extract+rename — clear them first
-        if (is_dir($targetPath)) {
-            $logger->info('Removing incomplete phpMyAdmin directory at ' . $targetPath);
-            self::deleteDirectory($targetPath);
-        }
-
         // Create public directory if it doesn't exist
         if (!is_dir($publicDir) && !@mkdir($publicDir, 0755, true)) {
             throw new \Exception('Failed to create public directory: ' . $publicDir);
+        }
+
+        // Docker mounts public/pma as a volume — empty contents, never remove the mountpoint
+        if (is_dir($targetPath)) {
+            $logger->info('Clearing incomplete phpMyAdmin directory at ' . $targetPath);
+            self::emptyDirectory($targetPath);
+        } else {
+            if (!@mkdir($targetPath, 0755, true) && !is_dir($targetPath)) {
+                throw new \Exception('Failed to create phpMyAdmin directory: ' . $targetPath);
+            }
         }
 
         // Download the zip file
@@ -101,7 +105,7 @@ class PhpMyAdmin
                 throw new \Exception('Failed to open zip file. Error code: ' . $result);
             }
 
-            // Extract to public directory
+            // Extract beside the target (never onto the Docker volume path directly)
             if (!$zip->extractTo($publicDir)) {
                 $zip->close();
                 throw new \Exception('Failed to extract zip file to ' . $publicDir);
@@ -109,15 +113,14 @@ class PhpMyAdmin
 
             $zip->close();
 
-            // Rename the extracted folder
             $extractedPath = $publicDir . '/' . $extractedFolderName;
             if (!is_dir($extractedPath)) {
                 throw new \Exception('Extracted folder not found: ' . $extractedPath);
             }
 
-            if (!@rename($extractedPath, $targetPath)) {
-                throw new \Exception('Failed to rename folder from ' . $extractedFolderName . ' to ' . $targetFolderName);
-            }
+            // Move extracted files into pma/ (required when pma is a Docker volume mount)
+            self::moveDirectoryContents($extractedPath, $targetPath);
+            self::deleteDirectory($extractedPath);
 
             // Rename config.sample.inc.php to config.inc.php if it exists
             $configSamplePath = $targetPath . '/config.sample.inc.php';
@@ -204,9 +207,13 @@ class PhpMyAdmin
             return;
         }
 
-        // Delete the directory recursively
+        // Clear install files. Docker volume mounts cannot be removed with rmdir.
         $logger->info('Deleting phpMyAdmin installation from ' . $targetPath);
-        self::deleteDirectory($targetPath);
+        if (self::isMountPoint($targetPath)) {
+            self::emptyDirectory($targetPath);
+        } else {
+            self::deleteDirectory($targetPath);
+        }
         self::clearInstalledMarker();
         $logger->info('phpMyAdmin successfully deleted');
     }
@@ -570,6 +577,113 @@ class PhpMyAdmin
     }
 
     /**
+     * Whether $path is a filesystem mount point (e.g. Docker volume at public/pma).
+     */
+    private static function isMountPoint(string $path): bool
+    {
+        $real = realpath($path);
+        if ($real === false) {
+            return false;
+        }
+
+        $parent = dirname($real);
+        $pathStat = @stat($real);
+        $parentStat = @stat($parent);
+        if ($pathStat === false || $parentStat === false) {
+            return false;
+        }
+
+        return $pathStat['dev'] !== $parentStat['dev'];
+    }
+
+    /**
+     * Move all entries from $source into $destination (both must be directories).
+     * Falls back to copy+delete when rename fails across Docker volume boundaries.
+     *
+     * @throws \Exception If a move fails
+     */
+    private static function moveDirectoryContents(string $source, string $destination): void
+    {
+        if (!is_dir($source)) {
+            throw new \Exception("Source directory not found: {$source}");
+        }
+        if (!is_dir($destination) && !@mkdir($destination, 0755, true) && !is_dir($destination)) {
+            throw new \Exception("Failed to create destination directory: {$destination}");
+        }
+
+        $entries = array_diff(scandir($source) ?: [], ['.', '..']);
+        foreach ($entries as $entry) {
+            $from = $source . '/' . $entry;
+            $to = $destination . '/' . $entry;
+            if (@rename($from, $to)) {
+                continue;
+            }
+
+            // EXDEV: public/ and the pma Docker volume are different filesystems
+            if (is_dir($from) && !is_link($from)) {
+                self::copyDirectoryRecursive($from, $to);
+                self::deleteDirectory($from);
+            } else {
+                if (!@copy($from, $to)) {
+                    throw new \Exception("Failed to move '{$entry}' into phpMyAdmin directory");
+                }
+                if (!@unlink($from)) {
+                    throw new \Exception("Failed to remove temporary file after copy: {$from}");
+                }
+            }
+        }
+    }
+
+    /**
+     * Recursively copy a directory tree.
+     *
+     * @throws \Exception If copy fails
+     */
+    private static function copyDirectoryRecursive(string $source, string $destination): void
+    {
+        if (!is_dir($destination) && !@mkdir($destination, 0755, true) && !is_dir($destination)) {
+            throw new \Exception("Failed to create directory: {$destination}");
+        }
+
+        $entries = array_diff(scandir($source) ?: [], ['.', '..']);
+        foreach ($entries as $entry) {
+            $from = $source . '/' . $entry;
+            $to = $destination . '/' . $entry;
+            if (is_dir($from) && !is_link($from)) {
+                self::copyDirectoryRecursive($from, $to);
+            } elseif (!@copy($from, $to)) {
+                throw new \Exception("Failed to copy file: {$from}");
+            }
+        }
+    }
+
+    /**
+     * Recursively delete directory contents without removing the directory itself.
+     * Required for Docker volume mounts under public/pma.
+     *
+     * @throws \Exception If deletion fails
+     */
+    private static function emptyDirectory(string $dir): void
+    {
+        if (!is_dir($dir)) {
+            return;
+        }
+
+        $files = array_diff(scandir($dir) ?: [], ['.', '..']);
+
+        foreach ($files as $file) {
+            $path = $dir . '/' . $file;
+            if (is_dir($path) && !is_link($path)) {
+                self::deleteDirectory($path);
+            } else {
+                if (!@unlink($path)) {
+                    throw new \Exception("Failed to delete file: {$path}");
+                }
+            }
+        }
+    }
+
+    /**
      * Recursively delete a directory and its contents.
      *
      * @param string $dir The directory to delete
@@ -582,21 +696,31 @@ class PhpMyAdmin
             return;
         }
 
-        $files = array_diff(scandir($dir) ?: [], ['.', '..']);
+        self::emptyDirectory($dir);
 
-        foreach ($files as $file) {
-            $path = $dir . '/' . $file;
-            if (is_dir($path)) {
-                self::deleteDirectory($path);
-            } else {
-                if (!@unlink($path)) {
-                    throw new \Exception("Failed to delete file: {$path}");
-                }
-            }
+        if (@rmdir($dir)) {
+            return;
         }
 
-        if (!@rmdir($dir)) {
-            throw new \Exception("Failed to delete directory: {$dir}");
+        // Docker named volumes bind-mount public/pma — the mountpoint cannot be removed
+        if (self::isMountPoint($dir) || self::isDirectoryEmpty($dir)) {
+            return;
         }
+
+        throw new \Exception("Failed to delete directory: {$dir}");
+    }
+
+    /**
+     * Whether a directory exists and contains no entries besides . and ..
+     */
+    private static function isDirectoryEmpty(string $dir): bool
+    {
+        if (!is_dir($dir)) {
+            return true;
+        }
+
+        $entries = array_diff(scandir($dir) ?: [], ['.', '..']);
+
+        return $entries === [];
     }
 }

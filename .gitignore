@@ -38,4 +38,4 @@ TODO.txt
 todo.txt
 backend/storage/config/panel_integrity_baseline.json
 build.log
-crack/
+crack/backend/storage/data/
