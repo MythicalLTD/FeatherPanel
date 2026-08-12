@@ -35,7 +35,10 @@ const Progress = React.forwardRef<
             value={clamped}
         >
             <ProgressPrimitive.Indicator
-                className={cn('bg-primary h-full w-full flex-1 transition-all', indicatorClassName)}
+                className={cn(
+                    'bg-primary h-full w-full flex-1 transition-transform duration-500 ease-out',
+                    indicatorClassName,
+                )}
                 style={{ transform: `translateX(-${100 - clamped}%)` }}
             />
         </ProgressPrimitive.Root>

@@ -66,6 +66,29 @@ const handleAuthStateFailure = () => {
 
 const attachClientSyncRequestInterceptor = (client: AxiosInstance) => {
     client.interceptors.request.use((config) => {
+        // Never attach panel identity headers to cross-origin Wings/node URLs —
+        // those hosts do not allow X-FP-UI-* in Access-Control-Allow-Headers.
+        const absoluteUrl = (() => {
+            const url = String(config.url || '');
+            if (/^https?:\/\//i.test(url)) return url;
+            const base = String(config.baseURL || '');
+            if (/^https?:\/\//i.test(base)) {
+                try {
+                    return new URL(url || '', base).href;
+                } catch {
+                    return '';
+                }
+            }
+            return '';
+        })();
+        if (
+            absoluteUrl &&
+            typeof window !== 'undefined' &&
+            !absoluteUrl.startsWith(window.location.origin)
+        ) {
+            return config;
+        }
+
         const syncHeaders = getClientSyncHeaders();
         if (syncHeaders) {
             config.headers = config.headers ?? {};

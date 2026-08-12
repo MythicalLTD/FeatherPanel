@@ -46,7 +46,9 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { isEnabled } from '@/lib/utils';
 import { toast } from 'sonner';
+import { getFeatherpanelApiErrorMessage } from '@/lib/api';
 import { filesApi, ARCHIVE_EXTRACT_DRAG_MIME } from '@/lib/files-api';
+import { triggerSignedUrlDownload } from '@/lib/trigger-signed-download';
 import { isBinaryLikeFileName } from '@/lib/binary-like-file-names';
 import { FileObject } from '@/types/server';
 import {
@@ -708,7 +710,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 : `${currentDirectory || '/'}/${filename}`;
 
             const downloadUrl = await filesApi.getDownloadUrl(uuidShort, path);
-            window.open(downloadUrl, '_blank');
+            triggerSignedUrlDownload(downloadUrl);
             setActionFile(null);
         } catch {
             toast.error(t('files.messages.failed_download'));
@@ -1016,38 +1018,38 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
             );
 
             try {
+                // Folder uploads: create nested dirs via panel, then each file gets its own
+                // one-time Wings signed URL (tokens are single-use per request).
                 await ensureDirectoryExists(next.targetDirectory);
 
                 await filesApi.uploadFile(uuidShort, next.targetDirectory, next.file, (percent) => {
                     setUploadQueue((p) => p.map((u) => (u.id === next.id ? { ...u, progress: percent } : u)));
                 });
-                setUploadQueue((prev) => {
-                    const updated = prev.map((u) =>
-                        u.id === next.id ? { ...u, status: 'done' as const, progress: 100 } : u,
-                    );
-                    // If there are still pending uploads, try to process the next one.
-                    if (updated.some((u) => u.status === 'pending')) {
-                        processUploadQueue(updated, setUploadQueue);
-                    }
-                    return updated;
-                });
+                setUploadQueue((prev) =>
+                    prev.map((u) => (u.id === next.id ? { ...u, status: 'done' as const, progress: 100 } : u)),
+                );
                 refresh();
             } catch (error) {
                 const message =
-                    (error as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-                    t('files.editor.save_error');
-                setUploadQueue((prev) => {
-                    const updated = prev.map((u) =>
-                        u.id === next.id ? { ...u, status: 'error' as const, error: message } : u,
-                    );
-                    // If there are still pending uploads, try to process the next one.
-                    if (updated.some((u) => u.status === 'pending')) {
-                        processUploadQueue(updated, setUploadQueue);
-                    }
-                    return updated;
-                });
+                    getFeatherpanelApiErrorMessage(error) ||
+                    (error instanceof Error && error.message ? error.message : null) ||
+                    t('files.messages.upload_failed');
+                setUploadQueue((prev) =>
+                    prev.map((u) => (u.id === next.id ? { ...u, status: 'error' as const, error: message } : u)),
+                );
             } finally {
                 uploadProcessingRef.current = false;
+                // Continue after releasing the lock. Calling processUploadQueue from inside the
+                // success/error setState updater used to no-op because the lock was still held,
+                // which left folder / multi-file queues stuck after the first file.
+                setTimeout(() => {
+                    setUploadQueue((prev) => {
+                        if (prev.some((u) => u.status === 'pending')) {
+                            void processUploadQueue(prev, setUploadQueue);
+                        }
+                        return prev;
+                    });
+                }, 0);
             }
         },
         [uuidShort, refresh, t, ensureDirectoryExists],
@@ -1417,8 +1419,15 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                                                         </div>
                                                     )}
                                                     {hasError && !allDone && (
-                                                        <p className='text-destructive text-xs'>
-                                                            {t('files.messages.upload_folder_error')}
+                                                        <p
+                                                            className='text-destructive truncate text-xs'
+                                                            title={
+                                                                items.find((u) => u.status === 'error' && u.error)
+                                                                    ?.error
+                                                            }
+                                                        >
+                                                            {items.find((u) => u.status === 'error' && u.error)
+                                                                ?.error || t('files.messages.upload_folder_error')}
                                                         </p>
                                                     )}
                                                 </div>

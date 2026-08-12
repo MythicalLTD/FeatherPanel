@@ -115,6 +115,10 @@ export interface ServerStats {
     disk_limit_bytes: number;
     network_rx_bytes: number;
     network_tx_bytes: number;
+    disk_io?: {
+        read_bytes: number;
+        write_bytes: number;
+    };
     uptime: number;
     state: 'running' | 'starting' | 'stopping' | 'stopped' | 'offline' | 'error';
 }

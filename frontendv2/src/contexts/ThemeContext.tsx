@@ -275,9 +275,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         localStorage.setItem('accentColor', accentColor);
 
         const fontStacks: Record<FontFamily, string> = {
-            inter: "'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+            inter: "var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
             system: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-            rounded: "'Nunito', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+            rounded: "var(--font-nunito), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
         };
         const stack = fontStacks[fontFamily] || fontStacks.inter;
         root.style.setProperty('--app-font-family', stack);

@@ -37,10 +37,12 @@ interface ServerInfoCardsProps {
     diskUsage?: number;
     networkRx?: number;
     networkTx?: number;
+    diskIoRead?: number;
+    diskIoWrite?: number;
     className?: string;
 }
 
-export default function ServerInfoCards({
+export default React.memo(function ServerInfoCards({
     serverIp,
     serverPort,
     cpuLimit,
@@ -53,6 +55,8 @@ export default function ServerInfoCards({
     diskUsage = 0,
     networkRx = 0,
     networkTx = 0,
+    diskIoRead = 0,
+    diskIoWrite = 0,
     className,
 }: ServerInfoCardsProps) {
     const { t } = useTranslation();
@@ -109,9 +113,9 @@ export default function ServerInfoCards({
     };
 
     return (
-        <div className={cn('grid gap-6', className)}>
-            <div className='border-border/50 bg-card/50 rounded-xl border p-6 backdrop-blur-xl'>
-                <h3 className='text-muted-foreground mb-4 flex items-center gap-2 text-sm font-medium'>
+        <div className={cn('grid gap-4', className)}>
+            <div className='border-border/50 bg-card/50 rounded-xl border p-4 backdrop-blur-xl'>
+                <h3 className='text-muted-foreground mb-3 flex items-center gap-2 text-sm font-medium'>
                     <Wifi className='h-4 w-4' />
                     {t('servers.console.info_cards.network_title')}
                 </h3>
@@ -152,33 +156,33 @@ export default function ServerInfoCards({
                                 <Clock className='h-3 w-3' />
                                 {t('servers.console.info_cards.uptime')}
                             </p>
-                            <p className='text-sm font-medium'>{wingsUptime || 'N/A'}</p>
+                            <p className='text-sm font-medium tabular-nums'>{wingsUptime || 'N/A'}</p>
                         </div>
                         <div>
                             <p className='text-muted-foreground mb-1 flex items-center gap-1 text-xs'>
                                 <Activity className='h-3 w-3' />
                                 {t('servers.console.info_cards.ping')}
                             </p>
-                            <p className='text-sm font-medium'>{ping !== null ? `${ping}ms` : 'N/A'}</p>
+                            <p className='text-sm font-medium tabular-nums'>{ping !== null ? `${ping}ms` : 'N/A'}</p>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div className='border-border/50 bg-card/50 rounded-xl border p-6 backdrop-blur-xl'>
-                <h3 className='text-muted-foreground mb-4 flex items-center gap-2 text-sm font-medium'>
+            <div className='border-border/50 bg-card/50 rounded-xl border p-4 backdrop-blur-xl'>
+                <h3 className='text-muted-foreground mb-3 flex items-center gap-2 text-sm font-medium'>
                     <Activity className='h-4 w-4' />
                     {t('servers.console.info_cards.resources_title')}
                 </h3>
 
-                <div className='space-y-5'>
+                <div className='space-y-4'>
                     <div>
                         <div className='mb-1.5 flex justify-between text-sm'>
                             <span className='text-muted-foreground flex items-center gap-2'>
                                 <Cpu className='h-3 w-3' />
                                 {t('servers.cpu')}
                             </span>
-                            <span className={cn('font-medium', cpuOverLimit && 'text-destructive')}>
+                            <span className={cn('font-medium tabular-nums', cpuOverLimit && 'text-destructive')}>
                                 {cpuUsage.toFixed(1)}%
                             </span>
                         </div>
@@ -200,7 +204,7 @@ export default function ServerInfoCards({
                                 <Database className='h-3 w-3' />
                                 {t('servers.memory')}
                             </span>
-                            <span className={cn('font-medium', memoryOverLimit && 'text-destructive')}>
+                            <span className={cn('font-medium tabular-nums', memoryOverLimit && 'text-destructive')}>
                                 {formatMib(memoryUsage)}
                             </span>
                         </div>
@@ -222,7 +226,7 @@ export default function ServerInfoCards({
                                 <HardDrive className='h-3 w-3' />
                                 {t('servers.disk')}
                             </span>
-                            <span className={cn('font-medium', diskOverLimit && 'text-destructive')}>
+                            <span className={cn('font-medium tabular-nums', diskOverLimit && 'text-destructive')}>
                                 {formatMib(diskUsage)}
                             </span>
                         </div>
@@ -240,20 +244,20 @@ export default function ServerInfoCards({
                 </div>
             </div>
 
-            <div className='border-border/50 bg-card/50 rounded-xl border p-6 backdrop-blur-xl'>
-                <h3 className='text-muted-foreground mb-4 flex items-center gap-2 text-sm font-medium'>
+            <div className='border-border/50 bg-card/50 rounded-xl border p-4 backdrop-blur-xl'>
+                <h3 className='text-muted-foreground mb-3 flex items-center gap-2 text-sm font-medium'>
                     <Activity className='h-4 w-4' />
                     {t('servers.console.info_cards.network_title')}
                 </h3>
 
-                <div className='space-y-4'>
+                <div className='space-y-3'>
                     <div>
                         <div className='mb-1.5 flex justify-between align-middle text-sm'>
                             <span className='text-muted-foreground flex items-center gap-2'>
                                 <ArrowDown className='h-3 w-3' />
                                 {t('servers.console.info_cards.network_rx')}
                             </span>
-                            <span className='font-medium'>{formatFileSize(networkRx)}/s</span>
+                            <span className='font-medium tabular-nums'>{formatFileSize(networkRx)}/s</span>
                         </div>
                     </div>
 
@@ -263,11 +267,40 @@ export default function ServerInfoCards({
                                 <ArrowUp className='h-3 w-3' />
                                 {t('servers.console.info_cards.network_tx')}
                             </span>
-                            <span className='font-medium'>{formatFileSize(networkTx)}/s</span>
+                            <span className='font-medium tabular-nums'>{formatFileSize(networkTx)}/s</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div className='border-border/50 bg-card/50 rounded-xl border p-4 backdrop-blur-xl'>
+                <h3 className='text-muted-foreground mb-3 flex items-center gap-2 text-sm font-medium'>
+                    <HardDrive className='h-4 w-4' />
+                    {t('servers.console.info_cards.disk_io_title')}
+                </h3>
+
+                <div className='space-y-3'>
+                    <div>
+                        <div className='mb-1.5 flex justify-between align-middle text-sm'>
+                            <span className='text-muted-foreground flex items-center gap-2'>
+                                <ArrowDown className='h-3 w-3' />
+                                {t('servers.console.info_cards.disk_io_read')}
+                            </span>
+                            <span className='font-medium tabular-nums'>{formatFileSize(diskIoRead)}/s</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div className='mb-1.5 flex justify-between align-middle text-sm'>
+                            <span className='text-muted-foreground flex items-center gap-2'>
+                                <ArrowUp className='h-3 w-3' />
+                                {t('servers.console.info_cards.disk_io_write')}
+                            </span>
+                            <span className='font-medium tabular-nums'>{formatFileSize(diskIoWrite)}/s</span>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     );
-}
+});

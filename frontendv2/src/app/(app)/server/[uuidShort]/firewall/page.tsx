@@ -239,15 +239,16 @@ export default function ServerFirewallPage() {
         setDeleting(true);
         const deletingRuleId = ruleToDelete.id;
         try {
-            const { data } = await axios.delete(`/api/user/servers/${uuidShort}/firewall/${deletingRuleId}`);
+            const { data, status } = await axios.delete(`/api/user/servers/${uuidShort}/firewall/${deletingRuleId}`);
 
-            if (data.success) {
+            // 2xx with missing/empty body still counts as success (legacy 204 responses).
+            if (status >= 200 && status < 300 && data?.success !== false) {
                 toast.success(t('serverFirewall.deleteSuccess'));
                 setRules((prev) => prev.filter((r) => r.id !== deletingRuleId));
                 setDeleteDialogOpen(false);
                 setRuleToDelete(null);
             } else {
-                toast.error(data.message || t('serverFirewall.unknownError'));
+                toast.error(data?.message || t('serverFirewall.unknownError'));
             }
         } catch (error) {
             console.error('Failed to delete rule:', error);

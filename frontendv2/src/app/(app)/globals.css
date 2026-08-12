@@ -27,8 +27,8 @@
     --input: 0 0% 90%;
     --ring: 262 83% 58%;
     --radius: 0.5rem;
-    /* Default UI font (can be overridden via theme). */
-    --app-font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    /* Default UI font (can be overridden via theme). --font-inter comes from next/font/local. */
+    --app-font-family: var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 @theme inline {

@@ -46,7 +46,7 @@ class TicketPriority
             $params['search'] = '%' . $search . '%';
         }
 
-        $sql .= ' ORDER BY name ASC LIMIT :limit OFFSET :offset';
+        $sql .= ' ORDER BY sort_order ASC, id ASC LIMIT :limit OFFSET :offset';
         $stmt = $pdo->prepare($sql);
 
         if (!empty($params)) {
@@ -79,6 +79,17 @@ class TicketPriority
         $stmt->execute(['id' => $id]);
 
         return $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
+    }
+
+    /**
+     * Next sort_order value for a newly created priority.
+     */
+    public static function getNextSortOrder(): int
+    {
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->query('SELECT COALESCE(MAX(sort_order), 0) + 10 FROM ' . self::$table);
+
+        return (int) $stmt->fetchColumn();
     }
 
     /**
@@ -127,16 +138,13 @@ class TicketPriority
             }
         }
 
-        $fields = ['name', 'color'];
-        $insert = [];
-        foreach ($fields as $field) {
-            if ($field === 'color') {
-                $insert[$field] = $data[$field] ?? '#000000';
-            } else {
-                $insert[$field] = $data[$field];
-            }
-        }
+        $insert = [
+            'name' => $data['name'],
+            'color' => $data['color'] ?? '#000000',
+            'sort_order' => isset($data['sort_order']) ? (int) $data['sort_order'] : self::getNextSortOrder(),
+        ];
 
+        $fields = array_keys($insert);
         $pdo = Database::getPdoConnection();
         $fieldList = '`' . implode('`, `', $fields) . '`';
         $placeholders = ':' . implode(', :', $fields);
@@ -168,15 +176,21 @@ class TicketPriority
             return false;
         }
 
-        $fields = ['name', 'color'];
+        $fields = ['name', 'color', 'sort_order'];
         $set = [];
         $params = ['id' => $id];
 
         foreach ($fields as $field) {
-            if (array_key_exists($field, $data)) {
-                $params[$field] = $data[$field];
-                $set[] = "`$field` = :$field";
+            if (!array_key_exists($field, $data)) {
+                continue;
             }
+
+            if ($field === 'sort_order') {
+                $params[$field] = (int) $data[$field];
+            } else {
+                $params[$field] = $data[$field];
+            }
+            $set[] = "`$field` = :$field";
         }
 
         if (empty($set)) {

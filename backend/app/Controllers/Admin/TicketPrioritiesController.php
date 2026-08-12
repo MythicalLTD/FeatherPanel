@@ -33,6 +33,7 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'id', type: 'integer', description: 'Priority ID'),
         new OA\Property(property: 'name', type: 'string', description: 'Priority name'),
         new OA\Property(property: 'color', type: 'string', description: 'Priority color'),
+        new OA\Property(property: 'sort_order', type: 'integer', description: 'Display order (lower appears first)'),
         new OA\Property(property: 'created_at', type: 'string', format: 'date-time', description: 'Creation timestamp'),
         new OA\Property(property: 'updated_at', type: 'string', format: 'date-time', nullable: true, description: 'Last update timestamp'),
     ]
@@ -58,6 +59,7 @@ use Symfony\Component\HttpFoundation\Response;
     properties: [
         new OA\Property(property: 'name', type: 'string', description: 'Priority name', minLength: 1, maxLength: 255),
         new OA\Property(property: 'color', type: 'string', nullable: true, description: 'Priority color', default: '#000000'),
+        new OA\Property(property: 'sort_order', type: 'integer', nullable: true, description: 'Display order (lower appears first)'),
     ]
 )]
 #[OA\Schema(
@@ -66,6 +68,7 @@ use Symfony\Component\HttpFoundation\Response;
     properties: [
         new OA\Property(property: 'name', type: 'string', description: 'Priority name', minLength: 1, maxLength: 255),
         new OA\Property(property: 'color', type: 'string', nullable: true, description: 'Priority color'),
+        new OA\Property(property: 'sort_order', type: 'integer', nullable: true, description: 'Display order (lower appears first)'),
     ]
 )]
 class TicketPrioritiesController

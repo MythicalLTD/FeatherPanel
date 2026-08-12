@@ -25,9 +25,11 @@ import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Textarea } from '@/components/featherui/Textarea';
+import { useTranslation } from '@/contexts/TranslationContext';
 
 export default function FeatherCloudSuggestionsPage() {
     const router = useRouter();
+    const { t } = useTranslation();
     const [title, setTitle] = useState('');
     const [body, setBody] = useState('');
     const [why, setWhy] = useState('');
@@ -46,15 +48,14 @@ export default function FeatherCloudSuggestionsPage() {
                 const code = err.response?.data?.error_code;
                 if (code === 'CLOUD_CREDENTIALS_NOT_CONFIGURED' || err.response?.status === 503) {
                     setCredentialsError(
-                        err.response?.data?.message ||
-                            'Mythic Cloud is not linked. Connect under MyFeatherPanel → Cloud Connections first.',
+                        err.response?.data?.message || t('admin.feathercloud.common.credentials_error'),
                     );
                 }
             }
         } finally {
             setChecking(false);
         }
-    }, []);
+    }, [t]);
 
     useEffect(() => {
         checkLink();
@@ -62,11 +63,11 @@ export default function FeatherCloudSuggestionsPage() {
 
     const submitSuggestion = async () => {
         if (!title.trim()) {
-            toast.error('Add a short title for your idea');
+            toast.error(t('admin.feathercloud.suggestions.title_required'));
             return;
         }
         setSubmitting(true);
-        setProgress('Collecting environment info…');
+        setProgress(t('admin.feathercloud.suggestions.progress'));
         try {
             const response = await axios.post(
                 '/api/admin/cloud/data/suggestion',
@@ -79,31 +80,28 @@ export default function FeatherCloudSuggestionsPage() {
                 { timeout: 60000 },
             );
             if (response.data?.success) {
-                toast.success('Suggestion sent');
+                toast.success(t('admin.feathercloud.suggestions.success'));
                 setTitle('');
                 setBody('');
                 setWhy('');
             } else {
-                throw new Error(response.data?.message || 'Failed to submit suggestion');
+                throw new Error(response.data?.message || t('admin.feathercloud.suggestions.failed'));
             }
         } catch (err) {
             if (axios.isAxiosError(err)) {
                 const code = err.response?.data?.error_code;
                 if (code === 'MEMBER_UUID_REQUIRED') {
-                    toast.error(
-                        err.response?.data?.message ||
-                            'Link your Mythic account or ask your team owner to invite a matching email.',
-                    );
+                    toast.error(err.response?.data?.message || t('admin.feathercloud.common.member_uuid_required'));
                     return;
                 }
                 if (code === 'CLOUD_CREDENTIALS_NOT_CONFIGURED') {
-                    setCredentialsError(err.response?.data?.message || 'Mythic Cloud is not linked.');
+                    setCredentialsError(err.response?.data?.message || t('admin.feathercloud.common.not_linked_short'));
                     return;
                 }
-                toast.error(err.response?.data?.message || 'Failed to submit suggestion');
+                toast.error(err.response?.data?.message || t('admin.feathercloud.suggestions.failed'));
                 return;
             }
-            toast.error('Failed to submit suggestion');
+            toast.error(t('admin.feathercloud.suggestions.failed'));
         } finally {
             setSubmitting(false);
             setProgress(null);
@@ -113,76 +111,81 @@ export default function FeatherCloudSuggestionsPage() {
     return (
         <div className='space-y-6 md:space-y-8'>
             <PageHeader
-                title='Suggest a New Thing'
-                description='Ideas land on the Mythic suggestions board for featherpanel (not GitHub until accepted). We attach basic environment details automatically (no logs).'
+                title={t('admin.feathercloud.suggestions.title')}
+                description={t('admin.feathercloud.suggestions.subtitle')}
                 icon={Lightbulb}
             />
 
             {checking ? (
-                <PageCard title='Checking connection' icon={Loader2}>
+                <PageCard title={t('admin.feathercloud.common.checking_connection')} icon={Loader2}>
                     <div className='text-muted-foreground flex items-center gap-2 text-sm'>
                         <Loader2 className='h-4 w-4 animate-spin' />
-                        Checking Mythic Cloud link…
+                        {t('admin.feathercloud.common.checking_link')}
                     </div>
                 </PageCard>
             ) : credentialsError ? (
-                <PageCard title='Not linked' description={credentialsError} icon={Lightbulb}>
-                    <Button onClick={() => router.push('/admin/cloud-management')}>Open Cloud Connections</Button>
+                <PageCard
+                    title={t('admin.feathercloud.common.not_linked_title')}
+                    description={credentialsError}
+                    icon={Lightbulb}
+                >
+                    <Button onClick={() => router.push('/admin/cloud-management')}>
+                        {t('admin.feathercloud.common.open_cloud_connections')}
+                    </Button>
                 </PageCard>
             ) : (
                 <>
-                    <PageCard title='What we attach automatically' icon={FileText}>
+                    <PageCard title={t('admin.feathercloud.suggestions.auto_attach_title')} icon={FileText}>
                         <ul className='text-muted-foreground space-y-2 text-sm'>
                             <li className='flex gap-2'>
                                 <CheckCircle2 className='text-primary mt-0.5 h-4 w-4 shrink-0' />
-                                Tagged as <span className='text-foreground font-medium'>[Feature]</span> on{' '}
-                                <span className='text-foreground font-medium'>featherpanel</span>
+                                {t('admin.feathercloud.suggestions.auto_attach_1')}
                             </li>
                             <li className='flex gap-2'>
                                 <CheckCircle2 className='text-primary mt-0.5 h-4 w-4 shrink-0' />
-                                Version, PHP, OS, install type, and counts
+                                {t('admin.feathercloud.suggestions.auto_attach_2')}
                             </li>
                             <li className='flex gap-2'>
                                 <CheckCircle2 className='text-primary mt-0.5 h-4 w-4 shrink-0' />
-                                Installed plugins and PHP extensions
+                                {t('admin.feathercloud.suggestions.auto_attach_3')}
                             </li>
                         </ul>
                     </PageCard>
 
-                    <PageCard title='Your idea' icon={Send}>
+                    <PageCard title={t('admin.feathercloud.suggestions.form_title')} icon={Send}>
                         <div className='space-y-4'>
                             <div>
                                 <label className='text-muted-foreground mb-1 block text-xs font-semibold uppercase'>
-                                    Idea title
+                                    {t('admin.feathercloud.suggestions.idea_title')}
                                 </label>
                                 <Input
                                     value={title}
                                     onChange={(e) => setTitle(e.target.value)}
-                                    placeholder='Short name for the feature'
+                                    placeholder={t('admin.feathercloud.suggestions.idea_title_placeholder')}
                                     disabled={submitting}
                                 />
                             </div>
                             <div>
                                 <label className='text-muted-foreground mb-1 block text-xs font-semibold uppercase'>
-                                    What should it do?
+                                    {t('admin.feathercloud.suggestions.what_should_it_do')}
                                 </label>
                                 <Textarea
                                     value={body}
                                     onChange={(e) => setBody(e.target.value)}
                                     rows={4}
-                                    placeholder='Describe the feature or improvement'
+                                    placeholder={t('admin.feathercloud.suggestions.what_should_it_do_placeholder')}
                                     disabled={submitting}
                                 />
                             </div>
                             <div>
                                 <label className='text-muted-foreground mb-1 block text-xs font-semibold uppercase'>
-                                    Why it helps
+                                    {t('admin.feathercloud.suggestions.why_it_helps')}
                                 </label>
                                 <Textarea
                                     value={why}
                                     onChange={(e) => setWhy(e.target.value)}
                                     rows={3}
-                                    placeholder='Who benefits and what problem does it solve?'
+                                    placeholder={t('admin.feathercloud.suggestions.why_it_helps_placeholder')}
                                     disabled={submitting}
                                 />
                             </div>
@@ -200,7 +203,9 @@ export default function FeatherCloudSuggestionsPage() {
                                 ) : (
                                     <Send className='mr-2 h-4 w-4' />
                                 )}
-                                {submitting ? 'Sending…' : 'Send suggestion'}
+                                {submitting
+                                    ? t('admin.feathercloud.suggestions.sending')
+                                    : t('admin.feathercloud.suggestions.send')}
                             </Button>
                         </div>
                     </PageCard>

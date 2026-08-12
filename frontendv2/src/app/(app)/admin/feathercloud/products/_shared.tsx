@@ -110,12 +110,31 @@ export interface DetailMeta {
 
 export type DetailTab = 'overview' | 'versions' | 'reviews' | 'questions';
 
+export type TranslateFn = (key: string, params?: Record<string, string>) => string;
+
+const MYTHIC_ERROR_KEYS: Record<string, string> = {
+    PANEL_DOWNLOADS_DISABLED: 'admin.marketplace.plugins.errors.panel_downloads_disabled',
+    ACCESS_DENIED: 'admin.marketplace.plugins.errors.access_denied',
+    INVALID_USER_UUID: 'admin.marketplace.plugins.errors.invalid_user_uuid',
+    USER_NOT_TEAM_MEMBER: 'admin.marketplace.plugins.errors.user_not_team_member',
+    MEMBER_UUID_REQUIRED: 'admin.marketplace.plugins.errors.member_uuid_required',
+    NO_RELEASES: 'admin.marketplace.plugins.errors.no_releases',
+    PRODUCT_NOT_FOUND: 'admin.marketplace.plugins.errors.product_not_found',
+    REVIEW_NOT_FOUND: 'admin.marketplace.plugins.errors.review_not_found',
+};
+
 export function mythicCloudErrorFromPayload(
     payload: { error_code?: string; message?: string; error?: string } | null | undefined,
     fallback: string,
+    t?: TranslateFn,
 ): string {
     const code = String(payload?.error_code || '');
     const message = payload?.message || (typeof payload?.error === 'string' ? payload.error : null) || fallback;
+    const key = MYTHIC_ERROR_KEYS[code];
+    if (key && t) {
+        const translated = t(key);
+        if (translated !== key) return translated;
+    }
     switch (code) {
         case 'PANEL_DOWNLOADS_DISABLED':
             return 'Panel downloads are disabled for this product.';
@@ -138,9 +157,9 @@ export function mythicCloudErrorFromPayload(
     }
 }
 
-export function mythicCloudErrorMessage(err: unknown, fallback: string): string {
+export function mythicCloudErrorMessage(err: unknown, fallback: string, t?: TranslateFn): string {
     if (!axios.isAxiosError(err)) return fallback;
-    return mythicCloudErrorFromPayload(err.response?.data, fallback);
+    return mythicCloudErrorFromPayload(err.response?.data, fallback, t);
 }
 
 /** Marketplace slug for store detail URLs and Mythic download/release APIs. */
@@ -300,9 +319,14 @@ export function hasPluginUpdate(
     return comparePluginVersions(local.version, latest) < 0;
 }
 
-export function formatPrice(product?: StoreProduct | null): string {
-    if (!product) return '—';
-    if (product.is_free || Number(product.effective_price ?? product.price ?? 0) <= 0) return 'Free';
+export function isProductFree(product?: StoreProduct | null): boolean {
+    if (!product) return false;
+    return Boolean(product.is_free || Number(product.effective_price ?? product.price ?? 0) <= 0);
+}
+
+export function formatPrice(product?: StoreProduct | null, labels?: { free?: string; empty?: string }): string {
+    if (!product) return labels?.empty ?? '—';
+    if (isProductFree(product)) return labels?.free ?? 'Free';
     return `${product.currency?.symbol || '€'}${String(product.effective_price ?? product.price ?? '0.00')}`;
 }
 
@@ -316,17 +340,17 @@ export function extractStoreItems(data: unknown): StoreItem[] {
     return Array.isArray(d.items) ? (d.items as StoreItem[]) : [];
 }
 
-export async function parseBlobError(err: unknown, fallback: string): Promise<string> {
+export async function parseBlobError(err: unknown, fallback: string, t?: TranslateFn): Promise<string> {
     if (!axios.isAxiosError(err)) return fallback;
     const data = err.response?.data;
     if (data instanceof Blob) {
         try {
-            return mythicCloudErrorFromPayload(JSON.parse(await data.text()), fallback);
+            return mythicCloudErrorFromPayload(JSON.parse(await data.text()), fallback, t);
         } catch {
             return fallback;
         }
     }
-    return mythicCloudErrorMessage(err, fallback);
+    return mythicCloudErrorMessage(err, fallback, t);
 }
 
 export function MarkdownBody({ content, className }: { content: string; className?: string }) {
@@ -352,15 +376,20 @@ export function StarDisplay({
     rating,
     size = 'sm',
     className,
+    ariaLabel,
 }: {
     rating: number;
     size?: 'sm' | 'md';
     className?: string;
+    ariaLabel?: string;
 }) {
     const value = Math.max(0, Math.min(5, Number(rating) || 0));
     const icon = size === 'md' ? 'h-5 w-5' : 'h-3.5 w-3.5';
     return (
-        <span className={cn('inline-flex items-center gap-0.5', className)} aria-label={`${value} out of 5 stars`}>
+        <span
+            className={cn('inline-flex items-center gap-0.5', className)}
+            aria-label={ariaLabel || `${value} out of 5 stars`}
+        >
             {[1, 2, 3, 4, 5].map((n) => (
                 <Star
                     key={n}
@@ -380,16 +409,20 @@ export function StarRatingInput({
     value,
     onChange,
     disabled,
+    groupLabel,
+    starLabel,
 }: {
     value: number;
     onChange: (rating: number) => void;
     disabled?: boolean;
+    groupLabel?: string;
+    starLabel?: (count: number) => string;
 }) {
     const [hover, setHover] = React.useState(0);
     const shown = hover || value;
 
     return (
-        <div className='flex items-center gap-1' role='radiogroup' aria-label='Rating'>
+        <div className='flex items-center gap-1' role='radiogroup' aria-label={groupLabel || 'Rating'}>
             {[1, 2, 3, 4, 5].map((n) => {
                 const active = n <= shown;
                 return (
@@ -398,7 +431,7 @@ export function StarRatingInput({
                         type='button'
                         role='radio'
                         aria-checked={value === n}
-                        aria-label={`${n} star${n === 1 ? '' : 's'}`}
+                        aria-label={starLabel ? starLabel(n) : `${n} star${n === 1 ? '' : 's'}`}
                         disabled={disabled}
                         className={cn(
                             'rounded-md p-0.5 transition-transform hover:scale-110 disabled:opacity-50',
@@ -431,9 +464,15 @@ export async function downloadAndInstall(slug: string, version: string): Promise
     const contentType = String(response.headers['content-type'] || '');
     if (contentType.includes('application/json')) {
         const text = await (response.data as Blob).text();
+        let payload: unknown = null;
+        try {
+            payload = JSON.parse(text);
+        } catch {
+            payload = null;
+        }
         throw Object.assign(new Error('Download failed'), {
             isAxiosError: true,
-            response: { data: JSON.parse(text) },
+            response: { data: payload },
         });
     }
     const blob = new Blob([response.data], { type: 'application/octet-stream' });

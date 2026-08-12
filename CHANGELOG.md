@@ -1,5 +1,29 @@
 # Changelog
 
+## v1.3.7.9 STABLE
+
+### Fixed
+
+- File manager uploads no longer proxy the entire file through PHP. The panel issues a signed Wings upload URL and the browser uploads multipart directly to the node (same pattern as downloads), fixing small-file failures caused by panel/proxy timeouts, body size limits, and the default 30s Wings Guzzle timeout. Upload errors from Wings are now shown in the queue instead of a generic save failure. Multi-file and folder uploads correctly chain after each file (previously the queue lock could stop after the first file). Direct Wings uploads use a bare axios client so panel `X-FP-UI-*` headers are not sent (those headers broke CORS preflight). by @nayskutzu
+- Frontend Docker/dev builds no longer fail on Google Fonts 404s or CSS `url()` font resolution. Inter and Nunito are loaded via `next/font/local` from `src/fonts/`. by @nayskutzu
+- Missing translations were added. by @nayskutzu
+- Editing a file and clicking Cancel/back now returns to the folder you were in instead of the server root. by @nayskutzu
+- File manager and backup downloads no longer use `window.open` after an async signed-URL request (popup blockers silently blocked downloads); they use a hidden iframe so Wings `Content-Disposition: attachment` downloads start reliably. by @nayskutzu
+- File download signed JWTs now include `user_uuid`, matching Wings revocation checks. Missing that claim made Wings return 404 on `/download/file` so clicks appeared to do nothing. by @nayskutzu
+- Deleting a firewall rule no longer shows a false error when the rule was actually removed (delete now returns 200 with a JSON body instead of 204). by @nayskutzu
+- Ticket priorities now sort by severity level (Low → Medium → High) instead of alphabetically (High → Low → Medium). Admins can also reorder priorities. (FeatherPanel#125) by @nayskutzu
+- Installing phpMyAdmin no longer fails with `Failed to delete directory: .../public/pma` when that path is a Docker volume mount — the installer clears and writes into the mount instead of trying to remove it. by @nayskutzu
+- Marketplace/plugin updates no longer wipe addon `Storage/` uploads (e.g. Digital File Store product images and downloadable files). Existing Storage is backed up and restored during plugin reinstall. by @nayskutzu
+
+### Added
+
+- Disk IO for the server page was added. by @nayskutzu
+
+### Improved
+
+- Digital File Store (BillingFilesStore): durable media path under `storage/data/`, public portal nav page, marketplace-style storefront, admin product search, and per-file remove. by @nayskutzu
+- Imrpoved the design of the console server page. by @nayskutzu
+
 ## v1.3.7.8 STABLE
 
 ### Fixed

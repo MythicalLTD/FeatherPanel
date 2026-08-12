@@ -317,10 +317,16 @@ export default function ServerFilesIDEPage({
         setOriginalContent('');
     };
 
+    const filesListHref = useMemo(() => {
+        const dir = normalizeDirectory(currentFileDirectory || currentDirectory || '/');
+        if (!dir || dir === '/') return `/server/${uuidShort}/files`;
+        return `/server/${uuidShort}/files?path=${encodeURIComponent(dir)}`;
+    }, [uuidShort, currentFileDirectory, currentDirectory]);
+
     const handleBackToFiles = () => {
         if (!confirmNavigationIfDirty()) return;
         setContextMenu(null);
-        router.push(`/server/${uuidShort}/files`);
+        router.push(filesListHref);
     };
 
     const handleCloseWindow = () => {
@@ -328,7 +334,7 @@ export default function ServerFilesIDEPage({
         // Try to close the tab (works if opened via window.open)
         window.close();
         // Fallback to navigating back to regular file manager
-        router.push(`/server/${uuidShort}/files`);
+        router.push(filesListHref);
     };
 
     if (!canRead) {

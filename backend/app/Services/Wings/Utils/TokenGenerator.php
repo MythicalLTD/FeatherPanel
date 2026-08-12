@@ -101,7 +101,10 @@ class TokenGenerator
     /**
      * Generate a backup download token.
      *
+     * Wings denylists download tokens that omit user_uuid (fail-closed revocation checks).
+     *
      * @param string $serverUuid The server UUID
+     * @param string $userUuid The user UUID
      * @param string $backupUuid The backup UUID
      * @param string $uniqueId Unique request ID
      *
@@ -109,18 +112,24 @@ class TokenGenerator
      *
      * @return string The JWT token
      */
-    public function generateBackupDownloadToken(string $serverUuid, string $backupUuid, string $uniqueId = ''): string
-    {
-        $uniqueId = $uniqueId ?: $this->generateUniqueId();
+    public function generateBackupDownloadToken(
+        string $serverUuid,
+        string $userUuid,
+        string $backupUuid,
+        string $uniqueId = '',
+    ): string {
+        $jti = $this->generateJti();
+        $uniqueId = $uniqueId ?: $jti;
 
         $payload = [
             'scope' => $this->formatScope(NodeJwtScope::BackupDownload),
             'server_uuid' => $serverUuid,
+            'user_uuid' => $userUuid,
             'backup_uuid' => $backupUuid,
             'unique_id' => $uniqueId,
             'iat' => time(),
             'exp' => time() + $this->expiration,
-            'jti' => $this->generateJti(),
+            'jti' => $jti,
         ];
 
         return $this->encodeToken($payload);
@@ -129,7 +138,11 @@ class TokenGenerator
     /**
      * Generate a file download token.
      *
+     * Wings denylists download tokens that omit user_uuid (fail-closed revocation checks),
+     * which surfaces as HTTP 404 on /download/file.
+     *
      * @param string $serverUuid The server UUID
+     * @param string $userUuid The user UUID
      * @param string $filePath The file path
      * @param string $uniqueId Unique request ID
      *
@@ -137,18 +150,24 @@ class TokenGenerator
      *
      * @return string The JWT token
      */
-    public function generateFileDownloadToken(string $serverUuid, string $filePath, string $uniqueId = ''): string
-    {
-        $uniqueId = $uniqueId ?: $this->generateUniqueId();
+    public function generateFileDownloadToken(
+        string $serverUuid,
+        string $userUuid,
+        string $filePath,
+        string $uniqueId = '',
+    ): string {
+        $jti = $this->generateJti();
+        $uniqueId = $uniqueId ?: $jti;
 
         $payload = [
             'scope' => $this->formatScope(NodeJwtScope::FileDownload),
             'file_path' => $filePath,
             'server_uuid' => $serverUuid,
+            'user_uuid' => $userUuid,
             'unique_id' => $uniqueId,
             'iat' => time(),
             'exp' => time() + $this->expiration,
-            'jti' => $this->generateJti(),
+            'jti' => $jti,
         ];
 
         return $this->encodeToken($payload);
@@ -391,6 +410,7 @@ class TokenGenerator
      *
      * @param string $baseUrl The Wings base URL
      * @param string $serverUuid The server UUID
+     * @param string $userUuid The user UUID
      * @param string $backupUuid The backup UUID
      * @param string $uniqueId Unique request ID
      *
@@ -398,9 +418,14 @@ class TokenGenerator
      *
      * @return string The signed URL
      */
-    public function generateBackupDownloadUrl(string $baseUrl, string $serverUuid, string $backupUuid, string $uniqueId = ''): string
-    {
-        $token = $this->generateBackupDownloadToken($serverUuid, $backupUuid, $uniqueId);
+    public function generateBackupDownloadUrl(
+        string $baseUrl,
+        string $serverUuid,
+        string $userUuid,
+        string $backupUuid,
+        string $uniqueId = '',
+    ): string {
+        $token = $this->generateBackupDownloadToken($serverUuid, $userUuid, $backupUuid, $uniqueId);
         $baseUrl = rtrim($baseUrl, '/');
 
         return "{$baseUrl}/download/backup?token={$token}&server={$serverUuid}&backup={$backupUuid}";
@@ -411,6 +436,7 @@ class TokenGenerator
      *
      * @param string $baseUrl The Wings base URL
      * @param string $serverUuid The server UUID
+     * @param string $userUuid The user UUID
      * @param string $filePath The file path
      * @param string $uniqueId Unique request ID
      *
@@ -418,9 +444,14 @@ class TokenGenerator
      *
      * @return string The signed URL
      */
-    public function generateFileDownloadUrl(string $baseUrl, string $serverUuid, string $filePath, string $uniqueId = ''): string
-    {
-        $token = $this->generateFileDownloadToken($serverUuid, $filePath, $uniqueId);
+    public function generateFileDownloadUrl(
+        string $baseUrl,
+        string $serverUuid,
+        string $userUuid,
+        string $filePath,
+        string $uniqueId = '',
+    ): string {
+        $token = $this->generateFileDownloadToken($serverUuid, $userUuid, $filePath, $uniqueId);
         $baseUrl = rtrim($baseUrl, '/');
         $encodedFilePath = urlencode($filePath);
 

@@ -723,8 +723,13 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
         }, [showSettings, showQuickRules, showHistory, fitTerminal]);
 
         return (
-            <Card className='border-border/50 bg-card/50 w-full min-w-0 overflow-hidden shadow-sm backdrop-blur-xl'>
-                <CardHeader className='border-border/50 space-y-3 border-b p-3 sm:p-4'>
+            <Card
+                className={cn(
+                    'border-border/50 bg-card/50 w-full min-w-0 overflow-hidden shadow-sm backdrop-blur-xl',
+                    'flex h-full min-h-[22rem] flex-col sm:min-h-[26rem]',
+                )}
+            >
+                <CardHeader className='border-border/50 shrink-0 space-y-3 border-b p-3 sm:p-4'>
                     <div className='flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between'>
                         <div className='min-w-0'>
                             <h3 className='text-muted-foreground flex items-center gap-2 text-sm font-medium'>
@@ -920,14 +925,14 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                         />
                     </div>
                 )}
-                <CardContent className='relative z-0 p-0'>
-                    <div className='relative isolate'>
+                <CardContent className='relative z-0 flex min-h-0 flex-1 flex-col p-0'>
+                    <div className='relative isolate flex min-h-0 flex-1 flex-col'>
                         <div
                             ref={terminalRef}
                             className={
                                 fullHeight
                                     ? 'bg-secondary h-[calc(100dvh-132px)] w-full min-w-0 overflow-hidden'
-                                    : 'bg-secondary h-[min(22rem,calc(100dvh-12rem))] w-full min-w-0 overflow-hidden sm:h-[min(40rem,58vh)] 2xl:h-[min(48rem,64vh)]'
+                                    : 'bg-secondary min-h-[16rem] w-full min-w-0 flex-1 overflow-hidden sm:min-h-[20rem]'
                             }
                         />
                         {showScrollButton && (
@@ -945,7 +950,7 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                     </div>
                 </CardContent>
                 {onSendCommand && (
-                    <CardFooter className='border-border/50 bg-card flex w-full min-w-0 flex-col items-stretch gap-1.5 border-t px-3 py-2 sm:px-4 sm:py-2.5'>
+                    <CardFooter className='border-border/50 bg-card flex w-full min-w-0 shrink-0 flex-col items-stretch gap-1.5 border-t px-3 py-2 sm:px-4 sm:py-2.5'>
                         <div className='flex w-full min-w-0 items-center gap-2'>
                             <Input
                                 value={commandInput}

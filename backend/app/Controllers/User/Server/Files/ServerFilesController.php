@@ -2349,8 +2349,9 @@ class ServerFilesController
             }
 
             // Get the file content from the request body
+            // Use strict empty-string check: empty() is wrong for binary payloads like "0".
             $fileContent = $request->getContent();
-            if (empty($fileContent)) {
+            if ($fileContent === '' || $fileContent === false) {
                 return ApiResponse::error('Request body is empty', 'EMPTY_CONTENT', 400);
             }
 
@@ -2360,7 +2361,8 @@ class ServerFilesController
             // Combine path and filename
             $fullPath = rtrim($path, '/') . '/' . $filename;
 
-            $wings = $this->createWingsConnection($node);
+            // Proxied uploads can be large; use a longer Wings timeout than the default 30s.
+            $wings = $this->createWingsConnection($node, 300);
             $response = $wings->getServer()->writeFile($server['uuid'], $fullPath, $fileContent);
 
             if (!$response->isSuccessful()) {
@@ -2394,6 +2396,74 @@ class ServerFilesController
             return ApiResponse::success($response->getData(), 'File uploaded successfully');
         } catch (\Exception $e) {
             return $this->handleWingsError($e, 'upload file');
+        }
+    }
+
+    #[OA\Get(
+        path: '/api/user/servers/{uuidShort}/upload-file',
+        summary: 'Get file upload URL',
+        description: 'Generate a secure one-time Wings upload URL with JWT token authentication. The browser uploads directly to Wings (multipart), avoiding PHP body/memory limits and panel proxy timeouts.',
+        tags: ['User - Server Files'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Upload URL generated successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'upload_url', type: 'string', description: 'Signed Wings file upload URL'),
+                        new OA\Property(property: 'expires_in', type: 'integer', description: 'Token lifetime in seconds', example: 900),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing UUID'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server or node not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to generate upload URL'),
+        ]
+    )]
+    public function getUploadUrl(Request $request, string $serverUuid): Response
+    {
+        try {
+            $user = $this->validateUser($request);
+            $server = $this->validateServer($serverUuid);
+            $node = $this->validateNode($server['node_id']);
+
+            // Check file.create permission (uploading creates files)
+            $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::FILE_CREATE);
+            if ($permissionCheck !== null) {
+                return $permissionCheck;
+            }
+
+            $token = $node['daemon_token'];
+            $wingsBaseUrl = WingsUrlHelper::buildFromNode($node);
+            $expiresIn = 900;
+
+            $jwtService = new JwtService(
+                $token,
+                AppUrlHelper::wingsRemoteUrl(),
+                $wingsBaseUrl,
+                $expiresIn
+            );
+
+            $jwtToken = $jwtService->generateFileUploadToken($server['uuid'], $user['uuid']);
+            $uploadUrl = rtrim($wingsBaseUrl, '/') . '/upload/file?token=' . $jwtToken;
+
+            return ApiResponse::success([
+                'upload_url' => $uploadUrl,
+                'expires_in' => $expiresIn,
+            ]);
+        } catch (\Exception $e) {
+            return $this->handleWingsError($e, 'get upload url');
         }
     }
 
@@ -2466,7 +2536,7 @@ class ServerFilesController
                 $wingsBaseUrl
             );
 
-            $jwtToken = $jwtService->generateFileDownloadToken($server['uuid'], $path);
+            $jwtToken = $jwtService->generateFileDownloadToken($server['uuid'], $user['uuid'], $path);
             $baseUrl = rtrim($wingsBaseUrl, '/');
             $encodedFilePath = urlencode($path);
             $downloadUrl = "{$baseUrl}/download/file?token={$jwtToken}&server={$server['uuid']}&file={$encodedFilePath}";

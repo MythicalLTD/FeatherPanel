@@ -33,6 +33,10 @@ interface WingsStats {
         rx_bytes: number;
         tx_bytes: number;
     };
+    disk_io?: {
+        read_bytes: number;
+        write_bytes: number;
+    };
     state?: string;
 }
 
