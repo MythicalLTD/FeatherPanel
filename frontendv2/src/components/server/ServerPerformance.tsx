@@ -16,7 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import React, { useMemo, useRef } from 'react';
-import { LineChart, Line, ResponsiveContainer, YAxis, Tooltip } from 'recharts';
+import { LineChart, Line, ResponsiveContainer, YAxis, Tooltip, type TooltipContentProps } from 'recharts';
 import { Cpu, Database, HardDrive, Globe, Activity, type LucideIcon } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
 
@@ -126,13 +126,7 @@ const PerformanceChartCard = React.memo(function PerformanceChartCard({
     emptyLabel,
 }: PerformanceChartCardProps) {
     const tooltipContent = useMemo(() => {
-        return function ChartTooltip({
-            active,
-            payload,
-        }: {
-            active?: boolean;
-            payload?: Array<{ value?: number | string }>;
-        }) {
+        return function ChartTooltip({ active, payload }: TooltipContentProps) {
             if (!active || !payload?.length) return null;
             const value = Number(payload[0]?.value ?? 0);
             return (

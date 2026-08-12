@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- File manager uploads no longer proxy the entire file through PHP. The panel issues a signed Wings upload URL and the browser uploads multipart directly to the node (same pattern as downloads), fixing small-file failures caused by panel/proxy timeouts, body size limits, and the default 30s Wings Guzzle timeout. Upload errors from Wings are now shown in the queue instead of a generic save failure. Multi-file and folder uploads correctly chain after each file (previously the queue lock could stop after the first file). Direct Wings uploads use a bare axios client so panel `X-FP-UI-*` headers are not sent (those headers broke CORS preflight). by @nayskutzu
 - Frontend Docker/dev builds no longer fail on Google Fonts 404s or CSS `url()` font resolution. Inter and Nunito are loaded via `next/font/local` from `src/fonts/`. by @nayskutzu
 - Missing translations were added. by @nayskutzu
 - Editing a file and clicking Cancel/back now returns to the folder you were in instead of the server root. by @nayskutzu

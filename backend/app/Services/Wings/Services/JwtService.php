@@ -201,6 +201,22 @@ class JwtService
     }
 
     /**
+     * Generate a one-time JWT token for direct Wings file uploads.
+     *
+     * @param string $serverUuid The server UUID
+     * @param string $userUuid The user UUID (required by Wings revocation checks)
+     * @param string $uniqueId Unique request ID (one-time use on Wings)
+     *
+     * @throws \Exception
+     *
+     * @return string The JWT token
+     */
+    public function generateFileUploadToken(string $serverUuid, string $userUuid, string $uniqueId = ''): string
+    {
+        return $this->tokenGenerator->generateFileUploadToken($serverUuid, $userUuid, $uniqueId);
+    }
+
+    /**
      * Generate a JWT token for file operations.
      *
      * @param string $serverUuid The server UUID

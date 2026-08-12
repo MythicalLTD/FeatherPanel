@@ -13,9 +13,15 @@ by the Free Software Foundation, either version 3 of the License, or
 See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
-import api from './api';
+import api, { getFeatherpanelApiErrorMessage } from './api';
+import axios from 'axios';
 import { filterFeatherTrashFiles } from '@/lib/feather-trash';
 import { FileObject, FilesResponse } from '@/types/server';
+
+/** Bare client for signed Wings URLs — no panel cookies / X-FP-UI-* headers (CORS). */
+const wingsUploadClient = axios.create({
+    withCredentials: false,
+});
 
 interface ApiResponse<T> {
     success: boolean;
@@ -485,24 +491,57 @@ export const filesApi = {
         file: File,
         onProgress?: (percent: number) => void,
     ): Promise<void> => {
-        await api.post(`/user/servers/${uuid}/upload-file`, file, {
-            params: {
-                path: root,
-                filename: file.name,
-            },
-            headers: {
-                'Content-Type': 'application/octet-stream',
-            },
-            onUploadProgress:
-                onProgress &&
-                ((e) => {
-                    const percent = e.total ? Math.round((e.loaded / e.total) * 100) : 0;
-                    onProgress(Math.min(percent, 100));
-                }),
-        });
+        // Same pattern as downloads: signed Wings URL, then upload direct to the node.
+        // Avoids buffering the whole file through PHP (memory, post_max_size, 30s Guzzle timeout).
+        const signed = await api.get<ApiResponse<{ upload_url: string; expires_in: number }>>(
+            `/user/servers/${uuid}/upload-file`,
+        );
+        const uploadUrl = signed.data.data?.upload_url;
+        if (!uploadUrl) {
+            throw new Error('Failed to get upload URL');
+        }
+
+        const formData = new FormData();
+        formData.append('files', file);
+
+        try {
+            await wingsUploadClient.post(uploadUrl, formData, {
+                params: {
+                    directory: root || '/',
+                },
+                onUploadProgress:
+                    onProgress &&
+                    ((e) => {
+                        const percent = e.total ? Math.round((e.loaded / e.total) * 100) : 0;
+                        onProgress(Math.min(percent, 100));
+                    }),
+            });
+        } catch (error) {
+            if (axios.isAxiosError(error)) {
+                const wingsError =
+                    typeof error.response?.data?.error === 'string' ? error.response.data.error.trim() : '';
+                const panelMessage = getFeatherpanelApiErrorMessage(error);
+                let message = wingsError || panelMessage;
+                if (!message && !error.response) {
+                    message =
+                        'Could not reach the node to upload. Check that the node FQDN is publicly reachable from your browser and that Wings CORS allows this panel URL.';
+                }
+                if (message) {
+                    const wrapped = new Error(message) as Error & {
+                        response?: { data?: { message?: string } };
+                    };
+                    wrapped.response = { data: { message } };
+                    throw wrapped;
+                }
+            }
+            throw error;
+        }
     },
 
     getUploadUrl: async (uuid: string): Promise<string> => {
-        return `/api/user/servers/${uuid}/upload-file`;
+        const res = await api.get<ApiResponse<{ upload_url: string; expires_in: number }>>(
+            `/user/servers/${uuid}/upload-file`,
+        );
+        return res.data.data.upload_url;
     },
 };

@@ -420,6 +420,21 @@ return function (RouteCollection $routes): void {
 
     App::getInstance(true)->registerServerRoute(
         $routes,
+        'session-server-upload-file-url',
+        '/api/user/servers/{uuidShort}/upload-file',
+        function (Request $request, array $args) {
+            $uuidShort = $args['uuidShort'] ?? null;
+
+            return (new ServerFilesController())->getUploadUrl($request, $uuidShort);
+        },
+        'uuidShort', // Pass the server UUID for middleware
+        ['GET'],
+        Rate::perMinute(300), // One signed URL per file; folders need headroom
+        'user-server-files'
+    );
+
+    App::getInstance(true)->registerServerRoute(
+        $routes,
         'session-server-upload-file',
         '/api/user/servers/{uuidShort}/upload-file',
         function (Request $request, array $args) {
@@ -429,7 +444,7 @@ return function (RouteCollection $routes): void {
         },
         'uuidShort', // Pass the server UUID for middleware
         ['POST'],
-        Rate::perMinute(10), // Default: Admin can override in ratelimit.json
+        Rate::perMinute(30), // Legacy proxied upload (prefer GET signed URL)
         'user-server-files'
     );
 
