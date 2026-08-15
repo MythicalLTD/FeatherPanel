@@ -987,6 +987,8 @@
 				"resources_title": "Resources",
 				"network_rx": "Inbound",
 				"network_tx": "Outbound",
+				"all_time": "All-time",
+				"all_time_label": "All-time: {total}",
 				"disk_io_title": "Disk I/O",
 				"disk_io_read": "Read",
 				"disk_io_write": "Write"

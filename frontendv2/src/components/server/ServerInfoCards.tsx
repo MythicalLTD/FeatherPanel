@@ -16,12 +16,63 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import React from 'react';
-import { Wifi, Cpu, Clock, Activity, HardDrive, Database, ArrowDown, ArrowUp } from 'lucide-react';
+import { Wifi, Cpu, Clock, Activity, HardDrive, Database, ArrowDown, ArrowUp, type LucideIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { formatMib, formatCpu as formatCpuGlobal, cn, formatFileSize } from '@/lib/utils';
 import { getUsagePercentage, getProgressColor } from '@/lib/server-utils';
 import { Progress } from '@/components/ui/progress';
+
+interface ThroughputRowProps {
+    icon: LucideIcon;
+    label: string;
+    value: string;
+}
+
+function ThroughputRow({ icon: Icon, label, value }: ThroughputRowProps) {
+    return (
+        <div className='flex items-center justify-between gap-2 text-sm'>
+            <span className='text-muted-foreground flex min-w-0 items-center gap-2'>
+                <Icon className='h-3 w-3 shrink-0' />
+                <span className='truncate'>{label}</span>
+            </span>
+            <span className='shrink-0 font-medium tabular-nums'>{value}</span>
+        </div>
+    );
+}
+
+interface AllTimeFooterProps {
+    downLabel: string;
+    upLabel: string;
+    downBytes: number;
+    upBytes: number;
+    allTimeLabel: string;
+}
+
+function AllTimeFooter({ downLabel, upLabel, downBytes, upBytes, allTimeLabel }: AllTimeFooterProps) {
+    const total = downBytes + upBytes;
+
+    return (
+        <div className='border-border/50 space-y-2 border-t pt-3'>
+            <div className='flex items-center justify-between gap-2'>
+                <span className='text-muted-foreground text-[10px] font-medium tracking-wide uppercase'>
+                    {allTimeLabel}
+                </span>
+                <span className='text-foreground text-xs font-semibold tabular-nums'>{formatFileSize(total)}</span>
+            </div>
+            <div className='text-muted-foreground grid grid-cols-2 gap-2 text-[11px]'>
+                <span className='flex min-w-0 items-center gap-1' title={downLabel}>
+                    <ArrowDown className='h-3 w-3 shrink-0' />
+                    <span className='truncate tabular-nums'>{formatFileSize(downBytes)}</span>
+                </span>
+                <span className='flex min-w-0 items-center justify-end gap-1' title={upLabel}>
+                    <ArrowUp className='h-3 w-3 shrink-0' />
+                    <span className='truncate tabular-nums'>{formatFileSize(upBytes)}</span>
+                </span>
+            </div>
+        </div>
+    );
+}
 
 interface ServerInfoCardsProps {
     serverIp: string;
@@ -37,8 +88,12 @@ interface ServerInfoCardsProps {
     diskUsage?: number;
     networkRx?: number;
     networkTx?: number;
+    networkRxTotal?: number;
+    networkTxTotal?: number;
     diskIoRead?: number;
     diskIoWrite?: number;
+    diskIoReadTotal?: number;
+    diskIoWriteTotal?: number;
     className?: string;
 }
 
@@ -55,8 +110,12 @@ export default React.memo(function ServerInfoCards({
     diskUsage = 0,
     networkRx = 0,
     networkTx = 0,
+    networkRxTotal = 0,
+    networkTxTotal = 0,
     diskIoRead = 0,
     diskIoWrite = 0,
+    diskIoReadTotal = 0,
+    diskIoWriteTotal = 0,
     className,
 }: ServerInfoCardsProps) {
     const { t } = useTranslation();
@@ -251,25 +310,23 @@ export default React.memo(function ServerInfoCards({
                 </h3>
 
                 <div className='space-y-3'>
-                    <div>
-                        <div className='mb-1.5 flex justify-between align-middle text-sm'>
-                            <span className='text-muted-foreground flex items-center gap-2'>
-                                <ArrowDown className='h-3 w-3' />
-                                {t('servers.console.info_cards.network_rx')}
-                            </span>
-                            <span className='font-medium tabular-nums'>{formatFileSize(networkRx)}/s</span>
-                        </div>
-                    </div>
-
-                    <div>
-                        <div className='mb-1.5 flex justify-between align-middle text-sm'>
-                            <span className='text-muted-foreground flex items-center gap-2'>
-                                <ArrowUp className='h-3 w-3' />
-                                {t('servers.console.info_cards.network_tx')}
-                            </span>
-                            <span className='font-medium tabular-nums'>{formatFileSize(networkTx)}/s</span>
-                        </div>
-                    </div>
+                    <ThroughputRow
+                        icon={ArrowDown}
+                        label={t('servers.console.info_cards.network_rx')}
+                        value={`${formatFileSize(networkRx)}/s`}
+                    />
+                    <ThroughputRow
+                        icon={ArrowUp}
+                        label={t('servers.console.info_cards.network_tx')}
+                        value={`${formatFileSize(networkTx)}/s`}
+                    />
+                    <AllTimeFooter
+                        allTimeLabel={t('servers.console.info_cards.all_time')}
+                        downLabel={t('servers.console.info_cards.network_rx')}
+                        upLabel={t('servers.console.info_cards.network_tx')}
+                        downBytes={networkRxTotal}
+                        upBytes={networkTxTotal}
+                    />
                 </div>
             </div>
 
@@ -280,25 +337,23 @@ export default React.memo(function ServerInfoCards({
                 </h3>
 
                 <div className='space-y-3'>
-                    <div>
-                        <div className='mb-1.5 flex justify-between align-middle text-sm'>
-                            <span className='text-muted-foreground flex items-center gap-2'>
-                                <ArrowDown className='h-3 w-3' />
-                                {t('servers.console.info_cards.disk_io_read')}
-                            </span>
-                            <span className='font-medium tabular-nums'>{formatFileSize(diskIoRead)}/s</span>
-                        </div>
-                    </div>
-
-                    <div>
-                        <div className='mb-1.5 flex justify-between align-middle text-sm'>
-                            <span className='text-muted-foreground flex items-center gap-2'>
-                                <ArrowUp className='h-3 w-3' />
-                                {t('servers.console.info_cards.disk_io_write')}
-                            </span>
-                            <span className='font-medium tabular-nums'>{formatFileSize(diskIoWrite)}/s</span>
-                        </div>
-                    </div>
+                    <ThroughputRow
+                        icon={ArrowDown}
+                        label={t('servers.console.info_cards.disk_io_read')}
+                        value={`${formatFileSize(diskIoRead)}/s`}
+                    />
+                    <ThroughputRow
+                        icon={ArrowUp}
+                        label={t('servers.console.info_cards.disk_io_write')}
+                        value={`${formatFileSize(diskIoWrite)}/s`}
+                    />
+                    <AllTimeFooter
+                        allTimeLabel={t('servers.console.info_cards.all_time')}
+                        downLabel={t('servers.console.info_cards.disk_io_read')}
+                        upLabel={t('servers.console.info_cards.disk_io_write')}
+                        downBytes={diskIoReadTotal}
+                        upBytes={diskIoWriteTotal}
+                    />
                 </div>
             </div>
         </div>

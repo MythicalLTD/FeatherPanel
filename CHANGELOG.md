@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.3.7.10 STABLE
+
+### Added
+- Server console Network and Disk I/O cards show all-time totals (in/out and read/write since container start), with a clearer breakdown under the live rates. by @nayskutzu
+
+### Fixed
+- Server console on phones no longer scrolls the page instead of the terminal buffer; touch pans stay in the console, and auto-scroll pauses while reading older output so the scrollbar does not jump. by @nayskutzu
+- Subuser management endpoints now enforce `user.read` / `user.create` / `user.update` / `user.delete`, reject self-modification, validate permission names against the known set, and block assigning permissions the actor does not hold — closing privilege escalation where any invited subuser could rewrite their own permission list. by @nayskutzu
+
+
 ## v1.3.7.9 STABLE
 
 ### Fixed

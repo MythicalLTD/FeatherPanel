@@ -134,8 +134,12 @@ export default function ServerConsolePage() {
     const [currentDisk, setCurrentDisk] = useState(0);
     const [currentNetworkRx, setCurrentNetworkRx] = useState(0);
     const [currentNetworkTx, setCurrentNetworkTx] = useState(0);
+    const [networkRxTotal, setNetworkRxTotal] = useState(0);
+    const [networkTxTotal, setNetworkTxTotal] = useState(0);
     const [currentDiskIoRead, setCurrentDiskIoRead] = useState(0);
     const [currentDiskIoWrite, setCurrentDiskIoWrite] = useState(0);
+    const [diskIoReadTotal, setDiskIoReadTotal] = useState(0);
+    const [diskIoWriteTotal, setDiskIoWriteTotal] = useState(0);
 
     const [consoleFilters, setConsoleFilters] = useState<ConsoleFilterRule[]>([]);
     const hasLoadedFilters = useRef(false);
@@ -324,6 +328,9 @@ export default function ServerConsolePage() {
             const currentTxBytes = Number(stats.network.tx_bytes);
             const now = new Date().getTime();
 
+            setNetworkRxTotal(Math.max(0, currentRxBytes));
+            setNetworkTxTotal(Math.max(0, currentTxBytes));
+
             if (prevNetworkRef.current.timestamp > 0) {
                 const timeDiff = (now - prevNetworkRef.current.timestamp) / 1000;
                 if (timeDiff > 0) {
@@ -357,6 +364,9 @@ export default function ServerConsolePage() {
             const currentReadBytes = Number(stats.disk_io.read_bytes);
             const currentWriteBytes = Number(stats.disk_io.write_bytes);
             const now = new Date().getTime();
+
+            setDiskIoReadTotal(Math.max(0, currentReadBytes));
+            setDiskIoWriteTotal(Math.max(0, currentWriteBytes));
 
             if (prevDiskIoRef.current.timestamp > 0) {
                 const timeDiff = (now - prevDiskIoRef.current.timestamp) / 1000;
@@ -753,8 +763,12 @@ export default function ServerConsolePage() {
                             diskUsage={currentDisk}
                             networkRx={currentNetworkRx}
                             networkTx={currentNetworkTx}
+                            networkRxTotal={networkRxTotal}
+                            networkTxTotal={networkTxTotal}
                             diskIoRead={currentDiskIoRead}
                             diskIoWrite={currentDiskIoWrite}
+                            diskIoReadTotal={diskIoReadTotal}
+                            diskIoWriteTotal={diskIoWriteTotal}
                             className='xl:grid-cols-1'
                         />
                     )}
@@ -772,6 +786,10 @@ export default function ServerConsolePage() {
                     diskData={diskData}
                     networkData={networkData}
                     diskIoData={diskIoData}
+                    networkRxTotal={networkRxTotal}
+                    networkTxTotal={networkTxTotal}
+                    diskIoReadTotal={diskIoReadTotal}
+                    diskIoWriteTotal={diskIoWriteTotal}
                     cpuLimit={server.cpu || 0}
                     memoryLimit={server.memory || 0}
                     diskLimit={server.disk || 0}

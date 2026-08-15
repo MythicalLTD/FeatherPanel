@@ -386,6 +386,8 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
         const terminalInstanceRef = useRef<Terminal | null>(null);
         const fitAddonRef = useRef<FitAddon | null>(null);
         const showScrollButtonRef = useRef(false);
+        const autoScrollRef = useRef(true);
+        const followOutputRef = useRef(true);
         const { t } = useTranslation();
         const [commandInput, setCommandInput] = useState('');
         const [showScrollButton, setShowScrollButton] = useState(false);
@@ -398,6 +400,8 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
         const [showSettings, setShowSettings] = useState(false);
         const [showQuickRules, setShowQuickRules] = useState(false);
         const [showHistory, setShowHistory] = useState(false);
+
+        autoScrollRef.current = autoScroll;
 
         const hslFromVar = useCallback((name: string, fallback: string) => {
             if (typeof window === 'undefined') return fallback;
@@ -467,6 +471,10 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
 
         useEffect(() => {
             localStorage.setItem('featherpanel_terminal_autoscroll', String(autoScroll));
+            if (autoScroll) {
+                followOutputRef.current = true;
+                terminalInstanceRef.current?.scrollToBottom();
+            }
         }, [autoScroll]);
 
         const saveToHistory = (cmd: string) => {
@@ -475,23 +483,25 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
             localStorage.setItem('featherpanel_terminal_history', JSON.stringify(newHistory));
         };
 
+        const maybeFollowOutput = useCallback(() => {
+            if (autoScrollRef.current && followOutputRef.current && terminalInstanceRef.current) {
+                terminalInstanceRef.current.scrollToBottom();
+            }
+        }, []);
+
         React.useImperativeHandle(
             ref,
             () => ({
                 write: (data: string) => {
                     if (terminalInstanceRef.current) {
                         terminalInstanceRef.current.write(data);
-                        if (autoScroll) {
-                            terminalInstanceRef.current.scrollToBottom();
-                        }
+                        maybeFollowOutput();
                     }
                 },
                 writeln: (data: string) => {
                     if (terminalInstanceRef.current) {
                         terminalInstanceRef.current.writeln(data);
-                        if (autoScroll) {
-                            terminalInstanceRef.current.scrollToBottom();
-                        }
+                        maybeFollowOutput();
                     }
                 },
                 clear: () => {
@@ -500,7 +510,7 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                     }
                 },
             }),
-            [autoScroll],
+            [maybeFollowOutput],
         );
 
         useEffect(() => {
@@ -521,6 +531,8 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                     selectionBackground: 'rgba(167, 139, 250, 0.2)',
                 },
                 scrollback: 10000,
+                // Avoid smooth scrollbar animation fighting touch pans / live output.
+                smoothScrollDuration: 0,
                 allowProposedApi: true,
                 allowTransparency: false,
                 disableStdin: true,
@@ -571,12 +583,54 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
 
             terminal.onScroll(() => {
                 const isAtBottom = terminal.buffer.active.viewportY === terminal.buffer.active.baseY;
+                // Pause following live output while reading history; resume at bottom if auto-scroll is on.
+                followOutputRef.current = isAtBottom && autoScrollRef.current;
                 const next = !isAtBottom;
                 if (showScrollButtonRef.current !== next) {
                     showScrollButtonRef.current = next;
                     setShowScrollButton(next);
                 }
             });
+
+            // xterm v6 only wires mouse-wheel scrolling; map touch pans so mobile can scroll
+            // the buffer without dragging the page behind the console.
+            const host = terminalRef.current;
+            let touchLastY = 0;
+            let touchActive = false;
+
+            const onTouchStart = (e: TouchEvent) => {
+                if (e.touches.length !== 1) {
+                    touchActive = false;
+                    return;
+                }
+                touchLastY = e.touches[0].clientY;
+                touchActive = true;
+            };
+
+            const onTouchMove = (e: TouchEvent) => {
+                if (!touchActive || e.touches.length !== 1) return;
+                const y = e.touches[0].clientY;
+                const dy = y - touchLastY;
+                if (dy === 0) return;
+                touchLastY = y;
+
+                // Keep the page from scrolling while the finger is over the terminal.
+                e.preventDefault();
+
+                const rows = Math.max(terminal.rows, 1);
+                const cellHeight = host.clientHeight / rows || 14;
+                // Finger down → reveal older lines (negative scrollLines).
+                terminal.scrollLines(-dy / cellHeight);
+            };
+
+            const onTouchEnd = () => {
+                touchActive = false;
+            };
+
+            host.addEventListener('touchstart', onTouchStart, { passive: true });
+            host.addEventListener('touchmove', onTouchMove, { passive: false });
+            host.addEventListener('touchend', onTouchEnd);
+            host.addEventListener('touchcancel', onTouchEnd);
 
             const handleResize = () => {
                 fitTerminal();
@@ -594,6 +648,10 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                 themeObserver.disconnect();
                 resizeObserver.disconnect();
                 window.removeEventListener('resize', handleResize);
+                host.removeEventListener('touchstart', onTouchStart);
+                host.removeEventListener('touchmove', onTouchMove);
+                host.removeEventListener('touchend', onTouchEnd);
+                host.removeEventListener('touchcancel', onTouchEnd);
                 terminal.dispose();
                 terminalInstanceRef.current = null;
                 fitAddonRef.current = null;
@@ -618,6 +676,7 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
         };
 
         const scrollToBottom = () => {
+            followOutputRef.current = autoScrollRef.current;
             if (terminalInstanceRef.current) {
                 terminalInstanceRef.current.scrollToBottom();
             }
@@ -931,8 +990,8 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                             ref={terminalRef}
                             className={
                                 fullHeight
-                                    ? 'bg-secondary h-[calc(100dvh-132px)] w-full min-w-0 overflow-hidden'
-                                    : 'bg-secondary min-h-[16rem] w-full min-w-0 flex-1 overflow-hidden sm:min-h-[20rem]'
+                                    ? 'bg-secondary h-[calc(100dvh-132px)] w-full min-w-0 touch-none overflow-hidden overscroll-none'
+                                    : 'bg-secondary min-h-[16rem] w-full min-w-0 flex-1 touch-none overflow-hidden overscroll-none sm:min-h-[20rem]'
                             }
                         />
                         {showScrollButton && (
@@ -1072,10 +1131,20 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                         width: 100% !important;
                         height: 100% !important;
                         background-color: hsl(var(--secondary)) !important;
+                        touch-action: none;
+                        overscroll-behavior: none;
+                    }
+                    .xterm-scrollable-element {
+                        width: 100% !important;
+                        height: 100% !important;
+                        touch-action: none;
+                        overscroll-behavior: none;
                     }
                     .xterm-viewport {
                         overflow-x: hidden !important;
                         background-color: hsl(var(--secondary)) !important;
+                        touch-action: none;
+                        overscroll-behavior: none;
                         scrollbar-width: thin;
                         scrollbar-color: hsl(var(--muted-foreground) / 0.3) transparent;
                     }
@@ -1095,6 +1164,12 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                     }
                     .xterm-viewport::-webkit-scrollbar-thumb:hover {
                         background-color: hsl(var(--muted-foreground) / 0.5);
+                    }
+                    .xterm .xterm-scrollable-element > .scrollbar {
+                        background: transparent !important;
+                    }
+                    .xterm .xterm-scrollable-element > .scrollbar > .slider {
+                        border-radius: 4px;
                     }
                 `}</style>
             </Card>

@@ -111,6 +111,56 @@ class SubuserPermissionChecker
     }
 
     /**
+     * Get the permission list for a user on a server.
+     *
+     * @return array|null Null when the user is the owner (all permissions), otherwise the subuser permission list
+     */
+    public static function getPermissions(int $userId, int $serverId): ?array
+    {
+        $subuser = Subuser::getSubuserByUserAndServer($userId, $serverId);
+
+        if (!$subuser) {
+            return null; // Owner — full permission set
+        }
+
+        $permissions = [];
+        if (isset($subuser['permissions']) && !empty($subuser['permissions'])) {
+            try {
+                $decoded = json_decode($subuser['permissions'], true);
+                $permissions = is_array($decoded) ? $decoded : [];
+            } catch (\Exception $e) {
+                App::getInstance(true)->getLogger()->error('Failed to parse subuser permissions: ' . $e->getMessage());
+
+                return [];
+            }
+        }
+
+        return $permissions;
+    }
+
+    /**
+     * Whether the actor may assign the given permissions to another subuser.
+     * Owners may assign any valid permission; subusers may only assign a subset of their own.
+     */
+    public static function canAssignPermissions(int $userId, int $serverId, array $permissions): bool
+    {
+        $actorPermissions = self::getPermissions($userId, $serverId);
+
+        // Owner can assign any permission
+        if ($actorPermissions === null) {
+            return true;
+        }
+
+        foreach ($permissions as $permission) {
+            if (!in_array($permission, $actorPermissions, true)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
      * Map actions to required permissions.
      *
      * @param string $controller The controller name (e.g., 'files', 'backups', 'databases')

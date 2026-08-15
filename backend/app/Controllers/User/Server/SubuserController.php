@@ -25,6 +25,7 @@ use App\Chat\Subuser;
 use App\SubuserPermissions;
 use App\Chat\ServerActivity;
 use App\Helpers\ApiResponse;
+use App\Helpers\SubuserPermissionChecker;
 use App\Services\Wings\Wings;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
@@ -118,6 +119,8 @@ use App\Plugins\Events\Events\ServerSubuserEvent;
 )]
 class SubuserController
 {
+    use CheckSubuserPermissionsTrait;
+
     #[OA\Get(
         path: '/api/user/servers/{uuidShort}/subusers',
         summary: 'Get server subusers',
@@ -177,6 +180,11 @@ class SubuserController
         $server = Server::getServerByUuid($serverUuid);
         if (!$server) {
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+        }
+
+        $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::USER_READ);
+        if ($permissionCheck !== null) {
+            return $permissionCheck;
         }
 
         // Get page and per_page from query parameters
@@ -274,6 +282,11 @@ class SubuserController
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
 
+        $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::USER_READ);
+        if ($permissionCheck !== null) {
+            return $permissionCheck;
+        }
+
         // Get subuser info
         $subuser = Subuser::getSubuserById($subuserId);
         if (!$subuser) {
@@ -332,6 +345,11 @@ class SubuserController
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
 
+        $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::USER_CREATE);
+        if ($permissionCheck !== null) {
+            return $permissionCheck;
+        }
+
         // Get request data
         $data = json_decode($request->getContent(), true);
         if (!$data) {
@@ -362,6 +380,11 @@ class SubuserController
             return ApiResponse::error('Cannot add yourself as a subuser', 'CANNOT_ADD_SELF', 400);
         }
 
+        $actor = $request->attributes->get('user');
+        if (($actor['id'] ?? null) == $user['id']) {
+            return ApiResponse::error('Cannot add yourself as a subuser', 'CANNOT_ADD_SELF', 400);
+        }
+
         // Check if subuser already exists for this user+server combination
         $existingSubuser = Subuser::getSubuserByUserAndServer($user['id'], $server['id']);
         if ($existingSubuser) {
@@ -388,10 +411,9 @@ class SubuserController
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
         }
-        $user = $request->attributes->get('user');
         $this->logActivity($server, $node, 'subuser_created', [
             'subuser_id' => $subuserId,
-        ], $user);
+        ], $actor);
 
         // Get created subuser with details
         $subuser = Subuser::getSubuserWithDetails($subuserId);
@@ -402,7 +424,7 @@ class SubuserController
             $eventManager->emit(
                 ServerSubuserEvent::onServerSubuserCreated(),
                 [
-                    'user_uuid' => $request->attributes->get('user')['uuid'],
+                    'user_uuid' => $actor['uuid'],
                     'server_uuid' => $server['uuid'],
                     'subuser_id' => $subuserId,
                 ]
@@ -458,6 +480,11 @@ class SubuserController
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
 
+        $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::USER_UPDATE);
+        if ($permissionCheck !== null) {
+            return $permissionCheck;
+        }
+
         // Get subuser info
         $subuser = Subuser::getSubuserById($subuserId);
         if (!$subuser) {
@@ -469,37 +496,57 @@ class SubuserController
             return ApiResponse::error('Subuser not found', 'SUBUSER_NOT_FOUND', 404);
         }
 
+        $actor = $request->attributes->get('user');
+        // Subusers cannot modify their own access record
+        if (($actor['id'] ?? null) == $subuser['user_id']) {
+            return ApiResponse::error('You cannot modify your own subuser permissions', 'CANNOT_MODIFY_SELF', 403);
+        }
+
         // Get request data
         $data = json_decode($request->getContent(), true);
-        if (!$data) {
+        if (!$data || !is_array($data)) {
             return ApiResponse::error('Invalid request data', 'INVALID_REQUEST_DATA', 400);
         }
 
-        // Encode permissions array to JSON string if provided
-        if (isset($data['permissions']) && is_array($data['permissions'])) {
-            $data['permissions'] = json_encode($data['permissions']);
+        // Only permissions may be updated via this endpoint
+        if (!array_key_exists('permissions', $data) || !is_array($data['permissions'])) {
+            return ApiResponse::error('Permissions array is required', 'INVALID_PERMISSIONS', 400);
         }
 
-        // Add updated_at timestamp
-        $data['updated_at'] = date('Y-m-d H:i:s');
+        $permissions = array_values(array_unique($data['permissions']));
+
+        if (!Subuser::validatePermissions($permissions)) {
+            return ApiResponse::error('One or more permissions are invalid', 'INVALID_PERMISSIONS', 400);
+        }
+
+        // Subusers may only grant permissions they themselves hold
+        if (!SubuserPermissionChecker::canAssignPermissions((int) $actor['id'], (int) $server['id'], $permissions)) {
+            return ApiResponse::error(
+                'You cannot assign permissions you do not have',
+                'PERMISSION_ESCALATION_DENIED',
+                403
+            );
+        }
+
+        $updateData = [
+            'permissions' => json_encode($permissions),
+            'updated_at' => date('Y-m-d H:i:s'),
+        ];
 
         // Update subuser
-        $success = Subuser::updateSubuser($subuserId, $data);
+        $success = Subuser::updateSubuser($subuserId, $updateData);
         if (!$success) {
             return ApiResponse::error('Failed to update subuser', 'UPDATE_FAILED', 500);
         }
 
         // Log activity
-        $user = User::getUserById($subuser['user_id']);
-
         $node = Node::getNodeById($server['node_id']);
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
         }
-        $user = $request->attributes->get('user');
         $this->logActivity($server, $node, 'subuser_updated', [
             'subuser_id' => $subuserId,
-        ], $user);
+        ], $actor);
 
         // Get updated subuser
         $updatedSubuser = Subuser::getSubuserWithDetails($subuserId);
@@ -510,7 +557,7 @@ class SubuserController
             $eventManager->emit(
                 ServerSubuserEvent::onServerSubuserUpdated(),
                 [
-                    'user_uuid' => $request->attributes->get('user')['uuid'],
+                    'user_uuid' => $actor['uuid'],
                     'server_uuid' => $server['uuid'],
                     'subuser_id' => $subuserId,
                 ]
@@ -566,6 +613,11 @@ class SubuserController
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
 
+        $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::USER_DELETE);
+        if ($permissionCheck !== null) {
+            return $permissionCheck;
+        }
+
         // Get subuser info
         $subuser = Subuser::getSubuserById($subuserId);
         if (!$subuser) {
@@ -575,6 +627,12 @@ class SubuserController
         // Verify subuser belongs to this server
         if ($subuser['server_id'] != $server['id']) {
             return ApiResponse::error('Subuser not found', 'SUBUSER_NOT_FOUND', 404);
+        }
+
+        $actor = $request->attributes->get('user');
+        // Subusers cannot remove their own access via this endpoint
+        if (($actor['id'] ?? null) == $subuser['user_id']) {
+            return ApiResponse::error('You cannot delete your own subuser access', 'CANNOT_MODIFY_SELF', 403);
         }
 
         // Get user info for logging and deauthorization
@@ -600,7 +658,7 @@ class SubuserController
             $eventManager->emit(
                 ServerSubuserEvent::onServerSubuserDeleted(),
                 [
-                    'user_uuid' => $request->attributes->get('user')['uuid'],
+                    'user_uuid' => $actor['uuid'],
                     'server_uuid' => $server['uuid'],
                     'subuser_id' => $subuserId,
                 ]
@@ -627,14 +685,9 @@ class SubuserController
         }
 
         // Log activity
-        $node = Node::getNodeById($server['node_id']);
-        if (!$node) {
-            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
-        }
-        $user = $request->attributes->get('user');
         $this->logActivity($server, $node, 'subuser_deleted', [
             'subuser_id' => $subuserId,
-        ], $user);
+        ], $actor);
 
         return ApiResponse::success(null, 'Subuser deleted successfully');
     }
@@ -679,6 +732,11 @@ class SubuserController
         $server = Server::getServerByUuid($serverUuid);
         if (!$server) {
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+        }
+
+        $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::USER_READ);
+        if ($permissionCheck !== null) {
+            return $permissionCheck;
         }
 
         // Get subuser with details
@@ -744,6 +802,11 @@ class SubuserController
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
 
+        $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::USER_READ);
+        if ($permissionCheck !== null) {
+            return $permissionCheck;
+        }
+
         // Get subusers with details
         $subusers = Subuser::getSubusersWithDetailsByServerId($server['id']);
 
@@ -801,6 +864,12 @@ class SubuserController
         if (!$server) {
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
+
+        $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::USER_CREATE);
+        if ($permissionCheck !== null) {
+            return $permissionCheck;
+        }
+
         // Get search query
         $search = $request->query->get('search', '');
         if (empty($search)) {
@@ -887,10 +956,36 @@ class SubuserController
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
 
+        $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::USER_READ);
+        if ($permissionCheck !== null) {
+            return $permissionCheck;
+        }
+
+        $actor = $request->attributes->get('user');
+        $actorPermissions = SubuserPermissionChecker::getPermissions((int) $actor['id'], (int) $server['id']);
+
+        // Owners see the full set; subusers only see permissions they can assign
+        $permissions = $actorPermissions === null
+            ? SubuserPermissions::PERMISSIONS
+            : array_values(array_intersect(SubuserPermissions::PERMISSIONS, $actorPermissions));
+
+        $grouped = SubuserPermissions::getGroupedPermissions();
+        if ($actorPermissions !== null) {
+            foreach ($grouped as $group => $groupData) {
+                $groupPermissions = $groupData['permissions'] ?? [];
+                $filtered = array_values(array_intersect($groupPermissions, $actorPermissions));
+                if (empty($filtered)) {
+                    unset($grouped[$group]);
+                    continue;
+                }
+                $grouped[$group]['permissions'] = $filtered;
+            }
+        }
+
         return ApiResponse::success([
-            'permissions' => SubuserPermissions::PERMISSIONS,
-            'grouped_permissions' => SubuserPermissions::getGroupedPermissions(),
-            'total' => count(SubuserPermissions::PERMISSIONS),
+            'permissions' => $permissions,
+            'grouped_permissions' => $grouped,
+            'total' => count($permissions),
         ]);
     }
 

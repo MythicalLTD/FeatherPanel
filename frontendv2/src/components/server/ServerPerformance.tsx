@@ -31,6 +31,10 @@ interface ServerPerformanceProps {
     diskData: PerformanceDataPoint[];
     networkData: PerformanceDataPoint[];
     diskIoData: PerformanceDataPoint[];
+    networkRxTotal?: number;
+    networkTxTotal?: number;
+    diskIoReadTotal?: number;
+    diskIoWriteTotal?: number;
     cpuLimit: number;
     memoryLimit: number;
     diskLimit: number;
@@ -148,8 +152,8 @@ const PerformanceChartCard = React.memo(function PerformanceChartCard({
             </div>
 
             <div className='space-y-3'>
-                <div className='flex items-center justify-between gap-2 text-xs'>
-                    <span className='text-muted-foreground truncate'>{limitLabel}</span>
+                <div className='flex items-start justify-between gap-2 text-xs'>
+                    <span className='text-muted-foreground min-w-0 truncate'>{limitLabel}</span>
                     <span className='shrink-0 font-medium tabular-nums' style={{ color }}>
                         {currentValue}
                     </span>
@@ -189,6 +193,10 @@ export default function ServerPerformance({
     diskData,
     networkData,
     diskIoData,
+    networkRxTotal = 0,
+    networkTxTotal = 0,
+    diskIoReadTotal = 0,
+    diskIoWriteTotal = 0,
     cpuLimit,
     memoryLimit,
     diskLimit,
@@ -268,7 +276,9 @@ export default function ServerPerformance({
             color: '#f59e0b',
             icon: Globe,
             currentValue: `${formatBytes(networkCurrent)}/s`,
-            limitLabel: t('servers.console.info_cards.limit', { limit: 'N/A' }),
+            limitLabel: t('servers.console.info_cards.all_time_label', {
+                total: formatBytes(networkRxTotal + networkTxTotal),
+            }),
             domainMax: networkDomainMax,
             formatTooltip: formatNetworkTooltip,
             emptyLabel,
@@ -280,7 +290,9 @@ export default function ServerPerformance({
             color: '#06b6d4',
             icon: Activity,
             currentValue: `${formatBytes(diskIoCurrent)}/s`,
-            limitLabel: t('servers.console.info_cards.limit', { limit: 'N/A' }),
+            limitLabel: t('servers.console.info_cards.all_time_label', {
+                total: formatBytes(diskIoReadTotal + diskIoWriteTotal),
+            }),
             domainMax: diskIoDomainMax,
             formatTooltip: formatDiskIoTooltip,
             emptyLabel,
