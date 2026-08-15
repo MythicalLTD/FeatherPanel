@@ -58,6 +58,8 @@ interface ConfigInterface
     public const APP_BACKGROUND_TYPE_LOCK = 'app_background_type_lock';
     /** When false, hide FeatherPanel "powered by" branding (FeatherPanel Premium / Mythic entitlement). */
     public const BRANDING_SHOW_POWERED_BY = 'branding_show_powered_by';
+    /** When false, hide the panel version badge in the sidebar (FeatherPanel Premium / Mythic entitlement). */
+    public const BRANDING_SHOW_VERSION = 'branding_show_version';
     public const APP_BACKDROP_BLUR_DEFAULT = 'app_backdrop_blur_default';
     public const APP_BACKDROP_BLUR_LOCK = 'app_backdrop_blur_lock';
     public const APP_BACKDROP_DARKEN_DEFAULT = 'app_backdrop_darken_default';

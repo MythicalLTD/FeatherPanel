@@ -147,7 +147,7 @@ class FeatherPanelPremium
     }
 
     /**
-     * UI customization (AI rename/avatar, remove powered-by, custom sidebar) is gated on active for now.
+     * UI customization (AI rename/avatar, remove powered-by, hide version, custom sidebar) is gated on active for now.
      * Mythic feature flags are reserved; AND them in later when Mythic enables them.
      */
     public static function canCustomizeUi(): bool
@@ -312,6 +312,7 @@ class FeatherPanelPremium
     {
         $config = App::getInstance(true)->getConfig();
         $config->setSetting(ConfigInterface::BRANDING_SHOW_POWERED_BY, 'true');
+        $config->setSetting(ConfigInterface::BRANDING_SHOW_VERSION, 'true');
         $config->setSetting(ConfigInterface::CHATBOT_DISPLAY_NAME, '');
         $config->setSetting(ConfigInterface::CHATBOT_AVATAR_URL, '');
         $config->setSetting(ConfigInterface::SIDEBAR_NAVIGATION_CONFIG, '');

@@ -157,6 +157,8 @@ interface FilterSettingsPanelProps {
     onAddFilter: () => void;
     onUpdateFilter: (id: string, partial: Partial<ConsoleFilterRule>) => void;
     onDeleteFilter: (id: string) => void;
+    /** Hide the title/intro when the parent already shows them (e.g. mobile sheet). */
+    showIntro?: boolean;
 }
 
 function FilterSettingsPanel({
@@ -165,18 +167,28 @@ function FilterSettingsPanel({
     onAddFilter,
     onUpdateFilter,
     onDeleteFilter,
+    showIntro = true,
 }: FilterSettingsPanelProps) {
     const { t } = useTranslation();
 
     return (
         <>
-            <div className='mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between'>
-                <div>
-                    <p className='text-foreground text-xs font-semibold'>{t('servers.console.terminal.customize')}</p>
-                    <p className='text-muted-foreground mt-1 max-w-2xl text-[11px] leading-relaxed'>
-                        {t('servers.console.terminal.rules_intro')}
-                    </p>
-                </div>
+            <div
+                className={cn(
+                    'mb-3 flex gap-2',
+                    showIntro ? 'flex-col sm:flex-row sm:items-start sm:justify-between' : 'items-center justify-end',
+                )}
+            >
+                {showIntro && (
+                    <div>
+                        <p className='text-foreground text-xs font-semibold'>
+                            {t('servers.console.terminal.customize')}
+                        </p>
+                        <p className='text-muted-foreground mt-1 max-w-2xl text-[11px] leading-relaxed'>
+                            {t('servers.console.terminal.rules_intro')}
+                        </p>
+                    </div>
+                )}
                 <Button
                     type='button'
                     variant='outline'
@@ -400,8 +412,18 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
         const [showSettings, setShowSettings] = useState(false);
         const [showQuickRules, setShowQuickRules] = useState(false);
         const [showHistory, setShowHistory] = useState(false);
+        // Sheet portals to body, so CSS sm:hidden cannot hide it — gate open state instead.
+        const [isNarrowViewport, setIsNarrowViewport] = useState(false);
 
         autoScrollRef.current = autoScroll;
+
+        useEffect(() => {
+            const mediaQuery = window.matchMedia('(max-width: 639px)');
+            const update = () => setIsNarrowViewport(mediaQuery.matches);
+            update();
+            mediaQuery.addEventListener('change', update);
+            return () => mediaQuery.removeEventListener('change', update);
+        }, []);
 
         const hslFromVar = useCallback((name: string, fallback: string) => {
             if (typeof window === 'undefined') return fallback;
@@ -1082,7 +1104,11 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                 )}
 
                 <div className='sm:hidden'>
-                    <Sheet open={showSettings} onOpenChange={setShowSettings} className='max-w-lg'>
+                    <Sheet
+                        open={showSettings && isNarrowViewport}
+                        onOpenChange={setShowSettings}
+                        className='max-w-lg'
+                    >
                         <SheetContent>
                             <SheetHeader>
                                 <SheetTitle>{t('servers.console.terminal.customize')}</SheetTitle>
@@ -1094,12 +1120,17 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                                 onAddFilter={handleAddFilter}
                                 onUpdateFilter={handleUpdateFilter}
                                 onDeleteFilter={handleDeleteFilter}
+                                showIntro={false}
                             />
                         </SheetContent>
                     </Sheet>
 
                     {onFiltersChange && (
-                        <Sheet open={showQuickRules} onOpenChange={setShowQuickRules} className='max-w-lg'>
+                        <Sheet
+                            open={showQuickRules && isNarrowViewport}
+                            onOpenChange={setShowQuickRules}
+                            className='max-w-lg'
+                        >
                             <SheetContent>
                                 <SheetHeader>
                                     <SheetTitle>{t('servers.console.terminal.quick_rules')}</SheetTitle>
@@ -1116,7 +1147,11 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                         </Sheet>
                     )}
 
-                    <Sheet open={showHistory} onOpenChange={setShowHistory} className='max-w-lg'>
+                    <Sheet
+                        open={showHistory && isNarrowViewport}
+                        onOpenChange={setShowHistory}
+                        className='max-w-lg'
+                    >
                         <SheetContent>
                             <SheetHeader>
                                 <SheetTitle>{t('servers.console.terminal.history_title')}</SheetTitle>

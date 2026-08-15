@@ -59,6 +59,8 @@ export interface AppSettings {
     reforge_captcha_min_score?: string;
     app_url: string;
     branding_show_powered_by?: string;
+    /** Premium: when false, hide the version badge in the sidebar */
+    branding_show_version?: string;
     /** Premium: custom AI display name (empty = i18n default) */
     chatbot_display_name?: string;
     /** Premium: custom AI avatar URL (empty = panel logo) */

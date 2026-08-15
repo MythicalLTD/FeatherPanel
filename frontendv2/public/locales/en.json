@@ -7339,7 +7339,7 @@
 		},
 		"featherpanel_premium": {
 			"title": "FeatherPanel Premium",
-			"subtitle": "Unlock AI branding and powered-by customization with a Mythic team Premium subscription.",
+			"subtitle": "Unlock AI branding, powered-by, and version customization with a Mythic team Premium subscription.",
 			"refresh": "Refresh entitlement",
 			"load_failed": "Failed to load FeatherPanel Premium status",
 			"save_failed": "Failed to save Premium settings",
@@ -7355,7 +7355,7 @@
 				"inactive": "Premium is not active",
 				"not_linked": "Link Mythic Cloud first so this panel can read your team's Premium entitlement.",
 				"active_desc": "Premium is active for {team}. Customize your AI assistant and FeatherPanel branding below.",
-				"inactive_desc": "Subscribe on Mythic to rename the AI assistant, customize sidebar items/links, and hide the powered-by footer.",
+				"inactive_desc": "Subscribe on Mythic to rename the AI assistant, customize sidebar items/links, hide the powered-by footer, and hide the panel version.",
 				"higher_limits": "Premium limits are active on Mythic (paste, temp files, and Panel API).",
 				"checked_at": "Last checked",
 				"expires_at": "Cache valid until",
@@ -7371,6 +7371,8 @@
 				"ai_avatar_help": "Upload an image or paste a URL. Leave empty to use your panel logo.",
 				"show_powered_by": "Show “Powered by FeatherPanel”",
 				"show_powered_by_help": "Turn off to hide FeatherPanel branding in the sidebar and related surfaces.",
+				"show_version": "Show panel version",
+				"show_version_help": "Turn off to hide the FeatherPanel version badge in the sidebar.",
 				"save": "Save changes"
 			},
 			"sidebar": {
