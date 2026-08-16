@@ -50,6 +50,16 @@ interface ConfigInterface
      */
     public const APP_BACKGROUND_IMAGE_URL = 'app_background_image_url';
     public const APP_BACKGROUND_LOCK = 'app_background_lock';
+    /** Default UI locale code for users who have not chosen a language (e.g. en, de, fr). */
+    public const APP_LOCALE_DEFAULT = 'app_locale_default';
+    /** When true, force the configured locale for all users (disables per-user language selection). */
+    public const APP_LOCALE_LOCK = 'app_locale_lock';
+    /** When true, show spell/egg banners on the server console header (default off). */
+    public const APP_SERVER_SPELL_BANNER_ENABLED = 'app_server_spell_banner_enabled';
+    /** Header presentation: off | cover | strip | hero (default off). Replaces the old enabled flag. */
+    public const APP_SERVER_SPELL_BANNER_STYLE = 'app_server_spell_banner_style';
+    /** Use spell banner as server-area background: off | blend | replace (default off). */
+    public const APP_SERVER_SPELL_BANNER_BACKGROUND = 'app_server_spell_banner_background';
     public const APP_ACCENT_COLOR_DEFAULT = 'app_accent_color_default';
     public const APP_ACCENT_COLOR_LOCK = 'app_accent_color_lock';
     public const APP_THEME_DEFAULT = 'app_theme_default';

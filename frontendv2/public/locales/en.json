@@ -1309,6 +1309,8 @@
 		"settingsMenuSubtitle": "Theme, background, accent, and layout",
 		"fontFamilyTitle": "Font",
 		"language": "Language",
+		"languageLocked": "Locked",
+		"languageLockedByAdmin": "Language is locked by administrator",
 		"navbarHoverReveal": {
 			"title": "Top bar (desktop)",
 			"off": "Always visible",

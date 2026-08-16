@@ -3,12 +3,22 @@
 ## v1.3.7.10 STABLE
 
 ### Added
+
 - Server console Network and Disk I/O cards show all-time totals (in/out and read/write since container start), with a clearer breakdown under the live rates. by @nayskutzu
 - **FeatherPanel Premium:** hide the panel version badge in the sidebar (toggle under Premium customization). by @nayskutzu
 - Support for Calagopus Wings as a Wings alternative. by @nayskutzu
 - File manager “VS Code” action opens a clearer dialog that explains the Calagopus extension requirement and links to the Visual Studio Marketplace and Open VSX install pages. by @nayskutzu
 
+### Improved
+
+- Added an upload image button for eggs in the admin area by @nayskutzu
+- Better design for the server power buttons by @nayskutzu
+
 ### Fixed
+
+- A way to change the default language of the panel by @nayskutzu
+- A way to lock the default language of the panel by @nayskutzu
+- Eggs backgrounds can be used as a full server background by @nayskutzu
 - Server console on phones no longer scrolls the page instead of the terminal buffer; touch pans stay in the console, and auto-scroll pauses while reading older output so the scrollbar does not jump. by @nayskutzu
 - Rules & filters on mobile no longer shows the title and description twice when the sheet opens. by @nayskutzu
 - Opening Rules & filters on tablet/desktop no longer also pops the mobile side sheet (it was ignoring `sm:hidden` because the sheet portals to the document body). by @nayskutzu
@@ -77,7 +87,6 @@
 - FastDL generated `sv_downloadurl` no longer uses the Wings API port (e.g. `:8080`); it uses the node FQDN and FastDL bind port (default 80, omit `:80`). FastDL enable/directory is persisted on the server and synced to Wings so it survives restart/power cycles. by @nayskutzu
 - Issues with stuck console connections were fixed. by @nayskutzu
 - Issues with console on mobile devices were fixed. by @nayskutzu
-
 
 ## v1.3.7.5 STABLE
 
@@ -200,7 +209,6 @@
 - Color issues with vds settings page were fixed. by @nayskutzu
 - Further enhanced the plugin installer for improved performance and reliability. by @nayskutzu
 - Resolved a significant issue that previously prevented searching for allocations within the admin area. by @nayskutzu
-
 
 ### Improved
 

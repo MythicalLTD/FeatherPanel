@@ -59,6 +59,13 @@ class PublicConfig extends ConfigFactory
             // Optional global background image URL and a lock flag to force it for all users.
             ConfigInterface::APP_BACKGROUND_IMAGE_URL => '',
             ConfigInterface::APP_BACKGROUND_LOCK => 'false',
+            // Optional admin default/lock for panel language (locale).
+            ConfigInterface::APP_LOCALE_DEFAULT => 'en',
+            ConfigInterface::APP_LOCALE_LOCK => 'false',
+            // Spell/egg banner on server pages (opt-in; off by default).
+            ConfigInterface::APP_SERVER_SPELL_BANNER_ENABLED => 'false',
+            ConfigInterface::APP_SERVER_SPELL_BANNER_STYLE => 'off',
+            ConfigInterface::APP_SERVER_SPELL_BANNER_BACKGROUND => 'off',
             // Optional admin defaults/locks for theme + accent + background type.
             ConfigInterface::APP_ACCENT_COLOR_DEFAULT => 'purple',
             ConfigInterface::APP_ACCENT_COLOR_LOCK => 'false',

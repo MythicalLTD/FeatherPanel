@@ -143,6 +143,16 @@ export interface AppSettings {
     app_background_image_url?: string;
     /** When 'true', force the configured background image URL for all users. */
     app_background_lock?: string;
+    /** Default UI locale for users who have not chosen a language (e.g. en, de). */
+    app_locale_default?: string;
+    /** When 'true', force the configured locale for all users. */
+    app_locale_lock?: string;
+    /** When 'true', show spell/egg banners on the server console header (legacy; prefer style). */
+    app_server_spell_banner_enabled?: string;
+    /** Header banner style: off | cover | strip | hero (default off). */
+    app_server_spell_banner_style?: string;
+    /** Server-page full panel background from spell banner: off | blend | replace (default off). Same layer as dashboard theme bg. */
+    app_server_spell_banner_background?: string;
     /** Optional default accent color (purple, blue, etc.). */
     app_accent_color_default?: string;
     /** When 'true', force the configured accent color for all users. */

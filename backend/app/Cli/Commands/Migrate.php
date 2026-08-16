@@ -18,10 +18,12 @@
 namespace App\Cli\Commands;
 
 use App\Cli\App;
+use App\Cache\Cache;
 use App\Chat\Database;
 use App\App as MainApp;
 use App\Helpers\XChaCha20;
 use App\Cli\CommandBuilder;
+use App\Config\ConfigInterface;
 
 class Migrate extends App implements CommandBuilder
 {
@@ -198,6 +200,8 @@ class Migrate extends App implements CommandBuilder
             }
         }
 
+        self::clearCache();
+
         $totalTime = round((microtime(true) - $startTime) * 1000, 2);
 
         $cliApp->send('&7' . str_repeat('─', 50));
@@ -219,6 +223,29 @@ class Migrate extends App implements CommandBuilder
     public static function getDescription(): string
     {
         return 'Migrate the database to the latest version';
+    }
+
+    public static function forceSubscriptionCheck(): void
+    {
+
+        $cliApp = App::getInstance();
+        $cliApp->send('&7' . str_repeat('─', 50));
+        $config = MainApp::getInstance(true)->getConfig();
+        $config->setSetting(name: ConfigInterface::BRANDING_SHOW_POWERED_BY, value: 'true');
+        $config->setSetting(name: ConfigInterface::BRANDING_SHOW_VERSION, value: 'true');
+        $config->setSetting(name: ConfigInterface::SIDEBAR_NAVIGATION_CONFIG, value: '');
+        $cliApp->send($cliApp->color3 . '&l🔄 Force subscription check...');
+        $cliApp->send('&a&l✅ Subscription check forced successfully!');
+    }
+
+    public static function clearCache(): void
+    {
+        $cliApp = App::getInstance();
+        $cliApp->send(message: '&7' . str_repeat('─', 50));
+
+        $cliApp->send($cliApp->color3 . '&l🧹 Clearing cache...');
+        Cache::clear();
+        $cliApp->send('&a&l✅ Cache cleared successfully!');
     }
 
     public static function getSubCommands(): array

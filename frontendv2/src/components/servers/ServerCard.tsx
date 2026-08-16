@@ -17,7 +17,7 @@ import { Fragment } from 'react';
 import { Menu, MenuButton, MenuItems, MenuItem, Transition } from '@headlessui/react';
 import { MoreVertical, FolderMinus, FolderInput, Star } from 'lucide-react';
 import Link from 'next/link';
-import { cn } from '@/lib/utils';
+import { cn, resolveAttachmentUrl } from '@/lib/utils';
 import {
     displayStatus,
     getServerMemory,
@@ -105,7 +105,9 @@ export function ServerCard({
                     >
                         <div
                             className='h-full w-full bg-cover bg-center'
-                            style={{ backgroundImage: `url(${server.spell.banner})` }}
+                            style={{
+                                backgroundImage: `url(${resolveAttachmentUrl(server.spell.banner) || server.spell.banner})`,
+                            }}
                         />
                     </Link>
                 )}
@@ -282,7 +284,9 @@ export function ServerCard({
                     <div className='relative h-40 overflow-hidden'>
                         <div
                             className='absolute inset-0 bg-cover bg-center transition-transform duration-300 group-hover:scale-105'
-                            style={{ backgroundImage: `url(${server.spell.banner})` }}
+                            style={{
+                                backgroundImage: `url(${resolveAttachmentUrl(server.spell.banner) || server.spell.banner})`,
+                            }}
                         />
                         <div className='from-card via-card/60 absolute inset-0 bg-linear-to-t to-transparent' />
                     </div>

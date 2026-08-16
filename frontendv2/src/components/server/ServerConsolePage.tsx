@@ -40,6 +40,7 @@ import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import PlayerStatusWidget from '@/components/server/PlayerStatusWidget';
 import { toast } from 'sonner';
 import { copyToClipboard } from '@/lib/utils';
+import { resolveServerSpellBannerStyle } from '@/lib/server-spell-banner';
 
 interface WingsStats {
     uptime?: number;
@@ -645,6 +646,9 @@ export default function ServerConsolePage() {
                 nodeLocation={server.location?.name || server.node?.name}
                 nodeLocationFlag={server.location?.flag_code}
                 nodeName={server.node?.name}
+                bannerUrl={server.spell?.banner}
+                spellName={server.spell?.name}
+                bannerStyle={resolveServerSpellBannerStyle(settings)}
                 canStart={hasPermission('control.start')}
                 canStop={hasPermission('control.stop')}
                 canRestart={hasPermission('control.restart')}

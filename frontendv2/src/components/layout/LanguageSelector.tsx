@@ -21,7 +21,7 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { Check, Globe } from 'lucide-react';
 
 export default function LanguageSelector() {
-    const { locale, availableLanguages, setLocale, t } = useTranslation();
+    const { locale, availableLanguages, setLocale, t, isLocaleLocked } = useTranslation();
     const [mounted] = useState(true);
 
     if (!mounted) {
@@ -30,7 +30,11 @@ export default function LanguageSelector() {
 
     return (
         <Menu as='div' className='relative'>
-            <MenuButton className='border-border/50 bg-background/90 hover:bg-background flex h-10 w-10 items-center justify-center rounded-full border backdrop-blur-md transition-all duration-200 hover:scale-110 hover:shadow-lg'>
+            <MenuButton
+                disabled={isLocaleLocked}
+                title={isLocaleLocked ? t('appearance.languageLockedByAdmin') : t('appearance.language')}
+                className='border-border/50 bg-background/90 hover:bg-background flex h-10 w-10 items-center justify-center rounded-full border backdrop-blur-md transition-all duration-200 hover:scale-110 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100'
+            >
                 <Globe className='h-4 w-4' />
             </MenuButton>
 
@@ -46,15 +50,21 @@ export default function LanguageSelector() {
                 <MenuItems className='bg-card border-border/50 ring-opacity-5 absolute right-0 mt-2 w-48 origin-top-right rounded-xl border p-2 shadow-lg ring-1 ring-black backdrop-blur-xl focus:outline-none'>
                     <div className='text-foreground border-border/50 mb-2 border-b px-3 py-2 text-sm font-semibold'>
                         {t('appearance.language')}
+                        {isLocaleLocked && (
+                            <span className='text-muted-foreground ml-1 text-xs font-normal'>
+                                ({t('appearance.languageLocked')})
+                            </span>
+                        )}
                     </div>
                     {availableLanguages.map((language) => (
-                        <MenuItem key={language.code}>
-                            {({ focus }) => (
+                        <MenuItem key={language.code} disabled={isLocaleLocked}>
+                            {({ focus, disabled }) => (
                                 <button
-                                    onClick={() => setLocale(language.code)}
+                                    onClick={() => !disabled && setLocale(language.code)}
+                                    disabled={disabled}
                                     className={`${
-                                        focus ? 'bg-accent' : ''
-                                    } group flex w-full items-center rounded-lg px-3 py-2 text-sm transition-colors`}
+                                        focus && !disabled ? 'bg-accent' : ''
+                                    } group flex w-full items-center rounded-lg px-3 py-2 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50`}
                                 >
                                     <span className='flex-1 text-left'>
                                         <span className='font-medium'>{language.nativeName}</span>
