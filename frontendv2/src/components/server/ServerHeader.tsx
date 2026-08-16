@@ -200,7 +200,7 @@ export default function ServerHeader({
                                     (connectionLive ? !isOfflineStatus(serverStatus) : false)
                                 }
                                 onClick={() => handleAction('start', onStart)}
-                                className='flex items-center gap-2'
+                                className='flex items-center gap-2 border-emerald-600/40 bg-emerald-600 text-white hover:bg-emerald-600/90 hover:text-white disabled:border-emerald-600/20 disabled:bg-emerald-600/40 disabled:text-white/70'
                             >
                                 {actionLoading === 'start' ? (
                                     <Loader2 className='h-4 w-4 animate-spin' />
@@ -219,7 +219,7 @@ export default function ServerHeader({
                                     actionLoading === 'restart' || (connectionLive ? serverStatus !== 'running' : false)
                                 }
                                 onClick={() => handleAction('restart', onRestart)}
-                                className='flex items-center gap-2'
+                                className='flex items-center gap-2 border-amber-500/40 bg-amber-500 text-amber-950 hover:bg-amber-500/90 hover:text-amber-950 disabled:border-amber-500/20 disabled:bg-amber-500/40 disabled:text-amber-950/70'
                             >
                                 {actionLoading === 'restart' ? (
                                     <Loader2 className='h-4 w-4 animate-spin' />
@@ -239,7 +239,7 @@ export default function ServerHeader({
                                     (connectionLive ? !isRunningStatus(serverStatus) : false)
                                 }
                                 onClick={() => handleAction('stop', onStop)}
-                                className='flex items-center gap-2'
+                                className='flex items-center gap-2 border-orange-600/40 bg-orange-600 text-white hover:bg-orange-600/90 hover:text-white disabled:border-orange-600/20 disabled:bg-orange-600/40 disabled:text-white/70'
                             >
                                 {actionLoading === 'stop' ? (
                                     <Loader2 className='h-4 w-4 animate-spin' />
