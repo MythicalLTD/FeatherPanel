@@ -27,6 +27,7 @@ use App\Services\Wings\Wings;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
 use App\Helpers\WingsUrlHelper;
+use App\Helpers\DaemonCapabilities;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -127,6 +128,10 @@ class ServerFastDlController
         $node = Node::getNodeById($server['node_id']);
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+
+        if (!DaemonCapabilities::fromNode($node)->supports(DaemonCapabilities::FEATURE_FASTDL)) {
+            return DaemonCapabilities::unsupportedResponse($node, DaemonCapabilities::FEATURE_FASTDL);
         }
 
         $wings = $this->createWings($node);
@@ -264,6 +269,10 @@ class ServerFastDlController
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
         }
 
+        if (!DaemonCapabilities::fromNode($node)->supports(DaemonCapabilities::FEATURE_FASTDL)) {
+            return DaemonCapabilities::unsupportedResponse($node, DaemonCapabilities::FEATURE_FASTDL);
+        }
+
         $wings = $this->createWings($node);
 
         try {
@@ -383,6 +392,10 @@ class ServerFastDlController
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
         }
 
+        if (!DaemonCapabilities::fromNode($node)->supports(DaemonCapabilities::FEATURE_FASTDL)) {
+            return DaemonCapabilities::unsupportedResponse($node, DaemonCapabilities::FEATURE_FASTDL);
+        }
+
         $wings = $this->createWings($node);
 
         try {
@@ -499,6 +512,10 @@ class ServerFastDlController
         $node = Node::getNodeById($server['node_id']);
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+
+        if (!DaemonCapabilities::fromNode($node)->supports(DaemonCapabilities::FEATURE_FASTDL)) {
+            return DaemonCapabilities::unsupportedResponse($node, DaemonCapabilities::FEATURE_FASTDL);
         }
 
         $wings = $this->createWings($node);

@@ -52,6 +52,7 @@ class Wings
      * @param string $authToken The authentication token for Wings
      * @param int $timeout Request timeout in seconds (default: 30)
      * @param bool $behindProxy Whether Wings is accessed through a reverse proxy
+     * @param string $daemonType featherwings|wings_rs
      */
     public function __construct(
         string $host,
@@ -60,8 +61,9 @@ class Wings
         string $authToken = '',
         int $timeout = 30,
         bool $behindProxy = false,
+        string $daemonType = 'featherwings',
     ) {
-        $this->connection = new WingsConnection($host, $port, $protocol, $authToken, $timeout, $behindProxy);
+        $this->connection = new WingsConnection($host, $port, $protocol, $authToken, $timeout, $behindProxy, $daemonType);
 
         // Initialize service classes
         $this->system = new SystemService($this->connection);
@@ -87,6 +89,7 @@ class Wings
             (string) ($node['daemon_token'] ?? ''),
             $timeout,
             WingsUrlHelper::isBehindProxy($node),
+            (string) ($node['daemon_type'] ?? 'featherwings'),
         );
     }
 

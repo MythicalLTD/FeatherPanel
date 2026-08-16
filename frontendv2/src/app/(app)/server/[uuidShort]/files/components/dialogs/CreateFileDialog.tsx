@@ -24,7 +24,9 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { toast } from 'sonner';
 import { filesApi } from '@/lib/files-api';
+import { getFeatherpanelApiErrorMessage } from '@/lib/api';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { Textarea } from '@/components/featherui/Textarea';
 
@@ -48,14 +50,16 @@ export function CreateFileDialog({ open, onOpenChange, uuid, root, onSuccess }: 
 
         setLoading(true);
         try {
-            const path = root === '/' ? name : `${root}/${name}`;
+            const path = `${root === '/' ? '' : root.replace(/\/$/, '')}/${name}`;
             await filesApi.saveFileContent(uuid, path, content);
             setName('');
             setContent('');
+            toast.success(t('files.dialogs.create_file.success'));
             onSuccess();
             onOpenChange(false);
         } catch (error) {
             console.error(error);
+            toast.error(getFeatherpanelApiErrorMessage(error) || t('files.dialogs.create_file.error'));
         } finally {
             setLoading(false);
         }

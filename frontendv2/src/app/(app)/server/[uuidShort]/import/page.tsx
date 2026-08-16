@@ -17,7 +17,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import * as React from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { DownloadCloud, Loader2, AlertTriangle, Clock, CheckCircle, XCircle, Plus, RefreshCw } from 'lucide-react';
+import { DownloadCloud, Loader2, Clock, CheckCircle, XCircle, Plus, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/featherui/Button';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { EmptyState } from '@/components/featherui/EmptyState';
@@ -31,6 +31,7 @@ import { toast } from 'sonner';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { cn, isEnabled } from '@/lib/utils';
+import { supportsDaemonFeature } from '@/lib/daemonCapabilities';
 import type { ImportItem, ImportsResponse } from '@/types/server';
 
 export default function ServerImportPage() {
@@ -38,7 +39,7 @@ export default function ServerImportPage() {
     const router = useRouter();
     const { t } = useTranslation();
     const { settings, loading: settingsLoading } = useSettings();
-    const { hasPermission, loading: permissionsLoading } = useServerPermissions(uuidShort as string);
+    const { hasPermission, loading: permissionsLoading, server } = useServerPermissions(uuidShort as string);
     const canManage = hasPermission('settings.import') || hasPermission('file.create');
 
     const [imports, setImports] = React.useState<ImportItem[]>([]);
@@ -108,7 +109,9 @@ export default function ServerImportPage() {
         }
     };
 
-    const isImportEnabled = isEnabled(settings?.server_allow_user_made_import);
+    const isImportEnabled =
+        isEnabled(settings?.server_allow_user_made_import) &&
+        supportsDaemonFeature(server?.node?.capabilities, 'import', server?.node?.daemon_type);
     const showHeaderCreateAction = isImportEnabled && canManage && imports.length > 0;
 
     if (permissionsLoading || settingsLoading) {
@@ -116,6 +119,21 @@ export default function ServerImportPage() {
             <div className='flex items-center justify-center p-12'>
                 <Loader2 className='text-primary h-8 w-8 animate-spin' />
             </div>
+        );
+    }
+
+    if (!isImportEnabled) {
+        return (
+            <EmptyState
+                title={t('serverImport.featureDisabled')}
+                description={t('serverImport.featureDisabledDescription')}
+                icon={DownloadCloud}
+                action={
+                    <Button variant='secondary' onClick={() => router.back()}>
+                        {t('common.goBack')}
+                    </Button>
+                }
+            />
         );
     }
 
@@ -154,15 +172,6 @@ export default function ServerImportPage() {
             />
             <WidgetRenderer widgets={getWidgets('server-import', 'after-header')} />
 
-            {!isImportEnabled && (
-                <div className='flex items-center gap-3 rounded-xl border border-yellow-500/20 bg-yellow-500/10 p-4'>
-                    <AlertTriangle className='h-5 w-5 shrink-0 text-yellow-500' />
-                    <p className='text-sm font-medium text-yellow-500/90'>
-                        {t('serverImport.featureDisabledDescription')}
-                    </p>
-                </div>
-            )}
-
             <WidgetRenderer widgets={getWidgets('server-import', 'before-imports-list')} />
 
             {imports.length === 0 ? (
@@ -171,7 +180,6 @@ export default function ServerImportPage() {
                     description={t('serverImport.noImportsDescription')}
                     icon={DownloadCloud}
                     action={
-                        isImportEnabled &&
                         canManage && (
                             <Button
                                 size='default'

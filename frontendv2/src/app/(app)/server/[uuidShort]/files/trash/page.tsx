@@ -32,12 +32,13 @@ import { EmptyTrashDialog } from '../components/dialogs/EmptyTrashDialog';
 import { RestoreTrashDialog } from '../components/dialogs/RestoreTrashDialog';
 import axios from 'axios';
 import { ArrowLeft } from 'lucide-react';
+import { supportsDaemonFeature } from '@/lib/daemonCapabilities';
 
 export default function ServerTrashPage({ params }: { params: Promise<{ uuidShort: string }> }) {
     const { uuidShort } = use(params);
     const { t } = useTranslation();
     const { settings } = useSettings();
-    const { hasPermission } = useServerPermissions(uuidShort);
+    const { hasPermission, server } = useServerPermissions(uuidShort);
 
     const [entries, setEntries] = useState<Awaited<ReturnType<typeof filesApi.listTrash>>['entries']>([]);
     const [totalSize, setTotalSize] = useState(0);
@@ -47,7 +48,9 @@ export default function ServerTrashPage({ params }: { params: Promise<{ uuidShor
     const [restoreOpen, setRestoreOpen] = useState(false);
     const [busy, setBusy] = useState(false);
 
-    const trashEnabled = isEnabled(settings?.file_trash_enabled);
+    const trashEnabled =
+        isEnabled(settings?.file_trash_enabled) &&
+        supportsDaemonFeature(server?.node?.capabilities, 'trash', server?.node?.daemon_type);
     const canUpdate = hasPermission('file.update');
     const canDelete = hasPermission('file.delete');
 

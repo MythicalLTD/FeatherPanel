@@ -75,6 +75,22 @@ export function SelfUpdateTab({ nodeId, systemData, onRefresh }: SelfUpdateTabPr
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [nodeId]);
 
+    useEffect(() => {
+        if (!versionStatus) return;
+        const owner = versionStatus.github_owner?.trim();
+        const repo = versionStatus.github_repo?.trim();
+        if (!owner && !repo) return;
+        setOptions((prev) => ({
+            ...prev,
+            repoOwner: owner || prev.repoOwner,
+            repoName: repo || prev.repoName,
+            url:
+                owner && repo
+                    ? `https://github.com/${owner}/${repo}/releases/latest/download/${repo === 'wings' ? 'wings-rs-x86_64-linux' : repo}`
+                    : prev.url,
+        }));
+    }, [versionStatus]);
+
     const handleUpdate = async () => {
         if (!confirm(t('admin.node.view.self_update.confirm'))) return;
 
@@ -119,7 +135,7 @@ export function SelfUpdateTab({ nodeId, systemData, onRefresh }: SelfUpdateTabPr
                     className='h-full'
                 >
                     <h3 className='text-primary font-mono text-3xl font-bold'>
-                        {systemData?.wings.version || t('common.unknown')}
+                        {systemData?.wings?.version || t('common.unknown')}
                     </h3>
                 </PageCard>
 

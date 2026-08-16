@@ -38,6 +38,7 @@ import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { toast } from 'sonner';
 import axios from 'axios';
 import { cn, isEnabled } from '@/lib/utils';
+import { supportsDaemonFeature } from '@/lib/daemonCapabilities';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { PageHeader } from '@/components/featherui/PageHeader';
@@ -49,7 +50,7 @@ export default function CreateServerImportPage() {
     const router = useRouter();
     const { t } = useTranslation();
     const { settings, loading: settingsLoading } = useSettings();
-    const { hasPermission, loading: permissionsLoading } = useServerPermissions(uuidShort as string);
+    const { hasPermission, loading: permissionsLoading, server } = useServerPermissions(uuidShort as string);
     const canManage = hasPermission('settings.import') || hasPermission('file.create');
 
     const [saving, setSaving] = React.useState(false);
@@ -134,7 +135,9 @@ export default function CreateServerImportPage() {
         fetchWidgets();
     }, [fetchWidgets]);
 
-    const isImportEnabled = isEnabled(settings?.server_allow_user_made_import);
+    const isImportEnabled =
+        isEnabled(settings?.server_allow_user_made_import) &&
+        supportsDaemonFeature(server?.node?.capabilities, 'import', server?.node?.daemon_type);
 
     if (permissionsLoading || settingsLoading) return null;
     if (!canManage) {

@@ -160,7 +160,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
                         !window.location.pathname.startsWith('/auth') &&
                         !isPublicNoAuthRoute(window.location.pathname)
                     ) {
-                        router.push('/auth/login');
+                        const redirect = `${window.location.pathname}${window.location.search}`;
+                        router.push(`/auth/login?redirect=${encodeURIComponent(redirect)}`);
                     }
                     setIsSessionChecked(true);
                     setIsLoading(false);
@@ -209,7 +210,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
                         !window.location.pathname.startsWith('/auth') &&
                         !isPublicNoAuthRoute(window.location.pathname)
                     ) {
-                        router.push('/auth/login');
+                        const redirect = `${window.location.pathname}${window.location.search}`;
+                        router.push(`/auth/login?redirect=${encodeURIComponent(redirect)}`);
                     }
                 }
                 setIsSessionChecked(true);

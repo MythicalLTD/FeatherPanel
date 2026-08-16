@@ -261,7 +261,7 @@ export const filesApi = {
 
     saveFileContent: async (uuid: string, path: string, content: string): Promise<void> => {
         await api.post(`/user/servers/${uuid}/write-file`, content, {
-            params: { path },
+            params: { path: normalizePath(path) },
             headers: {
                 'Content-Type': 'text/plain',
             },
@@ -295,9 +295,16 @@ export const filesApi = {
         await api.post(`/user/servers/${uuid}/copy-files`, {
             location: sourcePath,
             files: [sourcePath],
+            ...(targetName ? { name: targetName } : {}),
         });
 
         if (targetName && expectedCopiedName && expectedCopiedName !== targetName) {
+            const siblings = await filesApi.getFiles(uuid, root || '/');
+            const names = new Set(siblings.contents.map((entry) => entry.name));
+            // Skip rename when the daemon already honored `name`
+            if (names.has(targetName) || !names.has(expectedCopiedName)) {
+                return;
+            }
             await api.put(`/user/servers/${uuid}/rename`, {
                 root: normalizePath(root || '/'),
                 files: [{ from: expectedCopiedName, to: targetName }],
@@ -390,6 +397,40 @@ export const filesApi = {
         );
         return res.data.data.download_url;
     },
+
+    downloadDirectory: async (uuid: string, path: string, archiveFormat?: string): Promise<string> => {
+        const res = await api.get<ApiResponse<{ download_url: string; expires_in: number }>>(
+            `/user/servers/${uuid}/download-directory`,
+            {
+                params: {
+                    path: normalizePath(path || '/'),
+                    ...(archiveFormat ? { format: archiveFormat } : {}),
+                },
+            },
+        );
+        return res.data.data.download_url;
+    },
+
+    abortInstall: async (uuid: string): Promise<void> => {
+        await api.post(`/user/servers/${uuid}/install/abort`);
+    },
+
+    getFingerprints: async (
+        uuid: string,
+        files: string[],
+        algorithm: string = 'sha256',
+    ): Promise<Record<string, string> | { files?: Record<string, string>; algorithm?: string }> => {
+        const response = await api.get<
+            ApiResponse<Record<string, string> | { files?: Record<string, string>; algorithm?: string }>
+        >(`/user/servers/${uuid}/file-fingerprints`, {
+            params: {
+                files,
+                algorithm,
+            },
+        });
+        return response.data.data;
+    },
+
     compressFiles: async (
         uuid: string,
         root: string,

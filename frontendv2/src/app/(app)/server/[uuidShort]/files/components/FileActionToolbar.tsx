@@ -31,6 +31,7 @@ import {
     MoreVertical,
     Boxes,
     ChevronDown,
+    Code2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -61,6 +62,7 @@ interface FileActionToolbarProps {
     onMoveSelected: () => void;
     onPermissionsSelected: () => void;
     onOpenInIDE: () => void;
+    onOpenInCalagopus?: () => void;
     canCreate: boolean;
     canDelete: boolean;
     currentDirectory: string;
@@ -85,6 +87,7 @@ export function FileActionToolbar({
     onMoveSelected,
     onPermissionsSelected,
     onOpenInIDE,
+    onOpenInCalagopus,
     canCreate,
     canDelete,
     currentDirectory,
@@ -250,6 +253,18 @@ export function FileActionToolbar({
                                 <Boxes className='mr-2 h-4 w-4 shrink-0' />
                                 <span className='xs:inline hidden'>{t('files.toolbar.open_in_ide')}</span>
                             </Button>
+
+                            {onOpenInCalagopus && (
+                                <Button
+                                    variant='ghost'
+                                    size='sm'
+                                    onClick={onOpenInCalagopus}
+                                    className='text-muted-foreground hover:text-foreground h-9 shrink-0 px-3 hover:bg-black/5 dark:hover:bg-white/5'
+                                >
+                                    <Code2 className='mr-2 h-4 w-4 shrink-0' />
+                                    <span className='xs:inline hidden'>{t('files.toolbar.open_in_vscode')}</span>
+                                </Button>
+                            )}
 
                             <DropdownMenu>
                                 <DropdownMenuTrigger

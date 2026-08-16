@@ -26,6 +26,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { AlertTriangle, ArrowLeftRight, ChevronRight, Loader2, Search, ShieldCheck } from 'lucide-react';
 import { ApiAllocation, ApiNode, ApiServer } from '@/types/adminServerTypes';
+import { supportsDaemonFeature, type DaemonCapabilitiesMap, type DaemonType } from '@/lib/daemonCapabilities';
 
 interface TransferServerDialogProps {
     server: ApiServer | null;
@@ -51,6 +52,10 @@ export function TransferServerDialog({ server, open, onOpenChange, onCompleted }
     const [selectedAllocation, setSelectedAllocation] = useState<ApiAllocation | null>(null);
     const [autoAllocate, setAutoAllocate] = useState(true);
     const [autoOpenPorts, setAutoOpenPorts] = useState(false);
+    const [includeBackups, setIncludeBackups] = useState(false);
+    const [deleteBackups, setDeleteBackups] = useState(false);
+    const [sourceDaemonType, setSourceDaemonType] = useState<DaemonType | null>(null);
+    const [sourceCapabilities, setSourceCapabilities] = useState<DaemonCapabilitiesMap | null>(null);
 
     const [allocationsNeeded, setAllocationsNeeded] = useState(1);
     const [freeOnDestination, setFreeOnDestination] = useState<number | null>(null);
@@ -59,11 +64,17 @@ export function TransferServerDialog({ server, open, onOpenChange, onCompleted }
     const [submitting, setSubmitting] = useState(false);
     const [transferError, setTransferError] = useState<string | null>(null);
 
+    const canTransferBackups = supportsDaemonFeature(sourceCapabilities, 'transfer_backups', sourceDaemonType);
+
     const resetState = useCallback(() => {
         setSelectedNode(null);
         setSelectedAllocation(null);
         setAutoAllocate(true);
         setAutoOpenPorts(false);
+        setIncludeBackups(false);
+        setDeleteBackups(false);
+        setSourceDaemonType(null);
+        setSourceCapabilities(null);
         setAllocationsNeeded(1);
         setFreeOnDestination(null);
         setTransferError(null);
@@ -76,6 +87,25 @@ export function TransferServerDialog({ server, open, onOpenChange, onCompleted }
             resetState();
         }
     }, [open, resetState]);
+
+    useEffect(() => {
+        if (!open || !server?.node_id) return;
+        let cancelled = false;
+        (async () => {
+            try {
+                const { data } = await axios.get(`/api/admin/nodes/${server.node_id}`);
+                const node = data?.data?.node ?? data?.data;
+                if (cancelled || !node) return;
+                setSourceDaemonType((node.daemon_type as DaemonType) ?? null);
+                setSourceCapabilities((node.capabilities as DaemonCapabilitiesMap) ?? null);
+            } catch {
+                // Ignore — backups option stays hidden when caps are unknown.
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, [open, server?.node_id]);
 
     const loadServerAllocations = useCallback(async (serverId: number) => {
         try {
@@ -170,6 +200,8 @@ export function TransferServerDialog({ server, open, onOpenChange, onCompleted }
                 destination_allocation_id?: number;
                 auto_allocate?: boolean;
                 auto_open_ports?: boolean;
+                include_all_backups?: boolean;
+                delete_backups?: boolean;
             } = {
                 destination_node_id: selectedNode.id,
                 auto_allocate: autoAllocate,
@@ -179,6 +211,12 @@ export function TransferServerDialog({ server, open, onOpenChange, onCompleted }
             }
             if (!autoAllocate && selectedAllocation) {
                 payload.destination_allocation_id = selectedAllocation.id;
+            }
+            if (canTransferBackups && includeBackups) {
+                payload.include_all_backups = true;
+                if (deleteBackups) {
+                    payload.delete_backups = true;
+                }
             }
             await axios.post(`/api/admin/servers/${server.id}/transfer`, payload);
             toast.success(t('admin.servers.messages.transfer_initiated'));
@@ -304,6 +342,54 @@ export function TransferServerDialog({ server, open, onOpenChange, onCompleted }
                                     </p>
                                 </div>
                             </label>
+                        )}
+
+                        {canTransferBackups && (
+                            <>
+                                <label className='flex cursor-pointer items-start gap-3'>
+                                    <Checkbox
+                                        checked={includeBackups}
+                                        onCheckedChange={(v) => {
+                                            const enabled = v === true;
+                                            setIncludeBackups(enabled);
+                                            if (!enabled) {
+                                                setDeleteBackups(false);
+                                            }
+                                        }}
+                                        disabled={submitting}
+                                        className='mt-0.5'
+                                    />
+                                    <div>
+                                        <p className='text-sm font-medium'>
+                                            {t('admin.servers.transfer.include_backups') || 'Include backups'}
+                                        </p>
+                                        <p className='text-muted-foreground mt-0.5 text-xs leading-relaxed'>
+                                            {t('admin.servers.transfer.include_backups_help') ||
+                                                'Transfer successful backups to the destination node (Calagopus).'}
+                                        </p>
+                                    </div>
+                                </label>
+                                {includeBackups && (
+                                    <label className='flex cursor-pointer items-start gap-3 pl-1'>
+                                        <Checkbox
+                                            checked={deleteBackups}
+                                            onCheckedChange={(v) => setDeleteBackups(v === true)}
+                                            disabled={submitting}
+                                            className='mt-0.5'
+                                        />
+                                        <div>
+                                            <p className='text-sm font-medium'>
+                                                {t('admin.servers.transfer.delete_backups') ||
+                                                    'Delete backups on source'}
+                                            </p>
+                                            <p className='text-muted-foreground mt-0.5 text-xs leading-relaxed'>
+                                                {t('admin.servers.transfer.delete_backups_help') ||
+                                                    'Remove transferred backups from the source node after a successful transfer.'}
+                                            </p>
+                                        </div>
+                                    </label>
+                                )}
+                            </>
                         )}
                     </div>
 

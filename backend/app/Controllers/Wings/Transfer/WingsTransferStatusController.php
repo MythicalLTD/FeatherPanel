@@ -26,6 +26,7 @@ use App\Chat\ServerTransfer;
 use App\Helpers\ApiResponse;
 use App\Services\Wings\Wings;
 use App\Helpers\WingsUrlHelper;
+use App\Helpers\DaemonCapabilities;
 use App\Plugins\Events\Events\ServerEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -243,13 +244,22 @@ class WingsTransferStatusController
         // Update the server
         Server::updateServerById($server['id'], $serverUpdateData);
 
-        // Mark transfer as successful
+        // Mark transfer as successful (clears in-progress transfer options stored in error)
         ServerTransfer::markSuccessful($server['id']);
 
-        // 3. Delete backups from the old node (they are not transferred)
-        $deletedBackups = Backup::deleteAllByServerId($server['id']);
-        if ($deletedBackups > 0) {
-            $logger->info('Deleted ' . $deletedBackups . ' backup records for transferred server ' . $uuid);
+        // 3. Delete backups from the old node unless they were transferred (Calagopus).
+        $payload = json_decode($request->getContent(), true);
+        if (!is_array($payload)) {
+            $payload = [];
+        }
+        $shouldKeepBackupRows = $this->shouldKeepBackupRowsAfterTransfer($transfer, $payload, $logger);
+        if ($shouldKeepBackupRows) {
+            $logger->info('Keeping backup DB rows for transferred server ' . $uuid . ' (backups moved with server)');
+        } else {
+            $deletedBackups = Backup::deleteAllByServerId($server['id']);
+            if ($deletedBackups > 0) {
+                $logger->info('Deleted ' . $deletedBackups . ' backup records for transferred server ' . $uuid);
+            }
         }
 
         // 4. Delete the server from the old node via Wings API
@@ -388,6 +398,70 @@ class WingsTransferStatusController
         $logger->error('Server transfer failed: ' . $server['name'] . ' (UUID: ' . $uuid . ') - ' . $error);
 
         return ApiResponse::success([], 'Transfer failure recorded', 200);
+    }
+
+    /**
+     * Whether backup DB rows should be kept after a successful transfer.
+     *
+     * Calagopus can move backups with the server and reports transferred UUIDs in the
+     * success callback body. We also stash transfer options on the transfer row.
+     *
+     * @param array<string, mixed> $transfer
+     * @param array<string, mixed> $payload
+     */
+    private function shouldKeepBackupRowsAfterTransfer(array $transfer, array $payload, $logger): bool
+    {
+        $transferredFromCallback = [];
+        if (isset($payload['backups']) && is_array($payload['backups'])) {
+            foreach ($payload['backups'] as $uuid) {
+                if (is_string($uuid) && $uuid !== '') {
+                    $transferredFromCallback[] = $uuid;
+                }
+            }
+        }
+
+        if ($transferredFromCallback !== []) {
+            return true;
+        }
+
+        $options = $this->decodeTransferOptions($transfer['error'] ?? null);
+        if ($options !== null && !empty($options['backups']) && is_array($options['backups'])) {
+            return true;
+        }
+
+        $destinationNode = Node::getNodeById((int) ($transfer['destination_node_id'] ?? 0));
+        if ($destinationNode && DaemonCapabilities::fromNode($destinationNode)->isWingsRs()) {
+            // Fallback: wings_rs destination + transfer requested with backups option.
+            if ($options !== null && array_key_exists('backups', $options)) {
+                $logger->info('Skipping backup deletion for wings_rs transfer with backups option');
+
+                return true;
+            }
+            if (array_key_exists('backups', $payload)) {
+                $logger->info('Skipping backup deletion for wings_rs transfer success payload containing backups key');
+
+                return !empty($payload['backups']);
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @return array{backups?: list<string>, delete_backups?: bool}|null
+     */
+    private function decodeTransferOptions(mixed $errorField): ?array
+    {
+        if (!is_string($errorField) || $errorField === '') {
+            return null;
+        }
+
+        $decoded = json_decode($errorField, true);
+        if (!is_array($decoded) || !isset($decoded['_transfer_options']) || !is_array($decoded['_transfer_options'])) {
+            return null;
+        }
+
+        return $decoded['_transfer_options'];
     }
 
     /**

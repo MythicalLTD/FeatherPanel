@@ -298,6 +298,7 @@ class ServerTransfer
             'status' => 'completed',
             'progress' => 100.0,
             'completed_at' => date('Y-m-d H:i:s'),
+            'error' => null,
         ]);
     }
 

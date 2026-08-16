@@ -31,6 +31,14 @@ interface SystemInfoTabProps {
     onRefresh: () => void;
 }
 
+function displayValue(value: string | number | null | undefined, fallback = '—'): string {
+    if (value === null || value === undefined || value === '') {
+        return fallback;
+    }
+
+    return String(value);
+}
+
 export function SystemInfoTab({ nodeId, loading, data, error, onRefresh }: SystemInfoTabProps) {
     const { t } = useTranslation();
     const [versionStatus, setVersionStatus] = useState<VersionStatus | null>(null);
@@ -80,7 +88,12 @@ export function SystemInfoTab({ nodeId, loading, data, error, onRefresh }: Syste
         );
     }
 
-    if (!data) return null;
+    if (!data?.wings) return null;
+
+    const wings = data.wings;
+    const docker = wings.docker;
+    const system = wings.system;
+    const hasDockerDetails = Boolean(docker?.version);
 
     return (
         <div className='space-y-6'>
@@ -90,7 +103,7 @@ export function SystemInfoTab({ nodeId, loading, data, error, onRefresh }: Syste
                         <p className='text-muted-foreground mb-1 text-xs font-bold tracking-wider uppercase'>
                             {t('admin.node.view.system.wings_version')}
                         </p>
-                        <p className='font-mono text-sm'>{data.wings.version}</p>
+                        <p className='font-mono text-sm'>{displayValue(wings.version)}</p>
                     </div>
 
                     {versionLoading ? (
@@ -143,67 +156,74 @@ export function SystemInfoTab({ nodeId, loading, data, error, onRefresh }: Syste
 
             <div className='grid grid-cols-1 gap-6 lg:grid-cols-2'>
                 <PageCard title={t('admin.node.view.system.docker_info')} icon={LayoutGrid}>
-                    <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
-                        <div>
-                            <p className='text-muted-foreground mb-1 text-xs font-bold tracking-wider uppercase'>
-                                {t('admin.node.view.system.docker_version')}
-                            </p>
-                            <p className='font-mono text-sm'>{data.wings.docker.version}</p>
-                        </div>
-                        <div>
-                            <p className='text-muted-foreground mb-1 text-xs font-bold tracking-wider uppercase'>
-                                {t('admin.node.view.system.cgroups_driver')}
-                            </p>
-                            <p className='text-sm'>
-                                {data.wings.docker.cgroups.driver} (v{data.wings.docker.cgroups.version})
-                            </p>
-                        </div>
-                        <div>
-                            <p className='text-muted-foreground mb-1 text-xs font-bold tracking-wider uppercase'>
-                                {t('admin.node.view.system.storage_driver')}
-                            </p>
-                            <p className='text-sm'>
-                                {data.wings.docker.storage.driver} ({data.wings.docker.storage.filesystem})
-                            </p>
-                        </div>
-                        <div>
-                            <p className='text-muted-foreground mb-1 text-xs font-bold tracking-wider uppercase'>
-                                {t('admin.node.view.system.runc_version')}
-                            </p>
-                            <p className='font-mono text-sm'>{data.wings.docker.runc.version}</p>
-                        </div>
-                        <div className='border-border/50 border-t pt-4 md:col-span-2'>
-                            <p className='text-muted-foreground mb-3 text-xs font-bold tracking-wider uppercase'>
-                                {t('admin.node.view.system.containers')}
-                            </p>
-                            <div className='flex flex-wrap gap-3'>
-                                <Badge
-                                    variant='secondary'
-                                    className='bg-primary/5 text-primary border-primary/10 px-3 py-1'
-                                >
-                                    {t('admin.node.view.system.total')}: {data.wings.docker.containers.total}
-                                </Badge>
-                                <Badge
-                                    variant='secondary'
-                                    className='border-green-500/10 bg-green-500/5 px-3 py-1 text-green-500'
-                                >
-                                    {t('admin.node.view.system.running')}: {data.wings.docker.containers.running}
-                                </Badge>
-                                <Badge
-                                    variant='secondary'
-                                    className='border-yellow-500/10 bg-yellow-500/5 px-3 py-1 text-yellow-500'
-                                >
-                                    {t('admin.node.view.system.paused')}: {data.wings.docker.containers.paused}
-                                </Badge>
-                                <Badge
-                                    variant='secondary'
-                                    className='border-red-500/10 bg-red-500/5 px-3 py-1 text-red-500'
-                                >
-                                    {t('admin.node.view.system.stopped')}: {data.wings.docker.containers.stopped}
-                                </Badge>
+                    {hasDockerDetails ? (
+                        <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
+                            <div>
+                                <p className='text-muted-foreground mb-1 text-xs font-bold tracking-wider uppercase'>
+                                    {t('admin.node.view.system.docker_version')}
+                                </p>
+                                <p className='font-mono text-sm'>{displayValue(docker?.version)}</p>
+                            </div>
+                            <div>
+                                <p className='text-muted-foreground mb-1 text-xs font-bold tracking-wider uppercase'>
+                                    {t('admin.node.view.system.cgroups_driver')}
+                                </p>
+                                <p className='text-sm'>
+                                    {displayValue(docker?.cgroups?.driver)} (v{displayValue(docker?.cgroups?.version)})
+                                </p>
+                            </div>
+                            <div>
+                                <p className='text-muted-foreground mb-1 text-xs font-bold tracking-wider uppercase'>
+                                    {t('admin.node.view.system.storage_driver')}
+                                </p>
+                                <p className='text-sm'>
+                                    {displayValue(docker?.storage?.driver)} ({displayValue(docker?.storage?.filesystem)}
+                                    )
+                                </p>
+                            </div>
+                            <div>
+                                <p className='text-muted-foreground mb-1 text-xs font-bold tracking-wider uppercase'>
+                                    {t('admin.node.view.system.runc_version')}
+                                </p>
+                                <p className='font-mono text-sm'>{displayValue(docker?.runc?.version)}</p>
+                            </div>
+                            <div className='border-border/50 border-t pt-4 md:col-span-2'>
+                                <p className='text-muted-foreground mb-3 text-xs font-bold tracking-wider uppercase'>
+                                    {t('admin.node.view.system.containers')}
+                                </p>
+                                <div className='flex flex-wrap gap-3'>
+                                    <Badge
+                                        variant='secondary'
+                                        className='bg-primary/5 text-primary border-primary/10 px-3 py-1'
+                                    >
+                                        {t('admin.node.view.system.total')}: {docker?.containers?.total ?? 0}
+                                    </Badge>
+                                    <Badge
+                                        variant='secondary'
+                                        className='border-green-500/10 bg-green-500/5 px-3 py-1 text-green-500'
+                                    >
+                                        {t('admin.node.view.system.running')}: {docker?.containers?.running ?? 0}
+                                    </Badge>
+                                    <Badge
+                                        variant='secondary'
+                                        className='border-yellow-500/10 bg-yellow-500/5 px-3 py-1 text-yellow-500'
+                                    >
+                                        {t('admin.node.view.system.paused')}: {docker?.containers?.paused ?? 0}
+                                    </Badge>
+                                    <Badge
+                                        variant='secondary'
+                                        className='border-red-500/10 bg-red-500/5 px-3 py-1 text-red-500'
+                                    >
+                                        {t('admin.node.view.system.stopped')}: {docker?.containers?.stopped ?? 0}
+                                    </Badge>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    ) : (
+                        <p className='text-muted-foreground text-sm'>
+                            {t('admin.node.view.system.docker_unavailable')}
+                        </p>
+                    )}
                 </PageCard>
 
                 <PageCard title={t('admin.node.view.system.host_info')} icon={Cpu}>
@@ -212,37 +232,37 @@ export function SystemInfoTab({ nodeId, loading, data, error, onRefresh }: Syste
                             <p className='text-muted-foreground mb-1 text-xs font-bold tracking-wider uppercase'>
                                 {t('admin.node.view.system.architecture')}
                             </p>
-                            <p className='font-mono text-sm uppercase'>{data.wings.system.architecture}</p>
+                            <p className='font-mono text-sm uppercase'>{displayValue(system?.architecture)}</p>
                         </div>
                         <div>
                             <p className='text-muted-foreground mb-1 text-xs font-bold tracking-wider uppercase'>
                                 {t('admin.node.view.system.cpu_threads')}
                             </p>
-                            <p className='text-sm'>{data.wings.system.cpu_threads}</p>
+                            <p className='text-sm'>{displayValue(system?.cpu_threads, '0')}</p>
                         </div>
                         <div>
                             <p className='text-muted-foreground mb-1 text-xs font-bold tracking-wider uppercase'>
                                 {t('admin.node.view.system.total_memory')}
                             </p>
-                            <p className='text-sm'>{formatBytes(data.wings.system.memory_bytes)}</p>
+                            <p className='text-sm'>{formatBytes(system?.memory_bytes ?? 0)}</p>
                         </div>
                         <div>
                             <p className='text-muted-foreground mb-1 text-xs font-bold tracking-wider uppercase'>
                                 {t('admin.node.view.system.kernel_version')}
                             </p>
-                            <p className='font-mono text-sm'>{data.wings.system.kernel_version}</p>
+                            <p className='font-mono text-sm'>{displayValue(system?.kernel_version)}</p>
                         </div>
                         <div>
                             <p className='text-muted-foreground mb-1 text-xs font-bold tracking-wider uppercase'>
                                 {t('admin.node.view.system.operating_system')}
                             </p>
-                            <p className='text-sm'>{data.wings.system.os}</p>
+                            <p className='text-sm'>{displayValue(system?.os)}</p>
                         </div>
                         <div>
                             <p className='text-muted-foreground mb-1 text-xs font-bold tracking-wider uppercase'>
                                 {t('admin.node.view.system.os_type')}
                             </p>
-                            <p className='text-sm capitalize'>{data.wings.system.os_type}</p>
+                            <p className='text-sm capitalize'>{displayValue(system?.os_type)}</p>
                         </div>
                     </div>
                 </PageCard>

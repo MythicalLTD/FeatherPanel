@@ -25,6 +25,7 @@ use App\Services\Wings\Wings;
 use App\Config\ConfigInterface;
 use App\Helpers\WingsUrlHelper;
 use App\Chat\ServerLifecycleHook;
+use App\Helpers\DaemonCapabilities;
 use App\Chat\ServerLifecycleHookStep;
 use App\Plugins\Events\Events\ServerEvent;
 
@@ -343,6 +344,14 @@ class LifecycleHookExecutorService
         $enabled = App::getInstance(true)->getConfig()->getSetting(ConfigInterface::SERVER_LIFECYCLE_HOOKS_CONTAINER_SHELL_ENABLED, 'false') === 'true';
         if (!$enabled) {
             throw new \Exception('Container Shell steps are disabled by the administrator');
+        }
+
+        if (!DaemonCapabilities::fromNode($node)->supports(DaemonCapabilities::FEATURE_CONTAINER_EXEC)) {
+            App::getInstance(true)->getLogger()->warning(
+                'Lifecycle container shell skipped: daemon does not support container_exec for server ' . ($server['uuid'] ?? 'unknown')
+            );
+
+            return ['skipped' => true, 'reason' => 'container_exec_unsupported'];
         }
 
         $command = trim((string) ($payload['command'] ?? ''));

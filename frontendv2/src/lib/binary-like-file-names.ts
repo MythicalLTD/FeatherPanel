@@ -30,7 +30,7 @@ const BINARY_LIKE_EXTENSIONS = new Set([
     'exe',
     'flac',
     'gif',
-    'gz',
+    // Plain .gz / .log.gz are treated as editable text candidates; .tar.gz stays blocked below.
     'ico',
     'iso',
     'jar',
@@ -82,7 +82,10 @@ const BINARY_LIKE_EXTENSIONS = new Set([
  */
 export function isBinaryLikeFileName(fileName: string): boolean {
     const lower = fileName.trim().toLowerCase();
+    // Keep compound tar archives blocked; allow plain .gz and .log.gz as text candidates.
     if (/\.(tar\.gz|tar\.bz2|tar\.xz)$/i.test(lower)) return true;
+    if (/\.log\.gz$/i.test(lower)) return false;
+    if (/\.gz$/i.test(lower)) return false;
     const dot = lower.lastIndexOf('.');
     if (dot === -1 || dot === lower.length - 1) return false;
     const ext = lower.slice(dot + 1);
@@ -91,5 +94,5 @@ export function isBinaryLikeFileName(fileName: string): boolean {
 
 /** Archives that the panel may offer to extract or browse (zip-like and common bundles). */
 export function isDecompressibleArchiveFileName(fileName: string): boolean {
-    return /\.(zip|jar|war|ear|7z|tar|tar\.gz|tgz|tar\.bz2|tbz2|tar\.xz|txz|rar)$/i.test(fileName.trim());
+    return /\.(zip|jar|war|ear|7z|ddup|tar|tar\.gz|tgz|tar\.bz2|tbz2|tar\.xz|txz|rar)$/i.test(fileName.trim());
 }

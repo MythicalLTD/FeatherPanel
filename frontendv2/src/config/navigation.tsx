@@ -63,6 +63,7 @@ import {
     Lightbulb,
 } from 'lucide-react';
 import { isEnabled } from '@/lib/utils';
+import { supportsDaemonFeature, type DaemonFeature } from '@/lib/daemonCapabilities';
 
 type TFunction = (key: string) => string;
 
@@ -704,7 +705,11 @@ export const getServerNavigationItems = (
     t: TFunction,
     serverUuid: string,
     settings: AppSettings | null,
+    daemonCapabilities?: Partial<Record<string, boolean>> | null,
+    daemonType?: string | null,
 ): NavigationItem[] => {
+    const supports = (feature: DaemonFeature) => supportsDaemonFeature(daemonCapabilities, feature, daemonType);
+
     const items: NavigationItem[] = [
         {
             id: 'server-overview',
@@ -766,7 +771,7 @@ export const getServerNavigationItems = (
         },
     ];
 
-    if (isEnabled(settings?.server_allow_user_made_import)) {
+    if (isEnabled(settings?.server_allow_user_made_import) && supports('import')) {
         items.push({
             id: 'server-import',
             name: t('navigation.items.import'),
@@ -860,7 +865,7 @@ export const getServerNavigationItems = (
         },
     );
 
-    if (isEnabled(settings?.server_allow_user_made_firewall)) {
+    if (isEnabled(settings?.server_allow_user_made_firewall) && supports('firewall')) {
         items.push({
             id: 'server-firewall',
             name: t('navigation.items.firewall'),
@@ -874,7 +879,7 @@ export const getServerNavigationItems = (
         });
     }
 
-    if (isEnabled(settings?.server_allow_user_made_proxy)) {
+    if (isEnabled(settings?.server_allow_user_made_proxy) && supports('proxy')) {
         items.push({
             id: 'server-proxy',
             name: t('navigation.items.proxy'),
@@ -888,7 +893,7 @@ export const getServerNavigationItems = (
         });
     }
 
-    if (isEnabled(settings?.server_allow_user_made_fastdl)) {
+    if (isEnabled(settings?.server_allow_user_made_fastdl) && supports('fastdl')) {
         items.push({
             id: 'server-fastdl',
             name: t('navigation.items.fastdl'),

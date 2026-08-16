@@ -42,6 +42,7 @@ import type {
     AllocationsResponse,
 } from '@/types/server';
 import { safeBack } from '@/lib/safe-back';
+import { supportsDaemonFeature } from '@/lib/daemonCapabilities';
 
 export default function ServerFirewallPage() {
     const params = useParams();
@@ -51,7 +52,7 @@ export default function ServerFirewallPage() {
     const { t } = useTranslation();
     const { settings, loading: settingsLoading } = useSettings();
 
-    const { hasPermission, loading: permissionsLoading } = useServerPermissions(uuidShort);
+    const { hasPermission, loading: permissionsLoading, server } = useServerPermissions(uuidShort);
     const canRead = hasPermission('allocation.read') || hasPermission('firewall.read');
     const canManage = hasPermission('allocation.update') || hasPermission('firewall.manage');
 
@@ -77,7 +78,9 @@ export default function ServerFirewallPage() {
     const [ruleToDelete, setRuleToDelete] = React.useState<FirewallRule | null>(null);
     const [deleting, setDeleting] = React.useState(false);
 
-    const firewallEnabled = isEnabled(settings?.server_allow_user_made_firewall);
+    const firewallEnabled =
+        isEnabled(settings?.server_allow_user_made_firewall) &&
+        supportsDaemonFeature(server?.node?.capabilities, 'firewall', server?.node?.daemon_type);
 
     const { getWidgets, fetchWidgets } = usePluginWidgets('server-firewall');
 

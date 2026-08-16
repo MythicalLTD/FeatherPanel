@@ -152,17 +152,26 @@ export function AllocationsTab({ nodeId, nodeName }: AllocationsTabProps) {
     const checkHealthAndIPs = useCallback(async () => {
         setIsCheckingHealth(true);
         try {
-            const [healthRes, ipsRes] = await Promise.all([
+            const [healthSettled, ipsSettled] = await Promise.allSettled([
                 axios.get(`/api/wings/admin/node/${nodeId}/system`),
                 axios.get(`/api/wings/admin/node/${nodeId}/ips`),
             ]);
-            setNodeHealthStatus(healthRes.data.success ? 'healthy' : 'unhealthy');
-            if (ipsRes.data.success) {
-                setNodeIPs(ipsRes.data.data.ips.ip_addresses || []);
+
+            if (healthSettled.status === 'fulfilled' && healthSettled.value.data?.success) {
+                setNodeHealthStatus('healthy');
+            } else {
+                setNodeHealthStatus('unhealthy');
+            }
+
+            if (ipsSettled.status === 'fulfilled' && ipsSettled.value.data?.success) {
+                setNodeIPs(ipsSettled.value.data?.data?.ips?.ip_addresses || []);
+            } else {
+                setNodeIPs([]);
             }
         } catch (error) {
             console.error('Error checking health/IPs:', error);
             setNodeHealthStatus('unhealthy');
+            setNodeIPs([]);
         } finally {
             setIsCheckingHealth(false);
         }

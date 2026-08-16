@@ -34,6 +34,8 @@ import { Server, ArrowLeft, Save, Search as SearchIcon, MapPin, ChevronLeft, Che
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { safeBack } from '@/lib/safe-back';
+import { defaultDaemonBase, supportsDaemonFeature, type DaemonType } from '@/lib/daemonCapabilities';
+import { DaemonTypeField } from '@/components/admin/DaemonTypeField';
 
 interface Location {
     id: number;
@@ -85,11 +87,13 @@ export default function CreateNodePage() {
         daemonSFTP: 2022,
         fastdl_port: 80,
         daemonBase: '/var/lib/featherpanel/volumes',
+        daemon_type: 'featherwings' as DaemonType,
         public_ip_v4: '',
         public_ip_v6: '',
         sftp_subdomain: '',
     });
 
+    const [daemonTypeConfirmed, setDaemonTypeConfirmed] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
 
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-nodes-create');
@@ -199,9 +203,13 @@ export default function CreateNodePage() {
             }
         }
 
+        if (form.daemon_type === 'wings_rs' && !daemonTypeConfirmed) {
+            newErrors.daemon_type = t('admin.node.form.daemon_type_confirm_required');
+        }
+
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
-    }, [form, t]);
+    }, [form, daemonTypeConfirmed, t]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -458,9 +466,33 @@ export default function CreateNodePage() {
                                     </div>
                                 </div>
                                 <div className='space-y-2'>
+                                    <DaemonTypeField
+                                        value={form.daemon_type}
+                                        requireConfirmation
+                                        confirmed={daemonTypeConfirmed}
+                                        onConfirmedChange={setDaemonTypeConfirmed}
+                                        onChange={(daemon_type, nextBase) => {
+                                            const shouldUpdateBase =
+                                                !form.daemonBase ||
+                                                form.daemonBase === defaultDaemonBase(form.daemon_type);
+                                            setForm({
+                                                ...form,
+                                                daemon_type,
+                                                daemonBase: shouldUpdateBase ? nextBase : form.daemonBase,
+                                            });
+                                            if (daemon_type !== 'wings_rs') {
+                                                setDaemonTypeConfirmed(false);
+                                            }
+                                        }}
+                                    />
+                                    {errors.daemon_type ? (
+                                        <p className='text-destructive text-xs font-medium'>{errors.daemon_type}</p>
+                                    ) : null}
+                                </div>
+                                <div className='space-y-2'>
                                     <Label className='text-sm font-semibold'>{t('admin.node.form.daemon_base')}</Label>
                                     <Input
-                                        placeholder='/var/lib/featherpanel/volumes'
+                                        placeholder={defaultDaemonBase(form.daemon_type)}
                                         value={form.daemonBase}
                                         onChange={(e) => setForm({ ...form, daemonBase: e.target.value })}
                                         error={!!errors.daemonBase}
@@ -546,21 +578,23 @@ export default function CreateNodePage() {
                                             }
                                         />
                                     </div>
-                                    <div className='space-y-2'>
-                                        <Label className='text-sm font-semibold'>
-                                            {t('admin.node.form.fastdl_port')}
-                                        </Label>
-                                        <Input
-                                            type='number'
-                                            value={form.fastdl_port}
-                                            onChange={(e) =>
-                                                setForm({ ...form, fastdl_port: parseInt(e.target.value) || 80 })
-                                            }
-                                        />
-                                        <p className='text-muted-foreground text-xs'>
-                                            {t('admin.node.form.fastdl_port_help')}
-                                        </p>
-                                    </div>
+                                    {supportsDaemonFeature(null, 'fastdl', form.daemon_type) ? (
+                                        <div className='space-y-2'>
+                                            <Label className='text-sm font-semibold'>
+                                                {t('admin.node.form.fastdl_port')}
+                                            </Label>
+                                            <Input
+                                                type='number'
+                                                value={form.fastdl_port}
+                                                onChange={(e) =>
+                                                    setForm({ ...form, fastdl_port: parseInt(e.target.value) || 80 })
+                                                }
+                                            />
+                                            <p className='text-muted-foreground text-xs'>
+                                                {t('admin.node.form.fastdl_port_help')}
+                                            </p>
+                                        </div>
+                                    ) : null}
                                 </div>
                                 <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
                                     <div className='space-y-2'>

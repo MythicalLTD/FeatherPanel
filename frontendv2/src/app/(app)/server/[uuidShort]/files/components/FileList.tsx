@@ -37,6 +37,9 @@ interface FileListProps {
     canDelete: boolean;
     canDownload: boolean;
     acceptArchiveExtract?: boolean;
+    canShare?: boolean;
+    canBrowseArchiveFeature?: boolean;
+    canDownloadDirectory?: boolean;
     serverUuid: string;
     currentDirectory: string;
     anchorName?: string | null;
@@ -60,6 +63,9 @@ export function FileList({
     canDelete,
     canDownload,
     acceptArchiveExtract = false,
+    canShare = true,
+    canBrowseArchiveFeature = true,
+    canDownloadDirectory = false,
     serverUuid,
     currentDirectory,
     anchorName = null,
@@ -160,6 +166,9 @@ export function FileList({
                         canDelete={canDelete}
                         canDownload={canDownload}
                         acceptArchiveExtract={acceptArchiveExtract}
+                        canShare={canShare}
+                        canBrowseArchiveFeature={canBrowseArchiveFeature}
+                        canDownloadDirectory={canDownloadDirectory}
                         serverUuid={serverUuid}
                         currentDirectory={currentDirectory}
                     />

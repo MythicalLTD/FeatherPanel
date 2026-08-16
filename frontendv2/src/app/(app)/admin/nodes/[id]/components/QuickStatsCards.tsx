@@ -30,7 +30,7 @@ export function QuickStatsCards({ node, systemInfoData }: QuickStatsCardsProps) 
     const stats = [
         {
             title: t('admin.node.view.stats.cpu'),
-            value: systemInfoData?.wings.system.cpu_threads || '0',
+            value: systemInfoData?.wings?.system?.cpu_threads || '0',
             subtitle: t('admin.node.view.stats.cpu_threads'),
             icon: Cpu,
             color: 'text-blue-500',
@@ -54,7 +54,7 @@ export function QuickStatsCards({ node, systemInfoData }: QuickStatsCardsProps) 
         },
         {
             title: t('admin.node.view.stats.docker'),
-            value: systemInfoData?.wings.docker.version || 'N/A',
+            value: systemInfoData?.wings?.docker?.version || 'N/A',
             subtitle: t('admin.node.view.stats.docker_version'),
             icon: LayoutGrid,
             color: 'text-green-500',

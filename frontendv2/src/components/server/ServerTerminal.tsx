@@ -1104,11 +1104,7 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                 )}
 
                 <div className='sm:hidden'>
-                    <Sheet
-                        open={showSettings && isNarrowViewport}
-                        onOpenChange={setShowSettings}
-                        className='max-w-lg'
-                    >
+                    <Sheet open={showSettings && isNarrowViewport} onOpenChange={setShowSettings} className='max-w-lg'>
                         <SheetContent>
                             <SheetHeader>
                                 <SheetTitle>{t('servers.console.terminal.customize')}</SheetTitle>
@@ -1147,11 +1143,7 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                         </Sheet>
                     )}
 
-                    <Sheet
-                        open={showHistory && isNarrowViewport}
-                        onOpenChange={setShowHistory}
-                        className='max-w-lg'
-                    >
+                    <Sheet open={showHistory && isNarrowViewport} onOpenChange={setShowHistory} className='max-w-lg'>
                         <SheetContent>
                             <SheetHeader>
                                 <SheetTitle>{t('servers.console.terminal.history_title')}</SheetTitle>

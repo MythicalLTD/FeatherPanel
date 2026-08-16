@@ -34,6 +34,7 @@ import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { isEnabled } from '@/lib/utils';
 import { copyToClipboard } from '@/lib/utils';
 import { safeBack } from '@/lib/safe-back';
+import { supportsDaemonFeature } from '@/lib/daemonCapabilities';
 
 interface FastDlConfig {
     enabled: boolean;
@@ -55,11 +56,13 @@ export default function ServerFastDlPage() {
     const { t } = useTranslation();
     const { settings, loading: settingsLoading } = useSettings();
 
-    const { hasPermission, loading: permissionsLoading } = useServerPermissions(uuidShort);
+    const { hasPermission, loading: permissionsLoading, server } = useServerPermissions(uuidShort);
     const canRead = hasPermission('settings.reinstall');
     const canManage = hasPermission('settings.reinstall');
 
-    const fastDlEnabled = isEnabled(settings?.server_allow_user_made_fastdl);
+    const fastDlEnabled =
+        isEnabled(settings?.server_allow_user_made_fastdl) &&
+        supportsDaemonFeature(server?.node?.capabilities, 'fastdl', server?.node?.daemon_type);
 
     const [config, setConfig] = React.useState<FastDlConfig | null>(null);
     const [loading, setLoading] = React.useState(true);

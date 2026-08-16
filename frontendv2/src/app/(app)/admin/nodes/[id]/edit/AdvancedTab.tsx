@@ -19,6 +19,7 @@ import { Input } from '@/components/featherui/Input';
 import { Select } from '@/components/ui/select-native';
 import { Label } from '@/components/ui/label';
 import { Shield } from 'lucide-react';
+import { supportsDaemonFeature } from '@/lib/daemonCapabilities';
 
 import { type NodeForm } from './page';
 
@@ -30,6 +31,7 @@ interface AdvancedTabProps {
 
 export function AdvancedTab({ form, setForm, errors }: AdvancedTabProps) {
     const { t } = useTranslation();
+    const showFastdl = supportsDaemonFeature(null, 'fastdl', form.daemon_type);
 
     return (
         <PageCard title={t('admin.node.form.advanced')} icon={Shield}>
@@ -56,17 +58,19 @@ export function AdvancedTab({ form, setForm, errors }: AdvancedTabProps) {
                                 }
                             />
                         </div>
-                        <div className='space-y-2'>
-                            <Label className='text-sm font-semibold'>{t('admin.node.form.fastdl_port')}</Label>
-                            <Input
-                                type='number'
-                                value={form.fastdl_port}
-                                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                    setForm({ ...form, fastdl_port: parseInt(e.target.value) || 80 })
-                                }
-                            />
-                            <p className='text-muted-foreground text-xs'>{t('admin.node.form.fastdl_port_help')}</p>
-                        </div>
+                        {showFastdl ? (
+                            <div className='space-y-2'>
+                                <Label className='text-sm font-semibold'>{t('admin.node.form.fastdl_port')}</Label>
+                                <Input
+                                    type='number'
+                                    value={form.fastdl_port}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                        setForm({ ...form, fastdl_port: parseInt(e.target.value) || 80 })
+                                    }
+                                />
+                                <p className='text-muted-foreground text-xs'>{t('admin.node.form.fastdl_port_help')}</p>
+                            </div>
+                        ) : null}
                     </div>
                     <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
                         <div className='space-y-2'>

@@ -5,13 +5,14 @@
 ### Added
 - Server console Network and Disk I/O cards show all-time totals (in/out and read/write since container start), with a clearer breakdown under the live rates. by @nayskutzu
 - **FeatherPanel Premium:** hide the panel version badge in the sidebar (toggle under Premium customization). by @nayskutzu
+- Support for Calagopus Wings as a Wings alternative. by @nayskutzu
+- File manager “VS Code” action opens a clearer dialog that explains the Calagopus extension requirement and links to the Visual Studio Marketplace and Open VSX install pages. by @nayskutzu
 
 ### Fixed
 - Server console on phones no longer scrolls the page instead of the terminal buffer; touch pans stay in the console, and auto-scroll pauses while reading older output so the scrollbar does not jump. by @nayskutzu
 - Rules & filters on mobile no longer shows the title and description twice when the sheet opens. by @nayskutzu
 - Opening Rules & filters on tablet/desktop no longer also pops the mobile side sheet (it was ignoring `sm:hidden` because the sheet portals to the document body). by @nayskutzu
 - Subuser management endpoints now enforce `user.read` / `user.create` / `user.update` / `user.delete`, reject self-modification, validate permission names against the known set, and block assigning permissions the actor does not hold — closing privilege escalation where any invited subuser could rewrite their own permission list. by @nayskutzu
-
 
 ## v1.3.7.9 STABLE
 

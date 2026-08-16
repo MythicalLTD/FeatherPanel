@@ -50,6 +50,39 @@ export interface ServerNode {
     sftp_subdomain?: string | null;
     location_id: number;
     location?: ServerLocation;
+    daemon_type?: 'featherwings' | 'wings_rs';
+    capabilities?: {
+        core?: boolean;
+        modules?: boolean;
+        live_config?: boolean;
+        host_terminal?: boolean;
+        self_update?: boolean;
+        trash?: boolean;
+        firewall?: boolean;
+        fastdl?: boolean;
+        diagnostics?: boolean;
+        docker?: boolean;
+        docker_disk?: boolean;
+        proxy?: boolean;
+        import?: boolean;
+        share?: boolean;
+        archive_browse?: boolean;
+        file_search?: boolean;
+        reconcile?: boolean;
+        deauthorize?: boolean;
+        container_exec?: boolean;
+        system_logs?: boolean;
+        install_abort?: boolean;
+        directory_download?: boolean;
+        file_op_progress?: boolean;
+        backup_browse?: boolean;
+        server_script?: boolean;
+        ws_live_permissions?: boolean;
+        file_fingerprints?: boolean;
+        paginated_file_list?: boolean;
+        transfer_backups?: boolean;
+        compress_7z?: boolean;
+    };
 }
 
 export interface ServerLocation {

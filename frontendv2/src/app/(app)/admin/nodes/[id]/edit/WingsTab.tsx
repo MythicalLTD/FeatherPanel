@@ -36,6 +36,10 @@ interface SetupCommandData {
     install_command: string;
     setup_command: string;
     config_path_hint: string;
+    daemon_type?: string;
+    daemon_display_name?: string;
+    systemd_unit?: string;
+    join_data?: string;
 }
 
 interface CommandBlockProps {
@@ -101,6 +105,12 @@ export function WingsTab({ nodeId, wingsConfigYaml, handleResetKey, resetting }:
             <PageCard title={t('admin.node.wings.setup_command_title')} icon={Terminal}>
                 <div className='space-y-4'>
                     <p className='text-muted-foreground text-sm'>{t('admin.node.wings.setup_command_help')}</p>
+                    {setupData?.daemon_display_name ? (
+                        <p className='text-foreground text-sm font-medium'>
+                            Daemon: {setupData.daemon_display_name}
+                            {setupData.config_path_hint ? ` · ${setupData.config_path_hint}` : ''}
+                        </p>
+                    ) : null}
                     {setupLoading ? (
                         <div className='text-muted-foreground rounded-xl border border-white/5 bg-zinc-950/50 p-4 text-sm'>
                             {t('common.loading')}...

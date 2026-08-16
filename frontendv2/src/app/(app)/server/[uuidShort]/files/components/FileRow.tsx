@@ -95,6 +95,12 @@ interface FileRowProps {
     canDownload: boolean;
     /** Accept drag-and-drop from archive browse (extract) onto this folder row */
     acceptArchiveExtract?: boolean;
+    /** Show share action when daemon supports it */
+    canShare?: boolean;
+    /** Show archive browse action when daemon supports it */
+    canBrowseArchiveFeature?: boolean;
+    /** Show download-folder action when daemon supports directory_download */
+    canDownloadDirectory?: boolean;
     serverUuid: string;
     currentDirectory: string;
 }
@@ -219,6 +225,9 @@ export function FileRow({
     canDelete,
     canDownload,
     acceptArchiveExtract = false,
+    canShare = true,
+    canBrowseArchiveFeature = true,
+    canDownloadDirectory = false,
     serverUuid,
     currentDirectory,
 }: FileRowProps) {
@@ -245,7 +254,11 @@ export function FileRow({
         }
     }, [isAnchor]);
 
-    const canBrowseArchive = file.isFile && isDecompressibleArchiveFileName(file.name) && (canEdit || canDownload);
+    const canBrowseArchive =
+        canBrowseArchiveFeature &&
+        file.isFile &&
+        isDecompressibleArchiveFileName(file.name) &&
+        (canEdit || canDownload);
 
     const menuActions = useMemo<MenuAction[]>(() => {
         if (virtualTrash) {
@@ -273,7 +286,12 @@ export function FileRow({
         }
         if (file.isFile && canDownload) {
             items.push({ key: 'download', label: t('files.row.download'), Icon: Download });
-            items.push({ key: 'share', label: t('files.row.share'), Icon: Share2 });
+            if (canShare) {
+                items.push({ key: 'share', label: t('files.row.share'), Icon: Share2 });
+            }
+        }
+        if (!file.isFile && canDownload && canDownloadDirectory) {
+            items.push({ key: 'download-directory', label: t('files.row.download_folder'), Icon: Download });
         }
         if (canEdit) {
             items.push({ key: 'copy', label: t('files.row.copy'), Icon: Copy });
@@ -302,7 +320,7 @@ export function FileRow({
             });
         }
         return items;
-    }, [file, canEdit, canDelete, canDownload, t, canBrowseArchive, virtualTrash]);
+    }, [file, canEdit, canDelete, canDownload, canShare, t, canBrowseArchive, canDownloadDirectory, virtualTrash]);
 
     const handleRowClick = (e: React.MouseEvent) => {
         if (onRowClick?.(file, e)) {

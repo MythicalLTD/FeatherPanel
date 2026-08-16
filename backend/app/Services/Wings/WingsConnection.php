@@ -40,6 +40,7 @@ class WingsConnection
     private string $protocol;
     private int $port;
     private int $timeout;
+    private string $daemonType;
     private array $defaultHeaders;
     private TokenGenerator $tokenGenerator;
     private Client $client;
@@ -53,6 +54,7 @@ class WingsConnection
      * @param string $authToken The authentication token for Wings
      * @param int $timeout Request timeout in seconds (default: 30)
      * @param bool $behindProxy Whether Wings is accessed through a reverse proxy
+     * @param string $daemonType featherwings|wings_rs
      */
     public function __construct(
         string $host,
@@ -61,11 +63,13 @@ class WingsConnection
         string $authToken = '',
         int $timeout = 30,
         bool $behindProxy = false,
+        string $daemonType = 'featherwings',
     ) {
         $this->protocol = $protocol;
         $this->port = $port;
         $this->authToken = $authToken;
         $this->timeout = $timeout;
+        $this->daemonType = \App\Helpers\DaemonCapabilities::normalizeType($daemonType);
 
         // Build base URL
         $this->baseUrl = $this->buildBaseUrl($host, $port, $protocol, $behindProxy);
@@ -113,6 +117,19 @@ class WingsConnection
     public function getBaseUrl(): string
     {
         return $this->baseUrl;
+    }
+
+    /**
+     * Daemon type for this node (featherwings|wings_rs).
+     */
+    public function getDaemonType(): string
+    {
+        return $this->daemonType;
+    }
+
+    public function isWingsRs(): bool
+    {
+        return $this->daemonType === \App\Helpers\DaemonCapabilities::TYPE_WINGS_RS;
     }
 
     /**

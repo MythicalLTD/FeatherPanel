@@ -404,10 +404,11 @@ class ServerBackupController
                 $scheme,
                 $token,
                 $timeout,
-                WingsUrlHelper::isBehindProxy($node)
+                WingsUrlHelper::isBehindProxy($node),
+                (string) ($node['daemon_type'] ?? 'featherwings')
             );
 
-            // Prefer Proxmox Backup Server when enabled on the Wings node
+            // Adapter is node-admin configured; users cannot choose destination.
             $adapter = BackupAdapterResolver::resolveDefault($wings);
 
             // Create backup record in database
@@ -426,8 +427,9 @@ class ServerBackupController
                 return ApiResponse::error('Failed to create backup record', 'CREATION_FAILED', 500);
             }
 
-            // Initiate backup on Wings
-            $response = $wings->getServer()->createBackup($serverUuid, $adapter, $backupUuid, $ignoredFiles);
+            // Initiate backup on Wings (map pbs ↔ proxmox-backup-server for wings_rs)
+            $daemonAdapter = BackupAdapterResolver::toDaemonAdapter($adapter, $wings);
+            $response = $wings->getServer()->createBackup($serverUuid, $daemonAdapter, $backupUuid, $ignoredFiles);
 
             if (!$response->isSuccessful()) {
                 // Rollback database record
@@ -597,11 +599,14 @@ class ServerBackupController
                 $scheme,
                 $token,
                 $timeout,
-                WingsUrlHelper::isBehindProxy($node)
+                WingsUrlHelper::isBehindProxy($node),
+                (string) ($node['daemon_type'] ?? 'featherwings')
             );
 
+            $daemonAdapter = BackupAdapterResolver::toDaemonAdapter($adapter, $wings);
+
             // Initiate restore on Wings
-            $response = $wings->getServer()->restoreBackup($serverUuid, $backupUuid, $adapter, $truncateDirectory, $downloadUrl);
+            $response = $wings->getServer()->restoreBackup($serverUuid, $backupUuid, $daemonAdapter, $truncateDirectory, $downloadUrl);
 
             if (!$response->isSuccessful()) {
                 $error = $response->getError();
@@ -1158,6 +1163,49 @@ class ServerBackupController
             ]);
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to generate download URL: ' . $e->getMessage(), 'DOWNLOAD_URL_GENERATION_FAILED', 500);
+        }
+    }
+
+    /**
+     * List backup adapters/destinations available on the server's node.
+     */
+    public function getBackupDestinations(Request $request, string $serverUuid): Response
+    {
+        $server = Server::getServerByUuid($serverUuid);
+        if (!$server) {
+            return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+        }
+
+        $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::BACKUP_READ);
+        if ($permissionCheck !== null) {
+            return $permissionCheck;
+        }
+
+        $node = Node::getNodeById($server['node_id']);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+
+        try {
+            $wings = Wings::fromNode($node, 30);
+            $adapters = BackupAdapterResolver::listAvailableAdapters($wings);
+            $default = BackupAdapterResolver::normalizeStored(BackupAdapterResolver::resolveDefault($wings));
+
+            $destinations = array_map(static function (string $adapter): array {
+                return [
+                    'id' => $adapter,
+                    'adapter' => $adapter,
+                    'name' => $adapter,
+                ];
+            }, $adapters);
+
+            return ApiResponse::success([
+                'adapters' => $adapters,
+                'destinations' => $destinations,
+                'default_adapter' => $default,
+            ], 'Backup destinations retrieved');
+        } catch (\Throwable $e) {
+            return ApiResponse::error('Failed to list backup destinations: ' . $e->getMessage(), 'BACKUP_DESTINATIONS_FAILED', 500);
         }
     }
 

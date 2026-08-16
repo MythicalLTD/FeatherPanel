@@ -30,6 +30,7 @@ use App\Helpers\ApiResponse;
 use App\Services\Wings\Wings;
 use OpenApi\Attributes as OA;
 use App\Helpers\WingsUrlHelper;
+use App\Helpers\DaemonCapabilities;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Plugins\Events\Events\NodesEvent;
 use Symfony\Component\HttpFoundation\Request;
@@ -47,6 +48,18 @@ use App\Services\Servers\ServerTransferInitiator;
         new OA\Property(property: 'location_id', type: 'integer', description: 'Location ID'),
         new OA\Property(property: 'daemon_token_id', type: 'string', description: 'Daemon token ID'),
         new OA\Property(property: 'daemon_token', type: 'string', description: 'Daemon authentication token'),
+        new OA\Property(
+            property: 'daemon_type',
+            type: 'string',
+            enum: ['featherwings', 'wings_rs'],
+            description: 'Node daemon implementation (FeatherWings or Calagopus wings-rs)'
+        ),
+        new OA\Property(
+            property: 'capabilities',
+            type: 'object',
+            description: 'Feature capability flags for this daemon type',
+            additionalProperties: new OA\AdditionalProperties(type: 'boolean')
+        ),
         new OA\Property(
             property: 'public_ip_v4',
             type: 'string',
@@ -93,6 +106,13 @@ use App\Services\Servers\ServerTransferInitiator;
         new OA\Property(property: 'fqdn', type: 'string', description: 'Fully qualified domain name', minLength: 1, maxLength: 255),
         new OA\Property(property: 'location_id', type: 'integer', description: 'Location ID', minimum: 1),
         new OA\Property(
+            property: 'daemon_type',
+            type: 'string',
+            enum: ['featherwings', 'wings_rs'],
+            description: 'Daemon implementation for this node',
+            default: 'featherwings'
+        ),
+        new OA\Property(
             property: 'public_ip_v4',
             type: 'string',
             nullable: true,
@@ -124,6 +144,12 @@ use App\Services\Servers\ServerTransferInitiator;
         new OA\Property(property: 'fqdn', type: 'string', description: 'Fully qualified domain name', minLength: 1, maxLength: 255),
         new OA\Property(property: 'location_id', type: 'integer', description: 'Location ID', minimum: 1),
         new OA\Property(property: 'uuid', type: 'string', description: 'Node UUID (must be valid UUID format)'),
+        new OA\Property(
+            property: 'daemon_type',
+            type: 'string',
+            enum: ['featherwings', 'wings_rs'],
+            description: 'Daemon implementation for this node'
+        ),
         new OA\Property(
             property: 'public_ip_v4',
             type: 'string',
@@ -291,7 +317,7 @@ class NodesController
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
         }
 
-        return ApiResponse::success(['node' => $node], 'Node fetched successfully', 200);
+        return ApiResponse::success(['node' => $this->enrichNode($node)], 'Node fetched successfully', 200);
     }
 
     #[OA\Put(
@@ -370,6 +396,14 @@ class NodesController
         $data['daemon_token_id'] = Node::generateDaemonTokenId();
         $data['daemon_token'] = Node::generateDaemonToken();
 
+        $data['daemon_type'] = DaemonCapabilities::normalizeType(
+            (string) ($data['daemon_type'] ?? DaemonCapabilities::TYPE_FEATHERWINGS)
+        );
+        $caps = DaemonCapabilities::forType($data['daemon_type']);
+        if (!isset($data['daemonBase']) || trim((string) $data['daemonBase']) === '') {
+            $data['daemonBase'] = $caps->defaults()['daemon_base'];
+        }
+
         $locationId = $data['location_id'] ?? null;
         if (!$locationId || !is_numeric($locationId)) {
             return ApiResponse::error('Location does not exist', 'LOCATION_NOT_FOUND', 400);
@@ -428,7 +462,7 @@ class NodesController
             );
         }
 
-        return ApiResponse::success(['node' => $node], 'Node created successfully', 201);
+        return ApiResponse::success(['node' => $this->enrichNode($node)], 'Node created successfully', 201);
     }
 
     #[OA\Patch(
@@ -541,6 +575,22 @@ class NodesController
         if (isset($data['uuid']) && !Node::isValidUuid($data['uuid'])) {
             return ApiResponse::error('Invalid UUID format', 'INVALID_UUID', 400);
         }
+
+        if (array_key_exists('daemon_type', $data)) {
+            $currentType = DaemonCapabilities::normalizeType(
+                (string) ($node['daemon_type'] ?? DaemonCapabilities::TYPE_FEATHERWINGS)
+            );
+            $requestedType = DaemonCapabilities::normalizeType((string) $data['daemon_type']);
+            if ($requestedType !== $currentType) {
+                return ApiResponse::error(
+                    'Daemon type cannot be changed after the node is created',
+                    'DAEMON_TYPE_IMMUTABLE',
+                    400
+                );
+            }
+            unset($data['daemon_type']);
+        }
+
         $success = Node::updateNodeById($id, $data);
         if (!$success) {
             return ApiResponse::error('Failed to update node', 'NODE_UPDATE_FAILED', 400);
@@ -566,7 +616,7 @@ class NodesController
             );
         }
 
-        return ApiResponse::success(['node' => $node], 'Node updated successfully', 200);
+        return ApiResponse::success(['node' => $this->enrichNode($node)], 'Node updated successfully', 200);
     }
 
     #[OA\Delete(
@@ -722,6 +772,11 @@ class NodesController
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
         }
 
+        $unsupported = $this->requireFeature($node, DaemonCapabilities::FEATURE_DIAGNOSTICS);
+        if ($unsupported !== null) {
+            return $unsupported;
+        }
+
         $includeEndpoints = $request->query->has('include_endpoints')
             ? $request->query->getBoolean('include_endpoints')
             : null;
@@ -789,6 +844,114 @@ class NodesController
         }
     }
 
+    #[OA\Get(
+        path: '/api/admin/nodes/{id}/system-logs',
+        summary: 'List node system log files',
+        description: 'Lists daemon log files via Calagopus GET /api/system/logs.',
+        tags: ['Admin - Nodes'],
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                description: 'Node ID',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'System logs listed successfully'),
+            new OA\Response(response: 404, description: 'Node not found'),
+            new OA\Response(response: 501, description: 'Daemon feature unsupported'),
+            new OA\Response(response: 500, description: 'Failed to list system logs'),
+        ]
+    )]
+    public function listSystemLogs(Request $request, int $id): Response
+    {
+        $node = Node::getNodeById($id);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+
+        $unsupported = $this->requireFeature($node, DaemonCapabilities::FEATURE_SYSTEM_LOGS);
+        if ($unsupported !== null) {
+            return $unsupported;
+        }
+
+        try {
+            $wings = Wings::fromNode($node, 30);
+            $logs = $wings->getSystem()->listSystemLogs();
+
+            return ApiResponse::success([
+                'logs' => $logs['log_files'] ?? $logs['logs'] ?? $logs,
+            ], 'System logs listed successfully', 200);
+        } catch (\Throwable $e) {
+            App::getInstance(true)->getLogger()->error('Failed to list system logs for node ' . $id . ': ' . $e->getMessage());
+
+            return ApiResponse::error('Failed to list system logs', 'NODE_SYSTEM_LOGS_FAILED', 500);
+        }
+    }
+
+    #[OA\Get(
+        path: '/api/admin/nodes/{id}/system-logs/{file}',
+        summary: 'Read a node system log file',
+        description: 'Reads a daemon log file via Calagopus GET /api/system/logs/{file}.',
+        tags: ['Admin - Nodes'],
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                description: 'Node ID',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+            new OA\Parameter(
+                name: 'file',
+                in: 'path',
+                description: 'Log file name',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'System log file retrieved successfully'),
+            new OA\Response(response: 400, description: 'Invalid log file name'),
+            new OA\Response(response: 404, description: 'Node not found'),
+            new OA\Response(response: 501, description: 'Daemon feature unsupported'),
+            new OA\Response(response: 500, description: 'Failed to read system log'),
+        ]
+    )]
+    public function getSystemLogFile(Request $request, int $id, string $file): Response
+    {
+        $node = Node::getNodeById($id);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+
+        $unsupported = $this->requireFeature($node, DaemonCapabilities::FEATURE_SYSTEM_LOGS);
+        if ($unsupported !== null) {
+            return $unsupported;
+        }
+
+        $file = basename(trim($file));
+        if ($file === '' || $file === '.' || $file === '..') {
+            return ApiResponse::error('Invalid log file name', 'INVALID_LOG_FILE', 400);
+        }
+
+        try {
+            $wings = Wings::fromNode($node, 30);
+            $content = $wings->getSystem()->getSystemLogFile($file);
+
+            return ApiResponse::success([
+                'file' => $file,
+                'content' => $content,
+            ], 'System log file retrieved successfully', 200);
+        } catch (\Throwable $e) {
+            App::getInstance(true)->getLogger()->error('Failed to read system log for node ' . $id . ': ' . $e->getMessage());
+
+            return ApiResponse::error('Failed to read system log', 'NODE_SYSTEM_LOG_FAILED', 500);
+        }
+    }
+
     #[OA\Post(
         path: '/api/admin/nodes/{id}/self-update',
         summary: 'Trigger Wings self-update',
@@ -844,6 +1007,11 @@ class NodesController
         $node = Node::getNodeById($id);
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+
+        $unsupported = $this->requireFeature($node, DaemonCapabilities::FEATURE_SELF_UPDATE);
+        if ($unsupported !== null) {
+            return $unsupported;
         }
 
         $payload = json_decode($request->getContent() ?: '{}', true);
@@ -904,7 +1072,23 @@ class NodesController
                 WingsUrlHelper::isBehindProxy($node)
             );
 
-            $response = $wings->getSystem()->triggerSelfUpdate($cleanPayload, true);
+            $caps = DaemonCapabilities::fromNode($node);
+            $useCalagopusUpgrade = $caps->isWingsRs();
+            $updatePayload = $cleanPayload;
+
+            if ($useCalagopusUpgrade) {
+                $mapped = $this->buildCalagopusUpgradePayload($wings, $caps, $cleanPayload);
+                if (isset($mapped['error'])) {
+                    return ApiResponse::error(
+                        (string) $mapped['error'],
+                        (string) ($mapped['code'] ?? 'NODE_SELF_UPDATE_FAILED'),
+                        (int) ($mapped['status'] ?? 400)
+                    );
+                }
+                $updatePayload = $mapped['payload'];
+            }
+
+            $response = $wings->getSystem()->triggerSelfUpdate($updatePayload, true, $useCalagopusUpgrade);
 
             Activity::createActivity([
                 'user_uuid' => $admin['uuid'] ?? null,
@@ -1032,20 +1216,28 @@ class NodesController
         $tokenId = $node['daemon_token_id'] ?? '';
         $tokenSecret = $node['daemon_token'] ?? '';
         $bearer = $tokenId . '.' . $tokenSecret;
-        $configPath = '/etc/featherpanel/config.yml';
-        $configDir = '/etc/featherpanel';
 
-        $installCommand = 'curl -sSL https://get.featherpanel.com/installer.sh | bash';
-        // Create config dir if missing, fetch config, then restart FeatherWings
-        $setupCommand = 'mkdir -p ' . $configDir . ' && curl -s -H "Authorization: Bearer ' . $bearer . '" "' . $configUrl . '" -o ' . $configPath . ' && systemctl restart featherwings';
+        $caps = DaemonCapabilities::fromNode($node);
+        $configYaml = Node::generateWingsConfigYaml($node, $panelUrl);
+        $commands = $caps->buildSetupCommands($configUrl, $bearer, $configYaml);
+        $defaults = $caps->defaults();
 
-        return ApiResponse::success([
+        $payload = [
             'panel_url' => $panelUrl,
             'config_url' => $configUrl,
-            'install_command' => $installCommand,
-            'setup_command' => $setupCommand,
-            'config_path_hint' => $configPath,
-        ], 'Setup command retrieved successfully', 200);
+            'install_command' => $commands['install_command'],
+            'setup_command' => $commands['setup_command'],
+            'config_path_hint' => $commands['config_path_hint'],
+            'daemon_type' => $caps->getType(),
+            'daemon_display_name' => $defaults['display_name'],
+            'systemd_unit' => $defaults['systemd_unit'],
+            'capabilities' => $caps->toArray(),
+        ];
+        if (!empty($commands['join_data'])) {
+            $payload['join_data'] = $commands['join_data'];
+        }
+
+        return ApiResponse::success($payload, 'Setup command retrieved successfully', 200);
     }
 
     #[OA\Post(
@@ -1108,6 +1300,11 @@ class NodesController
         $node = Node::getNodeById($id);
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+
+        $unsupported = $this->requireFeature($node, DaemonCapabilities::FEATURE_HOST_TERMINAL);
+        if ($unsupported !== null) {
+            return $unsupported;
         }
 
         $payload = json_decode($request->getContent() ?: '{}', true);
@@ -1229,6 +1426,11 @@ class NodesController
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
         }
 
+        $unsupported = $this->requireFeature($node, DaemonCapabilities::FEATURE_LIVE_CONFIG);
+        if ($unsupported !== null) {
+            return $unsupported;
+        }
+
         try {
             $wings = new Wings(
                 $node['fqdn'],
@@ -1299,6 +1501,11 @@ class NodesController
         $node = Node::getNodeById($id);
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+
+        $unsupported = $this->requireFeature($node, DaemonCapabilities::FEATURE_LIVE_CONFIG);
+        if ($unsupported !== null) {
+            return $unsupported;
         }
 
         $data = json_decode($request->getContent(), true);
@@ -1418,6 +1625,11 @@ class NodesController
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
         }
 
+        $unsupported = $this->requireFeature($node, DaemonCapabilities::FEATURE_LIVE_CONFIG);
+        if ($unsupported !== null) {
+            return $unsupported;
+        }
+
         $data = json_decode($request->getContent(), true);
         if (json_last_error() !== JSON_ERROR_NONE) {
             return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
@@ -1498,6 +1710,11 @@ class NodesController
         $node = Node::getNodeById($id);
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+
+        $unsupported = $this->requireFeature($node, DaemonCapabilities::FEATURE_LIVE_CONFIG);
+        if ($unsupported !== null) {
+            return $unsupported;
         }
 
         try {
@@ -1584,10 +1801,15 @@ class NodesController
             // Remove 'v' prefix if present for comparison
             $currentVersionClean = ltrim($currentVersion, 'v');
 
+            $caps = DaemonCapabilities::fromNode($node);
+            $defaults = $caps->defaults();
+            $githubOwner = $defaults['github_owner'];
+            $githubRepo = $defaults['github_repo'];
+
             // Fetch latest version from GitHub (with caching)
             $latestVersion = null;
             $githubError = null;
-            $cacheKey = 'featherwings:latest_version';
+            $cacheKey = $githubOwner . ':' . $githubRepo . ':latest_version';
 
             // Try to get from cache first (cache for 1 hour)
             $cachedVersion = Cache::get($cacheKey);
@@ -1605,7 +1827,7 @@ class NodesController
                         ],
                     ]);
 
-                    $response = $client->get('https://api.github.com/repos/mythicalltd/featherwings/releases/latest');
+                    $response = $client->get('https://api.github.com/repos/' . $githubOwner . '/' . $githubRepo . '/releases/latest');
                     $releaseData = json_decode($response->getBody()->getContents(), true);
 
                     if (isset($releaseData['tag_name']) && is_string($releaseData['tag_name'])) {
@@ -1638,6 +1860,10 @@ class NodesController
                 'is_up_to_date' => $isUpToDate,
                 'update_available' => $updateAvailable,
                 'github_error' => $githubError,
+                'daemon_type' => $caps->getType(),
+                'self_update_supported' => $caps->supports(DaemonCapabilities::FEATURE_SELF_UPDATE),
+                'github_owner' => $githubOwner,
+                'github_repo' => $githubRepo,
             ], 'Version status retrieved successfully', 200);
         } catch (\Throwable $e) {
             App::getInstance(true)->getLogger()->error('Failed to check version status for node ' . $id . ': ' . $e->getMessage());
@@ -1819,5 +2045,184 @@ class NodesController
             'failed_count' => count($results['failed']),
             'skipped_count' => count($results['skipped']),
         ], 'Mass transfer processed', 200);
+    }
+
+    /**
+     * Map FeatherPanel self-update options to Calagopus POST /api/system/upgrade payload.
+     *
+     * @param array<string, mixed> $options
+     *
+     * @return array{payload?: array<string, mixed>, error?: string, code?: string, status?: int}
+     */
+    private function buildCalagopusUpgradePayload(Wings $wings, DaemonCapabilities $caps, array $options): array
+    {
+        $defaults = $caps->defaults();
+        $unit = (string) ($defaults['systemd_unit'] ?? 'wings');
+        $url = isset($options['url']) && is_string($options['url']) ? trim($options['url']) : '';
+        $sha256 = isset($options['sha256']) && is_string($options['sha256']) ? strtolower(trim($options['sha256'])) : '';
+        $source = isset($options['source']) && is_string($options['source']) ? $options['source'] : 'github';
+
+        if ($source === 'url') {
+            if ($url === '' || $sha256 === '') {
+                return [
+                    'error' => 'Calagopus upgrades require both download URL and sha256 checksum',
+                    'code' => 'NODE_SELF_UPDATE_INVALID',
+                    'status' => 400,
+                ];
+            }
+        } else {
+            $resolved = $this->resolveCalagopusGithubAsset($wings, $caps, $options);
+            if (isset($resolved['error'])) {
+                return $resolved;
+            }
+            $url = (string) $resolved['url'];
+            $sha256 = (string) $resolved['sha256'];
+        }
+
+        $sha256 = preg_replace('/^sha256:/i', '', $sha256) ?? $sha256;
+
+        return [
+            'payload' => [
+                'url' => $url,
+                'headers' => new \stdClass(),
+                'sha256' => $sha256,
+                'restart_command' => 'systemctl',
+                'restart_command_args' => ['restart', $unit],
+            ],
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $options
+     *
+     * @return array{url?: string, sha256?: string, error?: string, code?: string, status?: int}
+     */
+    private function resolveCalagopusGithubAsset(Wings $wings, DaemonCapabilities $caps, array $options): array
+    {
+        $defaults = $caps->defaults();
+        $owner = isset($options['repo_owner']) && is_string($options['repo_owner']) && $options['repo_owner'] !== ''
+            ? $options['repo_owner']
+            : (string) $defaults['github_owner'];
+        $repo = isset($options['repo_name']) && is_string($options['repo_name']) && $options['repo_name'] !== ''
+            ? $options['repo_name']
+            : (string) $defaults['github_repo'];
+
+        $arch = 'x86_64';
+        try {
+            $systemInfo = $wings->getSystem()->getSystemInfo();
+            $rawArch = strtolower((string) ($systemInfo['architecture'] ?? $systemInfo['arch'] ?? ''));
+            if (str_contains($rawArch, 'aarch64') || str_contains($rawArch, 'arm64')) {
+                $arch = 'aarch64';
+            } elseif (str_contains($rawArch, 'ppc64')) {
+                $arch = 'ppc64le';
+            } elseif (str_contains($rawArch, 'riscv64')) {
+                $arch = 'riscv64';
+            } elseif (str_contains($rawArch, 'x86_64') || str_contains($rawArch, 'amd64')) {
+                $arch = 'x86_64';
+            }
+        } catch (\Throwable $e) {
+            // Fall back to x86_64 when system info is unavailable.
+        }
+
+        $assetNeedle = 'wings-rs-' . $arch . '-linux';
+
+        try {
+            $client = new Client([
+                'timeout' => 10,
+                'verify' => true,
+                'headers' => [
+                    'User-Agent' => 'FeatherPanel',
+                    'Accept' => 'application/vnd.github.v3+json',
+                ],
+            ]);
+            $response = $client->get('https://api.github.com/repos/' . $owner . '/' . $repo . '/releases/latest');
+            $releaseData = json_decode($response->getBody()->getContents(), true);
+            if (!is_array($releaseData) || !isset($releaseData['assets']) || !is_array($releaseData['assets'])) {
+                return [
+                    'error' => 'Failed to resolve GitHub release assets for Calagopus upgrade',
+                    'code' => 'NODE_SELF_UPDATE_GITHUB',
+                    'status' => 502,
+                ];
+            }
+
+            $matched = null;
+            foreach ($releaseData['assets'] as $asset) {
+                if (!is_array($asset)) {
+                    continue;
+                }
+                $name = (string) ($asset['name'] ?? '');
+                if ($name === $assetNeedle || str_starts_with($name, $assetNeedle)) {
+                    $matched = $asset;
+                    break;
+                }
+            }
+
+            if ($matched === null) {
+                return [
+                    'error' => 'No Calagopus release asset found for architecture ' . $arch,
+                    'code' => 'NODE_SELF_UPDATE_ASSET',
+                    'status' => 404,
+                ];
+            }
+
+            $url = (string) ($matched['browser_download_url'] ?? '');
+            $digest = (string) ($matched['digest'] ?? '');
+            $sha256 = preg_replace('/^sha256:/i', '', $digest) ?? '';
+            if ($url === '' || $sha256 === '') {
+                return [
+                    'error' => 'Calagopus release asset is missing download URL or sha256 digest',
+                    'code' => 'NODE_SELF_UPDATE_ASSET',
+                    'status' => 502,
+                ];
+            }
+
+            return [
+                'url' => $url,
+                'sha256' => strtolower($sha256),
+            ];
+        } catch (\Throwable $e) {
+            return [
+                'error' => 'Failed to fetch Calagopus release from GitHub: ' . $e->getMessage(),
+                'code' => 'NODE_SELF_UPDATE_GITHUB',
+                'status' => 502,
+            ];
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $node
+     *
+     * @return array<string, mixed>
+     */
+    private function enrichNode(array $node): array
+    {
+        $caps = DaemonCapabilities::fromNode($node);
+        $node['daemon_type'] = $caps->getType();
+        $node['capabilities'] = $caps->toArray();
+
+        return $node;
+    }
+
+    /**
+     * @param array<string, mixed> $node
+     */
+    private function requireFeature(array $node, string $feature): ?Response
+    {
+        $caps = DaemonCapabilities::fromNode($node);
+        if ($caps->supports($feature)) {
+            return null;
+        }
+
+        $defaults = $caps->defaults();
+
+        return ApiResponse::error(
+            'This feature is not supported by ' . $defaults['display_name'] . ' on this node.',
+            'DAEMON_FEATURE_UNSUPPORTED',
+            501,
+            [
+                'feature' => $feature,
+                'daemon_type' => $caps->getType(),
+            ]
+        );
     }
 }

@@ -39,6 +39,7 @@ import {
     Loader2,
     Lock,
     Link as LinkIcon,
+    OctagonX,
 } from 'lucide-react';
 import { copyToClipboard } from '@/lib/utils';
 import { Button } from '@/components/featherui/Button';
@@ -59,6 +60,8 @@ import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import type { Server } from '@/types/server';
 import { isEnabled } from '@/lib/utils';
+import { supportsDaemonFeature } from '@/lib/daemonCapabilities';
+import { filesApi } from '@/lib/files-api';
 
 interface SftpDetails {
     host: string;
@@ -95,6 +98,7 @@ export default function ServerSettingsPage() {
     const [loading, setLoading] = React.useState(true);
     const [saving, setSaving] = React.useState(false);
     const [reinstalling, setReinstalling] = React.useState(false);
+    const [abortingInstall, setAbortingInstall] = React.useState(false);
     const [deleting, setDeleting] = React.useState(false);
 
     const [name, setName] = React.useState('');
@@ -195,6 +199,26 @@ export default function ServerSettingsPage() {
             toast.error(t('serverSettings.reinstallError'));
         } finally {
             setReinstalling(false);
+        }
+    };
+
+    const canAbortInstall =
+        canReinstall &&
+        server?.status === 'installing' &&
+        supportsDaemonFeature(server?.node?.capabilities, 'install_abort', server?.node?.daemon_type);
+
+    const handleAbortInstall = async () => {
+        if (!canAbortInstall) return;
+        setAbortingInstall(true);
+        try {
+            await filesApi.abortInstall(uuidShort);
+            toast.success(t('serverSettings.abortInstallSuccess'));
+            await fetchData();
+        } catch (error) {
+            console.error(error);
+            toast.error(t('serverSettings.abortInstallError'));
+        } finally {
+            setAbortingInstall(false);
         }
     };
 
@@ -562,6 +586,23 @@ export default function ServerSettingsPage() {
                 </div>
 
                 <div className='min-w-0 space-y-8 lg:col-span-4'>
+                    {canAbortInstall && (
+                        <PageCard title={t('serverSettings.abortInstall')} icon={OctagonX} variant='warning'>
+                            <p className='text-xs leading-relaxed font-medium text-orange-200/60'>
+                                {t('serverSettings.abortInstallDescription')}
+                            </p>
+                            <Button
+                                variant='destructive'
+                                className='mt-4 h-12 w-full rounded-xl border border-orange-500/20 bg-orange-500/10 text-xs font-black tracking-widest text-orange-500 uppercase hover:border-orange-500/50 hover:bg-orange-500/20'
+                                loading={abortingInstall}
+                                onClick={handleAbortInstall}
+                            >
+                                {!abortingInstall && <OctagonX className='mr-2 h-4 w-4' />}
+                                {t('serverSettings.abortInstall')}
+                            </Button>
+                        </PageCard>
+                    )}
+
                     {canReinstall && (
                         <>
                             <PageCard title={t('serverSettings.reinstallServer')} icon={Settings} variant='warning'>

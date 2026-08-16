@@ -23,8 +23,6 @@ export function shouldShowPoweredBy(
     return (settings?.branding_show_powered_by ?? 'true') === 'true';
 }
 
-export function shouldShowVersion(
-    settings: Pick<AppSettings, 'branding_show_version'> | null | undefined,
-): boolean {
+export function shouldShowVersion(settings: Pick<AppSettings, 'branding_show_version'> | null | undefined): boolean {
     return (settings?.branding_show_version ?? 'true') === 'true';
 }

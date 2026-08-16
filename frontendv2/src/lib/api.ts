@@ -81,11 +81,7 @@ const attachClientSyncRequestInterceptor = (client: AxiosInstance) => {
             }
             return '';
         })();
-        if (
-            absoluteUrl &&
-            typeof window !== 'undefined' &&
-            !absoluteUrl.startsWith(window.location.origin)
-        ) {
+        if (absoluteUrl && typeof window !== 'undefined' && !absoluteUrl.startsWith(window.location.origin)) {
             return config;
         }
 

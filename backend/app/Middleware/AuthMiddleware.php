@@ -100,6 +100,12 @@ class AuthMiddleware implements MiddlewareInterface
                 // Attach user info and API client info to the request attributes
                 $request->attributes->set('user', $userInfo);
                 $request->attributes->set('api_client', $apiClient);
+                $decodedPermissions = null;
+                if (array_key_exists('permissions', $apiClient) && $apiClient['permissions'] !== null) {
+                    $decoded = json_decode((string) $apiClient['permissions'], true);
+                    $decodedPermissions = is_array($decoded) ? $decoded : [];
+                }
+                $request->attributes->set('api_client_permissions', $decodedPermissions);
                 $request->attributes->set('auth_type', 'api_key');
             } else {
                 return ApiResponse::error('You are not allowed to access this resource!', 'INVALID_ACCOUNT_TOKEN', 400, []);

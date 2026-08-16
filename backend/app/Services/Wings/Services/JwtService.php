@@ -145,11 +145,22 @@ class JwtService
         string $serverUuid,
         string $userUuid,
         array $permissions,
+        array $additionalClaims = [],
     ): string {
-        return $this->tokenGenerator->generateWebSocketToken(
+        // Calagopus requires standard claims (iss/aud/sub/nbf) on websocket JWTs.
+        // FeatherWings accepts them via jwt.Payload (optional issuer/audience).
+        return $this->tokenGenerator->generateWingsApiToken(
             $serverUuid,
             $userUuid,
-            $permissions
+            $permissions,
+            $this->panelUrl,
+            $this->wingsUrl,
+            array_merge(
+                [
+                    'scope' => NodeJwtScope::Websocket->value,
+                ],
+                $additionalClaims
+            )
         );
     }
 
@@ -197,7 +208,17 @@ class JwtService
      */
     public function generateFileDownloadToken(string $serverUuid, string $userUuid, string $filePath): string
     {
-        return $this->tokenGenerator->generateFileDownloadToken($serverUuid, $userUuid, $filePath);
+        return $this->tokenGenerator->generateWingsApiToken(
+            $serverUuid,
+            $userUuid,
+            [],
+            $this->panelUrl,
+            $this->wingsUrl,
+            [
+                'scope' => NodeJwtScope::FileDownload->value,
+                'file_path' => $filePath,
+            ]
+        );
     }
 
     /**
@@ -211,9 +232,61 @@ class JwtService
      *
      * @return string The JWT token
      */
-    public function generateFileUploadToken(string $serverUuid, string $userUuid, string $uniqueId = ''): string
+    public function generateFileUploadToken(string $serverUuid, string $userUuid, string $uniqueId = '', array $ignoredFiles = []): string
     {
-        return $this->tokenGenerator->generateFileUploadToken($serverUuid, $userUuid, $uniqueId);
+        $additionalClaims = [
+            'scope' => NodeJwtScope::FileUpload->value,
+        ];
+        if ($uniqueId !== '') {
+            $additionalClaims['unique_id'] = $uniqueId;
+        }
+        if ($ignoredFiles !== []) {
+            $additionalClaims['ignored_files'] = array_values($ignoredFiles);
+        }
+
+        return $this->tokenGenerator->generateWingsApiToken(
+            $serverUuid,
+            $userUuid,
+            [],
+            $this->panelUrl,
+            $this->wingsUrl,
+            $additionalClaims
+        );
+    }
+
+    /**
+     * Generate a one-time JWT for downloading a directory as an archive (Calagopus).
+     *
+     * @param string $serverUuid The server UUID
+     * @param string $userUuid The user UUID
+     * @param string $directoryPath Directory path on the server
+     *
+     * @throws \Exception
+     *
+     * @return string The JWT token
+     */
+    public function generateDirectoryDownloadToken(string $serverUuid, string $userUuid, string $directoryPath): string
+    {
+        return $this->tokenGenerator->generateDirectoryDownloadToken(
+            $serverUuid,
+            $userUuid,
+            $directoryPath,
+            '',
+            $this->panelUrl,
+            $this->wingsUrl
+        );
+    }
+
+    /**
+     * Build a signed Wings URL for directory download.
+     */
+    public function generateDirectoryDownloadUrl(string $serverUuid, string $userUuid, string $directoryPath): string
+    {
+        $token = $this->generateDirectoryDownloadToken($serverUuid, $userUuid, $directoryPath);
+        $baseUrl = rtrim($this->wingsUrl, '/');
+        $encodedPath = urlencode($directoryPath);
+
+        return "{$baseUrl}/download/directory?token={$token}&server={$serverUuid}&directory={$encodedPath}";
     }
 
     /**
@@ -433,6 +506,30 @@ class JwtService
             $this->panelUrl,
             $this->wingsUrl,
             $additionalClaims
+        );
+    }
+
+    /**
+     * Generate a token accepted by the Calagopus cross-node file transfer receiver.
+     */
+    public function generateFileTransferToken(
+        string $destinationServerUuid,
+        string $userUuid,
+        string $root,
+        string $destinationPath,
+    ): string {
+        return $this->tokenGenerator->generateWingsApiToken(
+            $destinationServerUuid,
+            $userUuid,
+            [],
+            $this->panelUrl,
+            $this->wingsUrl,
+            [
+                'scope' => 'transfer',
+                'server' => $destinationServerUuid,
+                'root' => $root,
+                'destination_path' => $destinationPath,
+            ]
         );
     }
 }

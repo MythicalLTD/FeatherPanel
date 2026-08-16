@@ -25,10 +25,11 @@ use App\Chat\Subuser;
 use App\SubuserPermissions;
 use App\Chat\ServerActivity;
 use App\Helpers\ApiResponse;
-use App\Helpers\SubuserPermissionChecker;
 use App\Services\Wings\Wings;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
+use App\Helpers\DaemonCapabilities;
+use App\Helpers\SubuserPermissionChecker;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use App\Plugins\Events\Events\ServerSubuserEvent;
@@ -544,6 +545,32 @@ class SubuserController
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
         }
+
+        // Live-update websocket permissions on Calagopus (wings_rs)
+        if (DaemonCapabilities::fromNode($node)->supports(DaemonCapabilities::FEATURE_WS_LIVE_PERMISSIONS)) {
+            $subuserUser = User::getUserById((int) $subuser['user_id']);
+            if ($subuserUser && !empty($subuserUser['uuid'])) {
+                try {
+                    $wings = Wings::fromNode($node, 15);
+                    $wsResponse = $wings->getServer()->updateWsPermissions($server['uuid'], [
+                        [
+                            'user' => $subuserUser['uuid'],
+                            'permissions' => $permissions,
+                        ],
+                    ]);
+                    if (!$wsResponse->isSuccessful()) {
+                        App::getInstance(true)->getLogger()->warning(
+                            'Failed to push live WS permissions for subuser ' . $subuserId . ': ' . $wsResponse->getError()
+                        );
+                    }
+                } catch (\Throwable $e) {
+                    App::getInstance(true)->getLogger()->warning(
+                        'Failed to push live WS permissions for subuser ' . $subuserId . ': ' . $e->getMessage()
+                    );
+                }
+            }
+        }
+
         $this->logActivity($server, $node, 'subuser_updated', [
             'subuser_id' => $subuserId,
         ], $actor);
@@ -671,13 +698,22 @@ class SubuserController
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
         }
 
-        // Deauthorize user from Wings (only if we have a valid user UUID)
-        // We need the UUID because Wings API expects UUID, not user_id
+        // Deauthorize user from Wings (best-effort; do not fail the delete if unsupported).
         if ($subuserUserUuid !== null) {
-            $wings = $this->createWings($node);
-            $response = $wings->getServer()->deAuthUser($subuserUserUuid, $server['uuid']);
-            if (!$response->isSuccessful()) {
-                return ApiResponse::error('Failed to deauthorize user from Wings', 'WINGS_ERROR', $response->getStatusCode());
+            try {
+                $wings = $this->createWings($node);
+                $response = $wings->getServer()->deAuthUser($subuserUserUuid, $server['uuid']);
+                if (!$response->isSuccessful()) {
+                    App::getInstance(true)->getLogger()->warning(
+                        'Wings deauthorization failed for subuser_id: ' . $subuserId
+                        . ' (continuing): ' . ($response->getError() ?? 'unknown')
+                    );
+                }
+            } catch (\Throwable $e) {
+                App::getInstance(true)->getLogger()->warning(
+                    'Wings deauthorization threw for subuser_id: ' . $subuserId
+                    . ' (continuing): ' . $e->getMessage()
+                );
             }
         } else {
             // Log that we skipped deauthorization due to missing UUID

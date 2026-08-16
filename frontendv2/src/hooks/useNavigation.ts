@@ -246,7 +246,13 @@ export function useNavigation() {
         }
 
         if (isServer && serverUuid) {
-            let items = getServerNavigationItems(t, serverUuid, settings);
+            let items = getServerNavigationItems(
+                t,
+                serverUuid,
+                settings,
+                server?.node?.capabilities ?? null,
+                server?.node?.daemon_type,
+            );
 
             items = items.map((item) => ({
                 ...item,
@@ -321,6 +327,8 @@ export function useNavigation() {
         isServer,
         serverUuid,
         serverSpellId,
+        server?.node?.capabilities,
+        server?.node?.daemon_type,
         isDeveloperModeEnabled,
         isVds,
         vdsId,

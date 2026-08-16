@@ -117,22 +117,25 @@ class TokenGenerator
         string $userUuid,
         string $backupUuid,
         string $uniqueId = '',
+        string $panelUrl = '',
+        string $wingsUrl = '',
     ): string {
         $jti = $this->generateJti();
         $uniqueId = $uniqueId ?: $jti;
 
-        $payload = [
-            'scope' => $this->formatScope(NodeJwtScope::BackupDownload),
-            'server_uuid' => $serverUuid,
-            'user_uuid' => $userUuid,
-            'backup_uuid' => $backupUuid,
-            'unique_id' => $uniqueId,
-            'iat' => time(),
-            'exp' => time() + $this->expiration,
-            'jti' => $jti,
-        ];
-
-        return $this->encodeToken($payload);
+        return $this->generateWingsApiToken(
+            $serverUuid,
+            $userUuid,
+            [],
+            $panelUrl,
+            $wingsUrl,
+            [
+                'scope' => $this->formatScope(NodeJwtScope::BackupDownload),
+                'backup_uuid' => $backupUuid,
+                'unique_id' => $uniqueId,
+                'jti' => $jti,
+            ]
+        );
     }
 
     /**
@@ -145,6 +148,8 @@ class TokenGenerator
      * @param string $userUuid The user UUID
      * @param string $filePath The file path
      * @param string $uniqueId Unique request ID
+     * @param string $panelUrl Issuer (required by Calagopus wings-rs)
+     * @param string $wingsUrl Audience
      *
      * @throws \Exception
      *
@@ -155,22 +160,25 @@ class TokenGenerator
         string $userUuid,
         string $filePath,
         string $uniqueId = '',
+        string $panelUrl = '',
+        string $wingsUrl = '',
     ): string {
         $jti = $this->generateJti();
         $uniqueId = $uniqueId ?: $jti;
 
-        $payload = [
-            'scope' => $this->formatScope(NodeJwtScope::FileDownload),
-            'file_path' => $filePath,
-            'server_uuid' => $serverUuid,
-            'user_uuid' => $userUuid,
-            'unique_id' => $uniqueId,
-            'iat' => time(),
-            'exp' => time() + $this->expiration,
-            'jti' => $jti,
-        ];
-
-        return $this->encodeToken($payload);
+        return $this->generateWingsApiToken(
+            $serverUuid,
+            $userUuid,
+            [],
+            $panelUrl,
+            $wingsUrl,
+            [
+                'scope' => $this->formatScope(NodeJwtScope::FileDownload),
+                'file_path' => $filePath,
+                'unique_id' => $uniqueId,
+                'jti' => $jti,
+            ]
+        );
     }
 
     /**
@@ -179,26 +187,81 @@ class TokenGenerator
      * @param string $serverUuid The server UUID
      * @param string $userUuid The user UUID
      * @param string $uniqueId Unique request ID
+     * @param string $panelUrl Issuer (required by Calagopus wings-rs)
+     * @param string $wingsUrl Audience
      *
      * @throws \Exception
      *
      * @return string The JWT token
      */
-    public function generateFileUploadToken(string $serverUuid, string $userUuid, string $uniqueId = ''): string
-    {
+    public function generateFileUploadToken(
+        string $serverUuid,
+        string $userUuid,
+        string $uniqueId = '',
+        string $panelUrl = '',
+        string $wingsUrl = '',
+        array $ignoredFiles = [],
+    ): string {
+        $jti = $this->generateJti();
         $uniqueId = $uniqueId ?: $this->generateUniqueId();
 
-        $payload = [
+        $additionalClaims = [
             'scope' => $this->formatScope(NodeJwtScope::FileUpload),
-            'server_uuid' => $serverUuid,
-            'user_uuid' => $userUuid,
             'unique_id' => $uniqueId,
-            'iat' => time(),
-            'exp' => time() + $this->expiration,
-            'jti' => $this->generateJti(),
+            'jti' => $jti,
         ];
+        if ($ignoredFiles !== []) {
+            $additionalClaims['ignored_files'] = array_values($ignoredFiles);
+        }
 
-        return $this->encodeToken($payload);
+        return $this->generateWingsApiToken(
+            $serverUuid,
+            $userUuid,
+            [],
+            $panelUrl,
+            $wingsUrl,
+            $additionalClaims
+        );
+    }
+
+    /**
+     * Generate a directory download token (Calagopus /download/directory).
+     *
+     * @param string $serverUuid The server UUID
+     * @param string $userUuid The user UUID
+     * @param string $directoryPath The directory path
+     * @param string $uniqueId Unique request ID
+     * @param string $panelUrl Issuer (required by Calagopus wings-rs)
+     * @param string $wingsUrl Audience
+     *
+     * @throws \Exception
+     *
+     * @return string The JWT token
+     */
+    public function generateDirectoryDownloadToken(
+        string $serverUuid,
+        string $userUuid,
+        string $directoryPath,
+        string $uniqueId = '',
+        string $panelUrl = '',
+        string $wingsUrl = '',
+    ): string {
+        $jti = $this->generateJti();
+        $uniqueId = $uniqueId ?: $jti;
+
+        return $this->generateWingsApiToken(
+            $serverUuid,
+            $userUuid,
+            [],
+            $panelUrl,
+            $wingsUrl,
+            [
+                'scope' => $this->formatScope(NodeJwtScope::FileDownload),
+                'file_path' => $directoryPath,
+                'unique_id' => $uniqueId,
+                'jti' => $jti,
+            ]
+        );
     }
 
     /**
@@ -229,30 +292,36 @@ class TokenGenerator
     /**
      * Generate a WebSocket token.
      *
+     * Prefer JwtService::generateWebSocketToken() so iss/aud/sub are set for Calagopus.
+     * This helper keeps FeatherWings-compatible claims when used without panel/wings URLs.
+     *
      * @param string $serverUuid The server UUID
      * @param string $userUuid The user UUID
      * @param array $permissions The permissions array (e.g., ['console', 'files', 'admin'])
+     * @param string $panelUrl Issuer (required by Calagopus wings-rs)
+     * @param string $wingsUrl Audience
      *
      * @throws \Exception
      *
      * @return string The JWT token
      */
-    public function generateWebSocketToken(string $serverUuid, string $userUuid, array $permissions = []): string
-    {
-        $jti = $this->generateJti();
-
-        $payload = [
-            'scope' => $this->formatScope(NodeJwtScope::Websocket),
-            'user_uuid' => $userUuid,
-            'server_uuid' => $serverUuid,
-            'permissions' => $permissions,
-            'unique_id' => $jti,
-            'iat' => time(),
-            'exp' => time() + $this->expiration,
-            'jti' => $jti,
-        ];
-
-        return $this->encodeToken($payload);
+    public function generateWebSocketToken(
+        string $serverUuid,
+        string $userUuid,
+        array $permissions = [],
+        string $panelUrl = '',
+        string $wingsUrl = '',
+    ): string {
+        return $this->generateWingsApiToken(
+            $serverUuid,
+            $userUuid,
+            $permissions,
+            $panelUrl,
+            $wingsUrl,
+            [
+                'scope' => $this->formatScope(NodeJwtScope::Websocket),
+            ]
+        );
     }
 
     /**
@@ -286,7 +355,9 @@ class TokenGenerator
         $payload = [
             // Standard JWT claims
             'iss' => $panelUrl, // Issuer (panel URL)
-            'aud' => $wingsUrl, // Audience (Wings node URL)
+            // Audience must be an array: Calagopus wings-rs deserializes `aud` as Vec.
+            // FeatherWings accepts both string and array forms.
+            'aud' => $wingsUrl !== '' ? [$wingsUrl] : [],
             'sub' => $serverUuid, // Subject (server UUID) - standard JWT claim
             'iat' => $currentTime, // Issued at
             'nbf' => $currentTime - 300, // Not valid before (5 minutes ago)
@@ -302,11 +373,11 @@ class TokenGenerator
             ...$additionalClaims,
         ];
 
-        // Wings tracks token usage by unique_id, so set it to match jti
-        // This ensures each token has a unique identifier for tracking.
-        // Set after additionalClaims to ensure it always matches jti even if
-        // additionalClaims contains a unique_id field.
-        $payload['unique_id'] = $jti;
+        // Wings tracks token usage by unique_id. Prefer an explicit unique_id from
+        // additionalClaims when provided (upload one-time keys); otherwise match jti.
+        if (!isset($payload['unique_id']) || $payload['unique_id'] === '' || $payload['unique_id'] === null) {
+            $payload['unique_id'] = $payload['jti'] ?? $jti;
+        }
 
         return $this->encodeToken($payload);
     }

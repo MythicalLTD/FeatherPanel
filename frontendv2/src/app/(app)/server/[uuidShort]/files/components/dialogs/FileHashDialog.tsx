@@ -55,8 +55,25 @@ export function FileHashDialog({ open, onOpenChange, uuid, path }: FileHashDialo
                     setHashes(result);
                 }
             } catch {
-                if (!cancelled) {
-                    toast.error(t('files.dialogs.hash.error'));
+                // Calagopus: fall back to batch fingerprints API for a single file
+                try {
+                    const parts = path.split('/').filter(Boolean);
+                    const fileName = parts.pop() || path;
+                    const fp = await filesApi.getFingerprints(uuid, [fileName], 'sha256');
+                    const map =
+                        fp && typeof fp === 'object' && 'fingerprints' in (fp as object)
+                            ? ((fp as { fingerprints?: Record<string, string> }).fingerprints ?? {})
+                            : ((fp as Record<string, string>) ?? {});
+                    const hash = map[fileName] || map[`/${fileName}`] || Object.values(map)[0];
+                    if (!cancelled && hash) {
+                        setHashes({ sha256: String(hash), md5: '', sha1: '' } as FileHashesResponse);
+                    } else if (!cancelled) {
+                        toast.error(t('files.dialogs.hash.error'));
+                    }
+                } catch {
+                    if (!cancelled) {
+                        toast.error(t('files.dialogs.hash.error'));
+                    }
                 }
             } finally {
                 if (!cancelled) {

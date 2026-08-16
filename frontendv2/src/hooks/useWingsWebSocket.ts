@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import axios from 'axios';
+import { toast } from 'sonner';
 
 interface WingsMessage {
     event: string;
@@ -56,6 +57,12 @@ interface WingsJWTResponse {
     error_code: string | null;
 }
 
+export interface FileOperationEvent {
+    event: string;
+    operationId: string;
+    args?: unknown[];
+}
+
 interface WingsWebSocketOptions {
     serverUuid: string;
     onMessage?: (data: WingsMessage) => void;
@@ -69,6 +76,8 @@ interface WingsWebSocketOptions {
     onBackupComplete?: () => void;
     onTransferLogs?: (log: string) => void;
     onTransferStatus?: (status: string) => void;
+    /** Calagopus file-op progress/completed/error/aborted events */
+    onFileOperation?: (event: FileOperationEvent) => void;
     connect?: boolean;
 }
 
@@ -101,6 +110,7 @@ export function useWingsWebSocket({
     onBackupComplete,
     onTransferLogs,
     onTransferStatus,
+    onFileOperation,
     connect: shouldConnect = true,
 }: WingsWebSocketOptions): WingsWebSocketReturn {
     const wsRef = useRef<WebSocket | null>(null);
@@ -134,6 +144,7 @@ export function useWingsWebSocket({
     const onBackupCompleteRef = useRef(onBackupComplete);
     const onTransferLogsRef = useRef(onTransferLogs);
     const onTransferStatusRef = useRef(onTransferStatus);
+    const onFileOperationRef = useRef(onFileOperation);
 
     // Update refs when callbacks change
     useEffect(() => {
@@ -148,6 +159,7 @@ export function useWingsWebSocket({
         onBackupCompleteRef.current = onBackupComplete;
         onTransferLogsRef.current = onTransferLogs;
         onTransferStatusRef.current = onTransferStatus;
+        onFileOperationRef.current = onFileOperation;
     }, [
         onMessage,
         onStats,
@@ -160,6 +172,7 @@ export function useWingsWebSocket({
         onBackupComplete,
         onTransferLogs,
         onTransferStatus,
+        onFileOperation,
     ]);
 
     const flushConsoleOutputQueue = useCallback(() => {
@@ -515,6 +528,35 @@ export function useWingsWebSocket({
                         // Handle transfer status
                         if (data.event === 'transfer status' && onTransferStatusRef.current) {
                             onTransferStatusRef.current(data.args?.[0] as string);
+                            return;
+                        }
+
+                        // Calagopus file operation progress / completed / error / aborted
+                        if (typeof data.event === 'string' && data.event.includes('operation')) {
+                            const operationId = String(data.args?.[0] ?? '');
+                            const payload: FileOperationEvent = {
+                                event: data.event,
+                                operationId,
+                                args: data.args,
+                            };
+                            if (onFileOperationRef.current) {
+                                onFileOperationRef.current(payload);
+                            } else {
+                                const toastId = operationId ? `file-op-${operationId}` : 'file-op';
+                                if (data.event.includes('progress')) {
+                                    toast.loading('File operation in progress…', { id: toastId });
+                                } else if (data.event.includes('completed')) {
+                                    toast.success('File operation completed', { id: toastId });
+                                } else if (data.event.includes('error')) {
+                                    const message =
+                                        typeof data.args?.[1] === 'string' && data.args[1]
+                                            ? data.args[1]
+                                            : 'File operation failed';
+                                    toast.error(message, { id: toastId });
+                                } else if (data.event.includes('aborted')) {
+                                    toast.message('File operation aborted', { id: toastId });
+                                }
+                            }
                             return;
                         }
 
