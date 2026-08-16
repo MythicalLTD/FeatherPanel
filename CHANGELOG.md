@@ -23,6 +23,7 @@
 - Rules & filters on mobile no longer shows the title and description twice when the sheet opens. by @nayskutzu
 - Opening Rules & filters on tablet/desktop no longer also pops the mobile side sheet (it was ignoring `sm:hidden` because the sheet portals to the document body). by @nayskutzu
 - Subuser management endpoints now enforce `user.read` / `user.create` / `user.update` / `user.delete`, reject self-modification, validate permission names against the known set, and block assigning permissions the actor does not hold — closing privilege escalation where any invited subuser could rewrite their own permission list. by @nayskutzu
+- Fixed an issue where the server would incorrectly display "Java version 69 required" instead of showing the correct Java version (it was displaying the internal class file version). by @nayskutzu
 
 ## v1.3.7.9 STABLE
 
