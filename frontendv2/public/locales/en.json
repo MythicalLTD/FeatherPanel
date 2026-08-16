@@ -6517,6 +6517,7 @@
 			"database": "Database",
 			"cache": "Cache",
 			"avg": "Avg",
+			"view_nodes": "Node status",
 			"status": {
 				"unavailable": "Unavailable",
 				"online": "{healthy}/{total} Online",
@@ -6547,6 +6548,11 @@
 				"remind_me": "Remind Me Later",
 				"update_settings": "Update Settings"
 			},
+			"update_banner": {
+				"title": "Update {version} available",
+				"message": "A newer FeatherPanel build is ready. Review release notes and update when convenient.",
+				"action": "View updates"
+			},
 			"eula": {
 				"title": "End User License Agreement",
 				"subtitle": "Terms and conditions for using FeatherPanel"
@@ -6556,9 +6562,15 @@
 			"running_version": "Running FeatherPanel {version}",
 			"welcome_back": "Welcome back, ",
 			"subtitle": "Management interface active • All systems operational",
+			"subtitle_update": "Update {version} is available • Review release notes when ready",
 			"create_server": "Create Server",
 			"add_user": "Add User",
-			"manage_nodes": "Manage Nodes"
+			"manage_nodes": "Manage Nodes",
+			"view_updates": "View Updates",
+			"chip_nodes": "{healthy}/{total} Nodes Online",
+			"chip_systems_ok": "Systems Operational",
+			"chip_systems_attention": "Needs Attention",
+			"chip_update": "Update {version}"
 		},
 		"stats": {
 			"total_servers": "Total Servers",
@@ -6567,6 +6579,82 @@
 			"total_spells": "Total Spells",
 			"total_vm_nodes": "Total VDS Nodes",
 			"total_vm_instances": "Total VM Instances"
+		},
+		"activity": {
+			"title": "Recent Activity",
+			"description": "Latest panel events across users",
+			"view_all": "Analytics",
+			"unknown_user": "Unknown",
+			"empty_title": "No recent activity",
+			"empty_desc": "User actions will show up here as they happen.",
+			"error_title": "Could not load activity",
+			"error_desc": "Something went wrong fetching recent events.",
+			"retry": "Try again",
+			"no_permission_title": "Activity unavailable",
+			"no_permission_desc": "You need users view permission to see the activity feed."
+		},
+		"attention": {
+			"title": "Needs Attention",
+			"description": "Issues and recommended actions",
+			"all_clear_title": "All clear",
+			"all_clear_desc": "No critical alerts right now. Infrastructure looks healthy.",
+			"unhealthy_nodes_title": "Unhealthy nodes",
+			"unhealthy_nodes_detail": "{count} node(s) need investigation",
+			"database_title": "Database issue",
+			"database_detail": "MySQL self-test reported a failure",
+			"cache_title": "Cache issue",
+			"cache_detail": "Redis self-test reported a failure",
+			"cron_title": "Cron tasks failing",
+			"cron_detail": "{count} background task(s) are late or failed",
+			"update_title": "Update {version} available",
+			"update_detail": "Review release notes and update when ready"
+		},
+		"nodes_overview": {
+			"title": "Nodes Overview",
+			"description": "Live host status and utilization",
+			"view_all": "Full status",
+			"empty": "No nodes reported yet.",
+			"healthy": "Healthy",
+			"unhealthy": "Unhealthy",
+			"servers_count": "{count} servers"
+		},
+		"recent_servers": {
+			"title": "Recent Servers",
+			"description": "Newest servers on this panel",
+			"view_all": "All servers",
+			"create": "Create",
+			"empty": "No servers created yet.",
+			"error": "Could not load servers.",
+			"retry": "Try again",
+			"no_permission": "Servers view permission required.",
+			"unknown_owner": "Unknown owner"
+		},
+		"support_tickets": {
+			"title": "Support Tickets",
+			"description": "Latest customer and staff tickets",
+			"view_all": "All tickets",
+			"empty": "No tickets yet.",
+			"error": "Could not load tickets.",
+			"retry": "Try again",
+			"no_permission": "Tickets unavailable",
+			"no_permission_desc": "You need tickets view permission to see this feed.",
+			"unknown_user": "Unknown user"
+		},
+		"cloud_hub": {
+			"title": "MyFeatherPanel",
+			"description": "Cloud services, marketplace, and community",
+			"premium": "FeatherPanel Pro",
+			"premium_desc": "Premium features and licensing",
+			"marketplace": "Marketplace",
+			"marketplace_desc": "Browse spells, plugins, and products",
+			"plugins": "Plugins",
+			"plugins_desc": "Manage installed addons",
+			"report_issue": "Report an Issue",
+			"report_issue_desc": "Tell us about bugs and regressions",
+			"suggest": "Suggest a Feature",
+			"suggest_desc": "Share ideas for the roadmap",
+			"cloud": "Cloud Connections",
+			"cloud_desc": "Link FeatherCloud and sync services"
 		},
 		"cron": {
 			"title": "Cron Status",
@@ -6663,10 +6751,37 @@
 		"quick_links": {
 			"title": "Quick Actions",
 			"description": "Shortcuts & Maintenance",
+			"group_manage": "Manage",
+			"group_system": "System & resources",
 			"system_settings": "System Settings",
+			"system_settings_desc": "Global panel configuration",
+			"analytics": "Analytics",
+			"analytics_desc": "KPIs and usage insights",
+			"updates": "System Updates",
+			"updates_desc": "Releases and upgrade tools",
+			"nodes_status": "Nodes Status",
+			"nodes_status_desc": "Live infrastructure health",
+			"servers": "Servers",
+			"servers_desc": "Create and manage game servers",
+			"users": "Users",
+			"users_desc": "Accounts and access control",
+			"nodes": "Nodes",
+			"nodes_desc": "Wings hosts and capacity",
+			"roles": "Roles",
+			"roles_desc": "Permissions and staff roles",
+			"locations": "Locations",
+			"locations_desc": "Regions and node groupings",
+			"plugins": "Plugins",
+			"plugins_desc": "Installed addons and modules",
+			"translations": "Translations",
+			"translations_desc": "Locale packs and language files",
 			"documentation": "Documentation",
+			"documentation_desc": "Guides and API references",
 			"support_discord": "Support Discord",
-			"clear_system_cache": "Clear System Cache"
+			"support_discord_desc": "Community help and updates",
+			"clear_system_cache": "Clear System Cache",
+			"clear_system_cache_desc": "Flush Redis and application caches",
+			"clear_cache_short": "Clear cache"
 		},
 		"analytics": {
 			"title": "Analytics Dashboard",
