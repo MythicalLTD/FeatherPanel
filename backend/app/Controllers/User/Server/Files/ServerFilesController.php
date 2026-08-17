@@ -230,8 +230,10 @@ class ServerFilesController
                 $contents = [];
             }
 
-            // Calagopus /files/list returns {entries,total,...}; FeatherWings returns a flat list.
-            if (isset($contents['entries']) && is_array($contents['entries'])) {
+            // Legacy {contents: [files...]}, Calagopus {entries,...}, FeatherWings flat list, or {files: [...]}.
+            if (isset($contents['contents']) && is_array($contents['contents']) && array_is_list($contents['contents'])) {
+                $contents = array_values($contents['contents']);
+            } elseif (isset($contents['entries']) && is_array($contents['entries'])) {
                 $contents = array_values($contents['entries']);
             } elseif (array_is_list($contents)) {
                 // FeatherWings flat list — keep as-is
@@ -1246,6 +1248,13 @@ class ServerFilesController
                 || $data['overwrite'] === 1
                 || $data['overwrite'] === '1'
             );
+
+            if ($overwrite) {
+                $overwritePermissionCheck = $this->checkPermission($request, $server, SubuserPermissions::FILE_UPDATE);
+                if ($overwritePermissionCheck !== null) {
+                    return $overwritePermissionCheck;
+                }
+            }
 
             $sources = [];
             foreach ($data['files'] as $sourcePath) {
@@ -2615,8 +2624,8 @@ class ServerFilesController
                 return $permissionCheck;
             }
 
-            $path = $this->getPathFromQuery();
-            if ($path === '') {
+            $path = $this->getPathFromQuery('');
+            if (trim($path) === '') {
                 return ApiResponse::error('Directory path is required', 'MISSING_PATH', 400);
             }
 
@@ -2627,6 +2636,11 @@ class ServerFilesController
 
             $token = $node['daemon_token'];
             $wingsBaseUrl = WingsUrlHelper::buildFromNode($node);
+            $scheme = parse_url($wingsBaseUrl, PHP_URL_SCHEME);
+            if (!is_string($scheme) || strtolower($scheme) !== 'https') {
+                return ApiResponse::error('Directory download requires an HTTPS node URL', 'INSECURE_NODE_URL', 400);
+            }
+
             $expiresIn = 300;
 
             $jwtService = new JwtService(
@@ -2642,10 +2656,13 @@ class ServerFilesController
                 'path' => $path,
             ], $user);
 
-            return ApiResponse::success([
+            $response = ApiResponse::success([
                 'download_url' => $downloadUrl,
                 'expires_in' => $expiresIn,
             ]);
+            $response->headers->set('Cache-Control', 'no-store');
+
+            return $response;
         } catch (\Exception $e) {
             return $this->handleWingsError($e, 'download directory');
         }

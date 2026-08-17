@@ -132,14 +132,14 @@ class CopyFilesTool implements ToolInterface
         // Copy files via Wings
         try {
             $wings = Wings::fromNode($node, 30);
-            $destination = is_string($location) ? $location : '/';
+            $destination = $this->normalizeDirectoryPath(is_string($location) ? $location : '/');
             $copied = [];
 
             foreach ($files as $sourcePath) {
                 if (!is_string($sourcePath) || trim($sourcePath) === '') {
                     continue;
                 }
-                $source = $sourcePath;
+                $source = $this->normalizeAbsolutePath($sourcePath);
                 $response = $wings->getServer()->copyFiles(
                     $server['uuid'],
                     $source,
@@ -223,5 +223,34 @@ class CopyFilesTool implements ToolInterface
             'files' => 'Array of file/directory paths to copy (required)',
             'location' => 'Destination location path (required)',
         ];
+    }
+
+    /**
+     * Normalize a filesystem path to an absolute path.
+     */
+    private function normalizeAbsolutePath(string $path): string
+    {
+        $path = preg_replace('#/+#', '/', trim($path));
+        if ($path === '' || $path === null) {
+            return '/';
+        }
+        if ($path[0] !== '/') {
+            $path = '/' . $path;
+        }
+
+        return $path;
+    }
+
+    /**
+     * Normalize directory path and drop trailing slash except for root.
+     */
+    private function normalizeDirectoryPath(string $path): string
+    {
+        $normalized = $this->normalizeAbsolutePath($path);
+        if ($normalized === '/') {
+            return '/';
+        }
+
+        return rtrim($normalized, '/');
     }
 }

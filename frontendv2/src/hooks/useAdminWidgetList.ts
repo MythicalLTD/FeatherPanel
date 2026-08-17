@@ -15,7 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import axios, { type AxiosResponse } from 'axios';
 
 export type AdminWidgetListState = 'loading' | 'ready' | 'forbidden' | 'error' | 'empty';
@@ -41,11 +41,14 @@ export function useAdminWidgetList<T>(
 ) {
     const [items, setItems] = useState<T[]>([]);
     const [state, setState] = useState<AdminWidgetListState>('loading');
+    const requestIdRef = useRef(0);
 
     const load = useCallback(async () => {
+        const requestId = ++requestIdRef.current;
         setState('loading');
         try {
             const response = await fetcher();
+            if (requestId !== requestIdRef.current) return;
             if (response.data.success) {
                 const list = extract(response.data.data) || [];
                 setItems(list);
@@ -54,6 +57,7 @@ export function useAdminWidgetList<T>(
                 setState('error');
             }
         } catch (err) {
+            if (requestId !== requestIdRef.current) return;
             if (axios.isAxiosError(err) && err.response?.status === 403) {
                 setState('forbidden');
             } else {
