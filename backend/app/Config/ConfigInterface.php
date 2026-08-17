@@ -259,6 +259,12 @@ interface ConfigInterface
      * and will not execute. Default off docker exec is a security-sensitive capability.
      */
     public const SERVER_LIFECYCLE_HOOKS_CONTAINER_SHELL_ENABLED = 'server_lifecycle_hooks_container_shell_enabled';
+    /**
+     * When false, the user-facing "run a custom container script" endpoint is disabled.
+     * Distinct from SERVER_LIFECYCLE_HOOKS_CONTAINER_SHELL_ENABLED (which only gates the
+     * lifecycle hook docker-exec step). Default off: security-sensitive capability.
+     */
+    public const SERVER_RUN_SCRIPT_ENABLED = 'server_run_script_enabled';
 
     /**
      * File trash bin (soft-delete via FeatherWings).

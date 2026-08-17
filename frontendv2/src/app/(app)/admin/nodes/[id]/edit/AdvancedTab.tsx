@@ -19,7 +19,7 @@ import { Input } from '@/components/featherui/Input';
 import { Select } from '@/components/ui/select-native';
 import { Label } from '@/components/ui/label';
 import { Shield } from 'lucide-react';
-import { supportsDaemonFeature } from '@/lib/daemonCapabilities';
+import { supportsDaemonFeature, type DaemonCapabilitiesMap } from '@/lib/daemonCapabilities';
 
 import { type NodeForm } from './page';
 
@@ -27,11 +27,12 @@ interface AdvancedTabProps {
     form: NodeForm;
     setForm: React.Dispatch<React.SetStateAction<NodeForm>>;
     errors: Record<string, string>;
+    capabilities?: Partial<DaemonCapabilitiesMap> | null;
 }
 
-export function AdvancedTab({ form, setForm, errors }: AdvancedTabProps) {
+export function AdvancedTab({ form, setForm, errors, capabilities }: AdvancedTabProps) {
     const { t } = useTranslation();
-    const showFastdl = supportsDaemonFeature(null, 'fastdl', form.daemon_type);
+    const showFastdl = supportsDaemonFeature(capabilities, 'fastdl', form.daemon_type);
 
     return (
         <PageCard title={t('admin.node.form.advanced')} icon={Shield}>

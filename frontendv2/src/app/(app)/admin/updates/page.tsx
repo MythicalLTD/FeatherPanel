@@ -171,7 +171,7 @@ export default function AdminUpdatesPage() {
                 [id]: {
                     current_version: data.current_version,
                     latest_version: data.latest_version,
-                    update_available: selfUpdateSupported && Boolean(data.update_available),
+                    update_available: Boolean(data.update_available),
                     self_update_supported: selfUpdateSupported,
                     loading: false,
                 },
@@ -794,6 +794,7 @@ export default function AdminUpdatesPage() {
                         {filteredNodes.map((node) => {
                             const version = nodeVersions[node.id];
                             const needsUpdate = Boolean(version?.update_available);
+                            const selfUpdateSupported = version?.self_update_supported !== false;
                             const checked = selectedNodes.has(node.id);
 
                             return (
@@ -804,7 +805,7 @@ export default function AdminUpdatesPage() {
                                     <div className='flex items-start gap-3'>
                                         <Checkbox
                                             checked={checked}
-                                            disabled={!needsUpdate || isBulkUpdating}
+                                            disabled={!needsUpdate || !selfUpdateSupported || isBulkUpdating}
                                             onCheckedChange={(value) => {
                                                 setSelectedNodes((prev) => {
                                                     const next = new Set(prev);
@@ -840,7 +841,11 @@ export default function AdminUpdatesPage() {
                                                 )}
                                             </p>
                                         </div>
-                                        {needsUpdate ? (
+                                        {version?.self_update_supported === false && !version?.loading && !version?.error ? (
+                                            <span className='rounded-md bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-400'>
+                                                {t('admin_updates.wings.manual_update_required')}
+                                            </span>
+                                        ) : needsUpdate ? (
                                             <span className='rounded-md bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-400'>
                                                 Update
                                             </span>

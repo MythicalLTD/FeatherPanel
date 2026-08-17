@@ -468,6 +468,7 @@ class ApiClientController
         if ($permissions instanceof Response) {
             return $permissions;
         }
+        $permissions = $this->intersectCalagopusPermissionsWithUser($permissions, $user);
 
         $publicKey = $this->generateApiKey();
         $privateKey = $this->generateApiKey();
@@ -544,6 +545,11 @@ class ApiClientController
             return ApiResponse::error('You are not allowed to access this resource!', 'INVALID_ACCOUNT_TOKEN', 400, []);
         }
 
+        $notAllowed = $this->ensureApiKeyCreationAllowed($user);
+        if ($notAllowed !== null) {
+            return $notAllowed;
+        }
+
         $data = json_decode($request->getContent(), true);
         if (!is_array($data)) {
             return ApiResponse::error('Invalid request data', 'INVALID_REQUEST_DATA', 400);
@@ -557,6 +563,7 @@ class ApiClientController
         if ($permissions instanceof Response) {
             return $permissions;
         }
+        $permissions = $this->intersectCalagopusPermissionsWithUser($permissions, $user);
 
         foreach (ApiClient::getApiClientsByUserUuid($user['uuid']) as $client) {
             $public = (string) ($client['public_key'] ?? '');
@@ -1664,7 +1671,7 @@ class ApiClientController
         $result = [];
         foreach (['admin', 'user', 'server'] as $bucket) {
             $field = $bucket . '_permissions';
-            $value = $data[$field] ?? $request->query->get($field, []);
+            $value = $data[$field] ?? $request->query->all()[$field] ?? [];
             if (is_string($value)) {
                 $value = $value === '' ? [] : explode(',', $value);
             }
@@ -1690,5 +1697,57 @@ class ApiClientController
         }
 
         return $result;
+    }
+
+    /**
+     * Restrict persisted Calagopus scopes to permissions the authenticated user can actually exercise.
+     *
+     * @param array{admin:list<string>,user:list<string>,server:list<string>} $permissions
+     * @param array<string, mixed> $user
+     *
+     * @return array{admin:list<string>,user:list<string>,server:list<string>}
+     */
+    private function intersectCalagopusPermissionsWithUser(array $permissions, array $user): array
+    {
+        $nodes = PermissionHelper::getPermissionNodesForRole((int) ($user['role_id'] ?? 0));
+        $isRoot = in_array(Permissions::ADMIN_ROOT, $nodes, true);
+
+        $permissions['admin'] = array_values(array_filter(
+            $permissions['admin'],
+            fn (string $scope): bool => $this->userMayGrantCalagopusAdminScope($user, $scope, $isRoot)
+        ));
+
+        // Authenticated users may grant user/server scopes for their own resources; wildcards
+        // still require root so a key cannot outrank the caller's panel role.
+        if (!$isRoot) {
+            foreach (['user', 'server'] as $bucket) {
+                $permissions[$bucket] = array_values(array_filter(
+                    $permissions[$bucket],
+                    static fn (string $scope): bool => $scope !== '*'
+                ));
+            }
+        }
+
+        return $permissions;
+    }
+
+    private function userMayGrantCalagopusAdminScope(array $user, string $scope, bool $isRoot): bool
+    {
+        if ($isRoot) {
+            return true;
+        }
+        if ($scope === '*') {
+            return false;
+        }
+
+        $mapped = match ($scope) {
+            'servers.read' => Permissions::ADMIN_SERVERS_VIEW,
+            default => null,
+        };
+        if ($mapped === null) {
+            return false;
+        }
+
+        return PermissionHelper::hasPermission($user['uuid'], $mapped, $user);
     }
 }

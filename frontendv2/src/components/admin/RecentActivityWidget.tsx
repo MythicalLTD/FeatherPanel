@@ -15,7 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback } from 'react';
 import Link from 'next/link';
 import axios from 'axios';
 import { Activity, ArrowUpRight, Lock, User } from 'lucide-react';
@@ -24,6 +24,7 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { formatRelativeTime } from '@/lib/dateUtils';
 import { useDateFormatOptions } from '@/contexts/PreferencesContext';
 import { cn } from '@/lib/utils';
+import { useAdminWidgetList } from '@/hooks/useAdminWidgetList';
 
 interface ActivityItem {
     id: number;
@@ -38,8 +39,6 @@ interface ActivityItem {
     role_color?: string | null;
 }
 
-type LoadState = 'loading' | 'ready' | 'forbidden' | 'error' | 'empty';
-
 function initials(name?: string | null) {
     if (!name) return '?';
     const parts = name.trim().split(/\s+/);
@@ -50,35 +49,24 @@ function initials(name?: string | null) {
 export function RecentActivityWidget() {
     const { t } = useTranslation();
     const dateOpts = useDateFormatOptions();
-    const [activities, setActivities] = useState<ActivityItem[]>([]);
-    const [state, setState] = useState<LoadState>('loading');
 
-    const fetchActivities = useCallback(async () => {
-        setState('loading');
-        try {
-            const response = await axios.get('/api/admin/analytics/activity/recent', {
+    const fetchActivities = useCallback(
+        () =>
+            axios.get('/api/admin/analytics/activity/recent', {
                 params: { limit: 8 },
                 withCredentials: true,
-            });
-            if (response.data.success) {
-                const list: ActivityItem[] = response.data.data?.activities || [];
-                setActivities(list);
-                setState(list.length ? 'ready' : 'empty');
-            } else {
-                setState('error');
-            }
-        } catch (err) {
-            if (axios.isAxiosError(err) && err.response?.status === 403) {
-                setState('forbidden');
-            } else {
-                setState('error');
-            }
-        }
-    }, []);
-
-    useEffect(() => {
-        fetchActivities();
-    }, [fetchActivities]);
+            }),
+        [],
+    );
+    const extractActivities = useCallback(
+        (data: unknown) => (data as { activities?: ActivityItem[] } | undefined)?.activities || [],
+        [],
+    );
+    const {
+        items: activities,
+        state,
+        retry: retryFetchActivities,
+    } = useAdminWidgetList(fetchActivities, extractActivities);
 
     return (
         <PageCard
@@ -138,7 +126,7 @@ export function RecentActivityWidget() {
                     {state === 'error' && (
                         <button
                             type='button'
-                            onClick={fetchActivities}
+                            onClick={retryFetchActivities}
                             className='bg-secondary border-border/50 mt-1 rounded-xl border px-4 py-2 text-[10px] font-black tracking-widest uppercase transition-all hover:scale-105'
                         >
                             {t('admin.activity.retry')}

@@ -61,8 +61,8 @@ export function FileHashDialog({ open, onOpenChange, uuid, path }: FileHashDialo
                     const fileName = parts.pop() || path;
                     const fp = await filesApi.getFingerprints(uuid, [fileName], 'sha256');
                     const map =
-                        fp && typeof fp === 'object' && 'fingerprints' in (fp as object)
-                            ? ((fp as { fingerprints?: Record<string, string> }).fingerprints ?? {})
+                        fp && typeof fp === 'object' && 'files' in (fp as object)
+                            ? ((fp as { files?: Record<string, string> }).files ?? {})
                             : ((fp as Record<string, string>) ?? {});
                     const hash = map[fileName] || map[`/${fileName}`] || Object.values(map)[0];
                     if (!cancelled && hash) {

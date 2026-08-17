@@ -525,7 +525,7 @@ class JwtService
             $this->panelUrl,
             $this->wingsUrl,
             [
-                'scope' => 'transfer',
+                'scope' => NodeJwtScope::ServerTransfer->value,
                 'server' => $destinationServerUuid,
                 'root' => $root,
                 'destination_path' => $destinationPath,

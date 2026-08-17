@@ -115,6 +115,28 @@ export function formatCpu(percent: number): string {
 }
 
 /**
+ * Loopback hostnames allowed for OAuth-style callback URLs (e.g. Calagopus VS Code auth).
+ * Restricting to these prevents an attacker-supplied `callback_url` query param from being
+ * used as an open redirect / arbitrary iframe navigation target.
+ */
+const LOOPBACK_CALLBACK_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]', '::1']);
+
+/**
+ * Validate that a callback URL is a loopback HTTP(S) URL (localhost, 127.0.0.1, or ::1).
+ * Used to guard client-side navigation/iframe targets built from untrusted query params.
+ */
+export function isLoopbackCallbackUrl(url: string): boolean {
+    if (!url) return false;
+    try {
+        const parsed = new URL(url);
+        if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return false;
+        return LOOPBACK_CALLBACK_HOSTS.has(parsed.hostname.toLowerCase());
+    } catch {
+        return false;
+    }
+}
+
+/**
  * Format date string to local locale string
  */
 export function formatDate(date: string | null | undefined): string {

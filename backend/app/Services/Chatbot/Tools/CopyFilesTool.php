@@ -23,7 +23,6 @@ use App\Chat\Server;
 use App\Chat\ServerActivity;
 use App\Services\Wings\Wings;
 use App\Helpers\ServerGateway;
-use App\Helpers\WingsUrlHelper;
 use App\Plugins\Events\Events\ServerEvent;
 
 /**
@@ -132,21 +131,35 @@ class CopyFilesTool implements ToolInterface
 
         // Copy files via Wings
         try {
-            $wings = new Wings(
-                $node['fqdn'],
-                $node['daemonListen'],
-                $node['scheme'],
-                $node['daemon_token'],
-                30,
-                WingsUrlHelper::isBehindProxy($node)
-            );
+            $wings = Wings::fromNode($node, 30);
+            $destination = is_string($location) ? $location : '/';
+            $copied = [];
 
-            $response = $wings->getServer()->copyFiles($server['uuid'], $location, $files);
+            foreach ($files as $sourcePath) {
+                if (!is_string($sourcePath) || trim($sourcePath) === '') {
+                    continue;
+                }
+                $source = $sourcePath;
+                $response = $wings->getServer()->copyFiles(
+                    $server['uuid'],
+                    $source,
+                    $destination,
+                    basename($source)
+                );
+                if (!$response->isSuccessful()) {
+                    return [
+                        'success' => false,
+                        'error' => 'Failed to copy files: ' . $response->getError(),
+                        'action_type' => 'copy_files',
+                    ];
+                }
+                $copied[] = $source;
+            }
 
-            if (!$response->isSuccessful()) {
+            if ($copied === []) {
                 return [
                     'success' => false,
-                    'error' => 'Failed to copy files: ' . $response->getError(),
+                    'error' => 'Files must be a non-empty array of paths',
                     'action_type' => 'copy_files',
                 ];
             }
@@ -158,9 +171,9 @@ class CopyFilesTool implements ToolInterface
                 'user_id' => $user['id'],
                 'event' => 'files_copied',
                 'metadata' => json_encode([
-                    'location' => $location,
-                    'files' => $files,
-                    'file_count' => count($files),
+                    'location' => $destination,
+                    'files' => $copied,
+                    'file_count' => count($copied),
                 ]),
             ]);
 
@@ -172,7 +185,7 @@ class CopyFilesTool implements ToolInterface
                     [
                         'user_uuid' => $user['uuid'],
                         'server_uuid' => $server['uuid'],
-                        'file_paths' => $files,
+                        'file_paths' => $copied,
                     ]
                 );
             }
@@ -181,10 +194,10 @@ class CopyFilesTool implements ToolInterface
                 'success' => true,
                 'action_type' => 'copy_files',
                 'server_name' => $server['name'],
-                'location' => $location,
-                'files' => $files,
-                'file_count' => count($files),
-                'message' => 'Copied ' . count($files) . " file(s) to '{$location}' on server '{$server['name']}'",
+                'location' => $destination,
+                'files' => $copied,
+                'file_count' => count($copied),
+                'message' => 'Copied ' . count($copied) . " file(s) to '{$destination}' on server '{$server['name']}'",
             ];
         } catch (\Exception $e) {
             $this->app->getLogger()->error('CopyFilesTool error: ' . $e->getMessage());

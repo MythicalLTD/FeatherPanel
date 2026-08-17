@@ -62,7 +62,11 @@ export default function BackgroundWrapper({ children }: { children: React.ReactN
     const { settings } = useSettings();
     const serverCtx = useContext(ServerContext);
     const pathname = usePathname();
-    const [mounted] = useState(() => typeof window !== 'undefined');
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     const isServerRoute = Boolean(pathname?.startsWith('/server/'));
     const spellBgMode = resolveServerSpellBannerBackground(settings);

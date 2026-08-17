@@ -68,6 +68,7 @@ import {
     capabilitiesForType,
     defaultDaemonBase,
     normalizeDaemonType,
+    resolveCapabilities,
     supportsDaemonFeature,
     type DaemonType,
 } from '@/lib/daemonCapabilities';
@@ -515,7 +516,10 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
         }
     };
 
-    const caps = useMemo(() => capabilitiesForType(form.daemon_type), [form.daemon_type]);
+    const caps = useMemo(
+        () => resolveCapabilities(nodeData?.capabilities, form.daemon_type),
+        [nodeData, form.daemon_type],
+    );
     const tabs = useMemo(
         () => [
             { id: 'details', label: t('admin.node.form.basic_details'), icon: Database },
@@ -661,7 +665,7 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
                         </TabsContent>
 
                         <TabsContent value='advanced' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
-                            <AdvancedTab form={form} setForm={setForm} errors={errors} />
+                            <AdvancedTab form={form} setForm={setForm} errors={errors} capabilities={caps} />
                         </TabsContent>
 
                         <TabsContent value='wings' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>

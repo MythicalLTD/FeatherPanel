@@ -699,7 +699,7 @@ class ServerFilesController
                     return ApiResponse::error(
                         'A folder already exists at this path. Choose a different file name.',
                         'PATH_IS_DIRECTORY',
-                        $response->getStatusCode() >= 400 ? $response->getStatusCode() : 417
+                        $response->getStatusCode() >= 400 ? $response->getStatusCode() : 409
                     );
                 }
 
@@ -1247,21 +1247,35 @@ class ServerFilesController
                 || $data['overwrite'] === '1'
             );
 
-            $wings = $this->createWingsConnection($node);
-            $destinationRoot = $this->normalizeDirectoryPath((string) $data['location']);
-            $copiedFiles = [];
-
+            $sources = [];
             foreach ($data['files'] as $sourcePath) {
                 if (!is_string($sourcePath) || trim($sourcePath) === '') {
                     continue;
                 }
+                $sources[] = $this->normalizeAbsolutePath($sourcePath);
+            }
+            if ($sources === []) {
+                return ApiResponse::error('No valid files were provided to copy', 'INVALID_COPY_REQUEST', 400);
+            }
+            if ($copyName !== null && count($sources) > 1) {
+                return ApiResponse::error(
+                    'name cannot be used when copying multiple files; each source is copied into the destination directory under its own filename',
+                    'INVALID_COPY_NAME',
+                    400
+                );
+            }
 
-                $normalizedSourcePath = $this->normalizeAbsolutePath($sourcePath);
+            $wings = $this->createWingsConnection($node);
+            $destinationRoot = $this->normalizeDirectoryPath((string) $data['location']);
+            $copiedFiles = [];
+
+            foreach ($sources as $normalizedSourcePath) {
+                $destinationName = $copyName ?? basename($normalizedSourcePath);
                 $copyResponse = $wings->getServer()->copyFiles(
                     $server['uuid'],
                     $normalizedSourcePath,
-                    [],
-                    $copyName,
+                    $destinationRoot,
+                    $destinationName,
                     $overwrite
                 );
                 if (!$copyResponse->isSuccessful()) {
@@ -2537,7 +2551,7 @@ class ServerFilesController
                 $expiresIn
             );
 
-            $ignoredFiles = $this->resolveSpellFileDenylist($server);
+            $ignoredFiles = Spell::resolveFileDenylist($server);
             $jwtToken = $jwtService->generateFileUploadToken($server['uuid'], $user['uuid'], '', $ignoredFiles);
             $uploadUrl = rtrim($wingsBaseUrl, '/') . '/upload/file?token=' . $jwtToken;
 
@@ -2670,7 +2684,15 @@ class ServerFilesController
                 return ApiResponse::error('At least one file is required', 'MISSING_FILES', 400);
             }
 
-            $algorithm = isset($_GET['algorithm']) && is_string($_GET['algorithm']) ? $_GET['algorithm'] : 'sha256';
+            $algorithm = isset($_GET['algorithm']) && is_string($_GET['algorithm']) ? strtolower($_GET['algorithm']) : 'sha256';
+            $allowedAlgorithms = ['md5', 'crc32', 'sha1', 'sha224', 'sha256', 'sha384', 'sha512', 'curseforge'];
+            if (!in_array($algorithm, $allowedAlgorithms, true)) {
+                return ApiResponse::error(
+                    'Invalid algorithm. Supported: ' . implode(', ', $allowedAlgorithms),
+                    'INVALID_ALGORITHM',
+                    400
+                );
+            }
             $root = isset($_GET['root']) && is_string($_GET['root']) ? $_GET['root'] : '/';
 
             $wings = $this->createWingsConnection($node);
@@ -2776,43 +2798,6 @@ class ServerFilesController
         } catch (\Exception $e) {
             return $this->handleWingsError($e, 'download file');
         }
-    }
-
-    /**
-     * @param array<string, mixed> $server
-     *
-     * @return list<string>
-     */
-    private function resolveSpellFileDenylist(array $server): array
-    {
-        $spellId = (int) ($server['spell_id'] ?? 0);
-        if ($spellId <= 0) {
-            return [];
-        }
-
-        $spell = Spell::getSpellById($spellId);
-        if (!$spell || empty($spell['file_denylist'])) {
-            return [];
-        }
-
-        $denylist = $spell['file_denylist'];
-        if (is_string($denylist)) {
-            $decoded = json_decode($denylist, true);
-            $denylist = is_array($decoded) ? $decoded : [];
-        }
-
-        if (!is_array($denylist)) {
-            return [];
-        }
-
-        $out = [];
-        foreach ($denylist as $entry) {
-            if (is_string($entry) && $entry !== '') {
-                $out[] = $entry;
-            }
-        }
-
-        return $out;
     }
 
     /**

@@ -341,6 +341,7 @@ class SettingsController
                 ConfigInterface::SERVER_ALLOW_SCHEDULES,
                 ConfigInterface::SERVER_LIFECYCLE_HOOKS_ENABLED,
                 ConfigInterface::SERVER_LIFECYCLE_HOOKS_CONTAINER_SHELL_ENABLED,
+                ConfigInterface::SERVER_RUN_SCRIPT_ENABLED,
                 ConfigInterface::SERVER_BACKUP_RETENTION_MODE,
                 ConfigInterface::SERVER_ALLOW_USER_BACKUP_POLICY_EDIT,
                 ConfigInterface::SERVER_ALLOW_ALLOCATION_SELECT,
@@ -2034,6 +2035,22 @@ class SettingsController
                         'false',
                     ),
                 'description' => 'Allow the Container Shell lifecycle step (docker exec /bin/sh -c inside the server container). This is a security-sensitive capability: users with schedule.update can run arbitrary shell commands in running containers when lifecycle hooks fire. Default off. Requires Lifecycle Hooks Enabled. Existing Container Shell steps will not execute while this is disabled.',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'false',
+                'validation' => 'required|string|max:255',
+                'options' => ['true', 'false'],
+                'category' => 'servers',
+            ],
+            ConfigInterface::SERVER_RUN_SCRIPT_ENABLED => [
+                'name' => ConfigInterface::SERVER_RUN_SCRIPT_ENABLED,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::SERVER_RUN_SCRIPT_ENABLED,
+                        'false',
+                    ),
+                'description' => 'Allow the "run a custom container script" endpoint, which runs an arbitrary script inside a spell-allowed Docker image. Separate from the lifecycle Container Shell setting. Security-sensitive capability, default off.',
                 'type' => 'select',
                 'required' => true,
                 'placeholder' => 'false',
@@ -4008,7 +4025,7 @@ class SettingsController
 
         if (is_dir($translationsDir)) {
             foreach (scandir($translationsDir) ?: [] as $file) {
-                if (!preg_match('/^([a-z]{2}(?:-[a-z]{2})?)\.json$/i', $file, $matches)) {
+                if (!preg_match('/^([a-z]{2}(?:[-_][a-z]{2})?)\.json$/i', $file, $matches)) {
                     continue;
                 }
                 $normalized = strtolower(str_replace('_', '-', $matches[1]));

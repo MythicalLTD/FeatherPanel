@@ -15,7 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback } from 'react';
 import Link from 'next/link';
 import axios from 'axios';
 import { ArrowUpRight, Lock, Ticket } from 'lucide-react';
@@ -23,6 +23,7 @@ import { PageCard } from '@/components/featherui/PageCard';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { formatRelativeTime } from '@/lib/dateUtils';
 import { useDateFormatOptions } from '@/contexts/PreferencesContext';
+import { useAdminWidgetList } from '@/hooks/useAdminWidgetList';
 
 interface TicketItem {
     id: number;
@@ -34,40 +35,23 @@ interface TicketItem {
     priority?: { name?: string; color?: string };
 }
 
-type LoadState = 'loading' | 'ready' | 'forbidden' | 'error' | 'empty';
-
 export function SupportTicketsWidget() {
     const { t } = useTranslation();
     const dateOpts = useDateFormatOptions();
-    const [tickets, setTickets] = useState<TicketItem[]>([]);
-    const [state, setState] = useState<LoadState>('loading');
 
-    const fetchTickets = useCallback(async () => {
-        setState('loading');
-        try {
-            const response = await axios.get('/api/admin/tickets', {
+    const fetchTickets = useCallback(
+        () =>
+            axios.get('/api/admin/tickets', {
                 params: { page: 1, limit: 6 },
                 withCredentials: true,
-            });
-            if (response.data.success) {
-                const list: TicketItem[] = response.data.data?.tickets || [];
-                setTickets(list);
-                setState(list.length ? 'ready' : 'empty');
-            } else {
-                setState('error');
-            }
-        } catch (err) {
-            if (axios.isAxiosError(err) && err.response?.status === 403) {
-                setState('forbidden');
-            } else {
-                setState('error');
-            }
-        }
-    }, []);
-
-    useEffect(() => {
-        fetchTickets();
-    }, [fetchTickets]);
+            }),
+        [],
+    );
+    const extractTickets = useCallback(
+        (data: unknown) => (data as { tickets?: TicketItem[] } | undefined)?.tickets || [],
+        [],
+    );
+    const { items: tickets, state, retry: retryFetchTickets } = useAdminWidgetList(fetchTickets, extractTickets);
 
     return (
         <PageCard
@@ -113,7 +97,7 @@ export function SupportTicketsWidget() {
                     {state === 'error' && (
                         <button
                             type='button'
-                            onClick={fetchTickets}
+                            onClick={retryFetchTickets}
                             className='bg-secondary border-border/50 rounded-xl border px-4 py-2 text-[10px] font-black tracking-widest uppercase'
                         >
                             {t('admin.support_tickets.retry')}

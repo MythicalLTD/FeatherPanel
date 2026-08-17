@@ -43,6 +43,7 @@ class ServerTransferInitiator
      *                                      - auto_allocate (bool, default true when primary allocation omitted)
      *                                      - auto_open_ports (bool, create missing allocations from Wings IPs)
      *                                      - backups (optional string[] backup UUIDs to transfer — Calagopus)
+     *                                      - include_all_backups (bool, include all successful server backups when no explicit backups are supplied)
      *                                      - delete_backups (bool, delete transferred backups on source — Calagopus)
      *
      * @return array{success: bool, error?: string, code?: string, http_status?: int, transfer_id?: int|false, new_allocation?: int|null, new_additional_allocations?: int[]}
@@ -205,18 +206,30 @@ class ServerTransferInitiator
                 ['*']
             );
 
+            $serverBackups = Backup::getBackupsByServerId($serverId);
+            $serverBackupUuids = [];
+            foreach ($serverBackups as $backup) {
+                if (!empty($backup['uuid'])) {
+                    $serverBackupUuids[strtolower((string) $backup['uuid'])] = true;
+                }
+            }
+
             $backupUuids = [];
             if (isset($options['backups']) && is_array($options['backups'])) {
                 foreach ($options['backups'] as $backupUuid) {
                     if (is_string($backupUuid) && preg_match('/^[a-f0-9\-]{36}$/i', $backupUuid)) {
-                        $backupUuids[] = strtolower($backupUuid);
+                        $normalized = strtolower($backupUuid);
+                        // Only forward backups that actually belong to this server.
+                        if (isset($serverBackupUuids[$normalized])) {
+                            $backupUuids[] = $normalized;
+                        }
                     }
                 }
                 $backupUuids = array_values(array_unique($backupUuids));
             }
 
             if ($backupUuids === [] && !empty($options['include_all_backups'])) {
-                foreach (Backup::getBackupsByServerId($serverId) as $backup) {
+                foreach ($serverBackups as $backup) {
                     if (!empty($backup['uuid']) && (int) ($backup['is_successful'] ?? 0) === 1) {
                         $backupUuids[] = (string) $backup['uuid'];
                     }
@@ -249,15 +262,11 @@ class ServerTransferInitiator
                 'status' => 'in_progress',
                 'progress' => 0.0,
                 'started_at' => date('Y-m-d H:i:s'),
-                // Persist transfer backup options for success-callback handling (no metadata column).
-                'error' => ($backupUuids !== [] || $deleteBackups)
-                    ? json_encode([
-                        '_transfer_options' => [
-                            'backups' => $backupUuids,
-                            'delete_backups' => $deleteBackups,
-                        ],
-                    ])
-                    : null,
+                'metadata' => [
+                    'backups' => $backupUuids,
+                    'delete_backups' => $deleteBackups,
+                    'keep_backup_rows' => $backupUuids !== [],
+                ],
             ]);
 
             if (!$transferId) {

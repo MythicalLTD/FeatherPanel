@@ -31,6 +31,7 @@ use App\Config\ConfigInterface;
 use App\Helpers\DaemonCapabilities;
 use App\Helpers\SubuserPermissionChecker;
 use Symfony\Component\HttpFoundation\Request;
+use App\Services\Notifications\WarningService;
 use Symfony\Component\HttpFoundation\Response;
 use App\Plugins\Events\Events\ServerSubuserEvent;
 
@@ -529,6 +530,13 @@ class SubuserController
             );
         }
 
+        $previousPermissions = json_decode((string) ($subuser['permissions'] ?? '[]'), true);
+        if (!is_array($previousPermissions)) {
+            $previousPermissions = [];
+        }
+        $removedPermissions = array_values(array_diff($previousPermissions, $permissions));
+        $grantedPermissions = array_values(array_diff($permissions, $previousPermissions));
+
         $updateData = [
             'permissions' => json_encode($permissions),
             'updated_at' => date('Y-m-d H:i:s'),
@@ -559,20 +567,57 @@ class SubuserController
                         ],
                     ]);
                     if (!$wsResponse->isSuccessful()) {
-                        App::getInstance(true)->getLogger()->warning(
-                            'Failed to push live WS permissions for subuser ' . $subuserId . ': ' . $wsResponse->getError()
-                        );
+                        $error = $wsResponse->getError();
+                        $isRevocation = $removedPermissions !== [];
+                        $logMessage = ($isRevocation ? 'Failed to revoke live WS permissions' : 'Failed to grant live WS permissions')
+                            . ' for subuser ' . $subuserId . ': ' . $error;
+                        if ($isRevocation) {
+                            App::getInstance(true)->getLogger()->error($logMessage);
+                            WarningService::send([
+                                'title' => 'Live permission revocation failed',
+                                'message_markdown' => 'Websocket permission revocation for a subuser on server **'
+                                    . ($server['name'] ?? $server['uuid'])
+                                    . '** did not reach the daemon. Removed permissions remain active until the subuser reconnects. Error: `'
+                                    . $error . '`',
+                                'type' => 'warning',
+                                'user_id' => (int) ($actor['id'] ?? 0) ?: null,
+                                'server_id' => (int) $server['id'],
+                                'actor_uuid' => $actor['uuid'] ?? null,
+                            ]);
+                        } else {
+                            App::getInstance(true)->getLogger()->warning(
+                                $logMessage . ($grantedPermissions !== [] ? ' (grants: ' . implode(',', $grantedPermissions) . ')' : '')
+                            );
+                        }
                     }
                 } catch (\Throwable $e) {
-                    App::getInstance(true)->getLogger()->warning(
-                        'Failed to push live WS permissions for subuser ' . $subuserId . ': ' . $e->getMessage()
-                    );
+                    $isRevocation = $removedPermissions !== [];
+                    $logMessage = ($isRevocation ? 'Failed to revoke live WS permissions' : 'Failed to grant live WS permissions')
+                        . ' for subuser ' . $subuserId . ': ' . $e->getMessage();
+                    if ($isRevocation) {
+                        App::getInstance(true)->getLogger()->error($logMessage);
+                        WarningService::send([
+                            'title' => 'Live permission revocation failed',
+                            'message_markdown' => 'Websocket permission revocation for a subuser on server **'
+                                . ($server['name'] ?? $server['uuid'])
+                                . '** did not reach the daemon. Removed permissions remain active until the subuser reconnects. Error: `'
+                                . $e->getMessage() . '`',
+                            'type' => 'warning',
+                            'user_id' => (int) ($actor['id'] ?? 0) ?: null,
+                            'server_id' => (int) $server['id'],
+                            'actor_uuid' => $actor['uuid'] ?? null,
+                        ]);
+                    } else {
+                        App::getInstance(true)->getLogger()->warning($logMessage);
+                    }
                 }
             }
         }
 
         $this->logActivity($server, $node, 'subuser_updated', [
             'subuser_id' => $subuserId,
+            'granted_permissions' => $grantedPermissions,
+            'removed_permissions' => $removedPermissions,
         ], $actor);
 
         // Get updated subuser

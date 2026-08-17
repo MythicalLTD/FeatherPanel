@@ -382,7 +382,7 @@ class MythicIssueReportCollector
                 continue;
             }
 
-            if (!DaemonCapabilities::forType((string) ($node['daemon_type'] ?? ''))->supports(DaemonCapabilities::FEATURE_DIAGNOSTICS)) {
+            if (!DaemonCapabilities::fromNode($node)->supports(DaemonCapabilities::FEATURE_DIAGNOSTICS)) {
                 $entry['error'] = 'Diagnostics not supported by this daemon type';
                 $out[] = $entry;
                 continue;

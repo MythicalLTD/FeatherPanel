@@ -228,7 +228,7 @@ class TransferAllocationProvisioner
         if (empty($wingsIps)) {
             return [
                 'success' => false,
-                'error' => 'Destination node reported no usable IPs from Wings',
+                'error' => 'Destination node has no configured usable public IP addresses',
                 'code' => 'WINGS_IPS_EMPTY',
                 'http_status' => 400,
             ];

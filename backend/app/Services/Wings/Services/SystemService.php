@@ -17,6 +17,7 @@
 
 namespace App\Services\Wings\Services;
 
+use App\App;
 use App\Services\Wings\WingsConnection;
 use App\Services\Wings\Exceptions\WingsRequestException;
 
@@ -32,6 +33,15 @@ use App\Services\Wings\Exceptions\WingsRequestException;
 class SystemService
 {
     private WingsConnection $connection;
+
+    /** Short-lived per-instance memoization for getSystemUtilization() to avoid
+     *  repeated fallback-ladder round trips when multiple getters (getCpuPercent,
+     *  getUsedMemory, etc.) are called for the same request. */
+    private ?array $utilizationCache = null;
+
+    private float $utilizationCacheExpiresAt = 0.0;
+
+    private const UTILIZATION_CACHE_TTL_SECONDS = 2.0;
 
     /**
      * Create a new SystemService instance.
@@ -371,6 +381,19 @@ class SystemService
      * @param int $maxRetries Maximum Wings HTTP retry attempts (default: 3)
      */
     public function getSystemUtilization(int $maxRetries = 3): array
+    {
+        if ($this->utilizationCache !== null && microtime(true) < $this->utilizationCacheExpiresAt) {
+            return $this->utilizationCache;
+        }
+
+        $result = $this->fetchSystemUtilization($maxRetries);
+        $this->utilizationCache = $result;
+        $this->utilizationCacheExpiresAt = microtime(true) + self::UTILIZATION_CACHE_TTL_SECONDS;
+
+        return $result;
+    }
+
+    private function fetchSystemUtilization(int $maxRetries): array
     {
         try {
             return $this->connection->get('/api/system/utilization', [], $maxRetries);
@@ -837,7 +860,7 @@ class SystemService
         $encoded = rawurlencode($file);
         $endpoint = "/api/system/logs/{$encoded}";
         if ($lines !== null && $lines > 0) {
-            $endpoint .= '?lines=' . max(1, $lines);
+            $endpoint .= '?lines=' . min(500, $lines);
         }
 
         return $this->connection->getRaw($endpoint, ['Accept' => 'text/plain']);
@@ -915,6 +938,9 @@ class SystemService
             $overview = $this->connection->get('/api/system/overview', [], 0);
         } catch (\Throwable $e) {
             // Overview is optional enrichment; flat /api/system is enough to avoid UI crashes.
+            App::getInstance(true)->getLogger()->debug(
+                'Failed to fetch Calagopus /api/system/overview enrichment: ' . $e->getMessage()
+            );
         }
 
         $memoryBytes = (int) ($overview['memory']['total_bytes'] ?? 0);

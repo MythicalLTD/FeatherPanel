@@ -23,6 +23,7 @@ import { toast } from 'sonner';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSession } from '@/contexts/SessionContext';
 import { CalagopusAuthorizeView } from '@/components/account/CalagopusAuthorizeView';
+import { isLoopbackCallbackUrl } from '@/lib/utils';
 
 function splitCsv(value: string | null): string[] {
     if (!value) return [];
@@ -115,18 +116,27 @@ export default function CalagopusApiKeyUpdatePage() {
     }, [isSessionChecked, isLoading, user, keyStart, redirectTarget, router, t]);
 
     const handleApprove = async () => {
-        if (!callbackUrl) {
+        if (!callbackUrl || !isLoopbackCallbackUrl(callbackUrl)) {
             toast.error(t('account.calagopus.missingCallback'));
             return;
         }
         setSubmitting(true);
         try {
-            await axios.post('/api/user/api-clients/calagopus/update-permissions', {
+            const response = await axios.post('/api/user/api-clients/calagopus/update-permissions', {
                 key_start: keyStart,
                 admin_permissions: adminPermissions,
                 user_permissions: userPermissions,
                 server_permissions: serverPermissions,
             });
+
+            if (!response.data?.success) {
+                if (response.data?.error_code === 'INVALID_ACCOUNT_TOKEN') {
+                    router.push(`/auth/login?redirect=${encodeURIComponent(redirectTarget)}`);
+                    return;
+                }
+                throw new Error(response.data?.message || t('account.calagopus.createFailed'));
+            }
+
             await deliverCalagopusCallback(callbackUrl);
             try {
                 window.location.assign(callbackUrl);
@@ -159,7 +169,8 @@ export default function CalagopusApiKeyUpdatePage() {
         );
     }
 
-    const errorMessage = lookupError || (!callbackUrl ? t('account.calagopus.missingCallback') : null);
+    const callbackValid = isLoopbackCallbackUrl(callbackUrl);
+    const errorMessage = lookupError || (!callbackValid ? t('account.calagopus.missingCallback') : null);
 
     return (
         <CalagopusAuthorizeView
@@ -170,7 +181,7 @@ export default function CalagopusApiKeyUpdatePage() {
             userPermissions={userPermissions}
             serverPermissions={serverPermissions}
             submitting={submitting}
-            canApprove={!!callbackUrl && !lookupError}
+            canApprove={callbackValid && !lookupError}
             errorMessage={errorMessage}
             completedKey={completedKey}
             onApprove={handleApprove}

@@ -23,6 +23,7 @@ import { toast } from 'sonner';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSession } from '@/contexts/SessionContext';
 import { CalagopusAuthorizeView } from '@/components/account/CalagopusAuthorizeView';
+import { isLoopbackCallbackUrl } from '@/lib/utils';
 
 function splitCsv(value: string | null): string[] {
     if (!value) return [];
@@ -93,7 +94,7 @@ export default function CalagopusApiKeyCreatePage() {
     }, [isSessionChecked, isLoading, user, redirectTarget, router]);
 
     const handleApprove = async () => {
-        if (!callbackUrl) {
+        if (!callbackUrl || !isLoopbackCallbackUrl(callbackUrl)) {
             toast.error(t('account.calagopus.missingCallback'));
             return;
         }
@@ -110,7 +111,7 @@ export default function CalagopusApiKeyCreatePage() {
             const redirectUrl = data?.redirect_url ? String(data.redirect_url) : '';
             const publicKey = data?.public_key ? String(data.public_key) : '';
 
-            if (!response.data?.success || !redirectUrl) {
+            if (!response.data?.success || !redirectUrl || !isLoopbackCallbackUrl(redirectUrl)) {
                 if (response.data?.error_code === 'INVALID_ACCOUNT_TOKEN') {
                     router.push(`/auth/login?redirect=${encodeURIComponent(redirectTarget)}`);
                     return;
@@ -167,8 +168,8 @@ export default function CalagopusApiKeyCreatePage() {
             userPermissions={userPermissions}
             serverPermissions={serverPermissions}
             submitting={submitting}
-            canApprove={!!callbackUrl}
-            errorMessage={!callbackUrl ? t('account.calagopus.missingCallback') : null}
+            canApprove={isLoopbackCallbackUrl(callbackUrl)}
+            errorMessage={!isLoopbackCallbackUrl(callbackUrl) ? t('account.calagopus.missingCallback') : null}
             completedKey={completedKey}
             onApprove={handleApprove}
             onDeny={handleDeny}

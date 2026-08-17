@@ -194,7 +194,7 @@ class LifecycleHookExecutorService
             $stepResult = $this->executeStep($step, $server, $node, $powerAction, $hook, $actor);
             $pipelineResult['steps'][] = $stepResult;
 
-            if (!$stepResult['success'] && !$stepResult['continued']) {
+            if (!$stepResult['success'] && !$stepResult['continued'] && !$stepResult['skipped']) {
                 $pipelineResult['blocked'] = true;
                 $pipelineResult['blocked_reason'] = $stepResult['error'] ?: 'Hook step failed';
                 $this->emitHookEvent(ServerEvent::onServerLifecycleHookFailed(), $server, $powerAction, $hook, $actor, [
@@ -233,6 +233,7 @@ class LifecycleHookExecutorService
             'task_type' => $step['task_type'],
             'continue_on_failure' => $continueOnFailure,
             'success' => false,
+            'skipped' => false,
             'continued' => false,
             'error' => null,
             'meta' => [],
@@ -253,7 +254,8 @@ class LifecycleHookExecutorService
             $taskType = (string) ($step['task_type'] ?? '');
             $meta = $this->dispatchTaskByType($taskType, $payload, $server, $node);
 
-            $result['success'] = true;
+            $result['skipped'] = is_array($meta) && ($meta['skipped'] ?? false) === true;
+            $result['success'] = !$result['skipped'];
             $result['meta'] = $meta;
             $this->emitHookEvent(ServerEvent::onServerLifecycleHookStepCompleted(), $server, $powerAction, $hook, $actor, [
                 'step_id' => $step['id'],

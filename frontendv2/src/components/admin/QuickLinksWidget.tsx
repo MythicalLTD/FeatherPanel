@@ -252,30 +252,6 @@ export function QuickLinksWidget({ onClearCache, isClearingCache }: QuickLinksWi
                         {system.map(renderLink)}
                     </div>
                 </div>
-
-                <button
-                    type='button'
-                    onClick={onClearCache}
-                    disabled={isClearingCache}
-                    className='group relative flex w-full items-center gap-4 rounded-2xl border border-red-500/20 bg-red-500/5 p-4 text-start transition-all hover:scale-[1.01] hover:bg-red-500/10 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 md:rounded-3xl md:p-5'
-                >
-                    <div
-                        className={cn(
-                            'flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-red-500/20 bg-red-500/10 text-red-500 md:h-12 md:w-12 md:rounded-2xl',
-                            isClearingCache && 'animate-pulse',
-                        )}
-                    >
-                        <Trash2 className={cn('h-5 w-5', isClearingCache && 'animate-spin')} />
-                    </div>
-                    <div className='min-w-0 flex-1 space-y-1'>
-                        <p className='text-[11px] leading-snug font-black tracking-widest text-red-500 uppercase md:text-xs'>
-                            {t('admin.quick_links.clear_system_cache')}
-                        </p>
-                        <p className='text-[11px] leading-relaxed font-medium tracking-normal text-red-500/70 normal-case md:text-xs'>
-                            {t('admin.quick_links.clear_system_cache_desc')}
-                        </p>
-                    </div>
-                </button>
             </div>
         </PageCard>
     );

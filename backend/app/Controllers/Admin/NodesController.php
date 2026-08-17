@@ -2107,7 +2107,22 @@ class NodesController
             ? $options['repo_name']
             : (string) $defaults['github_repo'];
 
-        $arch = 'x86_64';
+        // Self-update pulls and executes a binary asset from the resolved repo, so overrides of the
+        // daemon's default GitHub coordinates must be restricted to a known-safe allowlist to prevent
+        // pointing the upgrade mechanism at an attacker-controlled repository.
+        $allowedRepos = [
+            'calagopus/wings',
+            'mythicalltd/featherwings',
+        ];
+        if (!in_array($owner . '/' . $repo, $allowedRepos, true)) {
+            return [
+                'error' => 'Repository ' . $owner . '/' . $repo . ' is not an approved source for Calagopus self-update',
+                'code' => 'NODE_SELF_UPDATE_REPO_NOT_ALLOWED',
+                'status' => 400,
+            ];
+        }
+
+        $arch = null;
         try {
             $systemInfo = $wings->getSystem()->getSystemInfo();
             $rawArch = strtolower((string) ($systemInfo['architecture'] ?? $systemInfo['arch'] ?? ''));
@@ -2121,7 +2136,19 @@ class NodesController
                 $arch = 'x86_64';
             }
         } catch (\Throwable $e) {
-            // Fall back to x86_64 when system info is unavailable.
+            return [
+                'error' => 'Failed to determine node architecture for Calagopus upgrade: ' . $e->getMessage(),
+                'code' => 'NODE_SELF_UPDATE_ARCH',
+                'status' => 502,
+            ];
+        }
+
+        if ($arch === null) {
+            return [
+                'error' => 'Unable to determine a supported architecture for Calagopus upgrade on this node',
+                'code' => 'NODE_SELF_UPDATE_ARCH',
+                'status' => 502,
+            ];
         }
 
         $assetNeedle = 'wings-rs-' . $arch . '-linux';
@@ -2213,16 +2240,6 @@ class NodesController
             return null;
         }
 
-        $defaults = $caps->defaults();
-
-        return ApiResponse::error(
-            'This feature is not supported by ' . $defaults['display_name'] . ' on this node.',
-            'DAEMON_FEATURE_UNSUPPORTED',
-            501,
-            [
-                'feature' => $feature,
-                'daemon_type' => $caps->getType(),
-            ]
-        );
+        return DaemonCapabilities::unsupportedResponse($node, $feature);
     }
 }

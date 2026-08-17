@@ -25,6 +25,7 @@ use App\Chat\Server;
 use App\Permissions;
 use App\Chat\Subuser;
 use App\Helpers\UUIDUtils;
+use App\SubuserPermissions;
 use App\Chat\CommandSnippet;
 use App\Helpers\AppUrlHelper;
 use App\Services\Wings\Wings;
@@ -38,6 +39,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use App\Services\Server\LifecycleHookPowerGate;
 use App\Services\Server\LifecycleHookExecutorService;
+use App\Controllers\User\Server\CheckSubuserPermissionsTrait;
 
 /**
  * Calagopus VS Code extension client API compatibility shim.
@@ -46,9 +48,16 @@ use App\Services\Server\LifecycleHookExecutorService;
  */
 class CalagopusClientCompatController
 {
+    use CheckSubuserPermissionsTrait;
+
     private const DEFAULT_MAX_VIEW_SIZE = 10 * 1024 * 1024;
     private const DEFAULT_MAX_SEARCH_SIZE = 5 * 1024 * 1024;
     private const DEFAULT_MAX_SEARCH_RESULTS = 250;
+
+    /** Cumulative resource budget for a single panel-mediated recursive copy operation. */
+    private const MAX_PANEL_COPY_TOTAL_BYTES = 500 * 1024 * 1024;
+    private const MAX_PANEL_COPY_ENTRIES = 5000;
+    private const MAX_PANEL_COPY_DEPTH = 32;
 
     public function listServers(Request $request): Response
     {
@@ -290,6 +299,9 @@ class CalagopusClientCompatController
         if ($server === null) {
             return $this->error('Server not found', 404);
         }
+        if (($denied = $this->checkPermission($request, $server, SubuserPermissions::FILE_UPDATE)) !== null) {
+            return $denied;
+        }
 
         $file = (string) $request->query->get('file', '');
         if ($file === '') {
@@ -337,6 +349,15 @@ class CalagopusClientCompatController
             return $this->error('Invalid power action', 400);
         }
         if (($denied = $this->requireApiScope($request, 'server', 'control.' . $action)) !== null) {
+            return $denied;
+        }
+        $requiredPermission = match ($action) {
+            'start' => SubuserPermissions::CONTROL_START,
+            'stop' => SubuserPermissions::CONTROL_STOP,
+            'restart' => SubuserPermissions::CONTROL_RESTART,
+            'kill' => SubuserPermissions::CONTROL_CONSOLE,
+        };
+        if (($denied = $this->checkPermission($request, $server, $requiredPermission)) !== null) {
             return $denied;
         }
 
@@ -445,7 +466,7 @@ class CalagopusClientCompatController
                 $wingsBaseUrl,
                 $expiresIn
             );
-            $ignored = $this->spellDenylist($server);
+            $ignored = Spell::resolveFileDenylist($server);
             $token = $jwtService->generateFileUploadToken((string) $server['uuid'], (string) $user['uuid'], '', $ignored);
             $url = rtrim($wingsBaseUrl, '/') . '/upload/file?token=' . $token;
 
@@ -527,6 +548,9 @@ class CalagopusClientCompatController
         if ($server === null) {
             return $this->error('Server not found', 404);
         }
+        if (($denied = $this->checkPermission($request, $server, SubuserPermissions::FILE_CREATE)) !== null) {
+            return $denied;
+        }
 
         $data = json_decode($request->getContent(), true);
         if (!is_array($data) || empty($data['name'])) {
@@ -567,6 +591,9 @@ class CalagopusClientCompatController
         if ($server === null) {
             return $this->error('Server not found', 404);
         }
+        if (($denied = $this->checkPermission($request, $server, SubuserPermissions::FILE_UPDATE)) !== null) {
+            return $denied;
+        }
 
         $data = json_decode($request->getContent(), true);
         if (!is_array($data) || !isset($data['files']) || !is_array($data['files'])) {
@@ -605,6 +632,9 @@ class CalagopusClientCompatController
         $server = $this->resolveAccessibleServer($user, $uuid);
         if ($server === null) {
             return $this->error('Server not found', 404);
+        }
+        if (($denied = $this->checkPermission($request, $server, SubuserPermissions::FILE_DELETE)) !== null) {
+            return $denied;
         }
 
         $data = json_decode($request->getContent(), true);
@@ -822,6 +852,9 @@ class CalagopusClientCompatController
         if ($server === null) {
             return $this->error('Server not found', 404);
         }
+        if (($denied = $this->checkPermission($request, $server, SubuserPermissions::FILE_ARCHIVE)) !== null) {
+            return $denied;
+        }
 
         $data = json_decode($request->getContent(), true);
         if (
@@ -882,6 +915,9 @@ class CalagopusClientCompatController
         if ($server === null) {
             return $this->error('Server not found', 404);
         }
+        if (($denied = $this->checkPermission($request, $server, SubuserPermissions::FILE_ARCHIVE)) !== null) {
+            return $denied;
+        }
 
         $data = json_decode($request->getContent(), true);
         if (!is_array($data) || !is_string($data['file'] ?? null) || trim($data['file']) === '') {
@@ -933,6 +969,9 @@ class CalagopusClientCompatController
         if ($server === null) {
             return $this->error('Server not found', 404);
         }
+        if (($denied = $this->checkPermission($request, $server, SubuserPermissions::FILE_UPDATE)) !== null) {
+            return $denied;
+        }
 
         $data = json_decode($request->getContent(), true);
         if (!is_array($data) || !isset($data['files']) || !is_array($data['files'])) {
@@ -979,6 +1018,9 @@ class CalagopusClientCompatController
         $server = $this->resolveAccessibleServer($user, $uuid);
         if ($server === null) {
             return $this->error('Server not found', 404);
+        }
+        if (($denied = $this->checkPermission($request, $server, SubuserPermissions::FILE_UPDATE)) !== null) {
+            return $denied;
         }
 
         $data = json_decode($request->getContent(), true);
@@ -1042,6 +1084,9 @@ class CalagopusClientCompatController
         if ($server === null) {
             return $this->error('Server not found', 404);
         }
+        if (($denied = $this->checkPermission($request, $server, SubuserPermissions::FILE_UPDATE)) !== null) {
+            return $denied;
+        }
 
         $data = json_decode($request->getContent(), true);
         if (
@@ -1057,6 +1102,9 @@ class CalagopusClientCompatController
         $destinationServer = $this->resolveAccessibleServer($user, $data['destination_server']);
         if ($destinationServer === null) {
             return $this->error('Destination server not found', 404);
+        }
+        if (($denied = $this->checkPermission($request, $destinationServer, SubuserPermissions::FILE_CREATE)) !== null) {
+            return $denied;
         }
 
         $sourceNode = Node::getNodeById((int) $server['node_id']);
@@ -1565,39 +1613,6 @@ class CalagopusClientCompatController
         return array_values(array_intersect($effectivePermissions, array_unique($allowed)));
     }
 
-    /**
-     * @param array<string, mixed> $server
-     *
-     * @return list<string>
-     */
-    private function spellDenylist(array $server): array
-    {
-        $spellId = (int) ($server['spell_id'] ?? 0);
-        if ($spellId <= 0) {
-            return [];
-        }
-        $spell = Spell::getSpellById($spellId);
-        if (!$spell || empty($spell['file_denylist'])) {
-            return [];
-        }
-        $denylist = $spell['file_denylist'];
-        if (is_string($denylist)) {
-            $decoded = json_decode($denylist, true);
-            $denylist = is_array($decoded) ? $decoded : [];
-        }
-        if (!is_array($denylist)) {
-            return [];
-        }
-        $out = [];
-        foreach ($denylist as $entry) {
-            if (is_string($entry) && $entry !== '') {
-                $out[] = $entry;
-            }
-        }
-
-        return $out;
-    }
-
     private function joinFilePath(string $root, string $path): string
     {
         if (str_starts_with($path, '/')) {
@@ -1628,6 +1643,7 @@ class CalagopusClientCompatController
         $sourceService = Wings::fromNode($sourceNode, 900)->getServer();
         $destinationService = Wings::fromNode($destinationNode, 900)->getServer();
 
+        $budget = ['bytes' => 0, 'entries' => 0];
         foreach ($files as $file) {
             $source = $this->joinFilePath($sourceRoot, $file['from']);
             $destination = $this->joinFilePath($destinationRoot, $file['to']);
@@ -1637,11 +1653,16 @@ class CalagopusClientCompatController
                 $source,
                 $destinationService,
                 (string) $destinationServer['uuid'],
-                $destination
+                $destination,
+                $budget
             );
         }
     }
 
+    /**
+     * @param array{bytes:int,entries:int} $budget Cumulative counters shared across the whole
+     *                                              recursive operation, to bound resource usage.
+     */
     private function copyRemoteEntryThroughPanel(
         object $sourceService,
         string $sourceServerUuid,
@@ -1649,7 +1670,16 @@ class CalagopusClientCompatController
         object $destinationService,
         string $destinationServerUuid,
         string $destinationPath,
+        array &$budget,
+        int $depth = 0,
     ): void {
+        if ($depth > self::MAX_PANEL_COPY_DEPTH) {
+            throw new \RuntimeException('Panel-mediated copy exceeds maximum directory depth: ' . $sourcePath);
+        }
+        if (++$budget['entries'] > self::MAX_PANEL_COPY_ENTRIES) {
+            throw new \RuntimeException('Panel-mediated copy exceeds maximum entry count (' . self::MAX_PANEL_COPY_ENTRIES . ')');
+        }
+
         $parent = dirname($sourcePath);
         $entries = $this->listRemoteDirectoryEntries($sourceService, $sourceServerUuid, $parent);
         $entry = null;
@@ -1676,7 +1706,9 @@ class CalagopusClientCompatController
                     $this->joinFilePath($sourcePath, $child['name']),
                     $destinationService,
                     $destinationServerUuid,
-                    $this->joinFilePath($destinationPath, $child['name'])
+                    $this->joinFilePath($destinationPath, $child['name']),
+                    $budget,
+                    $depth + 1
                 );
             }
 
@@ -1686,6 +1718,10 @@ class CalagopusClientCompatController
         $size = (int) ($entry['size'] ?? 0);
         if ($size > 50 * 1024 * 1024) {
             throw new \RuntimeException('Panel-mediated copy is limited to 50 MiB per file: ' . $sourcePath);
+        }
+        $budget['bytes'] += $size;
+        if ($budget['bytes'] > self::MAX_PANEL_COPY_TOTAL_BYTES) {
+            throw new \RuntimeException('Panel-mediated copy exceeds maximum total size (' . (self::MAX_PANEL_COPY_TOTAL_BYTES / (1024 * 1024)) . ' MiB)');
         }
         $this->createRemoteDirectory($destinationService, $destinationServerUuid, dirname($destinationPath));
         $read = $sourceService->getFileContentsRaw($sourceServerUuid, $sourcePath, false);
@@ -1828,13 +1864,14 @@ class CalagopusClientCompatController
     private function mapCommandSnippet(array $snippet): array
     {
         $createdAt = (string) ($snippet['created_at'] ?? '');
+        $timestamp = $createdAt !== '' ? strtotime($createdAt) : false;
 
         return [
             'uuid' => (string) ($snippet['uuid'] ?? ''),
             'name' => (string) ($snippet['name'] ?? ''),
             'eggs' => is_array($snippet['eggs'] ?? null) ? array_values($snippet['eggs']) : [],
             'command' => (string) ($snippet['command'] ?? ''),
-            'created' => $createdAt !== '' ? gmdate('c', strtotime($createdAt)) : gmdate('c'),
+            'created' => gmdate('c', $timestamp !== false ? $timestamp : time()),
         ];
     }
 

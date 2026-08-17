@@ -15,7 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
+import { createContext, useContext, useEffect, useState, useRef, ReactNode, useCallback } from 'react';
 import { isCloudflareChallengeText } from '@/lib/cloudflare-challenge';
 import { useSettings } from '@/contexts/SettingsContext';
 
@@ -64,16 +64,18 @@ function migrateLegacyLocalePreference(): void {
 }
 
 export function TranslationProvider({ children }: { children: ReactNode }) {
-    const { settings } = useSettings();
+    const { settings, loading: settingsLoading } = useSettings();
     const isLocaleLocked = settings?.app_locale_lock === 'true';
     const adminLocaleDefault = normalizeLocaleCode(settings?.app_locale_default || '') || DEFAULT_LOCALE;
 
     const [locale, setLocaleState] = useState(() => {
         if (typeof window !== 'undefined') {
-            return localStorage.getItem('locale') || DEFAULT_LOCALE;
+            const stored = localStorage.getItem('locale');
+            return stored ? normalizeLocaleCode(stored) || DEFAULT_LOCALE : DEFAULT_LOCALE;
         }
         return DEFAULT_LOCALE;
     });
+    const hasStoredLocaleRef = useRef(typeof window !== 'undefined' && !!localStorage.getItem('locale'));
     const [translations, setTranslations] = useState<Record<string, unknown>>({});
     const [availableLanguages, setAvailableLanguages] = useState<Language[]>([
         { code: 'en', name: 'English', nativeName: 'English' },
@@ -219,10 +221,15 @@ export function TranslationProvider({ children }: { children: ReactNode }) {
     }, []);
 
     useEffect(() => {
+        // For first-time visitors with no stored/overridden locale, wait for admin locale
+        // settings to resolve before the first fetch. Otherwise we'd load the default locale
+        // and then immediately reload once the admin default is applied below, causing a
+        // duplicate network fetch and a visible language flash.
+        if (!hasStoredLocaleRef.current && settingsLoading) return;
         loadFullTranslations(locale);
         loadAvailableLanguages();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [locale]);
+    }, [locale, settingsLoading]);
 
     // Apply admin default / lock once public settings are available.
     useEffect(() => {

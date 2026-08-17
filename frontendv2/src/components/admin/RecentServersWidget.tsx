@@ -15,7 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import axios from 'axios';
 import { ArrowUpRight, Lock, PlusCircle, Server } from 'lucide-react';
@@ -42,14 +42,21 @@ export function RecentServersWidget() {
     const dateOpts = useDateFormatOptions();
     const [servers, setServers] = useState<RecentServer[]>([]);
     const [state, setState] = useState<LoadState>('loading');
+    const abortControllerRef = useRef<AbortController | null>(null);
 
     const fetchServers = useCallback(async () => {
+        abortControllerRef.current?.abort();
+        const controller = new AbortController();
+        abortControllerRef.current = controller;
+
         setState('loading');
         try {
             const response = await axios.get('/api/admin/servers', {
                 params: { page: 1, limit: 6, sort_by: 'created_at', sort_order: 'DESC' },
                 withCredentials: true,
+                signal: controller.signal,
             });
+            if (controller.signal.aborted) return;
             if (response.data.success) {
                 const list: RecentServer[] = response.data.data?.servers || [];
                 setServers(list);
@@ -58,6 +65,9 @@ export function RecentServersWidget() {
                 setState('error');
             }
         } catch (err) {
+            if (axios.isCancel(err) || controller.signal.aborted) {
+                return;
+            }
             if (axios.isAxiosError(err) && err.response?.status === 403) {
                 setState('forbidden');
             } else {
@@ -68,6 +78,9 @@ export function RecentServersWidget() {
 
     useEffect(() => {
         fetchServers();
+        return () => {
+            abortControllerRef.current?.abort();
+        };
     }, [fetchServers]);
 
     return (

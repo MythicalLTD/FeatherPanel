@@ -83,6 +83,18 @@ final class BackupAdapterResolver
                 return self::ADAPTER_S3;
             }
 
+            if (
+                in_array($adapter, [
+                    self::ADAPTER_DDUP_BAK,
+                    self::ADAPTER_BTRFS,
+                    self::ADAPTER_ZFS,
+                    self::ADAPTER_RESTIC,
+                    self::ADAPTER_KOPIA,
+                ], true)
+            ) {
+                return $adapter;
+            }
+
             return self::ADAPTER_WINGS;
         } catch (\Throwable $e) {
             App::getInstance(true)->getLogger()->warning(

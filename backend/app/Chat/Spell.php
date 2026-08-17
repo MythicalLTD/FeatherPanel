@@ -158,6 +158,45 @@ class Spell
     }
 
     /**
+     * Resolve the file denylist configured on a server's spell.
+     *
+     * @param array<string, mixed> $server
+     *
+     * @return list<string>
+     */
+    public static function resolveFileDenylist(array $server): array
+    {
+        $spellId = (int) ($server['spell_id'] ?? 0);
+        if ($spellId <= 0) {
+            return [];
+        }
+
+        $spell = self::getSpellById($spellId);
+        if (!$spell || empty($spell['file_denylist'])) {
+            return [];
+        }
+
+        $denylist = $spell['file_denylist'];
+        if (is_string($denylist)) {
+            $decoded = json_decode($denylist, true);
+            $denylist = is_array($decoded) ? $decoded : [];
+        }
+
+        if (!is_array($denylist)) {
+            return [];
+        }
+
+        $out = [];
+        foreach ($denylist as $entry) {
+            if (is_string($entry) && $entry !== '') {
+                $out[] = $entry;
+            }
+        }
+
+        return $out;
+    }
+
+    /**
      * Fetch spells by IDs, keyed by id.
      *
      * @param int[] $ids

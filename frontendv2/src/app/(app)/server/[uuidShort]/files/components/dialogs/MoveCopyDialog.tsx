@@ -103,10 +103,10 @@ export function MoveCopyDialog({ open, onOpenChange, uuid, root, files, action, 
         try {
             if (action === 'copy') {
                 if (files.length === 1) {
-                    await filesApi.copyFile(uuid, root, files[0], newName.trim() || undefined);
+                    await filesApi.copyFile(uuid, root, files[0], newName.trim() || undefined, normalizedDestination);
                 } else {
                     for (const file of files) {
-                        await filesApi.copyFile(uuid, root, file);
+                        await filesApi.copyFile(uuid, root, file, undefined, normalizedDestination);
                     }
                 }
             } else {

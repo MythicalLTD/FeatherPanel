@@ -18,6 +18,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import React from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/contexts/TranslationContext';
 
 interface AdminWidgetFrameProps {
     widgetId: string;
@@ -36,6 +37,7 @@ export function AdminWidgetFrame({
     children,
     className,
 }: AdminWidgetFrameProps) {
+    const { t } = useTranslation();
     const isHidden = hiddenWidgets.includes(widgetId);
     const isVisible = !isHidden || isCustomizing;
 
@@ -51,7 +53,7 @@ export function AdminWidgetFrame({
                         type='button'
                         onClick={() => onToggle(widgetId)}
                         className='bg-background border-border text-muted-foreground absolute -top-3 -right-3 z-20 rounded-full border p-2 transition-transform hover:scale-105'
-                        aria-label={isHidden ? 'Show widget' : 'Hide widget'}
+                        aria-label={isHidden ? t('admin.dashboard.show_widget') : t('admin.dashboard.hide_widget')}
                     >
                         {isHidden ? <Eye className='h-4 w-4' /> : <EyeOff className='h-4 w-4' />}
                     </button>

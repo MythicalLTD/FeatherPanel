@@ -39,6 +39,7 @@ class ServerTransfer
      *                    - started_at: When the transfer started
      *                    - completed_at: When the transfer completed
      *                    - error: Error message if failed
+     *                    - metadata: JSON object for transfer options (not used for failures)
      *                    - archived: Whether the transfer is archived
      *                    - successful: Whether the transfer was successful (null = in progress)
      */
@@ -61,6 +62,7 @@ class ServerTransfer
             'started_at',
             'completed_at',
             'error',
+            'metadata',
             'archived',
             'successful',
         ];
@@ -71,6 +73,9 @@ class ServerTransfer
         }
         if (isset($data['new_additional_allocations']) && is_array($data['new_additional_allocations'])) {
             $data['new_additional_allocations'] = json_encode($data['new_additional_allocations']);
+        }
+        if (isset($data['metadata']) && is_array($data['metadata'])) {
+            $data['metadata'] = json_encode($data['metadata']);
         }
 
         $filteredData = array_intersect_key($data, array_flip($allowedFields));
@@ -155,6 +160,7 @@ class ServerTransfer
             'started_at',
             'completed_at',
             'error',
+            'metadata',
             'source_allocation_id',
             'destination_allocation_id',
             'old_allocation',
@@ -171,6 +177,9 @@ class ServerTransfer
         }
         if (isset($data['new_additional_allocations']) && is_array($data['new_additional_allocations'])) {
             $data['new_additional_allocations'] = json_encode($data['new_additional_allocations']);
+        }
+        if (isset($data['metadata']) && is_array($data['metadata'])) {
+            $data['metadata'] = json_encode($data['metadata']);
         }
 
         $filteredData = array_intersect_key($data, array_flip($allowedFields));
@@ -204,6 +213,7 @@ class ServerTransfer
             'started_at',
             'completed_at',
             'error',
+            'metadata',
             'source_allocation_id',
             'destination_allocation_id',
             'old_allocation',
@@ -220,6 +230,9 @@ class ServerTransfer
         }
         if (isset($data['new_additional_allocations']) && is_array($data['new_additional_allocations'])) {
             $data['new_additional_allocations'] = json_encode($data['new_additional_allocations']);
+        }
+        if (isset($data['metadata']) && is_array($data['metadata'])) {
+            $data['metadata'] = json_encode($data['metadata']);
         }
 
         $filteredData = array_intersect_key($data, array_flip($allowedFields));
@@ -325,6 +338,10 @@ class ServerTransfer
         }
         if (isset($transfer['new_additional_allocations']) && is_string($transfer['new_additional_allocations'])) {
             $transfer['new_additional_allocations'] = json_decode($transfer['new_additional_allocations'], true) ?? [];
+        }
+        if (isset($transfer['metadata']) && is_string($transfer['metadata'])) {
+            $decoded = json_decode($transfer['metadata'], true);
+            $transfer['metadata'] = is_array($decoded) ? $decoded : null;
         }
 
         return $transfer;

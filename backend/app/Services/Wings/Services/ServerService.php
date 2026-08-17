@@ -474,16 +474,19 @@ class ServerService
     }
 
     /**
-     * Copy files/directories.
+     * Copy a single source file to a destination directory.
+     *
+     * Wings expects the source as a `file` query parameter and the destination
+     * directory in the request body `location` field.
      *
      * @param string|null $name Optional destination name (Calagopus)
      * @param bool $overwrite Overwrite existing destination (Calagopus)
      */
-    public function copyFiles(string $serverUuid, string $location, array $files, ?string $name = null, bool $overwrite = false): WingsResponse
+    public function copyFiles(string $serverUuid, string $source, string $destination, ?string $name = null, bool $overwrite = false): WingsResponse
     {
         try {
             $data = [
-                'location' => $location,
+                'location' => $destination,
             ];
             if ($name !== null && $name !== '') {
                 $data['name'] = $name;
@@ -492,7 +495,10 @@ class ServerService
                 $data['overwrite'] = true;
             }
 
-            $response = $this->connection->post("/api/servers/{$serverUuid}/files/copy", $data);
+            $response = $this->connection->post(
+                "/api/servers/{$serverUuid}/files/copy?file=" . rawurlencode($source),
+                $data
+            );
 
             return new WingsResponse($response, 204);
         } catch (\Exception $e) {
@@ -805,13 +811,22 @@ class ServerService
             $skipped = [];
             foreach ($files as $file) {
                 if (!is_array($file) || !is_string($file['from'] ?? null) || !is_string($file['to'] ?? null)) {
+                    if (is_array($file) && is_string($file['to'] ?? null) && $file['to'] !== '') {
+                        $skipped[] = $this->skippedFileEntry($this->resolveFileOperationPath($root, $file['to']));
+                    }
                     continue;
                 }
 
                 $source = $this->resolveFileOperationPath($root, $file['from']);
                 $destination = $this->resolveFileOperationPath($root, $file['to']);
                 $temporaryDestination = rtrim(dirname($source), '/') . '/' . basename($destination);
-                $copy = $this->copyFiles($serverUuid, $source, [], basename($destination), $overwrite);
+                $copy = $this->copyFiles(
+                    $serverUuid,
+                    $source,
+                    rtrim(dirname($temporaryDestination), '/') === '' ? '/' : rtrim(dirname($temporaryDestination), '/'),
+                    basename($destination),
+                    $overwrite
+                );
 
                 if (!$copy->isSuccessful()) {
                     $skipped[] = $this->skippedFileEntry($destination);
@@ -824,6 +839,9 @@ class ServerService
                         'to' => $destination,
                     ]]);
                     if (!$rename->isSuccessful()) {
+                        // The copy succeeded but the rename to the final destination didn't —
+                        // remove the orphaned temporary copy so it isn't left behind.
+                        $this->deleteFiles($serverUuid, '/', [$temporaryDestination]);
                         $skipped[] = $this->skippedFileEntry($destination);
                     }
                 }
@@ -1110,8 +1128,9 @@ class ServerService
             return new WingsResponse($response, 204);
         } catch (WingsRequestException $e) {
             $status = (int) $e->getCode();
-            // Soft-succeed when the daemon does not implement deauthorize (404/501) or returns client errors.
-            if ($status === 404 || $status === 501 || ($status >= 400 && $status < 500)) {
+            // Soft-succeed only when the daemon does not implement deauthorize (404/405/501).
+            // Other errors (401/403/other 4xx, 5xx) are real failures and must be preserved.
+            if ($status === 404 || $status === 405 || $status === 501) {
                 return new WingsResponse(['skipped' => true, 'reason' => $e->getMessage()], 204);
             }
 
@@ -1262,11 +1281,16 @@ class ServerService
     public function getFileFingerprints(string $serverUuid, array $files, string $algorithm = 'sha256', string $root = '/'): WingsResponse
     {
         try {
-            $query = http_build_query([
-                'algorithm' => strtolower($algorithm),
-                'root' => $root,
-                'files' => array_values($files),
-            ]);
+            // Wings expects repeated `files=a&files=b` query params, not PHP's
+            // indexed `files[0]=a&files[1]=b` array encoding.
+            $queryParts = [
+                'algorithm=' . rawurlencode(strtolower($algorithm)),
+                'root=' . rawurlencode($root),
+            ];
+            foreach (array_values($files) as $file) {
+                $queryParts[] = 'files=' . rawurlencode((string) $file);
+            }
+            $query = implode('&', $queryParts);
             $response = $this->connection->get("/api/servers/{$serverUuid}/files/fingerprints?" . $query);
 
             return new WingsResponse($response, 200);

@@ -99,46 +99,6 @@ class TokenGenerator
     }
 
     /**
-     * Generate a backup download token.
-     *
-     * Wings denylists download tokens that omit user_uuid (fail-closed revocation checks).
-     *
-     * @param string $serverUuid The server UUID
-     * @param string $userUuid The user UUID
-     * @param string $backupUuid The backup UUID
-     * @param string $uniqueId Unique request ID
-     *
-     * @throws \Exception
-     *
-     * @return string The JWT token
-     */
-    public function generateBackupDownloadToken(
-        string $serverUuid,
-        string $userUuid,
-        string $backupUuid,
-        string $uniqueId = '',
-        string $panelUrl = '',
-        string $wingsUrl = '',
-    ): string {
-        $jti = $this->generateJti();
-        $uniqueId = $uniqueId ?: $jti;
-
-        return $this->generateWingsApiToken(
-            $serverUuid,
-            $userUuid,
-            [],
-            $panelUrl,
-            $wingsUrl,
-            [
-                'scope' => $this->formatScope(NodeJwtScope::BackupDownload),
-                'backup_uuid' => $backupUuid,
-                'unique_id' => $uniqueId,
-                'jti' => $jti,
-            ]
-        );
-    }
-
-    /**
      * Generate a file download token.
      *
      * Wings denylists download tokens that omit user_uuid (fail-closed revocation checks),
@@ -474,32 +434,6 @@ class TokenGenerator
             $wingsUrl,
             $additionalClaims
         );
-    }
-
-    /**
-     * Generate a signed URL for backup download.
-     *
-     * @param string $baseUrl The Wings base URL
-     * @param string $serverUuid The server UUID
-     * @param string $userUuid The user UUID
-     * @param string $backupUuid The backup UUID
-     * @param string $uniqueId Unique request ID
-     *
-     * @throws \Exception
-     *
-     * @return string The signed URL
-     */
-    public function generateBackupDownloadUrl(
-        string $baseUrl,
-        string $serverUuid,
-        string $userUuid,
-        string $backupUuid,
-        string $uniqueId = '',
-    ): string {
-        $token = $this->generateBackupDownloadToken($serverUuid, $userUuid, $backupUuid, $uniqueId);
-        $baseUrl = rtrim($baseUrl, '/');
-
-        return "{$baseUrl}/download/backup?token={$token}&server={$serverUuid}&backup={$backupUuid}";
     }
 
     /**

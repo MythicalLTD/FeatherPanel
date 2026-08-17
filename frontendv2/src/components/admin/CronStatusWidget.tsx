@@ -65,11 +65,12 @@ export function CronStatusWidget({ tasks, loading }: CronStatusWidgetProps) {
                     <div className='space-y-1'>
                         {tasks.map((task, index) => {
                             const healthy = task.last_run_success && !task.late;
+                            const failed = !task.last_run_success;
                             const statusLabel = healthy
                                 ? t('admin.cron.healthy')
-                                : task.late
-                                  ? t('admin.cron.late')
-                                  : t('admin.cron.failed');
+                                : failed
+                                  ? t('admin.cron.failed')
+                                  : t('admin.cron.late');
                             return (
                                 <div key={task.id} className='group relative flex gap-3'>
                                     <div className='flex w-8 shrink-0 flex-col items-center'>
@@ -78,17 +79,17 @@ export function CronStatusWidget({ tasks, loading }: CronStatusWidgetProps) {
                                                 'relative z-10 flex h-8 w-8 items-center justify-center rounded-full border',
                                                 healthy
                                                     ? 'border-green-500/30 bg-green-500/10 text-green-500'
-                                                    : task.late
-                                                      ? 'border-orange-500/30 bg-orange-500/10 text-orange-500'
-                                                      : 'border-red-500/30 bg-red-500/10 text-red-500',
+                                                    : failed
+                                                      ? 'border-red-500/30 bg-red-500/10 text-red-500'
+                                                      : 'border-orange-500/30 bg-orange-500/10 text-orange-500',
                                             )}
                                         >
                                             {healthy ? (
                                                 <CheckCircle2 className='h-3.5 w-3.5' />
-                                            ) : task.late ? (
-                                                <Clock className='h-3.5 w-3.5' />
-                                            ) : (
+                                            ) : failed ? (
                                                 <XCircle className='h-3.5 w-3.5' />
+                                            ) : (
+                                                <Clock className='h-3.5 w-3.5' />
                                             )}
                                         </div>
                                         {index < tasks.length - 1 && (
@@ -116,9 +117,9 @@ export function CronStatusWidget({ tasks, loading }: CronStatusWidgetProps) {
                                                 'shrink-0 rounded-full px-2.5 py-1 text-[9px] font-black tracking-wider uppercase md:text-[10px]',
                                                 healthy
                                                     ? 'bg-green-500/15 text-green-500'
-                                                    : task.late
-                                                      ? 'bg-orange-500/15 text-orange-500'
-                                                      : 'bg-red-500/15 text-red-500',
+                                                    : failed
+                                                      ? 'bg-red-500/15 text-red-500'
+                                                      : 'bg-orange-500/15 text-orange-500',
                                             )}
                                         >
                                             {statusLabel}

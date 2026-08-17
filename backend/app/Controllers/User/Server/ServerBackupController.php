@@ -1169,6 +1169,49 @@ class ServerBackupController
     /**
      * List backup adapters/destinations available on the server's node.
      */
+    #[OA\Get(
+        path: '/api/user/servers/{uuidShort}/backups/destinations',
+        summary: 'Get backup destinations',
+        description: 'List backup adapters available on the server\'s node, including the default adapter.',
+        tags: ['User - Server Backups'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Backup destinations retrieved',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'adapters', type: 'array', items: new OA\Items(type: 'string')),
+                        new OA\Property(
+                            property: 'destinations',
+                            type: 'array',
+                            items: new OA\Items(
+                                type: 'object',
+                                properties: [
+                                    new OA\Property(property: 'id', type: 'string'),
+                                    new OA\Property(property: 'adapter', type: 'string'),
+                                    new OA\Property(property: 'name', type: 'string'),
+                                ]
+                            )
+                        ),
+                        new OA\Property(property: 'default_adapter', type: 'string'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 404, description: 'Server or node not found'),
+            new OA\Response(response: 500, description: 'Failed to list backup destinations'),
+        ]
+    )]
     public function getBackupDestinations(Request $request, string $serverUuid): Response
     {
         $server = Server::getServerByUuid($serverUuid);

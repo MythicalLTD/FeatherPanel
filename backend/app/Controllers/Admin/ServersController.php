@@ -2861,6 +2861,7 @@ class ServersController
                     new OA\Property(property: 'destination_node_id', type: 'integer', description: 'Destination node ID', minimum: 1),
                     new OA\Property(property: 'destination_allocation_id', type: 'integer', description: 'Destination allocation ID (optional)', minimum: 1),
                     new OA\Property(property: 'backups', type: 'array', items: new OA\Items(type: 'string', format: 'uuid'), description: 'Optional backup UUIDs to transfer (Calagopus)'),
+                    new OA\Property(property: 'include_all_backups', type: 'boolean', description: 'Include all successful server backups when no explicit backups are supplied'),
                     new OA\Property(property: 'delete_backups', type: 'boolean', description: 'Delete transferred backups on the source node (Calagopus)'),
                 ]
             )

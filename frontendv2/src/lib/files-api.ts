@@ -282,31 +282,32 @@ export const filesApi = {
         });
     },
 
-    copyFile: async (uuid: string, root: string, file: string, newName?: string): Promise<void> => {
+    copyFile: async (uuid: string, root: string, file: string, newName?: string, destRoot?: string): Promise<void> => {
         const sourcePath = normalizePath(`${root || '/'}/${file}`);
+        const destinationRoot = normalizePath(destRoot || root || '/');
         const targetName = (newName || '').trim();
         let expectedCopiedName: string | null = null;
 
         if (targetName) {
-            const siblings = await filesApi.getFiles(uuid, root || '/');
+            const siblings = await filesApi.getFiles(uuid, destinationRoot);
             expectedCopiedName = inferNextCopyName(file, new Set(siblings.contents.map((entry) => entry.name)));
         }
 
         await api.post(`/user/servers/${uuid}/copy-files`, {
-            location: sourcePath,
+            location: destinationRoot,
             files: [sourcePath],
             ...(targetName ? { name: targetName } : {}),
         });
 
         if (targetName && expectedCopiedName && expectedCopiedName !== targetName) {
-            const siblings = await filesApi.getFiles(uuid, root || '/');
+            const siblings = await filesApi.getFiles(uuid, destinationRoot);
             const names = new Set(siblings.contents.map((entry) => entry.name));
             // Skip rename when the daemon already honored `name`
             if (names.has(targetName) || !names.has(expectedCopiedName)) {
                 return;
             }
             await api.put(`/user/servers/${uuid}/rename`, {
-                root: normalizePath(root || '/'),
+                root: destinationRoot,
                 files: [{ from: expectedCopiedName, to: targetName }],
             });
         }

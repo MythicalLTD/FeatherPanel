@@ -71,9 +71,9 @@ export function SystemHealthWidget({ stats, selftest, latency, loading }: System
         },
         {
             name: t('admin.system_health.database'),
-            status: selftest?.checks.mysql.status ? 'Healthy' : 'Error',
+            status: !selftest ? 'Unknown' : selftest.checks.mysql.status ? 'Healthy' : 'Error',
             icon: Database,
-            color: selftest?.checks.mysql.status ? 'text-primary' : 'text-red-500',
+            color: !selftest ? 'text-muted-foreground' : selftest.checks.mysql.status ? 'text-primary' : 'text-red-500',
             detail:
                 selftest?.checks.mysql.message === 'Successful'
                     ? t('admin.system_health.status.successful')
@@ -84,9 +84,9 @@ export function SystemHealthWidget({ stats, selftest, latency, loading }: System
         },
         {
             name: t('admin.system_health.cache'),
-            status: selftest?.checks.redis.status ? 'Healthy' : 'Error',
+            status: !selftest ? 'Unknown' : selftest.checks.redis.status ? 'Healthy' : 'Error',
             icon: Server,
-            color: selftest?.checks.redis.status ? 'text-primary' : 'text-red-500',
+            color: !selftest ? 'text-muted-foreground' : selftest.checks.redis.status ? 'text-primary' : 'text-red-500',
             detail:
                 selftest?.checks.redis.message === 'Successful'
                     ? t('admin.system_health.status.successful')

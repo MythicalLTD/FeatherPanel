@@ -159,13 +159,16 @@ class NodeStatusHelper
                     continue;
                 }
 
+                $reason = $outcome['reason'] ?? null;
+
                 // Stats missing too (stock Pterodactyl Wings) — last resort /api/system?v=2.
-                if (isset($clients[$nodeId])) {
+                // Only escalate on a 404 (endpoint missing); other errors should stop here
+                // to avoid burning an extra timeout window on a probe that won't help.
+                if ($reason instanceof WingsRequestException && (int) $reason->getCode() === 404 && isset($clients[$nodeId])) {
                     $systemFallbackPromises[$nodeId] = $clients[$nodeId]->getConnection()->getAsync('/api/system?v=2');
                     continue;
                 }
 
-                $reason = $outcome['reason'] ?? null;
                 $results[$nodeId]['error'] = $reason instanceof \Throwable
                     ? $reason->getMessage()
                     : 'Failed to fetch utilization data';

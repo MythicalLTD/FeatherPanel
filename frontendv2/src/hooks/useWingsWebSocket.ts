@@ -145,6 +145,10 @@ export function useWingsWebSocket({
     const onTransferLogsRef = useRef(onTransferLogs);
     const onTransferStatusRef = useRef(onTransferStatus);
     const onFileOperationRef = useRef(onFileOperation);
+    // Tracks toast ids raised for in-flight file operations so they can be dismissed on
+    // socket close / unmount instead of being left dangling (e.g. a "progress" toast whose
+    // "completed"/"error"/"aborted" event never arrives because the socket dropped).
+    const fileOpToastIdsRef = useRef<Set<string>>(new Set());
 
     // Update refs when callbacks change
     useEffect(() => {
@@ -532,7 +536,13 @@ export function useWingsWebSocket({
                         }
 
                         // Calagopus file operation progress / completed / error / aborted
-                        if (typeof data.event === 'string' && data.event.includes('operation')) {
+                        const FILE_OPERATION_EVENTS = new Set([
+                            'operation progress',
+                            'operation completed',
+                            'operation error',
+                            'operation aborted',
+                        ]);
+                        if (typeof data.event === 'string' && FILE_OPERATION_EVENTS.has(data.event)) {
                             const operationId = String(data.args?.[0] ?? '');
                             const payload: FileOperationEvent = {
                                 event: data.event,
@@ -542,19 +552,43 @@ export function useWingsWebSocket({
                             if (onFileOperationRef.current) {
                                 onFileOperationRef.current(payload);
                             } else {
-                                const toastId = operationId ? `file-op-${operationId}` : 'file-op';
-                                if (data.event.includes('progress')) {
-                                    toast.loading('File operation in progress…', { id: toastId });
-                                } else if (data.event.includes('completed')) {
-                                    toast.success('File operation completed', { id: toastId });
-                                } else if (data.event.includes('error')) {
+                                const toastId = operationId
+                                    ? `file-op-${operationId}`
+                                    : `file-op-${crypto.randomUUID()}`;
+                                if (data.event === 'operation progress') {
+                                    fileOpToastIdsRef.current.add(toastId);
+                                    toast.loading('File operation in progress…', { id: toastId, duration: 15000 });
+                                } else if (data.event === 'operation completed') {
+                                    if (operationId) {
+                                        fileOpToastIdsRef.current.delete(toastId);
+                                        toast.success('File operation completed', { id: toastId });
+                                    } else {
+                                        fileOpToastIdsRef.current.forEach((id) => toast.dismiss(id));
+                                        fileOpToastIdsRef.current.clear();
+                                        toast.success('File operation completed');
+                                    }
+                                } else if (data.event === 'operation error') {
                                     const message =
                                         typeof data.args?.[1] === 'string' && data.args[1]
                                             ? data.args[1]
                                             : 'File operation failed';
-                                    toast.error(message, { id: toastId });
-                                } else if (data.event.includes('aborted')) {
-                                    toast.message('File operation aborted', { id: toastId });
+                                    if (operationId) {
+                                        fileOpToastIdsRef.current.delete(toastId);
+                                        toast.error(message, { id: toastId });
+                                    } else {
+                                        fileOpToastIdsRef.current.forEach((id) => toast.dismiss(id));
+                                        fileOpToastIdsRef.current.clear();
+                                        toast.error(message);
+                                    }
+                                } else if (data.event === 'operation aborted') {
+                                    if (operationId) {
+                                        fileOpToastIdsRef.current.delete(toastId);
+                                        toast.message('File operation aborted', { id: toastId });
+                                    } else {
+                                        fileOpToastIdsRef.current.forEach((id) => toast.dismiss(id));
+                                        fileOpToastIdsRef.current.clear();
+                                        toast.message('File operation aborted');
+                                    }
                                 }
                             }
                             return;
@@ -588,6 +622,8 @@ export function useWingsWebSocket({
                     }
 
                     console.log('[Wings WS] Disconnected');
+                    fileOpToastIdsRef.current.forEach((id) => toast.dismiss(id));
+                    fileOpToastIdsRef.current.clear();
                     setIsConnected(false);
                     setPing(null);
                     setStats(null);
@@ -645,6 +681,10 @@ export function useWingsWebSocket({
                 wsRef.current.close();
                 wsRef.current = null;
             }
+            // Dismiss any file-operation toasts still awaiting a completion/error/abort event
+            // so a dropped connection doesn't leave a stuck "in progress" toast behind.
+            fileOpToastIdsRef.current.forEach((id) => toast.dismiss(id));
+            fileOpToastIdsRef.current.clear();
         };
     }, [
         serverUuid,

@@ -15,7 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import axios from 'axios';
 
 export interface GlobalStats {
@@ -59,13 +59,20 @@ export function useSystemHealth(pollMs = 30000) {
     const [selftest, setSelftest] = useState<SelfTestResponse | null>(null);
     const [latency, setLatency] = useState(0);
     const [loading, setLoading] = useState(true);
+    const requestIdRef = useRef(0);
 
     const fetchData = useCallback(async () => {
+        const requestId = ++requestIdRef.current;
         try {
             const statsReq = axios.get('/api/admin/nodes/status/global');
             const start = performance.now();
             const selftestReq = axios.get('/api/selftest');
             const [statsRes, selftestRes] = await Promise.all([statsReq, selftestReq]);
+
+            // A newer request already resolved while this one was in flight — discard this
+            // stale response so it can't overwrite fresher state.
+            if (requestId !== requestIdRef.current) return;
+
             setLatency(Math.round(performance.now() - start));
 
             if (statsRes.data.success) {
@@ -78,7 +85,7 @@ export function useSystemHealth(pollMs = 30000) {
         } catch (err) {
             console.error('Failed to fetch system health', err);
         } finally {
-            setLoading(false);
+            if (requestId === requestIdRef.current) setLoading(false);
         }
     }, []);
 
