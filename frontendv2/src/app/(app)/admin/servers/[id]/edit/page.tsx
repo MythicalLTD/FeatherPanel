@@ -1182,6 +1182,8 @@ export default function EditServerPage() {
                             suspendedAt={suspendedAt}
                             suspendedBy={suspendedBy}
                             currentNodeId={node?.id}
+                            daemonType={node?.daemon_type}
+                            nodeCapabilities={node?.capabilities ?? null}
                             onRefresh={fetchServerData}
                         />
                     </TabsContent>

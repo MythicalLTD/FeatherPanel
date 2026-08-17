@@ -75,6 +75,7 @@ type PremiumPayload = {
         chatbot_display_name: string;
         chatbot_avatar_url: string;
         branding_show_powered_by: boolean;
+        branding_show_version: boolean;
         sidebar_navigation_config?: SidebarNavigationConfig | string;
     };
 };
@@ -92,6 +93,7 @@ export default function FeatherPanelPremiumPage() {
     const [displayName, setDisplayName] = useState('');
     const [avatarUrl, setAvatarUrl] = useState('');
     const [showPoweredBy, setShowPoweredBy] = useState(true);
+    const [showVersion, setShowVersion] = useState(true);
     const [sidebarConfig, setSidebarConfig] = useState<SidebarNavigationConfig>({});
 
     const applyPayload = useCallback((payload: PremiumPayload) => {
@@ -99,6 +101,7 @@ export default function FeatherPanelPremiumPage() {
         setDisplayName(payload.settings.chatbot_display_name || '');
         setAvatarUrl(payload.settings.chatbot_avatar_url || '');
         setShowPoweredBy(payload.settings.branding_show_powered_by !== false);
+        setShowVersion(payload.settings.branding_show_version !== false);
         setSidebarConfig(parseSidebarNavigationConfig(payload.settings.sidebar_navigation_config));
     }, []);
 
@@ -142,6 +145,7 @@ export default function FeatherPanelPremiumPage() {
                     chatbot_display_name: displayName,
                     chatbot_avatar_url: avatarUrl,
                     branding_show_powered_by: showPoweredBy,
+                    branding_show_version: showVersion,
                     sidebar_navigation_config: sidebarConfig,
                 },
             );
@@ -334,6 +338,22 @@ export default function FeatherPanelPremiumPage() {
                                             id='premium-powered-by'
                                             checked={showPoweredBy}
                                             onCheckedChange={setShowPoweredBy}
+                                        />
+                                    </div>
+
+                                    <div className='flex items-center justify-between gap-4 rounded-lg border px-4 py-3'>
+                                        <div className='space-y-1'>
+                                            <Label htmlFor='premium-show-version'>
+                                                {t('admin.featherpanel_premium.customize.show_version')}
+                                            </Label>
+                                            <p className='text-muted-foreground text-xs'>
+                                                {t('admin.featherpanel_premium.customize.show_version_help')}
+                                            </p>
+                                        </div>
+                                        <Switch
+                                            id='premium-show-version'
+                                            checked={showVersion}
+                                            onCheckedChange={setShowVersion}
                                         />
                                     </div>
 

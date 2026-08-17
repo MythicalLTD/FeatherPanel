@@ -20,6 +20,8 @@ import { Activity, CheckCircle2, AlertTriangle, XCircle, Clock } from 'lucide-re
 import { useTranslation } from '@/contexts/TranslationContext';
 import { PageCard } from '@/components/featherui/PageCard';
 import { cn } from '@/lib/utils';
+import { formatRelativeTime } from '@/lib/dateUtils';
+import { useDateFormatOptions } from '@/contexts/PreferencesContext';
 
 interface CronTask {
     id: number;
@@ -36,82 +38,100 @@ interface CronStatusWidgetProps {
 
 export function CronStatusWidget({ tasks, loading }: CronStatusWidgetProps) {
     const { t } = useTranslation();
+    const dateOpts = useDateFormatOptions();
 
     return (
-        <PageCard title={t('admin.cron.title')} description={t('admin.cron.description')} icon={Activity}>
-            <div className='space-y-4'>
+        <PageCard
+            title={t('admin.cron.title')}
+            description={t('admin.cron.description')}
+            icon={Activity}
+            className='h-full'
+        >
+            <div className='relative space-y-0'>
                 {loading ? (
-                    Array.from({ length: 3 }).map((_, i) => (
-                        <div
-                            key={i}
-                            className='bg-muted/20 flex animate-pulse items-center justify-between rounded-2xl p-4'
-                        >
-                            <div className='space-y-2'>
-                                <div className='bg-muted h-4 w-32 rounded' />
-                                <div className='bg-muted h-3 w-24 rounded' />
+                    <div className='space-y-3'>
+                        {Array.from({ length: 3 }).map((_, i) => (
+                            <div key={i} className='bg-muted/20 flex animate-pulse items-center gap-3 rounded-2xl p-3'>
+                                <div className='bg-muted h-8 w-8 rounded-full' />
+                                <div className='flex-1 space-y-2'>
+                                    <div className='bg-muted h-3 w-32 rounded' />
+                                    <div className='bg-muted h-2.5 w-24 rounded' />
+                                </div>
+                                <div className='bg-muted h-5 w-14 rounded-full' />
                             </div>
-                            <div className='bg-muted h-6 w-16 rounded' />
-                        </div>
-                    ))
+                        ))}
+                    </div>
                 ) : tasks && tasks.length > 0 ? (
-                    tasks.map((task) => (
-                        <div
-                            key={task.id}
-                            className='bg-muted/10 border-border/50 group hover:bg-muted/20 flex flex-col gap-3 rounded-xl border p-3 transition-all sm:flex-row sm:items-center sm:justify-between sm:gap-4 md:rounded-2xl md:p-4'
-                        >
-                            <div className='flex min-w-0 flex-1 items-center gap-3'>
-                                <div
-                                    className={cn(
-                                        'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg md:h-10 md:w-10 md:rounded-xl',
-                                        task.last_run_success && !task.late
-                                            ? 'bg-green-500/10 text-green-500'
-                                            : task.late
-                                              ? 'bg-orange-500/10 text-orange-500'
-                                              : 'bg-red-500/10 text-red-500',
-                                    )}
-                                >
-                                    {task.last_run_success && !task.late ? (
-                                        <CheckCircle2 className='h-4 w-4 md:h-5 md:w-5' />
-                                    ) : task.late ? (
-                                        <Clock className='h-4 w-4 md:h-5 md:w-5' />
-                                    ) : (
-                                        <XCircle className='h-4 w-4 md:h-5 md:w-5' />
-                                    )}
+                    <div className='space-y-1'>
+                        {tasks.map((task, index) => {
+                            const healthy = task.last_run_success && !task.late;
+                            const failed = !task.last_run_success;
+                            const statusLabel = healthy
+                                ? t('admin.cron.healthy')
+                                : failed
+                                  ? t('admin.cron.failed')
+                                  : t('admin.cron.late');
+                            return (
+                                <div key={task.id} className='group relative flex gap-3'>
+                                    <div className='flex w-8 shrink-0 flex-col items-center'>
+                                        <div
+                                            className={cn(
+                                                'relative z-10 flex h-8 w-8 items-center justify-center rounded-full border',
+                                                healthy
+                                                    ? 'border-green-500/30 bg-green-500/10 text-green-500'
+                                                    : failed
+                                                      ? 'border-red-500/30 bg-red-500/10 text-red-500'
+                                                      : 'border-orange-500/30 bg-orange-500/10 text-orange-500',
+                                            )}
+                                        >
+                                            {healthy ? (
+                                                <CheckCircle2 className='h-3.5 w-3.5' />
+                                            ) : failed ? (
+                                                <XCircle className='h-3.5 w-3.5' />
+                                            ) : (
+                                                <Clock className='h-3.5 w-3.5' />
+                                            )}
+                                        </div>
+                                        {index < tasks.length - 1 && (
+                                            <div className='bg-border/60 my-1 min-h-3 w-px flex-1' />
+                                        )}
+                                    </div>
+                                    <div className='bg-muted/10 border-border/40 hover:bg-muted/20 mb-2 flex min-w-0 flex-1 items-center justify-between gap-3 rounded-xl border p-3 transition-all md:rounded-2xl'>
+                                        <div className='min-w-0 flex-1'>
+                                            <p className='truncate text-xs font-bold tracking-tight md:text-sm'>
+                                                {task.task_name}
+                                            </p>
+                                            <p className='text-muted-foreground truncate text-[9px] font-bold uppercase opacity-70 md:text-[10px]'>
+                                                {task.last_run_at
+                                                    ? t('admin.cron.last_run', {
+                                                          date: formatRelativeTime(task.last_run_at, {
+                                                              ...dateOpts,
+                                                              relativeStyle: 'long',
+                                                          }),
+                                                      })
+                                                    : t('admin.cron.last_run', { date: t('admin.cron.never') })}
+                                            </p>
+                                        </div>
+                                        <span
+                                            className={cn(
+                                                'shrink-0 rounded-full px-2.5 py-1 text-[9px] font-black tracking-wider uppercase md:text-[10px]',
+                                                healthy
+                                                    ? 'bg-green-500/15 text-green-500'
+                                                    : failed
+                                                      ? 'bg-red-500/15 text-red-500'
+                                                      : 'bg-orange-500/15 text-orange-500',
+                                            )}
+                                        >
+                                            {statusLabel}
+                                        </span>
+                                    </div>
                                 </div>
-                                <div className='min-w-0 flex-1'>
-                                    <p className='truncate text-xs font-bold tracking-tight md:text-sm'>
-                                        {task.task_name}
-                                    </p>
-                                    <p className='text-muted-foreground truncate text-[9px] font-bold uppercase opacity-70 md:text-[10px]'>
-                                        {t('admin.cron.last_run', {
-                                            date: task.last_run_at
-                                                ? new Date(task.last_run_at).toLocaleString()
-                                                : t('admin.cron.never'),
-                                        })}
-                                    </p>
-                                </div>
-                            </div>
-                            <div
-                                className={cn(
-                                    'shrink-0 self-start rounded-lg px-2 py-1 text-[9px] font-black tracking-wider uppercase sm:self-auto md:text-[10px]',
-                                    task.last_run_success && !task.late
-                                        ? 'bg-green-500/20 text-green-500'
-                                        : task.late
-                                          ? 'bg-orange-500/20 text-orange-500'
-                                          : 'bg-red-500/20 text-red-500',
-                                )}
-                            >
-                                {task.last_run_success && !task.late
-                                    ? t('admin.cron.healthy')
-                                    : task.late
-                                      ? t('admin.cron.late')
-                                      : t('admin.cron.failed')}
-                            </div>
-                        </div>
-                    ))
+                            );
+                        })}
+                    </div>
                 ) : (
                     <div className='py-8 text-center'>
-                        <AlertTriangle className='text-muted-foreground/30 mx-auto mb-3 h-12 w-12' />
+                        <AlertTriangle className='text-muted-foreground/30 mx-auto mb-3 h-10 w-10' />
                         <p className='text-muted-foreground text-sm font-bold italic'>{t('admin.cron.no_tasks')}</p>
                     </div>
                 )}

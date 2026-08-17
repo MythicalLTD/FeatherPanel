@@ -27,6 +27,7 @@ use App\Services\Wings\Wings;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
 use App\Chat\Proxy as ProxyModel;
+use App\Helpers\DaemonCapabilities;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use App\Plugins\Events\Events\ServerProxyEvent;
@@ -208,6 +209,10 @@ class ServerProxyController
         $node = Node::getNodeById($server['node_id']);
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+
+        if (!DaemonCapabilities::fromNode($node)->supports(DaemonCapabilities::FEATURE_PROXY)) {
+            return DaemonCapabilities::unsupportedResponse($node, DaemonCapabilities::FEATURE_PROXY);
         }
 
         // Determine IP from port/allocation
@@ -394,6 +399,10 @@ class ServerProxyController
         $node = Node::getNodeById($server['node_id']);
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+
+        if (!DaemonCapabilities::fromNode($node)->supports(DaemonCapabilities::FEATURE_PROXY)) {
+            return DaemonCapabilities::unsupportedResponse($node, DaemonCapabilities::FEATURE_PROXY);
         }
 
         $wings = $this->createWings($node);

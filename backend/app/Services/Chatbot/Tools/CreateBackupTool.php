@@ -168,14 +168,7 @@ class CreateBackupTool implements ToolInterface
 
         // Initiate backup on Wings
         try {
-            $wings = new Wings(
-                $node['fqdn'],
-                $node['daemonListen'],
-                $node['scheme'],
-                $node['daemon_token'],
-                30,
-                WingsUrlHelper::isBehindProxy($node)
-            );
+            $wings = Wings::fromNode($node, 30);
 
             $adapter = BackupAdapterResolver::resolveDefault($wings);
 
@@ -199,7 +192,8 @@ class CreateBackupTool implements ToolInterface
                 ];
             }
 
-            $response = $wings->getServer()->createBackup($server['uuid'], $adapter, $backupUuid, $ignoredFiles);
+            $daemonAdapter = BackupAdapterResolver::toDaemonAdapter($adapter, $wings);
+            $response = $wings->getServer()->createBackup($server['uuid'], $daemonAdapter, $backupUuid, $ignoredFiles);
 
             if (!$response->isSuccessful()) {
                 // Rollback database record

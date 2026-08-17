@@ -48,6 +48,42 @@ return function (RouteCollection $routes): void {
 
     App::getInstance(true)->registerAuthRoute(
         $routes,
+        'user-api-client-calagopus-create',
+        '/api/user/api-clients/calagopus/create',
+        function (Request $request) {
+            return (new ApiClientController())->calagopusCreate($request);
+        },
+        ['POST'],
+        Rate::perMinute(10),
+        'user-api-clients'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-api-client-calagopus-find',
+        '/api/user/api-clients/calagopus/find',
+        function (Request $request) {
+            return (new ApiClientController())->calagopusFindByKeyStart($request);
+        },
+        ['GET'],
+        Rate::perMinute(30),
+        'user-api-clients'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-api-client-calagopus-update-permissions',
+        '/api/user/api-clients/calagopus/update-permissions',
+        function (Request $request) {
+            return (new ApiClientController())->calagopusUpdatePermissions($request);
+        },
+        ['POST'],
+        Rate::perMinute(20),
+        'user-api-clients'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
         'user-api-client-get',
         '/api/user/api-clients/{id}',
         function (Request $request, array $args) {

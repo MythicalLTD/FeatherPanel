@@ -59,6 +59,7 @@ import {
 } from 'lucide-react';
 import { ApiNode, ApiAllocation } from '@/types/adminServerTypes';
 import type { ServerRuntimeInfo } from '@/types/server';
+import { supportsDaemonFeature } from '@/lib/daemonCapabilities';
 
 interface ActionsTabProps {
     serverId: string;
@@ -69,6 +70,8 @@ interface ActionsTabProps {
     suspendedAt?: string | null;
     suspendedBy?: ModerationStaffActor | null;
     currentNodeId?: number | null;
+    daemonType?: string | null;
+    nodeCapabilities?: Partial<Record<string, boolean>> | null;
     onRefresh: () => void;
 }
 
@@ -86,10 +89,13 @@ export function ActionsTab({
     suspendedAt,
     suspendedBy,
     currentNodeId,
+    daemonType,
+    nodeCapabilities,
     onRefresh,
 }: ActionsTabProps) {
     const { t } = useTranslation();
     const router = useRouter();
+    const supportsReconcile = supportsDaemonFeature(nodeCapabilities, 'reconcile', daemonType);
     const [suspending, setSuspending] = useState(false);
     const [deleting, setDeleting] = useState(false);
     const [isHardDelete, setIsHardDelete] = useState(false);
@@ -369,14 +375,16 @@ export function ActionsTab({
                                 <RefreshCw className='mr-2 h-4 w-4' />
                                 {t('admin.servers.edit.actions.runtime_refresh')}
                             </Button>
-                            <Button
-                                variant='destructive'
-                                onClick={() => setReconcileDialogOpen(true)}
-                                loading={reconciling}
-                            >
-                                <Activity className='mr-2 h-4 w-4' />
-                                {t('admin.servers.edit.actions.reconcile')}
-                            </Button>
+                            {supportsReconcile ? (
+                                <Button
+                                    variant='destructive'
+                                    onClick={() => setReconcileDialogOpen(true)}
+                                    loading={reconciling}
+                                >
+                                    <Activity className='mr-2 h-4 w-4' />
+                                    {t('admin.servers.edit.actions.reconcile')}
+                                </Button>
+                            ) : null}
                         </div>
                     </div>
                 </div>

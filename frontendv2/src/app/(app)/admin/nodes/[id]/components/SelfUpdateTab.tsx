@@ -13,7 +13,7 @@ by the Free Software Foundation, either version 3 of the License, or
 See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
@@ -75,6 +75,28 @@ export function SelfUpdateTab({ nodeId, systemData, onRefresh }: SelfUpdateTabPr
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [nodeId]);
 
+    // Only prefill options from the fetched version status once per node, so a later
+    // refetch (e.g. after a successful self-update) doesn't clobber in-progress edits.
+    const prefilledForNodeRef = useRef<number | null>(null);
+
+    useEffect(() => {
+        if (!versionStatus) return;
+        if (prefilledForNodeRef.current === nodeId) return;
+        const owner = versionStatus.github_owner?.trim();
+        const repo = versionStatus.github_repo?.trim();
+        if (!owner && !repo) return;
+        prefilledForNodeRef.current = nodeId;
+        setOptions((prev) => ({
+            ...prev,
+            repoOwner: owner || prev.repoOwner,
+            repoName: repo || prev.repoName,
+            url:
+                owner && repo
+                    ? `https://github.com/${owner}/${repo}/releases/latest/download/${repo === 'wings' ? 'wings-rs-x86_64-linux' : repo}`
+                    : prev.url,
+        }));
+    }, [versionStatus, nodeId]);
+
     const handleUpdate = async () => {
         if (!confirm(t('admin.node.view.self_update.confirm'))) return;
 
@@ -119,7 +141,7 @@ export function SelfUpdateTab({ nodeId, systemData, onRefresh }: SelfUpdateTabPr
                     className='h-full'
                 >
                     <h3 className='text-primary font-mono text-3xl font-bold'>
-                        {systemData?.wings.version || t('common.unknown')}
+                        {systemData?.wings?.version || t('common.unknown')}
                     </h3>
                 </PageCard>
 

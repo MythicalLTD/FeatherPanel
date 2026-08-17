@@ -406,9 +406,8 @@ class WingsServerListController
                 ],
             ];
             $listMounts = Mount::getWingsMountsForServer((int) $server['id']);
-            if ($listMounts !== []) {
-                $settingsInner['mounts'] = $listMounts;
-            }
+            // Always include mounts (even empty): Calagopus wings-rs requires the field.
+            $settingsInner['mounts'] = $listMounts;
 
             // Build server configuration
             $serverConfig = [

@@ -29,9 +29,9 @@ class SettingsControllerTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->controller = new SettingsController();
-        // Ensure DB connection is initialized in test mode
+        // Ensure DB connection is initialized before SettingsController builds settings.
         App::getInstance(false, true, true);
+        $this->controller = new SettingsController();
         // Ensure test admin user exists
         $existing = User::getUserByUuid($this->adminUuid);
         if (!$existing) {

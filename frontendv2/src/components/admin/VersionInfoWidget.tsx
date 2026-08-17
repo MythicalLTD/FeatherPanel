@@ -174,11 +174,12 @@ export function VersionInfoWidget({ version, loading }: VersionInfoWidgetProps) 
         <PageCard title={t('admin.version.title')} description={t('admin.version.description')} icon={Package}>
             <div className='space-y-4 md:space-y-6'>
                 <div className='grid gap-3 sm:grid-cols-2'>
-                    <div className='bg-secondary/30 border-border/50 rounded-2xl border p-3 md:rounded-3xl md:p-4'>
-                        <p className='text-muted-foreground text-[9px] font-black tracking-widest uppercase md:text-[10px]'>
+                    <div className='bg-secondary/30 border-border/50 relative overflow-hidden rounded-2xl border p-3 md:rounded-3xl md:p-4'>
+                        <div className='bg-primary/5 pointer-events-none absolute -top-8 -right-8 h-24 w-24 rounded-full blur-2xl' />
+                        <p className='text-muted-foreground relative text-[9px] font-black tracking-widest uppercase md:text-[10px]'>
                             {t('admin.version.current_build')}
                         </p>
-                        <h4 className='mt-1 truncate text-lg font-black md:text-xl'>
+                        <h4 className='relative mt-1 truncate text-lg font-black md:text-xl'>
                             {loading ? '…' : current?.version || 'unknown'}
                         </h4>
                         {current?.release_name ? (
@@ -209,11 +210,18 @@ export function VersionInfoWidget({ version, loading }: VersionInfoWidgetProps) 
                         </div>
                     </div>
 
-                    <div className='bg-secondary/30 border-border/50 rounded-2xl border p-3 md:rounded-3xl md:p-4'>
-                        <p className='text-muted-foreground text-[9px] font-black tracking-widest uppercase md:text-[10px]'>
+                    <div
+                        className={`relative overflow-hidden rounded-2xl border p-3 md:rounded-3xl md:p-4 ${
+                            !isLatest ? 'border-amber-500/30 bg-amber-500/5' : 'bg-secondary/30 border-border/50'
+                        }`}
+                    >
+                        {!isLatest && (
+                            <div className='pointer-events-none absolute -top-8 -right-8 h-24 w-24 rounded-full bg-amber-500/15 blur-2xl' />
+                        )}
+                        <p className='text-muted-foreground relative text-[9px] font-black tracking-widest uppercase md:text-[10px]'>
                             {t('admin.version.latest_build')}
                         </p>
-                        <h4 className='mt-1 truncate text-lg font-black md:text-xl'>
+                        <h4 className='relative mt-1 truncate text-lg font-black md:text-xl'>
                             {loading ? '…' : latest?.version || current?.version || t('admin.version.no_releases_yet')}
                         </h4>
                         {latest?.release_name ? (

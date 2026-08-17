@@ -22,6 +22,7 @@ use App\Helpers\ApiResponse;
 use App\Services\Wings\Wings;
 use OpenApi\Attributes as OA;
 use App\Helpers\WingsUrlHelper;
+use App\Helpers\DaemonCapabilities;
 use App\Plugins\Events\Events\WingsEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -198,6 +199,10 @@ class WingsAdminController
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
         }
 
+        if (!DaemonCapabilities::fromNode($node)->supports(DaemonCapabilities::FEATURE_DOCKER_DISK)) {
+            return DaemonCapabilities::unsupportedResponse($node, DaemonCapabilities::FEATURE_DOCKER_DISK);
+        }
+
         $scheme = $node['scheme'];
         $host = $node['fqdn'];
         $port = $node['daemonListen'];
@@ -263,6 +268,10 @@ class WingsAdminController
         $node = Node::getNodeById($id);
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+
+        if (!DaemonCapabilities::fromNode($node)->supports(DaemonCapabilities::FEATURE_DOCKER_DISK)) {
+            return DaemonCapabilities::unsupportedResponse($node, DaemonCapabilities::FEATURE_DOCKER_DISK);
         }
 
         $scheme = $node['scheme'];
@@ -349,6 +358,18 @@ class WingsAdminController
         );
 
         $ips = $wings->getSystem()->getSystemIPs();
+
+        // Calagopus has no /api/system/ips — fall back to node public IPs for allocation UX.
+        if (empty($ips['ip_addresses'])) {
+            $fallback = [];
+            foreach (['public_ip_v4', 'public_ip_v6'] as $key) {
+                $value = trim((string) ($node[$key] ?? ''));
+                if ($value !== '') {
+                    $fallback[] = $value;
+                }
+            }
+            $ips['ip_addresses'] = array_values(array_unique($fallback));
+        }
 
         // Emit event
         global $eventManager;
@@ -482,6 +503,10 @@ class WingsAdminController
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
         }
 
+        if (!DaemonCapabilities::fromNode($node)->supports(DaemonCapabilities::FEATURE_MODULES)) {
+            return DaemonCapabilities::unsupportedResponse($node, DaemonCapabilities::FEATURE_MODULES);
+        }
+
         $scheme = $node['scheme'];
         $host = $node['fqdn'];
         $port = $node['daemonListen'];
@@ -540,6 +565,10 @@ class WingsAdminController
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
         }
 
+        if (!DaemonCapabilities::fromNode($node)->supports(DaemonCapabilities::FEATURE_MODULES)) {
+            return DaemonCapabilities::unsupportedResponse($node, DaemonCapabilities::FEATURE_MODULES);
+        }
+
         $scheme = $node['scheme'];
         $host = $node['fqdn'];
         $port = $node['daemonListen'];
@@ -596,6 +625,10 @@ class WingsAdminController
         $node = Node::getNodeById($id);
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+
+        if (!DaemonCapabilities::fromNode($node)->supports(DaemonCapabilities::FEATURE_MODULES)) {
+            return DaemonCapabilities::unsupportedResponse($node, DaemonCapabilities::FEATURE_MODULES);
         }
 
         $requestData = json_decode($request->getContent(), true);
@@ -661,6 +694,10 @@ class WingsAdminController
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
         }
 
+        if (!DaemonCapabilities::fromNode($node)->supports(DaemonCapabilities::FEATURE_MODULES)) {
+            return DaemonCapabilities::unsupportedResponse($node, DaemonCapabilities::FEATURE_MODULES);
+        }
+
         $scheme = $node['scheme'];
         $host = $node['fqdn'];
         $port = $node['daemonListen'];
@@ -717,6 +754,10 @@ class WingsAdminController
         $node = Node::getNodeById($id);
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+
+        if (!DaemonCapabilities::fromNode($node)->supports(DaemonCapabilities::FEATURE_MODULES)) {
+            return DaemonCapabilities::unsupportedResponse($node, DaemonCapabilities::FEATURE_MODULES);
         }
 
         $scheme = $node['scheme'];

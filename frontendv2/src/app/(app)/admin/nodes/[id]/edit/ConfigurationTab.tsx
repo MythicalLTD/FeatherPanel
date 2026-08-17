@@ -18,6 +18,7 @@ import { PageCard } from '@/components/featherui/PageCard';
 import { Input } from '@/components/featherui/Input';
 import { Label } from '@/components/ui/label';
 import { Settings2 } from 'lucide-react';
+import { defaultDaemonBase, type DaemonType } from '@/lib/daemonCapabilities';
 
 import { type NodeForm } from './page';
 
@@ -25,15 +26,29 @@ interface ConfigurationTabProps {
     form: NodeForm;
     setForm: React.Dispatch<React.SetStateAction<NodeForm>>;
     errors: Record<string, string>;
+    /** Daemon type locked at creation — shown read-only. */
+    originalDaemonType?: DaemonType;
 }
 
-export function ConfigurationTab({ form, setForm, errors }: ConfigurationTabProps) {
+export function ConfigurationTab({ form, setForm, errors, originalDaemonType }: ConfigurationTabProps) {
     const { t } = useTranslation();
+    const daemonType = originalDaemonType ?? form.daemon_type;
+    const daemonLabel =
+        daemonType === 'wings_rs'
+            ? t('admin.node.form.daemon_type_wings_rs')
+            : t('admin.node.form.daemon_type_featherwings');
 
     return (
         <PageCard title={t('admin.node.form.configuration')} icon={Settings2}>
             <div className='grid grid-cols-1 gap-8 md:grid-cols-2'>
                 <div className='space-y-6'>
+                    <div className='space-y-2'>
+                        <Label className='text-sm font-semibold'>{t('admin.node.form.daemon_type')}</Label>
+                        <Input value={daemonLabel} disabled readOnly />
+                        <p className='text-muted-foreground/70 text-xs italic'>
+                            {t('admin.node.form.daemon_type_immutable_help')}
+                        </p>
+                    </div>
                     <div className='grid grid-cols-2 gap-4'>
                         <div className='space-y-2'>
                             <Label className='text-sm font-semibold'>{t('admin.node.form.memory')}</Label>
@@ -109,7 +124,7 @@ export function ConfigurationTab({ form, setForm, errors }: ConfigurationTabProp
                     <div className='space-y-2'>
                         <Label className='text-sm font-semibold'>{t('admin.node.form.daemon_base')}</Label>
                         <Input
-                            placeholder='/var/lib/featherpanel/volumes'
+                            placeholder={defaultDaemonBase(form.daemon_type)}
                             value={form.daemonBase}
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                                 setForm({ ...form, daemonBase: e.target.value })

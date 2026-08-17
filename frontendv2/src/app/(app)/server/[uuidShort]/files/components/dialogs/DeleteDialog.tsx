@@ -27,7 +27,9 @@ import { filesApi } from '@/lib/files-api';
 import { filterFeatherTrashNames } from '@/lib/feather-trash';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSettings } from '@/contexts/SettingsContext';
+import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { isEnabled } from '@/lib/utils';
+import { supportsDaemonFeature } from '@/lib/daemonCapabilities';
 import { toast } from 'sonner';
 import { Trash2 } from 'lucide-react';
 
@@ -58,9 +60,12 @@ function DeleteFileList({ files }: { files: string[] }) {
 export function DeleteDialog({ open, onOpenChange, uuid, root, files, onSuccess }: DeleteDialogProps) {
     const { t } = useTranslation();
     const { settings } = useSettings();
+    const { server } = useServerPermissions(uuid);
     const [loading, setLoading] = useState(false);
 
-    const trashEnabled = isEnabled(settings?.file_trash_enabled);
+    const trashEnabled =
+        isEnabled(settings?.file_trash_enabled) &&
+        supportsDaemonFeature(server?.node?.capabilities, 'trash', server?.node?.daemon_type);
     const safeFiles = useMemo(() => filterFeatherTrashNames(files), [files]);
 
     const handleClose = (next: boolean) => {

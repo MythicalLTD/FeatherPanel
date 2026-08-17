@@ -462,4 +462,34 @@ return function (RouteCollection $routes): void {
         Rate::perMinute(20), // Default: Admin can override in ratelimit.json
         'user-server-files'
     );
+
+    App::getInstance(true)->registerServerRoute(
+        $routes,
+        'session-server-download-directory',
+        '/api/user/servers/{uuidShort}/download-directory',
+        function (Request $request, array $args) {
+            $uuidShort = $args['uuidShort'] ?? null;
+
+            return (new ServerFilesController())->downloadDirectory($request, $uuidShort);
+        },
+        'uuidShort',
+        ['GET'],
+        Rate::perMinute(10),
+        'user-server-files'
+    );
+
+    App::getInstance(true)->registerServerRoute(
+        $routes,
+        'session-server-file-fingerprints',
+        '/api/user/servers/{uuidShort}/file-fingerprints',
+        function (Request $request, array $args) {
+            $uuidShort = $args['uuidShort'] ?? null;
+
+            return (new ServerFilesController())->getFileFingerprints($request, $uuidShort);
+        },
+        'uuidShort',
+        ['GET'],
+        Rate::perMinute(20),
+        'user-server-files'
+    );
 };

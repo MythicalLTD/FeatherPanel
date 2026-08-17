@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import axios from 'axios';
+import { toast } from 'sonner';
 
 interface WingsMessage {
     event: string;
@@ -56,6 +57,12 @@ interface WingsJWTResponse {
     error_code: string | null;
 }
 
+export interface FileOperationEvent {
+    event: string;
+    operationId: string;
+    args?: unknown[];
+}
+
 interface WingsWebSocketOptions {
     serverUuid: string;
     onMessage?: (data: WingsMessage) => void;
@@ -69,6 +76,8 @@ interface WingsWebSocketOptions {
     onBackupComplete?: () => void;
     onTransferLogs?: (log: string) => void;
     onTransferStatus?: (status: string) => void;
+    /** Calagopus file-op progress/completed/error/aborted events */
+    onFileOperation?: (event: FileOperationEvent) => void;
     connect?: boolean;
 }
 
@@ -101,6 +110,7 @@ export function useWingsWebSocket({
     onBackupComplete,
     onTransferLogs,
     onTransferStatus,
+    onFileOperation,
     connect: shouldConnect = true,
 }: WingsWebSocketOptions): WingsWebSocketReturn {
     const wsRef = useRef<WebSocket | null>(null);
@@ -134,6 +144,12 @@ export function useWingsWebSocket({
     const onBackupCompleteRef = useRef(onBackupComplete);
     const onTransferLogsRef = useRef(onTransferLogs);
     const onTransferStatusRef = useRef(onTransferStatus);
+    const onFileOperationRef = useRef(onFileOperation);
+    // Tracks toast ids raised for in-flight file operations so they can be dismissed on
+    // socket close / unmount instead of being left dangling (e.g. a "progress" toast whose
+    // "completed"/"error"/"aborted" event never arrives because the socket dropped).
+    const fileOpToastIdsRef = useRef<Set<string>>(new Set());
+    const fileOpToastTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
     // Update refs when callbacks change
     useEffect(() => {
@@ -148,6 +164,7 @@ export function useWingsWebSocket({
         onBackupCompleteRef.current = onBackupComplete;
         onTransferLogsRef.current = onTransferLogs;
         onTransferStatusRef.current = onTransferStatus;
+        onFileOperationRef.current = onFileOperation;
     }, [
         onMessage,
         onStats,
@@ -160,6 +177,7 @@ export function useWingsWebSocket({
         onBackupComplete,
         onTransferLogs,
         onTransferStatus,
+        onFileOperation,
     ]);
 
     const flushConsoleOutputQueue = useCallback(() => {
@@ -300,6 +318,33 @@ export function useWingsWebSocket({
         intentionalCloseRef.current = false;
         isRefreshingTokenRef.current = false;
         isConnectingRef.current = false;
+
+        const clearFileOpToastTimer = (id: string) => {
+            const timer = fileOpToastTimersRef.current.get(id);
+            if (timer !== undefined) {
+                clearTimeout(timer);
+                fileOpToastTimersRef.current.delete(id);
+            }
+        };
+        const untrackFileOpToast = (id: string) => {
+            clearFileOpToastTimer(id);
+            fileOpToastIdsRef.current.delete(id);
+        };
+        const trackFileOpToast = (id: string) => {
+            clearFileOpToastTimer(id);
+            fileOpToastIdsRef.current.add(id);
+            const timer = setTimeout(() => {
+                fileOpToastIdsRef.current.delete(id);
+                fileOpToastTimersRef.current.delete(id);
+            }, 15000);
+            fileOpToastTimersRef.current.set(id, timer);
+        };
+        const dismissAllFileOpToasts = () => {
+            fileOpToastTimersRef.current.forEach((timer) => clearTimeout(timer));
+            fileOpToastTimersRef.current.clear();
+            fileOpToastIdsRef.current.forEach((id) => toast.dismiss(id));
+            fileOpToastIdsRef.current.clear();
+        };
 
         const establishConnection = async () => {
             // Don't connect if we've already cleaned up or connecting is disabled
@@ -518,6 +563,59 @@ export function useWingsWebSocket({
                             return;
                         }
 
+                        // Calagopus file operation progress / completed / error / aborted
+                        const FILE_OPERATION_EVENTS = new Set([
+                            'operation progress',
+                            'operation completed',
+                            'operation error',
+                            'operation aborted',
+                        ]);
+                        if (typeof data.event === 'string' && FILE_OPERATION_EVENTS.has(data.event)) {
+                            const operationId = String(data.args?.[0] ?? '');
+                            const payload: FileOperationEvent = {
+                                event: data.event,
+                                operationId,
+                                args: data.args,
+                            };
+                            if (onFileOperationRef.current) {
+                                onFileOperationRef.current(payload);
+                            } else if (operationId) {
+                                const toastId = `file-op-${operationId}`;
+                                if (data.event === 'operation progress') {
+                                    trackFileOpToast(toastId);
+                                    toast.loading('File operation in progress…', { id: toastId, duration: 15000 });
+                                } else if (data.event === 'operation completed') {
+                                    untrackFileOpToast(toastId);
+                                    toast.success('File operation completed', { id: toastId });
+                                } else if (data.event === 'operation error') {
+                                    untrackFileOpToast(toastId);
+                                    const message =
+                                        typeof data.args?.[1] === 'string' && data.args[1]
+                                            ? data.args[1]
+                                            : 'File operation failed';
+                                    toast.error(message, { id: toastId });
+                                } else if (data.event === 'operation aborted') {
+                                    untrackFileOpToast(toastId);
+                                    toast.message('File operation aborted', { id: toastId });
+                                }
+                            } else if (data.event === 'operation progress') {
+                                // No stable operation id — fire an untracked toast so it
+                                // cannot collide with or be bulk-dismissed by other ops.
+                                toast.loading('File operation in progress…', { duration: 15000 });
+                            } else if (data.event === 'operation completed') {
+                                toast.success('File operation completed');
+                            } else if (data.event === 'operation error') {
+                                const message =
+                                    typeof data.args?.[1] === 'string' && data.args[1]
+                                        ? data.args[1]
+                                        : 'File operation failed';
+                                toast.error(message);
+                            } else if (data.event === 'operation aborted') {
+                                toast.message('File operation aborted');
+                            }
+                            return;
+                        }
+
                         // Generic message handler
                         if (onMessageRef.current) {
                             onMessageRef.current(data);
@@ -546,6 +644,7 @@ export function useWingsWebSocket({
                     }
 
                     console.log('[Wings WS] Disconnected');
+                    dismissAllFileOpToasts();
                     setIsConnected(false);
                     setPing(null);
                     setStats(null);
@@ -603,6 +702,9 @@ export function useWingsWebSocket({
                 wsRef.current.close();
                 wsRef.current = null;
             }
+            // Dismiss any file-operation toasts still awaiting a completion/error/abort event
+            // so a dropped connection doesn't leave a stuck "in progress" toast behind.
+            dismissAllFileOpToasts();
         };
     }, [
         serverUuid,

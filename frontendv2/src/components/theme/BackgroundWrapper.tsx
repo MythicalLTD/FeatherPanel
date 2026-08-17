@@ -16,14 +16,17 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import dynamic from 'next/dynamic';
+import { useContext, useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useSettings } from '@/contexts/SettingsContext';
-import { useEffect, useState } from 'react';
+import { ServerContext } from '@/contexts/ServerContext';
 
 import { getAuroraColorStops, getPrimaryHex, getBeamLightHex } from '@/lib/themeColors';
 import { backgroundFitToCssSize } from '@/lib/backgroundImageFit';
 import { importWithRetry } from '@/lib/importWithRetry';
 import BackgroundEffectBoundary from '@/components/theme/BackgroundEffectBoundary';
+import { resolveServerSpellBannerBackground, resolveSpellBannerUrl } from '@/lib/server-spell-banner';
 
 import '@/components/thirdparty/Aurora.css';
 import '@/components/thirdparty/Beams.css';
@@ -57,11 +60,26 @@ export default function BackgroundWrapper({ children }: { children: React.ReactN
         setBackgroundImage,
     } = useTheme();
     const { settings } = useSettings();
-    const [mounted] = useState(() => typeof window !== 'undefined');
+    const serverCtx = useContext(ServerContext);
+    const pathname = usePathname();
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    const isServerRoute = Boolean(pathname?.startsWith('/server/'));
+    const spellBgMode = resolveServerSpellBannerBackground(settings);
+    const spellBannerUrl =
+        isServerRoute && spellBgMode !== 'off' ? resolveSpellBannerUrl(serverCtx?.server?.spell?.banner) : null;
+    const useSpellReplace = Boolean(spellBannerUrl && spellBgMode === 'replace');
+    const useSpellBlend = Boolean(spellBannerUrl && spellBgMode === 'blend');
 
     useEffect(() => {
         if (!mounted) return;
         if (!settings) return;
+        // Don't fight a server-route spell replace background with admin image seeding.
+        if (useSpellReplace) return;
 
         const imageUrl = settings.app_background_image_url;
         const lock = settings.app_background_lock === 'true';
@@ -86,6 +104,7 @@ export default function BackgroundWrapper({ children }: { children: React.ReactN
         backgroundImage,
         setBackgroundImage,
         setBackgroundType,
+        useSpellReplace,
     ]);
 
     if (!mounted) {
@@ -93,6 +112,15 @@ export default function BackgroundWrapper({ children }: { children: React.ReactN
     }
 
     const getBackgroundStyle = (): React.CSSProperties => {
+        if (useSpellReplace && spellBannerUrl) {
+            return {
+                backgroundImage: `url(${spellBannerUrl})`,
+                backgroundSize: backgroundFitToCssSize(backgroundImageFit),
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat',
+            };
+        }
+
         if (backgroundType === 'image' && backgroundImage) {
             return {
                 backgroundImage: `url(${backgroundImage})`,
@@ -127,17 +155,20 @@ export default function BackgroundWrapper({ children }: { children: React.ReactN
         return {};
     };
 
-    const useAurora = backgroundType === 'aurora';
-    const hasOverlay = backdropBlur > 0 || backdropDarken > 0;
+    const useAurora = !useSpellReplace && backgroundType === 'aurora';
+    const hasOverlay = backdropBlur > 0 || backdropDarken > 0 || useSpellReplace;
     const overlayStyle: React.CSSProperties = {
         backdropFilter: backdropBlur > 0 ? `blur(${backdropBlur}px)` : undefined,
         WebkitBackdropFilter: backdropBlur > 0 ? `blur(${backdropBlur}px)` : undefined,
-        backgroundColor: backdropDarken > 0 ? `rgba(0,0,0,${backdropDarken / 100})` : undefined,
+        backgroundColor:
+            backdropDarken > 0 || useSpellReplace
+                ? `rgba(0,0,0,${Math.max(backdropDarken, useSpellReplace ? 35 : 0) / 100})`
+                : undefined,
     };
 
     return (
         <div className='relative min-h-screen transition-all duration-500'>
-            {/* Background layer: Aurora or gradient/solid/pattern/image */}
+            {/* Background layer: Aurora or gradient/solid/pattern/image (or spell replace on server pages) */}
             {useAurora ? (
                 <>
                     <div
@@ -198,6 +229,15 @@ export default function BackgroundWrapper({ children }: { children: React.ReactN
                     aria-hidden
                 />
             )}
+
+            {/* Soft spell banner over the existing theme background on server pages */}
+            {useSpellBlend && spellBannerUrl ? (
+                <div
+                    className='pointer-events-none fixed inset-0 z-[1] bg-cover bg-center bg-no-repeat opacity-45 transition-all duration-500'
+                    style={{ backgroundImage: `url(${spellBannerUrl})` }}
+                    aria-hidden
+                />
+            ) : null}
 
             {hasOverlay && (
                 <div

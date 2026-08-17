@@ -243,6 +243,22 @@ class ServerService
         }
     }
 
+    /**
+     * Abort an in-progress install/reinstall (Calagopus).
+     */
+    public function abortInstall(string $serverUuid): WingsResponse
+    {
+        try {
+            $response = $this->connection->post("/api/servers/{$serverUuid}/install/abort");
+
+            return new WingsResponse($response, 202);
+        } catch (WingsRequestException $e) {
+            return new WingsResponse(['error' => $e->getMessage()], $e->getCode() > 0 ? $e->getCode() : 500);
+        } catch (\Exception $e) {
+            return new WingsResponse(['error' => $e->getMessage()], 500);
+        }
+    }
+
     // ========================================
     // File Management Methods
     // ========================================
@@ -251,18 +267,38 @@ class ServerService
      * List items in a directory.
      *
      * @param bool $includeDirectorySizes when true, requests Wings recursive per-folder sizes (cached on the daemon)
+     * @param array{page?: int, per_page?: int, sort?: string} $options
      */
-    public function listDirectory(string $serverUuid, string $directory = '/', bool $includeDirectorySizes = false): WingsResponse
+    public function listDirectory(string $serverUuid, string $directory = '/', bool $includeDirectorySizes = false, array $options = []): WingsResponse
     {
         try {
+            if ($this->connection->isWingsRs()) {
+                return $this->listDirectoryCalagopus($serverUuid, $directory, $options);
+            }
+
             $encodedDirectory = urlencode($directory);
             $query = "directory={$encodedDirectory}";
             if ($includeDirectorySizes) {
                 $query .= '&directory_sizes=true';
             }
-            $response = $this->connection->get("/api/servers/{$serverUuid}/files/list-directory?{$query}");
 
-            return new WingsResponse($response, 200);
+            try {
+                $response = $this->connection->get("/api/servers/{$serverUuid}/files/list-directory?{$query}");
+
+                return new WingsResponse($response, 200);
+            } catch (WingsRequestException $e) {
+                // Some daemons reject directory_sizes; retry without it.
+                $status = (int) $e->getCode();
+                if ($includeDirectorySizes && $status >= 400 && $status < 500) {
+                    $response = $this->connection->get(
+                        "/api/servers/{$serverUuid}/files/list-directory?directory={$encodedDirectory}"
+                    );
+
+                    return new WingsResponse($response, 200);
+                }
+
+                throw $e;
+            }
         } catch (\Exception $e) {
             return new WingsResponse(['error' => $e->getMessage()], 500);
         }
@@ -270,6 +306,7 @@ class ServerService
 
     /**
      * Search files with advanced filters.
+     * FeatherWings uses GET; Calagopus wings-rs uses POST — retry with POST on 404/405/501.
      *
      * @param array<string,mixed> $filters
      */
@@ -278,11 +315,26 @@ class ServerService
         try {
             $query = http_build_query($filters);
             $endpoint = "/api/servers/{$serverUuid}/files/search" . ($query !== '' ? "?{$query}" : '');
-            $response = $this->connection->get($endpoint);
 
-            return new WingsResponse($response, 200);
+            try {
+                $response = $this->connection->get($endpoint);
+
+                return new WingsResponse($this->normalizeSearchResults($response), 200);
+            } catch (WingsRequestException $e) {
+                $status = (int) $e->getCode();
+                if (!in_array($status, [404, 405, 501], true)) {
+                    throw $e;
+                }
+
+                $payload = $this->mapSearchFiltersToCalagopusPayload($filters);
+                $response = $this->connection->post("/api/servers/{$serverUuid}/files/search", $payload);
+
+                return new WingsResponse($this->normalizeSearchResults($response), 200);
+            }
         } catch (\Exception $e) {
-            return new WingsResponse(['error' => $e->getMessage()], 500);
+            $status = $e instanceof WingsRequestException ? (int) $e->getCode() : 500;
+
+            return new WingsResponse(['error' => $e->getMessage()], $status > 0 ? $status : 500);
         }
     }
 
@@ -294,6 +346,34 @@ class ServerService
     public function listArchiveDirectory(string $serverUuid, string $directory, string $file, string $innerPath = ''): WingsResponse
     {
         try {
+            // Calagopus mounts archives as a virtual filesystem — list the joined path.
+            if ($this->connection->isWingsRs()) {
+                $base = rtrim($directory === '' ? '/' : $directory, '/');
+                if ($base === '') {
+                    $base = '/';
+                }
+                $archivePath = $base === '/' ? '/' . ltrim($file, '/') : $base . '/' . ltrim($file, '/');
+                if ($innerPath !== '' && $innerPath !== '/') {
+                    $archivePath = rtrim($archivePath, '/') . '/' . ltrim($innerPath, '/');
+                }
+
+                $listed = $this->listDirectory($serverUuid, $archivePath, false);
+                if (!$listed->isSuccessful()) {
+                    return $listed;
+                }
+                $data = $listed->getData();
+                $entries = [];
+                if (is_array($data)) {
+                    if (isset($data['entries']) && is_array($data['entries'])) {
+                        $entries = $data['entries'];
+                    } elseif (array_is_list($data)) {
+                        $entries = $data;
+                    }
+                }
+
+                return new WingsResponse(['contents' => $entries, 'truncated' => false], 200);
+            }
+
             $query = http_build_query([
                 'directory' => $directory,
                 'file' => $file,
@@ -313,7 +393,7 @@ class ServerService
     public function getFileContents(string $serverUuid, string $file, bool $download = false): WingsResponse
     {
         try {
-            $encodedFile = urlencode($file);
+            $encodedFile = urlencode($this->normalizeDaemonFilePath($file));
             $downloadParam = $download ? 'true' : 'false';
             $response = $this->connection->get("/api/servers/{$serverUuid}/files/contents?file={$encodedFile}&download={$downloadParam}");
 
@@ -331,7 +411,7 @@ class ServerService
     public function getFileContentsRaw(string $serverUuid, string $file, bool $download = false): WingsResponse
     {
         try {
-            $encodedFile = urlencode($file);
+            $encodedFile = urlencode($this->normalizeDaemonFilePath($file));
             $downloadParam = $download ? 'true' : 'false';
             $rawResponse = $this->connection->getRaw("/api/servers/{$serverUuid}/files/contents?file={$encodedFile}&download={$downloadParam}");
 
@@ -348,7 +428,7 @@ class ServerService
     public function downloadFile(string $serverUuid, string $file): WingsResponse
     {
         try {
-            $encodedFile = urlencode($file);
+            $encodedFile = urlencode($this->normalizeDaemonFilePath($file));
             $rawResponse = $this->connection->getRaw("/api/servers/{$serverUuid}/files/contents?file={$encodedFile}&download=true");
 
             return new WingsResponse($rawResponse, 200);
@@ -363,7 +443,7 @@ class ServerService
     public function writeFile(string $serverUuid, string $file, string $content): WingsResponse
     {
         try {
-            $encodedFile = urlencode($file);
+            $encodedFile = urlencode($this->normalizeDaemonFilePath($file));
             // Send raw content to Wings (no JSON wrapper)
             $response = $this->connection->postRaw("/api/servers/{$serverUuid}/files/write?file={$encodedFile}", $content, [
                 'Content-Type' => 'text/plain',
@@ -394,14 +474,31 @@ class ServerService
     }
 
     /**
-     * Copy files/directories.
+     * Copy a single source file to a destination directory.
+     *
+     * Wings expects the source as a `file` query parameter and the destination
+     * directory in the request body `location` field.
+     *
+     * @param string|null $name Optional destination name (Calagopus)
+     * @param bool $overwrite Overwrite existing destination (Calagopus)
      */
-    public function copyFiles(string $serverUuid, string $location, array $files): WingsResponse
+    public function copyFiles(string $serverUuid, string $source, string $destination, ?string $name = null, bool $overwrite = false): WingsResponse
     {
         try {
-            $response = $this->connection->post("/api/servers/{$serverUuid}/files/copy", [
-                'location' => $location,
-            ]);
+            $data = [
+                'location' => $destination,
+            ];
+            if ($name !== null && $name !== '') {
+                $data['name'] = $name;
+            }
+            if ($overwrite) {
+                $data['overwrite'] = true;
+            }
+
+            $response = $this->connection->post(
+                "/api/servers/{$serverUuid}/files/copy?file=" . rawurlencode($source),
+                $data
+            );
 
             return new WingsResponse($response, 204);
         } catch (\Exception $e) {
@@ -540,8 +637,15 @@ class ServerService
      * @param string $extension Archive extension (zip, tar.gz, tgz, tar.bz2, tbz2, tar.xz, txz)
      * @param int|null $timeout Optional timeout in seconds (default: 15 minutes for large archives)
      */
-    public function compressFiles(string $serverUuid, string $root, array $files, string $name = '', string $extension = 'tar.gz', ?int $timeout = null): WingsResponse
-    {
+    public function compressFiles(
+        string $serverUuid,
+        string $root,
+        array $files,
+        string $name = '',
+        string $extension = 'tar.gz',
+        ?int $timeout = null,
+        ?bool $foreground = null,
+    ): WingsResponse {
         try {
             // Ensure $files is an array
             if (!is_array($files)) {
@@ -575,15 +679,23 @@ class ServerService
                 $data['name'] = $name;
             }
 
-            if (!empty($extension)) {
-                $data['extension'] = $extension;
+            if ($this->connection->isWingsRs()) {
+                $format = $this->mapCompressExtensionToCalagopusFormat($extension);
+                if ($format !== null) {
+                    $data['format'] = $format;
+                }
+            } elseif (!empty($extension)) {
+                $data['extension'] = $this->mapCalagopusFormatToCompressExtension($extension);
+            }
+            if ($foreground !== null) {
+                $data['foreground'] = $foreground;
             }
 
             // Use 15 minute timeout for archive operations (like pelican) if not specified
             $requestTimeout = $timeout ?? (60 * 15);
             $response = $this->connection->post("/api/servers/{$serverUuid}/files/compress", $data, [], 3, $requestTimeout);
 
-            return new WingsResponse($response, 200);
+            return new WingsResponse($response, $foreground === false ? 202 : 200);
         } catch (\Exception $e) {
             return new WingsResponse(['error' => $e->getMessage()], 500);
         }
@@ -597,19 +709,27 @@ class ServerService
      * @param string $root The root directory path
      * @param int|null $timeout Optional timeout in seconds (default: 15 minutes for large archives)
      */
-    public function decompressArchive(string $serverUuid, string $file, string $root, ?int $timeout = null): WingsResponse
-    {
+    public function decompressArchive(
+        string $serverUuid,
+        string $file,
+        string $root,
+        ?int $timeout = null,
+        ?bool $foreground = null,
+    ): WingsResponse {
         try {
             $data = [
                 'file' => $file,
                 'root' => $root,
             ];
+            if ($foreground !== null) {
+                $data['foreground'] = $foreground;
+            }
 
             // Use 15 minute timeout for archive operations (like pelican) if not specified
             $requestTimeout = $timeout ?? (60 * 15);
             $response = $this->connection->post("/api/servers/{$serverUuid}/files/decompress", $data, [], 3, $requestTimeout);
 
-            return new WingsResponse($response, 204);
+            return new WingsResponse($response, $foreground === false ? 202 : 204);
         } catch (\Exception $e) {
             return new WingsResponse(['error' => $e->getMessage()], 500);
         }
@@ -656,6 +776,132 @@ class ServerService
                 'files' => $files,
             ];
             $response = $this->connection->post("/api/servers/{$serverUuid}/files/chmod", $data);
+
+            return new WingsResponse($response, $this->connection->isWingsRs() ? 200 : 204);
+        } catch (\Exception $e) {
+            return new WingsResponse(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Copy multiple files, using Calagopus' operation endpoint where available.
+     *
+     * FeatherWings only exposes single-source copies, so those are attempted
+     * sequentially and failed destinations are returned as skipped entries.
+     */
+    public function copyManyFiles(
+        string $serverUuid,
+        string $root,
+        array $files,
+        bool $overwrite = false,
+        bool $foreground = false,
+    ): WingsResponse {
+        try {
+            if ($this->connection->isWingsRs()) {
+                $response = $this->connection->post("/api/servers/{$serverUuid}/files/copy-many", [
+                    'root' => $root,
+                    'files' => $files,
+                    'overwrite' => $overwrite,
+                    'foreground' => $foreground,
+                ]);
+
+                return new WingsResponse($response, 200);
+            }
+
+            $skipped = [];
+            foreach ($files as $file) {
+                if (!is_array($file) || !is_string($file['from'] ?? null) || !is_string($file['to'] ?? null)) {
+                    if (is_array($file) && is_string($file['to'] ?? null) && $file['to'] !== '') {
+                        $skipped[] = $this->skippedFileEntry($this->resolveFileOperationPath($root, $file['to']));
+                    }
+                    continue;
+                }
+
+                $source = $this->resolveFileOperationPath($root, $file['from']);
+                $destination = $this->resolveFileOperationPath($root, $file['to']);
+                $temporaryDestination = rtrim(dirname($source), '/') . '/' . basename($destination);
+                $copy = $this->copyFiles(
+                    $serverUuid,
+                    $source,
+                    rtrim(dirname($temporaryDestination), '/') === '' ? '/' : rtrim(dirname($temporaryDestination), '/'),
+                    basename($destination),
+                    $overwrite
+                );
+
+                if (!$copy->isSuccessful()) {
+                    $skipped[] = $this->skippedFileEntry($destination);
+                    continue;
+                }
+
+                if ($temporaryDestination !== $destination) {
+                    $rename = $this->renameFiles($serverUuid, '/', [[
+                        'from' => $temporaryDestination,
+                        'to' => $destination,
+                    ]]);
+                    if (!$rename->isSuccessful()) {
+                        // The copy succeeded but the rename to the final destination didn't —
+                        // remove the orphaned temporary copy so it isn't left behind.
+                        $this->deleteFiles($serverUuid, '/', [$temporaryDestination]);
+                        $skipped[] = $this->skippedFileEntry($destination);
+                    }
+                }
+            }
+
+            return new WingsResponse(['skipped' => $skipped], 200);
+        } catch (\Exception $e) {
+            return new WingsResponse(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Ask Calagopus Wings to copy files to another server/node.
+     *
+     * @param array<int, array{from:string,to:string}> $files
+     */
+    public function copyRemoteFiles(
+        string $serverUuid,
+        string $url,
+        string $token,
+        string $root,
+        array $files,
+        string $destinationServer,
+        string $destinationPath,
+        bool $foreground = true,
+        string $archiveFormat = 'tar_gz',
+    ): WingsResponse {
+        try {
+            $response = $this->connection->post(
+                "/api/servers/{$serverUuid}/files/copy-remote",
+                [
+                    'url' => $url,
+                    'token' => $token,
+                    'root' => $root,
+                    'files' => array_values($files),
+                    'destination_server' => $destinationServer,
+                    'destination_path' => $destinationPath,
+                    'foreground' => $foreground,
+                    'archive_format' => $archiveFormat,
+                ],
+                [],
+                1,
+                900
+            );
+
+            return new WingsResponse($response, $foreground ? 200 : 202);
+        } catch (\Exception $e) {
+            return new WingsResponse(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Abort an asynchronous Calagopus file operation.
+     */
+    public function cancelFileOperation(string $serverUuid, string $operation): WingsResponse
+    {
+        try {
+            $response = $this->connection->delete(
+                "/api/servers/{$serverUuid}/files/operations/" . rawurlencode($operation)
+            );
 
             return new WingsResponse($response, 204);
         } catch (\Exception $e) {
@@ -787,15 +1033,12 @@ class ServerService
     public function createBackup(string $serverUuid, string $adapter, string $uuid, mixed $ignore = null): WingsResponse
     {
         try {
+            // Calagopus requires `ignore` (even empty); FeatherWings accepts empty string too.
             $data = [
                 'adapter' => $adapter,
                 'uuid' => $uuid,
+                'ignore' => BackupIgnoreHelper::formatForWings($ignore),
             ];
-
-            $ignorePatterns = BackupIgnoreHelper::formatForWings($ignore);
-            if ($ignorePatterns !== '') {
-                $data['ignore'] = $ignorePatterns;
-            }
 
             $response = $this->connection->post("/api/servers/{$serverUuid}/backup", $data);
 
@@ -883,6 +1126,15 @@ class ServerService
             $response = $this->connection->post('/api/deauthorize-user', $data);
 
             return new WingsResponse($response, 204);
+        } catch (WingsRequestException $e) {
+            $status = (int) $e->getCode();
+            // Soft-succeed only when the daemon does not implement deauthorize (404/405/501).
+            // Other errors (401/403/other 4xx, 5xx) are real failures and must be preserved.
+            if ($status === 404 || $status === 405 || $status === 501) {
+                return new WingsResponse(['skipped' => true, 'reason' => $e->getMessage()], 204);
+            }
+
+            return new WingsResponse(['error' => $e->getMessage()], $status > 0 ? $status : 500);
         } catch (\Exception $e) {
             return new WingsResponse(['error' => $e->getMessage()], 500);
         }
@@ -928,9 +1180,235 @@ class ServerService
     public function getServerInstallLogs(string $serverUuid): WingsResponse
     {
         try {
+            if ($this->connection->isWingsRs()) {
+                try {
+                    $response = $this->connection->get("/api/servers/{$serverUuid}/logs/install");
+
+                    return new WingsResponse($this->normalizeInstallLogsResponse($response), 200);
+                } catch (WingsRequestException $e) {
+                    // Fall through to FeatherWings path for mixed/compat daemons
+                    if (!in_array((int) $e->getCode(), [404, 405], true)) {
+                        throw $e;
+                    }
+                }
+            }
+
             $response = $this->connection->get("/api/servers/{$serverUuid}/install-logs");
 
             return new WingsResponse($response, 200);
+        } catch (\Exception $e) {
+            return new WingsResponse(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Run a custom async script on the server (Calagopus).
+     *
+     * @param array<string, mixed> $payload
+     */
+    public function runServerScript(string $serverUuid, array $payload): WingsResponse
+    {
+        try {
+            $response = $this->connection->post("/api/servers/{$serverUuid}/script", $payload);
+
+            return new WingsResponse($response, 202);
+        } catch (WingsRequestException $e) {
+            return new WingsResponse(['error' => $e->getMessage()], $e->getCode() > 0 ? $e->getCode() : 500);
+        } catch (\Exception $e) {
+            return new WingsResponse(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Live-update websocket permissions for users (Calagopus).
+     *
+     * @param list<array{user: string, permissions: list<string>, ignored_files?: list<string>}> $userPermissions
+     */
+    public function updateWsPermissions(string $serverUuid, array $userPermissions): WingsResponse
+    {
+        try {
+            $response = $this->connection->post("/api/servers/{$serverUuid}/ws/permissions", [
+                'user_permissions' => array_values($userPermissions),
+            ]);
+
+            return new WingsResponse($response, 200);
+        } catch (WingsRequestException $e) {
+            return new WingsResponse(['error' => $e->getMessage()], $e->getCode() > 0 ? $e->getCode() : 500);
+        } catch (\Exception $e) {
+            return new WingsResponse(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Broadcast a websocket message to connected clients (Calagopus).
+     *
+     * @param array<string, mixed> $payload
+     */
+    public function broadcastWsMessage(string $serverUuid, array $payload): WingsResponse
+    {
+        try {
+            $response = $this->connection->post("/api/servers/{$serverUuid}/ws/broadcast", $payload);
+
+            return new WingsResponse($response, 200);
+        } catch (WingsRequestException $e) {
+            return new WingsResponse(['error' => $e->getMessage()], $e->getCode() > 0 ? $e->getCode() : 500);
+        } catch (\Exception $e) {
+            return new WingsResponse(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Get daemon-side server version hash (Calagopus).
+     */
+    public function getServerVersion(string $serverUuid): WingsResponse
+    {
+        try {
+            $response = $this->connection->get("/api/servers/{$serverUuid}/version");
+
+            return new WingsResponse($response, 200);
+        } catch (WingsRequestException $e) {
+            return new WingsResponse(['error' => $e->getMessage()], $e->getCode() > 0 ? $e->getCode() : 500);
+        } catch (\Exception $e) {
+            return new WingsResponse(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Batch file fingerprints (Calagopus).
+     *
+     * @param list<string> $files
+     */
+    public function getFileFingerprints(string $serverUuid, array $files, string $algorithm = 'sha256', string $root = '/'): WingsResponse
+    {
+        try {
+            // Wings expects repeated `files=a&files=b` query params, not PHP's
+            // indexed `files[0]=a&files[1]=b` array encoding.
+            $queryParts = [
+                'algorithm=' . rawurlencode(strtolower($algorithm)),
+                'root=' . rawurlencode($root),
+            ];
+            foreach (array_values($files) as $file) {
+                $queryParts[] = 'files=' . rawurlencode((string) $file);
+            }
+            $query = implode('&', $queryParts);
+            $response = $this->connection->get("/api/servers/{$serverUuid}/files/fingerprints?" . $query);
+
+            return new WingsResponse($response, 200);
+        } catch (WingsRequestException $e) {
+            return new WingsResponse(['error' => $e->getMessage()], $e->getCode() > 0 ? $e->getCode() : 500);
+        } catch (\Exception $e) {
+            return new WingsResponse(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * List file revisions (FeatherWings + Calagopus wings-rs).
+     */
+    public function getFileRevisions(string $serverUuid, string $file): WingsResponse
+    {
+        try {
+            $query = http_build_query(['file' => $this->normalizeDaemonFilePath($file)]);
+            $response = $this->connection->get("/api/servers/{$serverUuid}/files/revisions?{$query}");
+
+            return new WingsResponse(is_array($response) ? $response : ['revisions' => []], 200);
+        } catch (WingsRequestException $e) {
+            // Older FeatherWings builds without /files/revisions.
+            if (in_array($e->getCode(), [404, 405], true)) {
+                return new WingsResponse(['revisions' => []], 200);
+            }
+
+            return new WingsResponse(['error' => $e->getMessage()], $e->getCode() > 0 ? $e->getCode() : 500);
+        } catch (\Exception $e) {
+            return new WingsResponse(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Read a single file revision's contents (FeatherWings + Calagopus wings-rs).
+     */
+    public function getFileRevisionContents(string $serverUuid, int $revisionId, string $file = ''): WingsResponse
+    {
+        try {
+            $endpoint = "/api/servers/{$serverUuid}/files/revisions/{$revisionId}";
+            if ($file !== '') {
+                $endpoint .= '?' . http_build_query(['file' => $this->normalizeDaemonFilePath($file)]);
+            }
+            $raw = $this->connection->getRaw($endpoint);
+
+            return new WingsResponse($raw, 200);
+        } catch (WingsRequestException $e) {
+            return new WingsResponse(['error' => $e->getMessage()], $e->getCode() > 0 ? $e->getCode() : 500);
+        } catch (\Exception $e) {
+            return new WingsResponse(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Search files using a Calagopus-shaped JSON body (POST /files/search).
+     *
+     * @param array<string, mixed> $payload
+     */
+    public function searchFilesCalagopus(string $serverUuid, array $payload): WingsResponse
+    {
+        try {
+            if ($this->connection->isWingsRs()) {
+                if (!isset($payload['per_page'])) {
+                    $payload['per_page'] = 250;
+                }
+                $response = $this->connection->post("/api/servers/{$serverUuid}/files/search", $payload);
+
+                return new WingsResponse(is_array($response) ? $response : ['results' => []], 200);
+            }
+
+            $filters = [
+                'directory' => (string) ($payload['root'] ?? '/'),
+                'pattern' => '',
+                'include' => '',
+                'exclude' => '',
+                'case_insensitive' => 'true',
+                'content' => '',
+                'content_case_insensitive' => 'true',
+                'min_size' => '0',
+                'max_size' => '0',
+                'max_content_size' => strval(5 * 1024 * 1024),
+                'include_oversized' => 'false',
+            ];
+
+            $pathFilter = $payload['path_filter'] ?? null;
+            if (is_array($pathFilter)) {
+                $include = $pathFilter['include'] ?? [];
+                $exclude = $pathFilter['exclude'] ?? [];
+                if (is_array($include) && $include !== []) {
+                    $filters['include'] = (string) $include[0];
+                    if (count($include) > 1) {
+                        $filters['pattern'] = (string) $include[1];
+                    }
+                }
+                if (is_array($exclude) && $exclude !== []) {
+                    $filters['exclude'] = (string) $exclude[0];
+                }
+                if (array_key_exists('case_insensitive', $pathFilter)) {
+                    $filters['case_insensitive'] = filter_var($pathFilter['case_insensitive'], FILTER_VALIDATE_BOOLEAN) ? 'true' : 'false';
+                }
+            }
+
+            $sizeFilter = $payload['size_filter'] ?? null;
+            if (is_array($sizeFilter)) {
+                $filters['min_size'] = strval((int) ($sizeFilter['min'] ?? 0));
+                $filters['max_size'] = strval((int) ($sizeFilter['max'] ?? 0));
+            }
+
+            $contentFilter = $payload['content_filter'] ?? null;
+            if (is_array($contentFilter)) {
+                $filters['content'] = (string) ($contentFilter['query'] ?? '');
+                $filters['max_content_size'] = strval((int) ($contentFilter['max_search_size'] ?? 5 * 1024 * 1024));
+                $filters['include_oversized'] = filter_var($contentFilter['include_unmatched'] ?? false, FILTER_VALIDATE_BOOLEAN) ? 'true' : 'false';
+                $filters['content_case_insensitive'] = filter_var($contentFilter['case_insensitive'] ?? true, FILTER_VALIDATE_BOOLEAN) ? 'true' : 'false';
+            }
+
+            return $this->searchFiles($serverUuid, $filters);
+        } catch (WingsRequestException $e) {
+            return new WingsResponse(['error' => $e->getMessage()], $e->getCode() > 0 ? $e->getCode() : 500);
         } catch (\Exception $e) {
             return new WingsResponse(['error' => $e->getMessage()], 500);
         }
@@ -1189,6 +1667,253 @@ class ServerService
         } catch (\Exception $e) {
             return new WingsResponse(['error' => $e->getMessage()], 500);
         }
+    }
+
+    /**
+     * Calagopus preferred listing: GET /files/list (paginated), fallback to list-directory.
+     *
+     * @param array{page?: int, per_page?: int, sort?: string} $options
+     */
+    private function listDirectoryCalagopus(string $serverUuid, string $directory, array $options = []): WingsResponse
+    {
+        $params = [
+            'directory' => $directory === '' ? '/' : $directory,
+        ];
+        if (isset($options['page'])) {
+            $params['page'] = (int) $options['page'];
+        }
+        if (isset($options['per_page'])) {
+            $params['per_page'] = (int) $options['per_page'];
+        }
+        if (!empty($options['sort']) && is_string($options['sort'])) {
+            $params['sort'] = $options['sort'];
+        }
+
+        try {
+            $query = http_build_query($params);
+            $response = $this->connection->get("/api/servers/{$serverUuid}/files/list?{$query}");
+
+            return new WingsResponse($this->normalizeDirectoryListResponse($response), 200);
+        } catch (WingsRequestException $e) {
+            $status = (int) $e->getCode();
+            if (!in_array($status, [404, 405, 501], true)) {
+                throw $e;
+            }
+
+            $encodedDirectory = urlencode($directory);
+            $response = $this->connection->get(
+                "/api/servers/{$serverUuid}/files/list-directory?directory={$encodedDirectory}"
+            );
+
+            return new WingsResponse($response, 200);
+        }
+    }
+
+    /**
+     * Normalize Calagopus {entries,total,...} into a flat list the panel UI expects,
+     * while preserving pagination metadata when present.
+     */
+    private function normalizeDirectoryListResponse($response)
+    {
+        if (!is_array($response)) {
+            return $response;
+        }
+
+        if (isset($response['entries']) && is_array($response['entries'])) {
+            // Keep metadata for clients that want it; primary payload stays entries-compatible
+            // by also exposing a list-shaped top-level when controllers pass getData() through.
+            return [
+                'entries' => $response['entries'],
+                'total' => $response['total'] ?? count($response['entries']),
+                'filesystem_primary' => $response['filesystem_primary'] ?? true,
+                'filesystem_writable' => $response['filesystem_writable'] ?? true,
+                'filesystem_fast' => $response['filesystem_fast'] ?? false,
+                // Flat alias used by existing getFiles consumers that iterate the list
+                'files' => $response['entries'],
+            ];
+        }
+
+        return $response;
+    }
+
+    /**
+     * @param array<string, mixed> $filters
+     *
+     * @return array<string, mixed>
+     */
+    private function mapSearchFiltersToCalagopusPayload(array $filters): array
+    {
+        $root = (string) ($filters['directory'] ?? '/');
+        $include = trim((string) ($filters['include'] ?? ''));
+        $exclude = trim((string) ($filters['exclude'] ?? ''));
+        $pattern = trim((string) ($filters['pattern'] ?? ''));
+        $caseInsensitive = filter_var($filters['case_insensitive'] ?? true, FILTER_VALIDATE_BOOLEAN);
+        $content = trim((string) ($filters['content'] ?? ''));
+        $contentCaseInsensitive = filter_var($filters['content_case_insensitive'] ?? true, FILTER_VALIDATE_BOOLEAN);
+        $minSize = (int) ($filters['min_size'] ?? 0);
+        $maxSize = (int) ($filters['max_size'] ?? 0);
+        $maxContentSize = (int) ($filters['max_content_size'] ?? 5 * 1024 * 1024);
+        $includeOversized = filter_var($filters['include_oversized'] ?? false, FILTER_VALIDATE_BOOLEAN);
+
+        $pathIncludes = [];
+        if ($include !== '') {
+            $pathIncludes[] = $include;
+        }
+        if ($pattern !== '') {
+            $pathIncludes[] = $pattern;
+        }
+        if ($pathIncludes === [] && $content === '') {
+            $pathIncludes[] = '*';
+        }
+
+        $pathFilter = [
+            'include' => $pathIncludes,
+            'exclude' => $exclude !== '' ? [$exclude] : [],
+            'case_insensitive' => $caseInsensitive,
+        ];
+
+        $payload = [
+            'root' => $root === '' ? '/' : $root,
+            'path_filter' => $pathFilter,
+            'per_page' => 250,
+        ];
+
+        if ($maxSize > 0 || $minSize > 0) {
+            $payload['size_filter'] = [
+                'min' => max(0, $minSize),
+                'max' => $maxSize > 0 ? $maxSize : PHP_INT_MAX,
+            ];
+        }
+
+        if ($content !== '') {
+            $payload['content_filter'] = [
+                'query' => $content,
+                'max_search_size' => max(0, $maxContentSize),
+                'include_unmatched' => $includeOversized,
+                'case_insensitive' => $contentCaseInsensitive,
+            ];
+        }
+
+        return $payload;
+    }
+
+    /**
+     * @return array<int, mixed>
+     */
+    private function normalizeSearchResults($response): array
+    {
+        if (!is_array($response)) {
+            return [];
+        }
+        if (isset($response['results']) && is_array($response['results'])) {
+            return array_values($response['results']);
+        }
+        if (array_is_list($response)) {
+            return $response;
+        }
+
+        return [];
+    }
+
+    /**
+     * Normalize a daemon file path to an absolute server path (leading slash).
+     * FeatherWings does this itself; Calagopus expects the panel to send /path style paths.
+     */
+    private function normalizeDaemonFilePath(string $file): string
+    {
+        $file = str_replace('\\', '/', trim($file));
+        if ($file === '' || $file === '/') {
+            return '/';
+        }
+
+        $file = '/' . ltrim($file, '/');
+        $collapsed = preg_replace('#/+#', '/', $file);
+
+        return is_string($collapsed) && $collapsed !== '' ? $collapsed : '/';
+    }
+
+    /**
+     * Map panel/UI archive extension aliases to Calagopus ArchiveFormat snake_case.
+     */
+    private function mapCompressExtensionToCalagopusFormat(string $extension): ?string
+    {
+        $ext = strtolower(ltrim(trim($extension), '.'));
+
+        return match ($ext) {
+            'zip' => 'zip',
+            '7z', 'seven_zip', 'seven-zip' => 'seven_zip',
+            'tar' => 'tar',
+            'tar.gz', 'tgz', 'tar_gz' => 'tar_gz',
+            'tar.xz', 'txz', 'tar_xz' => 'tar_xz',
+            'tar.bz2', 'tbz2', 'tar_bz2' => 'tar_bz2',
+            'tar.lz4', 'tar_lz4' => 'tar_lz4',
+            'tar.zst', 'tar.zstd', 'tar_zstd' => 'tar_zstd',
+            'tar.lz', 'tar_lzip' => 'tar_lzip',
+            default => null,
+        };
+    }
+
+    /**
+     * Map Calagopus archive format names back to FeatherWings extensions.
+     */
+    private function mapCalagopusFormatToCompressExtension(string $format): string
+    {
+        $normalized = strtolower(ltrim(trim($format), '.'));
+
+        return match ($normalized) {
+            'seven_zip', 'seven-zip' => '7z',
+            'tar_gz' => 'tar.gz',
+            'tar_xz' => 'tar.xz',
+            'tar_bz2' => 'tar.bz2',
+            'tar_lz4' => 'tar.lz4',
+            'tar_zstd' => 'tar.zst',
+            'tar_lzip' => 'tar.lz',
+            default => $format,
+        };
+    }
+
+    private function resolveFileOperationPath(string $root, string $path): string
+    {
+        if (str_starts_with($path, '/')) {
+            return '/' . ltrim($path, '/');
+        }
+
+        $root = '/' . trim($root, '/');
+
+        return rtrim($root, '/') . '/' . ltrim($path, '/');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function skippedFileEntry(string $path): array
+    {
+        return [
+            'name' => basename($path),
+            'file' => true,
+            'directory' => false,
+            'path' => $path,
+        ];
+    }
+
+    private function normalizeInstallLogsResponse($response)
+    {
+        if (is_string($response)) {
+            return ['logs' => $response];
+        }
+        if (is_array($response)) {
+            if (isset($response['logs'])) {
+                return $response;
+            }
+            if (isset($response['data']) && is_string($response['data'])) {
+                return ['logs' => $response['data']];
+            }
+            if (isset($response['content']) && is_string($response['content'])) {
+                return ['logs' => $response['content']];
+            }
+        }
+
+        return $response;
     }
 
     /**

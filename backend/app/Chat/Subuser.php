@@ -589,7 +589,7 @@ class Subuser
     }
 
     /**
-     * Validate permissions format.
+     * Validate permissions format and that each entry is a known subuser permission.
      */
     public static function validatePermissions($permissions): bool
     {
@@ -605,9 +605,13 @@ class Subuser
             return false;
         }
 
-        // Check if all permissions are valid strings
+        $validPermissions = SubuserPermissions::PERMISSIONS;
+
         foreach ($permissions as $permission) {
             if (!is_string($permission) || trim($permission) === '') {
+                return false;
+            }
+            if (!in_array($permission, $validPermissions, true)) {
                 return false;
             }
         }

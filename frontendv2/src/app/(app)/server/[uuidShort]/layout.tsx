@@ -17,6 +17,7 @@ import DashboardShell from '@/components/layout/DashboardShell';
 import { Metadata } from 'next';
 import ChatbotWidget from '@/components/ai/ChatbotWidget';
 import { ServerAnnouncementBanner } from '@/components/server/ServerAnnouncementBanner';
+import { ServerSpellBackdrop } from '@/components/server/ServerSpellBackdrop';
 
 type Props = {
     params: Promise<{ uuidShort: string }>;
@@ -95,8 +96,10 @@ export default async function ServerLayout({
         <ServerProvider uuidShort={uuidShort} initialServer={server}>
             <DashboardShell>
                 <ServerSuspendedWrapper>
-                    <ServerAnnouncementBanner />
-                    {children}
+                    <ServerSpellBackdrop>
+                        <ServerAnnouncementBanner />
+                        {children}
+                    </ServerSpellBackdrop>
                 </ServerSuspendedWrapper>
             </DashboardShell>
             <ChatbotWidget />

@@ -134,9 +134,9 @@ class NodeStatusHelper
 
             $reason = $outcome['reason'] ?? null;
 
-            // FeatherWings-specific endpoint may be missing on stock Wings — fall back once.
+            // FeatherWings /utilization may be missing — try Calagopus /stats first.
             if ($reason instanceof WingsRequestException && (int) $reason->getCode() === 404 && isset($clients[$nodeId])) {
-                $fallbackPromises[$nodeId] = $clients[$nodeId]->getConnection()->getAsync('/api/system?v=2');
+                $fallbackPromises[$nodeId] = $clients[$nodeId]->getConnection()->getAsync('/api/system/stats');
                 continue;
             }
 
@@ -147,19 +147,49 @@ class NodeStatusHelper
 
         if ($fallbackPromises !== []) {
             $fallbackSettled = Utils::settle($fallbackPromises)->wait();
+            $systemFallbackPromises = [];
 
             foreach ($fallbackSettled as $nodeId => $outcome) {
                 $nodeId = (int) $nodeId;
 
                 if (($outcome['state'] ?? '') === 'fulfilled' && is_array($outcome['value'] ?? null)) {
                     $results[$nodeId]['status'] = 'healthy';
-                    $results[$nodeId]['utilization'] = SystemService::utilizationFromSystemInfo($outcome['value']);
+                    $results[$nodeId]['utilization'] = SystemService::utilizationFromCalagopusStats($outcome['value']);
                     $results[$nodeId]['error'] = null;
-                } else {
-                    $reason = $outcome['reason'] ?? null;
-                    $results[$nodeId]['error'] = $reason instanceof \Throwable
-                        ? $reason->getMessage()
-                        : 'Failed to fetch utilization data';
+                    continue;
+                }
+
+                $reason = $outcome['reason'] ?? null;
+
+                // Stats missing too (stock Pterodactyl Wings) — last resort /api/system?v=2.
+                // Only escalate on a 404 (endpoint missing); other errors should stop here
+                // to avoid burning an extra timeout window on a probe that won't help.
+                if ($reason instanceof WingsRequestException && (int) $reason->getCode() === 404 && isset($clients[$nodeId])) {
+                    $systemFallbackPromises[$nodeId] = $clients[$nodeId]->getConnection()->getAsync('/api/system?v=2');
+                    continue;
+                }
+
+                $results[$nodeId]['error'] = $reason instanceof \Throwable
+                    ? $reason->getMessage()
+                    : 'Failed to fetch utilization data';
+            }
+
+            if ($systemFallbackPromises !== []) {
+                $systemSettled = Utils::settle($systemFallbackPromises)->wait();
+
+                foreach ($systemSettled as $nodeId => $outcome) {
+                    $nodeId = (int) $nodeId;
+
+                    if (($outcome['state'] ?? '') === 'fulfilled' && is_array($outcome['value'] ?? null)) {
+                        $results[$nodeId]['status'] = 'healthy';
+                        $results[$nodeId]['utilization'] = SystemService::utilizationFromSystemInfo($outcome['value']);
+                        $results[$nodeId]['error'] = null;
+                    } else {
+                        $reason = $outcome['reason'] ?? null;
+                        $results[$nodeId]['error'] = $reason instanceof \Throwable
+                            ? $reason->getMessage()
+                            : 'Failed to fetch utilization data';
+                    }
                 }
             }
         }

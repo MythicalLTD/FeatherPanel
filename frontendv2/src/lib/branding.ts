@@ -17,6 +17,12 @@ import type { AppSettings } from '@/types/settings';
 
 export const FEATHERPANEL_MARKETING_URL = 'https://featherpanel.com';
 
-export function shouldShowPoweredBy(settings: AppSettings | null | undefined): boolean {
+export function shouldShowPoweredBy(
+    settings: Pick<AppSettings, 'branding_show_powered_by'> | null | undefined,
+): boolean {
     return (settings?.branding_show_powered_by ?? 'true') === 'true';
+}
+
+export function shouldShowVersion(settings: Pick<AppSettings, 'branding_show_version'> | null | undefined): boolean {
+    return (settings?.branding_show_version ?? 'true') === 'true';
 }

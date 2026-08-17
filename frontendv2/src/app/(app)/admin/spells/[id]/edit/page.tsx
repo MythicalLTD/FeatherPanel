@@ -43,6 +43,7 @@ import {
     Terminal,
     Star,
 } from 'lucide-react';
+import { ImageAttachmentField } from '@/components/featherui/ImageAttachmentField';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
@@ -426,25 +427,13 @@ export default function EditSpellPage() {
                                     placeholder='https://example.com/update'
                                 />
                             </div>
-                            <div className='space-y-2'>
-                                <Label>{t('admin.spells.form.banner_url')}</Label>
-                                <Input
-                                    value={form.banner}
-                                    onChange={(e) => setForm({ ...form, banner: e.target.value })}
-                                    placeholder='https://example.com/banner.jpg'
-                                />
-                                {form.banner && (
-                                    <div className='mt-2'>
-                                        <div className='text-muted-foreground mb-1 text-sm'>
-                                            {t('admin.spells.form.banner_preview')}
-                                        </div>
-                                        <div
-                                            className='border-border h-24 w-full rounded-lg border bg-cover bg-center bg-no-repeat'
-                                            style={{ backgroundImage: `url(${form.banner})` }}
-                                        />
-                                    </div>
-                                )}
-                            </div>
+                            <ImageAttachmentField
+                                id='spell-banner'
+                                label={t('admin.spells.form.banner_url')}
+                                value={form.banner}
+                                onChange={(url) => setForm({ ...form, banner: url })}
+                                placeholder='https://example.com/banner.jpg'
+                            />
                         </div>
                     </PageCard>
                 </TabsContent>

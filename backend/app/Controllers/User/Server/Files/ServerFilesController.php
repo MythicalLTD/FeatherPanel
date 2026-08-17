@@ -18,6 +18,7 @@
 namespace App\Controllers\User\Server\Files;
 
 use App\App;
+use App\Chat\Spell;
 use App\Chat\Server;
 use App\SubuserPermissions;
 use App\Chat\ServerActivity;
@@ -27,6 +28,7 @@ use App\Services\Wings\Wings;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
 use App\Helpers\WingsUrlHelper;
+use App\Helpers\DaemonCapabilities;
 use App\Plugins\Events\Events\ServerEvent;
 use App\Services\Wings\Services\JwtService;
 use Symfony\Component\HttpFoundation\Request;
@@ -86,6 +88,8 @@ use App\Controllers\User\Server\CheckSubuserPermissionsTrait;
     properties: [
         new OA\Property(property: 'files', type: 'array', items: new OA\Items(type: 'string'), description: 'Array of file paths to copy'),
         new OA\Property(property: 'location', type: 'string', description: 'Destination location'),
+        new OA\Property(property: 'name', type: 'string', nullable: true, description: 'Optional destination name (Calagopus)'),
+        new OA\Property(property: 'overwrite', type: 'boolean', nullable: true, description: 'Overwrite existing destination (Calagopus)', default: false),
     ]
 )]
 #[OA\Schema(
@@ -226,6 +230,19 @@ class ServerFilesController
                 $contents = [];
             }
 
+            // Legacy {contents: [files...]}, Calagopus {entries,...}, FeatherWings flat list, or {files: [...]}.
+            if (isset($contents['contents']) && is_array($contents['contents']) && array_is_list($contents['contents'])) {
+                $contents = array_values($contents['contents']);
+            } elseif (isset($contents['entries']) && is_array($contents['entries'])) {
+                $contents = array_values($contents['entries']);
+            } elseif (array_is_list($contents)) {
+                // FeatherWings flat list — keep as-is
+            } elseif (isset($contents['files']) && is_array($contents['files']) && array_is_list($contents['files'])) {
+                $contents = $contents['files'];
+            } else {
+                $contents = [];
+            }
+
             // Filter the full Wings listing by name before applying the display cap.
             // Client-side filtering only saw the first MAX_LIST_ITEMS and missed the rest.
             if ($search !== '') {
@@ -286,6 +303,10 @@ class ServerFilesController
             $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::FILE_READ);
             if ($permissionCheck !== null) {
                 return $permissionCheck;
+            }
+
+            if (!DaemonCapabilities::fromNode($node)->supports(DaemonCapabilities::FEATURE_ARCHIVE_BROWSE)) {
+                return DaemonCapabilities::unsupportedResponse($node, DaemonCapabilities::FEATURE_ARCHIVE_BROWSE);
             }
 
             $directory = $this->getPathFromQuery('/');
@@ -358,6 +379,10 @@ class ServerFilesController
             $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::FILE_READ);
             if ($permissionCheck !== null) {
                 return $permissionCheck;
+            }
+
+            if (!DaemonCapabilities::fromNode($node)->supports(DaemonCapabilities::FEATURE_FILE_SEARCH)) {
+                return DaemonCapabilities::unsupportedResponse($node, DaemonCapabilities::FEATURE_FILE_SEARCH);
             }
 
             $filters = [
@@ -671,6 +696,14 @@ class ServerFilesController
 
             if (!$response->isSuccessful()) {
                 $error = $response->getError();
+                $errorLower = strtolower((string) $error);
+                if (str_contains($errorLower, 'file is not a file') || str_contains($errorLower, 'is a directory')) {
+                    return ApiResponse::error(
+                        'A folder already exists at this path. Choose a different file name.',
+                        'PATH_IS_DIRECTORY',
+                        $response->getStatusCode() >= 400 ? $response->getStatusCode() : 409
+                    );
+                }
 
                 return ApiResponse::error('Failed to write file: ' . $error, 'WINGS_ERROR', $response->getStatusCode());
             }
@@ -839,6 +872,9 @@ class ServerFilesController
             $data = $this->validateJsonBody($request, ['files', 'root']);
             $permanent = !empty($data['permanent']);
             $deleteOptions = $this->buildTrashDeleteOptions($permanent);
+            if (!DaemonCapabilities::fromNode($node)->supports(DaemonCapabilities::FEATURE_TRASH)) {
+                $deleteOptions = ['permanent' => true];
+            }
 
             $wings = $this->createWingsConnection($node);
             $response = $wings->getServer()->deleteFiles($server['uuid'], $data['root'], $data['files'], $deleteOptions);
@@ -896,6 +932,10 @@ class ServerFilesController
                 return ApiResponse::error('File trash is disabled on this panel', 'TRASH_DISABLED', 403);
             }
 
+            if (!DaemonCapabilities::fromNode($node)->supports(DaemonCapabilities::FEATURE_TRASH)) {
+                return DaemonCapabilities::unsupportedResponse($node, DaemonCapabilities::FEATURE_TRASH);
+            }
+
             $limits = $this->getTrashLimits();
             $wings = $this->createWingsConnection($node);
             $response = $wings->getServer()->listTrash(
@@ -930,6 +970,10 @@ class ServerFilesController
 
             if (!$this->isFileTrashEnabled()) {
                 return ApiResponse::error('File trash is disabled on this panel', 'TRASH_DISABLED', 403);
+            }
+
+            if (!DaemonCapabilities::fromNode($node)->supports(DaemonCapabilities::FEATURE_TRASH)) {
+                return DaemonCapabilities::unsupportedResponse($node, DaemonCapabilities::FEATURE_TRASH);
             }
 
             $data = $this->validateJsonBody($request, ['ids']);
@@ -968,6 +1012,10 @@ class ServerFilesController
                 return ApiResponse::error('File trash is disabled on this panel', 'TRASH_DISABLED', 403);
             }
 
+            if (!DaemonCapabilities::fromNode($node)->supports(DaemonCapabilities::FEATURE_TRASH)) {
+                return DaemonCapabilities::unsupportedResponse($node, DaemonCapabilities::FEATURE_TRASH);
+            }
+
             $data = $this->validateJsonBody($request, ['ids']);
             $wings = $this->createWingsConnection($node);
             $response = $wings->getServer()->deleteTrashEntries($server['uuid'], $data['ids']);
@@ -1001,6 +1049,10 @@ class ServerFilesController
 
             if (!$this->isFileTrashEnabled()) {
                 return ApiResponse::error('File trash is disabled on this panel', 'TRASH_DISABLED', 403);
+            }
+
+            if (!DaemonCapabilities::fromNode($node)->supports(DaemonCapabilities::FEATURE_TRASH)) {
+                return DaemonCapabilities::unsupportedResponse($node, DaemonCapabilities::FEATURE_TRASH);
             }
 
             $wings = $this->createWingsConnection($node);
@@ -1187,17 +1239,54 @@ class ServerFilesController
                 return ApiResponse::error('At least one file or directory must be provided', 'INVALID_COPY_REQUEST', 400);
             }
 
-            $wings = $this->createWingsConnection($node);
-            $destinationRoot = $this->normalizeDirectoryPath((string) $data['location']);
-            $copiedFiles = [];
+            $copyName = isset($data['name']) && is_string($data['name']) && trim($data['name']) !== ''
+                ? trim($data['name'])
+                : null;
+            $overwrite = isset($data['overwrite']) && (
+                $data['overwrite'] === true
+                || $data['overwrite'] === 'true'
+                || $data['overwrite'] === 1
+                || $data['overwrite'] === '1'
+            );
 
+            if ($overwrite) {
+                $overwritePermissionCheck = $this->checkPermission($request, $server, SubuserPermissions::FILE_UPDATE);
+                if ($overwritePermissionCheck !== null) {
+                    return $overwritePermissionCheck;
+                }
+            }
+
+            $sources = [];
             foreach ($data['files'] as $sourcePath) {
                 if (!is_string($sourcePath) || trim($sourcePath) === '') {
                     continue;
                 }
+                $sources[] = $this->normalizeAbsolutePath($sourcePath);
+            }
+            if ($sources === []) {
+                return ApiResponse::error('No valid files were provided to copy', 'INVALID_COPY_REQUEST', 400);
+            }
+            if ($copyName !== null && count($sources) > 1) {
+                return ApiResponse::error(
+                    'name cannot be used when copying multiple files; each source is copied into the destination directory under its own filename',
+                    'INVALID_COPY_NAME',
+                    400
+                );
+            }
 
-                $normalizedSourcePath = $this->normalizeAbsolutePath($sourcePath);
-                $copyResponse = $wings->getServer()->copyFiles($server['uuid'], $normalizedSourcePath, []);
+            $wings = $this->createWingsConnection($node);
+            $destinationRoot = $this->normalizeDirectoryPath((string) $data['location']);
+            $copiedFiles = [];
+
+            foreach ($sources as $normalizedSourcePath) {
+                $destinationName = $copyName ?? basename($normalizedSourcePath);
+                $copyResponse = $wings->getServer()->copyFiles(
+                    $server['uuid'],
+                    $normalizedSourcePath,
+                    $destinationRoot,
+                    $destinationName,
+                    $overwrite
+                );
                 if (!$copyResponse->isSuccessful()) {
                     return ApiResponse::error(
                         'Failed to copy files: ' . $copyResponse->getError(),
@@ -1629,6 +1718,10 @@ class ServerFilesController
             $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::FILE_ARCHIVE);
             if ($permissionCheck !== null) {
                 return $permissionCheck;
+            }
+
+            if (!DaemonCapabilities::fromNode($node)->supports(DaemonCapabilities::FEATURE_ARCHIVE_BROWSE)) {
+                return DaemonCapabilities::unsupportedResponse($node, DaemonCapabilities::FEATURE_ARCHIVE_BROWSE);
             }
 
             $data = $this->validateJsonBody($request, ['root', 'file', 'destination', 'entries']);
@@ -2064,6 +2157,10 @@ class ServerFilesController
                 return $permissionCheck;
             }
 
+            if (!DaemonCapabilities::fromNode($node)->supports(DaemonCapabilities::FEATURE_SHARE)) {
+                return DaemonCapabilities::unsupportedResponse($node, DaemonCapabilities::FEATURE_SHARE);
+            }
+
             $config = App::getInstance(true)->getConfig();
             if (($config->getSetting(ConfigInterface::TEMP_FILES_ENABLED, 'true') ?? 'true') !== 'true') {
                 return ApiResponse::error('Temp uploads sharing is disabled', 'TEMP_FILES_DISABLED', 403);
@@ -2199,6 +2296,10 @@ class ServerFilesController
                 return $permissionCheck;
             }
 
+            if (!DaemonCapabilities::fromNode($node)->supports(DaemonCapabilities::FEATURE_SHARE)) {
+                return DaemonCapabilities::unsupportedResponse($node, DaemonCapabilities::FEATURE_SHARE);
+            }
+
             $wings = $this->createWingsConnection($node);
             $response = $wings->getServer()->getShareJobs($server['uuid']);
 
@@ -2252,6 +2353,10 @@ class ServerFilesController
             $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::FILE_READ_CONTENT);
             if ($permissionCheck !== null) {
                 return $permissionCheck;
+            }
+
+            if (!DaemonCapabilities::fromNode($node)->supports(DaemonCapabilities::FEATURE_SHARE)) {
+                return DaemonCapabilities::unsupportedResponse($node, DaemonCapabilities::FEATURE_SHARE);
             }
 
             $wings = $this->createWingsConnection($node);
@@ -2455,7 +2560,8 @@ class ServerFilesController
                 $expiresIn
             );
 
-            $jwtToken = $jwtService->generateFileUploadToken($server['uuid'], $user['uuid']);
+            $ignoredFiles = Spell::resolveFileDenylist($server);
+            $jwtToken = $jwtService->generateFileUploadToken($server['uuid'], $user['uuid'], '', $ignoredFiles);
             $uploadUrl = rtrim($wingsBaseUrl, '/') . '/upload/file?token=' . $jwtToken;
 
             return ApiResponse::success([
@@ -2464,6 +2570,162 @@ class ServerFilesController
             ]);
         } catch (\Exception $e) {
             return $this->handleWingsError($e, 'get upload url');
+        }
+    }
+
+    #[OA\Get(
+        path: '/api/user/servers/{uuidShort}/download-directory',
+        summary: 'Get directory download URL',
+        description: 'Generate a secure Wings download URL that archives and streams a directory (Calagopus).',
+        tags: ['User - Server Files'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'path',
+                in: 'query',
+                description: 'Directory path to download',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Download URL generated successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'download_url', type: 'string', description: 'Signed Wings directory download URL'),
+                        new OA\Property(property: 'expires_in', type: 'integer', description: 'Token lifetime in seconds', example: 300),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing UUID or directory path'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server or node not found'),
+            new OA\Response(response: 501, description: 'Daemon feature unsupported'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to generate download URL'),
+        ]
+    )]
+    public function downloadDirectory(Request $request, string $serverUuid): Response
+    {
+        try {
+            $user = $this->validateUser($request);
+            $server = $this->validateServer($serverUuid);
+
+            $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::FILE_READ_CONTENT);
+            if ($permissionCheck !== null) {
+                return $permissionCheck;
+            }
+
+            $path = $this->getPathFromQuery('');
+            if (trim($path) === '') {
+                return ApiResponse::error('Directory path is required', 'MISSING_PATH', 400);
+            }
+
+            $node = $this->validateNode($server['node_id']);
+            if (!DaemonCapabilities::fromNode($node)->supports(DaemonCapabilities::FEATURE_DIRECTORY_DOWNLOAD)) {
+                return DaemonCapabilities::unsupportedResponse($node, DaemonCapabilities::FEATURE_DIRECTORY_DOWNLOAD);
+            }
+
+            $token = $node['daemon_token'];
+            $wingsBaseUrl = WingsUrlHelper::buildFromNode($node);
+            $scheme = parse_url($wingsBaseUrl, PHP_URL_SCHEME);
+            if (!is_string($scheme) || strtolower($scheme) !== 'https') {
+                return ApiResponse::error('Directory download requires an HTTPS node URL', 'INSECURE_NODE_URL', 400);
+            }
+
+            $expiresIn = 300;
+
+            $jwtService = new JwtService(
+                $token,
+                AppUrlHelper::wingsRemoteUrl(),
+                $wingsBaseUrl,
+                $expiresIn
+            );
+
+            $downloadUrl = $jwtService->generateDirectoryDownloadUrl($server['uuid'], $user['uuid'], $path);
+
+            $this->logActivity($server, $node, 'directory_downloaded', [
+                'path' => $path,
+            ], $user);
+
+            $response = ApiResponse::success([
+                'download_url' => $downloadUrl,
+                'expires_in' => $expiresIn,
+            ]);
+            $response->headers->set('Cache-Control', 'no-store');
+
+            return $response;
+        } catch (\Exception $e) {
+            return $this->handleWingsError($e, 'download directory');
+        }
+    }
+
+    /**
+     * Batch file fingerprints via Calagopus GET /files/fingerprints.
+     */
+    public function getFileFingerprints(Request $request, string $serverUuid): Response
+    {
+        try {
+            $user = $this->validateUser($request);
+            $server = $this->validateServer($serverUuid);
+            $node = $this->validateNode($server['node_id']);
+
+            if (!DaemonCapabilities::fromNode($node)->supports(DaemonCapabilities::FEATURE_FILE_FINGERPRINTS)) {
+                return DaemonCapabilities::unsupportedResponse($node, DaemonCapabilities::FEATURE_FILE_FINGERPRINTS);
+            }
+
+            $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::FILE_READ_CONTENT);
+            if ($permissionCheck !== null) {
+                return $permissionCheck;
+            }
+
+            $filesParam = $_GET['files'] ?? [];
+            if (is_string($filesParam)) {
+                $decoded = json_decode($filesParam, true);
+                $files = is_array($decoded) ? $decoded : array_filter(array_map('trim', explode(',', $filesParam)));
+            } elseif (is_array($filesParam)) {
+                $files = $filesParam;
+            } else {
+                $files = [];
+            }
+            $files = array_values(array_filter($files, static fn ($f) => is_string($f) && $f !== ''));
+            if ($files === []) {
+                return ApiResponse::error('At least one file is required', 'MISSING_FILES', 400);
+            }
+
+            $algorithm = isset($_GET['algorithm']) && is_string($_GET['algorithm']) ? strtolower($_GET['algorithm']) : 'sha256';
+            $allowedAlgorithms = ['md5', 'crc32', 'sha1', 'sha224', 'sha256', 'sha384', 'sha512', 'curseforge'];
+            if (!in_array($algorithm, $allowedAlgorithms, true)) {
+                return ApiResponse::error(
+                    'Invalid algorithm. Supported: ' . implode(', ', $allowedAlgorithms),
+                    'INVALID_ALGORITHM',
+                    400
+                );
+            }
+            $root = isset($_GET['root']) && is_string($_GET['root']) ? $_GET['root'] : '/';
+
+            $wings = $this->createWingsConnection($node);
+            $response = $wings->getServer()->getFileFingerprints($server['uuid'], $files, $algorithm, $root);
+            if (!$response->isSuccessful()) {
+                return ApiResponse::error('Failed to fingerprint files: ' . $response->getError(), 'WINGS_ERROR', $response->getStatusCode());
+            }
+
+            $this->logActivity($server, $node, 'files_fingerprinted', [
+                'files' => $files,
+                'algorithm' => $algorithm,
+            ], $user);
+
+            return ApiResponse::success($response->getData(), 'Fingerprints retrieved');
+        } catch (\Exception $e) {
+            return $this->handleWingsError($e, 'fingerprint files');
         }
     }
 

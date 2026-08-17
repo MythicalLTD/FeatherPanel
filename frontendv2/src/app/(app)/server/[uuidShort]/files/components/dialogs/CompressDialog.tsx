@@ -15,7 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
     Dialog,
     DialogContent,
@@ -31,6 +31,7 @@ import { HeadlessSelect } from '@/components/ui/headless-select';
 import { Archive } from 'lucide-react';
 import { toast } from 'sonner';
 import { filesApi } from '@/lib/files-api';
+import { supportsDaemonFeature, type DaemonCapabilitiesMap } from '@/lib/daemonCapabilities';
 import { useTranslation } from '@/contexts/TranslationContext';
 
 interface CompressDialogProps {
@@ -40,23 +41,46 @@ interface CompressDialogProps {
     directory: string;
     files: string[];
     onSuccess: () => void;
+    capabilities?: Partial<DaemonCapabilitiesMap> | null;
+    daemonType?: string | null;
 }
 
-export function CompressDialog({ open, onOpenChange, serverUuid, directory, files, onSuccess }: CompressDialogProps) {
+export function CompressDialog({
+    open,
+    onOpenChange,
+    serverUuid,
+    directory,
+    files,
+    onSuccess,
+    capabilities,
+    daemonType,
+}: CompressDialogProps) {
     const { t } = useTranslation();
     const [name, setName] = useState('');
     const [extension, setExtension] = useState('tar.gz');
     const [compressing, setCompressing] = useState(false);
 
-    const formats = [
-        { id: 'zip', name: 'ZIP (.zip)' },
-        { id: 'tar.gz', name: 'TAR GZIP (.tar.gz)' },
-        { id: 'tgz', name: 'TAR GZIP (.tgz)' },
-        { id: 'tar.bz2', name: 'TAR BZIP2 (.tar.bz2)' },
-        { id: 'tbz2', name: 'TAR BZIP2 (.tbz2)' },
-        { id: 'tar.xz', name: 'TAR XZ (.tar.xz)' },
-        { id: 'txz', name: 'TAR XZ (.txz)' },
-    ];
+    const canCompress7z = supportsDaemonFeature(capabilities, 'compress_7z', daemonType);
+
+    const formats = useMemo(
+        () => [
+            { id: 'zip', name: 'ZIP (.zip)' },
+            { id: 'tar.gz', name: 'TAR GZIP (.tar.gz)' },
+            { id: 'tgz', name: 'TAR GZIP (.tgz)' },
+            { id: 'tar.bz2', name: 'TAR BZIP2 (.tar.bz2)' },
+            { id: 'tbz2', name: 'TAR BZIP2 (.tbz2)' },
+            { id: 'tar.xz', name: 'TAR XZ (.tar.xz)' },
+            { id: 'txz', name: 'TAR XZ (.txz)' },
+            ...(canCompress7z ? [{ id: '7z', name: '7-Zip (.7z)' }] : []),
+        ],
+        [canCompress7z],
+    );
+
+    useEffect(() => {
+        if (!canCompress7z && extension === '7z') {
+            setExtension('tar.gz');
+        }
+    }, [canCompress7z, extension]);
 
     const handleCompress = async () => {
         setCompressing(true);

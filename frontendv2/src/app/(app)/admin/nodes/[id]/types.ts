@@ -61,35 +61,35 @@ export interface DiagnosticsResult {
 }
 
 export interface SystemInfoResponse {
-    wings: {
-        version: string;
-        docker: {
-            version: string;
-            cgroups: {
-                driver: string;
-                version: string;
+    wings?: {
+        version?: string;
+        docker?: {
+            version?: string;
+            cgroups?: {
+                driver?: string;
+                version?: string;
             };
-            containers: {
-                total: number;
-                running: number;
-                paused: number;
-                stopped: number;
+            containers?: {
+                total?: number;
+                running?: number;
+                paused?: number;
+                stopped?: number;
             };
-            storage: {
-                driver: string;
-                filesystem: string;
+            storage?: {
+                driver?: string;
+                filesystem?: string;
             };
-            runc: {
-                version: string;
+            runc?: {
+                version?: string;
             };
         };
-        system: {
-            architecture: string;
-            cpu_threads: number;
-            memory_bytes: number;
-            kernel_version: string;
-            os: string;
-            os_type: string;
+        system?: {
+            architecture?: string;
+            cpu_threads?: number;
+            memory_bytes?: number;
+            kernel_version?: string;
+            os?: string;
+            os_type?: string;
         };
     };
 }
@@ -116,6 +116,8 @@ export interface NodeData {
     daemonSFTP: number;
     fastdl_port?: number;
     daemonBase: string;
+    daemon_type?: 'featherwings' | 'wings_rs';
+    capabilities?: Record<string, boolean>;
     public_ip_v4?: string | null;
     public_ip_v6?: string | null;
     sftp_subdomain?: string | null;
@@ -171,4 +173,8 @@ export interface VersionStatus {
     is_up_to_date: boolean;
     update_available: boolean;
     github_error: string | null;
+    daemon_type?: string;
+    self_update_supported?: boolean;
+    github_owner?: string;
+    github_repo?: string;
 }

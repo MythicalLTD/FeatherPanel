@@ -15,11 +15,12 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Settings, Trash2, AlertTriangle, LayoutDashboard, Eye, EyeOff } from 'lucide-react';
+import { Settings, Trash2, AlertTriangle, LayoutDashboard, Download } from 'lucide-react';
 import { useAdminDashboard } from '@/hooks/useAdminDashboard';
+import { useSystemHealth } from '@/hooks/useSystemHealth';
 import { useSettings } from '@/contexts/SettingsContext';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
@@ -28,19 +29,34 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { cn } from '@/lib/utils';
 import axios from 'axios';
 
-import { WelcomeWidget } from '@/components/admin/WelcomeWidget';
+import { WelcomeWidget, type WelcomeChip } from '@/components/admin/WelcomeWidget';
 import { QuickStatsWidget } from '@/components/admin/QuickStatsWidget';
 import { CronStatusWidget } from '@/components/admin/CronStatusWidget';
 import { SystemHealthWidget } from '@/components/admin/SystemHealthWidget';
 import { VersionInfoWidget } from '@/components/admin/VersionInfoWidget';
 import { QuickLinksWidget } from '@/components/admin/QuickLinksWidget';
-import { EulaWidget } from '@/components/admin/EulaWidget';
+import { RecentActivityWidget } from '@/components/admin/RecentActivityWidget';
+import { AttentionWidget } from '@/components/admin/AttentionWidget';
+import { NodesOverviewWidget } from '@/components/admin/NodesOverviewWidget';
+import { RecentServersWidget } from '@/components/admin/RecentServersWidget';
+import { SupportTicketsWidget } from '@/components/admin/SupportTicketsWidget';
+import { CloudHubWidget } from '@/components/admin/CloudHubWidget';
+import { AdminWidgetFrame } from '@/components/admin/AdminWidgetFrame';
 import { PageHeader } from '@/components/featherui/PageHeader';
+import { Button } from '@/components/featherui/Button';
 
 export default function AdminDashboardPage() {
     const { t } = useTranslation();
     const router = useRouter();
     const { data, loading, refresh } = useAdminDashboard();
+    const {
+        stats: healthStats,
+        nodes: healthNodes,
+        selftest: healthSelftest,
+        latency: healthLatency,
+        systemsOk,
+        loading: healthLoading,
+    } = useSystemHealth();
     const { settings } = useSettings();
 
     const { fetchWidgets, getWidgets } = usePluginWidgets('admin-home');
@@ -48,7 +64,6 @@ export default function AdminDashboardPage() {
     const [showAppUrlWarning, setShowAppUrlWarning] = useState(false);
     const [isClearingCache, setIsClearingCache] = useState(false);
     const [isCustomizing, setIsCustomizing] = useState(false);
-
     const [hiddenWidgets, setHiddenWidgets] = useState<string[]>([]);
 
     useEffect(() => {
@@ -84,9 +99,7 @@ export default function AdminDashboardPage() {
         try {
             const response = await axios.post('/api/admin/dashboard/cache/clear');
             if (response.data.success) {
-                toast.success(t('admin.dashboard.cache_cleared'), {
-                    id: toastId,
-                });
+                toast.success(t('admin.dashboard.cache_cleared'), { id: toastId });
                 refresh();
             } else {
                 toast.error(t('admin.dashboard.cache_failed'), {
@@ -99,9 +112,7 @@ export default function AdminDashboardPage() {
             if (axios.isAxiosError(err)) {
                 message = err.response?.data?.message || err.message;
             }
-            toast.error(message, {
-                id: toastId,
-            });
+            toast.error(message, { id: toastId });
         } finally {
             setIsClearingCache(false);
         }
@@ -121,7 +132,50 @@ export default function AdminDashboardPage() {
         localStorage.setItem('admin-hidden-widgets', JSON.stringify(newHidden));
     };
 
-    const isVisible = (widgetId: string) => !hiddenWidgets.includes(widgetId) || isCustomizing;
+    const updateAvailable = Boolean(data?.version?.update_available);
+    const latestVersion = data?.version?.latest?.version;
+
+    const welcomeChips = useMemo(() => {
+        const chips: WelcomeChip[] = [];
+
+        if (!healthLoading && healthStats) {
+            chips.push({
+                id: 'nodes',
+                label: t('admin.welcome.chip_nodes', {
+                    healthy: String(healthStats.healthy_nodes),
+                    total: String(healthStats.total_nodes),
+                }),
+                tone: healthStats.unhealthy_nodes === 0 ? 'ok' : 'warn',
+                icon: 'nodes',
+            });
+        }
+
+        if (!healthLoading) {
+            chips.push({
+                id: 'systems',
+                label: systemsOk ? t('admin.welcome.chip_systems_ok') : t('admin.welcome.chip_systems_attention'),
+                tone: systemsOk ? 'ok' : 'warn',
+                icon: systemsOk ? 'ok' : 'warn',
+            });
+        }
+
+        if (updateAvailable && latestVersion) {
+            chips.push({
+                id: 'update',
+                label: t('admin.welcome.chip_update', { version: latestVersion }),
+                tone: 'info',
+                icon: 'info',
+            });
+        }
+
+        return chips;
+    }, [healthLoading, healthStats, systemsOk, updateAvailable, latestVersion, t]);
+
+    const frameProps = {
+        isCustomizing,
+        hiddenWidgets,
+        onToggle: toggleWidgetVisibility,
+    };
 
     return (
         <div className='space-y-6 md:space-y-8'>
@@ -133,13 +187,14 @@ export default function AdminDashboardPage() {
                 icon={LayoutDashboard}
                 actions={
                     <div className='flex flex-wrap items-center gap-2 md:gap-3'>
-                        <button
+                        <Button
+                            type='button'
+                            variant={isCustomizing ? 'warning' : 'secondary'}
+                            size='sm'
                             onClick={() => setIsCustomizing(!isCustomizing)}
                             className={cn(
-                                'flex items-center gap-2 rounded-xl border px-4 py-2.5 text-[10px] font-black tracking-widest uppercase transition-all hover:scale-105 active:scale-95 md:rounded-2xl md:px-5 md:py-3',
-                                isCustomizing
-                                    ? 'border-amber-500/50 bg-amber-500/10 text-amber-500'
-                                    : 'bg-secondary/50 hover:bg-secondary border-border/50',
+                                'gap-2 text-[10px] font-black tracking-widest',
+                                isCustomizing && 'border-amber-500/50 bg-amber-500/10 text-amber-500',
                             )}
                         >
                             <Settings className={cn('h-4 w-4', isCustomizing && 'animate-spin-slow')} />
@@ -149,24 +204,26 @@ export default function AdminDashboardPage() {
                             <span className='sm:hidden'>
                                 {isCustomizing ? t('admin.dashboard.stop') : t('admin.dashboard.customize')}
                             </span>
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                            type='button'
+                            variant='secondary'
+                            size='sm'
                             onClick={clearCache}
-                            disabled={isClearingCache}
-                            className='bg-secondary hover:bg-secondary/80 border-border/50 flex items-center gap-2 rounded-xl border px-4 py-2.5 text-[10px] font-black tracking-widest uppercase transition-all hover:scale-105 active:scale-95 disabled:scale-100 disabled:opacity-50 md:rounded-2xl md:px-6 md:py-3'
+                            loading={isClearingCache}
+                            className='gap-2 text-[10px] font-black tracking-widest'
                         >
-                            <Trash2 className={cn('h-4 w-4', isClearingCache && 'animate-pulse')} />
+                            {!isClearingCache && <Trash2 className='h-4 w-4' />}
                             <span className='hidden sm:inline'>{t('admin.dashboard.clear_cache')}</span>
                             <span className='sm:hidden'>{t('admin.dashboard.clear')}</span>
-                        </button>
-                        <Link
-                            href='/admin/settings'
-                            className='bg-primary text-primary-foreground flex items-center gap-2 rounded-xl px-4 py-2.5 text-[10px] font-black tracking-widest uppercase transition-all hover:scale-105 active:scale-95 md:rounded-2xl md:px-6 md:py-3'
-                        >
-                            <Settings className='h-4 w-4' />
-                            <span className='hidden sm:inline'>{t('admin.dashboard.global_settings')}</span>
-                            <span className='sm:hidden'>{t('admin.dashboard.settings')}</span>
-                        </Link>
+                        </Button>
+                        <Button asChild size='sm' className='gap-2 text-[10px] font-black tracking-widest'>
+                            <Link href='/admin/settings'>
+                                <Settings className='h-4 w-4' />
+                                <span className='hidden sm:inline'>{t('admin.dashboard.global_settings')}</span>
+                                <span className='sm:hidden'>{t('admin.dashboard.settings')}</span>
+                            </Link>
+                        </Button>
                     </div>
                 }
             />
@@ -176,7 +233,6 @@ export default function AdminDashboardPage() {
             {showAppUrlWarning && (
                 <div className='animate-in slide-in-from-top-4 group relative overflow-hidden rounded-2xl border border-red-500/20 bg-red-500/10 p-4 backdrop-blur-3xl duration-500 md:rounded-[2.5rem] md:p-6'>
                     <div className='absolute top-0 right-0 -mt-16 -mr-16 h-32 w-32 rounded-full bg-red-500/10 blur-3xl transition-all duration-700 group-hover:bg-red-500/20' />
-
                     <div className='relative z-10 flex flex-col justify-between gap-4 md:flex-row md:items-center md:gap-6'>
                         <div className='flex min-w-0 flex-1 items-start gap-3 md:gap-4'>
                             <div className='flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-red-500/30 bg-red-500/20 text-red-500 md:h-12 md:w-12 md:rounded-2xl'>
@@ -193,12 +249,14 @@ export default function AdminDashboardPage() {
                         </div>
                         <div className='flex shrink-0 flex-col items-stretch gap-2 sm:flex-row sm:items-center'>
                             <button
+                                type='button'
                                 onClick={dismissWarning}
                                 className='rounded-xl border border-red-500/20 px-4 py-2 text-[10px] font-black tracking-widest whitespace-nowrap text-red-500 uppercase transition-all hover:bg-red-500/10 md:px-5 md:py-2.5'
                             >
                                 {t('admin.dashboard.app_url_warning.remind_me')}
                             </button>
                             <button
+                                type='button'
                                 onClick={() => router.push('/admin/settings')}
                                 className='rounded-xl bg-red-500 px-4 py-2 text-[10px] font-black tracking-widest whitespace-nowrap text-white uppercase transition-all hover:scale-105 md:px-5 md:py-2.5'
                             >
@@ -209,155 +267,102 @@ export default function AdminDashboardPage() {
                 </div>
             )}
 
-            <div className={cn('transition-all duration-500', !isVisible('welcome') && 'hidden')}>
-                <div className='relative'>
-                    {isCustomizing && (
-                        <button
-                            onClick={() => toggleWidgetVisibility('welcome')}
-                            className='bg-background border-border text-muted-foreground absolute -top-3 -right-3 z-20 rounded-full border p-2 transition-transform hover:scale-105'
+            {updateAvailable && latestVersion && !showAppUrlWarning && (
+                <div className='group relative overflow-hidden rounded-2xl border border-amber-500/25 bg-amber-500/10 p-4 backdrop-blur-3xl md:rounded-3xl md:p-5'>
+                    <div className='relative z-10 flex flex-col justify-between gap-3 sm:flex-row sm:items-center'>
+                        <div className='flex min-w-0 items-start gap-3'>
+                            <div className='flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-amber-500/30 bg-amber-500/20 text-amber-500'>
+                                <Download className='h-5 w-5' />
+                            </div>
+                            <div className='min-w-0 space-y-0.5'>
+                                <h3 className='text-sm font-black tracking-tight text-amber-500 uppercase md:text-base'>
+                                    {t('admin.dashboard.update_banner.title', { version: latestVersion })}
+                                </h3>
+                                <p className='text-xs font-bold text-amber-500/70'>
+                                    {t('admin.dashboard.update_banner.message')}
+                                </p>
+                            </div>
+                        </div>
+                        <Link
+                            href='/admin/updates'
+                            className='shrink-0 rounded-xl bg-amber-500 px-4 py-2 text-center text-[10px] font-black tracking-widest whitespace-nowrap text-black uppercase transition-all hover:scale-105'
                         >
-                            {hiddenWidgets.includes('welcome') ? (
-                                <Eye className='h-4 w-4' />
-                            ) : (
-                                <EyeOff className='h-4 w-4' />
-                            )}
-                        </button>
-                    )}
-                    <div className={cn(hiddenWidgets.includes('welcome') && 'opacity-30 grayscale')}>
-                        <WelcomeWidget version={data?.version?.current?.version} />
+                            {t('admin.dashboard.update_banner.action')}
+                        </Link>
                     </div>
                 </div>
-            </div>
+            )}
 
-            <div className={cn('transition-all duration-500', !isVisible('stats') && 'hidden')}>
-                <div className='relative'>
-                    {isCustomizing && (
-                        <button
-                            onClick={() => toggleWidgetVisibility('stats')}
-                            className='bg-background border-border text-muted-foreground absolute -top-3 -right-3 z-20 rounded-full border p-2 transition-transform hover:scale-105'
-                        >
-                            {hiddenWidgets.includes('stats') ? (
-                                <Eye className='h-4 w-4' />
-                            ) : (
-                                <EyeOff className='h-4 w-4' />
-                            )}
-                        </button>
-                    )}
-                    <div className={cn(hiddenWidgets.includes('stats') && 'opacity-30 grayscale')}>
-                        <QuickStatsWidget stats={data?.count} loading={loading} />
-                    </div>
-                </div>
-            </div>
+            <AdminWidgetFrame widgetId='welcome' {...frameProps}>
+                <WelcomeWidget
+                    version={data?.version?.current?.version}
+                    chips={welcomeChips}
+                    updateAvailable={updateAvailable}
+                    latestVersion={latestVersion}
+                />
+            </AdminWidgetFrame>
+
+            <AdminWidgetFrame widgetId='stats' {...frameProps}>
+                <QuickStatsWidget stats={data?.count} loading={loading} />
+            </AdminWidgetFrame>
 
             <WidgetRenderer widgets={getWidgets('admin-home', 'before-widgets-grid')} />
 
-            <div className='grid grid-cols-1 items-start gap-6 md:gap-8 lg:grid-cols-2'>
-                <div className='space-y-6 md:space-y-8'>
-                    <div className={cn('transition-all duration-500', !isVisible('health') && 'hidden')}>
-                        <div className='relative'>
-                            {isCustomizing && (
-                                <button
-                                    onClick={() => toggleWidgetVisibility('health')}
-                                    className='bg-background border-border text-muted-foreground absolute -top-3 -right-3 z-20 rounded-full border p-2 transition-transform hover:scale-105'
-                                >
-                                    {hiddenWidgets.includes('health') ? (
-                                        <Eye className='h-4 w-4' />
-                                    ) : (
-                                        <EyeOff className='h-4 w-4' />
-                                    )}
-                                </button>
-                            )}
-                            <div className={cn(hiddenWidgets.includes('health') && 'opacity-30 grayscale')}>
-                                <SystemHealthWidget />
-                            </div>
-                        </div>
-                    </div>
+            <div className='grid grid-cols-1 items-start gap-6 md:gap-8 lg:grid-cols-12'>
+                <AdminWidgetFrame widgetId='health' {...frameProps} className='lg:col-span-8'>
+                    <SystemHealthWidget
+                        stats={healthStats}
+                        selftest={healthSelftest}
+                        latency={healthLatency}
+                        loading={healthLoading}
+                    />
+                </AdminWidgetFrame>
 
-                    <div className={cn('transition-all duration-500', !isVisible('cron') && 'hidden')}>
-                        <div className='relative'>
-                            {isCustomizing && (
-                                <button
-                                    onClick={() => toggleWidgetVisibility('cron')}
-                                    className='bg-background border-border text-muted-foreground absolute -top-3 -right-3 z-20 rounded-full border p-2 transition-transform hover:scale-105'
-                                >
-                                    {hiddenWidgets.includes('cron') ? (
-                                        <Eye className='h-4 w-4' />
-                                    ) : (
-                                        <EyeOff className='h-4 w-4' />
-                                    )}
-                                </button>
-                            )}
-                            <div className={cn(hiddenWidgets.includes('cron') && 'opacity-30 grayscale')}>
-                                <CronStatusWidget tasks={data?.cron?.recent} loading={loading} />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div className='space-y-6 md:space-y-8'>
-                    <div className={cn('transition-all duration-500', !isVisible('version') && 'hidden')}>
-                        <div className='relative'>
-                            {isCustomizing && (
-                                <button
-                                    onClick={() => toggleWidgetVisibility('version')}
-                                    className='bg-background border-border text-muted-foreground absolute -top-3 -right-3 z-20 rounded-full border p-2 transition-transform hover:scale-105'
-                                >
-                                    {hiddenWidgets.includes('version') ? (
-                                        <Eye className='h-4 w-4' />
-                                    ) : (
-                                        <EyeOff className='h-4 w-4' />
-                                    )}
-                                </button>
-                            )}
-                            <div className={cn(hiddenWidgets.includes('version') && 'opacity-30 grayscale')}>
-                                <VersionInfoWidget version={data?.version} loading={loading} />
-                            </div>
-                        </div>
-                    </div>
+                <AdminWidgetFrame widgetId='attention' {...frameProps} className='lg:col-span-4'>
+                    <AttentionWidget
+                        stats={healthStats}
+                        selftest={healthSelftest}
+                        healthLoading={healthLoading}
+                        updateAvailable={updateAvailable}
+                        latestVersion={latestVersion}
+                        cronTasks={data?.cron?.recent}
+                    />
+                </AdminWidgetFrame>
 
-                    <div className={cn('transition-all duration-500', !isVisible('links') && 'hidden')}>
-                        <div className='relative'>
-                            {isCustomizing && (
-                                <button
-                                    onClick={() => toggleWidgetVisibility('links')}
-                                    className='bg-background border-border text-muted-foreground absolute -top-3 -right-3 z-20 rounded-full border p-2 transition-transform hover:scale-105'
-                                >
-                                    {hiddenWidgets.includes('links') ? (
-                                        <Eye className='h-4 w-4' />
-                                    ) : (
-                                        <EyeOff className='h-4 w-4' />
-                                    )}
-                                </button>
-                            )}
-                            <div className={cn(hiddenWidgets.includes('links') && 'opacity-30 grayscale')}>
-                                <QuickLinksWidget onClearCache={clearCache} isClearingCache={isClearingCache} />
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <AdminWidgetFrame widgetId='nodes' {...frameProps} className='lg:col-span-6'>
+                    <NodesOverviewWidget nodes={healthNodes} loading={healthLoading} />
+                </AdminWidgetFrame>
+
+                <AdminWidgetFrame widgetId='activity' {...frameProps} className='lg:col-span-6'>
+                    <RecentActivityWidget />
+                </AdminWidgetFrame>
+
+                <AdminWidgetFrame widgetId='servers' {...frameProps} className='lg:col-span-6'>
+                    <RecentServersWidget />
+                </AdminWidgetFrame>
+
+                <AdminWidgetFrame widgetId='tickets' {...frameProps} className='lg:col-span-6'>
+                    <SupportTicketsWidget />
+                </AdminWidgetFrame>
+
+                <AdminWidgetFrame widgetId='version' {...frameProps} className='lg:col-span-7'>
+                    <VersionInfoWidget version={data?.version} loading={loading} />
+                </AdminWidgetFrame>
+
+                <AdminWidgetFrame widgetId='cron' {...frameProps} className='lg:col-span-5'>
+                    <CronStatusWidget tasks={data?.cron?.recent} loading={loading} />
+                </AdminWidgetFrame>
+
+                <AdminWidgetFrame widgetId='cloud' {...frameProps} className='lg:col-span-12'>
+                    <CloudHubWidget />
+                </AdminWidgetFrame>
+
+                <AdminWidgetFrame widgetId='links' {...frameProps} className='lg:col-span-12'>
+                    <QuickLinksWidget onClearCache={clearCache} isClearingCache={isClearingCache} />
+                </AdminWidgetFrame>
             </div>
 
             <WidgetRenderer widgets={getWidgets('admin-home', 'after-widgets-grid')} />
-
-            <div className={cn('transition-all duration-500', !isVisible('eula') && 'hidden')}>
-                <div className='relative'>
-                    {isCustomizing && (
-                        <button
-                            onClick={() => toggleWidgetVisibility('eula')}
-                            className='bg-background border-border text-muted-foreground absolute -top-3 -right-3 z-20 rounded-full border p-2 transition-transform hover:scale-105'
-                        >
-                            {hiddenWidgets.includes('eula') ? (
-                                <Eye className='h-4 w-4' />
-                            ) : (
-                                <EyeOff className='h-4 w-4' />
-                            )}
-                        </button>
-                    )}
-                    <div className={cn(hiddenWidgets.includes('eula') && 'opacity-30 grayscale')}>
-                        <EulaWidget />
-                    </div>
-                </div>
-            </div>
-
             <WidgetRenderer widgets={getWidgets('admin-home', 'bottom-of-page')} />
         </div>
     );

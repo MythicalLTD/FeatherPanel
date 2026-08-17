@@ -75,6 +75,38 @@ return function (RouteCollection $routes): void {
     );
     App::getInstance(true)->registerAdminRoute(
         $routes,
+        'admin-nodes-system-logs',
+        '/api/admin/nodes/{id}/system-logs',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
+
+            return (new NodesController())->listSystemLogs($request, (int) $id);
+        },
+        Permissions::ADMIN_NODES_VIEW,
+    );
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-nodes-system-log-file',
+        '/api/admin/nodes/{id}/system-logs/{file}',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            $file = $args['file'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
+            if (!$file || !is_string($file)) {
+                return ApiResponse::error('Missing or invalid log file', 'INVALID_LOG_FILE', 400);
+            }
+
+            return (new NodesController())->getSystemLogFile($request, (int) $id, $file);
+        },
+        Permissions::ADMIN_NODES_VIEW,
+    );
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
         'admin-nodes-update',
         '/api/admin/nodes/{id}',
         function (Request $request, array $args) {

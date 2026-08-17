@@ -25,6 +25,7 @@ use App\Helpers\LogHelper;
 use App\Chat\InstalledPlugin;
 use App\Services\Wings\Wings;
 use App\Helpers\WingsUrlHelper;
+use App\Helpers\DaemonCapabilities;
 
 /**
  * Collects environment diagnostics + panel/node logs for Mythic issue reports.
@@ -377,6 +378,12 @@ class MythicIssueReportCollector
 
             if ($nodeId <= 0 || $fqdn === '' || empty($node['daemon_token'])) {
                 $entry['error'] = 'Node missing connection details';
+                $out[] = $entry;
+                continue;
+            }
+
+            if (!DaemonCapabilities::fromNode($node)->supports(DaemonCapabilities::FEATURE_DIAGNOSTICS)) {
+                $entry['error'] = 'Diagnostics not supported by this daemon type';
                 $out[] = $entry;
                 continue;
             }

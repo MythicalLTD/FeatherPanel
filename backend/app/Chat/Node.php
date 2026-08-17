@@ -20,6 +20,7 @@ namespace App\Chat;
 use App\App;
 use App\Cache\Cache;
 use Symfony\Component\Yaml\Yaml;
+use App\Helpers\DaemonCapabilities;
 
 /**
  * Node service/model for CRUD operations on the featherpanel_nodes table.
@@ -56,6 +57,7 @@ class Node
         'daemonSFTP',
         'fastdl_port',
         'daemonBase',
+        'daemon_type',
         'public_ip_v4',
         'public_ip_v6',
         'sftp_subdomain',
@@ -110,6 +112,10 @@ class Node
 
         if (isset($data['fastdl_port']) && (!is_numeric($data['fastdl_port']) || (int) $data['fastdl_port'] < 1 || (int) $data['fastdl_port'] > 65535)) {
             $errors[] = 'FastDL port must be a number between 1 and 65535';
+        }
+
+        if (isset($data['daemon_type']) && !DaemonCapabilities::isValidType((string) $data['daemon_type'])) {
+            $errors[] = 'daemon_type must be one of: ' . implode(', ', DaemonCapabilities::VALID_TYPES);
         }
 
         if (isset($data['public_ip_v4']) && $data['public_ip_v4'] !== null && $data['public_ip_v4'] !== '') {
@@ -215,6 +221,12 @@ class Node
         }
         if (isset($data['daemon_token']) && is_string($data['daemon_token']) && $data['daemon_token'] !== '') {
             $data['daemon_token'] = App::getInstance(true)->encryptValue($data['daemon_token']);
+        }
+
+        if (isset($data['daemon_type'])) {
+            $data['daemon_type'] = DaemonCapabilities::normalizeType((string) $data['daemon_type']);
+        } else {
+            $data['daemon_type'] = DaemonCapabilities::TYPE_FEATHERWINGS;
         }
 
         // Handle optional ID for migrations
@@ -510,6 +522,10 @@ class Node
             $data['daemon_token'] = App::getInstance(true)->encryptValue($data['daemon_token']);
         }
 
+        if (isset($data['daemon_type'])) {
+            $data['daemon_type'] = DaemonCapabilities::normalizeType((string) $data['daemon_type']);
+        }
+
         // Filter data to only include allowed fields
         $filteredData = array_intersect_key($data, array_flip(self::$allowedFields));
 
@@ -558,6 +574,10 @@ class Node
         }
         if (isset($data['daemon_token']) && is_string($data['daemon_token']) && $data['daemon_token'] !== '') {
             $data['daemon_token'] = App::getInstance(true)->encryptValue($data['daemon_token']);
+        }
+
+        if (isset($data['daemon_type'])) {
+            $data['daemon_type'] = DaemonCapabilities::normalizeType((string) $data['daemon_type']);
         }
 
         // Filter data to only include allowed fields
@@ -829,10 +849,13 @@ class Node
      * @param array<string, mixed> $node Node record (must include uuid, daemon_token_id, daemon_token, daemonListen, scheme, fqdn, upload_size, daemonBase, daemonSFTP)
      * @param string $panelUrl Panel base URL (e.g. https://panel.example.com) for Wings to call back
      *
-     * @return string YAML content for FeatherWings config.yml
+     * @return string YAML content for daemon config.yml
      */
     public static function generateWingsConfigYaml(array $node, string $panelUrl): string
     {
+        $caps = DaemonCapabilities::fromNode($node);
+        $defaults = $caps->defaults();
+
         $uuid = $node['uuid'] ?? '';
         $tokenId = $node['daemon_token_id'] ?? '';
         $token = $node['daemon_token'] ?? '';
@@ -840,7 +863,7 @@ class Node
         $scheme = ($node['scheme'] ?? 'https') === 'https';
         $fqdn = $node['fqdn'] ?? 'localhost';
         $uploadLimit = (int) ($node['upload_size'] ?? 100);
-        $dataPath = $node['daemonBase'] ?? '/var/lib/featherpanel/volumes';
+        $dataPath = $node['daemonBase'] ?? $defaults['daemon_base'];
         $sftpPort = (int) ($node['daemonSFTP'] ?? 2022);
         $fastdlPort = (int) ($node['fastdl_port'] ?? 80);
         if ($fastdlPort < 1 || $fastdlPort > 65535) {
@@ -865,11 +888,13 @@ class Node
         $yaml .= '  data: ' . $dataPath . "\n";
         $yaml .= "  sftp:\n";
         $yaml .= '    bind_port: ' . $sftpPort . "\n";
-        $yaml .= "  fastdl:\n";
-        $yaml .= "    enabled: false\n";
-        $yaml .= '    bind_port: ' . $fastdlPort . "\n";
-        $yaml .= '    public_hostname: ' . $fqdn . "\n";
-        $yaml .= "    nginx_config_path: /etc/nginx/sites-available/featherwings-fastdl\n";
+        if ($caps->supports(DaemonCapabilities::FEATURE_FASTDL)) {
+            $yaml .= "  fastdl:\n";
+            $yaml .= "    enabled: false\n";
+            $yaml .= '    bind_port: ' . $fastdlPort . "\n";
+            $yaml .= '    public_hostname: ' . $fqdn . "\n";
+            $yaml .= "    nginx_config_path: /etc/nginx/sites-available/featherwings-fastdl\n";
+        }
         $allowedMounts = Mount::getAllowedSourcesForNode((int) ($node['id'] ?? 0));
         $yaml .= rtrim(Yaml::dump(['allowed_mounts' => $allowedMounts], 3, 2, Yaml::DUMP_EMPTY_ARRAY_AS_SEQUENCE)) . "\n";
         $yaml .= "remote: '" . $remote . "'\n";

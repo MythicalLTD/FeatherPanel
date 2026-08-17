@@ -48,7 +48,7 @@ export default function ThemeCustomizer() {
     const { navbarHoverReveal, setNavbarHoverReveal } = useNavbarHoverReveal();
     const { navbarSticky, setNavbarSticky } = useNavbarSticky();
     const { chromeLayout, setChromeLayout } = useChromeLayout();
-    const { t, availableLanguages, setLocale, locale } = useTranslation();
+    const { t, availableLanguages, setLocale, locale, isLocaleLocked } = useTranslation();
     const { settings } = useSettings();
     const [customizerOpen, setCustomizerOpen] = useState(false);
     const [backgroundDialogOpen, setBackgroundDialogOpen] = useState(false);
@@ -382,18 +382,30 @@ export default function ThemeCustomizer() {
                                                 <p className={cn(sectionLabelClass, 'flex items-center gap-1')}>
                                                     <Globe className='h-3 w-3' aria-hidden />
                                                     {t('appearance.language')}
+                                                    {isLocaleLocked && (
+                                                        <span className='text-muted-foreground normal-case'>
+                                                            ({t('appearance.languageLocked')})
+                                                        </span>
+                                                    )}
                                                 </p>
                                                 <div className='max-h-44 space-y-1.5 overflow-y-auto pr-0.5 sm:max-h-40 sm:space-y-1'>
                                                     {availableLanguages.map((language) => (
                                                         <button
                                                             key={language.code}
                                                             type='button'
-                                                            onClick={() => setLocale(language.code)}
+                                                            disabled={isLocaleLocked}
+                                                            title={
+                                                                isLocaleLocked
+                                                                    ? t('appearance.languageLockedByAdmin')
+                                                                    : undefined
+                                                            }
+                                                            onClick={() => !isLocaleLocked && setLocale(language.code)}
                                                             className={cn(
                                                                 'flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm transition-colors sm:py-2 sm:text-xs',
+                                                                isLocaleLocked && 'cursor-not-allowed opacity-50',
                                                                 locale === language.code
                                                                     ? 'bg-primary/15 text-primary font-medium'
-                                                                    : 'hover:bg-accent/40',
+                                                                    : !isLocaleLocked && 'hover:bg-accent/40',
                                                             )}
                                                         >
                                                             <span className='min-w-0 flex-1 truncate'>

@@ -69,6 +69,8 @@ export interface Node {
     name: string;
     fqdn: string;
     location_id: number;
+    daemon_type?: 'featherwings' | 'wings_rs';
+    capabilities?: Partial<Record<string, boolean>>;
 }
 
 export interface Allocation {

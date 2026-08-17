@@ -19,6 +19,7 @@ namespace App\Services\Servers;
 
 use App\App;
 use App\Chat\Node;
+use App\Chat\Backup;
 use App\Chat\Server;
 use App\Chat\Activity;
 use App\Chat\Allocation;
@@ -41,6 +42,9 @@ class ServerTransferInitiator
      *                                      - destination_additional_allocations (optional int[])
      *                                      - auto_allocate (bool, default true when primary allocation omitted)
      *                                      - auto_open_ports (bool, create missing allocations from Wings IPs)
+     *                                      - backups (optional string[] backup UUIDs to transfer — Calagopus)
+     *                                      - include_all_backups (bool, include all successful server backups when no explicit backups are supplied)
+     *                                      - delete_backups (bool, delete transferred backups on source — Calagopus)
      *
      * @return array{success: bool, error?: string, code?: string, http_status?: int, transfer_id?: int|false, new_allocation?: int|null, new_additional_allocations?: int[]}
      */
@@ -202,10 +206,48 @@ class ServerTransferInitiator
                 ['*']
             );
 
+            $serverBackups = Backup::getBackupsByServerId($serverId);
+            $serverBackupUuids = [];
+            foreach ($serverBackups as $backup) {
+                if (!empty($backup['uuid'])) {
+                    $serverBackupUuids[strtolower((string) $backup['uuid'])] = true;
+                }
+            }
+
+            $backupUuids = [];
+            if (isset($options['backups']) && is_array($options['backups'])) {
+                foreach ($options['backups'] as $backupUuid) {
+                    if (is_string($backupUuid) && preg_match('/^[a-f0-9\-]{36}$/i', $backupUuid)) {
+                        $normalized = strtolower($backupUuid);
+                        // Only forward backups that actually belong to this server.
+                        if (isset($serverBackupUuids[$normalized])) {
+                            $backupUuids[] = $normalized;
+                        }
+                    }
+                }
+                $backupUuids = array_values(array_unique($backupUuids));
+            }
+
+            if ($backupUuids === [] && !empty($options['include_all_backups'])) {
+                foreach ($serverBackups as $backup) {
+                    if (!empty($backup['uuid']) && (int) ($backup['is_successful'] ?? 0) === 1) {
+                        $backupUuids[] = (string) $backup['uuid'];
+                    }
+                }
+            }
+
+            $deleteBackups = !empty($options['delete_backups']);
+
             $transferData = [
                 'url' => $destinationUrl . '/api/transfers',
                 'token' => 'Bearer ' . $transferToken,
             ];
+            if ($backupUuids !== []) {
+                $transferData['backups'] = $backupUuids;
+            }
+            if ($deleteBackups) {
+                $transferData['delete_backups'] = true;
+            }
 
             $wings->getTransfer()->startTransfer($server['uuid'], $transferData);
 
@@ -220,6 +262,11 @@ class ServerTransferInitiator
                 'status' => 'in_progress',
                 'progress' => 0.0,
                 'started_at' => date('Y-m-d H:i:s'),
+                'metadata' => [
+                    'backups' => $backupUuids,
+                    'delete_backups' => $deleteBackups,
+                    'keep_backup_rows' => $backupUuids !== [],
+                ],
             ]);
 
             if (!$transferId) {

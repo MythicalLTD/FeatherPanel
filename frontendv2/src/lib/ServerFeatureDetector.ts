@@ -73,12 +73,52 @@ export const FEATURE_PATTERNS: FeaturePattern[] = [
     },
 ];
 
-function extractJavaVersion(message: string): string | null {
-    const patterns = [/Java (\d+)/i, /version (\d+)/i, /class file version (\d+)/i, /major version (\d+)/i];
+/**
+ * Convert a JVM class-file major version to a Java SE version.
+ * Class major 52 = Java 8, 61 = 17, 65 = 21, 69 = 25, etc. (java = major - 44).
+ */
+function classFileMajorToJavaVersion(major: number): number | null {
+    if (!Number.isFinite(major) || major < 45) {
+        return null;
+    }
 
-    for (const pattern of patterns) {
+    return major - 44;
+}
+
+function extractJavaVersion(message: string): string | null {
+    // Prefer class-file version patterns and convert them to Java SE versions.
+    // Errors like "Unsupported class file major version 69" mean Java 25, not "Java 69".
+    const classFilePatterns = [
+        /Unsupported class file major version (\d+)/i,
+        /class file version (\d+)(?:\.\d+)?/i,
+        /class file major version (\d+)/i,
+        /major version (\d+)/i,
+    ];
+
+    for (const pattern of classFilePatterns) {
         const match = message.match(pattern);
-        if (match && match[1]) {
+        if (match?.[1]) {
+            const javaVersion = classFileMajorToJavaVersion(Number.parseInt(match[1], 10));
+            if (javaVersion !== null) {
+                return String(javaVersion);
+            }
+        }
+    }
+
+    // Explicit Java version mentions in server output (already Java SE numbers).
+    const javaPatterns = [
+        /requires Java (\d+)/i,
+        /Java version (\d+)/i,
+        /with Java (\d+)/i,
+        /install Java (\d+)/i,
+        /Download Java (\d+)/i,
+        /update to Java (\d+)/i,
+        /Java (\d+)/i,
+    ];
+
+    for (const pattern of javaPatterns) {
+        const match = message.match(pattern);
+        if (match?.[1]) {
             return match[1];
         }
     }

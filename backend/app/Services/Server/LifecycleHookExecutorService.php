@@ -25,6 +25,7 @@ use App\Services\Wings\Wings;
 use App\Config\ConfigInterface;
 use App\Helpers\WingsUrlHelper;
 use App\Chat\ServerLifecycleHook;
+use App\Helpers\DaemonCapabilities;
 use App\Chat\ServerLifecycleHookStep;
 use App\Plugins\Events\Events\ServerEvent;
 
@@ -193,7 +194,7 @@ class LifecycleHookExecutorService
             $stepResult = $this->executeStep($step, $server, $node, $powerAction, $hook, $actor);
             $pipelineResult['steps'][] = $stepResult;
 
-            if (!$stepResult['success'] && !$stepResult['continued']) {
+            if (!$stepResult['success'] && !$stepResult['continued'] && !$stepResult['skipped']) {
                 $pipelineResult['blocked'] = true;
                 $pipelineResult['blocked_reason'] = $stepResult['error'] ?: 'Hook step failed';
                 $this->emitHookEvent(ServerEvent::onServerLifecycleHookFailed(), $server, $powerAction, $hook, $actor, [
@@ -232,6 +233,7 @@ class LifecycleHookExecutorService
             'task_type' => $step['task_type'],
             'continue_on_failure' => $continueOnFailure,
             'success' => false,
+            'skipped' => false,
             'continued' => false,
             'error' => null,
             'meta' => [],
@@ -252,7 +254,8 @@ class LifecycleHookExecutorService
             $taskType = (string) ($step['task_type'] ?? '');
             $meta = $this->dispatchTaskByType($taskType, $payload, $server, $node);
 
-            $result['success'] = true;
+            $result['skipped'] = is_array($meta) && ($meta['skipped'] ?? false) === true;
+            $result['success'] = !$result['skipped'];
             $result['meta'] = $meta;
             $this->emitHookEvent(ServerEvent::onServerLifecycleHookStepCompleted(), $server, $powerAction, $hook, $actor, [
                 'step_id' => $step['id'],
@@ -343,6 +346,14 @@ class LifecycleHookExecutorService
         $enabled = App::getInstance(true)->getConfig()->getSetting(ConfigInterface::SERVER_LIFECYCLE_HOOKS_CONTAINER_SHELL_ENABLED, 'false') === 'true';
         if (!$enabled) {
             throw new \Exception('Container Shell steps are disabled by the administrator');
+        }
+
+        if (!DaemonCapabilities::fromNode($node)->supports(DaemonCapabilities::FEATURE_CONTAINER_EXEC)) {
+            App::getInstance(true)->getLogger()->warning(
+                'Lifecycle container shell skipped: daemon does not support container_exec for server ' . ($server['uuid'] ?? 'unknown')
+            );
+
+            return ['skipped' => true, 'reason' => 'container_exec_unsupported'];
         }
 
         $command = trim((string) ($payload['command'] ?? ''));

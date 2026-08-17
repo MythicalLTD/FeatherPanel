@@ -100,6 +100,11 @@ class FeatherPanelPremiumController
             $config->setSetting(ConfigInterface::BRANDING_SHOW_POWERED_BY, $show ? 'true' : 'false');
         }
 
+        if (array_key_exists('branding_show_version', $body)) {
+            $show = filter_var($body['branding_show_version'], FILTER_VALIDATE_BOOLEAN);
+            $config->setSetting(ConfigInterface::BRANDING_SHOW_VERSION, $show ? 'true' : 'false');
+        }
+
         if (array_key_exists('sidebar_navigation_config', $body)) {
             if (!FeatherPanelPremium::canCustomSidebar()) {
                 return ApiResponse::error(
@@ -152,6 +157,7 @@ class FeatherPanelPremiumController
                 'chatbot_display_name' => (string) ($config->getSetting(ConfigInterface::CHATBOT_DISPLAY_NAME, '') ?? ''),
                 'chatbot_avatar_url' => (string) ($config->getSetting(ConfigInterface::CHATBOT_AVATAR_URL, '') ?? ''),
                 'branding_show_powered_by' => ($config->getSetting(ConfigInterface::BRANDING_SHOW_POWERED_BY, 'true') ?? 'true') === 'true',
+                'branding_show_version' => ($config->getSetting(ConfigInterface::BRANDING_SHOW_VERSION, 'true') ?? 'true') === 'true',
                 'sidebar_navigation_config' => $this->decodeSidebarConfig(
                     (string) ($config->getSetting(ConfigInterface::SIDEBAR_NAVIGATION_CONFIG, '') ?? '')
                 ),

@@ -178,6 +178,75 @@ return function (RouteCollection $routes): void {
         Rate::perMinute(1) // Default: Admin can override in ratelimit.json
     );
 
+    // Rate limit: Admin can override in ratelimit.json, default is 2 per minute
+    App::getInstance(true)->registerServerRoute(
+        $routes,
+        'session-server-install-abort',
+        '/api/user/servers/{uuidShort}/install/abort',
+        function (Request $request, array $args) {
+            $uuidShort = $args['uuidShort'] ?? null;
+            if (!$uuidShort) {
+                return ApiResponse::error('Missing or invalid UUID short', 'INVALID_UUID_SHORT', 400);
+            }
+
+            return (new ServerUserController())->abortInstall($request, $uuidShort);
+        },
+        'uuidShort',
+        ['POST'],
+        Rate::perMinute(2)
+    );
+
+    App::getInstance(true)->registerServerRoute(
+        $routes,
+        'session-server-script',
+        '/api/user/servers/{uuidShort}/script',
+        function (Request $request, array $args) {
+            $uuidShort = $args['uuidShort'] ?? null;
+            if (!$uuidShort) {
+                return ApiResponse::error('Missing or invalid UUID short', 'INVALID_UUID_SHORT', 400);
+            }
+
+            return (new ServerUserController())->runScript($request, $uuidShort);
+        },
+        'uuidShort',
+        ['POST'],
+        Rate::perMinute(2)
+    );
+
+    App::getInstance(true)->registerServerRoute(
+        $routes,
+        'session-server-daemon-version',
+        '/api/user/servers/{uuidShort}/daemon-version',
+        function (Request $request, array $args) {
+            $uuidShort = $args['uuidShort'] ?? null;
+            if (!$uuidShort) {
+                return ApiResponse::error('Missing or invalid UUID short', 'INVALID_UUID_SHORT', 400);
+            }
+
+            return (new ServerUserController())->getDaemonServerVersion($request, $uuidShort);
+        },
+        'uuidShort',
+        ['GET'],
+        Rate::perMinute(30)
+    );
+
+    App::getInstance(true)->registerServerRoute(
+        $routes,
+        'session-server-ws-broadcast',
+        '/api/user/servers/{uuidShort}/ws/broadcast',
+        function (Request $request, array $args) {
+            $uuidShort = $args['uuidShort'] ?? null;
+            if (!$uuidShort) {
+                return ApiResponse::error('Missing or invalid UUID short', 'INVALID_UUID_SHORT', 400);
+            }
+
+            return (new ServerUserController())->broadcastWs($request, $uuidShort);
+        },
+        'uuidShort',
+        ['POST'],
+        Rate::perMinute(10)
+    );
+
     // Rate limit: Admin can override in ratelimit.json, default is 30 per minute
     App::getInstance(true)->registerServerRoute(
         $routes,

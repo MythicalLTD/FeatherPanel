@@ -61,46 +61,48 @@ export function UtilizationTab({ loading, data, error, onRefresh }: UtilizationT
         );
     }
 
-    if (!data) return null;
+    if (!data?.utilization) return null;
 
     const { utilization } = data;
+    const percentOf = (used: number, total: number): number => (total > 0 ? (used / total) * 100 : 0);
+    const formatPercent = (used: number, total: number): string => `${percentOf(used, total).toFixed(1)}%`;
 
     const resourceItems = [
         {
             title: t('admin.node.view.utilization.cpu'),
-            value: utilization.cpu_percent,
-            label: `${utilization.cpu_percent.toFixed(2)}%`,
+            value: utilization.cpu_percent ?? 0,
+            label: `${Number(utilization.cpu_percent ?? 0).toFixed(2)}%`,
             icon: Cpu,
             color: 'bg-blue-500',
             stats: [
-                { label: t('admin.node.view.utilization.load_1m'), value: utilization.load_average1 },
-                { label: t('admin.node.view.utilization.load_5m'), value: utilization.load_average5 },
-                { label: t('admin.node.view.utilization.load_15m'), value: utilization.load_average15 },
+                { label: t('admin.node.view.utilization.load_1m'), value: utilization.load_average1 ?? 0 },
+                { label: t('admin.node.view.utilization.load_5m'), value: utilization.load_average5 ?? 0 },
+                { label: t('admin.node.view.utilization.load_15m'), value: utilization.load_average15 ?? 0 },
             ],
         },
         {
             title: t('admin.node.view.utilization.memory'),
-            value: (utilization.memory_used / utilization.memory_total) * 100,
+            value: percentOf(utilization.memory_used, utilization.memory_total),
             label: `${formatBytes(utilization.memory_used)} / ${formatBytes(utilization.memory_total)}`,
             icon: Zap,
             color: 'bg-purple-500',
             stats: [
                 {
                     label: t('admin.node.view.utilization.memory_percent'),
-                    value: `${((utilization.memory_used / utilization.memory_total) * 100).toFixed(1)}%`,
+                    value: formatPercent(utilization.memory_used, utilization.memory_total),
                 },
             ],
         },
         {
             title: t('admin.node.view.utilization.disk'),
-            value: (utilization.disk_used / utilization.disk_total) * 100,
+            value: percentOf(utilization.disk_used, utilization.disk_total),
             label: `${formatBytes(utilization.disk_used)} / ${formatBytes(utilization.disk_total)}`,
             icon: HardDrive,
             color: 'bg-green-500',
             stats: [
                 {
                     label: t('admin.node.view.utilization.disk_percent'),
-                    value: `${((utilization.disk_used / utilization.disk_total) * 100).toFixed(1)}%`,
+                    value: formatPercent(utilization.disk_used, utilization.disk_total),
                 },
             ],
         },

@@ -41,10 +41,12 @@ import {
     CompressDialog,
     FileHashDialog,
     ArchiveBrowsePanel,
+    OpenInCalagopusDialog,
 } from './components/dialogs';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { isEnabled } from '@/lib/utils';
+import { supportsDaemonFeature } from '@/lib/daemonCapabilities';
 import { toast } from 'sonner';
 import { getFeatherpanelApiErrorMessage } from '@/lib/api';
 import { filesApi, ARCHIVE_EXTRACT_DRAG_MIME } from '@/lib/files-api';
@@ -165,7 +167,26 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
     const { uuidShort } = use(params);
     const { t } = useTranslation();
     const { settings } = useSettings();
-    const trashEnabled = isEnabled(settings?.file_trash_enabled);
+    const { hasPermission, server } = useServerPermissions(uuidShort);
+    const trashEnabled =
+        isEnabled(settings?.file_trash_enabled) &&
+        supportsDaemonFeature(server?.node?.capabilities, 'trash', server?.node?.daemon_type);
+    const shareEnabled = supportsDaemonFeature(server?.node?.capabilities, 'share', server?.node?.daemon_type);
+    const archiveBrowseEnabled = supportsDaemonFeature(
+        server?.node?.capabilities,
+        'archive_browse',
+        server?.node?.daemon_type,
+    );
+    const directoryDownloadEnabled = supportsDaemonFeature(
+        server?.node?.capabilities,
+        'directory_download',
+        server?.node?.daemon_type,
+    );
+    const fileSearchEnabled = supportsDaemonFeature(
+        server?.node?.capabilities,
+        'file_search',
+        server?.node?.daemon_type,
+    );
 
     const {
         files,
@@ -186,8 +207,6 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
         toggleSelect,
         cancelPull,
     } = useFileManager(uuidShort);
-
-    const { hasPermission } = useServerPermissions(uuidShort);
 
     const { fetchWidgets, getWidgets } = usePluginWidgets('server-files');
 
@@ -218,6 +237,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
     const [compressOpen, setCompressOpen] = useState(false);
     const [fileHashOpen, setFileHashOpen] = useState(false);
     const [archiveBrowseOpen, setArchiveBrowseOpen] = useState(false);
+    const [calagopusOpen, setCalagopusOpen] = useState(false);
     const [filesToCompress, setFilesToCompress] = useState<string[]>([]);
     const [moveCopyAction, setMoveCopyAction] = useState<'move' | 'copy'>('move');
     const [uploadQueue, setUploadQueue] = useState<UploadQueueItem[]>([]);
@@ -326,7 +346,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
 
     useEffect(() => {
         let cancelled = false;
-        if (!hasAdvancedFilters) {
+        if (!hasAdvancedFilters || !fileSearchEnabled) {
             setSearchResults(null);
             setSearchLoading(false);
             return;
@@ -381,6 +401,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
         maxFileSizeMiB,
         includeOversized,
         hasAdvancedFilters,
+        fileSearchEnabled,
         t,
     ]);
 
@@ -674,7 +695,11 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
             case 'download':
                 handleDownload(file.name);
                 break;
+            case 'download-directory':
+                handleDownloadDirectory(file.name);
+                break;
             case 'share':
+                if (!shareEnabled) return;
                 setShareFileOpen(true);
                 break;
             case 'compress':
@@ -684,6 +709,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 handleDecompress(file.name);
                 break;
             case 'browse-archive':
+                if (!archiveBrowseEnabled) return;
                 setArchiveBrowseOpen(true);
                 break;
             case 'copy':
@@ -714,6 +740,22 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
             setActionFile(null);
         } catch {
             toast.error(t('files.messages.failed_download'));
+        }
+    };
+
+    const handleDownloadDirectory = async (folderName: string) => {
+        if (!directoryDownloadEnabled) return;
+        const path = (currentDirectory || '/').endsWith('/')
+            ? `${currentDirectory || '/'}${folderName}`
+            : `${currentDirectory || '/'}/${folderName}`;
+        const toastId = toast.loading(t('files.messages.downloading_directory'));
+        try {
+            const downloadUrl = await filesApi.downloadDirectory(uuidShort, path);
+            triggerSignedUrlDownload(downloadUrl);
+            toast.success(t('files.messages.download_directory_started'), { id: toastId });
+            setActionFile(null);
+        } catch {
+            toast.error(t('files.messages.failed_download_directory'), { id: toastId });
         }
     };
 
@@ -1252,7 +1294,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                         searchQuery={searchQuery}
                         onSearchChange={setSearchQuery}
                         onDropFilesToPath={canUpdate || canArchive ? handleDropOnPath : undefined}
-                        onToggleFilters={() => setSearchFiltersOpen(true)}
+                        onToggleFilters={fileSearchEnabled ? () => setSearchFiltersOpen(true) : undefined}
                         activeFiltersCount={activeAdvancedFiltersCount}
                     />
                 </div>
@@ -1315,6 +1357,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                                 )}`;
                                 window.open(idePath, '_blank', 'noopener');
                             }}
+                            onOpenInCalagopus={() => setCalagopusOpen(true)}
                             canCreate={canCreate}
                             canDelete={canDelete}
                             currentDirectory={currentDirectory || '/'}
@@ -1624,7 +1667,10 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                             canEdit={canUpdate}
                             canDelete={canDelete}
                             canDownload={canRead}
-                            acceptArchiveExtract={canArchive}
+                            acceptArchiveExtract={canArchive && archiveBrowseEnabled}
+                            canShare={shareEnabled}
+                            canBrowseArchiveFeature={archiveBrowseEnabled}
+                            canDownloadDirectory={directoryDownloadEnabled}
                             serverUuid={uuidShort}
                             currentDirectory={currentDirectory || '/'}
                         />
@@ -1702,6 +1748,7 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 root={currentDirectory || '/'}
                 onSuccess={refresh}
             />
+            <OpenInCalagopusDialog open={calagopusOpen} onOpenChange={setCalagopusOpen} serverUuid={server?.uuid} />
             <ShareFileDialog
                 open={shareFileOpen}
                 onOpenChange={setShareFileOpen}
@@ -1756,6 +1803,8 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                 serverUuid={uuidShort}
                 directory={currentDirectory || '/'}
                 files={filesToCompress}
+                capabilities={server?.node?.capabilities}
+                daemonType={server?.node?.daemon_type}
                 onSuccess={() => {
                     refresh();
                     setSelectedFiles([]);

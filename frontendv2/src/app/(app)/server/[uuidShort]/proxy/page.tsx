@@ -34,12 +34,13 @@ import { PageHeader } from '@/components/featherui/PageHeader';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { safeBack } from '@/lib/safe-back';
+import { supportsDaemonFeature } from '@/lib/daemonCapabilities';
 
 export default function ServerProxyPage() {
     const { uuidShort } = useParams();
     const { t } = useTranslation();
     const { settings } = useSettings();
-    const { hasPermission, loading: permissionsLoading } = useServerPermissions(uuidShort as string);
+    const { hasPermission, loading: permissionsLoading, server } = useServerPermissions(uuidShort as string);
     const router = useRouter();
     const pathname = usePathname();
 
@@ -53,7 +54,9 @@ export default function ServerProxyPage() {
 
     const canManage = hasPermission('proxy.manage');
     const canRead = hasPermission('proxy.read');
-    const proxyEnabled = isEnabled(settings?.server_allow_user_made_proxy);
+    const proxyEnabled =
+        isEnabled(settings?.server_allow_user_made_proxy) &&
+        supportsDaemonFeature(server?.node?.capabilities, 'proxy', server?.node?.daemon_type);
     const maxProxies = parseInt(settings?.server_proxy_max_per_server || '0', 10);
     const isMaxReached = proxies.length >= maxProxies && maxProxies > 0;
     const showHeaderCreateAction = canManage && proxies.length > 0;

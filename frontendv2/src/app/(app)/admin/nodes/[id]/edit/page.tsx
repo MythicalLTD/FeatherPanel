@@ -64,6 +64,14 @@ import { UtilizationResponse, DockerResponse, SystemInfoResponse, NodeData, Loca
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { safeBack } from '@/lib/safe-back';
+import {
+    capabilitiesForType,
+    defaultDaemonBase,
+    normalizeDaemonType,
+    resolveCapabilities,
+    supportsDaemonFeature,
+    type DaemonType,
+} from '@/lib/daemonCapabilities';
 
 export interface NodeForm {
     name: string;
@@ -83,6 +91,7 @@ export interface NodeForm {
     daemonSFTP: number;
     fastdl_port: number;
     daemonBase: string;
+    daemon_type: DaemonType;
     public_ip_v4: string;
     public_ip_v6: string;
     sftp_subdomain: string;
@@ -142,6 +151,7 @@ export default function EditNodePage() {
         daemonSFTP: 2022,
         fastdl_port: 80,
         daemonBase: '/var/lib/featherpanel/volumes',
+        daemon_type: 'featherwings',
         public_ip_v4: '',
         public_ip_v6: '',
         sftp_subdomain: '',
@@ -171,10 +181,8 @@ export default function EditNodePage() {
     const fetchInitialData = useCallback(async () => {
         setLoading(true);
         try {
-            const nodeRes = await axios.get(`/api/admin/nodes`);
-
-            const allNodes: NodeData[] = nodeRes.data.data.nodes || [];
-            const node = allNodes.find((n) => n.id === Number(nodeId));
+            const nodeRes = await axios.get(`/api/admin/nodes/${nodeId}`);
+            const node: NodeData | undefined = nodeRes.data?.data?.node;
 
             if (!node) {
                 toast.error(t('admin.node.messages.fetch_failed'));
@@ -182,7 +190,7 @@ export default function EditNodePage() {
                 return;
             }
 
-            setNodeData(node as NodeData);
+            setNodeData(node);
 
             if (node.location_id) {
                 try {
@@ -195,6 +203,7 @@ export default function EditNodePage() {
                 }
             }
 
+            const daemonType = normalizeDaemonType(node.daemon_type);
             setForm({
                 name: node.name,
                 description: node.description || '',
@@ -212,7 +221,8 @@ export default function EditNodePage() {
                 daemonListen: node.daemonListen,
                 daemonSFTP: node.daemonSFTP,
                 fastdl_port: node.fastdl_port ?? 80,
-                daemonBase: node.daemonBase,
+                daemonBase: node.daemonBase || defaultDaemonBase(daemonType),
+                daemon_type: daemonType,
                 public_ip_v4: node.public_ip_v4 || '',
                 public_ip_v6: node.public_ip_v6 || '',
                 sftp_subdomain: node.sftp_subdomain || '',
@@ -369,6 +379,19 @@ export default function EditNodePage() {
 
     const wingsConfigYaml = useMemo(() => {
         if (!nodeData) return '';
+        const supportsFastdl = supportsDaemonFeature(
+            nodeData.capabilities ?? capabilitiesForType(form.daemon_type),
+            'fastdl',
+            form.daemon_type,
+        );
+        const fastdlBlock = supportsFastdl
+            ? `  fastdl:
+    enabled: false
+    bind_port: ${form.fastdl_port || 80}
+    public_hostname: ${form.fqdn || 'localhost'}
+    nginx_config_path: /etc/nginx/sites-available/featherwings-fastdl
+`
+            : '';
         const yaml = `debug: false
 uuid: ${nodeData.uuid}
 token_id: ${nodeData.daemon_token_id}
@@ -382,15 +405,10 @@ api:
     key: /etc/letsencrypt/live/${form.fqdn}/privkey.pem
   upload_limit: ${form.upload_size || 512}
 system:
-  data: ${form.daemonBase || '/var/lib/featherpanel/volumes'}
+  data: ${form.daemonBase || defaultDaemonBase(form.daemon_type)}
   sftp:
     bind_port: ${form.daemonSFTP || 2022}
-  fastdl:
-    enabled: false
-    bind_port: ${form.fastdl_port || 80}
-    public_hostname: ${form.fqdn || 'localhost'}
-    nginx_config_path: /etc/nginx/sites-available/featherwings-fastdl
-allowed_mounts: []
+${fastdlBlock}allowed_mounts: []
 remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://panel.example.com'}'`;
         return yaml;
     }, [nodeData, form]);
@@ -474,6 +492,8 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
                 public_ip_v6: trimmedIPv6 === '' ? null : trimmedIPv6,
                 sftp_subdomain: trimmedSftpSubdomain === '' ? null : trimmedSftpSubdomain,
             };
+            // Daemon type is immutable after create — never send changes on edit.
+            delete (submitData as { daemon_type?: string }).daemon_type;
 
             await axios.patch(`/api/admin/nodes/${nodeId}`, submitData);
             toast.success(t('admin.node.messages.update_success'));
@@ -486,11 +506,57 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
                 const detail = apiMsg ?? t('admin.node.form.location_invalid_type');
                 setErrors((prev) => ({ ...prev, location_id: detail }));
             }
-            toast.error(apiMsg ?? t('admin.node.messages.update_failed'));
+            if (code === 'DAEMON_TYPE_IMMUTABLE' || code === 'DAEMON_TYPE_MIGRATION_FORBIDDEN') {
+                toast.error(apiMsg ?? t('admin.node.form.daemon_type_immutable'));
+            } else {
+                toast.error(apiMsg ?? t('admin.node.messages.update_failed'));
+            }
         } finally {
             setSaving(false);
         }
     };
+
+    const caps = useMemo(
+        () => resolveCapabilities(nodeData?.capabilities, form.daemon_type),
+        [nodeData, form.daemon_type],
+    );
+    const tabs = useMemo(
+        () => [
+            { id: 'details', label: t('admin.node.form.basic_details'), icon: Database },
+            { id: 'config', label: t('admin.node.form.configuration'), icon: Settings2 },
+            { id: 'allocations', label: t('admin.node.allocations.title'), icon: Network },
+            { id: 'network', label: t('admin.node.form.network'), icon: Settings2 },
+            { id: 'advanced', label: t('admin.node.form.advanced'), icon: Shield },
+            { id: 'wings', label: t('admin.node.form.wings_config'), icon: Shield },
+            ...(supportsDaemonFeature(caps, 'host_terminal')
+                ? [{ id: 'terminal', label: t('admin.node.view.terminal.title'), icon: Server }]
+                : []),
+            ...(supportsDaemonFeature(caps, 'live_config')
+                ? [{ id: 'wings-config', label: t('admin.node.view.config.title'), icon: Settings2 }]
+                : []),
+            ...(supportsDaemonFeature(caps, 'modules')
+                ? [{ id: 'modules', label: t('admin.node.view.modules.title'), icon: LayoutGrid }]
+                : []),
+            { id: 'utilization', label: t('admin.node.view.utilization.title'), icon: Zap },
+            ...(supportsDaemonFeature(caps, 'docker_disk')
+                ? [{ id: 'docker', label: t('admin.node.view.docker.title'), icon: Database }]
+                : []),
+            { id: 'system-info', label: t('admin.node.view.system.title'), icon: Shield },
+            ...(supportsDaemonFeature(caps, 'diagnostics')
+                ? [{ id: 'diagnostics', label: t('admin.node.view.diagnostics.title'), icon: Shield }]
+                : []),
+            ...(supportsDaemonFeature(caps, 'self_update')
+                ? [{ id: 'self-update', label: t('admin.node.view.self_update.title'), icon: Shield }]
+                : []),
+        ],
+        [caps, t],
+    );
+
+    useEffect(() => {
+        if (!loading && !tabs.some((tab) => tab.id === activeTab)) {
+            setActiveTab('details');
+        }
+    }, [activeTab, tabs, loading]);
 
     if (loading) {
         return (
@@ -499,23 +565,6 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
             </div>
         );
     }
-
-    const tabs = [
-        { id: 'details', label: t('admin.node.form.basic_details'), icon: Database },
-        { id: 'config', label: t('admin.node.form.configuration'), icon: Settings2 },
-        { id: 'allocations', label: t('admin.node.allocations.title'), icon: Network },
-        { id: 'network', label: t('admin.node.form.network'), icon: Settings2 },
-        { id: 'advanced', label: t('admin.node.form.advanced'), icon: Shield },
-        { id: 'wings', label: t('admin.node.form.wings_config'), icon: Shield },
-        { id: 'terminal', label: t('admin.node.view.terminal.title'), icon: Server },
-        { id: 'wings-config', label: t('admin.node.view.config.title'), icon: Settings2 },
-        { id: 'modules', label: t('admin.node.view.modules.title'), icon: LayoutGrid },
-        { id: 'utilization', label: t('admin.node.view.utilization.title'), icon: Zap },
-        { id: 'docker', label: t('admin.node.view.docker.title'), icon: Database },
-        { id: 'system-info', label: t('admin.node.view.system.title'), icon: Shield },
-        { id: 'diagnostics', label: t('admin.node.view.diagnostics.title'), icon: Shield },
-        { id: 'self-update', label: t('admin.node.view.self_update.title'), icon: Shield },
-    ];
 
     return (
         <div className='space-y-6'>
@@ -592,7 +641,14 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
                         </TabsContent>
 
                         <TabsContent value='config' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
-                            <ConfigurationTab form={form} setForm={setForm} errors={errors} />
+                            <ConfigurationTab
+                                form={form}
+                                setForm={setForm}
+                                errors={errors}
+                                originalDaemonType={
+                                    nodeData?.daemon_type ? normalizeDaemonType(nodeData.daemon_type) : undefined
+                                }
+                            />
                         </TabsContent>
 
                         <TabsContent
@@ -609,7 +665,7 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
                         </TabsContent>
 
                         <TabsContent value='advanced' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
-                            <AdvancedTab form={form} setForm={setForm} errors={errors} />
+                            <AdvancedTab form={form} setForm={setForm} errors={errors} capabilities={caps} />
                         </TabsContent>
 
                         <TabsContent value='wings' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
@@ -681,7 +737,12 @@ remote: '${typeof window !== 'undefined' ? window.location.origin : 'https://pan
                             value='diagnostics'
                             className='mt-0 focus-visible:ring-0 focus-visible:outline-none'
                         >
-                            {activeTab === 'diagnostics' ? <DiagnosticsTab nodeId={Number(nodeId)} /> : null}
+                            {activeTab === 'diagnostics' ? (
+                                <DiagnosticsTab
+                                    nodeId={Number(nodeId)}
+                                    systemLogsEnabled={supportsDaemonFeature(caps, 'system_logs', form.daemon_type)}
+                                />
+                            ) : null}
                         </TabsContent>
 
                         <TabsContent

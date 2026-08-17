@@ -430,6 +430,172 @@ class ApiClientController
         return ApiResponse::success($apiClient, 'API client created successfully', 201);
     }
 
+    /**
+     * Create a scoped API client for Calagopus VS Code auth and return a callback redirect URL.
+     */
+    public function calagopusCreate(Request $request): Response
+    {
+        $user = AuthMiddleware::getCurrentUser($request);
+        if ($user == null) {
+            return ApiResponse::error('You are not allowed to access this resource!', 'INVALID_ACCOUNT_TOKEN', 400, []);
+        }
+
+        $app = App::getInstance(true);
+        $config = $app->getConfig();
+        $allowApiKeysCreate = $config->getSetting(ConfigInterface::USER_ALLOW_API_KEYS_CREATE, 'true') === 'true';
+        $hasBypassPermission = PermissionHelper::hasPermission($user['uuid'], Permissions::ADMIN_API_BYPASS_RESTRICTIONS);
+
+        if (!$allowApiKeysCreate && !$hasBypassPermission) {
+            return ApiResponse::error('You are not allowed to create API keys!', 'API_KEY_CREATION_NOT_ALLOWED', 403, []);
+        }
+
+        $data = json_decode($request->getContent(), true);
+        if (!is_array($data)) {
+            return ApiResponse::error('Invalid request data', 'INVALID_REQUEST_DATA', 400);
+        }
+
+        $name = trim((string) ($data['name'] ?? 'VS Code'));
+        if ($name === '' || strlen($name) > 191) {
+            return ApiResponse::error('Name must be between 1 and 191 characters', 'INVALID_NAME_LENGTH', 400);
+        }
+
+        $callbackUrl = trim((string) ($data['callback_url'] ?? ''));
+        if ($callbackUrl === '' || !filter_var($callbackUrl, FILTER_VALIDATE_URL)) {
+            return ApiResponse::error('Invalid callback_url', 'INVALID_CALLBACK_URL', 400);
+        }
+
+        $permissions = $this->normalizeCalagopusPermissions($data, $request);
+        if ($permissions instanceof Response) {
+            return $permissions;
+        }
+        $permissions = $this->intersectCalagopusPermissionsWithUser($permissions, $user);
+
+        $publicKey = $this->generateApiKey();
+        $privateKey = $this->generateApiKey();
+        $apiClientId = ApiClient::createApiClient([
+            'user_uuid' => $user['uuid'],
+            'name' => $name,
+            'public_key' => $publicKey,
+            'private_key' => $privateKey,
+            'allowed_ips' => null,
+            'permissions' => json_encode($permissions, JSON_UNESCAPED_SLASHES),
+            'notify_foreign_ip' => 'false',
+        ]);
+        if ($apiClientId === false) {
+            return ApiResponse::error('Failed to create API client', 'API_CLIENT_CREATION_FAILED', 500);
+        }
+
+        $apiClient = ApiClient::getApiClientById($apiClientId);
+        Activity::createActivity([
+            'user_uuid' => $user['uuid'],
+            'name' => 'api_client_created',
+            'context' => 'Created Calagopus API client: ' . $name,
+            'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        $separator = str_contains($callbackUrl, '?') ? '&' : '?';
+        $redirectUrl = $callbackUrl . $separator . 'key=' . rawurlencode($publicKey);
+
+        return ApiResponse::success([
+            'redirect_url' => $redirectUrl,
+            'public_key' => $publicKey,
+            'api_client' => $apiClient,
+        ], 'API client created successfully', 201);
+    }
+
+    /**
+     * Find an API client by public/private key prefix (Calagopus key_start).
+     */
+    public function calagopusFindByKeyStart(Request $request): Response
+    {
+        $user = AuthMiddleware::getCurrentUser($request);
+        if ($user == null) {
+            return ApiResponse::error('You are not allowed to access this resource!', 'INVALID_ACCOUNT_TOKEN', 400, []);
+        }
+
+        $keyStart = trim((string) $request->query->get('key_start', ''));
+        if (strlen($keyStart) < 8) {
+            return ApiResponse::error('Invalid key_start', 'INVALID_KEY_START', 400);
+        }
+
+        $clients = ApiClient::getApiClientsByUserUuid($user['uuid']);
+        foreach ($clients as $client) {
+            $public = (string) ($client['public_key'] ?? '');
+            $private = (string) ($client['private_key'] ?? '');
+            if (str_starts_with($public, $keyStart) || str_starts_with($private, $keyStart)) {
+                unset($client['private_key']);
+
+                return ApiResponse::success([
+                    'api_client' => $client,
+                    'key_start' => substr($public, 0, 16),
+                ], 'API client found');
+            }
+        }
+
+        return ApiResponse::error('API client not found', 'API_CLIENT_NOT_FOUND', 404);
+    }
+
+    /**
+     * Update scopes for a Calagopus API client selected by its key prefix.
+     */
+    public function calagopusUpdatePermissions(Request $request): Response
+    {
+        $user = AuthMiddleware::getCurrentUser($request);
+        if ($user === null) {
+            return ApiResponse::error('You are not allowed to access this resource!', 'INVALID_ACCOUNT_TOKEN', 400, []);
+        }
+
+        $notAllowed = $this->ensureApiKeyCreationAllowed($user);
+        if ($notAllowed !== null) {
+            return $notAllowed;
+        }
+
+        $data = json_decode($request->getContent(), true);
+        if (!is_array($data)) {
+            return ApiResponse::error('Invalid request data', 'INVALID_REQUEST_DATA', 400);
+        }
+        $keyStart = trim((string) ($data['key_start'] ?? ''));
+        if (strlen($keyStart) < 8) {
+            return ApiResponse::error('Invalid key_start', 'INVALID_KEY_START', 400);
+        }
+
+        $permissions = $this->normalizeCalagopusPermissions($data, $request);
+        if ($permissions instanceof Response) {
+            return $permissions;
+        }
+        $permissions = $this->intersectCalagopusPermissionsWithUser($permissions, $user);
+
+        foreach (ApiClient::getApiClientsByUserUuid($user['uuid']) as $client) {
+            $public = (string) ($client['public_key'] ?? '');
+            $private = (string) ($client['private_key'] ?? '');
+            if (!str_starts_with($public, $keyStart) && !str_starts_with($private, $keyStart)) {
+                continue;
+            }
+
+            if (
+                !ApiClient::updateApiClient((int) $client['id'], [
+                    'permissions' => json_encode($permissions, JSON_UNESCAPED_SLASHES),
+                ])
+            ) {
+                return ApiResponse::error('Failed to update API client permissions', 'API_CLIENT_UPDATE_FAILED', 500);
+            }
+
+            Activity::createActivity([
+                'user_uuid' => $user['uuid'],
+                'name' => 'api_client_permissions_updated',
+                'context' => 'Updated Calagopus API client permissions: ' . $client['name'],
+                'ip_address' => CloudFlareRealIP::getRealIP(),
+            ]);
+
+            return ApiResponse::success([
+                'key_start' => substr($public, 0, 16),
+                'permissions' => $permissions,
+            ], 'API client permissions updated');
+        }
+
+        return ApiResponse::error('API client not found', 'API_CLIENT_NOT_FOUND', 404);
+    }
+
     #[OA\Put(
         path: '/api/user/api-clients/{id}',
         summary: 'Update API client',
@@ -1495,5 +1661,93 @@ class ApiClientController
         }
 
         return 'false';
+    }
+
+    /**
+     * @return array{admin:list<string>,user:list<string>,server:list<string>}|Response
+     */
+    private function normalizeCalagopusPermissions(array $data, Request $request): array | Response
+    {
+        $result = [];
+        foreach (['admin', 'user', 'server'] as $bucket) {
+            $field = $bucket . '_permissions';
+            $value = $data[$field] ?? $request->query->all()[$field] ?? [];
+            if (is_string($value)) {
+                $value = $value === '' ? [] : explode(',', $value);
+            }
+            if (!is_array($value)) {
+                return ApiResponse::error($field . ' must be an array or CSV string', 'INVALID_PERMISSIONS', 400);
+            }
+
+            $normalized = [];
+            foreach ($value as $permission) {
+                if (!is_string($permission)) {
+                    return ApiResponse::error($field . ' contains an invalid permission', 'INVALID_PERMISSIONS', 400);
+                }
+                $permission = trim($permission);
+                if ($permission === '') {
+                    continue;
+                }
+                if (strlen($permission) > 191 || preg_match('/^[a-z0-9*._-]+$/i', $permission) !== 1) {
+                    return ApiResponse::error('Invalid permission: ' . $permission, 'INVALID_PERMISSIONS', 400);
+                }
+                $normalized[] = $permission;
+            }
+            $result[$bucket] = array_values(array_unique($normalized));
+        }
+
+        return $result;
+    }
+
+    /**
+     * Restrict persisted Calagopus scopes to permissions the authenticated user can actually exercise.
+     *
+     * @param array{admin:list<string>,user:list<string>,server:list<string>} $permissions
+     * @param array<string, mixed> $user
+     *
+     * @return array{admin:list<string>,user:list<string>,server:list<string>}
+     */
+    private function intersectCalagopusPermissionsWithUser(array $permissions, array $user): array
+    {
+        $nodes = PermissionHelper::getPermissionNodesForRole((int) ($user['role_id'] ?? 0));
+        $isRoot = in_array(Permissions::ADMIN_ROOT, $nodes, true);
+
+        $permissions['admin'] = array_values(array_filter(
+            $permissions['admin'],
+            fn (string $scope): bool => $this->userMayGrantCalagopusAdminScope($user, $scope, $isRoot)
+        ));
+
+        // Authenticated users may grant user/server scopes for their own resources; wildcards
+        // still require root so a key cannot outrank the caller's panel role.
+        if (!$isRoot) {
+            foreach (['user', 'server'] as $bucket) {
+                $permissions[$bucket] = array_values(array_filter(
+                    $permissions[$bucket],
+                    static fn (string $scope): bool => $scope !== '*'
+                ));
+            }
+        }
+
+        return $permissions;
+    }
+
+    private function userMayGrantCalagopusAdminScope(array $user, string $scope, bool $isRoot): bool
+    {
+        if ($isRoot) {
+            return true;
+        }
+        if ($scope === '*') {
+            return false;
+        }
+
+        $mapped = match ($scope) {
+            'servers.read' => Permissions::ADMIN_SERVERS_VIEW,
+            default => null,
+        };
+        if ($mapped === null) {
+            return false;
+        }
+
+        return PermissionHelper::hasPermission($user['uuid'], $mapped, $user);
     }
 }

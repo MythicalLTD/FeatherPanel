@@ -123,11 +123,11 @@ export function ServerPowerMenu({ uuidShort, serverName, disabled = false }: Ser
                         {t('servers.start')}
                     </DropdownMenuItem>
                     <DropdownMenuItem disabled={isLoading} onClick={() => handleAction('restart')} className='gap-2'>
-                        <RotateCw className='h-4 w-4 text-blue-500' />
+                        <RotateCw className='h-4 w-4 text-amber-500' />
                         {t('servers.restart')}
                     </DropdownMenuItem>
                     <DropdownMenuItem disabled={isLoading} onClick={() => handleAction('stop')} className='gap-2'>
-                        <Square className='h-4 w-4 text-amber-500' />
+                        <Square className='h-4 w-4 text-orange-500' />
                         {t('servers.stop')}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />

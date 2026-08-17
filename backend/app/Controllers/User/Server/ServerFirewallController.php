@@ -26,6 +26,7 @@ use App\Helpers\ApiResponse;
 use App\Services\Wings\Wings;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
+use App\Helpers\DaemonCapabilities;
 use App\Plugins\Events\Events\ServerEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -141,6 +142,10 @@ class ServerFirewallController
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
         }
 
+        if (!DaemonCapabilities::fromNode($node)->supports(DaemonCapabilities::FEATURE_FIREWALL)) {
+            return DaemonCapabilities::unsupportedResponse($node, DaemonCapabilities::FEATURE_FIREWALL);
+        }
+
         $wings = $this->createWings($node);
 
         try {
@@ -240,6 +245,10 @@ class ServerFirewallController
         $node = Node::getNodeById($server['node_id']);
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+
+        if (!DaemonCapabilities::fromNode($node)->supports(DaemonCapabilities::FEATURE_FIREWALL)) {
+            return DaemonCapabilities::unsupportedResponse($node, DaemonCapabilities::FEATURE_FIREWALL);
         }
 
         $wings = $this->createWings($node);
@@ -387,6 +396,10 @@ class ServerFirewallController
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
         }
 
+        if (!DaemonCapabilities::fromNode($node)->supports(DaemonCapabilities::FEATURE_FIREWALL)) {
+            return DaemonCapabilities::unsupportedResponse($node, DaemonCapabilities::FEATURE_FIREWALL);
+        }
+
         $wings = $this->createWings($node);
 
         try {
@@ -508,6 +521,10 @@ class ServerFirewallController
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
         }
 
+        if (!DaemonCapabilities::fromNode($node)->supports(DaemonCapabilities::FEATURE_FIREWALL)) {
+            return DaemonCapabilities::unsupportedResponse($node, DaemonCapabilities::FEATURE_FIREWALL);
+        }
+
         $wings = $this->createWings($node);
 
         try {
@@ -620,6 +637,10 @@ class ServerFirewallController
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
         }
 
+        if (!DaemonCapabilities::fromNode($node)->supports(DaemonCapabilities::FEATURE_FIREWALL)) {
+            return DaemonCapabilities::unsupportedResponse($node, DaemonCapabilities::FEATURE_FIREWALL);
+        }
+
         $wings = $this->createWings($node);
 
         try {
@@ -708,6 +729,10 @@ class ServerFirewallController
         $node = Node::getNodeById($server['node_id']);
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+
+        if (!DaemonCapabilities::fromNode($node)->supports(DaemonCapabilities::FEATURE_FIREWALL)) {
+            return DaemonCapabilities::unsupportedResponse($node, DaemonCapabilities::FEATURE_FIREWALL);
         }
 
         $wings = $this->createWings($node);

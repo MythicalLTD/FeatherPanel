@@ -35,6 +35,7 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import type { NavigationItem } from '@/types/navigation';
 import { type ChromeLayout, useChromeLayout } from '@/hooks/useChromeLayout';
 import { PoweredByFeatherPanel } from '@/components/branding/PoweredByFeatherPanel';
+import { shouldShowVersion } from '@/lib/branding';
 
 interface SidebarProps {
     mobileOpen: boolean;
@@ -84,6 +85,7 @@ function SidebarContent({
         app_logo_white?: string;
         app_logo_dark?: string;
         ticket_system_enabled?: string;
+        branding_show_version?: string;
     } | null;
     pathname: string;
     router: ReturnType<typeof useRouter>;
@@ -94,6 +96,7 @@ function SidebarContent({
     const { theme } = useTheme();
     const { t } = useTranslation();
     const { adminTicketStats } = useSession();
+    const showVersion = shouldShowVersion(settings);
 
     const [collapsedGroups, setCollapsedGroups] = useState<string[]>([]);
 
@@ -322,9 +325,11 @@ function SidebarContent({
                     <span className='text-foreground truncate text-sm font-semibold tracking-tight'>
                         {settings?.app_name || 'FeatherPanel'}
                     </span>
-                    <span className='border-primary/20 bg-primary/10 text-primary inline-flex w-fit items-center rounded-md border px-1.5 py-px text-[10px] font-semibold tracking-wider uppercase'>
-                        v{settings?.app_version || '1.0.0'}
-                    </span>
+                    {showVersion && (
+                        <span className='border-primary/20 bg-primary/10 text-primary inline-flex w-fit items-center rounded-md border px-1.5 py-px text-[10px] font-semibold tracking-wider uppercase'>
+                            v{settings?.app_version || '1.0.0'}
+                        </span>
+                    )}
                 </div>
             )}
         </div>
@@ -351,9 +356,11 @@ function SidebarContent({
             {(!collapsed || mobile) && (
                 <div className='flex min-w-0 flex-col gap-0.5'>
                     <span className='truncate text-base font-semibold'>{settings?.app_name || 'FeatherPanel'}</span>
-                    <span className='border-primary/20 bg-primary/10 text-primary inline-flex w-fit items-center rounded-md border px-2 py-0.5 text-[10px] font-medium'>
-                        v{settings?.app_version || '1.0.0'}
-                    </span>
+                    {showVersion && (
+                        <span className='border-primary/20 bg-primary/10 text-primary inline-flex w-fit items-center rounded-md border px-2 py-0.5 text-[10px] font-medium'>
+                            v{settings?.app_version || '1.0.0'}
+                        </span>
+                    )}
                 </div>
             )}
         </div>

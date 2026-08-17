@@ -41,6 +41,7 @@ use App\Config\ConfigInterface;
 use App\Helpers\WingsUrlHelper;
 use App\Helpers\PermissionHelper;
 use App\Chat\ServerCustomVariable;
+use App\Helpers\DaemonCapabilities;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Mail\templates\ServerDeleted;
 use App\Plugins\Events\Events\ServerEvent;
@@ -74,6 +75,8 @@ use App\Services\Subdomain\SubdomainCleanupService;
             new OA\Property(property: 'maintenance_mode', type: 'boolean', nullable: true),
             new OA\Property(property: 'fqdn', type: 'string', nullable: true),
             new OA\Property(property: 'behind_proxy', type: 'boolean', nullable: true),
+            new OA\Property(property: 'daemon_type', type: 'string', nullable: true),
+            new OA\Property(property: 'capabilities', type: 'object', additionalProperties: new OA\AdditionalProperties(type: 'boolean'), nullable: true),
         ]),
         new OA\Property(property: 'location', type: 'object', properties: [
             new OA\Property(property: 'id', type: 'integer', nullable: true),
@@ -452,11 +455,14 @@ class ServerUserController
             }
 
             $node = $nodesById[(int) $server['node_id']] ?? null;
+            $caps = DaemonCapabilities::fromNode($node ?? []);
             $server['node'] = [
                 'name' => $node['name'] ?? null,
                 'maintenance_mode' => $node['maintenance_mode'] ?? null,
                 'fqdn' => $node['fqdn'] ?? null,
                 'behind_proxy' => $node['behind_proxy'] ?? null,
+                'daemon_type' => $caps->getType(),
+                'capabilities' => $caps->toArray(),
             ];
 
             // Get location information from node
@@ -589,11 +595,14 @@ class ServerUserController
             ] : null;
 
             $node = Node::getNodeById($server['node_id']);
+            $caps = DaemonCapabilities::fromNode($node ?? []);
             $server['node'] = [
                 'name' => $node['name'] ?? null,
                 'maintenance_mode' => $node['maintenance_mode'] ?? null,
                 'fqdn' => $node['fqdn'] ?? null,
                 'behind_proxy' => $node['behind_proxy'] ?? null,
+                'daemon_type' => $caps->getType(),
+                'capabilities' => $caps->toArray(),
             ];
 
             $location = null;
@@ -723,6 +732,11 @@ class ServerUserController
         }
 
         $server['node'] = Node::getNodeById($server['node_id']);
+        if (is_array($server['node'])) {
+            $caps = DaemonCapabilities::fromNode($server['node']);
+            $server['node']['daemon_type'] = $caps->getType();
+            $server['node']['capabilities'] = $caps->toArray();
+        }
 
         // Get location information from node
         $location = null;
@@ -1458,20 +1472,9 @@ class ServerUserController
 
         // Get updated server data
         $updatedServer = Server::getServerById($server['id']);
-        $scheme = $node['scheme'];
-        $host = $node['fqdn'];
-        $port = $node['daemonListen'];
-        $token = $node['daemon_token'];
-
         $timeout = (int) 30;
         try {
-            $wings = new \App\Services\Wings\Wings(
-                $host,
-                $port,
-                $scheme,
-                $token,
-                $timeout
-            );
+            $wings = \App\Services\Wings\Wings::fromNode($node, $timeout);
 
             // If spell changed, trigger reinstall instead of just sync
             if ($spellChanged) {
@@ -1770,20 +1773,9 @@ class ServerUserController
 
         // Get updated server data
         $updatedServer = Server::getServerById($server['id']);
-        $scheme = $node['scheme'];
-        $host = $node['fqdn'];
-        $port = $node['daemonListen'];
-        $token = $node['daemon_token'];
-
         $timeout = (int) 30;
         try {
-            $wings = new \App\Services\Wings\Wings(
-                $host,
-                $port,
-                $scheme,
-                $token,
-                $timeout
-            );
+            $wings = \App\Services\Wings\Wings::fromNode($node, $timeout);
 
             // Wipe files if requested
             if ($wipeFiles) {
@@ -1839,6 +1831,287 @@ class ServerUserController
                 'updated_at' => $updatedServer['updated_at'] ?? null,
             ],
         ], 'Server reinstalled successfully', 200);
+    }
+
+    /**
+     * Abort an in-progress server install/reinstall (Calagopus).
+     *
+     * @param Request $request The HTTP request
+     * @param string $uuidShort The server's short UUID
+     *
+     * @return Response The API response
+     */
+    #[OA\Post(
+        path: '/api/user/servers/{uuidShort}/install/abort',
+        summary: 'Abort server install',
+        description: 'Abort an in-progress install or reinstall on a Calagopus (wings_rs) node.',
+        tags: ['User - Server'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Install abort requested'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 404, description: 'Server or node not found'),
+            new OA\Response(response: 501, description: 'Daemon feature unsupported'),
+            new OA\Response(response: 500, description: 'Internal server error'),
+        ]
+    )]
+    public function abortInstall(Request $request, string $uuidShort): Response
+    {
+        $user = $request->attributes->get('user');
+        if (!$user) {
+            return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
+        }
+
+        $server = Server::getServerByUuidShort($uuidShort);
+        if (!$server) {
+            return ApiResponse::error('Server not found', 'NOT_FOUND', 404);
+        }
+
+        $isOwner = (int) $server['owner_id'] === (int) $user['id'];
+        if (!$isOwner) {
+            $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::SETTINGS_REINSTALL);
+            if ($permissionCheck !== null) {
+                return $permissionCheck;
+            }
+        }
+
+        $node = Node::getNodeById($server['node_id']);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+
+        if (!DaemonCapabilities::fromNode($node)->supports(DaemonCapabilities::FEATURE_INSTALL_ABORT)) {
+            return DaemonCapabilities::unsupportedResponse($node, DaemonCapabilities::FEATURE_INSTALL_ABORT);
+        }
+
+        try {
+            $wings = \App\Services\Wings\Wings::fromNode($node, 30);
+            $response = $wings->getServer()->abortInstall($server['uuid']);
+
+            if (!$response->isSuccessful()) {
+                $error = $response->getError();
+
+                return ApiResponse::error(
+                    'Failed to abort install: ' . $error,
+                    'WINGS_ERROR',
+                    $response->getStatusCode() > 0 ? $response->getStatusCode() : 500
+                );
+            }
+        } catch (\Exception $e) {
+            App::getInstance(true)->getLogger()->error('Failed to abort install on Wings: ' . $e->getMessage());
+
+            return ApiResponse::error('Failed to abort install: ' . $e->getMessage(), 'FAILED_TO_ABORT_INSTALL', 500);
+        }
+
+        $this->logActivity($server, $node, 'server_install_aborted', [
+            'server_uuid' => $server['uuid'],
+        ], $user);
+
+        return ApiResponse::success([
+            'server' => [
+                'uuid' => $server['uuid'],
+                'uuidShort' => $server['uuidShort'],
+            ],
+        ], 'Install abort requested', 200);
+    }
+
+    /**
+     * Run a custom container script on the server (Calagopus).
+     */
+    public function runScript(Request $request, string $uuidShort): Response
+    {
+        $user = $request->attributes->get('user');
+        if (!$user) {
+            return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
+        }
+
+        $server = Server::getServerByUuidShort($uuidShort);
+        if (!$server) {
+            return ApiResponse::error('Server not found', 'NOT_FOUND', 404);
+        }
+
+        $isOwner = (int) $server['owner_id'] === (int) $user['id'];
+        if (!$isOwner) {
+            $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::SETTINGS_REINSTALL);
+            if ($permissionCheck !== null) {
+                return $permissionCheck;
+            }
+        }
+
+        $node = Node::getNodeById($server['node_id']);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+
+        if (!DaemonCapabilities::fromNode($node)->supports(DaemonCapabilities::FEATURE_SERVER_SCRIPT)) {
+            return DaemonCapabilities::unsupportedResponse($node, DaemonCapabilities::FEATURE_SERVER_SCRIPT);
+        }
+
+        $app = App::getInstance(true);
+        $runScriptEnabled = $app->getConfig()->getSetting(ConfigInterface::SERVER_RUN_SCRIPT_ENABLED, 'false');
+        $runScriptEnabled = ($runScriptEnabled === 'true' || $runScriptEnabled === true || $runScriptEnabled === '1' || $runScriptEnabled === 1);
+        if (!$runScriptEnabled) {
+            return ApiResponse::error('Running custom server scripts is currently disabled by the administrator', 'SERVER_SCRIPT_DISABLED', 403);
+        }
+
+        $body = json_decode($request->getContent(), true);
+        if (!is_array($body)) {
+            return ApiResponse::error('Invalid JSON body', 'INVALID_BODY', 400);
+        }
+
+        $containerImage = trim((string) ($body['container_image'] ?? ''));
+        $entrypoint = trim((string) ($body['entrypoint'] ?? ''));
+        $script = (string) ($body['script'] ?? '');
+        if ($containerImage === '' || $entrypoint === '' || $script === '') {
+            return ApiResponse::error('container_image, entrypoint, and script are required', 'MISSING_FIELDS', 400);
+        }
+
+        $spellForScript = Spell::getSpellById((int) ($server['spell_id'] ?? 0));
+        if (!$spellForScript) {
+            return ApiResponse::error('Spell not found for Docker image validation', 'SPELL_NOT_FOUND', 404);
+        }
+        $allowedScriptImages = Spell::parseDockerImages($spellForScript['docker_images'] ?? null);
+        if ($allowedScriptImages === [] || !in_array($containerImage, $allowedScriptImages, true)) {
+            return ApiResponse::error(
+                'container_image must be one of the images configured for this spell',
+                'INVALID_DOCKER_IMAGE',
+                400
+            );
+        }
+
+        $payload = [
+            'container_image' => $containerImage,
+            'entrypoint' => $entrypoint,
+            'script' => $script,
+            'environment' => is_array($body['environment'] ?? null) ? $body['environment'] : [],
+        ];
+
+        try {
+            $wings = \App\Services\Wings\Wings::fromNode($node, 120);
+            $response = $wings->getServer()->runServerScript($server['uuid'], $payload);
+            if (!$response->isSuccessful()) {
+                return ApiResponse::error('Failed to run script: ' . $response->getError(), 'WINGS_ERROR', $response->getStatusCode() ?: 500);
+            }
+
+            $this->logActivity($server, $node, 'server_script_run', [
+                'container_image' => $containerImage,
+            ], $user);
+
+            return ApiResponse::success($response->getData(), 'Script started', 202);
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to run script: ' . $e->getMessage(), 'SCRIPT_FAILED', 500);
+        }
+    }
+
+    /**
+     * Daemon-side server version/hash (Calagopus).
+     */
+    public function getDaemonServerVersion(Request $request, string $uuidShort): Response
+    {
+        $user = $request->attributes->get('user');
+        if (!$user) {
+            return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
+        }
+
+        $server = Server::getServerByUuidShort($uuidShort);
+        if (!$server) {
+            return ApiResponse::error('Server not found', 'NOT_FOUND', 404);
+        }
+
+        $node = Node::getNodeById($server['node_id']);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+
+        if (!DaemonCapabilities::fromNode($node)->isWingsRs()) {
+            return DaemonCapabilities::unsupportedResponse($node, 'server_version');
+        }
+
+        try {
+            $wings = \App\Services\Wings\Wings::fromNode($node, 30);
+            $response = $wings->getServer()->getServerVersion($server['uuid']);
+            if (!$response->isSuccessful()) {
+                return ApiResponse::error('Failed to get version: ' . $response->getError(), 'WINGS_ERROR', $response->getStatusCode() ?: 500);
+            }
+
+            return ApiResponse::success($response->getData(), 'Server version retrieved');
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to get version: ' . $e->getMessage(), 'VERSION_FAILED', 500);
+        }
+    }
+
+    /**
+     * Broadcast a websocket message to connected clients (Calagopus).
+     */
+    public function broadcastWs(Request $request, string $uuidShort): Response
+    {
+        $user = $request->attributes->get('user');
+        if (!$user) {
+            return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
+        }
+
+        $server = Server::getServerByUuidShort($uuidShort);
+        if (!$server) {
+            return ApiResponse::error('Server not found', 'NOT_FOUND', 404);
+        }
+
+        $isOwner = (int) $server['owner_id'] === (int) $user['id'];
+        if (!$isOwner) {
+            $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::CONTROL_CONSOLE);
+            if ($permissionCheck !== null) {
+                return $permissionCheck;
+            }
+        }
+
+        $node = Node::getNodeById($server['node_id']);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+
+        if (!DaemonCapabilities::fromNode($node)->supports(DaemonCapabilities::FEATURE_WS_LIVE_PERMISSIONS)) {
+            return DaemonCapabilities::unsupportedResponse($node, DaemonCapabilities::FEATURE_WS_LIVE_PERMISSIONS);
+        }
+
+        $body = json_decode($request->getContent(), true);
+        if (!is_array($body)) {
+            return ApiResponse::error('users, permissions, and message are required', 'INVALID_BODY', 400);
+        }
+        if (!isset($body['users']) || !is_array($body['users'])) {
+            return ApiResponse::error('users must be an array', 'MISSING_USERS', 400);
+        }
+        if (!isset($body['permissions']) || !is_array($body['permissions'])) {
+            return ApiResponse::error('permissions must be an array', 'MISSING_PERMISSIONS', 400);
+        }
+        if (!isset($body['message']) || !is_string($body['message']) || trim($body['message']) === '') {
+            return ApiResponse::error('message is required', 'MISSING_MESSAGE', 400);
+        }
+
+        $payload = [
+            'users' => array_values($body['users']),
+            'permissions' => array_values($body['permissions']),
+            'message' => $body['message'],
+        ];
+
+        try {
+            $wings = \App\Services\Wings\Wings::fromNode($node, 30);
+            $response = $wings->getServer()->broadcastWsMessage($server['uuid'], $payload);
+            if (!$response->isSuccessful()) {
+                return ApiResponse::error('Failed to broadcast: ' . $response->getError(), 'WINGS_ERROR', $response->getStatusCode() ?: 500);
+            }
+
+            return ApiResponse::success($response->getData(), 'Broadcast sent');
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to broadcast: ' . $e->getMessage(), 'BROADCAST_FAILED', 500);
+        }
     }
 
     /**
@@ -1938,19 +2211,8 @@ class ServerUserController
         }
 
         try {
-            $scheme = $node['scheme'];
-            $host = $node['fqdn'];
-            $port = $node['daemonListen'];
-            $token = $node['daemon_token'];
-
             $timeout = (int) 30;
-            $wings = new \App\Services\Wings\Wings(
-                $host,
-                $port,
-                $scheme,
-                $token,
-                $timeout
-            );
+            $wings = \App\Services\Wings\Wings::fromNode($node, $timeout);
 
             // Send command to Wings daemon
             $response = $wings->getServer()->sendCommands($server['uuid'], [$command]);
@@ -2136,20 +2398,9 @@ class ServerUserController
 
         // Delete from Wings daemon (after database deletion)
         if ($nodeInfo) {
-            $scheme = $nodeInfo['scheme'];
-            $host = $nodeInfo['fqdn'];
-            $port = $nodeInfo['daemonListen'];
-            $token = $nodeInfo['daemon_token'];
-
             $timeout = (int) 30;
             try {
-                $wings = new \App\Services\Wings\Wings(
-                    $host,
-                    $port,
-                    $scheme,
-                    $token,
-                    $timeout
-                );
+                $wings = \App\Services\Wings\Wings::fromNode($nodeInfo, $timeout);
 
                 $response = $wings->getServer()->deleteServer($server['uuid']);
                 if (!$response->isSuccessful()) {
@@ -2405,11 +2656,14 @@ class ServerUserController
 
             $responseData = $listResponse->getData();
 
-            // Handle different response structures
-            // Wings might return array directly or wrapped in 'contents' key
-            if (is_array($responseData) && isset($responseData['contents']) && is_array($responseData['contents'])) {
+            // Normalize list-shaped and wrapped directory payloads to a file-entry list.
+            if (is_array($responseData) && isset($responseData['entries']) && is_array($responseData['entries'])) {
+                $files = $responseData['entries'];
+            } elseif (is_array($responseData) && isset($responseData['files']) && is_array($responseData['files'])) {
+                $files = $responseData['files'];
+            } elseif (is_array($responseData) && isset($responseData['contents']) && is_array($responseData['contents'])) {
                 $files = $responseData['contents'];
-            } elseif (is_array($responseData)) {
+            } elseif (is_array($responseData) && array_is_list($responseData)) {
                 $files = $responseData;
             } else {
                 $files = [];
@@ -2477,13 +2731,7 @@ class ServerUserController
         }
 
         try {
-            $wings = new \App\Services\Wings\Wings(
-                $node['fqdn'],
-                $node['daemonListen'],
-                $node['scheme'],
-                $node['daemon_token'],
-                30
-            );
+            $wings = \App\Services\Wings\Wings::fromNode($node, 30);
             $response = $wings->getServer()->syncServer($server['uuid']);
             if (!$response->isSuccessful()) {
                 return ApiResponse::error('Failed to sync server configuration: ' . $response->getError(), 'WINGS_ERROR', $response->getStatusCode());

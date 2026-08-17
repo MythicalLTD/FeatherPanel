@@ -243,13 +243,18 @@ class WingsTransferStatusController
         // Update the server
         Server::updateServerById($server['id'], $serverUpdateData);
 
-        // Mark transfer as successful
+        // Mark transfer as successful (clears the error field; metadata is preserved)
+        $keepBackupRows = $this->shouldKeepBackupRowsAfterTransfer($transfer);
         ServerTransfer::markSuccessful($server['id']);
 
-        // 3. Delete backups from the old node (they are not transferred)
-        $deletedBackups = Backup::deleteAllByServerId($server['id']);
-        if ($deletedBackups > 0) {
-            $logger->info('Deleted ' . $deletedBackups . ' backup records for transferred server ' . $uuid);
+        // 3. Delete backups from the old node unless they were transferred (Calagopus).
+        if ($keepBackupRows) {
+            $logger->info('Keeping backup DB rows for transferred server ' . $uuid . ' (backups moved with server)');
+        } else {
+            $deletedBackups = Backup::deleteAllByServerId($server['id']);
+            if ($deletedBackups > 0) {
+                $logger->info('Deleted ' . $deletedBackups . ' backup records for transferred server ' . $uuid);
+            }
         }
 
         // 4. Delete the server from the old node via Wings API
@@ -388,6 +393,27 @@ class WingsTransferStatusController
         $logger->error('Server transfer failed: ' . $server['name'] . ' (UUID: ' . $uuid . ') - ' . $error);
 
         return ApiResponse::success([], 'Transfer failure recorded', 200);
+    }
+
+    /**
+     * Whether backup DB rows should be kept after a successful transfer.
+     *
+     * The keep/delete decision is recorded at transfer initiation in metadata.keep_backup_rows.
+     *
+     * @param array<string, mixed> $transfer
+     */
+    private function shouldKeepBackupRowsAfterTransfer(array $transfer): bool
+    {
+        $metadata = $transfer['metadata'] ?? null;
+        if (is_string($metadata)) {
+            $decoded = json_decode($metadata, true);
+            $metadata = is_array($decoded) ? $decoded : null;
+        }
+        if (!is_array($metadata)) {
+            return false;
+        }
+
+        return !empty($metadata['keep_backup_rows']);
     }
 
     /**

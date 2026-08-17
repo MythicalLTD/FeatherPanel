@@ -41,6 +41,7 @@ use App\Chat\DatabaseInstance;
 use App\Config\ConfigInterface;
 use App\Helpers\WingsUrlHelper;
 use App\Chat\ServerCustomVariable;
+use App\Helpers\DaemonCapabilities;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Mail\templates\ServerBanned;
 use App\Mail\templates\ServerCreated;
@@ -583,6 +584,12 @@ class ServersController
             $server['node']['daemonSFTP'],
             $server['node']['daemonBase']
         );
+
+        if (is_array($server['node'])) {
+            $caps = DaemonCapabilities::fromNode($server['node']);
+            $server['node']['daemon_type'] = $caps->getType();
+            $server['node']['capabilities'] = $caps->toArray();
+        }
 
         $server = ModerationReasonHelper::enrichServerSuspensionMetadata($server);
         $server = TimeHelper::normaliseRow($server, ['installed_at', 'suspended_at']);
@@ -2853,6 +2860,9 @@ class ServersController
                 properties: [
                     new OA\Property(property: 'destination_node_id', type: 'integer', description: 'Destination node ID', minimum: 1),
                     new OA\Property(property: 'destination_allocation_id', type: 'integer', description: 'Destination allocation ID (optional)', minimum: 1),
+                    new OA\Property(property: 'backups', type: 'array', items: new OA\Items(type: 'string', format: 'uuid'), description: 'Optional backup UUIDs to transfer (Calagopus)'),
+                    new OA\Property(property: 'include_all_backups', type: 'boolean', description: 'Include all successful server backups when no explicit backups are supplied'),
+                    new OA\Property(property: 'delete_backups', type: 'boolean', description: 'Delete transferred backups on the source node (Calagopus)'),
                 ]
             )
         ),
@@ -3151,6 +3161,10 @@ class ServersController
         $node = Node::getNodeById((int) $server['node_id']);
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+
+        if (!DaemonCapabilities::fromNode($node)->supports(DaemonCapabilities::FEATURE_RECONCILE)) {
+            return DaemonCapabilities::unsupportedResponse($node, DaemonCapabilities::FEATURE_RECONCILE);
         }
 
         try {

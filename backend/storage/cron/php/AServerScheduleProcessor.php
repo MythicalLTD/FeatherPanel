@@ -530,7 +530,8 @@ class AServerScheduleProcessor implements TimeTask
                 throw new \Exception('Failed to create backup record');
             }
 
-            $response = $wings->getServer()->createBackup($server['uuid'], $adapter, $backupUuid, $ignoredFiles);
+            $daemonAdapter = BackupAdapterResolver::toDaemonAdapter($adapter, $wings);
+            $response = $wings->getServer()->createBackup($server['uuid'], $daemonAdapter, $backupUuid, $ignoredFiles);
 
             if (!$response->isSuccessful()) {
                 $error = $response->getError();

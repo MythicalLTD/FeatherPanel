@@ -15,70 +15,37 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { Activity, Zap, Database, Clock, CheckCircle2, AlertTriangle, Server, HardDrive } from 'lucide-react';
+import React from 'react';
+import Link from 'next/link';
+import {
+    Activity,
+    Zap,
+    Database,
+    Clock,
+    CheckCircle2,
+    AlertTriangle,
+    Server,
+    HardDrive,
+    ArrowUpRight,
+} from 'lucide-react';
 import { PageCard } from '@/components/featherui/PageCard';
+import { Progress } from '@/components/ui/progress';
 import { cn, formatFileSize } from '@/lib/utils';
-import axios from 'axios';
-
-interface GlobalStats {
-    total_nodes: number;
-    healthy_nodes: number;
-    unhealthy_nodes: number;
-    total_memory: number;
-    used_memory: number;
-    avg_cpu_percent: number;
-}
-
-interface SelfTestResponse {
-    status: string;
-    checks: {
-        redis: { status: boolean; message: string };
-        mysql: { status: boolean; message: string };
-        permissions: Record<string, boolean>;
-    };
-}
-
 import { useTranslation } from '@/contexts/TranslationContext';
+import type { GlobalStats, SelfTestResponse } from '@/hooks/useSystemHealth';
 
-export function SystemHealthWidget() {
+interface SystemHealthWidgetProps {
+    stats: GlobalStats | null;
+    selftest: SelfTestResponse | null;
+    latency: number;
+    loading: boolean;
+}
+
+export function SystemHealthWidget({ stats, selftest, latency, loading }: SystemHealthWidgetProps) {
     const { t } = useTranslation();
-    const [stats, setStats] = useState<GlobalStats | null>(null);
-    const [selftest, setSelftest] = useState<SelfTestResponse | null>(null);
-    const [latency, setLatency] = useState<number>(0);
-    const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const statsReq = axios.get('/api/admin/nodes/status/global');
-
-                const start = performance.now();
-                const selftestReq = axios.get('/api/selftest');
-
-                const [statsRes, selftestRes] = await Promise.all([statsReq, selftestReq]);
-                const end = performance.now();
-
-                setLatency(Math.round(end - start));
-
-                if (statsRes.data.success) {
-                    setStats(statsRes.data.data.global);
-                }
-
-                if (selftestRes.data.success) {
-                    setSelftest(selftestRes.data.data);
-                }
-            } catch (err) {
-                console.error('Failed to fetch system health', err);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchData();
-        const interval = setInterval(fetchData, 30000);
-        return () => clearInterval(interval);
-    }, []);
+    const memoryPct = stats && stats.total_memory > 0 ? Math.round((stats.used_memory / stats.total_memory) * 100) : 0;
+    const cpuPct = stats ? Math.min(100, Math.max(0, Math.round(stats.avg_cpu_percent))) : 0;
 
     const systems = [
         {
@@ -92,27 +59,7 @@ export function SystemHealthWidget() {
                       total: String(stats.total_nodes),
                   })
                 : t('admin.system_health.status.loading'),
-            loading: loading,
-        },
-        {
-            name: t('admin.system_health.memory'),
-            status: 'Usage',
-            icon: HardDrive,
-            color: 'text-primary',
-            detail: stats
-                ? `${formatFileSize(stats.used_memory)} / ${formatFileSize(stats.total_memory)}`
-                : t('admin.system_health.status.unavailable'),
-            loading: loading,
-        },
-        {
-            name: t('admin.system_health.cpu_load'),
-            status: 'Average',
-            icon: Activity,
-            color: 'text-primary',
-            detail: stats
-                ? `${stats.avg_cpu_percent}% ${t('admin.system_health.avg')}`
-                : t('admin.system_health.status.unavailable'),
-            loading: loading,
+            loading,
         },
         {
             name: t('admin.system_health.startup'),
@@ -120,33 +67,33 @@ export function SystemHealthWidget() {
             icon: Clock,
             color: 'text-primary',
             detail: `${latency}ms`,
-            loading: loading,
+            loading,
         },
         {
             name: t('admin.system_health.database'),
-            status: selftest?.checks.mysql.status ? 'Healthy' : 'Error',
+            status: !selftest ? 'Unknown' : selftest.checks.mysql.status ? 'Healthy' : 'Error',
             icon: Database,
-            color: selftest?.checks.mysql.status ? 'text-primary' : 'text-red-500',
+            color: !selftest ? 'text-muted-foreground' : selftest.checks.mysql.status ? 'text-primary' : 'text-red-500',
             detail:
                 selftest?.checks.mysql.message === 'Successful'
                     ? t('admin.system_health.status.successful')
                     : selftest?.checks.mysql.message === 'Failed'
                       ? t('admin.system_health.status.failed')
                       : selftest?.checks.mysql.message || t('admin.system_health.status.connecting'),
-            loading: loading,
+            loading,
         },
         {
             name: t('admin.system_health.cache'),
-            status: selftest?.checks.redis.status ? 'Healthy' : 'Error',
+            status: !selftest ? 'Unknown' : selftest.checks.redis.status ? 'Healthy' : 'Error',
             icon: Server,
-            color: selftest?.checks.redis.status ? 'text-primary' : 'text-red-500',
+            color: !selftest ? 'text-muted-foreground' : selftest.checks.redis.status ? 'text-primary' : 'text-red-500',
             detail:
                 selftest?.checks.redis.message === 'Successful'
                     ? t('admin.system_health.status.successful')
                     : selftest?.checks.redis.message === 'Failed'
                       ? t('admin.system_health.status.failed')
                       : selftest?.checks.redis.message || t('admin.system_health.status.connecting'),
-            loading: loading,
+            loading,
         },
     ];
 
@@ -155,44 +102,118 @@ export function SystemHealthWidget() {
             title={t('admin.system_health.title')}
             description={t('admin.system_health.description')}
             icon={Activity}
+            className='h-full'
+            action={
+                <Link
+                    href='/admin/nodes/status'
+                    className='text-muted-foreground hover:text-primary flex items-center gap-1 text-[9px] font-black tracking-widest uppercase transition-colors md:text-[10px]'
+                >
+                    {t('admin.system_health.view_nodes')}
+                    <ArrowUpRight className='h-3.5 w-3.5' />
+                </Link>
+            }
         >
-            <div className='grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-4 lg:grid-cols-3'>
-                {systems.map((system) => (
-                    <div
-                        key={system.name}
-                        className='bg-muted/10 border-border/50 group hover:bg-muted/20 flex items-center justify-between gap-3 rounded-xl border p-3 transition-all md:rounded-2xl md:p-4'
-                    >
-                        <div className='flex min-w-0 flex-1 items-center gap-2 md:gap-3'>
-                            <div
-                                className={cn(
-                                    'bg-background border-border/50 group-hover:border-primary/30 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border shadow-sm transition-all md:h-10 md:w-10 md:rounded-xl',
-                                    system.loading && 'animate-pulse',
-                                )}
-                            >
-                                <system.icon className={cn('h-4 w-4 md:h-5 md:w-5', system.color)} />
+            <div className='space-y-5'>
+                <div className='grid grid-cols-1 gap-3 sm:grid-cols-2'>
+                    <div className='bg-muted/10 border-border/50 space-y-3 rounded-xl border p-4 md:rounded-2xl'>
+                        <div className='flex items-center justify-between gap-3'>
+                            <div className='flex items-center gap-2'>
+                                <div className='bg-primary/10 text-primary border-primary/20 flex h-9 w-9 items-center justify-center rounded-lg border'>
+                                    <HardDrive className='h-4 w-4' />
+                                </div>
+                                <div>
+                                    <p className='text-xs font-bold md:text-sm'>{t('admin.system_health.memory')}</p>
+                                    <p className='text-muted-foreground text-[9px] font-bold tracking-tighter uppercase opacity-70 md:text-[10px]'>
+                                        {loading
+                                            ? t('admin.system_health.status.fetching')
+                                            : stats
+                                              ? `${formatFileSize(stats.used_memory)} / ${formatFileSize(stats.total_memory)}`
+                                              : t('admin.system_health.status.unavailable')}
+                                    </p>
+                                </div>
                             </div>
-                            <div className='min-w-0 flex-1'>
-                                <p className='truncate text-xs font-bold tracking-tight md:text-sm'>{system.name}</p>
-                                <p
-                                    className='text-muted-foreground truncate text-[9px] font-bold tracking-tighter uppercase opacity-70 md:text-[10px]'
-                                    title={system.detail}
-                                >
-                                    {system.loading ? t('admin.system_health.status.fetching') : system.detail}
-                                </p>
-                            </div>
+                            <span className='text-sm font-black tabular-nums'>{loading ? '—' : `${memoryPct}%`}</span>
                         </div>
-                        {system.loading ? (
-                            <div className='bg-muted-foreground/30 h-2 w-2 shrink-0 animate-pulse rounded-full' />
-                        ) : system.status === 'Healthy' ||
-                          system.status === 'Usage' ||
-                          system.status === 'Average' ||
-                          system.status === 'Latency' ? (
-                            <CheckCircle2 className='h-4 w-4 shrink-0 text-green-500 md:h-5 md:w-5' />
-                        ) : (
-                            <AlertTriangle className='h-4 w-4 shrink-0 text-red-500 md:h-5 md:w-5' />
-                        )}
+                        <Progress
+                            value={loading ? 0 : memoryPct}
+                            className='h-2'
+                            indicatorClassName={
+                                memoryPct > 90 ? 'bg-red-500' : memoryPct > 75 ? 'bg-amber-500' : undefined
+                            }
+                        />
                     </div>
-                ))}
+
+                    <div className='bg-muted/10 border-border/50 space-y-3 rounded-xl border p-4 md:rounded-2xl'>
+                        <div className='flex items-center justify-between gap-3'>
+                            <div className='flex items-center gap-2'>
+                                <div className='bg-primary/10 text-primary border-primary/20 flex h-9 w-9 items-center justify-center rounded-lg border'>
+                                    <Activity className='h-4 w-4' />
+                                </div>
+                                <div>
+                                    <p className='text-xs font-bold md:text-sm'>{t('admin.system_health.cpu_load')}</p>
+                                    <p className='text-muted-foreground text-[9px] font-bold tracking-tighter uppercase opacity-70 md:text-[10px]'>
+                                        {loading
+                                            ? t('admin.system_health.status.fetching')
+                                            : stats
+                                              ? `${stats.avg_cpu_percent}% ${t('admin.system_health.avg')}`
+                                              : t('admin.system_health.status.unavailable')}
+                                    </p>
+                                </div>
+                            </div>
+                            <span className='text-sm font-black tabular-nums'>{loading ? '—' : `${cpuPct}%`}</span>
+                        </div>
+                        <Progress
+                            value={loading ? 0 : cpuPct}
+                            className='h-2'
+                            indicatorClassName={cpuPct > 90 ? 'bg-red-500' : cpuPct > 75 ? 'bg-amber-500' : undefined}
+                        />
+                    </div>
+                </div>
+
+                <div className='grid grid-cols-1 gap-3 sm:grid-cols-2'>
+                    {systems.map((system) => {
+                        const isOk =
+                            system.status === 'Healthy' ||
+                            system.status === 'Latency' ||
+                            system.status === 'Usage' ||
+                            system.status === 'Average';
+                        return (
+                            <div
+                                key={system.name}
+                                className='bg-muted/10 border-border/50 group hover:bg-muted/20 flex items-center justify-between gap-3 rounded-xl border p-3 transition-all md:rounded-2xl md:p-4'
+                            >
+                                <div className='flex min-w-0 flex-1 items-center gap-2 md:gap-3'>
+                                    <div
+                                        className={cn(
+                                            'bg-background border-border/50 group-hover:border-primary/30 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border shadow-sm transition-all md:h-10 md:w-10 md:rounded-xl',
+                                            system.loading && 'animate-pulse',
+                                        )}
+                                    >
+                                        <system.icon className={cn('h-4 w-4 md:h-5 md:w-5', system.color)} />
+                                    </div>
+                                    <div className='min-w-0 flex-1'>
+                                        <p className='truncate text-xs font-bold tracking-tight md:text-sm'>
+                                            {system.name}
+                                        </p>
+                                        <p
+                                            className='text-muted-foreground truncate text-[9px] font-bold tracking-tighter uppercase opacity-70 md:text-[10px]'
+                                            title={system.detail}
+                                        >
+                                            {system.loading ? t('admin.system_health.status.fetching') : system.detail}
+                                        </p>
+                                    </div>
+                                </div>
+                                {system.loading ? (
+                                    <div className='bg-muted-foreground/30 h-2 w-2 shrink-0 animate-pulse rounded-full' />
+                                ) : isOk ? (
+                                    <CheckCircle2 className='h-4 w-4 shrink-0 text-green-500 md:h-5 md:w-5' />
+                                ) : (
+                                    <AlertTriangle className='h-4 w-4 shrink-0 text-red-500 md:h-5 md:w-5' />
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
             </div>
         </PageCard>
     );

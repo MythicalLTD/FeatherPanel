@@ -73,6 +73,29 @@ return function (RouteCollection $routes): void {
 
     App::getInstance(true)->registerServerRoute(
         $routes,
+        'session-server-backup-destinations',
+        '/api/user/servers/{uuidShort}/backups/destinations',
+        function (Request $request, array $args) {
+            $uuidShort = $args['uuidShort'] ?? null;
+            if (!$uuidShort) {
+                return ApiResponse::error('Missing or invalid UUID short', 'INVALID_UUID_SHORT', 400);
+            }
+
+            $server = \App\Chat\Server::getServerByUuidShort($uuidShort);
+            if (!$server) {
+                return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+            }
+
+            return (new ServerBackupController())->getBackupDestinations($request, $server['uuid']);
+        },
+        'uuidShort',
+        ['GET'],
+        Rate::perMinute(30),
+        'user-server-backups'
+    );
+
+    App::getInstance(true)->registerServerRoute(
+        $routes,
         'session-server-get-backup',
         '/api/user/servers/{uuidShort}/backups/{backupUuid}',
         function (Request $request, array $args) {

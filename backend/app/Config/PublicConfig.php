@@ -59,6 +59,13 @@ class PublicConfig extends ConfigFactory
             // Optional global background image URL and a lock flag to force it for all users.
             ConfigInterface::APP_BACKGROUND_IMAGE_URL => '',
             ConfigInterface::APP_BACKGROUND_LOCK => 'false',
+            // Optional admin default/lock for panel language (locale).
+            ConfigInterface::APP_LOCALE_DEFAULT => 'en',
+            ConfigInterface::APP_LOCALE_LOCK => 'false',
+            // Spell/egg banner on server pages (opt-in; off by default).
+            ConfigInterface::APP_SERVER_SPELL_BANNER_ENABLED => 'false',
+            ConfigInterface::APP_SERVER_SPELL_BANNER_STYLE => 'off',
+            ConfigInterface::APP_SERVER_SPELL_BANNER_BACKGROUND => 'off',
             // Optional admin defaults/locks for theme + accent + background type.
             ConfigInterface::APP_ACCENT_COLOR_DEFAULT => 'purple',
             ConfigInterface::APP_ACCENT_COLOR_LOCK => 'false',
@@ -69,6 +76,7 @@ class PublicConfig extends ConfigFactory
             ConfigInterface::APP_BACKGROUND_TYPE_LOCK => 'false',
 
             ConfigInterface::BRANDING_SHOW_POWERED_BY => 'true',
+            ConfigInterface::BRANDING_SHOW_VERSION => 'true',
             ConfigInterface::CHATBOT_DISPLAY_NAME => '',
             ConfigInterface::CHATBOT_AVATAR_URL => '',
             ConfigInterface::SIDEBAR_NAVIGATION_CONFIG => '',
@@ -161,6 +169,7 @@ class PublicConfig extends ConfigFactory
             ConfigInterface::SERVER_ALLOW_SCHEDULES => 'true',
             ConfigInterface::SERVER_LIFECYCLE_HOOKS_ENABLED => 'false',
             ConfigInterface::SERVER_LIFECYCLE_HOOKS_CONTAINER_SHELL_ENABLED => 'false',
+            ConfigInterface::SERVER_RUN_SCRIPT_ENABLED => 'false',
             ConfigInterface::SERVER_BACKUP_RETENTION_MODE => 'hard_limit',
             ConfigInterface::SERVER_ALLOW_USER_BACKUP_POLICY_EDIT => 'true',
             ConfigInterface::SERVER_ALLOW_ALLOCATION_SELECT => 'false',

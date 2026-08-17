@@ -179,6 +179,10 @@ class SettingsController
                 ConfigInterface::APP_SSO_TOKEN_LIFETIME_MINUTES,
                 ConfigInterface::APP_BACKGROUND_IMAGE_URL,
                 ConfigInterface::APP_BACKGROUND_LOCK,
+                ConfigInterface::APP_LOCALE_DEFAULT,
+                ConfigInterface::APP_LOCALE_LOCK,
+                ConfigInterface::APP_SERVER_SPELL_BANNER_STYLE,
+                ConfigInterface::APP_SERVER_SPELL_BANNER_BACKGROUND,
                 ConfigInterface::APP_ACCENT_COLOR_DEFAULT,
                 ConfigInterface::APP_ACCENT_COLOR_LOCK,
                 ConfigInterface::APP_THEME_DEFAULT,
@@ -337,6 +341,7 @@ class SettingsController
                 ConfigInterface::SERVER_ALLOW_SCHEDULES,
                 ConfigInterface::SERVER_LIFECYCLE_HOOKS_ENABLED,
                 ConfigInterface::SERVER_LIFECYCLE_HOOKS_CONTAINER_SHELL_ENABLED,
+                ConfigInterface::SERVER_RUN_SCRIPT_ENABLED,
                 ConfigInterface::SERVER_BACKUP_RETENTION_MODE,
                 ConfigInterface::SERVER_ALLOW_USER_BACKUP_POLICY_EDIT,
                 ConfigInterface::SERVER_ALLOW_ALLOCATION_SELECT,
@@ -469,6 +474,58 @@ class SettingsController
                 'placeholder' => 'false',
                 'validation' => 'required|string|max:255',
                 'options' => ['true', 'false'],
+                'category' => 'app',
+            ],
+            ConfigInterface::APP_LOCALE_DEFAULT => [
+                'name' => ConfigInterface::APP_LOCALE_DEFAULT,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::APP_LOCALE_DEFAULT, 'en'),
+                'description' => 'Default panel language for users who have not chosen one (must match an installed translation code, e.g. en, de, fr)',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'en',
+                'validation' => 'required|string|max:16',
+                'options' => $this->getAvailableLocaleOptions(),
+                'category' => 'app',
+            ],
+            ConfigInterface::APP_LOCALE_LOCK => [
+                'name' => ConfigInterface::APP_LOCALE_LOCK,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::APP_LOCALE_LOCK, 'false'),
+                'description' => 'Force the configured language for all users (disables per-user language selection)',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'false',
+                'validation' => 'required|string|max:255',
+                'options' => ['true', 'false'],
+                'category' => 'app',
+            ],
+            ConfigInterface::APP_SERVER_SPELL_BANNER_STYLE => [
+                'name' => ConfigInterface::APP_SERVER_SPELL_BANNER_STYLE,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::APP_SERVER_SPELL_BANNER_STYLE, 'off'),
+                'description' => 'How spell/egg banners appear on the server console header: off, cover (side art), strip (top bar), or hero (image behind header controls)',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'off',
+                'validation' => 'required|string|max:32',
+                'options' => ['off', 'cover', 'strip', 'hero'],
+                'category' => 'app',
+            ],
+            ConfigInterface::APP_SERVER_SPELL_BANNER_BACKGROUND => [
+                'name' => ConfigInterface::APP_SERVER_SPELL_BANNER_BACKGROUND,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(ConfigInterface::APP_SERVER_SPELL_BANNER_BACKGROUND, 'off'),
+                'description' => 'Use the spell/egg banner as the full panel background on server pages (same layer as the dashboard theme background): off, blend (soft over current theme), or replace (spell image instead of theme background)',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'off',
+                'validation' => 'required|string|max:32',
+                'options' => ['off', 'blend', 'replace'],
                 'category' => 'app',
             ],
             ConfigInterface::APP_LOGO_WHITE => [
@@ -1978,6 +2035,22 @@ class SettingsController
                         'false',
                     ),
                 'description' => 'Allow the Container Shell lifecycle step (docker exec /bin/sh -c inside the server container). This is a security-sensitive capability: users with schedule.update can run arbitrary shell commands in running containers when lifecycle hooks fire. Default off. Requires Lifecycle Hooks Enabled. Existing Container Shell steps will not execute while this is disabled.',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'false',
+                'validation' => 'required|string|max:255',
+                'options' => ['true', 'false'],
+                'category' => 'servers',
+            ],
+            ConfigInterface::SERVER_RUN_SCRIPT_ENABLED => [
+                'name' => ConfigInterface::SERVER_RUN_SCRIPT_ENABLED,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::SERVER_RUN_SCRIPT_ENABLED,
+                        'false',
+                    ),
+                'description' => 'Allow the "run a custom container script" endpoint, which runs an arbitrary script inside a spell-allowed Docker image. Separate from the lifecycle Container Shell setting. Security-sensitive capability, default off.',
                 'type' => 'select',
                 'required' => true,
                 'placeholder' => 'false',
@@ -3923,6 +3996,50 @@ class SettingsController
                 'updater_response' => $decodedResponse,
             ],
         );
+    }
+
+    /**
+     * Locale codes offered for app_locale_default (from mapping.json + installed files).
+     *
+     * @return list<string>
+     */
+    private function getAvailableLocaleOptions(): array
+    {
+        $codes = ['en'];
+        $publicRoot = defined('APP_PUBLIC') ? \APP_PUBLIC : dirname(__DIR__, 3) . '/public';
+        $translationsDir = $publicRoot . '/translations';
+        $mappingPath = $translationsDir . '/mapping.json';
+
+        if (is_file($mappingPath)) {
+            $raw = file_get_contents($mappingPath);
+            $decoded = is_string($raw) ? json_decode($raw, true) : null;
+            if (is_array($decoded)) {
+                foreach (array_keys($decoded) as $code) {
+                    $normalized = strtolower(str_replace('_', '-', (string) $code));
+                    if ($normalized !== '' && !in_array($normalized, $codes, true)) {
+                        $codes[] = $normalized;
+                    }
+                }
+            }
+        }
+
+        if (is_dir($translationsDir)) {
+            foreach (scandir($translationsDir) ?: [] as $file) {
+                if (!preg_match('/^([a-z]{2}(?:[-_][a-z]{2})?)\.json$/i', $file, $matches)) {
+                    continue;
+                }
+                $normalized = strtolower(str_replace('_', '-', $matches[1]));
+                if ($normalized !== '' && !in_array($normalized, $codes, true)) {
+                    $codes[] = $normalized;
+                }
+            }
+        }
+
+        sort($codes);
+        // Keep English first for admin UX.
+        $codes = array_values(array_unique(array_merge(['en'], array_diff($codes, ['en']))));
+
+        return $codes;
     }
 
     private function isDockerDeployment(): bool

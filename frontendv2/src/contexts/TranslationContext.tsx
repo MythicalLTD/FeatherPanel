@@ -15,8 +15,9 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
+import { createContext, useContext, useEffect, useState, useRef, ReactNode, useCallback } from 'react';
 import { isCloudflareChallengeText } from '@/lib/cloudflare-challenge';
+import { useSettings } from '@/contexts/SettingsContext';
 
 interface Language {
     code: string;
@@ -32,6 +33,8 @@ interface TranslationContextType {
     t: (key: string, params?: Record<string, string>) => string;
     loading: boolean;
     initialLoading: boolean;
+    /** When true, admin forced language and users cannot change it. */
+    isLocaleLocked: boolean;
 }
 
 const TranslationContext = createContext<TranslationContextType | undefined>(undefined);
@@ -39,14 +42,40 @@ const TranslationContext = createContext<TranslationContextType | undefined>(und
 const DEFAULT_LOCALE = 'en';
 const PRIMARY_LOCALE = 'en';
 const CACHE_VERSION = '1.5';
+const LOCALE_USER_OVERRIDE_KEY = 'localeUserOverride';
+const LOCALE_MIGRATION_KEY = 'localeMigrationV1';
+
+function normalizeLocaleCode(code: string): string {
+    return code.trim().toLowerCase().replace(/_/g, '-');
+}
+
+function hasLocaleUserOverride(): boolean {
+    return localStorage.getItem(LOCALE_USER_OVERRIDE_KEY) === 'true';
+}
+
+/** Preserve pre-feature saved locales as explicit user preferences (one-time). */
+function migrateLegacyLocalePreference(): void {
+    if (typeof window === 'undefined') return;
+    if (localStorage.getItem(LOCALE_MIGRATION_KEY) === 'true') return;
+    if (localStorage.getItem('locale')) {
+        localStorage.setItem(LOCALE_USER_OVERRIDE_KEY, 'true');
+    }
+    localStorage.setItem(LOCALE_MIGRATION_KEY, 'true');
+}
 
 export function TranslationProvider({ children }: { children: ReactNode }) {
+    const { settings, loading: settingsLoading } = useSettings();
+    const isLocaleLocked = settings?.app_locale_lock === 'true';
+    const adminLocaleDefault = normalizeLocaleCode(settings?.app_locale_default || '') || DEFAULT_LOCALE;
+
     const [locale, setLocaleState] = useState(() => {
         if (typeof window !== 'undefined') {
-            return localStorage.getItem('locale') || DEFAULT_LOCALE;
+            const stored = localStorage.getItem('locale');
+            return stored ? normalizeLocaleCode(stored) || DEFAULT_LOCALE : DEFAULT_LOCALE;
         }
         return DEFAULT_LOCALE;
     });
+    const hasStoredLocaleRef = useRef(typeof window !== 'undefined' && !!localStorage.getItem('locale'));
     const [translations, setTranslations] = useState<Record<string, unknown>>({});
     const [availableLanguages, setAvailableLanguages] = useState<Language[]>([
         { code: 'en', name: 'English', nativeName: 'English' },
@@ -192,16 +221,39 @@ export function TranslationProvider({ children }: { children: ReactNode }) {
     }, []);
 
     useEffect(() => {
+        // For first-time visitors with no stored/overridden locale, wait for admin locale
+        // settings to resolve before the first fetch. Otherwise we'd load the default locale
+        // and then immediately reload once the admin default is applied below, causing a
+        // duplicate network fetch and a visible language flash.
+        if (!hasStoredLocaleRef.current && settingsLoading) return;
         loadFullTranslations(locale);
         loadAvailableLanguages();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [locale]);
+    }, [locale, settingsLoading]);
+
+    // Apply admin default / lock once public settings are available.
+    useEffect(() => {
+        if (!settings) return;
+
+        migrateLegacyLocalePreference();
+
+        const shouldUseAdminDefault = isLocaleLocked || !hasLocaleUserOverride();
+        if (!shouldUseAdminDefault) return;
+        if (!adminLocaleDefault || adminLocaleDefault === locale) return;
+
+        setLocaleState(adminLocaleDefault);
+        localStorage.setItem('locale', adminLocaleDefault);
+    }, [settings, isLocaleLocked, adminLocaleDefault, locale]);
 
     const setLocale = async (newLocale: string) => {
+        if (isLocaleLocked) return;
+
+        const normalized = normalizeLocaleCode(newLocale) || DEFAULT_LOCALE;
         setLoading(true);
-        setLocaleState(newLocale);
-        localStorage.setItem('locale', newLocale);
-        await loadFullTranslations(newLocale);
+        setLocaleState(normalized);
+        localStorage.setItem('locale', normalized);
+        localStorage.setItem(LOCALE_USER_OVERRIDE_KEY, 'true');
+        await loadFullTranslations(normalized);
         setLoading(false);
     };
 
@@ -243,6 +295,7 @@ export function TranslationProvider({ children }: { children: ReactNode }) {
                 t,
                 loading,
                 initialLoading,
+                isLocaleLocked,
             }}
         >
             {children}

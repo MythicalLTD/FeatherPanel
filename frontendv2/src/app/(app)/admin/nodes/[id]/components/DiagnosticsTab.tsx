@@ -19,16 +19,27 @@ import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Label } from '@/components/ui/label';
-import { Activity, Clipboard, FileText, ExternalLink, AlertTriangle, CheckCircle2, Settings2 } from 'lucide-react';
+import {
+    Activity,
+    Clipboard,
+    FileText,
+    ExternalLink,
+    AlertTriangle,
+    CheckCircle2,
+    Settings2,
+    ScrollText,
+} from 'lucide-react';
 import axios from 'axios';
 import { DiagnosticsResult } from '../types';
 import { toast } from 'sonner';
 
 interface DiagnosticsTabProps {
     nodeId: number;
+    /** When true, show Calagopus system logs section */
+    systemLogsEnabled?: boolean;
 }
 
-export function DiagnosticsTab({ nodeId }: DiagnosticsTabProps) {
+export function DiagnosticsTab({ nodeId, systemLogsEnabled = false }: DiagnosticsTabProps) {
     const { t } = useTranslation();
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState<DiagnosticsResult | null>(null);
@@ -41,6 +52,10 @@ export function DiagnosticsTab({ nodeId }: DiagnosticsTabProps) {
         logLines: 200,
         uploadApiUrl: '',
     });
+
+    const [systemLogsLoading, setSystemLogsLoading] = useState(false);
+    const [systemLogs, setSystemLogs] = useState<string | string[] | null>(null);
+    const [systemLogsError, setSystemLogsError] = useState<string | null>(null);
 
     const handleGenerate = async () => {
         setLoading(true);
@@ -73,6 +88,48 @@ export function DiagnosticsTab({ nodeId }: DiagnosticsTabProps) {
             toast.error(msg);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleFetchSystemLogs = async () => {
+        setSystemLogsLoading(true);
+        setSystemLogsError(null);
+        try {
+            // Stub path until backend lands: GET /api/admin/nodes/{id}/system-logs
+            const { data } = await axios.get(`/api/admin/nodes/${nodeId}/system-logs`);
+            if (data?.success === false) {
+                throw new Error(data.message || t('admin.node.view.diagnostics.system_logs_failed'));
+            }
+            const payload = data?.data ?? data;
+            if (typeof payload === 'string') {
+                setSystemLogs(payload);
+            } else if (Array.isArray(payload)) {
+                setSystemLogs(payload);
+            } else if (payload?.content) {
+                setSystemLogs(String(payload.content));
+            } else if (payload?.logs) {
+                setSystemLogs(Array.isArray(payload.logs) ? payload.logs : String(payload.logs));
+            } else if (payload?.files && Array.isArray(payload.files)) {
+                setSystemLogs(
+                    payload.files.map((f: { name?: string } | string) =>
+                        typeof f === 'string' ? f : f.name || JSON.stringify(f),
+                    ),
+                );
+            } else {
+                setSystemLogs(JSON.stringify(payload, null, 2));
+            }
+            toast.success(t('admin.node.view.diagnostics.system_logs_success'));
+        } catch (e: unknown) {
+            let msg = t('admin.node.view.diagnostics.system_logs_failed');
+            if (axios.isAxiosError(e)) {
+                msg = e.response?.data?.message || e.message || msg;
+            } else if (e instanceof Error) {
+                msg = e.message;
+            }
+            setSystemLogsError(msg);
+            toast.error(msg);
+        } finally {
+            setSystemLogsLoading(false);
         }
     };
 
@@ -251,6 +308,52 @@ export function DiagnosticsTab({ nodeId }: DiagnosticsTabProps) {
                     </div>
                 </div>
             </PageCard>
+
+            {systemLogsEnabled && (
+                <PageCard
+                    title={t('admin.node.view.diagnostics.system_logs_title')}
+                    description={t('admin.node.view.diagnostics.system_logs_description')}
+                    icon={ScrollText}
+                >
+                    <div className='space-y-4'>
+                        <Button
+                            className='h-11 text-sm font-bold'
+                            loading={systemLogsLoading}
+                            onClick={handleFetchSystemLogs}
+                        >
+                            {!systemLogsLoading && <ScrollText className='mr-2 h-4 w-4' />}
+                            {t('admin.node.view.diagnostics.system_logs_fetch')}
+                        </Button>
+
+                        {systemLogsError && <p className='text-destructive text-sm'>{systemLogsError}</p>}
+
+                        {systemLogs && (
+                            <div className='space-y-3'>
+                                <div className='flex items-center justify-between'>
+                                    <Label className='text-muted-foreground text-xs font-bold tracking-wider uppercase'>
+                                        {t('admin.node.view.diagnostics.system_logs_output')}
+                                    </Label>
+                                    <Button
+                                        variant='ghost'
+                                        size='sm'
+                                        onClick={() =>
+                                            copyToClipboard(
+                                                Array.isArray(systemLogs) ? systemLogs.join('\n') : systemLogs,
+                                            )
+                                        }
+                                    >
+                                        <Clipboard className='mr-2 h-4 w-4' />
+                                        {t('common.copy')}
+                                    </Button>
+                                </div>
+                                <pre className='bg-muted/30 border-border/50 max-h-[400px] overflow-auto rounded-2xl border p-6 font-mono text-[11px] leading-relaxed whitespace-pre-wrap'>
+                                    {Array.isArray(systemLogs) ? systemLogs.join('\n') : systemLogs}
+                                </pre>
+                            </div>
+                        )}
+                    </div>
+                </PageCard>
+            )}
 
             {result && (
                 <PageCard

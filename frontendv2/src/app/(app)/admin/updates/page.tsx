@@ -55,6 +55,7 @@ interface NodeVersionInfo {
     current_version?: string;
     latest_version?: string;
     update_available?: boolean;
+    self_update_supported?: boolean;
     loading?: boolean;
     error?: string;
 }
@@ -164,12 +165,14 @@ export default function AdminUpdatesPage() {
         try {
             const response = await axios.get(`/api/admin/nodes/${id}/version-status`);
             const data = response.data?.data || {};
+            const selfUpdateSupported = data.self_update_supported !== false;
             setNodeVersions((prev) => ({
                 ...prev,
                 [id]: {
                     current_version: data.current_version,
                     latest_version: data.latest_version,
                     update_available: Boolean(data.update_available),
+                    self_update_supported: selfUpdateSupported,
                     loading: false,
                 },
             }));
@@ -298,7 +301,13 @@ export default function AdminUpdatesPage() {
     );
 
     const selectableNodeIds = useMemo(
-        () => filteredNodes.filter((n) => nodeVersions[n.id]?.update_available).map((n) => n.id),
+        () =>
+            filteredNodes
+                .filter((n) => {
+                    const version = nodeVersions[n.id];
+                    return version?.update_available && version?.self_update_supported !== false;
+                })
+                .map((n) => n.id),
         [filteredNodes, nodeVersions],
     );
 
@@ -354,8 +363,9 @@ export default function AdminUpdatesPage() {
         let fail = 0;
 
         try {
+            const nodeIds = [...selectedNodes].filter((id) => nodeVersions[id]?.self_update_supported !== false);
             const nodeResults = await Promise.allSettled(
-                [...selectedNodes].map((id) => axios.post(`/api/admin/nodes/${id}/self-update`, { source: 'github' })),
+                nodeIds.map((id) => axios.post(`/api/admin/nodes/${id}/self-update`, { source: 'github' })),
             );
             fail += nodeResults.filter((r) => r.status === 'rejected').length;
 
@@ -784,6 +794,7 @@ export default function AdminUpdatesPage() {
                         {filteredNodes.map((node) => {
                             const version = nodeVersions[node.id];
                             const needsUpdate = Boolean(version?.update_available);
+                            const selfUpdateSupported = version?.self_update_supported !== false;
                             const checked = selectedNodes.has(node.id);
 
                             return (
@@ -794,7 +805,7 @@ export default function AdminUpdatesPage() {
                                     <div className='flex items-start gap-3'>
                                         <Checkbox
                                             checked={checked}
-                                            disabled={!needsUpdate || isBulkUpdating}
+                                            disabled={!needsUpdate || !selfUpdateSupported || isBulkUpdating}
                                             onCheckedChange={(value) => {
                                                 setSelectedNodes((prev) => {
                                                     const next = new Set(prev);
@@ -830,7 +841,11 @@ export default function AdminUpdatesPage() {
                                                 )}
                                             </p>
                                         </div>
-                                        {needsUpdate ? (
+                                        {version?.self_update_supported === false && needsUpdate && !version?.loading && !version?.error ? (
+                                            <span className='rounded-md bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-400'>
+                                                {t('admin_updates.wings.manual_update_required')}
+                                            </span>
+                                        ) : needsUpdate ? (
                                             <span className='rounded-md bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-400'>
                                                 Update
                                             </span>
