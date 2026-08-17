@@ -8,7 +8,7 @@
 		"dev:turbo": "NODE_OPTIONS='--max-old-space-size=8192' next dev -H 127.0.0.1",
 		"dev:clean": "rm -rf .next/dev && pnpm dev",
 		"build": "run-s scan:translations lint build:next",
-		"build:next": "next build",
+		"build:next": "next build && node scripts/fix-standalone-swc-helpers.js",
 		"start": "next start",
 		"lint": "run-s lint:eslint lint:format",
 		"lint:eslint": "node --require ./scripts/eslint-ts6-shim.cjs ./node_modules/eslint/bin/eslint.js --fix",

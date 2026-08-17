@@ -24,6 +24,7 @@
 - Opening Rules & filters on tablet/desktop no longer also pops the mobile side sheet (it was ignoring `sm:hidden` because the sheet portals to the document body). by @nayskutzu
 - Subuser management endpoints now enforce `user.read` / `user.create` / `user.update` / `user.delete`, reject self-modification, validate permission names against the known set, and block assigning permissions the actor does not hold — closing privilege escalation where any invited subuser could rewrite their own permission list. by @nayskutzu
 - Fixed an issue where the server would incorrectly display "Java version 69 required" instead of showing the correct Java version (it was displaying the internal class file version). by @nayskutzu
+- Frontend Docker image no longer crash-loops on Next.js 16.3.1 (`Cannot find module @swc/helpers/esm/_interop_require_default.js`), which left Caddy returning 502. by @nayskutzu
 
 ## v1.3.7.9 STABLE
 
