@@ -7,8 +7,9 @@ WORKDIR /app
 # Install pnpm
 RUN npm install -g pnpm
 
-# Copy package files
+# Copy package files and patches (required by patchedDependencies)
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY patches ./patches
 
 # Install dependencies with BuildKit cache mount
 RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
