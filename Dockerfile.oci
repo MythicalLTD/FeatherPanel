@@ -101,11 +101,12 @@ COPY backend/composer.json backend/composer.lock ./
 # Retry on transient GitHub/Packagist 5xx during package downloads
 RUN --mount=type=cache,target=/root/.composer/cache \
     COMPOSER_ALLOW_SUPERUSER=1 COMPOSER_PROCESS_TIMEOUT=600 \
-    sh -c 'for i in 1 2 3 4 5; do \
-      composer install --no-dev --optimize-autoloader --no-interaction && exit 0; \
-      echo "composer install failed (attempt $$i/5), retrying in $$((i * 15))s..."; \
-      sleep $$((i * 15)); \
-    done; exit 1'
+    for attempt in 1 2 3 4 5; do \
+      composer install --no-dev --optimize-autoloader --no-interaction && break; \
+      if [ "$$attempt" = "5" ]; then exit 1; fi; \
+      echo "composer install failed (attempt $$attempt/5), retrying in 20s..."; \
+      sleep 20; \
+    done
 
 # Copy rest of backend
 COPY backend/ .
