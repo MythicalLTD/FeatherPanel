@@ -32,6 +32,7 @@ use App\Services\Wings\Exceptions\WingsRequestException;
  */
 class SystemService
 {
+    private const UTILIZATION_CACHE_TTL_SECONDS = 2.0;
     private WingsConnection $connection;
 
     /** Short-lived per-instance memoization for getSystemUtilization() to avoid
@@ -40,8 +41,6 @@ class SystemService
     private ?array $utilizationCache = null;
 
     private float $utilizationCacheExpiresAt = 0.0;
-
-    private const UTILIZATION_CACHE_TTL_SECONDS = 2.0;
 
     /**
      * Create a new SystemService instance.
@@ -391,46 +390,6 @@ class SystemService
         $this->utilizationCacheExpiresAt = microtime(true) + self::UTILIZATION_CACHE_TTL_SECONDS;
 
         return $result;
-    }
-
-    private function fetchSystemUtilization(int $maxRetries): array
-    {
-        try {
-            return $this->connection->get('/api/system/utilization', [], $maxRetries);
-        } catch (WingsRequestException $e) {
-            // Only fall back when the utilization endpoint is missing (404).
-            // Other errors (auth, network, 5xx) should propagate.
-            if ((int) $e->getCode() !== 404) {
-                throw $e;
-            }
-
-            // Calagopus wings-rs: live CPU/memory/disk from /api/system/stats
-            try {
-                $stats = $this->connection->get('/api/system/stats', [], $maxRetries);
-
-                return self::utilizationFromCalagopusStats($stats);
-            } catch (WingsRequestException $statsError) {
-                if ((int) $statsError->getCode() !== 404) {
-                    throw $statsError;
-                }
-            }
-
-            // Calagopus overview: memory totals + coarse host info (no CPU %)
-            try {
-                $overview = $this->connection->get('/api/system/overview', [], $maxRetries);
-
-                return self::utilizationFromCalagopusOverview($overview);
-            } catch (WingsRequestException $overviewError) {
-                if ((int) $overviewError->getCode() !== 404) {
-                    throw $overviewError;
-                }
-            }
-
-            // Last resort: /api/system?v=2 capacity only (may be zeros on Calagopus flat shape)
-            $systemInfo = $this->connection->get('/api/system?v=2', [], $maxRetries);
-
-            return self::utilizationFromSystemInfo($systemInfo);
-        }
     }
 
     /**
@@ -922,6 +881,46 @@ class SystemService
         }
 
         return $this->connection->getRaw($endpoint, ['Accept' => 'text/plain']);
+    }
+
+    private function fetchSystemUtilization(int $maxRetries): array
+    {
+        try {
+            return $this->connection->get('/api/system/utilization', [], $maxRetries);
+        } catch (WingsRequestException $e) {
+            // Only fall back when the utilization endpoint is missing (404).
+            // Other errors (auth, network, 5xx) should propagate.
+            if ((int) $e->getCode() !== 404) {
+                throw $e;
+            }
+
+            // Calagopus wings-rs: live CPU/memory/disk from /api/system/stats
+            try {
+                $stats = $this->connection->get('/api/system/stats', [], $maxRetries);
+
+                return self::utilizationFromCalagopusStats($stats);
+            } catch (WingsRequestException $statsError) {
+                if ((int) $statsError->getCode() !== 404) {
+                    throw $statsError;
+                }
+            }
+
+            // Calagopus overview: memory totals + coarse host info (no CPU %)
+            try {
+                $overview = $this->connection->get('/api/system/overview', [], $maxRetries);
+
+                return self::utilizationFromCalagopusOverview($overview);
+            } catch (WingsRequestException $overviewError) {
+                if ((int) $overviewError->getCode() !== 404) {
+                    throw $overviewError;
+                }
+            }
+
+            // Last resort: /api/system?v=2 capacity only (may be zeros on Calagopus flat shape)
+            $systemInfo = $this->connection->get('/api/system?v=2', [], $maxRetries);
+
+            return self::utilizationFromSystemInfo($systemInfo);
+        }
     }
 
     /**

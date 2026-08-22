@@ -92,7 +92,13 @@ class Database
          * Load the environment variables.
          */
         \App\App::getInstance(true)->loadEnv();
-        $con = new self($_ENV['DATABASE_HOST'], $_ENV['DATABASE_DATABASE'], $_ENV['DATABASE_USER'], $_ENV['DATABASE_PASSWORD'], $_ENV['DATABASE_PORT']);
+        $con = new self(
+            (string) \App\App::env('DATABASE_HOST', '127.0.0.1'),
+            (string) \App\App::env('DATABASE_DATABASE', ''),
+            (string) \App\App::env('DATABASE_USER', ''),
+            (string) \App\App::env('DATABASE_PASSWORD', ''),
+            (int) \App\App::env('DATABASE_PORT', '3306'),
+        );
 
         return $con->getPdo();
     }

@@ -841,7 +841,10 @@ export default function AdminUpdatesPage() {
                                                 )}
                                             </p>
                                         </div>
-                                        {version?.self_update_supported === false && needsUpdate && !version?.loading && !version?.error ? (
+                                        {version?.self_update_supported === false &&
+                                        needsUpdate &&
+                                        !version?.loading &&
+                                        !version?.error ? (
                                             <span className='rounded-md bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-400'>
                                                 {t('admin_updates.wings.manual_update_required')}
                                             </span>

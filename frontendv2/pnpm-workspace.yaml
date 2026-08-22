@@ -14,18 +14,18 @@ minimumReleaseAgeExclude:
   - recharts@3.10.0
   - typescript@7.0.2
   - '@typescript/typescript6@6.0.2'
-  - '@next/eslint-plugin-next@16.2.11 || 16.2.12'
-  - eslint-config-next@16.2.11 || 16.2.12
-  - '@next/env@16.2.11 || 16.2.12'
-  - '@next/swc-darwin-arm64@16.2.11 || 16.2.12'
-  - '@next/swc-darwin-x64@16.2.11 || 16.2.12'
-  - '@next/swc-linux-arm64-gnu@16.2.11 || 16.2.12'
-  - '@next/swc-linux-arm64-musl@16.2.11 || 16.2.12'
-  - '@next/swc-linux-x64-gnu@16.2.11 || 16.2.12'
-  - '@next/swc-linux-x64-musl@16.2.11 || 16.2.12'
-  - '@next/swc-win32-arm64-msvc@16.2.11 || 16.2.12'
-  - '@next/swc-win32-x64-msvc@16.2.11 || 16.2.12'
-  - next@16.2.11 || 16.2.12
+  - '@next/eslint-plugin-next@16.2.11 || 16.2.12 || 16.3.2'
+  - eslint-config-next@16.2.11 || 16.2.12 || 16.3.2
+  - '@next/env@16.2.11 || 16.2.12 || 16.3.2'
+  - '@next/swc-darwin-arm64@16.2.11 || 16.2.12 || 16.3.2'
+  - '@next/swc-darwin-x64@16.2.11 || 16.2.12 || 16.3.2'
+  - '@next/swc-linux-arm64-gnu@16.2.11 || 16.2.12 || 16.3.2'
+  - '@next/swc-linux-arm64-musl@16.2.11 || 16.2.12 || 16.3.2'
+  - '@next/swc-linux-x64-gnu@16.2.11 || 16.2.12 || 16.3.2'
+  - '@next/swc-linux-x64-musl@16.2.11 || 16.2.12 || 16.3.2'
+  - '@next/swc-win32-arm64-msvc@16.2.11 || 16.2.12 || 16.3.2'
+  - '@next/swc-win32-x64-msvc@16.2.11 || 16.2.12 || 16.3.2'
+  - next@16.2.11 || 16.2.12 || 16.3.2
   - '@radix-ui/primitive@1.1.7'
   - '@radix-ui/react-collection@1.1.13'
   - '@radix-ui/react-compose-refs@1.1.4'
@@ -61,3 +61,5 @@ onlyBuiltDependencies:
   - tree-sitter
   - tree-sitter-json
   - unrs-resolver
+patchedDependencies:
+  eslint-plugin-react@7.37.5: patches/eslint-plugin-react@7.37.5.patch

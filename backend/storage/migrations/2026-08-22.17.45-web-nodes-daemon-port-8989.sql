@@ -1,0 +1,2 @@
+ALTER TABLE `featherpanel_web_nodes`
+	MODIFY COLUMN `daemonListen` SMALLINT(5) UNSIGNED NOT NULL DEFAULT 8989;

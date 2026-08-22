@@ -75,8 +75,8 @@ interface Pagination {
     hasPrev: boolean;
 }
 
-/** Set to false to allow selecting VPS and Web hosting (Proxmox / FeatherFly). */
-const NO_WEBHOSTING = true;
+/** Set to false to allow selecting Web hosting (FeatherQuilld). */
+const NO_WEBHOSTING = false;
 
 const LOCATIONS_LIST_FILTERS_KEY = 'featherpanel_admin_locations_filters_v1';
 const LOCATIONS_LIST_FILTERS_DEFAULTS = {
@@ -437,6 +437,10 @@ export default function LocationsPage() {
     const handleViewNodes = (location: Location) => {
         if (location.type === 'vps') {
             router.push(`/admin/vds-nodes?location_id=${location.id}`);
+            return;
+        }
+        if (location.type === 'web') {
+            router.push(`/admin/web-nodes?location_id=${location.id}`);
             return;
         }
         router.push(`/admin/nodes?location_id=${location.id}`);

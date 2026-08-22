@@ -333,6 +333,18 @@ export const getAdminNavigationItems = (
                     badge: 'VPS',
                 },
                 {
+                    id: 'admin-web-nodes',
+                    name: t('navigation.items.webNodes'),
+                    title: t('navigation.items.webNodes'),
+                    url: '/admin/web-nodes',
+                    icon: Server,
+                    isActive: false,
+                    category: 'admin',
+                    permission: Permissions.ADMIN_NODES_VIEW,
+                    group: 'infrastructure',
+                    badge: 'WEB',
+                },
+                {
                     id: 'admin-nodes-status',
                     name: t('navigation.items.nodeStatus'),
                     title: t('navigation.items.nodeStatus'),

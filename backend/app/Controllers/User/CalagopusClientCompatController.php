@@ -1660,8 +1660,8 @@ class CalagopusClientCompatController
     }
 
     /**
-     * @param array{bytes:int,entries:int} $budget Cumulative counters shared across the whole
-     *                                              recursive operation, to bound resource usage.
+     * @param array{bytes:int,entries:int} $budget cumulative counters shared across the whole
+     *                                             recursive operation, to bound resource usage
      */
     private function copyRemoteEntryThroughPanel(
         object $sourceService,

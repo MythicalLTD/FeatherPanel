@@ -20,6 +20,7 @@ use App\Helpers\ApiResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
 use App\Controllers\Wings\WingsConfigController;
+use App\Controllers\Wings\WingsHealthController;
 use App\Controllers\Wings\Sftp\SftpAuthController;
 use App\Controllers\Wings\Backup\WingsBackupController;
 use App\Controllers\Wings\Activity\WingsActivityController;
@@ -39,6 +40,16 @@ return function (RouteCollection $routes): void {
         '/api/remote/config',
         function (Request $request) {
             return (new WingsConfigController())->getConfig($request);
+        },
+        ['GET']
+    );
+
+    App::getInstance(true)->registerWingsRoute(
+        $routes,
+        'wings-remote-health',
+        '/api/remote/health',
+        function (Request $request) {
+            return (new WingsHealthController())->getHealth($request);
         },
         ['GET']
     );

@@ -813,8 +813,13 @@ class Node
             $stmt->execute();
             $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
             foreach ($rows as $row) {
-                $storedId = App::getInstance(true)->decryptValue($row['daemon_token_id'] ?? '');
-                $storedSecret = App::getInstance(true)->decryptValue($row['daemon_token'] ?? '');
+                try {
+                    $storedId = App::getInstance(true)->decryptValue($row['daemon_token_id'] ?? '');
+                    $storedSecret = App::getInstance(true)->decryptValue($row['daemon_token'] ?? '');
+                } catch (\Throwable) {
+                    continue;
+                }
+
                 if ($storedId === $tokenId && $storedSecret === $tokenSecret) {
                     Cache::put($cacheKey, (int) $row['id'], 5);
 

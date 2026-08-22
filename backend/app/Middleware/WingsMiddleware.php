@@ -24,6 +24,12 @@ use Symfony\Component\HttpFoundation\Response;
 
 class WingsMiddleware implements MiddlewareInterface
 {
+    /**
+     * Authenticates FeatherWings (game) daemons only.
+     *
+     * Web hosting tokens (featherpanel_web_nodes) must use /api/quilld-remote/*
+     * with FeatherQuilldMiddleware instead.
+     */
     public function handle(Request $request, callable $next): Response
     {
         $token = $this->getWingsToken($request);
@@ -37,7 +43,7 @@ class WingsMiddleware implements MiddlewareInterface
         $tokenId = $parts[0] ?? '';
         $tokenSecret = $parts[1] ?? '';
 
-        // Single decrypt scan (cached); attach node so controllers skip re-auth
+        // Game nodes (FeatherWings) only — web nodes use FeatherQuilldMiddleware on /api/quilld-remote/*
         $node = Node::getNodeByWingsAuth($tokenId, $tokenSecret);
         if ($node === null) {
             return ApiResponse::error('You are not authorized to hit this endpoint!', 'INVALID_WINGS_TOKEN', 401, []);

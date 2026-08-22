@@ -1651,7 +1651,7 @@ show_main_menu() {
 	echo -e "  ${YELLOW}${BOLD}[4]${NC} ${BOLD}SSL Certificates${NC} ${CYAN}Let's Encrypt Tools${NC}"
 	echo -e "  ${MAGENTA}${BOLD}[5]${NC} ${BOLD}Databases${NC} ${CYAN}Remote MySQL/MariaDB Hosts${NC}"
 	echo -e "  ${RED}${BOLD}[6]${NC} ${BOLD}Proxmox VNC Agent${NC} ${CYAN}Install on Proxmox Node${NC}"
-	echo -e "  ${MAGENTA}${BOLD}[7]${NC} ${BOLD}FeatherFly Daemon${NC} ${CYAN}WebHosting Daemon${NC} ${YELLOW}${BOLD}[Coming Soon]${NC}"
+	echo -e "  ${MAGENTA}${BOLD}[7]${NC} ${BOLD}FeatherQuilld Daemon${NC} ${CYAN}WebHosting Daemon${NC} ${YELLOW}${BOLD}[Coming Soon]${NC}"
 	echo -e "  ${GREEN}${BOLD}[8]${NC} ${BOLD}Configuration${NC} ${CYAN}Settings & Preferences${NC}"
 	echo ""
 	echo -e "  ${BLUE}Tip:${NC} ${YELLOW}Choose ${BOLD}8${NC}${YELLOW} to set defaults like panel port and prefer-dev behavior.${NC}"
@@ -5264,18 +5264,32 @@ check_eol_status() {
 		esac
 		;;
 	ubuntu | ubuntu-server)
+		# Dates from https://ubuntu.com/project/docs/release-team/list-of-releases/
+		# eol_date = End of Standard Support; eol_extended_date = Ubuntu Pro / ESM
 		case "$version" in
+		20.04)
+			eol_date=$(date -d "2025-05-01" +%s 2>/dev/null || echo "")
+			eol_extended_date=$(date -d "2030-04-01" +%s 2>/dev/null || echo "")
+			;;
 		22.04)
-			eol_date=$(date -d "2027-04-01" +%s 2>/dev/null || echo "")
-			eol_extended_date=$(date -d "2032-04-01" +%s 2>/dev/null || echo "")
+			eol_date=$(date -d "2027-06-01" +%s 2>/dev/null || echo "")
+			eol_extended_date=$(date -d "2032-05-01" +%s 2>/dev/null || echo "")
 			;;
 		24.04)
-			eol_date=$(date -d "2029-04-01" +%s 2>/dev/null || echo "")
-			eol_extended_date=$(date -d "2034-04-01" +%s 2>/dev/null || echo "")
+			eol_date=$(date -d "2029-06-01" +%s 2>/dev/null || echo "")
+			eol_extended_date=$(date -d "2034-05-01" +%s 2>/dev/null || echo "")
 			;;
 		25.04)
-			eol_date=$(date -d "2026-01-01" +%s 2>/dev/null || echo "")
+			eol_date=$(date -d "2026-01-15" +%s 2>/dev/null || echo "")
 			eol_extended_date=""
+			;;
+		25.10)
+			eol_date=$(date -d "2026-07-01" +%s 2>/dev/null || echo "")
+			eol_extended_date=""
+			;;
+		26.04)
+			eol_date=$(date -d "2031-05-01" +%s 2>/dev/null || echo "")
+			eol_extended_date=$(date -d "2036-05-01" +%s 2>/dev/null || echo "")
 			;;
 		esac
 		;;
@@ -5339,8 +5353,8 @@ if [ -f /etc/os-release ]; then
 			SUPPORTED=true
 		fi
 	elif [ "$OS" = "ubuntu" ] || [ "$OS" = "ubuntu-server" ]; then
-		# Support Ubuntu 22.04 LTS (Jammy), 24.04 LTS (Noble), and 25.04
-		if [ "$OS_VERSION" = "22.04" ] || [ "$OS_VERSION" = "24.04" ] || [ "$OS_VERSION" = "25.04" ] || [ "$OS_VERSION" = "25.10" ] || [ "$OS_VERSION" = "20.04" ]; then
+		# Support Ubuntu 22.04/24.04/26.04 LTS, plus recent interim releases
+		if [ "$OS_VERSION" = "22.04" ] || [ "$OS_VERSION" = "24.04" ] || [ "$OS_VERSION" = "26.04" ] || [ "$OS_VERSION" = "25.04" ] || [ "$OS_VERSION" = "25.10" ] || [ "$OS_VERSION" = "20.04" ]; then
 			SUPPORTED=true
 		fi
 	fi
@@ -5361,7 +5375,7 @@ if [ -f /etc/os-release ]; then
 			fi
 			echo -e "${YELLOW}This installer officially supports:${NC}"
 			echo -e "  ${GREEN}•${NC} Debian 11, 12, or 13"
-			echo -e "  ${GREEN}•${NC} Ubuntu 22.04 LTS, 24.04 LTS, or 25.04"
+			echo -e "  ${GREEN}•${NC} Ubuntu 22.04 LTS, 24.04 LTS, 26.04 LTS, or 25.04"
 			echo ""
 			echo -e "${BLUE}Continuing with installation at your own risk...${NC}"
 			echo ""
@@ -5375,7 +5389,7 @@ if [ -f /etc/os-release ]; then
 			log_error "Unsupported OS or version: $OS $OS_VERSION"
 			echo -e "${RED}${BOLD}This installer only supports:${NC}"
 			echo -e "  ${GREEN}•${NC} Debian 11, 12, or 13"
-			echo -e "  ${GREEN}•${NC} Ubuntu 22.04 LTS, 24.04 LTS, or 25.04"
+			echo -e "  ${GREEN}•${NC} Ubuntu 22.04 LTS, 24.04 LTS, 26.04 LTS, or 25.04"
 			echo -e ""
 			if [ "$OS" != "unknown" ] && [ "$OS_VERSION" != "unknown" ]; then
 				echo -e "${YELLOW}Your system: $OS $OS_VERSION${NC}"
@@ -5719,7 +5733,7 @@ if [ -f /etc/os-release ]; then
 	ssl) COMPONENT_TYPE="4" ;;
 	db | databases) COMPONENT_TYPE="5" ;;
 	proxmox) COMPONENT_TYPE="6" ;;
-	featherfly) COMPONENT_TYPE="7" ;;
+	featherquilld) COMPONENT_TYPE="7" ;;
 	config | configuration) COMPONENT_TYPE="8" ;;
 	*) COMPONENT_TYPE="" ;;
 	esac
@@ -5880,14 +5894,14 @@ if [ -f /etc/os-release ]; then
 			fi
 		done
 	elif [ "$COMPONENT_TYPE" = "7" ]; then
-		# FeatherFly Daemon – Coming Soon
+		# FeatherQuilld Daemon – Coming Soon
 		if [ -t 1 ]; then clear; fi
 		print_banner
 		draw_hr
 		print_centered "Coming Soon" "$YELLOW"
 		draw_hr
 		echo ""
-		echo -e "  ${BLUE}FeatherFly Daemon (WebHosting Daemon) is currently in development.${NC}"
+		echo -e "  ${BLUE}FeatherQuilld Daemon (WebHosting Daemon) is currently in development.${NC}"
 		echo -e "  ${YELLOW}This feature is not yet available in this installer build.${NC}"
 		echo ""
 		draw_hr
@@ -7432,7 +7446,7 @@ else
 		echo -e "${YELLOW}Cannot determine OS - /etc/os-release not found${NC}"
 		echo -e "${YELLOW}This installer officially supports:${NC}"
 		echo -e "  ${GREEN}•${NC} Debian 11, 12, or 13"
-		echo -e "  ${GREEN}•${NC} Ubuntu 22.04 LTS, 24.04 LTS, or 25.04"
+		echo -e "  ${GREEN}•${NC} Ubuntu 22.04 LTS, 24.04 LTS, 26.04 LTS, or 25.04"
 		echo ""
 		echo -e "${BLUE}Continuing with installation at your own risk...${NC}"
 		echo ""
@@ -7445,7 +7459,7 @@ else
 		log_error "Cannot determine OS - /etc/os-release not found"
 		echo -e "${RED}${BOLD}This installer only supports:${NC}"
 		echo -e "  ${GREEN}•${NC} Debian 11, 12, or 13"
-		echo -e "  ${GREEN}•${NC} Ubuntu 22.04 LTS, 24.04 LTS, or 25.04"
+		echo -e "  ${GREEN}•${NC} Ubuntu 22.04 LTS, 24.04 LTS, 26.04 LTS, or 25.04"
 		echo ""
 		echo -e "${BLUE}To bypass this check, use: ${BOLD}--skip-os-check${NC}"
 		support_hint

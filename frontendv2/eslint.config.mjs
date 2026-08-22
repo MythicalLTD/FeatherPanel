@@ -24,6 +24,13 @@ const eslintConfig = defineConfig([
     eslintConfigPrettier,
     ...nextTs,
     {
+        // Pin React version so eslint-plugin-react skips detect-mode
+        // (avoids legacy context.getFilename even with our patch).
+        settings: {
+            react: {
+                version: '19.2.8',
+            },
+        },
         plugins: {
             local: {
                 rules: {
