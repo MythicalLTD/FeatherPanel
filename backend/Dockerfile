@@ -56,13 +56,12 @@ COPY --chown=www-data:www-data composer.json composer.lock ./
 
 # Install PHP dependencies with BuildKit cache mount (retry on transient GitHub/Packagist 5xx)
 RUN --mount=type=cache,target=/root/.composer/cache \
-    COMPOSER_ALLOW_SUPERUSER=1 COMPOSER_PROCESS_TIMEOUT=600 \
-    for attempt in 1 2 3 4 5; do \
-      composer install --no-dev --optimize-autoloader --no-interaction && break; \
-      if [ "$$attempt" = "5" ]; then exit 1; fi; \
-      echo "composer install failed (attempt $$attempt/5), retrying in 20s..."; \
-      sleep 20; \
-    done
+    export COMPOSER_ALLOW_SUPERUSER=1 COMPOSER_PROCESS_TIMEOUT=600; \
+    composer install --no-dev --optimize-autoloader --no-interaction \
+    || (echo "composer install failed, retry 1/4..." && sleep 20 && composer install --no-dev --optimize-autoloader --no-interaction) \
+    || (echo "composer install failed, retry 2/4..." && sleep 20 && composer install --no-dev --optimize-autoloader --no-interaction) \
+    || (echo "composer install failed, retry 3/4..." && sleep 20 && composer install --no-dev --optimize-autoloader --no-interaction) \
+    || (echo "composer install failed, retry 4/4..." && sleep 20 && composer install --no-dev --optimize-autoloader --no-interaction)
 
 # Copy remaining application files with correct ownership
 COPY --chown=www-data:www-data . .
