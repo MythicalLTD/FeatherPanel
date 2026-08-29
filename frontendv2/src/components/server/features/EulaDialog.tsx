@@ -24,7 +24,7 @@ import {
     DialogDescription,
     DialogFooter,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/featherui/Button';
 import { AlertCircle, ExternalLink } from 'lucide-react';
 import { Server } from '@/types/server';
 

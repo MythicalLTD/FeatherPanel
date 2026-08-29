@@ -19,7 +19,7 @@ import { Button } from '@/components/featherui/Button';
 import { Download, X, Loader2, AlertCircle } from 'lucide-react';
 import { FileObject } from '@/types/server';
 import { formatFileSize } from '@/lib/utils';
-import { filesApi } from '@/lib/files-api';
+import { useFileManagerApi } from '@/contexts/FileManagerApiContext';
 import { useTranslation } from '@/contexts/TranslationContext';
 
 interface ImagePreviewDialogProps {
@@ -39,6 +39,7 @@ export function ImagePreviewDialog({
     currentDirectory,
     onDownload,
 }: ImagePreviewDialogProps) {
+    const filesApi = useFileManagerApi();
     const { t } = useTranslation();
     const [blobUrl, setBlobUrl] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);

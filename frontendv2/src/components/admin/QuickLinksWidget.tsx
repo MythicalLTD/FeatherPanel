@@ -75,9 +75,9 @@ export function QuickLinksWidget({ onClearCache, isClearingCache }: QuickLinksWi
             description: t('admin.quick_links.users_desc'),
             icon: Users,
             href: '/admin/users',
-            color: 'text-violet-500',
-            bg: 'bg-violet-500/10',
-            border: 'border-violet-500/20',
+            color: 'text-primary',
+            bg: 'bg-primary/10',
+            border: 'border-primary/20',
         },
         {
             name: t('admin.quick_links.nodes'),
@@ -111,9 +111,9 @@ export function QuickLinksWidget({ onClearCache, isClearingCache }: QuickLinksWi
             description: t('admin.quick_links.plugins_desc'),
             icon: Puzzle,
             href: '/admin/plugins',
-            color: 'text-fuchsia-500',
-            bg: 'bg-fuchsia-500/10',
-            border: 'border-fuchsia-500/20',
+            color: 'text-primary',
+            bg: 'bg-primary/10',
+            border: 'border-primary/20',
         },
     ];
 
@@ -178,9 +178,9 @@ export function QuickLinksWidget({ onClearCache, isClearingCache }: QuickLinksWi
             description: t('admin.quick_links.support_discord_desc'),
             icon: MessageSquare,
             href: 'https://discord.mythical.systems',
-            color: 'text-indigo-500',
-            bg: 'bg-indigo-500/10',
-            border: 'border-indigo-500/20',
+            color: 'text-primary',
+            bg: 'bg-primary/10',
+            border: 'border-primary/20',
             external: true,
         },
     ];

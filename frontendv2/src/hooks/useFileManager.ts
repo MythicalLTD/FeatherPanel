@@ -18,7 +18,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { filesApi } from '@/lib/files-api';
-import { filterFeatherTrashFiles, isFeatherTrashEntry } from '@/lib/feather-trash';
+import { filterFeatherTrashFiles, isHiddenServerEntry } from '@/lib/feather-trash';
 import { FileObject } from '@/types/server';
 import { toast } from 'sonner';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -50,6 +50,16 @@ export function useFileManager(serverUuid: string) {
 
     // Current directory from URL or default to /
     const currentDirectory = sanitizeDirectoryPath(searchParams?.get('path'));
+
+    // Keep users out of panel-managed folders (trash, database dumps)
+    useEffect(() => {
+        if (!currentDirectory || currentDirectory === '/') return;
+        if (!isHiddenServerEntry(currentDirectory.replace(/^\//, ''))) return;
+        const params = new URLSearchParams(searchParams?.toString() ?? '');
+        params.delete('path');
+        const qs = params.toString();
+        router.replace(qs ? `?${qs}` : '?');
+    }, [currentDirectory, router, searchParams]);
 
     // Debounce search so we filter on the server (full directory) instead of
     // only the first 250 client-loaded items.
@@ -156,7 +166,7 @@ export function useFileManager(serverUuid: string) {
         const params = new URLSearchParams(searchParams?.toString() ?? '');
         const sanitizedPath = sanitizeDirectoryPath(path) || '/';
         const segment = sanitizedPath.split('/').filter(Boolean).pop() ?? '';
-        if (isFeatherTrashEntry(segment) || isFeatherTrashEntry(sanitizedPath.replace(/^\//, ''))) {
+        if (isHiddenServerEntry(segment) || isHiddenServerEntry(sanitizedPath.replace(/^\//, ''))) {
             return;
         }
         if (sanitizedPath === '/') {

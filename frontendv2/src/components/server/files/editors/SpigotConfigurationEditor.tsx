@@ -19,9 +19,9 @@ import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { Button } from '@/components/featherui/Button';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import { Input } from '@/components/featherui/Input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { Textarea } from '@/components/featherui/Textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ArrowLeft, Save, MessageSquare, Settings2 } from 'lucide-react';
 import * as yaml from 'js-yaml';
@@ -238,8 +238,7 @@ export function SpigotConfigurationEditor({
                     <div className='space-y-2'>
                         <CardTitle className='text-2xl font-bold'>{t('files.editors.spigotConfig.title')}</CardTitle>
                         <CardDescription className='text-muted-foreground text-sm'>
-                            {t('files.editors.spigotConfig.description') ||
-                                'Configure your Spigot server settings visually'}
+                            {t('files.editors.spigotConfig.description')}
                         </CardDescription>
                     </div>
                     <div className='flex items-center gap-2'>
@@ -267,8 +266,7 @@ export function SpigotConfigurationEditor({
                                 {t('files.editors.spigotConfig.sections.settings')}
                             </h3>
                             <p className='text-muted-foreground text-sm'>
-                                {t('files.editors.spigotConfig.sectionsDescriptions.settings') ||
-                                    'General server settings and configuration'}
+                                {t('files.editors.spigotConfig.sectionsDescriptions.settings')}
                             </p>
                         </div>
                     </div>
@@ -371,8 +369,7 @@ export function SpigotConfigurationEditor({
                                 {t('files.editors.spigotConfig.sections.messages')}
                             </h3>
                             <p className='text-muted-foreground text-[9px] font-bold tracking-widest uppercase opacity-50'>
-                                {t('files.editors.spigotConfig.sectionsDescriptions.messages') ||
-                                    'Customize server messages'}
+                                {t('files.editors.spigotConfig.sectionsDescriptions.messages')}
                             </p>
                         </div>
                     </div>

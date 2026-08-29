@@ -18,7 +18,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import Link from 'next/link';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { PageCard } from '@/components/featherui/PageCard';
-import { Input } from '@/components/ui/input';
+import { Input } from '@/components/featherui/Input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/featherui/Button';
@@ -186,6 +186,19 @@ export function DetailsTab({
                             <Switch
                                 checked={form.skip_zerotrust}
                                 onCheckedChange={(checked) => setForm((prev) => ({ ...prev, skip_zerotrust: checked }))}
+                            />
+                        </div>
+
+                        <div className='bg-muted/20 border-border/50 flex items-center justify-between rounded-xl border p-4 md:col-span-2'>
+                            <div className='space-y-0.5'>
+                                <Label>{t('admin.servers.edit.details.show_on_status')}</Label>
+                                <p className='text-muted-foreground text-xs'>
+                                    {t('admin.servers.edit.details.show_on_status_help')}
+                                </p>
+                            </div>
+                            <Switch
+                                checked={form.show_on_status}
+                                onCheckedChange={(checked) => setForm((prev) => ({ ...prev, show_on_status: checked }))}
                             />
                         </div>
                     </div>

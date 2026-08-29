@@ -214,6 +214,8 @@ class CreateScheduleTool implements ToolInterface
                 if (isset($taskData['payload'])) {
                     if (is_string($taskData['payload'])) {
                         $payload = trim($taskData['payload']);
+                    } elseif (is_array($taskData['payload'])) {
+                        $payload = json_encode($taskData['payload']);
                     } elseif (is_scalar($taskData['payload'])) {
                         $payload = (string) $taskData['payload'];
                     }
@@ -229,6 +231,19 @@ class CreateScheduleTool implements ToolInterface
                 if ($action === 'command' && $payload === '') {
                     $tasksError = "Task action 'command' requires a payload (the command to execute)";
                     continue;
+                }
+
+                if (in_array($action, ['backup', 'database_backup'], true)) {
+                    try {
+                        if ($action === 'database_backup' && $payload === '') {
+                            $tasksError = "Task action '{$action}' requires a JSON payload";
+                            continue;
+                        }
+                        \App\Services\Database\ServerDatabaseDumpService::parseBackupPayload($payload);
+                    } catch (\InvalidArgumentException $e) {
+                        $tasksError = $e->getMessage();
+                        continue;
+                    }
                 }
 
                 // For start, stop, restart, kill - they can be used directly or via power action
@@ -370,7 +385,7 @@ class CreateScheduleTool implements ToolInterface
             'is_active' => 'Whether schedule is active (optional, default: true)',
             'only_when_online' => 'Only run when server is online (optional, default: false)',
             'command' => 'Command to execute (optional, creates a command task automatically)',
-            'tasks' => 'Array of tasks to create (optional). Each task object can have: action (required: power, backup, command, restart, kill, install, update, start, stop), payload (required for power/command actions, optional for others), time_offset (optional, integer in minutes, default: 0 - delay before executing this task), continue_on_failure (optional, boolean, default: false - whether to continue executing subsequent tasks if this one fails). For power actions, you can use either {"action": "power", "payload": "start"} or {"action": "start"} directly.',
+            'tasks' => 'Array of tasks to create (optional). Each task object can have: action (required: power, backup, command, restart, kill, install, update, start, stop), payload (required for power/command; for backup use JSON {"type":"files","ignored_files":"*.log"} or {"type":"database","databases":"all"|[1,2],"directory":"/.featherpanel-database-backups"} or {"type":"full","databases":"all","include_metadata":true,"include_encrypted":false,"include_activities":false}), time_offset (optional, integer in minutes, default: 0 - delay before executing this task), continue_on_failure (optional, boolean, default: false - whether to continue executing subsequent tasks if this one fails). For power actions, you can use either {"action": "power", "payload": "start"} or {"action": "start"} directly.',
         ];
     }
 }

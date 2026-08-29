@@ -22,6 +22,7 @@ import { useSession } from '@/contexts/SessionContext';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { ServerContext } from '@/contexts/ServerContext';
 import { VmInstanceContext } from '@/contexts/VmInstanceContext';
+import { WebSpaceContext } from '@/contexts/WebSpaceContext';
 import Permissions from '@/lib/permissions';
 import { LocalStorageManagerDialog } from '@/components/layout/LocalStorageManagerDialog';
 import { useNavbarHoverReveal } from '@/hooks/useNavbarHoverReveal';
@@ -41,8 +42,10 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
     const { t } = useTranslation();
     const serverContext = useContext(ServerContext);
     const vmInstanceContext = useContext(VmInstanceContext);
+    const webSpaceContext = useContext(WebSpaceContext);
     const isOnServerPage = pathname?.startsWith('/server/');
     const isOnVdsPage = pathname?.startsWith('/vds/');
+    const isOnWebSpacePage = pathname?.startsWith('/webspace/');
     const isOnAdminPage = pathname?.startsWith('/admin');
     const serverName = isOnServerPage ? serverContext?.server?.name : null;
     const isKnowledgeBaseSection = pathname?.startsWith('/dashboard/knowledgebase');
@@ -87,7 +90,9 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
             ? `/admin/servers/${serverContext.server.id}/edit`
             : isOnVdsPage && vmInstanceContext?.instance?.id
               ? `/admin/vm-instances/${vmInstanceContext.instance.id}/edit`
-              : '/admin';
+              : isOnWebSpacePage && webSpaceContext?.webspace?.uuid
+                ? `/admin/webspaces/${webSpaceContext.webspace.uuid}/edit`
+                : '/admin';
 
     const chromeProps = {
         onMenuClick,

@@ -16,12 +16,8 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useEffect, useState, type DragEvent } from 'react';
-import {
-    ARCHIVE_EXTRACT_DRAG_MIME,
-    filesApi,
-    type ArchiveExtractDragPayload,
-    type ArchiveListEntry,
-} from '@/lib/files-api';
+import { ARCHIVE_EXTRACT_DRAG_MIME, type ArchiveExtractDragPayload, type ArchiveListEntry } from '@/lib/files-api';
+import { useFileManagerApi } from '@/contexts/FileManagerApiContext';
 import { Button } from '@/components/featherui/Button';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { formatFileSize } from '@/lib/utils';
@@ -55,6 +51,7 @@ export function ArchiveBrowsePanel({
     onExtractEntries,
     onExtractComplete,
 }: ArchiveBrowsePanelProps) {
+    const filesApi = useFileManagerApi();
     const { t } = useTranslation();
     const [innerPath, setInnerPath] = useState('');
     const [entries, setEntries] = useState<ArchiveListEntry[]>([]);
@@ -94,7 +91,7 @@ export function ArchiveBrowsePanel({
         return () => {
             cancelled = true;
         };
-    }, [archiveFileName, innerPath, onOpenChange, open, serverDirectory, t, uuid]);
+    }, [archiveFileName, filesApi, innerPath, onOpenChange, open, serverDirectory, t, uuid]);
 
     useEffect(() => {
         if (open) {

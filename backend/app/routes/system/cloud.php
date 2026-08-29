@@ -263,17 +263,36 @@ return static function (RouteCollection $routes): void {
                         }
                     }
 
-                    if ($panelPublicFromRequest !== '' && $panelPrivateFromRequest !== '') {
-                        $storedPanelPublic = $config->getSetting(ConfigInterface::FEATHERCLOUD_CLOUD_PUBLIC_KEY, '');
-                        $storedPanelPrivate = $config->getSetting(ConfigInterface::FEATHERCLOUD_CLOUD_PRIVATE_KEY, '');
+                    // Always require panel identity keys. Omitting them must fail closed —
+                    // not skip verification — or unauthenticated callers can overwrite ACCESS credentials.
+                    if ($panelPublicFromRequest === '' || $panelPrivateFromRequest === '') {
+                        return ApiResponse::error(
+                            'Missing required parameters: panel_public_key, panel_private_key.',
+                            'MISSING_PANEL_KEYS',
+                            400
+                        );
+                    }
 
-                        if ($storedPanelPublic !== '' && $storedPanelPrivate !== '') {
-                            if (!hash_equals($storedPanelPublic, $panelPublicFromRequest) || !hash_equals($storedPanelPrivate, $panelPrivateFromRequest)) {
-                                $logger->warning('Mythic OAuth2 callback: Panel credentials mismatch');
+                    $storedPanelPublic = trim((string) ($config->getSetting(ConfigInterface::FEATHERCLOUD_CLOUD_PUBLIC_KEY, '') ?? ''));
+                    $storedPanelPrivate = trim((string) ($config->getSetting(ConfigInterface::FEATHERCLOUD_CLOUD_PRIVATE_KEY, '') ?? ''));
 
-                                return ApiResponse::error('Invalid panel credentials.', 'INVALID_PANEL_CREDENTIALS', 403);
-                            }
-                        }
+                    if ($storedPanelPublic === '' || $storedPanelPrivate === '') {
+                        $logger->warning('Mythic OAuth2 callback: Panel identity keys not configured');
+
+                        return ApiResponse::error(
+                            'Panel identity keys are not configured.',
+                            'PANEL_CREDENTIALS_NOT_CONFIGURED',
+                            403
+                        );
+                    }
+
+                    if (
+                        !hash_equals($storedPanelPublic, $panelPublicFromRequest)
+                        || !hash_equals($storedPanelPrivate, $panelPrivateFromRequest)
+                    ) {
+                        $logger->warning('Mythic OAuth2 callback: Panel credentials mismatch');
+
+                        return ApiResponse::error('Invalid panel credentials.', 'INVALID_PANEL_CREDENTIALS', 403);
                     }
 
                     $timestamp = gmdate('c');

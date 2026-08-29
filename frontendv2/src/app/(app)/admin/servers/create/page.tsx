@@ -70,6 +70,7 @@ const initialFormData: ServerFormData = {
     description: '',
     ownerId: null,
     skipScripts: false,
+    showOnStatus: true,
     locationId: null,
     nodeId: null,
     allocationId: null,
@@ -228,6 +229,29 @@ export default function CreateServerPage() {
     useEffect(() => {
         void refreshInfrastructureCheck();
     }, [refreshInfrastructureCheck]);
+
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            try {
+                const { data } = await axios.get('/api/admin/settings');
+                const value =
+                    data?.data?.settings?.status_page_servers_visible_by_default?.value ??
+                    data?.data?.settings?.status_page_servers_visible_by_default;
+                if (!cancelled && value !== undefined && value !== null) {
+                    setFormData((prev) => ({
+                        ...prev,
+                        showOnStatus: String(value) === 'true' || value === true || value === 1,
+                    }));
+                }
+            } catch {
+                // Keep the form default (true) if settings cannot be loaded
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     const wizardBlockedByInfra = infraGate.status === 'blocked';
     const wizardNavWaitingInfra = infraGate.status === 'loading';
@@ -666,6 +690,7 @@ export default function CreateServerPage() {
                 allocation_limit: formData.allocationLimit,
                 backup_limit: formData.backupLimit,
                 skip_scripts: formData.skipScripts,
+                show_on_status: formData.showOnStatus,
                 variables: formData.spellVariables,
                 oom_killer: formData.oomKiller,
                 threads: formData.threads?.trim() || null,

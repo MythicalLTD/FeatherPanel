@@ -32,10 +32,13 @@ import {
     getCurrentServerUuidShort,
     getRecentServerUuidShorts,
     getServerRouteId,
+    isServerFileViewerPath,
+    joinServerFilePath,
     sortServersForSwitcher,
     sortServersWithFavoritesFirst,
     type ServerSwitcherTab,
 } from '@/lib/server-switch';
+import { filesApi } from '@/lib/files-api';
 import { displayStatus, getStatusDotColor } from '@/lib/server-utils';
 import type { Server } from '@/types/server';
 
@@ -157,10 +160,31 @@ export function ServerSwitcher({ fallbackTitle }: ServerSwitcherProps) {
         return null;
     }
 
-    const handleSelect = (server: Server) => {
+    const handleSelect = async (server: Server) => {
         const targetId = getServerRouteId(server);
         if (!targetId || targetId === currentUuidShort) return;
-        router.push(buildServerSwitchUrl(targetId, pathname));
+
+        const search = typeof window !== 'undefined' ? window.location.search : '';
+
+        // While viewing a file: open the same path on the target if it exists, else files root
+        if (isServerFileViewerPath(pathname)) {
+            const params = new URLSearchParams(search.startsWith('?') ? search.slice(1) : search);
+            const file = params.get('file')?.trim();
+            if (!file) {
+                router.push(`/server/${targetId}/files`);
+                return;
+            }
+
+            const fullPath = joinServerFilePath(params.get('directory'), file);
+            const exists = await filesApi.fileExists(targetId, fullPath);
+            if (exists === false) {
+                router.push(`/server/${targetId}/files`);
+                return;
+            }
+            // exists === true → keep editor URL; null (unknown) → try the file, editor handles miss
+        }
+
+        router.push(buildServerSwitchUrl(targetId, pathname, search));
     };
 
     const displayName = currentServer?.name ?? fallbackTitle ?? t('navbar.server_switcher.current');

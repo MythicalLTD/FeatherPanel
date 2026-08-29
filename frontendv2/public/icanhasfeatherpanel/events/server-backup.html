@@ -33,7 +33,7 @@
   <p class="muted"><strong>Callback parameters:</strong> string server uuid, array backup data.</p>
 
   <h3>Event Data</h3>
-  <p class="muted"><strong>Data keys:</strong> backup_uuid, server_uuid, user_uuid</p>
+  <p class="muted"><strong>Data keys:</strong> backup_uuid, server_uuid, type, user_uuid</p>
 
   <h3>Emitted From</h3>
   <ul>
@@ -46,9 +46,9 @@ use App\Plugins\Events\Events\ServerBackupEvent;
 
 public static function processEvents(PluginEvents $evt): void
 {
-    $evt->on(ServerBackupEvent::onServerBackupCreated(), function ($backupUuid, $serverUuid, $userUuid) {
+    $evt->on(ServerBackupEvent::onServerBackupCreated(), function ($backupUuid, $serverUuid, $type, $userUuid) {
         // Handle featherpanel:user:server:backup:created
-        // Data keys: backup_uuid, server_uuid, user_uuid
+        // Data keys: backup_uuid, server_uuid, type, user_uuid
     });
 }</code></pre>
 </article>

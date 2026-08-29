@@ -7,7 +7,7 @@ Copyright (C) 2025 Cassian Gherman (aka NaysKutzu)
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published
-by the Free Software Foundation, either version 3 of the License, or
+    40|by the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
 See the LICENSE file or <https://www.gnu.org/licenses/>.
@@ -18,26 +18,67 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 
-export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-    error?: boolean;
+export interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'> {
+    /** Visual error state; string also renders an error message below the field. */
+    error?: boolean | string;
+    label?: string;
+    description?: string;
+    icon?: React.ReactNode;
 }
 
-const Input = React.forwardRef<HTMLInputElement, InputProps>(({ className, type, error, ...props }, ref) => {
-    return (
-        <input
-            type={type}
-            className={cn(
-                'bg-muted/30 placeholder:text-muted-foreground/50 text-foreground h-12 w-full rounded-xl border px-4 py-3 text-sm font-semibold shadow-sm transition-all duration-200 hover:shadow-md focus:shadow-lg focus:ring-4 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50',
-                error
-                    ? 'border-destructive focus:border-destructive focus:ring-destructive/20'
-                    : 'border-border/50 focus:border-primary focus:ring-primary/20 hover:border-border',
-                className,
-            )}
-            ref={ref}
-            {...props}
-        />
-    );
-});
+const Input = React.forwardRef<HTMLInputElement, InputProps>(
+    ({ className, type, error, label, description, icon, id, ...props }, ref) => {
+        const hasError = Boolean(error);
+        const errorMessage = typeof error === 'string' ? error : undefined;
+        const inputId = id || (label ? `input-${label.replace(/\s+/g, '-').toLowerCase()}` : undefined);
+
+        const field = (
+            <div className={cn(icon && 'group relative')}>
+                {icon && (
+                    <div className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 z-10 -translate-y-1/2 transition-colors'>
+                        {icon}
+                    </div>
+                )}
+                <input
+                    id={inputId}
+                    type={type}
+                    className={cn(
+                        'bg-muted/30 placeholder:text-muted-foreground/50 text-foreground h-12 w-full rounded-xl border py-3 text-sm font-semibold shadow-sm transition-all duration-200 hover:shadow-md focus:shadow-lg focus:ring-4 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50',
+                        icon ? 'pr-4 pl-10' : 'px-4',
+                        hasError
+                            ? 'border-destructive focus:border-destructive focus:ring-destructive/20'
+                            : 'border-border/50 focus:border-primary focus:ring-primary/20 hover:border-border',
+                        className,
+                    )}
+                    ref={ref}
+                    aria-invalid={hasError || undefined}
+                    {...props}
+                />
+            </div>
+        );
+
+        if (!label && !description && !errorMessage) {
+            return field;
+        }
+
+        return (
+            <div className='w-full'>
+                {label && (
+                    <label htmlFor={inputId} className='text-foreground mb-2 block text-sm font-semibold'>
+                        {label}
+                    </label>
+                )}
+                {description && <p className='text-muted-foreground mb-2 text-sm'>{description}</p>}
+                {field}
+                {errorMessage && (
+                    <p className='text-destructive mt-2 flex items-center gap-1 text-sm' role='alert'>
+                        {errorMessage}
+                    </p>
+                )}
+            </div>
+        );
+    },
+);
 Input.displayName = 'Input';
 
 export { Input };

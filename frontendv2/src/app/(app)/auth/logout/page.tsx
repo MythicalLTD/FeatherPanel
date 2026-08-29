@@ -17,7 +17,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/featherui/Button';
 import { LogOut } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
 

@@ -40,7 +40,7 @@ import { ResourceCard } from '@/components/featherui/ResourceCard';
 
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
-import { HeadlessModal } from '@/components/ui/headless-modal';
+import { Dialog, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -268,7 +268,7 @@ export default function ServerSubusersPage() {
 
     if (!isEnabled(settings?.server_allow_subusers)) {
         return (
-            <div className='bg-card/40 border-border/5 flex flex-col items-center justify-center space-y-8 rounded-[3rem] border py-24 text-center backdrop-blur-3xl'>
+            <div className='bg-card/40 border-border/5 flex flex-col items-center justify-center space-y-8 rounded-3xl border py-24 text-center backdrop-blur-3xl'>
                 <div className='relative'>
                     <div className='absolute inset-0 scale-150 rounded-full bg-red-500/20 blur-3xl' />
                     <div className='relative flex h-32 w-32 rotate-3 items-center justify-center rounded-3xl border-2 border-red-500/20 bg-red-500/10'>
@@ -522,12 +522,19 @@ export default function ServerSubusersPage() {
                 </div>
             )}
 
-            <HeadlessModal
-                isOpen={isAddOpen}
+            <Dialog
+                open={isAddOpen}
                 onClose={() => setIsAddOpen(false)}
-                title={t('serverSubusers.addSubuser')}
-                description={t('serverSubusers.addSubuserDialogDescription')}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setIsAddOpen(false);
+                    }
+                }}
             >
+                <DialogHeader>
+                    <DialogTitle>{t('serverSubusers.addSubuser')}</DialogTitle>
+                    <DialogDescription>{t('serverSubusers.addSubuserDialogDescription')}</DialogDescription>
+                </DialogHeader>
                 <div className='space-y-4 py-4'>
                     <div className='space-y-2'>
                         <label className='text-muted-foreground text-sm font-bold tracking-wider uppercase'>
@@ -570,14 +577,23 @@ export default function ServerSubusersPage() {
                         {t('serverSubusers.add')}
                     </Button>
                 </div>
-            </HeadlessModal>
+            </Dialog>
 
-            <HeadlessModal
-                isOpen={isDeleteOpen}
+            <Dialog
+                open={isDeleteOpen}
                 onClose={() => setIsDeleteOpen(false)}
-                title={t('serverSubusers.confirmDeleteTitle')}
-                description={t('serverSubusers.confirmDeleteDescription', { email: selectedSubuser?.email || '' })}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setIsDeleteOpen(false);
+                    }
+                }}
             >
+                <DialogHeader>
+                    <DialogTitle>{t('serverSubusers.confirmDeleteTitle')}</DialogTitle>
+                    <DialogDescription>
+                        {t('serverSubusers.confirmDeleteDescription', { email: selectedSubuser?.email || '' })}
+                    </DialogDescription>
+                </DialogHeader>
                 <div className='border-border/5 flex justify-end gap-3 border-t pt-6'>
                     <Button
                         variant='outline'
@@ -603,15 +619,22 @@ export default function ServerSubusersPage() {
                         {t('common.delete')}
                     </Button>
                 </div>
-            </HeadlessModal>
+            </Dialog>
 
-            <HeadlessModal
-                isOpen={isPermissionsOpen}
+            <Dialog
+                open={isPermissionsOpen}
                 onClose={() => setIsPermissionsOpen(false)}
-                title={t('serverSubusers.managePermissions')}
-                description={t('serverSubusers.managePermissionsDescription')}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setIsPermissionsOpen(false);
+                    }
+                }}
                 className='max-w-3xl'
             >
+                <DialogHeader>
+                    <DialogTitle>{t('serverSubusers.managePermissions')}</DialogTitle>
+                    <DialogDescription>{t('serverSubusers.managePermissionsDescription')}</DialogDescription>
+                </DialogHeader>
                 <div className='space-y-6 pt-4'>
                     <div className='bg-card/50 border-border/5 flex items-center justify-between rounded-3xl border p-5 backdrop-blur-md'>
                         <div className='flex items-center gap-4'>
@@ -731,7 +754,7 @@ export default function ServerSubusersPage() {
                         </Button>
                     </div>
                 </div>
-            </HeadlessModal>
+            </Dialog>
             <WidgetRenderer widgets={getWidgets('server-users', 'bottom-of-page')} />
         </div>
     );

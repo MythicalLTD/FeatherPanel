@@ -25,18 +25,16 @@ import { PageHeader } from '@/components/featherui/PageHeader';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { Button } from '@/components/featherui/Button';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
-import { Input } from '@/components/featherui/Input';
-import { Label } from '@/components/ui/label';
-import { HeadlessSelect } from '@/components/ui/headless-select';
-import { HeadlessModal } from '@/components/ui/headless-modal';
+import { Dialog, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
-import { isEnabled } from '@/lib/utils';
+import { isEnabledUnlessExplicitlyFalse } from '@/lib/utils';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { useSettings } from '@/contexts/SettingsContext';
-import type { Task, TaskCreateRequest, TaskUpdateRequest, Schedule, SchedulePagination } from '@/types/server';
+import type { Task, Schedule, SchedulePagination, Database } from '@/types/server';
 import { safeBack } from '@/lib/safe-back';
+import { formatBackupPayloadDisplay, isBackupAction } from '@/components/server/backup/backup-payload';
 
 export default function ServerTasksPage() {
     const { uuidShort, id: scheduleId } = useParams() as { uuidShort: string; id: string };
@@ -51,6 +49,7 @@ export default function ServerTasksPage() {
 
     const [tasks, setTasks] = React.useState<Task[]>([]);
     const [schedule, setSchedule] = React.useState<Schedule | null>(null);
+    const [databases, setDatabases] = React.useState<Database[]>([]);
     const [loading, setLoading] = React.useState(true);
     const [pagination, setPagination] = React.useState<SchedulePagination>({
         current_page: 1,
@@ -62,30 +61,11 @@ export default function ServerTasksPage() {
     });
 
     const { getWidgets, fetchWidgets } = usePluginWidgets('server-tasks');
+    const schedulesEnabled = isEnabledUnlessExplicitlyFalse(settings?.server_allow_schedules);
 
-    const schedulesEnabled = isEnabled(settings?.server_allow_schedules);
-
-    const [isCreateOpen, setIsCreateOpen] = React.useState(false);
-    const [isEditOpen, setIsEditOpen] = React.useState(false);
     const [isDeleteOpen, setIsDeleteOpen] = React.useState(false);
     const [selectedTask, setSelectedTask] = React.useState<Task | null>(null);
-    const [saving, setSaving] = React.useState(false);
     const [deleting, setDeleting] = React.useState(false);
-
-    const [createForm, setCreateForm] = React.useState<TaskCreateRequest>({
-        action: '',
-        payload: '',
-        time_offset: 0,
-        continue_on_failure: 0,
-    });
-
-    const [editForm, setEditForm] = React.useState<TaskUpdateRequest & { sequence_id: number }>({
-        action: '',
-        payload: '',
-        time_offset: 0,
-        continue_on_failure: 0,
-        sequence_id: 1,
-    });
 
     const sortedTasks = React.useMemo(() => {
         return [...tasks].sort((a, b) => a.sequence_id - b.sequence_id);
@@ -103,6 +83,23 @@ export default function ServerTasksPage() {
             console.error('Failed to fetch schedule:', error);
         }
     }, [uuidShort, scheduleId]);
+
+    const fetchDatabases = React.useCallback(async () => {
+        if (!uuidShort) return;
+        try {
+            const { data } = await axios.get<{
+                success: boolean;
+                data: { data: Database[] };
+            }>(`/api/user/servers/${uuidShort}/databases`, {
+                params: { page: 1, per_page: 100 },
+            });
+            if (data?.success && data?.data) {
+                setDatabases(data.data.data || []);
+            }
+        } catch (error) {
+            console.error('Failed to fetch databases:', error);
+        }
+    }, [uuidShort]);
 
     const fetchTasks = React.useCallback(
         async (page = 1) => {
@@ -133,6 +130,7 @@ export default function ServerTasksPage() {
         if (canRead && schedulesEnabled) {
             fetchSchedule();
             fetchTasks();
+            fetchDatabases();
             fetchWidgets();
         } else if (!permissionsLoading && !canRead) {
             toast.error(t('serverTasks.noSchedulePermission'));
@@ -140,54 +138,18 @@ export default function ServerTasksPage() {
         } else {
             setLoading(false);
         }
-    }, [canRead, permissionsLoading, fetchTasks, fetchSchedule, router, uuidShort, t, schedulesEnabled, fetchWidgets]);
-
-    const handleCreate = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setSaving(true);
-        try {
-            const { data } = await axios.post(
-                `/api/user/servers/${uuidShort}/schedules/${scheduleId}/tasks`,
-                createForm,
-            );
-            if (data?.success) {
-                toast.success(t('serverTasks.createSuccess'));
-                setIsCreateOpen(false);
-                fetchTasks(pagination.current_page);
-            } else {
-                toast.error(data?.message || t('serverTasks.createFailed'));
-            }
-        } catch (error) {
-            const axiosError = error as AxiosError<{ message: string }>;
-            toast.error(axiosError.response?.data?.message || t('serverTasks.createFailed'));
-        } finally {
-            setSaving(false);
-        }
-    };
-
-    const handleUpdate = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!selectedTask) return;
-        setSaving(true);
-        try {
-            const { data } = await axios.put(
-                `/api/user/servers/${uuidShort}/schedules/${scheduleId}/tasks/${selectedTask.id}`,
-                editForm,
-            );
-            if (data?.success) {
-                toast.success(t('serverTasks.updateSuccess'));
-                setIsEditOpen(false);
-                fetchTasks(pagination.current_page);
-            } else {
-                toast.error(data?.message || t('serverTasks.updateFailed'));
-            }
-        } catch (error) {
-            const axiosError = error as AxiosError<{ message: string }>;
-            toast.error(axiosError.response?.data?.message || t('serverTasks.updateFailed'));
-        } finally {
-            setSaving(false);
-        }
-    };
+    }, [
+        canRead,
+        permissionsLoading,
+        fetchTasks,
+        fetchSchedule,
+        fetchDatabases,
+        router,
+        uuidShort,
+        t,
+        schedulesEnabled,
+        fetchWidgets,
+    ]);
 
     const handleDelete = async () => {
         if (!selectedTask) return;
@@ -216,9 +178,7 @@ export default function ServerTasksPage() {
         try {
             const { data } = await axios.put(
                 `/api/user/servers/${uuidShort}/schedules/${scheduleId}/tasks/${task.id}/sequence`,
-                {
-                    sequence_id: task.sequence_id - 1,
-                },
+                { sequence_id: task.sequence_id - 1 },
             );
             if (data?.success) {
                 toast.success(t('serverTasks.moveUpSuccess'));
@@ -237,9 +197,7 @@ export default function ServerTasksPage() {
         try {
             const { data } = await axios.put(
                 `/api/user/servers/${uuidShort}/schedules/${scheduleId}/tasks/${task.id}/sequence`,
-                {
-                    sequence_id: task.sequence_id + 1,
-                },
+                { sequence_id: task.sequence_id + 1 },
             );
             if (data?.success) {
                 toast.success(t('serverTasks.moveDownSuccess'));
@@ -253,30 +211,32 @@ export default function ServerTasksPage() {
         }
     };
 
-    const getPayloadPlaceholder = (action: string): string => {
+    const getActionLabel = (action: string): string => {
         switch (action) {
             case 'power':
-                return t('serverTasks.selectPowerActionFromDropdown');
+                return t('serverTasks.actionPower');
             case 'backup':
-                return t('serverTasks.backupIgnoredFilesPlaceholder');
+            case 'database_backup':
+                return t('serverTasks.actionBackup');
             case 'command':
-                return t('serverTasks.enterCommand');
+                return t('serverTasks.actionCommand');
             default:
-                return t('serverTasks.payloadValue');
+                return action;
         }
     };
 
-    const getPayloadHelp = (action: string): string => {
-        switch (action) {
-            case 'power':
-                return t('serverTasks.selectPowerActionHelp');
-            case 'backup':
-                return t('serverTasks.backupIgnoredFilesHelp');
-            case 'command':
-                return t('serverTasks.commandHelp');
-            default:
-                return t('serverTasks.additionalDataHelp');
+    const formatTaskPayloadDisplay = (task: Task): string => {
+        if (isBackupAction(task.action)) {
+            return formatBackupPayloadDisplay(task.action, task.payload || '', databases, {
+                files: t('serverTasks.backupTypeFiles'),
+                databases: t('serverTasks.backupTypeDatabases'),
+                full: t('serverTasks.backupTypeFull'),
+                all: t('serverTasks.databaseScopeAll'),
+                specific: t('serverTasks.databaseScopeSpecific'),
+                noPayload: t('serverTasks.noPayload'),
+            });
         }
+        return task.payload || t('serverTasks.noPayload');
     };
 
     if (permissionsLoading || settingsLoading || loading) return null;
@@ -309,10 +269,7 @@ export default function ServerTasksPage() {
                             <Button
                                 size='default'
                                 variant='default'
-                                onClick={() => {
-                                    setCreateForm({ action: '', payload: '', time_offset: 0, continue_on_failure: 0 });
-                                    setIsCreateOpen(true);
-                                }}
+                                onClick={() => router.push(`/server/${uuidShort}/schedules/${scheduleId}/tasks/new`)}
                                 className='order-1 w-full sm:order-2 sm:w-auto'
                             >
                                 <Plus className='mr-2 h-4 w-4' />
@@ -352,10 +309,7 @@ export default function ServerTasksPage() {
                             <Button
                                 size='default'
                                 variant='default'
-                                onClick={() => {
-                                    setCreateForm({ action: '', payload: '', time_offset: 0, continue_on_failure: 0 });
-                                    setIsCreateOpen(true);
-                                }}
+                                onClick={() => router.push(`/server/${uuidShort}/schedules/${scheduleId}/tasks/new`)}
                             >
                                 <Plus className='mr-2 h-6 w-6' />
                                 {t('serverTasks.createTask')}
@@ -372,15 +326,15 @@ export default function ServerTasksPage() {
                             iconWrapperClassName={
                                 task.action === 'power'
                                     ? 'bg-red-500/10 border-red-500/20 text-red-500'
-                                    : task.action === 'backup'
+                                    : isBackupAction(task.action)
                                       ? 'bg-blue-500/10 border-blue-500/20 text-blue-500'
                                       : 'bg-white/5 border-white/10 text-muted-foreground'
                             }
-                            title={task.action}
+                            title={getActionLabel(task.action)}
                             description={
                                 <div className='flex flex-col gap-1'>
                                     <span className='text-muted-foreground w-fit rounded-md border border-white/5 bg-black/20 px-2 py-1 font-mono text-xs'>
-                                        {task.payload || t('serverTasks.noPayload')}
+                                        {formatTaskPayloadDisplay(task)}
                                     </span>
                                     {(task.time_offset > 0 || task.continue_on_failure === 1) && (
                                         <div className='text-muted-foreground/60 mt-1 flex items-center gap-3 text-[10px] font-medium tracking-wider uppercase'>
@@ -438,17 +392,11 @@ export default function ServerTasksPage() {
                                                 size='sm'
                                                 variant='glass'
                                                 className='h-8 w-8 p-0'
-                                                onClick={() => {
-                                                    setSelectedTask(task);
-                                                    setEditForm({
-                                                        action: task.action,
-                                                        payload: task.payload,
-                                                        time_offset: task.time_offset,
-                                                        continue_on_failure: task.continue_on_failure,
-                                                        sequence_id: task.sequence_id,
-                                                    });
-                                                    setIsEditOpen(true);
-                                                }}
+                                                onClick={() =>
+                                                    router.push(
+                                                        `/server/${uuidShort}/schedules/${scheduleId}/tasks/${task.id}/edit`,
+                                                    )
+                                                }
                                             >
                                                 <Pencil className='h-3.5 w-3.5' />
                                             </Button>
@@ -477,186 +425,24 @@ export default function ServerTasksPage() {
             <WidgetRenderer widgets={getWidgets('server-tasks', 'after-tasks-list')} />
             <WidgetRenderer widgets={getWidgets('server-tasks', 'bottom-of-page')} />
 
-            <HeadlessModal
-                isOpen={isCreateOpen}
-                onClose={() => setIsCreateOpen(false)}
-                title={t('serverTasks.createTask')}
-                description={t('serverTasks.createTaskDescription')}
-            >
-                <form onSubmit={handleCreate} className='space-y-4 pt-4'>
-                    <div className='space-y-2'>
-                        <Label>{t('serverTasks.action')}</Label>
-                        <HeadlessSelect
-                            value={createForm.action}
-                            onChange={(val) => setCreateForm({ ...createForm, action: String(val), payload: '' })}
-                            options={[
-                                { id: 'power', name: t('serverTasks.actionPower') },
-                                { id: 'backup', name: t('serverTasks.actionBackup') },
-                                { id: 'command', name: t('serverTasks.actionCommand') },
-                            ]}
-                            placeholder={t('serverTasks.selectActionType')}
-                        />
-                        <p className='text-muted-foreground text-xs'>{t('serverTasks.actionHelp')}</p>
-                    </div>
-
-                    <div className='space-y-2'>
-                        <Label>{t('serverTasks.payload')}</Label>
-                        {createForm.action === 'power' ? (
-                            <HeadlessSelect
-                                value={createForm.payload}
-                                onChange={(val) => setCreateForm({ ...createForm, payload: String(val) })}
-                                options={[
-                                    { id: 'start', name: t('serverTasks.startServer') },
-                                    { id: 'stop', name: t('serverTasks.stopServer') },
-                                    { id: 'restart', name: t('serverTasks.restartServer') },
-                                    { id: 'kill', name: t('serverTasks.killServer') },
-                                ]}
-                                placeholder={t('serverTasks.selectPowerAction')}
-                            />
-                        ) : (
-                            <Input
-                                value={createForm.payload}
-                                onChange={(e) => setCreateForm({ ...createForm, payload: e.target.value })}
-                                placeholder={getPayloadPlaceholder(createForm.action)}
-                                required={createForm.action === 'command'}
-                            />
-                        )}
-                        <p className='text-muted-foreground text-xs'>{getPayloadHelp(createForm.action)}</p>
-                    </div>
-
-                    <div className='space-y-2'>
-                        <Label>{t('serverTasks.timeOffset')}</Label>
-                        <Input
-                            type='number'
-                            min='0'
-                            value={createForm.time_offset}
-                            onChange={(e) => setCreateForm({ ...createForm, time_offset: Number(e.target.value) })}
-                        />
-                        <p className='text-muted-foreground text-xs'>{t('serverTasks.timeOffsetHelp')}</p>
-                    </div>
-
-                    <div className='space-y-2'>
-                        <Label>{t('serverTasks.continueOnFailure')}</Label>
-                        <HeadlessSelect
-                            value={String(createForm.continue_on_failure)}
-                            onChange={(val) => setCreateForm({ ...createForm, continue_on_failure: Number(val) })}
-                            options={[
-                                { id: '0', name: t('serverTasks.stopOnFailure') },
-                                { id: '1', name: t('serverTasks.continueOnFailure') },
-                            ]}
-                        />
-                        <p className='text-muted-foreground text-xs'>{t('serverTasks.continueOnFailureHelp')}</p>
-                    </div>
-
-                    <div className='flex justify-end gap-2 pt-4'>
-                        <Button type='button' variant='glass' onClick={() => setIsCreateOpen(false)} disabled={saving}>
-                            {t('common.cancel')}
-                        </Button>
-                        <Button type='submit' disabled={saving} variant='default' loading={saving}>
-                            {!saving && <Plus className='mr-2 h-4 w-4' />}
-                            {t('serverTasks.create')}
-                        </Button>
-                    </div>
-                </form>
-            </HeadlessModal>
-
-            <HeadlessModal
-                isOpen={isEditOpen}
-                onClose={() => setIsEditOpen(false)}
-                title={t('serverTasks.editTask')}
-                description={t('serverTasks.editTaskDescription')}
-            >
-                <form onSubmit={handleUpdate} className='space-y-4 pt-4'>
-                    <div className='space-y-2'>
-                        <Label>{t('serverTasks.action')}</Label>
-                        <HeadlessSelect
-                            value={editForm.action}
-                            onChange={(val) => setEditForm({ ...editForm, action: String(val), payload: '' })}
-                            options={[
-                                { id: 'power', name: t('serverTasks.actionPower') },
-                                { id: 'backup', name: t('serverTasks.actionBackup') },
-                                { id: 'command', name: t('serverTasks.actionCommand') },
-                            ]}
-                        />
-                    </div>
-
-                    <div className='space-y-2'>
-                        <Label>{t('serverTasks.sequenceId')}</Label>
-                        <Input
-                            type='number'
-                            min='1'
-                            max={Math.max(sortedTasks.length, editForm.sequence_id)}
-                            value={editForm.sequence_id}
-                            onChange={(e) => setEditForm({ ...editForm, sequence_id: Number(e.target.value) })}
-                        />
-                        <p className='text-muted-foreground text-xs'>{t('serverTasks.sequenceIdHelp')}</p>
-                    </div>
-
-                    <div className='space-y-2'>
-                        <Label>{t('serverTasks.payload')}</Label>
-                        {editForm.action === 'power' ? (
-                            <HeadlessSelect
-                                value={editForm.payload}
-                                onChange={(val) => setEditForm({ ...editForm, payload: String(val) })}
-                                options={[
-                                    { id: 'start', name: t('serverTasks.startServer') },
-                                    { id: 'stop', name: t('serverTasks.stopServer') },
-                                    { id: 'restart', name: t('serverTasks.restartServer') },
-                                    { id: 'kill', name: t('serverTasks.killServer') },
-                                ]}
-                            />
-                        ) : (
-                            <Input
-                                value={editForm.payload}
-                                onChange={(e) => setEditForm({ ...editForm, payload: e.target.value })}
-                                placeholder={getPayloadPlaceholder(editForm.action)}
-                                required={editForm.action === 'command'}
-                            />
-                        )}
-                    </div>
-
-                    <div className='space-y-2'>
-                        <Label>{t('serverTasks.timeOffset')}</Label>
-                        <Input
-                            type='number'
-                            min='0'
-                            value={editForm.time_offset}
-                            onChange={(e) => setEditForm({ ...editForm, time_offset: Number(e.target.value) })}
-                        />
-                    </div>
-
-                    <div className='space-y-2'>
-                        <Label>{t('serverTasks.continueOnFailure')}</Label>
-                        <HeadlessSelect
-                            value={String(editForm.continue_on_failure)}
-                            onChange={(val) => setEditForm({ ...editForm, continue_on_failure: Number(val) })}
-                            options={[
-                                { id: '0', name: t('serverTasks.stopOnFailure') },
-                                { id: '1', name: t('serverTasks.continueOnFailure') },
-                            ]}
-                        />
-                    </div>
-
-                    <div className='flex justify-end gap-2 pt-4'>
-                        <Button type='button' variant='glass' onClick={() => setIsEditOpen(false)} disabled={saving}>
-                            {t('common.cancel')}
-                        </Button>
-                        <Button type='submit' disabled={saving} variant='default' loading={saving}>
-                            {t('serverTasks.update')}
-                        </Button>
-                    </div>
-                </form>
-            </HeadlessModal>
-
-            <HeadlessModal
-                isOpen={isDeleteOpen}
+            <Dialog
+                open={isDeleteOpen}
                 onClose={() => setIsDeleteOpen(false)}
-                title={t('serverTasks.confirmDeleteTitle')}
-                description={t('serverTasks.confirmDeleteDescription', {
-                    action: selectedTask?.action || '',
-                    payload: selectedTask?.payload || t('serverTasks.noPayload'),
-                })}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setIsDeleteOpen(false);
+                    }
+                }}
             >
+                <DialogHeader>
+                    <DialogTitle>{t('serverTasks.confirmDeleteTitle')}</DialogTitle>
+                    <DialogDescription>
+                        {t('serverTasks.confirmDeleteDescription', {
+                            action: selectedTask ? getActionLabel(selectedTask.action) : '',
+                            payload: selectedTask ? formatTaskPayloadDisplay(selectedTask) : t('serverTasks.noPayload'),
+                        })}
+                    </DialogDescription>
+                </DialogHeader>
                 <div className='flex justify-end gap-2 pt-4'>
                     <Button variant='glass' onClick={() => setIsDeleteOpen(false)} disabled={deleting}>
                         {t('common.cancel')}
@@ -666,7 +452,7 @@ export default function ServerTasksPage() {
                         {t('serverTasks.confirmDelete')}
                     </Button>
                 </div>
-            </HeadlessModal>
+            </Dialog>
         </div>
     );
 }

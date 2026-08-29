@@ -27,7 +27,7 @@ import {
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { toast } from 'sonner';
-import { filesApi } from '@/lib/files-api';
+import { useFileManagerApi } from '@/contexts/FileManagerApiContext';
 import { ShieldCheck, Info } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
 
@@ -41,6 +41,7 @@ interface PermissionsDialogProps {
 }
 
 export function PermissionsDialog({ open, onOpenChange, uuid, root, files, onSuccess }: PermissionsDialogProps) {
+    const filesApi = useFileManagerApi();
     const { t } = useTranslation();
     const [mode, setMode] = useState('644');
     const [loading, setLoading] = useState(false);

@@ -41,10 +41,10 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { formatMemory, formatDisk } from '@/lib/server-utils';
 import { cn } from '@/lib/utils';
 
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/featherui/Button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { Input } from '@/components/ui/input';
+import { Input } from '@/components/featherui/Input';
 import { NodeServersList, type NodeStatusServer } from '@/components/admin/NodeServersList';
 
 interface NodeEntry {

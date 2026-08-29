@@ -25,7 +25,7 @@ import { Globe, Plus, Trash2, RefreshCw, AlertTriangle, Lock, Loader2 } from 'lu
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { Button } from '@/components/featherui/Button';
-import { HeadlessModal } from '@/components/ui/headless-modal';
+import { Dialog, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -257,14 +257,25 @@ export default function ServerSubdomainsPage() {
             )}
             <WidgetRenderer widgets={getWidgets('server-subdomains', 'after-subdomains-list')} />
 
-            <HeadlessModal
-                isOpen={isDeleteOpen}
+            <Dialog
+                open={isDeleteOpen}
                 onClose={() => setIsDeleteOpen(false)}
-                title={t('serverSubdomains.deleteTitle')}
-                description={t('serverSubdomains.deleteDescription', {
-                    subdomain: selectedSubdomain ? `${selectedSubdomain.subdomain}.${selectedSubdomain.domain}` : '',
-                })}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setIsDeleteOpen(false);
+                    }
+                }}
             >
+                <DialogHeader>
+                    <DialogTitle>{t('serverSubdomains.deleteTitle')}</DialogTitle>
+                    <DialogDescription>
+                        {t('serverSubdomains.deleteDescription', {
+                            subdomain: selectedSubdomain
+                                ? `${selectedSubdomain.subdomain}.${selectedSubdomain.domain}`
+                                : '',
+                        })}
+                    </DialogDescription>
+                </DialogHeader>
                 <div className='flex justify-end gap-2 pt-4'>
                     <Button variant='outline' onClick={() => setIsDeleteOpen(false)} disabled={deleting}>
                         {t('common.cancel')}
@@ -278,7 +289,7 @@ export default function ServerSubdomainsPage() {
                         {t('common.delete')}
                     </Button>
                 </div>
-            </HeadlessModal>
+            </Dialog>
             <WidgetRenderer widgets={getWidgets('server-subdomains', 'bottom-of-page')} />
         </div>
     );

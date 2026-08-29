@@ -19,19 +19,12 @@ import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSession } from '@/contexts/SessionContext';
 import { useSettings } from '@/contexts/SettingsContext';
-import {
-    Dialog,
-    DialogPanel,
-    DialogTitle,
-    Description as DialogDescription,
-    Field,
-    Label as HeadlessLabel,
-} from '@headlessui/react';
-import { Button } from '@/components/ui/button';
+import { Dialog, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/featherui/Button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/featherui/Input';
-import { Textarea } from '@/components/ui/textarea';
+import { Textarea } from '@/components/featherui/Textarea';
 import { copyToClipboard } from '@/lib/utils';
 import { Key, Plus, Trash2, Eye, Pencil, RefreshCw, Copy, Info } from 'lucide-react';
 import { toast } from 'sonner';
@@ -401,208 +394,177 @@ export default function ApiKeysTab({ slug = 'account-api-keys' }: ApiKeysTabProp
                     setAllowedIpsText('');
                     setNotifyForeignIp(false);
                 }}
-                className='relative z-50'
+                className='max-w-2xl'
             >
-                <div className='fixed inset-0 bg-black/30' aria-hidden='true' />
-                <div className='fixed inset-0 flex items-center justify-center p-4'>
-                    <DialogPanel className='bg-card/50 border-border/50 w-full max-w-2xl rounded-xl border p-6 backdrop-blur-xl'>
-                        <DialogTitle className='text-foreground mb-2 text-lg font-semibold'>
-                            {editModal ? t('account.apiKeys.editKey') : t('account.apiKeys.addKey')}
-                        </DialogTitle>
-                        <DialogDescription className='text-muted-foreground mb-6 text-sm'>
-                            {t('account.apiKeys.modalDescription')}
-                        </DialogDescription>
+                <DialogHeader>
+                    <DialogTitle>{editModal ? t('account.apiKeys.editKey') : t('account.apiKeys.addKey')}</DialogTitle>
+                    <DialogDescription>{t('account.apiKeys.modalDescription')}</DialogDescription>
+                </DialogHeader>
 
-                        <div>
-                            <Label htmlFor='api-keys-modal-client-name' className='text-foreground'>
-                                {t('account.apiKeys.clientName')}
-                            </Label>
-                            <Input
-                                id='api-keys-modal-client-name'
-                                value={clientName}
-                                onChange={(e) => setClientName(e.target.value)}
-                                placeholder={t('account.apiKeys.clientNamePlaceholder')}
-                                className='mt-2'
-                            />
-                        </div>
-
-                        <div className='mt-4'>
-                            <Label htmlFor='api-keys-modal-allowed-ips' className='text-foreground'>
-                                {t('account.apiKeys.allowedIpsLabel')}
-                            </Label>
-                            <p className='text-muted-foreground mt-1 mb-2 text-xs'>
-                                {t('account.apiKeys.allowedIpsHelp')}
-                            </p>
-                            <Textarea
-                                id='api-keys-modal-allowed-ips'
-                                value={allowedIpsText}
-                                onChange={(e) => {
-                                    const v = e.target.value;
-                                    setAllowedIpsText(v);
-                                    if (v.trim() === '') {
-                                        setNotifyForeignIp(false);
-                                    }
-                                }}
-                                placeholder={t('account.apiKeys.allowedIpsPlaceholder')}
-                                rows={5}
-                                className='mt-2 min-h-25 font-mono text-sm font-normal'
-                            />
-                        </div>
-
-                        <Field className='mt-4 flex items-start gap-3'>
-                            <Checkbox
-                                checked={notifyForeignIp}
-                                disabled={allowedIpsText.trim() === ''}
-                                onCheckedChange={(checked) => setNotifyForeignIp(checked === true)}
-                            />
-                            <div className='min-w-0 flex-1'>
-                                <HeadlessLabel className='text-foreground cursor-pointer text-sm font-medium'>
-                                    {t('account.apiKeys.notifyForeignIp')}
-                                </HeadlessLabel>
-                                <p className='text-muted-foreground mt-1 text-xs'>
-                                    {t('account.apiKeys.notifyForeignIpHelp')}
-                                </p>
-                            </div>
-                        </Field>
-
-                        <div className='mt-6 flex gap-3'>
-                            <Button onClick={editModal ? handleEditClient : handleCreateClient} className='flex-1'>
-                                {editModal ? t('account.apiKeys.updateKey') : t('account.apiKeys.addKey')}
-                            </Button>
-                            <Button
-                                onClick={() => {
-                                    setIsOpen(false);
-                                    setEditModal(false);
-                                    setClientName('');
-                                    setAllowedIpsText('');
-                                    setNotifyForeignIp(false);
-                                }}
-                                variant='outline'
-                                className='flex-1'
-                            >
-                                {t('common.cancel')}
-                            </Button>
-                        </div>
-                    </DialogPanel>
+                <div>
+                    <Label htmlFor='api-keys-modal-client-name' className='text-foreground'>
+                        {t('account.apiKeys.clientName')}
+                    </Label>
+                    <Input
+                        id='api-keys-modal-client-name'
+                        value={clientName}
+                        onChange={(e) => setClientName(e.target.value)}
+                        placeholder={t('account.apiKeys.clientNamePlaceholder')}
+                        className='mt-2'
+                    />
                 </div>
+
+                <div className='mt-4'>
+                    <Label htmlFor='api-keys-modal-allowed-ips' className='text-foreground'>
+                        {t('account.apiKeys.allowedIpsLabel')}
+                    </Label>
+                    <p className='text-muted-foreground mt-1 mb-2 text-xs'>{t('account.apiKeys.allowedIpsHelp')}</p>
+                    <Textarea
+                        id='api-keys-modal-allowed-ips'
+                        value={allowedIpsText}
+                        onChange={(e) => {
+                            const v = e.target.value;
+                            setAllowedIpsText(v);
+                            if (v.trim() === '') {
+                                setNotifyForeignIp(false);
+                            }
+                        }}
+                        placeholder={t('account.apiKeys.allowedIpsPlaceholder')}
+                        rows={5}
+                        className='mt-2 min-h-25 font-mono text-sm font-normal'
+                    />
+                </div>
+
+                <div className='mt-4 flex items-start gap-3'>
+                    <Checkbox
+                        checked={notifyForeignIp}
+                        disabled={allowedIpsText.trim() === ''}
+                        onCheckedChange={(checked) => setNotifyForeignIp(checked === true)}
+                    />
+                    <div className='min-w-0 flex-1'>
+                        <Label className='text-foreground cursor-pointer text-sm font-medium'>
+                            {t('account.apiKeys.notifyForeignIp')}
+                        </Label>
+                        <p className='text-muted-foreground mt-1 text-xs'>{t('account.apiKeys.notifyForeignIpHelp')}</p>
+                    </div>
+                </div>
+
+                <DialogFooter>
+                    <Button onClick={editModal ? handleEditClient : handleCreateClient} className='flex-1'>
+                        {editModal ? t('account.apiKeys.updateKey') : t('account.apiKeys.addKey')}
+                    </Button>
+                    <Button
+                        onClick={() => {
+                            setIsOpen(false);
+                            setEditModal(false);
+                            setClientName('');
+                            setAllowedIpsText('');
+                            setNotifyForeignIp(false);
+                        }}
+                        variant='outline'
+                        className='flex-1'
+                    >
+                        {t('common.cancel')}
+                    </Button>
+                </DialogFooter>
             </Dialog>
 
-            <Dialog open={viewModal} onClose={() => setViewModal(false)} className='relative z-50'>
-                <div className='fixed inset-0 bg-black/30' aria-hidden='true' />
-                <div className='fixed inset-0 flex items-center justify-center p-4'>
-                    <DialogPanel className='bg-card/50 border-border/50 w-full max-w-2xl rounded-xl border p-6 backdrop-blur-xl'>
-                        <DialogTitle className='text-foreground mb-4 text-lg font-semibold'>
-                            {selectedClient?.name}
-                        </DialogTitle>
-                        {selectedClient && (
-                            <div className='space-y-4'>
-                                {selectedClient.allowed_ips != null &&
-                                    String(selectedClient.allowed_ips).trim() !== '' && (
-                                        <div>
-                                            <span className='text-muted-foreground text-sm font-medium'>
-                                                {t('account.apiKeys.allowedIpsLabel')}:
-                                            </span>
-                                            <pre className='bg-muted custom-scrollbar mt-2 max-h-40 overflow-auto rounded-md p-3 font-mono text-xs break-all whitespace-pre-wrap'>
-                                                {selectedClient.allowed_ips}
-                                            </pre>
-                                            {selectedClient.notify_foreign_ip === 'true' && (
-                                                <p className='text-muted-foreground mt-2 text-xs'>
-                                                    {t('account.apiKeys.notifyEnabledHint')}
-                                                </p>
-                                            )}
-                                        </div>
-                                    )}
-                                <div>
-                                    <span className='text-muted-foreground text-sm font-medium'>
-                                        {t('account.apiKeys.publicKey')}:
-                                    </span>
-                                    <div className='bg-muted mt-2 rounded-md p-3'>
-                                        <pre className='font-mono text-xs break-all whitespace-pre-wrap'>
-                                            {selectedClient.public_key}
-                                        </pre>
-                                        <Button
-                                            variant='outline'
-                                            size='sm'
-                                            className='mt-2'
-                                            onClick={() => copyToClipboard(selectedClient.public_key || '')}
-                                        >
-                                            <Copy className='mr-1 h-4 w-4' />
-                                            {t('account.apiKeys.copyKey')}
-                                        </Button>
-                                    </div>
-                                </div>
-                                {selectedClient.private_key && (
-                                    <div>
-                                        <span className='text-muted-foreground text-sm font-medium'>
-                                            {t('account.apiKeys.privateKey')}:
-                                        </span>
-                                        <div className='bg-muted mt-2 rounded-md p-3'>
-                                            <pre className='custom-scrollbar max-h-64 overflow-auto font-mono text-xs break-all whitespace-pre-wrap'>
-                                                {selectedClient.private_key}
-                                            </pre>
-                                            <Button
-                                                variant='outline'
-                                                size='sm'
-                                                className='mt-2'
-                                                onClick={() => copyToClipboard(selectedClient.private_key || '')}
-                                            >
-                                                <Copy className='mr-1 h-4 w-4' />
-                                                {t('account.apiKeys.copyKey')}
-                                            </Button>
-                                            <p className='mt-2 text-xs text-yellow-600'>
-                                                {t('account.apiKeys.privateKeyWarning')}
-                                            </p>
-                                        </div>
-                                    </div>
+            <Dialog open={viewModal} onClose={() => setViewModal(false)} className='max-w-2xl'>
+                <DialogHeader>
+                    <DialogTitle>{selectedClient?.name}</DialogTitle>
+                </DialogHeader>
+                {selectedClient && (
+                    <div className='space-y-4'>
+                        {selectedClient.allowed_ips != null && String(selectedClient.allowed_ips).trim() !== '' && (
+                            <div>
+                                <span className='text-muted-foreground text-sm font-medium'>
+                                    {t('account.apiKeys.allowedIpsLabel')}:
+                                </span>
+                                <pre className='bg-muted custom-scrollbar mt-2 max-h-40 overflow-auto rounded-md p-3 font-mono text-xs break-all whitespace-pre-wrap'>
+                                    {selectedClient.allowed_ips}
+                                </pre>
+                                {selectedClient.notify_foreign_ip === 'true' && (
+                                    <p className='text-muted-foreground mt-2 text-xs'>
+                                        {t('account.apiKeys.notifyEnabledHint')}
+                                    </p>
                                 )}
                             </div>
                         )}
-                    </DialogPanel>
-                </div>
+                        <div>
+                            <span className='text-muted-foreground text-sm font-medium'>
+                                {t('account.apiKeys.publicKey')}:
+                            </span>
+                            <div className='bg-muted mt-2 rounded-md p-3'>
+                                <pre className='font-mono text-xs break-all whitespace-pre-wrap'>
+                                    {selectedClient.public_key}
+                                </pre>
+                                <Button
+                                    variant='outline'
+                                    size='sm'
+                                    className='mt-2'
+                                    onClick={() => copyToClipboard(selectedClient.public_key || '')}
+                                >
+                                    <Copy className='mr-1 h-4 w-4' />
+                                    {t('account.apiKeys.copyKey')}
+                                </Button>
+                            </div>
+                        </div>
+                        {selectedClient.private_key && (
+                            <div>
+                                <span className='text-muted-foreground text-sm font-medium'>
+                                    {t('account.apiKeys.privateKey')}:
+                                </span>
+                                <div className='bg-muted mt-2 rounded-md p-3'>
+                                    <pre className='custom-scrollbar max-h-64 overflow-auto font-mono text-xs break-all whitespace-pre-wrap'>
+                                        {selectedClient.private_key}
+                                    </pre>
+                                    <Button
+                                        variant='outline'
+                                        size='sm'
+                                        className='mt-2'
+                                        onClick={() => copyToClipboard(selectedClient.private_key || '')}
+                                    >
+                                        <Copy className='mr-1 h-4 w-4' />
+                                        {t('account.apiKeys.copyKey')}
+                                    </Button>
+                                    <p className='mt-2 text-xs text-yellow-600'>
+                                        {t('account.apiKeys.privateKeyWarning')}
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
             </Dialog>
 
-            <Dialog open={deleteModal} onClose={() => setDeleteModal(false)} className='relative z-50'>
-                <div className='fixed inset-0 bg-black/30' aria-hidden='true' />
-                <div className='fixed inset-0 flex items-center justify-center p-4'>
-                    <DialogPanel className='bg-card/50 border-border/50 w-full max-w-md rounded-xl border p-6 backdrop-blur-xl'>
-                        <DialogTitle className='text-foreground mb-2 text-lg font-semibold'>
-                            {t('account.apiKeys.confirmDelete')}
-                        </DialogTitle>
-                        <DialogDescription className='text-muted-foreground mb-6 text-sm'>
-                            {t('account.apiKeys.deleteWarning')}
-                        </DialogDescription>
-                        <div className='flex gap-3'>
-                            <Button onClick={deleteClient} variant='destructive' className='flex-1'>
-                                {t('account.apiKeys.confirmDelete')}
-                            </Button>
-                            <Button onClick={() => setDeleteModal(false)} variant='outline' className='flex-1'>
-                                {t('common.cancel')}
-                            </Button>
-                        </div>
-                    </DialogPanel>
-                </div>
+            <Dialog open={deleteModal} onClose={() => setDeleteModal(false)}>
+                <DialogHeader>
+                    <DialogTitle>{t('account.apiKeys.confirmDelete')}</DialogTitle>
+                    <DialogDescription>{t('account.apiKeys.deleteWarning')}</DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                    <Button onClick={deleteClient} variant='destructive' className='flex-1'>
+                        {t('account.apiKeys.confirmDelete')}
+                    </Button>
+                    <Button onClick={() => setDeleteModal(false)} variant='outline' className='flex-1'>
+                        {t('common.cancel')}
+                    </Button>
+                </DialogFooter>
             </Dialog>
 
-            <Dialog open={regenerateModal} onClose={() => setRegenerateModal(false)} className='relative z-50'>
-                <div className='fixed inset-0 bg-black/30' aria-hidden='true' />
-                <div className='fixed inset-0 flex items-center justify-center p-4'>
-                    <DialogPanel className='bg-card/50 border-border/50 w-full max-w-md rounded-xl border p-6 backdrop-blur-xl'>
-                        <DialogTitle className='text-foreground mb-2 text-lg font-semibold'>
-                            {t('account.apiKeys.confirmRegenerate')}
-                        </DialogTitle>
-                        <DialogDescription className='text-muted-foreground mb-6 text-sm'>
-                            {t('account.apiKeys.regenerateWarning')}
-                        </DialogDescription>
-                        <div className='flex gap-3'>
-                            <Button onClick={regenerateKeys} className='flex-1'>
-                                {t('account.apiKeys.confirmRegenerate')}
-                            </Button>
-                            <Button onClick={() => setRegenerateModal(false)} variant='outline' className='flex-1'>
-                                {t('common.cancel')}
-                            </Button>
-                        </div>
-                    </DialogPanel>
-                </div>
+            <Dialog open={regenerateModal} onClose={() => setRegenerateModal(false)}>
+                <DialogHeader>
+                    <DialogTitle>{t('account.apiKeys.confirmRegenerate')}</DialogTitle>
+                    <DialogDescription>{t('account.apiKeys.regenerateWarning')}</DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                    <Button onClick={regenerateKeys} className='flex-1'>
+                        {t('account.apiKeys.confirmRegenerate')}
+                    </Button>
+                    <Button onClick={() => setRegenerateModal(false)} variant='outline' className='flex-1'>
+                        {t('common.cancel')}
+                    </Button>
+                </DialogFooter>
             </Dialog>
             <WidgetRenderer widgets={getWidgets(slug, 'bottom-of-page')} />
         </div>

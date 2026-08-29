@@ -333,6 +333,26 @@ class Permissions
     /** Delete VM instances */
     public const ADMIN_VM_INSTANCES_DELETE = 'admin.vm_instances.delete';
 
+    // Admin WebPlates Permissions
+    /** View webplates */
+    public const ADMIN_WEBPLATES_VIEW = 'admin.webplates.view';
+    /** Create new webplates */
+    public const ADMIN_WEBPLATES_CREATE = 'admin.webplates.create';
+    /** Edit existing webplates */
+    public const ADMIN_WEBPLATES_EDIT = 'admin.webplates.edit';
+    /** Delete webplates */
+    public const ADMIN_WEBPLATES_DELETE = 'admin.webplates.delete';
+
+    // Admin WebSpaces Permissions
+    /** View webspaces */
+    public const ADMIN_WEBSPACES_VIEW = 'admin.webspaces.view';
+    /** Create new webspaces */
+    public const ADMIN_WEBSPACES_CREATE = 'admin.webspaces.create';
+    /** Edit existing webspaces */
+    public const ADMIN_WEBSPACES_EDIT = 'admin.webspaces.edit';
+    /** Delete webspaces */
+    public const ADMIN_WEBSPACES_DELETE = 'admin.webspaces.delete';
+
     /**
      * Returns all permission nodes with metadata.
      */
@@ -1046,6 +1066,54 @@ class Permissions
                 'value' => self::ADMIN_VM_INSTANCES_DELETE,
                 'category' => 'Admin VM Instances',
                 'description' => 'Delete VM instances',
+            ],
+            [
+                'constant' => 'ADMIN_WEBPLATES_VIEW',
+                'value' => self::ADMIN_WEBPLATES_VIEW,
+                'category' => 'Admin WebPlates',
+                'description' => 'View webplates',
+            ],
+            [
+                'constant' => 'ADMIN_WEBPLATES_CREATE',
+                'value' => self::ADMIN_WEBPLATES_CREATE,
+                'category' => 'Admin WebPlates',
+                'description' => 'Create new webplates',
+            ],
+            [
+                'constant' => 'ADMIN_WEBPLATES_EDIT',
+                'value' => self::ADMIN_WEBPLATES_EDIT,
+                'category' => 'Admin WebPlates',
+                'description' => 'Edit existing webplates',
+            ],
+            [
+                'constant' => 'ADMIN_WEBPLATES_DELETE',
+                'value' => self::ADMIN_WEBPLATES_DELETE,
+                'category' => 'Admin WebPlates',
+                'description' => 'Delete webplates',
+            ],
+            [
+                'constant' => 'ADMIN_WEBSPACES_VIEW',
+                'value' => self::ADMIN_WEBSPACES_VIEW,
+                'category' => 'Admin WebSpaces',
+                'description' => 'View webspaces',
+            ],
+            [
+                'constant' => 'ADMIN_WEBSPACES_CREATE',
+                'value' => self::ADMIN_WEBSPACES_CREATE,
+                'category' => 'Admin WebSpaces',
+                'description' => 'Create new webspaces',
+            ],
+            [
+                'constant' => 'ADMIN_WEBSPACES_EDIT',
+                'value' => self::ADMIN_WEBSPACES_EDIT,
+                'category' => 'Admin WebSpaces',
+                'description' => 'Edit existing webspaces',
+            ],
+            [
+                'constant' => 'ADMIN_WEBSPACES_DELETE',
+                'value' => self::ADMIN_WEBSPACES_DELETE,
+                'category' => 'Admin WebSpaces',
+                'description' => 'Delete webspaces',
             ],
         ];
     }

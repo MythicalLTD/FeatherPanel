@@ -117,6 +117,7 @@ class UserDataExportService
                 'excluded_export_tickets' => $context['excluded_ticket_ids'],
                 'ticket_messages' => $context['message_ids'],
                 'vm_instances' => $context['vm_instance_ids'],
+                'webspaces' => $context['webspace_ids'] ?? [],
                 'subdomain_domains' => $context['domain_ids'],
                 'spells' => $context['spell_ids'],
                 'chatbot_conversations' => $context['conversation_ids'],
@@ -128,6 +129,13 @@ class UserDataExportService
         $this->writeJson($exportDir . '/manifest.json', $manifest);
         $this->writeJson($exportDir . '/featherpanel/profile/user.json', [
             'user' => $this->sanitizeRows([$user])[0],
+            'export_uuid' => $export['uuid'],
+            'generated_at' => $manifest['generated_at'],
+        ]);
+        $this->writeJson($exportDir . '/featherpanel/profile/webspaces.json', [
+            'owned_webspace_ids' => $this->selectIds($pdo, 'featherpanel_webspaces', ['owner_id' => (int) $user['id']]),
+            'subuser_webspace_ids' => $this->selectIds($pdo, 'featherpanel_webspace_subusers', ['user_id' => (int) $user['id']], 'webspace_id'),
+            'webspace_ids' => $context['webspace_ids'] ?? [],
             'export_uuid' => $export['uuid'],
             'generated_at' => $manifest['generated_at'],
         ]);
@@ -227,6 +235,7 @@ class UserDataExportService
             'database_dump_server_ids' => [],
             'database_host_ids' => [],
             'vm_instance_ids' => [],
+            'webspace_ids' => [],
             'domain_ids' => [],
             'spell_ids' => [],
             'conversation_ids' => [],
@@ -254,6 +263,11 @@ class UserDataExportService
         $ownedVmInstanceIds = $this->selectIds($pdo, 'featherpanel_vm_instances', ['user_uuid' => $context['user_uuid']]);
         $subuserVmInstanceIds = $this->selectIds($pdo, 'featherpanel_vm_subusers', ['user_id' => $context['user_id']], 'vm_instance_id');
         $context['vm_instance_ids'] = $this->uniqueInts(array_merge($ownedVmInstanceIds, $subuserVmInstanceIds));
+
+        $ownedWebSpaceIds = $this->selectIds($pdo, 'featherpanel_webspaces', ['owner_id' => $context['user_id']]);
+        $subuserWebSpaceIds = $this->selectIds($pdo, 'featherpanel_webspace_subusers', ['user_id' => $context['user_id']], 'webspace_id');
+        $context['webspace_ids'] = $this->uniqueInts(array_merge($ownedWebSpaceIds, $subuserWebSpaceIds));
+
         $context['conversation_ids'] = $this->selectIds($pdo, 'featherpanel_chatbot_conversations', ['user_uuid' => $context['user_uuid']]);
 
         if (!empty($context['ticket_ids'])) {
@@ -324,10 +338,12 @@ class UserDataExportService
         $this->addInFilter($clauses, $params, $columns, 'server_id', $context['server_ids']);
         $this->addInFilter($clauses, $params, $columns, 'vm_instance_id', $context['vm_instance_ids']);
         $this->addInFilter($clauses, $params, $columns, 'instance_id', $context['vm_instance_ids']);
+        $this->addInFilter($clauses, $params, $columns, 'webspace_id', $context['webspace_ids'] ?? []);
         $this->addInFilter($clauses, $params, $columns, 'conversation_id', $context['conversation_ids']);
         $this->addInFilter($clauses, $params, $columns, 'schedule_id', $context['schedule_ids']);
         $this->addExactIdFilter($clauses, $params, $table, $columns, 'featherpanel_servers', $context['server_ids']);
         $this->addExactIdFilter($clauses, $params, $table, $columns, 'featherpanel_vm_instances', $context['vm_instance_ids']);
+        $this->addExactIdFilter($clauses, $params, $table, $columns, 'featherpanel_webspaces', $context['webspace_ids'] ?? []);
         $this->addExactIdFilter($clauses, $params, $table, $columns, 'featherpanel_databases', $context['database_host_ids']);
         $this->addExactIdFilter($clauses, $params, $table, $columns, 'featherpanel_subdomain_manager_domains', $context['domain_ids']);
         $this->addExactIdFilter($clauses, $params, $table, $columns, 'featherpanel_spells', $context['spell_ids']);

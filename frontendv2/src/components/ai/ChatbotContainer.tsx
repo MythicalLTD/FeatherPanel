@@ -20,7 +20,7 @@ import { Dialog, Transition } from '@headlessui/react';
 import { usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Send, Loader2, X, Bot, MessageSquare, Clock, Trash2, Plus, AlertTriangle, Menu } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/featherui/Button';
 import { toast } from 'sonner';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';

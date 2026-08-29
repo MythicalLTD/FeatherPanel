@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { APP_MONO_FONT_STACK } from '@/lib/mono-font';
 import { use, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Editor, OnMount } from '@monaco-editor/react';
@@ -29,8 +30,9 @@ import {
     Search as SearchIcon,
     X,
 } from 'lucide-react';
-import { filesApi } from '@/lib/files-api';
+import { filesApi, isFileNotFoundError } from '@/lib/files-api';
 import { isBinaryLikeFileName } from '@/lib/binary-like-file-names';
+import { isHiddenServerEntry } from '@/lib/feather-trash';
 import type { FileObject } from '@/types/server';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
@@ -48,7 +50,11 @@ function joinPath(directory: string, name: string): string {
 
 function normalizeDirectory(path: string | null | undefined): string {
     if (!path || path === '/') return '/';
-    return path.endsWith('/') && path !== '/' ? path.slice(0, -1) : path;
+    const normalized = path.endsWith('/') && path !== '/' ? path.slice(0, -1) : path;
+    if (isHiddenServerEntry(normalized.replace(/^\//, ''))) {
+        return '/';
+    }
+    return normalized;
 }
 
 function getParentDirectory(path: string): string {
@@ -102,8 +108,10 @@ export default function ServerFilesIDEPage({
     const { uuidShort } = use(params);
     const { file: initialFile, directory: initialDirectory } = use(searchParams);
 
-    const [currentDirectory, setCurrentDirectory] = useState<string>(initialDirectory || '/');
-    const [currentFileDirectory, setCurrentFileDirectory] = useState<string>(initialDirectory || '/');
+    const [currentDirectory, setCurrentDirectory] = useState<string>(() => normalizeDirectory(initialDirectory || '/'));
+    const [currentFileDirectory, setCurrentFileDirectory] = useState<string>(() =>
+        normalizeDirectory(initialDirectory || '/'),
+    );
     const [currentFileName, setCurrentFileName] = useState<string | null>(() => {
         const f = initialFile ?? null;
         return f && isBinaryLikeFileName(f) ? null : f;
@@ -193,11 +201,18 @@ export default function ServerFilesIDEPage({
             setOriginalContent(data);
         } catch (error) {
             console.error(error);
+            if (isFileNotFoundError(error)) {
+                setCurrentFileName(null);
+                setContent('');
+                setOriginalContent('');
+                router.replace(`/server/${uuidShort}/files`);
+                return;
+            }
             toast.error(t('files.editor.load_error'));
         } finally {
             setLoadingContent(false);
         }
-    }, [uuidShort, currentFileName, fullPath, t]);
+    }, [uuidShort, currentFileName, fullPath, t, router]);
 
     const confirmNavigationIfDirty = useCallback(() => {
         if (!hasUnsavedChanges) return true;
@@ -339,15 +354,15 @@ export default function ServerFilesIDEPage({
 
     if (!canRead) {
         return (
-            <div className='flex h-full min-h-0 items-center justify-center bg-linear-to-b from-[#060112] via-[#110429] to-[#050115]'>
+            <div className='bg-background flex h-full min-h-0 items-center justify-center'>
                 <p className='text-muted-foreground'>{t('files.list.empty_description')}</p>
             </div>
         );
     }
 
     return (
-        <div className='flex h-full min-h-0 flex-col gap-3 bg-linear-to-b from-[#060112] via-[#110429] to-[#050115] p-4'>
-            <div className='flex items-center justify-between rounded-2xl border border-white/10 bg-black/40 px-4 py-2 backdrop-blur-xl'>
+        <div className='bg-background flex h-full min-h-0 flex-col gap-3 p-4'>
+            <div className='bg-card/80 border-border/50 flex items-center justify-between rounded-2xl border px-4 py-2 backdrop-blur-xl'>
                 <div className='flex items-center gap-3'>
                     <div className='bg-primary/20 border-primary/40 flex h-8 w-8 items-center justify-center overflow-hidden rounded-xl border'>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -1051,7 +1066,7 @@ export default function ServerFilesIDEPage({
                                     scrollBeyondLastLine: false,
                                     automaticLayout: true,
                                     padding: { top: 20 },
-                                    fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+                                    fontFamily: APP_MONO_FONT_STACK,
                                     fontLigatures: true,
                                     cursorSmoothCaretAnimation: 'on',
                                     cursorBlinking: 'expand',

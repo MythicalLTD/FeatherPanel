@@ -23,10 +23,10 @@ import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { Button } from '@/components/featherui/Button';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { EmptyState } from '@/components/featherui/EmptyState';
-import { Input } from '@/components/ui/input';
+import { Input } from '@/components/featherui/Input';
 import { Label } from '@/components/ui/label';
 import { HeadlessSelect } from '@/components/ui/headless-select';
-import { HeadlessModal } from '@/components/ui/headless-modal';
+import { Dialog, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Info, Shield, RefreshCw, Plus, Pencil, Trash2, Loader2 } from 'lucide-react';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { cn, isEnabled } from '@/lib/utils';
@@ -486,12 +486,21 @@ export default function ServerFirewallPage() {
 
             <WidgetRenderer widgets={getWidgets('server-firewall', 'after-rules-list')} />
 
-            <HeadlessModal
-                isOpen={isModalOpen}
+            <Dialog
+                open={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
-                title={isEditing ? t('serverFirewall.editRule') : t('serverFirewall.createRule')}
-                description={t('serverFirewall.drawerDescription')}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setIsModalOpen(false);
+                    }
+                }}
             >
+                <DialogHeader>
+                    <DialogTitle>
+                        {isEditing ? t('serverFirewall.editRule') : t('serverFirewall.createRule')}
+                    </DialogTitle>
+                    <DialogDescription>{t('serverFirewall.drawerDescription')}</DialogDescription>
+                </DialogHeader>
                 <div className='space-y-6'>
                     <div className='space-y-2'>
                         <Label>{t('serverFirewall.allocation')}</Label>
@@ -562,14 +571,21 @@ export default function ServerFirewallPage() {
                         </Button>
                     </div>
                 </div>
-            </HeadlessModal>
+            </Dialog>
 
-            <HeadlessModal
-                isOpen={deleteDialogOpen}
+            <Dialog
+                open={deleteDialogOpen}
                 onClose={() => setDeleteDialogOpen(false)}
-                title={t('serverFirewall.confirmDeleteTitle')}
-                description={t('serverFirewall.confirmDeleteDescription')}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setDeleteDialogOpen(false);
+                    }
+                }}
             >
+                <DialogHeader>
+                    <DialogTitle>{t('serverFirewall.confirmDeleteTitle')}</DialogTitle>
+                    <DialogDescription>{t('serverFirewall.confirmDeleteDescription')}</DialogDescription>
+                </DialogHeader>
                 <div className='mt-4 flex justify-end gap-2'>
                     <Button variant='outline' onClick={() => setDeleteDialogOpen(false)} disabled={deleting}>
                         {t('common.cancel')}
@@ -579,7 +595,7 @@ export default function ServerFirewallPage() {
                         {t('serverFirewall.confirmDelete')}
                     </Button>
                 </div>
-            </HeadlessModal>
+            </Dialog>
             <WidgetRenderer widgets={getWidgets('server-firewall', 'bottom-of-page')} />
         </div>
     );

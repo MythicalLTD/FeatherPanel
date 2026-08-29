@@ -148,13 +148,39 @@ class CreateTaskTool implements ToolInterface
         }
 
         // Validate payload
-        $payload = isset($params['payload']) ? (is_string($params['payload']) ? trim($params['payload']) : '') : '';
+        $rawPayload = $params['payload'] ?? '';
+        if (is_array($rawPayload)) {
+            $payload = json_encode($rawPayload);
+        } elseif (is_string($rawPayload)) {
+            $payload = trim($rawPayload);
+        } else {
+            $payload = '';
+        }
         if (in_array($action, ['power', 'command'], true) && $payload === '') {
             return [
                 'success' => false,
                 'error' => "Task action '{$action}' requires a payload",
                 'action_type' => 'create_task',
             ];
+        }
+
+        if (in_array($action, ['backup', 'database_backup'], true)) {
+            try {
+                if ($action === 'database_backup' && $payload === '') {
+                    return [
+                        'success' => false,
+                        'error' => "Task action '{$action}' requires a payload",
+                        'action_type' => 'create_task',
+                    ];
+                }
+                \App\Services\Database\ServerDatabaseDumpService::parseBackupPayload($payload);
+            } catch (\InvalidArgumentException $e) {
+                return [
+                    'success' => false,
+                    'error' => $e->getMessage(),
+                    'action_type' => 'create_task',
+                ];
+            }
         }
 
         // Get next sequence ID
@@ -238,7 +264,7 @@ class CreateTaskTool implements ToolInterface
             'schedule_id' => 'Schedule ID (required if schedule_name not provided)',
             'schedule_name' => 'Schedule name (required if schedule_id not provided)',
             'action' => 'Task action (required: power, backup, command, restart, kill, install, update, start, stop)',
-            'payload' => 'Task payload (required for power/command actions, optional for others)',
+            'payload' => 'Task payload. Required for power/command. For backup use JSON: {"type":"files","ignored_files":"*.log"} or {"type":"database","databases":"all"|[1,2],"directory":"/.featherpanel-database-backups"} or {"type":"full","databases":"all","include_metadata":true,"include_encrypted":false,"include_activities":false}',
             'time_offset' => 'Time offset in minutes (optional, default: 0)',
             'continue_on_failure' => 'Continue on failure (optional, boolean, default: false)',
         ];

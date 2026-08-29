@@ -59,7 +59,6 @@ import { EmptyState } from '@/components/featherui/EmptyState';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { Checkbox } from '@/components/ui/checkbox';
-import { HeadlessSelect } from '@/components/ui/headless-select';
 import { Dialog, DialogTitle, DialogDescription, DialogHeader, DialogFooter } from '@/components/ui/dialog';
 import {
     DropdownMenu,
@@ -69,7 +68,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-import { Database, DatabaseHost, DatabasesResponse, Server } from '@/types/server';
+import { Database, DatabasesResponse, Server } from '@/types/server';
 
 export default function ServerDatabasesPage() {
     const { t, locale } = useTranslation();
@@ -86,7 +85,6 @@ export default function ServerDatabasesPage() {
     const canViewPassword = hasPermission('database.view_password');
 
     const [databases, setDatabases] = useState<Database[]>([]);
-    const [availableHosts, setAvailableHosts] = useState<DatabaseHost[]>([]);
     const [loading, setLoading] = useState(true);
     const [server, setServer] = useState<Server | null>(null);
 
@@ -101,25 +99,24 @@ export default function ServerDatabasesPage() {
         per_page: 20,
     });
 
-    const [createDialogOpen, setCreateDialogOpen] = useState(false);
     const [viewDialogOpen, setViewDialogOpen] = useState(false);
     const [confirmDeleteDialogOpen, setConfirmDeleteDialogOpen] = useState(false);
+    const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false);
     const [sensitiveWarningOpen, setSensitiveWarningOpen] = useState(false);
 
-    const [creating, setCreating] = useState(false);
     const [deletingId, setDeletingId] = useState<number | null>(null);
+    const [actionLoading, setActionLoading] = useState(false);
     const [viewingDatabase, setViewingDatabase] = useState<Database | null>(null);
     const [databaseToDelete, setDatabaseToDelete] = useState<Database | null>(null);
+    const [selectedIds, setSelectedIds] = useState<number[]>([]);
+    const [bulkAction, setBulkAction] = useState<{
+        title: string;
+        description: string;
+        action: () => Promise<void>;
+    } | null>(null);
 
     const [showPassword, setShowPassword] = useState(false);
     const [rememberSensitiveChoice, setRememberSensitiveChoice] = useState(false);
-
-    const [createForm, setCreateForm] = useState({
-        database_host_id: '',
-        database_name: '',
-        remote: '%',
-        max_connections: 0,
-    });
 
     // Export
     const [exportingId, setExportingId] = useState<number | null>(null);
@@ -159,7 +156,7 @@ export default function ServerDatabasesPage() {
 
             try {
                 setLoading(true);
-                const [databasesRes, serverRes, hostsRes, pmaRes] = await Promise.all([
+                const [databasesRes, serverRes, pmaRes] = await Promise.all([
                     axios.get<DatabasesResponse>(`/api/user/servers/${uuidShort}/databases`, {
                         params: {
                             page,
@@ -168,9 +165,6 @@ export default function ServerDatabasesPage() {
                         },
                     }),
                     axios.get<{ success: boolean; data: Server }>(`/api/user/servers/${uuidShort}`),
-                    axios.get<{ success: boolean; data: DatabaseHost[] }>(
-                        `/api/user/servers/${uuidShort}/databases/hosts`,
-                    ),
                     axios.get<{ success: boolean; data: { installed: boolean } }>(
                         `/api/user/servers/${uuidShort}/databases/phpmyadmin/check`,
                     ),
@@ -178,6 +172,7 @@ export default function ServerDatabasesPage() {
 
                 if (databasesRes.data.success) {
                     setDatabases(databasesRes.data.data.data);
+                    setSelectedIds([]);
                     const p = databasesRes.data.data.pagination;
                     setPagination({
                         current_page: p.current_page,
@@ -189,10 +184,6 @@ export default function ServerDatabasesPage() {
 
                 if (serverRes.data.success) {
                     setServer(serverRes.data.data);
-                }
-
-                if (hostsRes.data.success) {
-                    setAvailableHosts(hostsRes.data.data || []);
                 }
 
                 if (pmaRes.data.success) {
@@ -229,51 +220,6 @@ export default function ServerDatabasesPage() {
         }
     }, [canRead, permissionsLoading, fetchDatabases, uuidShort, router, t]);
 
-    const handleCreateDatabase = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!createForm.database_host_id) {
-            toast.error(t('serverDatabases.noHostSelected'));
-            return;
-        }
-        if (!createForm.database_name.trim()) {
-            toast.error(t('serverDatabases.databaseNameRequired'));
-            return;
-        }
-
-        try {
-            setCreating(true);
-            const submitData = {
-                ...createForm,
-                database_host_id: Number(createForm.database_host_id),
-                max_connections: Number(createForm.max_connections),
-            };
-            const { data } = await axios.post(`/api/user/servers/${uuidShort}/databases`, submitData);
-            if (data.success) {
-                toast.success(t('serverDatabases.createSuccess'));
-                setCreateDialogOpen(false);
-                setCreateForm({
-                    database_host_id: '',
-                    database_name: '',
-                    remote: '%',
-                    max_connections: 0,
-                });
-                fetchDatabases(1);
-            } else {
-                toast.error(data.message || t('serverDatabases.createFailed'));
-            }
-        } catch (error) {
-            console.error('Error creating database:', error);
-            const axiosError = error as { response?: { data?: { message?: string; error_message?: string } } };
-            const errorMessage =
-                axiosError?.response?.data?.message ||
-                axiosError?.response?.data?.error_message ||
-                t('serverDatabases.createFailed');
-            toast.error(errorMessage);
-        } finally {
-            setCreating(false);
-        }
-    };
-
     const handleDeleteDatabase = async () => {
         if (!databaseToDelete) return;
 
@@ -298,6 +244,76 @@ export default function ServerDatabasesPage() {
         } finally {
             setDeletingId(null);
         }
+    };
+
+    const allSelected = databases.length > 0 && databases.every((db) => selectedIds.includes(db.id));
+
+    const toggleDatabaseSelection = (id: number) => {
+        setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+    };
+
+    const toggleSelectAll = () => {
+        if (allSelected) {
+            setSelectedIds([]);
+        } else {
+            setSelectedIds(databases.map((db) => db.id));
+        }
+    };
+
+    const handleBulkDeleteResult = (data: {
+        success: boolean;
+        message?: string;
+        data?: { deleted_count?: number; failed_count?: number };
+    }) => {
+        if (!data.success) {
+            toast.error(data.message || t('serverDatabases.bulkDeleteFailed'));
+            return;
+        }
+        const deleted = data.data?.deleted_count ?? 0;
+        const failed = data.data?.failed_count ?? 0;
+        if (failed > 0) {
+            toast.success(
+                t('serverDatabases.bulkDeletePartial', {
+                    deleted: String(deleted),
+                    failed: String(failed),
+                }),
+            );
+        } else {
+            toast.success(t('serverDatabases.bulkDeleteSuccess', { count: String(deleted) }));
+        }
+        setSelectedIds([]);
+        fetchDatabases();
+    };
+
+    const handleDeleteSelected = () => {
+        if (selectedIds.length === 0) return;
+        setBulkAction({
+            title: t('serverDatabases.confirmBulkDeleteTitle'),
+            description: t('serverDatabases.confirmBulkDeleteDescription', {
+                count: String(selectedIds.length),
+            }),
+            action: async () => {
+                const { data } = await axios.delete(`/api/user/servers/${uuidShort}/databases/bulk-delete`, {
+                    data: { ids: selectedIds },
+                });
+                handleBulkDeleteResult(data);
+            },
+        });
+        setBulkConfirmOpen(true);
+    };
+
+    const handleDeleteAll = () => {
+        setBulkAction({
+            title: t('serverDatabases.confirmDeleteAllTitle'),
+            description: t('serverDatabases.confirmDeleteAllDescription'),
+            action: async () => {
+                const { data } = await axios.delete(`/api/user/servers/${uuidShort}/databases/bulk-delete`, {
+                    data: { all: true },
+                });
+                handleBulkDeleteResult(data);
+            },
+        });
+        setBulkConfirmOpen(true);
     };
 
     const openViewDatabase = (db: Database) => {
@@ -454,7 +470,8 @@ export default function ServerDatabasesPage() {
         );
     }
 
-    const limitReached = server && databases.length >= server.database_limit;
+    const limitReached = !!server && server.database_limit > 0 && pagination.total >= server.database_limit;
+    const showHeaderCreateAction = canCreate && databases.length > 0;
 
     return (
         <div key={pathname} className='space-y-8 pb-12'>
@@ -467,19 +484,19 @@ export default function ServerDatabasesPage() {
                         <span>{t('serverDatabases.description')}</span>
                         {server && (
                             <span className='bg-primary/5 text-primary border-primary/20 rounded-full border px-3 py-1 text-[10px] font-black tracking-widest uppercase'>
-                                {databases.length} / {server.database_limit}
+                                {pagination.total} / {server.database_limit}
                             </span>
                         )}
                     </div>
                 }
                 actions={
                     <div className='flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-3'>
-                        {canCreate && databases.length > 0 && (
+                        {showHeaderCreateAction && (
                             <Button
                                 size='default'
                                 disabled={limitReached || loading}
-                                onClick={() => setCreateDialogOpen(true)}
-                                className='order-1 w-full transition-all active:scale-95 sm:order-2 sm:w-auto'
+                                onClick={() => router.push(`/server/${uuidShort}/databases/new`)}
+                                className='order-1 w-full transition-all active:scale-95 sm:order-3 sm:w-auto'
                             >
                                 <Plus className='mr-2 h-5 w-5' />
                                 {t('serverDatabases.createDatabase')}
@@ -490,7 +507,7 @@ export default function ServerDatabasesPage() {
                             size='default'
                             onClick={() => fetchDatabases()}
                             disabled={loading}
-                            className='order-2 sm:order-1'
+                            className='order-2 sm:order-4'
                             aria-label={t('serverDatabases.refresh')}
                         >
                             <RefreshCw className={cn('h-5 w-5 sm:mr-2', loading && 'animate-spin')} />
@@ -523,7 +540,7 @@ export default function ServerDatabasesPage() {
             <WidgetRenderer widgets={getWidgets('server-databases', 'after-warning-banner')} />
 
             <div className='space-y-6'>
-                <div className='flex items-center gap-4'>
+                <div className='flex flex-col gap-4 sm:flex-row sm:items-center'>
                     <div className='group relative flex-1'>
                         <Search className='text-muted-foreground/80 group-focus-within:text-foreground absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 transition-colors' />
                         <Input
@@ -533,7 +550,47 @@ export default function ServerDatabasesPage() {
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
                     </div>
+                    {canDelete && databases.length > 0 && (
+                        <Button
+                            variant='destructive'
+                            size='default'
+                            onClick={handleDeleteAll}
+                            disabled={loading || actionLoading || pagination.total === 0}
+                            className='w-full shrink-0 sm:w-auto'
+                        >
+                            <Trash2 className='mr-2 h-4 w-4' />
+                            {t('serverDatabases.deleteAll')}
+                        </Button>
+                    )}
                 </div>
+
+                {canDelete && databases.length > 0 && (
+                    <div className='border-border bg-card/50 flex flex-wrap items-center justify-between gap-3 rounded-xl border px-4 py-3'>
+                        <div className='flex items-center gap-3'>
+                            <Checkbox
+                                checked={allSelected}
+                                onCheckedChange={toggleSelectAll}
+                                aria-label={t('serverDatabases.selectAll')}
+                            />
+                            <span className='text-sm font-medium'>
+                                {selectedIds.length > 0
+                                    ? t('serverDatabases.selectedCount', { count: String(selectedIds.length) })
+                                    : t('serverDatabases.selectAll')}
+                            </span>
+                        </div>
+                        {selectedIds.length > 0 && (
+                            <Button
+                                variant='destructive'
+                                size='sm'
+                                onClick={handleDeleteSelected}
+                                disabled={actionLoading}
+                            >
+                                <Trash2 className='mr-2 h-4 w-4' />
+                                {t('serverDatabases.deleteSelected')} ({selectedIds.length})
+                            </Button>
+                        )}
+                    </div>
+                )}
 
                 <WidgetRenderer widgets={getWidgets('server-databases', 'before-databases-list')} />
 
@@ -578,7 +635,7 @@ export default function ServerDatabasesPage() {
                             canCreate && server && server.database_limit > 0 ? (
                                 <Button
                                     size='default'
-                                    onClick={() => setCreateDialogOpen(true)}
+                                    onClick={() => router.push(`/server/${uuidShort}/databases/new`)}
                                     className='h-14 px-10 text-lg'
                                 >
                                     <Plus className='mr-2 h-6 w-6' />
@@ -590,128 +647,142 @@ export default function ServerDatabasesPage() {
                 ) : (
                     <div className='grid grid-cols-1 gap-4'>
                         {databases.map((db) => (
-                            <ResourceCard
-                                key={db.id}
-                                icon={DatabaseIcon}
-                                title={db.database}
-                                badges={
-                                    <>
-                                        <span className='bg-primary/10 text-primary border-primary/20 rounded-full border px-3 py-1 text-[10px] leading-none font-black tracking-widest uppercase'>
-                                            {db.database_type}
-                                        </span>
-                                        {db.remote === '%' ? (
-                                            <span className='flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-[10px] leading-none font-black tracking-widest text-emerald-500 uppercase'>
-                                                <Globe className='h-3 w-3' />
-                                                {t('serverDatabases.allHosts')}
+                            <div key={db.id} className='flex items-stretch gap-3'>
+                                {canDelete && (
+                                    <div className='flex shrink-0 items-center pl-1'>
+                                        <Checkbox
+                                            checked={selectedIds.includes(db.id)}
+                                            onCheckedChange={() => toggleDatabaseSelection(db.id)}
+                                            aria-label={db.database}
+                                        />
+                                    </div>
+                                )}
+                                <ResourceCard
+                                    className={cn(
+                                        'min-w-0 flex-1 transition-all duration-300',
+                                        selectedIds.includes(db.id) && 'border-primary/40 bg-primary/5',
+                                    )}
+                                    icon={DatabaseIcon}
+                                    title={db.database}
+                                    badges={
+                                        <>
+                                            <span className='bg-primary/10 text-primary border-primary/20 rounded-full border px-3 py-1 text-[10px] leading-none font-black tracking-widest uppercase'>
+                                                {db.database_type}
                                             </span>
-                                        ) : (
-                                            <span className='bg-muted border-border/50 text-muted-foreground rounded-full border px-3 py-1 font-mono text-[10px] leading-none font-black tracking-widest uppercase'>
-                                                {db.remote}
-                                            </span>
-                                        )}
-                                    </>
-                                }
-                                description={
-                                    <>
-                                        <div className='text-muted-foreground flex items-center gap-2'>
-                                            <User className='h-4 w-4 opacity-50' />
-                                            <span className='text-sm font-semibold'>{db.username}</span>
-                                        </div>
-                                        <div className='text-muted-foreground flex items-center gap-2'>
-                                            <ServerIcon className='h-4 w-4 opacity-50' />
-                                            <span className='font-mono text-sm font-semibold'>
-                                                {getDatabaseDisplayHost(db)}:{db.database_port}
-                                            </span>
-                                        </div>
-                                    </>
-                                }
-                                actions={
-                                    (canViewPassword || canDelete) && (
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger className='group-hover:bg-primary/10 flex h-12 w-12 items-center justify-center rounded-xl transition-colors outline-none'>
-                                                <MoreVertical className='text-muted-foreground group-hover:text-primary h-6 w-6 transition-colors' />
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent
-                                                align='end'
-                                                className='bg-card/90 border-border/40 w-56 rounded-2xl p-2 backdrop-blur-xl'
-                                            >
-                                                {canViewPassword && (
-                                                    <>
-                                                        <DropdownMenuItem
-                                                            onClick={() => openViewDatabase(db)}
-                                                            className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
-                                                        >
-                                                            <Eye className='text-primary h-4 w-4' />
-                                                            <span className='font-bold'>
-                                                                {t('serverDatabases.view')}
-                                                            </span>
-                                                        </DropdownMenuItem>
-                                                        {phpMyAdminInstalled && (
+                                            {db.remote === '%' ? (
+                                                <span className='flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-[10px] leading-none font-black tracking-widest text-emerald-500 uppercase'>
+                                                    <Globe className='h-3 w-3' />
+                                                    {t('serverDatabases.allHosts')}
+                                                </span>
+                                            ) : (
+                                                <span className='bg-muted border-border/50 text-muted-foreground rounded-full border px-3 py-1 font-mono text-[10px] leading-none font-black tracking-widest uppercase'>
+                                                    {db.remote}
+                                                </span>
+                                            )}
+                                        </>
+                                    }
+                                    description={
+                                        <>
+                                            <div className='text-muted-foreground flex items-center gap-2'>
+                                                <User className='h-4 w-4 opacity-50' />
+                                                <span className='text-sm font-semibold'>{db.username}</span>
+                                            </div>
+                                            <div className='text-muted-foreground flex items-center gap-2'>
+                                                <ServerIcon className='h-4 w-4 opacity-50' />
+                                                <span className='font-mono text-sm font-semibold'>
+                                                    {getDatabaseDisplayHost(db)}:{db.database_port}
+                                                </span>
+                                            </div>
+                                        </>
+                                    }
+                                    actions={
+                                        (canViewPassword || canDelete) && (
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger className='group-hover:bg-primary/10 flex h-12 w-12 items-center justify-center rounded-xl transition-colors outline-none'>
+                                                    <MoreVertical className='text-muted-foreground group-hover:text-primary h-6 w-6 transition-colors' />
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent
+                                                    align='end'
+                                                    className='bg-card/90 border-border/40 w-56 rounded-2xl p-2 backdrop-blur-xl'
+                                                >
+                                                    {canViewPassword && (
+                                                        <>
                                                             <DropdownMenuItem
-                                                                onClick={() => handlePhpMyAdmin(db)}
+                                                                onClick={() => openViewDatabase(db)}
                                                                 className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
                                                             >
-                                                                <ExternalLink className='h-4 w-4 text-blue-500' />
-                                                                <span className='font-bold'>phpMyAdmin</span>
+                                                                <Eye className='text-primary h-4 w-4' />
+                                                                <span className='font-bold'>
+                                                                    {t('serverDatabases.view')}
+                                                                </span>
                                                             </DropdownMenuItem>
-                                                        )}
-                                                        <DropdownMenuSeparator className='bg-border/40 my-1' />
-                                                        <DropdownMenuItem
-                                                            onClick={() => handleExportDatabase(db)}
-                                                            disabled={exportingId === db.id}
-                                                            className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
-                                                        >
-                                                            {exportingId === db.id ? (
-                                                                <Loader2 className='h-4 w-4 animate-spin text-emerald-500' />
-                                                            ) : (
-                                                                <Download className='h-4 w-4 text-emerald-500' />
+                                                            {phpMyAdminInstalled && (
+                                                                <DropdownMenuItem
+                                                                    onClick={() => handlePhpMyAdmin(db)}
+                                                                    className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
+                                                                >
+                                                                    <ExternalLink className='h-4 w-4 text-blue-500' />
+                                                                    <span className='font-bold'>phpMyAdmin</span>
+                                                                </DropdownMenuItem>
                                                             )}
-                                                            <span className='font-bold'>
-                                                                {t('serverDatabases.exportSql')}
-                                                            </span>
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem
-                                                            onClick={() => openImportDialog(db)}
-                                                            className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
-                                                        >
-                                                            <Upload className='h-4 w-4 text-amber-500' />
-                                                            <span className='font-bold'>
-                                                                {t('serverDatabases.importSql')}
-                                                            </span>
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem
-                                                            onClick={() => openQueryDialog(db)}
-                                                            className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
-                                                        >
-                                                            <Terminal className='h-4 w-4 text-violet-500' />
-                                                            <span className='font-bold'>
-                                                                {t('serverDatabases.runQuery')}
-                                                            </span>
-                                                        </DropdownMenuItem>
-                                                    </>
-                                                )}
-                                                {canDelete && (
-                                                    <>
-                                                        <DropdownMenuSeparator className='bg-border/40 my-1' />
-                                                        <DropdownMenuItem
-                                                            onClick={() => {
-                                                                setDatabaseToDelete(db);
-                                                                setConfirmDeleteDialogOpen(true);
-                                                            }}
-                                                            className='text-destructive focus:text-destructive focus:bg-destructive/10 flex cursor-pointer items-center gap-3 rounded-xl p-3'
-                                                        >
-                                                            <Trash2 className='h-4 w-4' />
-                                                            <span className='font-bold'>
-                                                                {t('serverDatabases.confirmDelete')}
-                                                            </span>
-                                                        </DropdownMenuItem>
-                                                    </>
-                                                )}
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    )
-                                }
-                            />
+                                                            <DropdownMenuSeparator className='bg-border/40 my-1' />
+                                                            <DropdownMenuItem
+                                                                onClick={() => handleExportDatabase(db)}
+                                                                disabled={exportingId === db.id}
+                                                                className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
+                                                            >
+                                                                {exportingId === db.id ? (
+                                                                    <Loader2 className='h-4 w-4 animate-spin text-emerald-500' />
+                                                                ) : (
+                                                                    <Download className='h-4 w-4 text-emerald-500' />
+                                                                )}
+                                                                <span className='font-bold'>
+                                                                    {t('serverDatabases.exportSql')}
+                                                                </span>
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem
+                                                                onClick={() => openImportDialog(db)}
+                                                                className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
+                                                            >
+                                                                <Upload className='h-4 w-4 text-amber-500' />
+                                                                <span className='font-bold'>
+                                                                    {t('serverDatabases.importSql')}
+                                                                </span>
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem
+                                                                onClick={() => openQueryDialog(db)}
+                                                                className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
+                                                            >
+                                                                <Terminal className='text-primary h-4 w-4' />
+                                                                <span className='font-bold'>
+                                                                    {t('serverDatabases.runQuery')}
+                                                                </span>
+                                                            </DropdownMenuItem>
+                                                        </>
+                                                    )}
+                                                    {canDelete && (
+                                                        <>
+                                                            <DropdownMenuSeparator className='bg-border/40 my-1' />
+                                                            <DropdownMenuItem
+                                                                onClick={() => {
+                                                                    setDatabaseToDelete(db);
+                                                                    setConfirmDeleteDialogOpen(true);
+                                                                }}
+                                                                className='text-destructive focus:text-destructive focus:bg-destructive/10 flex cursor-pointer items-center gap-3 rounded-xl p-3'
+                                                            >
+                                                                <Trash2 className='h-4 w-4' />
+                                                                <span className='font-bold'>
+                                                                    {t('serverDatabases.confirmDelete')}
+                                                                </span>
+                                                            </DropdownMenuItem>
+                                                        </>
+                                                    )}
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        )
+                                    }
+                                />
+                            </div>
                         ))}
                     </div>
                 )}
@@ -760,135 +831,52 @@ export default function ServerDatabasesPage() {
                 )}
             </div>
 
-            <Dialog
-                open={createDialogOpen}
-                onClose={() => {
-                    setCreateDialogOpen(false);
-                    setCreateForm({
-                        database_host_id: '',
-                        database_name: '',
-                        remote: '%',
-                        max_connections: 0,
-                    });
-                }}
-                className='max-w-xl'
-            >
+            <Dialog open={bulkConfirmOpen} onClose={() => setBulkConfirmOpen(false)} className='max-w-lg'>
                 <div className='space-y-6 p-2'>
                     <DialogHeader>
                         <div className='flex items-center gap-4'>
-                            <div className='bg-primary/10 border-primary/20 flex h-12 w-12 items-center justify-center rounded-xl border shadow-inner'>
-                                <Plus className='text-primary h-6 w-6' />
+                            <div className='flex h-12 w-12 items-center justify-center rounded-xl border border-red-500/20 bg-red-500/10'>
+                                <Trash2 className='h-6 w-6 text-red-500' />
                             </div>
                             <div className='space-y-0.5'>
                                 <DialogTitle className='text-xl leading-none font-bold'>
-                                    {t('serverDatabases.createDatabase')}
+                                    {bulkAction?.title}
                                 </DialogTitle>
                                 <DialogDescription className='text-sm opacity-70'>
-                                    {t('serverDatabases.createDatabaseDescription')}
+                                    {bulkAction?.description}
                                 </DialogDescription>
                             </div>
                         </div>
                     </DialogHeader>
-
-                    <form onSubmit={handleCreateDatabase} className='space-y-6'>
-                        <div className='space-y-4'>
-                            <div className='space-y-2 px-1'>
-                                <label className='ml-1 text-[10px] font-bold tracking-widest uppercase opacity-40'>
-                                    {t('serverDatabases.databaseHost')}
-                                </label>
-                                <HeadlessSelect
-                                    value={createForm.database_host_id}
-                                    onChange={(val) => {
-                                        setCreateForm({ ...createForm, database_host_id: String(val) });
-                                    }}
-                                    options={availableHosts.map((h) => ({
-                                        id: String(h.id),
-                                        name: `${h.name} (${h.database_type}) - ${h.database_subdomain || h.database_host}:${h.database_port}`,
-                                    }))}
-                                    placeholder={
-                                        availableHosts.length === 0
-                                            ? t('serverDatabases.noDatabaseHosts')
-                                            : t('serverDatabases.selectDatabaseHost')
-                                    }
-                                    disabled={availableHosts.length === 0}
-                                />
-                                {availableHosts.length === 0 && (
-                                    <p className='mt-1 ml-1 flex items-center gap-1.5 text-[10px] text-yellow-500'>
-                                        <AlertTriangle className='h-3 w-3' />
-                                        {t('serverDatabases.noDatabaseHostsDescription')}
-                                    </p>
-                                )}
-                            </div>
-
-                            <div className='space-y-2 px-1'>
-                                <label className='ml-1 text-[10px] font-bold tracking-widest uppercase opacity-40'>
-                                    {t('serverDatabases.databaseName')}
-                                </label>
-                                <Input
-                                    value={createForm.database_name}
-                                    onChange={(e) => setCreateForm({ ...createForm, database_name: e.target.value })}
-                                    placeholder={t('serverDatabases.databaseNamePlaceholder')}
-                                    required
-                                />
-                                <p className='text-muted-foreground px-1 text-[10px] italic'>
-                                    {t('serverDatabases.databaseNameHelp')}
-                                </p>
-                            </div>
-
-                            <div className='grid grid-cols-1 gap-4 px-1 md:grid-cols-2'>
-                                <div className='space-y-2'>
-                                    <label className='ml-1 text-[10px] font-bold tracking-widest uppercase opacity-40'>
-                                        {t('serverDatabases.remoteAccess')}
-                                    </label>
-                                    <Input
-                                        value={createForm.remote}
-                                        onChange={(e) => setCreateForm({ ...createForm, remote: e.target.value })}
-                                        placeholder='%'
-                                    />
-                                    <p className='text-muted-foreground px-1 text-[10px] italic'>
-                                        {t('serverDatabases.remoteAccessHelp')}
-                                    </p>
-                                </div>
-                                <div className='space-y-2'>
-                                    <label className='ml-1 text-[10px] font-bold tracking-widest uppercase opacity-40'>
-                                        {t('serverDatabases.maxConnections')}
-                                    </label>
-                                    <Input
-                                        type='number'
-                                        min={0}
-                                        value={createForm.max_connections}
-                                        onChange={(e) =>
-                                            setCreateForm({
-                                                ...createForm,
-                                                max_connections: parseInt(e.target.value) || 0,
-                                            })
-                                        }
-                                    />
-                                    <p className='text-muted-foreground px-1 text-[10px] italic'>
-                                        {t('serverDatabases.maxConnectionsHelp')}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <DialogFooter className='border-border/40 mt-4 border-t px-1 pt-6'>
-                            <Button
-                                type='button'
-                                variant='ghost'
-                                className='h-12 flex-1 rounded-xl font-bold'
-                                onClick={() => setCreateDialogOpen(false)}
-                            >
-                                {t('common.cancel')}
-                            </Button>
-                            <Button
-                                type='submit'
-                                disabled={creating || availableHosts.length === 0}
-                                className='h-12 flex-1 rounded-xl font-bold'
-                            >
-                                {creating ? <Loader2 className='h-5 w-5 animate-spin' /> : t('serverDatabases.create')}
-                            </Button>
-                        </DialogFooter>
-                    </form>
+                    <DialogFooter className='border-border/40 mt-4 border-t px-1 pt-6'>
+                        <Button
+                            variant='ghost'
+                            className='h-12 flex-1 rounded-xl font-bold'
+                            onClick={() => setBulkConfirmOpen(false)}
+                            disabled={actionLoading}
+                        >
+                            {t('common.cancel')}
+                        </Button>
+                        <Button
+                            variant='destructive'
+                            className='h-12 flex-1 rounded-xl font-bold'
+                            disabled={actionLoading}
+                            onClick={async () => {
+                                if (!bulkAction) return;
+                                setActionLoading(true);
+                                try {
+                                    await bulkAction.action();
+                                    setBulkConfirmOpen(false);
+                                } catch {
+                                    toast.error(t('serverDatabases.bulkDeleteFailed'));
+                                } finally {
+                                    setActionLoading(false);
+                                }
+                            }}
+                        >
+                            {actionLoading ? <Loader2 className='h-5 w-5 animate-spin' /> : t('common.confirm')}
+                        </Button>
+                    </DialogFooter>
                 </div>
             </Dialog>
 
@@ -1246,15 +1234,14 @@ export default function ServerDatabasesPage() {
                                 onChange={(e) => setImportSql(e.target.value)}
                                 disabled={importing}
                             />
-                            <div
-                                className='border-border/40 bg-card/50 hover:bg-accent/30 flex cursor-pointer items-center gap-3 rounded-xl border p-4 transition-colors'
+                            <button
+                                type='button'
+                                className='border-border/40 bg-card/50 hover:bg-accent/30 flex w-full items-center gap-3 rounded-xl border p-4 text-left transition-colors'
                                 onClick={() => setImportIgnoreErrors(!importIgnoreErrors)}
                             >
-                                <input
-                                    type='checkbox'
+                                <Checkbox
                                     checked={importIgnoreErrors}
-                                    onChange={() => setImportIgnoreErrors(!importIgnoreErrors)}
-                                    className='accent-primary h-4 w-4'
+                                    onCheckedChange={(c) => setImportIgnoreErrors(c)}
                                 />
                                 <div>
                                     <p className='text-sm font-bold'>{t('serverDatabases.continueOnErrors')}</p>
@@ -1262,7 +1249,7 @@ export default function ServerDatabasesPage() {
                                         {t('serverDatabases.continueOnErrorsHelp')}
                                     </p>
                                 </div>
-                            </div>
+                            </button>
                             <DialogFooter className='border-border/40 gap-3 border-t pt-4'>
                                 <Button
                                     variant='ghost'
@@ -1303,8 +1290,8 @@ export default function ServerDatabasesPage() {
                 <div className='space-y-5 p-2'>
                     <DialogHeader>
                         <div className='flex items-center gap-4'>
-                            <div className='flex h-12 w-12 items-center justify-center rounded-xl border border-violet-500/20 bg-violet-500/10'>
-                                <Terminal className='h-6 w-6 text-violet-500' />
+                            <div className='border-primary/20 bg-primary/10 flex h-12 w-12 items-center justify-center rounded-xl border'>
+                                <Terminal className='text-primary h-6 w-6' />
                             </div>
                             <div className='space-y-0.5'>
                                 <DialogTitle className='text-xl leading-none font-bold'>
@@ -1319,7 +1306,7 @@ export default function ServerDatabasesPage() {
 
                     <div className='relative'>
                         <textarea
-                            className='text-foreground placeholder:text-muted-foreground min-h-[120px] w-full resize-none rounded-xl border border-white/10 bg-[#0d0d0d] p-4 font-mono text-sm focus:ring-1 focus:ring-violet-500/50 focus:outline-none'
+                            className='bg-muted/40 text-foreground placeholder:text-muted-foreground focus:ring-primary/50 border-border/50 min-h-[120px] w-full resize-none rounded-xl border p-4 font-mono text-sm focus:ring-1 focus:outline-none'
                             placeholder='SELECT * FROM your_table LIMIT 10;'
                             value={queryText}
                             onChange={(e) => setQueryText(e.target.value)}
@@ -1335,7 +1322,7 @@ export default function ServerDatabasesPage() {
                             size='sm'
                             onClick={handleRunQuery}
                             disabled={runningQuery || !queryText.trim()}
-                            className='absolute right-3 bottom-3 h-8 gap-1.5 rounded-lg bg-violet-600 text-xs font-bold text-white hover:bg-violet-500'
+                            className='bg-primary hover:bg-primary/90 absolute right-3 bottom-3 h-8 gap-1.5 rounded-lg text-xs font-bold text-white'
                         >
                             {runningQuery ? (
                                 <Loader2 className='h-3.5 w-3.5 animate-spin' />

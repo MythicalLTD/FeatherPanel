@@ -200,7 +200,7 @@ class Server
         }
 
         // Add optional fields if provided
-        $optionalFields = ['description', 'status', 'skip_scripts', 'skip_zerotrust', 'parent_id', 'external_id', 'threads', 'allocation_limit', 'database_limit', 'backup_limit', 'backup_retention_mode', 'installed_at'];
+        $optionalFields = ['description', 'status', 'skip_scripts', 'skip_zerotrust', 'show_on_status', 'parent_id', 'external_id', 'threads', 'allocation_limit', 'database_limit', 'backup_limit', 'backup_retention_mode', 'installed_at'];
         foreach ($optionalFields as $field) {
             if (isset($data[$field])) {
                 $insert[$field] = $data[$field];
@@ -367,17 +367,34 @@ class Server
 
     /**
      * Get servers by node ID.
+     *
+     * @param bool $onlyVisibleOnStatus When true, only return servers with show_on_status enabled
      */
-    public static function getServersByNodeId(int $nodeId): array
+    public static function getServersByNodeId(int $nodeId, bool $onlyVisibleOnStatus = false): array
     {
         if ($nodeId <= 0) {
             return [];
         }
         $pdo = Database::getPdoConnection();
-        $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE node_id = :node_id');
+        $sql = 'SELECT * FROM ' . self::$table . ' WHERE node_id = :node_id';
+        if ($onlyVisibleOnStatus) {
+            $sql .= ' AND show_on_status = 1';
+        }
+        $stmt = $pdo->prepare($sql);
         $stmt->execute(['node_id' => $nodeId]);
 
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Count servers visible on the public status page.
+     */
+    public static function getStatusPageVisibleCount(): int
+    {
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->query('SELECT COUNT(*) FROM ' . self::$table . ' WHERE show_on_status = 1');
+
+        return (int) $stmt->fetchColumn();
     }
 
     /**

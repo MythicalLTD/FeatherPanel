@@ -625,7 +625,7 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
                         if (article.pinned === 'true') {
                             badges.push({
                                 label: t('admin.knowledgebase.articles.badges.pinned'),
-                                className: 'bg-indigo-500/10 text-indigo-600 border-indigo-500/20',
+                                className: 'bg-primary/10 text-primary border-primary/20',
                             });
                         }
 

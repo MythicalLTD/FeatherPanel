@@ -460,7 +460,7 @@ export default function VdsConsolePage() {
                             disabled={statusLoading}
                         >
                             <RefreshCw className={cn('mr-1.5 h-4 w-4', statusLoading && 'animate-spin')} />
-                            {t('navigation.items.refresh') || 'Refresh'}
+                            {t('navigation.items.refresh')}
                         </Button>
 
                         {canConsole && (
@@ -475,7 +475,7 @@ export default function VdsConsolePage() {
                                 ) : (
                                     <Monitor className='mr-1.5 h-4 w-4' />
                                 )}
-                                {t('vds.console.vnc_console') || 'Open Console'}
+                                {t('vds.console.vnc_console')}
                             </Button>
                         )}
 
@@ -561,7 +561,7 @@ export default function VdsConsolePage() {
                 />
                 <StatCard
                     icon={HardDrive}
-                    label={t('vds.console.performance.disk') || 'Disk'}
+                    label={t('vds.console.performance.disk')}
                     value={diskUsed != null ? formatMemory(diskUsed) : '—'}
                     sub={
                         diskMax != null

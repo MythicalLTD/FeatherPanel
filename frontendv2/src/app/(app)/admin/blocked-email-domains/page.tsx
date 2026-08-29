@@ -191,7 +191,7 @@ export default function BlockedEmailDomainsPage() {
             return 'border-blue-500/25 bg-blue-500/10 text-blue-700 dark:text-blue-300';
         }
         if (source === 'preset') {
-            return 'border-violet-500/25 bg-violet-500/10 text-violet-700 dark:text-violet-300';
+            return 'border-primary/25 bg-primary/10 text-primary dark:text-primary';
         }
         if (source === 'import') {
             return 'border-amber-500/25 bg-amber-500/10 text-amber-800 dark:text-amber-200';

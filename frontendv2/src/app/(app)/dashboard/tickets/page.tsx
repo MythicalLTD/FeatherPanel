@@ -23,11 +23,11 @@ import { Ticket as TicketIcon, Plus, Search, ChevronLeft, ChevronRight, Trash2, 
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useDateFormatOptions } from '@/contexts/PreferencesContext';
 import { formatDateInTz } from '@/lib/dateUtils';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Button } from '@/components/featherui/Button';
+import { Input } from '@/components/featherui/Input';
 import { Badge } from '@/components/ui/badge';
 import { HeadlessSelect } from '@/components/ui/headless-select';
-import { HeadlessModal } from '@/components/ui/headless-modal';
+import { Dialog, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import {} from '@/components/ui/card';
 
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
@@ -443,9 +443,7 @@ export default function TicketsPage() {
                                                 <Badge
                                                     variant='destructive'
                                                     className='inline-flex items-center gap-1 rounded-md border-0 px-2 py-0.5 font-medium'
-                                                    title={
-                                                        t('tickets.newMessages') || 'New messages since your last reply'
-                                                    }
+                                                    title={t('tickets.newMessages')}
                                                 >
                                                     <MessageCircle className='h-3 w-3' />
                                                     {ticket.unread_count && ticket.unread_count > 0
@@ -565,12 +563,19 @@ export default function TicketsPage() {
             )}
             <WidgetRenderer widgets={getWidgets('dashboard-tickets', 'after-tickets-list')} />
 
-            <HeadlessModal
-                isOpen={showDeleteDialog}
+            <Dialog
+                open={showDeleteDialog}
                 onClose={() => setShowDeleteDialog(false)}
-                title={t('tickets.deleteTicketTitle')}
-                description={t('tickets.deleteTicketWarning')}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setShowDeleteDialog(false);
+                    }
+                }}
             >
+                <DialogHeader>
+                    <DialogTitle>{t('tickets.deleteTicketTitle')}</DialogTitle>
+                    <DialogDescription>{t('tickets.deleteTicketWarning')}</DialogDescription>
+                </DialogHeader>
                 <div>
                     <p className='text-muted-foreground mb-6 text-sm'>{t('tickets.deleteTicketConfirm')}</p>
                     <div className='flex justify-end gap-2'>
@@ -582,7 +587,7 @@ export default function TicketsPage() {
                         </Button>
                     </div>
                 </div>
-            </HeadlessModal>
+            </Dialog>
             <WidgetRenderer widgets={getWidgets('dashboard-tickets', 'bottom-of-page')} />
         </div>
     );

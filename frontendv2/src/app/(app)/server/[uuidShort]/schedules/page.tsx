@@ -42,7 +42,7 @@ import { PageHeader } from '@/components/featherui/PageHeader';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { Button } from '@/components/featherui/Button';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
-import { HeadlessModal } from '@/components/ui/headless-modal';
+import { Dialog, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { formatDateTimeInTz } from '@/lib/dateUtils';
@@ -50,7 +50,7 @@ import { useDateFormatOptions } from '@/contexts/PreferencesContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
-import { cn, isEnabled } from '@/lib/utils';
+import { cn, isEnabledUnlessExplicitlyFalse } from '@/lib/utils';
 import type { Schedule, SchedulePagination } from '@/types/server';
 import { safeBack } from '@/lib/safe-back';
 
@@ -95,7 +95,7 @@ export default function ServerSchedulesPage() {
 
     const fetchData = React.useCallback(
         async (page = 1) => {
-            if (!uuidShort || !isEnabled(settings?.server_allow_schedules)) return;
+            if (!uuidShort || !isEnabledUnlessExplicitlyFalse(settings?.server_allow_schedules)) return;
             setLoading(true);
             try {
                 const { data } = await axios.get<{
@@ -119,7 +119,7 @@ export default function ServerSchedulesPage() {
     );
 
     React.useEffect(() => {
-        const schedulesEnabled = isEnabled(settings?.server_allow_schedules);
+        const schedulesEnabled = isEnabledUnlessExplicitlyFalse(settings?.server_allow_schedules);
         if (canRead && schedulesEnabled) {
             fetchData();
             fetchWidgets();
@@ -262,9 +262,9 @@ export default function ServerSchedulesPage() {
 
     if (permissionsLoading || settingsLoading) return null;
 
-    if (!isEnabled(settings?.server_allow_schedules)) {
+    if (!isEnabledUnlessExplicitlyFalse(settings?.server_allow_schedules)) {
         return (
-            <div className='flex flex-col items-center justify-center space-y-8 rounded-[3rem] border border-white/5 bg-[#0A0A0A]/40 py-24 text-center backdrop-blur-3xl'>
+            <div className='bg-card/40 border-border/50 flex flex-col items-center justify-center space-y-8 rounded-3xl border py-24 text-center backdrop-blur-xl'>
                 <div className='relative'>
                     <div className='absolute inset-0 scale-150 rounded-full bg-red-500/20 blur-3xl' />
                     <div className='relative flex h-32 w-32 rotate-3 items-center justify-center rounded-3xl border-2 border-red-500/20 bg-red-500/10'>
@@ -580,14 +580,23 @@ export default function ServerSchedulesPage() {
             <WidgetRenderer widgets={getWidgets('server-schedules', 'after-schedules-list')} />
             <WidgetRenderer widgets={getWidgets('server-schedules', 'bottom-of-page')} />
 
-            <HeadlessModal
-                isOpen={isDeleteOpen}
+            <Dialog
+                open={isDeleteOpen}
                 onClose={() => setIsDeleteOpen(false)}
-                title={t('serverSchedules.confirmDeleteTitle')}
-                description={t('serverSchedules.confirmDeleteDescription', {
-                    scheduleName: selectedSchedule?.name || '',
-                })}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setIsDeleteOpen(false);
+                    }
+                }}
             >
+                <DialogHeader>
+                    <DialogTitle>{t('serverSchedules.confirmDeleteTitle')}</DialogTitle>
+                    <DialogDescription>
+                        {t('serverSchedules.confirmDeleteDescription', {
+                            scheduleName: selectedSchedule?.name || '',
+                        })}
+                    </DialogDescription>
+                </DialogHeader>
                 <div className='flex justify-end gap-2 pt-4'>
                     <Button variant='outline' onClick={() => setIsDeleteOpen(false)} disabled={deleting}>
                         {t('common.cancel')}
@@ -601,19 +610,29 @@ export default function ServerSchedulesPage() {
                         {t('common.delete')}
                     </Button>
                 </div>
-            </HeadlessModal>
+            </Dialog>
 
-            <HeadlessModal
-                isOpen={isImportOpen}
+            <Dialog
+                open={isImportOpen}
                 onClose={() => {
                     if (!importing) {
                         setIsImportOpen(false);
                         setImportJson('');
                     }
                 }}
-                title={t('serverSchedules.importScheduleTitle')}
-                description={t('serverSchedules.importScheduleDescription')}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        if (!importing) {
+                            setIsImportOpen(false);
+                            setImportJson('');
+                        }
+                    }
+                }}
             >
+                <DialogHeader>
+                    <DialogTitle>{t('serverSchedules.importScheduleTitle')}</DialogTitle>
+                    <DialogDescription>{t('serverSchedules.importScheduleDescription')}</DialogDescription>
+                </DialogHeader>
                 <div className='flex flex-col gap-4 pt-2'>
                     <div
                         className='flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-white/10 bg-white/5 p-6 transition-colors hover:border-white/20'
@@ -662,7 +681,7 @@ export default function ServerSchedulesPage() {
                         </Button>
                     </div>
                 </div>
-            </HeadlessModal>
+            </Dialog>
         </div>
     );
 }

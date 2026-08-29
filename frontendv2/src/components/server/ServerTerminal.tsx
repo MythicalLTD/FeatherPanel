@@ -57,6 +57,7 @@ import {
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
+import { APP_MONO_FONT_STACK, resolveMonoFontFamily } from '@/lib/mono-font';
 
 const PRESET_MENU_SECTIONS: { group: ConsolePresetMenuGroup; presets: ConsolePresetTemplate[] }[] = [
     { group: 'redact', presets: CONSOLE_PRESET_TEMPLATES.filter((p) => p.menuGroup === 'redact') },
@@ -447,10 +448,8 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
 
         const applyTerminalTheme = useCallback(
             (terminal: Terminal) => {
-                const monoRaw = getComputedStyle(document.documentElement).getPropertyValue('--font-geist-mono').trim();
-                const fontStack = monoRaw
-                    ? `${monoRaw}, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace`
-                    : 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace';
+                const monoRaw = getComputedStyle(document.documentElement).getPropertyValue('--font-mono').trim();
+                const fontStack = resolveMonoFontFamily(monoRaw);
 
                 const bufBg = terminalBufferBackground();
                 terminal.options.fontFamily = fontStack;
@@ -545,7 +544,7 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                 cursorBlink: false,
                 fontSize: 13,
                 lineHeight: 1.35,
-                fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+                fontFamily: APP_MONO_FONT_STACK,
                 theme: {
                     background: initialBg,
                     foreground: '#e4e4e7',

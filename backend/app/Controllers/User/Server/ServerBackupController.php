@@ -36,6 +36,8 @@ use Symfony\Component\HttpFoundation\Request;
 use App\Services\Backup\BackupAdapterResolver;
 use Symfony\Component\HttpFoundation\Response;
 use App\Plugins\Events\Events\ServerBackupEvent;
+use App\Services\Backup\ServerFullBackupService;
+use App\Services\Database\ServerDatabaseDumpService;
 
 #[OA\Schema(
     schema: 'Backup',
@@ -330,6 +332,16 @@ class ServerBackupController
             return $permissionCheck;
         }
 
+        $body = json_decode($request->getContent(), true);
+        if (!is_array($body)) {
+            $body = [];
+        }
+
+        $backupType = strtolower(trim((string) ($body['type'] ?? 'files')));
+        if ($backupType === 'full') {
+            return $this->createFullBackup($request, $server, $body);
+        }
+
         // Check backup limit (0 = disabled; optional FIFO rotation per panel setting)
         $currentBackups = count(Backup::getBackupsByServerId((int) $server['id']));
         $backupLimit = (int) ($server['backup_limit'] ?? 0);
@@ -364,11 +376,6 @@ class ServerBackupController
             if ($evictErr !== null) {
                 return ApiResponse::error($evictErr['message'], $evictErr['code'], $evictErr['status']);
             }
-        }
-
-        $body = json_decode($request->getContent(), true);
-        if (!is_array($body)) {
-            $body = [];
         }
 
         // Generate backup UUID if not provided
@@ -484,6 +491,119 @@ class ServerBackupController
             'name' => $backupName,
             'adapter' => $adapter,
         ], 'Backup initiated successfully', 202);
+    }
+
+    /**
+     * Dump one or more server databases to SQL files on the server filesystem.
+     */
+    #[OA\Post(
+        path: '/api/user/servers/{uuidShort}/backups/databases',
+        summary: 'Create database backup files',
+        description: 'Export MySQL/MariaDB databases to SQL dumps on the server filesystem. Requires backup.create and database.view_password.',
+        tags: ['User - Server Backups'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: 'databases', description: '"all" or array of database IDs', oneOf: [
+                        new OA\Schema(type: 'string', enum: ['all']),
+                        new OA\Schema(type: 'array', items: new OA\Items(type: 'integer')),
+                    ]),
+                    new OA\Property(property: 'directory', type: 'string', nullable: true, description: 'Dump directory on the server filesystem'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Database backups written successfully'),
+            new OA\Response(response: 400, description: 'Bad request'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 404, description: 'Server or node not found'),
+            new OA\Response(response: 500, description: 'Failed to create database backups'),
+        ]
+    )]
+    public function createDatabaseBackup(Request $request, string $serverUuid): Response
+    {
+        $server = Server::getServerByUuid($serverUuid);
+        if (!$server) {
+            return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+        }
+
+        $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::BACKUP_CREATE);
+        if ($permissionCheck !== null) {
+            return $permissionCheck;
+        }
+
+        $user = $request->attributes->get('user');
+        $canViewPassword = \App\Helpers\SubuserPermissionChecker::hasPermission(
+            $user['id'],
+            $server['id'],
+            SubuserPermissions::DATABASE_VIEW_PASSWORD
+        );
+        if (!$canViewPassword) {
+            return ApiResponse::error('Insufficient permissions to back up databases', 'FORBIDDEN', 403);
+        }
+
+        $body = json_decode($request->getContent(), true);
+        if (!is_array($body)) {
+            return ApiResponse::error('Invalid request body', 'INVALID_REQUEST_BODY', 400);
+        }
+
+        try {
+            $payload = json_encode([
+                'type' => 'database',
+                'databases' => $body['databases'] ?? null,
+                'directory' => ServerDatabaseDumpService::DEFAULT_BACKUP_DIRECTORY,
+            ]);
+            $parsed = ServerDatabaseDumpService::parseBackupPayload((string) $payload);
+        } catch (\InvalidArgumentException $e) {
+            return ApiResponse::error($e->getMessage(), 'INVALID_PAYLOAD', 400);
+        }
+
+        $node = Node::getNodeById($server['node_id']);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+
+        try {
+            $wings = Wings::fromNode($node, 120);
+            $result = \App\Services\Database\ServerDatabaseFilesystemBackupService::backup($wings, $server, $parsed);
+
+            if ($result['backed_up'] === [] && $result['errors'] === []) {
+                return ApiResponse::error('No MySQL/MariaDB databases found to back up', 'NO_DATABASES', 400);
+            }
+
+            $this->logActivity($server, $node, 'database_backup_created', [
+                'directory' => $parsed['directory'],
+                'scope' => $parsed['databases'] === 'all' ? 'all' : 'specific',
+                'backed_up' => $result['backed_up'],
+                'errors' => $result['errors'],
+            ], $user);
+
+            $message = empty($result['errors'])
+                ? 'Database backups created successfully'
+                : 'Some database backups failed';
+
+            return ApiResponse::success([
+                'directory' => $parsed['directory'],
+                'backed_up' => $result['backed_up'],
+                'errors' => $result['errors'],
+            ], $message, empty($result['errors']) ? 200 : 207);
+        } catch (\InvalidArgumentException $e) {
+            return ApiResponse::error($e->getMessage(), 'INVALID_PAYLOAD', 400);
+        } catch (\Throwable $e) {
+            App::getInstance(true)->getLogger()->error('Failed to create database backups: ' . $e->getMessage());
+
+            return ApiResponse::error('Failed to create database backups: ' . $e->getMessage(), 'DATABASE_BACKUP_FAILED', 500);
+        }
     }
 
     /**
@@ -1009,6 +1129,224 @@ class ServerBackupController
     }
 
     /**
+     * Bulk delete backups for a server.
+     *
+     * Accepts either a list of backup UUIDs or `{ "all": true }` to delete every unlocked backup.
+     * Locked backups are skipped.
+     *
+     * @param Request $request The HTTP request
+     * @param string $serverUuid The server UUID
+     *
+     * @return Response The HTTP response
+     */
+    #[OA\Delete(
+        path: '/api/user/servers/{uuidShort}/backups/bulk-delete',
+        summary: 'Bulk delete server backups',
+        description: 'Delete multiple backups at once. Pass an array of backup UUIDs, or set all=true to delete every unlocked backup. Locked backups are skipped.',
+        tags: ['User - Server Backups'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: 'uuids', type: 'array', items: new OA\Items(type: 'string'), description: 'Backup UUIDs to delete'),
+                    new OA\Property(property: 'all', type: 'boolean', description: 'When true, delete all unlocked backups for the server'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Bulk delete completed',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'deleted_count', type: 'integer'),
+                        new OA\Property(property: 'skipped_count', type: 'integer'),
+                        new OA\Property(property: 'failed_count', type: 'integer'),
+                        new OA\Property(property: 'skipped_uuids', type: 'array', items: new OA\Items(type: 'string')),
+                        new OA\Property(property: 'failed', type: 'array', items: new OA\Items(type: 'object')),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Invalid or missing parameters'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server or node not found'),
+            new OA\Response(response: 500, description: 'Internal server error'),
+        ]
+    )]
+    public function bulkDeleteBackups(Request $request, string $serverUuid): Response
+    {
+        $server = Server::getServerByUuid($serverUuid);
+        if (!$server) {
+            return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+        }
+
+        $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::BACKUP_DELETE);
+        if ($permissionCheck !== null) {
+            return $permissionCheck;
+        }
+
+        $data = json_decode($request->getContent(), true);
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
+            return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
+        }
+
+        $deleteAll = !empty($data['all']);
+        $uuids = $data['uuids'] ?? [];
+
+        if (!$deleteAll) {
+            if (!is_array($uuids) || empty($uuids)) {
+                return ApiResponse::error('Provide a non-empty uuids array or set all=true', 'MISSING_UUIDS', 400);
+            }
+            if (count($uuids) > 100) {
+                return ApiResponse::error('Cannot delete more than 100 backups at once', 'TOO_MANY_UUIDS', 400);
+            }
+            foreach ($uuids as $uuid) {
+                if (!is_string($uuid) || !preg_match('/^[a-f0-9\-]{36}$/i', $uuid)) {
+                    return ApiResponse::error('All UUIDs must be valid UUID strings', 'INVALID_UUIDS', 400);
+                }
+            }
+            $uuids = array_values(array_unique($uuids));
+        }
+
+        $node = Node::getNodeById($server['node_id']);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+
+        $backupsToDelete = [];
+        $skippedUuids = [];
+
+        if ($deleteAll) {
+            $allBackups = Backup::getBackupsByServerId((int) $server['id']);
+            foreach ($allBackups as $backup) {
+                if ((int) ($backup['is_locked'] ?? 0) === 1) {
+                    $skippedUuids[] = $backup['uuid'];
+                    continue;
+                }
+                $backupsToDelete[] = $backup;
+            }
+        } else {
+            foreach ($uuids as $backupUuid) {
+                $backup = Backup::getBackupByUuid($backupUuid);
+                if (!$backup || (int) $backup['server_id'] !== (int) $server['id']) {
+                    $skippedUuids[] = $backupUuid;
+                    continue;
+                }
+                if ((int) ($backup['is_locked'] ?? 0) === 1) {
+                    $skippedUuids[] = $backupUuid;
+                    continue;
+                }
+                $backupsToDelete[] = $backup;
+            }
+        }
+
+        if (empty($backupsToDelete) && empty($skippedUuids)) {
+            return ApiResponse::error('No backups to delete', 'NO_BACKUPS', 400);
+        }
+
+        $scheme = $node['scheme'];
+        $host = $node['fqdn'];
+        $port = $node['daemonListen'];
+        $token = $node['daemon_token'];
+        $timeout = (int) 30;
+
+        try {
+            $wings = new Wings(
+                $host,
+                $port,
+                $scheme,
+                $token,
+                $timeout,
+                WingsUrlHelper::isBehindProxy($node)
+            );
+        } catch (\Exception $e) {
+            App::getInstance(true)->getLogger()->error('Failed to connect to Wings for bulk backup delete: ' . $e->getMessage());
+
+            return ApiResponse::error('Failed to connect to Wings: ' . $e->getMessage(), 'WINGS_CONNECTION_FAILED', 500);
+        }
+
+        $user = $request->attributes->get('user');
+        $deletedCount = 0;
+        $failed = [];
+
+        foreach ($backupsToDelete as $backup) {
+            $backupUuid = $backup['uuid'];
+            try {
+                $response = $wings->getServer()->deleteBackup($serverUuid, $backupUuid);
+                if (!$response->isSuccessful()) {
+                    $failed[] = [
+                        'uuid' => $backupUuid,
+                        'error' => $response->getError() ?: 'Wings delete failed',
+                    ];
+                    continue;
+                }
+
+                if (!Backup::deleteBackup($backup['id'])) {
+                    $failed[] = [
+                        'uuid' => $backupUuid,
+                        'error' => 'Failed to delete backup record',
+                    ];
+                    continue;
+                }
+
+                $this->logActivity($server, $node, 'backup_deleted', [
+                    'backup_uuid' => $backupUuid,
+                    'backup_name' => $backup['name'],
+                    'bulk' => true,
+                ], $user);
+
+                global $eventManager;
+                if (isset($eventManager) && $eventManager !== null) {
+                    $eventManager->emit(
+                        ServerBackupEvent::onServerBackupDeleted(),
+                        [
+                            'user_uuid' => $user['uuid'] ?? null,
+                            'server_uuid' => $server['uuid'],
+                            'backup_uuid' => $backupUuid,
+                        ]
+                    );
+                }
+
+                ++$deletedCount;
+            } catch (\Exception $e) {
+                App::getInstance(true)->getLogger()->error('Failed to delete backup ' . $backupUuid . ': ' . $e->getMessage());
+                $failed[] = [
+                    'uuid' => $backupUuid,
+                    'error' => $e->getMessage(),
+                ];
+            }
+        }
+
+        $skippedCount = count($skippedUuids);
+        $failedCount = count($failed);
+        $message = "Successfully deleted {$deletedCount} backup(s)";
+        if ($skippedCount > 0) {
+            $message .= ". Skipped {$skippedCount} locked or missing backup(s)";
+        }
+        if ($failedCount > 0) {
+            $message .= ". Failed to delete {$failedCount} backup(s)";
+        }
+
+        return ApiResponse::success([
+            'deleted_count' => $deletedCount,
+            'skipped_count' => $skippedCount,
+            'failed_count' => $failedCount,
+            'skipped_uuids' => $skippedUuids,
+            'failed' => $failed,
+        ], $message);
+    }
+
+    /**
      * Get backup download URL.
      *
      * @param Request $request The HTTP request
@@ -1249,6 +1587,133 @@ class ServerBackupController
             ], 'Backup destinations retrieved');
         } catch (\Throwable $e) {
             return ApiResponse::error('Failed to list backup destinations: ' . $e->getMessage(), 'BACKUP_DESTINATIONS_FAILED', 500);
+        }
+    }
+
+    /**
+     * Full server backup: dump databases, write panel metadata, then Wings archive.
+     *
+     * @param array<string, mixed> $body
+     */
+    private function createFullBackup(Request $request, array $server, array $body): Response
+    {
+        $user = $request->attributes->get('user');
+        $canViewPassword = \App\Helpers\SubuserPermissionChecker::hasPermission(
+            (int) $user['id'],
+            (int) $server['id'],
+            SubuserPermissions::DATABASE_VIEW_PASSWORD
+        );
+
+        $includeEncrypted = !empty($body['include_encrypted']);
+        if ($includeEncrypted && !$canViewPassword) {
+            return ApiResponse::error(
+                'database.view_password is required to include encrypted secrets',
+                'FORBIDDEN',
+                403
+            );
+        }
+
+        // Database dumps need password access; allow full without dumps only if explicitly none — always dump all MySQL when permitted
+        if (!$canViewPassword) {
+            return ApiResponse::error(
+                'Insufficient permissions to create a full backup (database.view_password required)',
+                'FORBIDDEN',
+                403
+            );
+        }
+
+        $currentBackups = count(Backup::getBackupsByServerId((int) $server['id']));
+        $backupLimit = (int) ($server['backup_limit'] ?? 0);
+
+        if ($backupLimit === 0) {
+            return ApiResponse::error('Backups are disabled for this server', 'BACKUPS_DISABLED', 403);
+        }
+
+        $node = Node::getNodeById($server['node_id']);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+
+        try {
+            $wings = Wings::fromNode($node, 120);
+        } catch (\Throwable $e) {
+            return ApiResponse::error('Failed to connect to node: ' . $e->getMessage(), 'WINGS_CONNECTION_FAILED', 500);
+        }
+
+        if ($currentBackups >= $backupLimit) {
+            if (!BackupFifoEviction::isFifoRollingForServer($server)) {
+                return ApiResponse::error('Backup limit reached', 'BACKUP_LIMIT_REACHED', 400);
+            }
+            $evictErr = BackupFifoEviction::evictOldestWingsBackup((int) $server['id'], (string) $server['uuid'], $wings);
+            if ($evictErr !== null) {
+                return ApiResponse::error($evictErr['message'], $evictErr['code'], $evictErr['status']);
+            }
+        }
+
+        try {
+            $payload = json_encode([
+                'type' => 'full',
+                'ignored_files' => $body['ignore'] ?? ($body['ignored_files'] ?? ''),
+                'databases' => $body['databases'] ?? 'all',
+                'directory' => ServerDatabaseDumpService::DEFAULT_BACKUP_DIRECTORY,
+                'include_metadata' => array_key_exists('include_metadata', $body) ? !empty($body['include_metadata']) : true,
+                'include_encrypted' => $includeEncrypted,
+                'include_activities' => !empty($body['include_activities']),
+            ]);
+            $parsed = ServerDatabaseDumpService::parseBackupPayload((string) $payload);
+        } catch (\InvalidArgumentException $e) {
+            return ApiResponse::error($e->getMessage(), 'INVALID_PAYLOAD', 400);
+        }
+
+        $backupName = trim((string) ($body['name'] ?? ''));
+        if ($backupName === '') {
+            $backupName = 'Full backup at ' . date('Y-m-d H:i:s');
+        }
+
+        try {
+            $result = ServerFullBackupService::run($wings, $server, $parsed, [
+                'name' => $backupName,
+                'uuid' => $body['uuid'] ?? null,
+            ]);
+
+            $this->logActivity($server, $node, 'full_backup_created', [
+                'backup_uuid' => $result['wings_backup']['uuid'],
+                'backup_name' => $result['wings_backup']['name'],
+                'metadata_included' => $result['metadata_included'],
+                'backed_up' => $result['backed_up'],
+                'dump_errors' => $result['dump_errors'],
+            ], $user);
+
+            global $eventManager;
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    ServerBackupEvent::onServerBackupCreated(),
+                    [
+                        'user_uuid' => $user['uuid'] ?? null,
+                        'server_uuid' => $server['uuid'],
+                        'backup_uuid' => $result['wings_backup']['uuid'],
+                        'type' => 'full',
+                    ]
+                );
+            }
+
+            return ApiResponse::success([
+                'id' => $result['wings_backup']['id'],
+                'uuid' => $result['wings_backup']['uuid'],
+                'name' => $result['wings_backup']['name'],
+                'adapter' => $result['wings_backup']['adapter'],
+                'type' => 'full',
+                'backed_up' => $result['backed_up'],
+                'dump_errors' => $result['dump_errors'],
+                'metadata_included' => $result['metadata_included'],
+                'metadata_path' => $result['metadata_path'],
+            ], 'Full backup initiated successfully', 202);
+        } catch (\InvalidArgumentException $e) {
+            return ApiResponse::error($e->getMessage(), 'INVALID_PAYLOAD', 400);
+        } catch (\Throwable $e) {
+            App::getInstance(true)->getLogger()->error('Failed to create full backup: ' . $e->getMessage());
+
+            return ApiResponse::error('Failed to create full backup: ' . $e->getMessage(), 'FULL_BACKUP_FAILED', 500);
         }
     }
 

@@ -83,6 +83,7 @@ use App\Services\Subdomain\SubdomainCleanupService;
         new OA\Property(property: 'external_id', type: 'string', nullable: true, description: 'External ID'),
         new OA\Property(property: 'threads', type: 'string', nullable: true, description: 'Specific CPU threads this process can run on. Single number, comma list, or ranges like 0,1,3 or 0-1,3'),
         new OA\Property(property: 'skip_scripts', type: 'boolean', description: 'Skip scripts flag'),
+        new OA\Property(property: 'show_on_status', type: 'boolean', description: 'Whether this server appears on the public status page'),
         new OA\Property(property: 'oom_killer', type: 'boolean', description: 'Whether the OOM killer is enabled (true) or disabled (false)'),
         new OA\Property(property: 'suspended', type: 'boolean', description: 'Suspended flag'),
         new OA\Property(property: 'created_at', type: 'string', format: 'date-time', description: 'Creation timestamp'),
@@ -129,6 +130,7 @@ use App\Services\Subdomain\SubdomainCleanupService;
         new OA\Property(property: 'external_id', type: 'string', nullable: true, description: 'External ID', maxLength: 191),
         new OA\Property(property: 'threads', type: 'string', nullable: true, description: 'Specific CPU threads this process can run on. Single number, comma list, or ranges like 0,1,3 or 0-1,3'),
         new OA\Property(property: 'skip_scripts', type: 'boolean', description: 'Skip scripts flag'),
+        new OA\Property(property: 'show_on_status', type: 'boolean', description: 'Whether this server appears on the public status page'),
         new OA\Property(property: 'oom_disabled', type: 'boolean', description: 'OOM disabled flag'),
         new OA\Property(property: 'variables', type: 'object', description: 'Server variables as key-value pairs'),
         new OA\Property(property: 'mount_ids', type: 'array', items: new OA\Items(type: 'integer'), description: 'Optional: Wings bind mounts to attach (validated against node/spell rules)'),
@@ -159,6 +161,7 @@ use App\Services\Subdomain\SubdomainCleanupService;
         new OA\Property(property: 'external_id', type: 'string', nullable: true, description: 'External ID', maxLength: 191),
         new OA\Property(property: 'threads', type: 'string', nullable: true, description: 'Specific CPU threads this process can run on. Single number, comma list, or ranges like 0,1,3 or 0-1,3'),
         new OA\Property(property: 'skip_scripts', type: 'boolean', description: 'Skip scripts flag'),
+        new OA\Property(property: 'show_on_status', type: 'boolean', description: 'Whether this server appears on the public status page'),
         new OA\Property(property: 'oom_disabled', type: 'boolean', description: 'OOM disabled flag'),
         new OA\Property(property: 'variables', type: 'object', description: 'Server variables as key-value pairs'),
         new OA\Property(property: 'mount_ids', type: 'array', items: new OA\Items(type: 'integer'), description: 'Optional: replace Wings bind mounts for this server'),
@@ -1040,6 +1043,15 @@ class ServersController
         $data['description'] = isset($data['description']) && $data['description'] !== '' ? $data['description'] : null;
         $data['status'] = $data['status'] ?? 'installing';
         $data['skip_scripts'] = isset($data['skip_scripts']) ? (int) $data['skip_scripts'] : 0;
+        if (array_key_exists('show_on_status', $data)) {
+            $data['show_on_status'] = (int) (bool) $data['show_on_status'];
+        } else {
+            $visibleByDefault = App::getInstance(true)->getConfig()->getSetting(
+                ConfigInterface::STATUS_PAGE_SERVERS_VISIBLE_BY_DEFAULT,
+                'true'
+            ) === 'true';
+            $data['show_on_status'] = $visibleByDefault ? 1 : 0;
+        }
         // Map oom_killer -> oom_disabled for DB (oom_disabled true when killer is false)
         if (array_key_exists('oom_killer', $data)) {
             $data['oom_disabled'] = $data['oom_killer'] ? 0 : 1;
@@ -1460,7 +1472,7 @@ class ServersController
         }
 
         // Validate boolean fields
-        $booleanFields = ['skip_scripts', 'skip_zerotrust', 'oom_disabled', 'oom_killer'];
+        $booleanFields = ['skip_scripts', 'skip_zerotrust', 'show_on_status', 'oom_disabled', 'oom_killer'];
         foreach ($data as $field => $value) {
             if (in_array($field, $booleanFields) && isset($data[$field])) {
                 if (!is_bool($value) && !in_array($value, [0, 1, '0', '1'], true)) {
@@ -1733,6 +1745,7 @@ class ServersController
             'backup_limit',
             'skip_scripts',
             'skip_zerotrust',
+            'show_on_status',
             'oom_disabled',
             'suspended',
         ];

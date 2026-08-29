@@ -34,7 +34,7 @@ export function NetworkTab({ loading, data, error, onRefresh }: NetworkTabProps)
 
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text);
-        toast.success(t('common.copied_to_clipboard'));
+        toast.success(t('common.copiedToClipboard'));
     };
 
     if (loading) {

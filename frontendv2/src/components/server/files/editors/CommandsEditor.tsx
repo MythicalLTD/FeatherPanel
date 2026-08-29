@@ -195,7 +195,7 @@ export function CommandsEditor({
     };
 
     return (
-        <Card className='bg-card/50 border-border/50 flex flex-col overflow-hidden rounded-3xl border shadow-sm backdrop-blur-3xl'>
+        <Card className='bg-card/50 border-border/50 flex flex-col overflow-hidden rounded-2xl border shadow-sm backdrop-blur-sm'>
             <CardHeader className='border-border/10 shrink-0 border-b pb-6'>
                 <div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
                     <div className='space-y-2'>
@@ -228,7 +228,7 @@ export function CommandsEditor({
                             <h3 className='text-xl font-black tracking-tight uppercase italic'>
                                 {t('files.editors.commandsConfig.sections.general')}
                             </h3>
-                            <p className='text-muted-foreground text-[9px] font-bold tracking-widest uppercase opacity-50'>
+                            <p className='text-muted-foreground text-xs font-medium opacity-50'>
                                 {t('files.editors.commandsConfig.sectionsDescriptions.general')}
                             </p>
                         </div>
@@ -237,10 +237,10 @@ export function CommandsEditor({
                     <div className='bg-card/30 border-border/30 space-y-3 rounded-xl border p-6'>
                         <div className='flex items-start justify-between gap-4'>
                             <div className='space-y-1'>
-                                <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
+                                <label className='text-muted-foreground ml-1 text-xs font-medium'>
                                     {t('files.editors.commandsConfig.fields.ignoreVanillaPermissions.label')}
                                 </label>
-                                <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
+                                <p className='text-muted-foreground ml-1 text-xs font-medium opacity-60'>
                                     {t('files.editors.commandsConfig.fields.ignoreVanillaPermissions.description')}
                                 </p>
                             </div>
@@ -253,7 +253,7 @@ export function CommandsEditor({
                     </div>
 
                     <div className='bg-card/30 border-border/30 space-y-3 rounded-xl border p-6'>
-                        <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
+                        <label className='text-muted-foreground ml-1 text-xs font-medium'>
                             {t('files.editors.commandsConfig.fields.commandBlockOverrides.label')}
                         </label>
                         <Textarea
@@ -262,7 +262,7 @@ export function CommandsEditor({
                             readOnly={readonly}
                             rows={4}
                         />
-                        <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
+                        <p className='text-muted-foreground ml-1 text-xs font-medium opacity-60'>
                             {t('files.editors.commandsConfig.fields.commandBlockOverrides.description')}
                         </p>
                     </div>
@@ -278,7 +278,7 @@ export function CommandsEditor({
                                 <h3 className='text-xl font-black tracking-tight uppercase italic'>
                                     {t('files.editors.commandsConfig.sections.aliases')}
                                 </h3>
-                                <p className='text-muted-foreground text-[9px] font-bold tracking-widest uppercase opacity-50'>
+                                <p className='text-muted-foreground text-xs font-medium opacity-50'>
                                     {t('files.editors.commandsConfig.sectionsDescriptions.aliases')}
                                 </p>
                             </div>
@@ -308,7 +308,7 @@ export function CommandsEditor({
                         >
                             <div className='flex items-start gap-4'>
                                 <div className='flex-1 space-y-3'>
-                                    <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
+                                    <label className='text-muted-foreground ml-1 text-xs font-medium'>
                                         {t('files.editors.commandsConfig.fields.aliases.aliasName')}
                                     </label>
                                     <Input
@@ -330,7 +330,7 @@ export function CommandsEditor({
                                 </Button>
                             </div>
                             <div className='space-y-3'>
-                                <label className='text-muted-foreground ml-1 text-[9px] font-black tracking-[0.2em] uppercase'>
+                                <label className='text-muted-foreground ml-1 text-xs font-medium'>
                                     {t('files.editors.commandsConfig.fields.aliases.aliasCommands')}
                                 </label>
                                 <Textarea
@@ -340,7 +340,7 @@ export function CommandsEditor({
                                     rows={3}
                                     placeholder='say Hello world'
                                 />
-                                <p className='text-muted-foreground ml-1 text-[9px] font-black tracking-widest uppercase opacity-60'>
+                                <p className='text-muted-foreground ml-1 text-xs font-medium opacity-60'>
                                     {t('files.editors.commandsConfig.fields.aliases.aliasCommandsHint')}
                                 </p>
                             </div>

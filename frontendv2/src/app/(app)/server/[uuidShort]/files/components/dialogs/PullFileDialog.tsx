@@ -27,7 +27,7 @@ import {
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { toast } from 'sonner';
-import { filesApi } from '@/lib/files-api';
+import { useFileManagerApi } from '@/contexts/FileManagerApiContext';
 import { Download } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
 
@@ -40,6 +40,7 @@ interface PullFileDialogProps {
 }
 
 export function PullFileDialog({ open, onOpenChange, uuid, root, onSuccess }: PullFileDialogProps) {
+    const filesApi = useFileManagerApi();
     const { t } = useTranslation();
     const [url, setUrl] = useState('');
     const [filename, setFilename] = useState('');

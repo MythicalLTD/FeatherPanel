@@ -34,7 +34,7 @@ import {
 
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
-import { Textarea } from '@/components/ui/textarea';
+import { Textarea } from '@/components/featherui/Textarea';
 import { HeadlessSelect } from '@/components/ui/headless-select';
 import { toast } from 'sonner';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
@@ -45,6 +45,7 @@ import { cn, isEnabled } from '@/lib/utils';
 import type { AllocationItem, AllocationsResponse, ProxyCreateRequest, DnsVerifyResponse } from '@/types/server';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { EmptyState } from '@/components/featherui/EmptyState';
+import { FormSection } from '@/components/featherui/FormSection';
 import { safeBack } from '@/lib/safe-back';
 
 export default function CreateProxyPage() {
@@ -234,7 +235,7 @@ export default function CreateProxyPage() {
 
             <div className='grid grid-cols-1 gap-8 lg:grid-cols-12'>
                 <div className='space-y-8 lg:col-span-8'>
-                    <div className='bg-card/50 border-border/50 space-y-6 rounded-3xl border p-8 backdrop-blur-3xl'>
+                    <FormSection>
                         <div className='border-border/10 flex items-center gap-4 border-b pb-6'>
                             <div className='bg-primary/10 border-primary/20 flex h-10 w-10 items-center justify-center rounded-xl border'>
                                 <Globe className='text-primary h-5 w-5' />
@@ -353,9 +354,9 @@ export default function CreateProxyPage() {
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </FormSection>
 
-                    <div className='bg-card/50 border-border/50 space-y-6 rounded-3xl border p-8 backdrop-blur-3xl'>
+                    <FormSection>
                         <div className='border-border/10 flex items-center gap-4 border-b pb-6'>
                             <div className='flex h-10 w-10 items-center justify-center rounded-xl border border-emerald-500/20 bg-emerald-500/10'>
                                 <ShieldCheck className='h-5 w-5 text-emerald-500' />
@@ -463,11 +464,11 @@ export default function CreateProxyPage() {
                                 )}
                             </div>
                         )}
-                    </div>
+                    </FormSection>
                 </div>
 
                 <div className='space-y-8 lg:col-span-4'>
-                    <div className='group relative space-y-4 overflow-hidden rounded-3xl border border-blue-500/10 bg-blue-500/5 p-8 backdrop-blur-3xl'>
+                    <FormSection className='group relative space-y-4 overflow-hidden border-blue-500/10 bg-blue-500/5'>
                         <div className='pointer-events-none absolute -right-6 -bottom-6 h-24 w-24 bg-blue-500/10 blur-2xl transition-transform duration-1000 group-hover:scale-150' />
                         <div className='relative z-10 flex h-10 w-10 items-center justify-center rounded-xl border border-blue-500/20 bg-blue-500/10'>
                             <Info className='h-5 w-5 text-blue-500' />
@@ -480,9 +481,9 @@ export default function CreateProxyPage() {
                                 {t('serverProxy.infoDescription')}
                             </p>
                         </div>
-                    </div>
+                    </FormSection>
 
-                    <div className='bg-card/50 border-border/50 relative space-y-6 overflow-hidden rounded-3xl border p-8 backdrop-blur-3xl'>
+                    <FormSection className='relative overflow-hidden'>
                         <div className='border-border/10 relative z-10 flex items-center gap-4 border-b pb-6'>
                             <div className='bg-secondary/50 border-border/10 flex h-10 w-10 items-center justify-center rounded-xl border'>
                                 <Settings2 className='text-muted-foreground h-5 w-5' />
@@ -510,7 +511,7 @@ export default function CreateProxyPage() {
                                 <span>{t('serverProxy.tipSsl')}</span>
                             </li>
                         </ul>
-                    </div>
+                    </FormSection>
 
                     <div className='pt-2 md:hidden'>
                         <Button size='default' onClick={handleCreate} disabled={saving || !dnsVerified}>

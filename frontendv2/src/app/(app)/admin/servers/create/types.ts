@@ -73,6 +73,7 @@ export interface ServerFormData {
     description: string;
     ownerId: number | null;
     skipScripts: boolean;
+    showOnStatus: boolean;
 
     // Allocation
     locationId: number | null;

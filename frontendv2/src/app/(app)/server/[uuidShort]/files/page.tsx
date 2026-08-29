@@ -64,6 +64,7 @@ import {
 import { Download, X, Upload, CheckCircle2, AlertCircle, Info } from 'lucide-react';
 import React, { use } from 'react';
 import { Button } from '@/components/featherui/Button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 type FileWithPath = { file: File; relativePath: string };
@@ -1899,27 +1900,18 @@ export default function ServerFilesPage({ params }: { params: Promise<{ uuidShor
                         </div>
                         <div className='grid grid-cols-1 gap-2 md:col-span-2 md:grid-cols-3'>
                             <label className='flex items-center gap-2 text-sm'>
-                                <input
-                                    type='checkbox'
-                                    checked={searchCaseInsensitive}
-                                    onChange={(e) => setSearchCaseInsensitive(e.target.checked)}
-                                />
+                                <Checkbox checked={searchCaseInsensitive} onCheckedChange={setSearchCaseInsensitive} />
                                 {t('files.search.advanced.case_insensitive')}
                             </label>
                             <label className='flex items-center gap-2 text-sm'>
-                                <input
-                                    type='checkbox'
+                                <Checkbox
                                     checked={contentCaseInsensitive}
-                                    onChange={(e) => setContentCaseInsensitive(e.target.checked)}
+                                    onCheckedChange={setContentCaseInsensitive}
                                 />
                                 {t('files.search.advanced.content_case_insensitive')}
                             </label>
                             <label className='flex items-center gap-2 text-sm'>
-                                <input
-                                    type='checkbox'
-                                    checked={includeOversized}
-                                    onChange={(e) => setIncludeOversized(e.target.checked)}
-                                />
+                                <Checkbox checked={includeOversized} onCheckedChange={setIncludeOversized} />
                                 {t('files.search.advanced.include_oversized')}
                             </label>
                         </div>

@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { APP_MONO_FONT_STACK } from '@/lib/mono-font';
 import React, { useEffect, useState, useCallback } from 'react';
 import { Editor } from '@monaco-editor/react';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -165,7 +166,7 @@ export function WingsConfigTab({ node }: WingsConfigTabProps) {
                                         scrollBeyondLastLine: false,
                                         automaticLayout: true,
                                         padding: { top: 20 },
-                                        fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+                                        fontFamily: APP_MONO_FONT_STACK,
                                         fontLigatures: true,
                                     }}
                                 />

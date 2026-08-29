@@ -24,6 +24,7 @@ import { Globe, Lock, Settings2, Info, Plus } from 'lucide-react';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
+import { FormSection } from '@/components/featherui/FormSection';
 import { HeadlessSelect } from '@/components/ui/headless-select';
 import { toast } from 'sonner';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
@@ -131,7 +132,7 @@ export default function CreateSubdomainPage() {
 
     if (availableDomains.length === 0 && !loading) {
         return (
-            <div className='bg-card/40 border-border/5 flex flex-col items-center justify-center space-y-8 rounded-[3rem] border py-24 text-center backdrop-blur-3xl'>
+            <div className='bg-card/40 border-border/5 flex flex-col items-center justify-center space-y-8 rounded-3xl border py-24 text-center backdrop-blur-3xl'>
                 <div className='relative'>
                     <div className='bg-primary/20 absolute inset-0 scale-150 rounded-full blur-3xl' />
                     <div className='bg-primary/10 border-primary/20 relative flex h-32 w-32 rotate-3 items-center justify-center rounded-3xl border-2'>
@@ -214,7 +215,7 @@ export default function CreateSubdomainPage() {
                         </div>
                     )}
 
-                    <div className='bg-card/50 border-border/50 space-y-6 rounded-3xl border p-8 backdrop-blur-3xl'>
+                    <FormSection>
                         <div className='border-border/10 flex items-center gap-4 border-b pb-6'>
                             <div className='bg-primary/10 border-primary/20 flex h-10 w-10 items-center justify-center rounded-xl border'>
                                 <Globe className='text-primary h-5 w-5' />
@@ -265,11 +266,11 @@ export default function CreateSubdomainPage() {
                                 </p>
                             </div>
                         </div>
-                    </div>
+                    </FormSection>
                 </div>
 
                 <div className='space-y-8 lg:col-span-4'>
-                    <div className='group relative space-y-4 overflow-hidden rounded-3xl border border-blue-500/10 bg-blue-500/5 p-8 backdrop-blur-3xl'>
+                    <FormSection className='group relative space-y-4 overflow-hidden border-blue-500/10 bg-blue-500/5'>
                         <div className='pointer-events-none absolute -right-6 -bottom-6 h-24 w-24 bg-blue-500/10 blur-2xl transition-transform duration-1000 group-hover:scale-150' />
                         <div className='relative z-10 flex h-10 w-10 items-center justify-center rounded-xl border border-blue-500/20 bg-blue-500/10'>
                             <Info className='h-5 w-5 text-blue-500' />
@@ -282,9 +283,9 @@ export default function CreateSubdomainPage() {
                                 {t('serverSubdomains.noSubdomainsDescription')}
                             </p>
                         </div>
-                    </div>
+                    </FormSection>
 
-                    <div className='bg-card/50 border-border/50 relative space-y-6 overflow-hidden rounded-3xl border p-8 backdrop-blur-3xl'>
+                    <FormSection className='relative overflow-hidden'>
                         <div className='border-border/10 relative z-10 flex items-center gap-4 border-b pb-6'>
                             <div className='bg-secondary/50 border-border/10 flex h-10 w-10 items-center justify-center rounded-xl border'>
                                 <Settings2 className='text-muted-foreground h-5 w-5' />
@@ -310,7 +311,7 @@ export default function CreateSubdomainPage() {
                                 <span>{t('serverSubdomains.guide_multiple')}</span>
                             </li>
                         </ul>
-                    </div>
+                    </FormSection>
 
                     <div className='pt-2 md:hidden'>
                         <Button

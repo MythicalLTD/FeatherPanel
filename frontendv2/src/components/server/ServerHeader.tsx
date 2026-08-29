@@ -15,21 +15,12 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/featherui/Button';
 import { Badge } from '@/components/ui/badge';
 import { Play, Square, RotateCw, Skull, Loader2 } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useState, useEffect } from 'react';
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
@@ -218,7 +209,7 @@ export default function ServerHeader({
                     size='sm'
                     disabled={actionLoading === 'restart' || (connectionLive ? serverStatus !== 'running' : false)}
                     onClick={() => handleAction('restart', onRestart)}
-                    className='flex items-center gap-2 border-amber-500/40 bg-amber-500 text-amber-950 hover:bg-amber-500/90 hover:text-amber-950 disabled:border-amber-500/20 disabled:bg-amber-500/40 disabled:text-amber-950/70'
+                    className='flex items-center gap-2 border-sky-600/40 bg-sky-600 text-white hover:bg-sky-600/90 hover:text-white disabled:border-sky-600/20 disabled:bg-sky-600/40 disabled:text-white/70'
                 >
                     {actionLoading === 'restart' ? (
                         <Loader2 className='h-4 w-4 animate-spin' />
@@ -278,33 +269,26 @@ export default function ServerHeader({
     );
 
     const killDialog = (
-        <AlertDialog open={showKillConfirm} onOpenChange={setShowKillConfirm}>
-            <AlertDialogContent>
-                <AlertDialogHeader>
-                    <AlertDialogTitle>{t('servers.console.kill_confirm_title')}</AlertDialogTitle>
-                    <AlertDialogDescription>{t('servers.console.kill_confirm_description')}</AlertDialogDescription>
-                </AlertDialogHeader>
-                <div className='flex items-center space-x-2 py-4'>
-                    <Checkbox
-                        id='dont-ask-kill'
-                        checked={dontAskAgain}
-                        onCheckedChange={(checked) => setDontAskAgain(checked === true)}
-                    />
-                    <Label htmlFor='dont-ask-kill' className='cursor-pointer text-sm font-normal'>
-                        {t('servers.console.kill_dont_ask_again')}
-                    </Label>
-                </div>
-                <AlertDialogFooter>
-                    <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
-                    <AlertDialogAction
-                        onClick={handleKillConfirm}
-                        className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
-                    >
-                        {t('servers.console.kill_confirm')}
-                    </AlertDialogAction>
-                </AlertDialogFooter>
-            </AlertDialogContent>
-        </AlertDialog>
+        <ConfirmDialog
+            open={showKillConfirm}
+            onOpenChange={setShowKillConfirm}
+            title={t('servers.console.kill_confirm_title')}
+            description={t('servers.console.kill_confirm_description')}
+            confirmLabel={t('servers.console.kill_confirm')}
+            cancelLabel={t('common.cancel')}
+            onConfirm={handleKillConfirm}
+        >
+            <div className='flex items-center space-x-2 py-4'>
+                <Checkbox
+                    id='dont-ask-kill'
+                    checked={dontAskAgain}
+                    onCheckedChange={(checked) => setDontAskAgain(checked === true)}
+                />
+                <Label htmlFor='dont-ask-kill' className='cursor-pointer text-sm font-normal'>
+                    {t('servers.console.kill_dont_ask_again')}
+                </Label>
+            </div>
+        </ConfirmDialog>
     );
 
     // Style: strip — compact image bar above controls

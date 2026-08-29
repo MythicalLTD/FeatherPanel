@@ -18,7 +18,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Loader2, RefreshCw, AlertTriangle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/featherui/Button';
 import { getPluginIframeThemeOverrideCss } from '@/lib/pluginIframeThemeCss';
 import { isCloudflareChallengeDocument, withCacheBuster } from '@/lib/cloudflare-challenge';
 import type { PluginPublicPage } from '@/types/plugin-public-pages';

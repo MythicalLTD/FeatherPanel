@@ -24,6 +24,8 @@ import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Textarea } from '@/components/featherui/Textarea';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { HeadlessSelect } from '@/components/ui/headless-select';
 import {
     AlertDialog,
@@ -381,69 +383,56 @@ export function AllocationsTab({ nodeId, nodeName }: AllocationsTabProps) {
                     )}
 
                     <div className='border-border/50 overflow-hidden rounded-xl border'>
-                        <table className='w-full text-sm'>
-                            <thead className='bg-muted/30 border-border/50 border-b'>
-                                <tr>
-                                    <th className='w-10 px-4 py-3 text-left'>
-                                        <input
-                                            type='checkbox'
-                                            className='border-border bg-background rounded'
+                        <Table>
+                            <TableHeader className='bg-muted/30'>
+                                <TableRow className='hover:bg-transparent'>
+                                    <TableHead className='w-10'>
+                                        <Checkbox
                                             checked={
                                                 allocations.length > 0 && selectedIds.length === allocations.length
                                             }
-                                            onChange={(e) => {
-                                                if (e.target.checked) setSelectedIds(allocations.map((a) => a.id));
+                                            onCheckedChange={(checked) => {
+                                                if (checked) setSelectedIds(allocations.map((a) => a.id));
                                                 else setSelectedIds([]);
                                             }}
                                         />
-                                    </th>
-                                    <th className='text-muted-foreground px-4 py-3 text-left font-medium'>ID</th>
-                                    <th className='text-muted-foreground px-4 py-3 text-left font-medium'>
-                                        {t('admin.node.allocations.ip_address')}
-                                    </th>
-                                    <th className='text-muted-foreground px-4 py-3 text-left font-medium'>
-                                        {t('admin.node.allocations.port')}
-                                    </th>
-                                    <th className='text-muted-foreground px-4 py-3 text-left font-medium'>
-                                        {t('admin.node.allocations.ip_alias')}
-                                    </th>
-                                    <th className='text-muted-foreground px-4 py-3 text-left font-medium'>
-                                        {t('admin.node.allocations.notes')}
-                                    </th>
-                                    <th className='text-muted-foreground px-4 py-3 text-left font-medium'>
-                                        {t('admin.node.allocations.server')}
-                                    </th>
-                                    <th className='text-muted-foreground px-4 py-3 text-right font-medium'>
-                                        {t('common.actions')}
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody className='divide-border/50 divide-y'>
+                                    </TableHead>
+                                    <TableHead>ID</TableHead>
+                                    <TableHead>{t('admin.node.allocations.ip_address')}</TableHead>
+                                    <TableHead>{t('admin.node.allocations.port')}</TableHead>
+                                    <TableHead>{t('admin.node.allocations.ip_alias')}</TableHead>
+                                    <TableHead>{t('admin.node.allocations.notes')}</TableHead>
+                                    <TableHead>{t('admin.node.allocations.server')}</TableHead>
+                                    <TableHead className='text-right'>{t('common.actions')}</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
                                 {loading ? (
-                                    <tr>
-                                        <td colSpan={8} className='px-4 py-8 text-center'>
+                                    <TableRow>
+                                        <TableCell colSpan={8} className='py-8 text-center'>
                                             <Loader2 className='text-primary mx-auto h-6 w-6 animate-spin' />
-                                        </td>
-                                    </tr>
+                                        </TableCell>
+                                    </TableRow>
                                 ) : allocations.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={8} className='text-muted-foreground px-4 py-8 text-center italic'>
+                                    <TableRow>
+                                        <TableCell
+                                            colSpan={8}
+                                            className='text-muted-foreground py-8 text-center italic'
+                                        >
                                             {t('admin.node.allocations.no_results')}
-                                        </td>
-                                    </tr>
+                                        </TableCell>
+                                    </TableRow>
                                 ) : (
                                     allocations.map((allocation) => (
-                                        <tr key={allocation.id} className='hover:bg-muted/20 transition-colors'>
-                                            <td className='px-4 py-3 text-left'>
-                                                <input
-                                                    type='checkbox'
-                                                    className='border-border bg-background rounded'
+                                        <TableRow key={allocation.id}>
+                                            <TableCell>
+                                                <Checkbox
                                                     checked={selectedIds.includes(allocation.id)}
-                                                    onChange={() => toggleSelection(allocation.id)}
+                                                    onCheckedChange={() => toggleSelection(allocation.id)}
                                                 />
-                                            </td>
-                                            <td className='px-4 py-3 font-mono text-xs'>{allocation.id}</td>
-                                            <td className='px-4 py-3'>
+                                            </TableCell>
+                                            <TableCell className='font-mono text-xs'>{allocation.id}</TableCell>
+                                            <TableCell>
                                                 <div className='flex items-center gap-2'>
                                                     <span className='font-mono'>{allocation.ip}</span>
                                                     {allocation.server_id ? (
@@ -456,18 +445,18 @@ export function AllocationsTab({ nodeId, nodeName }: AllocationsTabProps) {
                                                         </span>
                                                     )}
                                                 </div>
-                                            </td>
-                                            <td className='px-4 py-3 font-mono'>{allocation.port}</td>
-                                            <td className='text-muted-foreground max-w-[150px] truncate px-4 py-3'>
+                                            </TableCell>
+                                            <TableCell className='font-mono'>{allocation.port}</TableCell>
+                                            <TableCell className='text-muted-foreground max-w-[150px] truncate'>
                                                 {allocation.ip_alias || '-'}
-                                            </td>
-                                            <td
-                                                className='text-muted-foreground max-w-[200px] truncate px-4 py-3'
+                                            </TableCell>
+                                            <TableCell
+                                                className='text-muted-foreground max-w-[200px] truncate'
                                                 title={allocation.notes || undefined}
                                             >
                                                 {allocation.notes || '-'}
-                                            </td>
-                                            <td className='px-4 py-3'>
+                                            </TableCell>
+                                            <TableCell>
                                                 {allocation.server_id ? (
                                                     <button
                                                         type='button'
@@ -481,8 +470,8 @@ export function AllocationsTab({ nodeId, nodeName }: AllocationsTabProps) {
                                                 ) : (
                                                     <span className='text-muted-foreground'>-</span>
                                                 )}
-                                            </td>
-                                            <td className='px-4 py-3 text-right'>
+                                            </TableCell>
+                                            <TableCell className='text-right'>
                                                 <div className='flex items-center justify-end gap-1'>
                                                     <Button
                                                         variant='ghost'
@@ -538,12 +527,12 @@ export function AllocationsTab({ nodeId, nodeName }: AllocationsTabProps) {
                                                         </Button>
                                                     )}
                                                 </div>
-                                            </td>
-                                        </tr>
+                                            </TableCell>
+                                        </TableRow>
                                     ))
                                 )}
-                            </tbody>
-                        </table>
+                            </TableBody>
+                        </Table>
                     </div>
 
                     {pagination.totalPages > 1 && (

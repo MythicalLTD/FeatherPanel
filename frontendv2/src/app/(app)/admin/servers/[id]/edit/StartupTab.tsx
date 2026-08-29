@@ -18,7 +18,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import type { Dispatch, SetStateAction } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { PageCard } from '@/components/featherui/PageCard';
-import { Input } from '@/components/ui/input';
+import { Input } from '@/components/featherui/Input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/featherui/Button';
 import { Plus, Trash2, Lock } from 'lucide-react';
@@ -110,8 +110,8 @@ export function StartupTab({
             </PageCard>
 
             <PageCard
-                title='Custom environment variables'
-                description='Server-specific variables synced to Wings without a transfer.'
+                title={t('serverStartup.customEnv.title')}
+                description={t('serverStartup.customEnv.adminDescription')}
             >
                 <div className='space-y-4'>
                     {customVariables.length > 0 && (
@@ -138,6 +138,9 @@ export function StartupTab({
                                         onClick={() => onDeleteCustomVariable(variable)}
                                         disabled={customVariableSaving}
                                         className='shrink-0'
+                                        aria-label={t('serverStartup.customEnv.deleteAria', {
+                                            name: variable.env_variable,
+                                        })}
                                     >
                                         <Trash2 className='h-3.5 w-3.5' />
                                     </Button>
@@ -151,7 +154,7 @@ export function StartupTab({
                             value={customVariableForm.name}
                             onChange={(e) => setCustomVariableForm((prev) => ({ ...prev, name: e.target.value }))}
                             disabled={customVariableSaving}
-                            placeholder='Display name'
+                            placeholder={t('serverStartup.customEnv.namePlaceholder')}
                         />
                         <Input
                             value={customVariableForm.env_variable}
@@ -162,7 +165,7 @@ export function StartupTab({
                                 }))
                             }
                             disabled={customVariableSaving}
-                            placeholder='ENV_NAME'
+                            placeholder={t('serverStartup.customEnv.envPlaceholder')}
                             className='font-mono'
                         />
                         <div className='flex gap-3'>
@@ -175,7 +178,7 @@ export function StartupTab({
                                     }))
                                 }
                                 disabled={customVariableSaving}
-                                placeholder='Value'
+                                placeholder={t('serverStartup.customEnv.valuePlaceholder')}
                                 className='font-mono'
                             />
                             <Button
@@ -204,7 +207,7 @@ export function StartupTab({
                             disabled={customVariableSaving}
                             className='mt-0.5 h-4 w-4 rounded border-white/20 bg-white/5'
                         />
-                        <span>Encrypt this value and hide it after save</span>
+                        <span>{t('serverStartup.customEnv.encrypt')}</span>
                     </label>
                 </div>
             </PageCard>

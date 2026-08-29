@@ -212,8 +212,20 @@ export function IpPoolTab({ nodeId, nodeName }: IpPoolTabProps) {
                 }
             }
             if (success > 0) {
-                toast.success(`Created ${success} IP${success > 1 ? 's' : ''}.`);
-                if (failed > 0) toast.warning(`Failed ${failed} IP${failed > 1 ? 's' : ''}.`);
+                toast.success(
+                    t(success === 1 ? 'admin.vdsNodes.ips.bulk_created_one' : 'admin.vdsNodes.ips.bulk_created_other', {
+                        count: String(success),
+                    }),
+                );
+                if (failed > 0)
+                    toast.warning(
+                        t(
+                            failed === 1
+                                ? 'admin.vdsNodes.ips.bulk_failed_one'
+                                : 'admin.vdsNodes.ips.bulk_failed_other',
+                            { count: String(failed) },
+                        ),
+                    );
                 setCreateOpen(false);
                 setBulkIpsInput('');
                 setCreateForm({ ip: '', cidr: '', gateway: '', notes: '' });

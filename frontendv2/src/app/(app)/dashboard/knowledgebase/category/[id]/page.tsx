@@ -23,7 +23,7 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/featherui/Button';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { cn } from '@/lib/utils';

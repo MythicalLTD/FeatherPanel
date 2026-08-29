@@ -1,0 +1,603 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Events: WebSpace</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 2rem; background: #020617; color: #e5e7eb; }
+    a { color: #60a5fa; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .container { max-width: 960px; margin: 0 auto; }
+    h1 { font-size: 2rem; margin-bottom: 0.25rem; }
+    h2 { font-size: 1.25rem; margin: 0 0 0.25rem; }
+    h3 { font-size: 1rem; margin-top: 1.25rem; }
+    .muted { color: #9ca3af; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 0.875rem; }
+    pre { background: #020617; border-radius: 0.5rem; padding: 1rem; border: 1px solid #1f2937; overflow-x: auto; }
+    .card { border-radius: 0.75rem; border: 1px solid #1f2937; background: #020617; padding: 1.25rem 1.5rem; margin-top: 1.5rem; }
+    .back-link { margin-bottom: 1.5rem; display: inline-block; }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <a href="/icanhasfeatherpanel/events/index.html" class="back-link">&larr; Back to all event categories</a>
+    <header>
+      <h1>WebSpace</h1>
+      <p class="muted">22 events in this category.</p>
+    </header>
+
+<article class="card">
+  <h2><code>featherpanel:webspace:backup:create</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onWebSpaceBackupCreated</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, string webspace uuid, string uuid_short, string|null backup uuid, array context.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\WebSpaceEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(WebSpaceEvent::onWebSpaceBackupCreated(), function ($uuid, $uuid, $uuid_short, $uuid, $context) {
+        // Handle featherpanel:webspace:backup:create
+        // Parameters: string|null user uuid, string webspace uuid, string uuid_short, string|null backup uuid, array context.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:webspace:backup:delete</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onWebSpaceBackupDeleted</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, string webspace uuid, string uuid_short, string backup uuid, array context.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\WebSpaceEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(WebSpaceEvent::onWebSpaceBackupDeleted(), function ($uuid, $uuid, $uuid_short, $uuid, $context) {
+        // Handle featherpanel:webspace:backup:delete
+        // Parameters: string|null user uuid, string webspace uuid, string uuid_short, string backup uuid, array context.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:webspace:backup:restore</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onWebSpaceBackupRestored</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, string webspace uuid, string uuid_short, string backup uuid, array context.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\WebSpaceEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(WebSpaceEvent::onWebSpaceBackupRestored(), function ($uuid, $uuid, $uuid_short, $uuid, $context) {
+        // Handle featherpanel:webspace:backup:restore
+        // Parameters: string|null user uuid, string webspace uuid, string uuid_short, string backup uuid, array context.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:webspace:console:access</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onWebSpaceConsoleAccessed</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, string webspace uuid, string uuid_short, array context.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\WebSpaceEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(WebSpaceEvent::onWebSpaceConsoleAccessed(), function ($uuid, $uuid, $uuid_short, $context) {
+        // Handle featherpanel:webspace:console:access
+        // Parameters: string|null user uuid, string webspace uuid, string uuid_short, array context.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:webspace:created</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onWebSpaceCreated</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, string webspace uuid, string uuid_short, array webspace, array context.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\WebSpaceEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(WebSpaceEvent::onWebSpaceCreated(), function ($uuid, $uuid, $uuid_short, $webspace, $context) {
+        // Handle featherpanel:webspace:created
+        // Parameters: string|null user uuid, string webspace uuid, string uuid_short, array webspace, array context.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:webspace:database:create</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onWebSpaceDatabaseCreated</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, string webspace uuid, string uuid_short, int database id, array context.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\WebSpaceEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(WebSpaceEvent::onWebSpaceDatabaseCreated(), function ($uuid, $uuid, $uuid_short, $id, $context) {
+        // Handle featherpanel:webspace:database:create
+        // Parameters: string|null user uuid, string webspace uuid, string uuid_short, int database id, array context.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:webspace:database:delete</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onWebSpaceDatabaseDeleted</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, string webspace uuid, string uuid_short, int database id, array context.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\WebSpaceEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(WebSpaceEvent::onWebSpaceDatabaseDeleted(), function ($uuid, $uuid, $uuid_short, $id, $context) {
+        // Handle featherpanel:webspace:database:delete
+        // Parameters: string|null user uuid, string webspace uuid, string uuid_short, int database id, array context.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:webspace:deleted</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onWebSpaceDeleted</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, string webspace uuid, string uuid_short, array context.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\WebSpaceEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(WebSpaceEvent::onWebSpaceDeleted(), function ($uuid, $uuid, $uuid_short, $context) {
+        // Handle featherpanel:webspace:deleted
+        // Parameters: string|null user uuid, string webspace uuid, string uuid_short, array context.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:webspace:directory:create</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onWebSpaceDirectoryCreated</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, string webspace uuid, string uuid_short, string path, array context.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\WebSpaceEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(WebSpaceEvent::onWebSpaceDirectoryCreated(), function ($uuid, $uuid, $uuid_short, $path, $context) {
+        // Handle featherpanel:webspace:directory:create
+        // Parameters: string|null user uuid, string webspace uuid, string uuid_short, string path, array context.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:webspace:files:delete</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onWebSpaceFilesDeleted</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, string webspace uuid, string uuid_short, array paths, array context.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\WebSpaceEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(WebSpaceEvent::onWebSpaceFilesDeleted(), function ($uuid, $uuid, $uuid_short, $paths, $context) {
+        // Handle featherpanel:webspace:files:delete
+        // Parameters: string|null user uuid, string webspace uuid, string uuid_short, array paths, array context.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:webspace:mailbox:create</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onWebSpaceMailboxCreated</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, string webspace uuid, string uuid_short, int mailbox id, array context.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\WebSpaceEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(WebSpaceEvent::onWebSpaceMailboxCreated(), function ($uuid, $uuid, $uuid_short, $id, $context) {
+        // Handle featherpanel:webspace:mailbox:create
+        // Parameters: string|null user uuid, string webspace uuid, string uuid_short, int mailbox id, array context.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:webspace:mailbox:delete</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onWebSpaceMailboxDeleted</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, string webspace uuid, string uuid_short, int mailbox id, array context.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\WebSpaceEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(WebSpaceEvent::onWebSpaceMailboxDeleted(), function ($uuid, $uuid, $uuid_short, $id, $context) {
+        // Handle featherpanel:webspace:mailbox:delete
+        // Parameters: string|null user uuid, string webspace uuid, string uuid_short, int mailbox id, array context.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:webspace:reinstall</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onWebSpaceReinstalled</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, string webspace uuid, string uuid_short, array context.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\WebSpaceEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(WebSpaceEvent::onWebSpaceReinstalled(), function ($uuid, $uuid, $uuid_short, $context) {
+        // Handle featherpanel:webspace:reinstall
+        // Parameters: string|null user uuid, string webspace uuid, string uuid_short, array context.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:webspace:schedule:create</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onWebSpaceScheduleCreated</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, string webspace uuid, string uuid_short, int schedule id, array context.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\WebSpaceEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(WebSpaceEvent::onWebSpaceScheduleCreated(), function ($uuid, $uuid, $uuid_short, $id, $context) {
+        // Handle featherpanel:webspace:schedule:create
+        // Parameters: string|null user uuid, string webspace uuid, string uuid_short, int schedule id, array context.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:webspace:schedule:delete</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onWebSpaceScheduleDeleted</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, string webspace uuid, string uuid_short, int schedule id, array context.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\WebSpaceEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(WebSpaceEvent::onWebSpaceScheduleDeleted(), function ($uuid, $uuid, $uuid_short, $id, $context) {
+        // Handle featherpanel:webspace:schedule:delete
+        // Parameters: string|null user uuid, string webspace uuid, string uuid_short, int schedule id, array context.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:webspace:schedule:update</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onWebSpaceScheduleUpdated</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, string webspace uuid, string uuid_short, int schedule id, array context.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\WebSpaceEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(WebSpaceEvent::onWebSpaceScheduleUpdated(), function ($uuid, $uuid, $uuid_short, $id, $context) {
+        // Handle featherpanel:webspace:schedule:update
+        // Parameters: string|null user uuid, string webspace uuid, string uuid_short, int schedule id, array context.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:webspace:subuser:create</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onWebSpaceSubuserCreated</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, string webspace uuid, string uuid_short, int subuser id, array context.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\WebSpaceEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(WebSpaceEvent::onWebSpaceSubuserCreated(), function ($uuid, $uuid, $uuid_short, $id, $context) {
+        // Handle featherpanel:webspace:subuser:create
+        // Parameters: string|null user uuid, string webspace uuid, string uuid_short, int subuser id, array context.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:webspace:subuser:delete</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onWebSpaceSubuserDeleted</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, string webspace uuid, string uuid_short, int subuser id, array context.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\WebSpaceEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(WebSpaceEvent::onWebSpaceSubuserDeleted(), function ($uuid, $uuid, $uuid_short, $id, $context) {
+        // Handle featherpanel:webspace:subuser:delete
+        // Parameters: string|null user uuid, string webspace uuid, string uuid_short, int subuser id, array context.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:webspace:subuser:update</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onWebSpaceSubuserUpdated</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, string webspace uuid, string uuid_short, int subuser id, array context.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\WebSpaceEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(WebSpaceEvent::onWebSpaceSubuserUpdated(), function ($uuid, $uuid, $uuid_short, $id, $context) {
+        // Handle featherpanel:webspace:subuser:update
+        // Parameters: string|null user uuid, string webspace uuid, string uuid_short, int subuser id, array context.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:webspace:suspended</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onWebSpaceSuspended</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, string webspace uuid, string uuid_short, array context.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\WebSpaceEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(WebSpaceEvent::onWebSpaceSuspended(), function ($uuid, $uuid, $uuid_short, $context) {
+        // Handle featherpanel:webspace:suspended
+        // Parameters: string|null user uuid, string webspace uuid, string uuid_short, array context.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:webspace:unsuspended</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onWebSpaceUnsuspended</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, string webspace uuid, string uuid_short, array context.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\WebSpaceEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(WebSpaceEvent::onWebSpaceUnsuspended(), function ($uuid, $uuid, $uuid_short, $context) {
+        // Handle featherpanel:webspace:unsuspended
+        // Parameters: string|null user uuid, string webspace uuid, string uuid_short, array context.
+    });
+}</code></pre>
+</article>
+
+<article class="card">
+  <h2><code>featherpanel:webspace:updated</code></h2>
+  <p class="muted"><strong>Method:</strong> <code>onWebSpaceUpdated</code></p>
+  <p class="muted"><strong>Callback parameters:</strong> string|null user uuid, string webspace uuid, string uuid_short, array changed fields, array context.</p>
+
+  <h3>Event Data</h3>
+  <p class="muted"><strong>Data keys:</strong> N/A</p>
+
+  <h3>Emitted From</h3>
+  <ul>
+<li class="muted">No known emission locations.</li>
+  </ul>
+
+  <h3>Usage Example</h3>
+  <pre><code>use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\WebSpaceEvent;
+
+public static function processEvents(PluginEvents $evt): void
+{
+    $evt->on(WebSpaceEvent::onWebSpaceUpdated(), function ($uuid, $uuid, $uuid_short, $fields, $context) {
+        // Handle featherpanel:webspace:updated
+        // Parameters: string|null user uuid, string webspace uuid, string uuid_short, array changed fields, array context.
+    });
+}</code></pre>
+</article>
+  </main>
+</body>
+</html>

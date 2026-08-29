@@ -44,6 +44,7 @@ use App\Services\Backup\BackupFifoEviction;
 use App\Cli\Utils\MinecraftColorCodeSupport;
 use App\Services\Backup\BackupAdapterResolver;
 use App\Services\Server\LifecycleHookPowerGate;
+use App\Services\Database\ServerDatabaseDumpService;
 use App\Services\Server\LifecycleHookExecutorService;
 
 class AServerScheduleProcessor implements TimeTask
@@ -295,7 +296,8 @@ class AServerScheduleProcessor implements TimeTask
                 $this->executeKillServer($server);
                 break;
             case 'backup':
-                $this->executeBackupServer($server, $task['payload'] ?? '[]');
+            case 'database_backup':
+                $this->executeBackupTask($server, $task['payload'] ?? '', (string) $task['action']);
                 break;
             case 'command':
                 $this->executeCommand($server, $task['payload']);
@@ -561,6 +563,171 @@ class AServerScheduleProcessor implements TimeTask
     }
 
     /**
+     * Execute a backup task (server files or database dumps).
+     */
+    private function executeBackupTask(array $server, string $payload, string $action)
+    {
+        // Legacy database_backup without JSON type → treat as database payload
+        if ($action === 'database_backup') {
+            $trimmed = trim($payload);
+            $decoded = json_decode($trimmed, true);
+            if (is_array($decoded) && !isset($decoded['type'])) {
+                $decoded['type'] = 'database';
+                $payload = json_encode($decoded);
+            } elseif ($trimmed !== '' && !is_array($decoded)) {
+                throw new \Exception('Invalid database backup payload');
+            }
+        }
+
+        $parsed = ServerDatabaseDumpService::parseBackupPayload($payload);
+        if ($parsed['type'] === 'database') {
+            $this->executeDatabaseBackup($server, $parsed);
+
+            return;
+        }
+        if ($parsed['type'] === 'full') {
+            $this->executeFullBackup($server, $parsed);
+
+            return;
+        }
+
+        $this->executeBackupServer($server, $parsed['ignored_files'] !== '' ? $parsed['ignored_files'] : '[]');
+    }
+
+    /**
+     * Full backup: dump DBs, write metadata, then Wings archive.
+     *
+     * @param array{type: string, ignored_files: string, databases: 'all'|list<int>, directory: string, include_metadata: bool, include_encrypted: bool, include_activities: bool} $parsed
+     */
+    private function executeFullBackup(array $server, array $parsed)
+    {
+        $app = App::getInstance(false, true);
+        MinecraftColorCodeSupport::sendOutputWithNewLine('&aStarting full backup for server: ' . $server['name']);
+
+        $currentBackups = count(Backup::getBackupsByServerId((int) $server['id']));
+        $backupLimit = (int) ($server['backup_limit'] ?? 0);
+
+        if ($backupLimit === 0) {
+            MinecraftColorCodeSupport::sendOutputWithNewLine('&eSkipping full backup: backups disabled for server: ' . $server['name']);
+            $app->getLogger()->info('Skipped scheduled full backup for server ' . ($server['name'] ?? 'unknown') . ': backups disabled');
+
+            return;
+        }
+
+        $atBackupLimit = $currentBackups >= $backupLimit;
+        if ($atBackupLimit && !BackupFifoEviction::isFifoRollingForServer($server)) {
+            MinecraftColorCodeSupport::sendOutputWithNewLine('&eSkipping full backup: limit reached for server: ' . $server['name']);
+
+            return;
+        }
+
+        try {
+            $wings = $this->getWingsConnection($server, 120);
+
+            if ($atBackupLimit) {
+                $evict = BackupFifoEviction::evictOldestWingsBackup((int) $server['id'], (string) $server['uuid'], $wings);
+                if ($evict !== null) {
+                    MinecraftColorCodeSupport::sendOutputWithNewLine('&eSkipping full backup: FIFO rotation failed for server: ' . $server['name']);
+
+                    return;
+                }
+            }
+
+            $result = \App\Services\Backup\ServerFullBackupService::run($wings, $server, $parsed, [
+                'name' => 'Scheduled full backup at ' . date('Y-m-d H:i:s'),
+            ]);
+
+            foreach ($result['backed_up'] as $item) {
+                MinecraftColorCodeSupport::sendOutputWithNewLine(
+                    '&aDatabase dump: ' . $item['database_name'] . ' → ' . $item['path']
+                );
+            }
+            foreach ($result['dump_errors'] as $error) {
+                MinecraftColorCodeSupport::sendOutputWithNewLine('&cDump error: ' . $error);
+            }
+            if ($result['metadata_included']) {
+                MinecraftColorCodeSupport::sendOutputWithNewLine('&aMetadata pack written: ' . $result['metadata_path']);
+            }
+
+            ServerActivity::createActivity([
+                'server_id' => $server['id'],
+                'node_id' => $server['node_id'],
+                'event' => 'schedule_full_backup_started',
+                'metadata' => json_encode([
+                    'backup_uuid' => $result['wings_backup']['uuid'],
+                    'backup_id' => $result['wings_backup']['id'],
+                    'metadata_included' => $result['metadata_included'],
+                    'schedule_triggered' => true,
+                ]),
+            ]);
+
+            MinecraftColorCodeSupport::sendOutputWithNewLine('&aFull backup started: ' . $result['wings_backup']['name']);
+        } catch (\Exception $e) {
+            $app->getLogger()->error('Failed full backup for server ' . $server['name'] . ': ' . $e->getMessage());
+            MinecraftColorCodeSupport::sendOutputWithNewLine('&cFailed full backup: ' . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    /**
+     * Dump one or more server databases to SQL files on the server filesystem.
+     *
+     * @param array{type: string, ignored_files: string, databases: 'all'|list<int>, directory: string} $parsed
+     */
+    private function executeDatabaseBackup(array $server, array $parsed)
+    {
+        $app = App::getInstance(false, true);
+        MinecraftColorCodeSupport::sendOutputWithNewLine('&aBacking up database(s) for server: ' . $server['name']);
+
+        try {
+            $wings = $this->getWingsConnection($server);
+            $result = \App\Services\Database\ServerDatabaseFilesystemBackupService::backup($wings, $server, $parsed);
+
+            foreach ($result['backed_up'] as $item) {
+                MinecraftColorCodeSupport::sendOutputWithNewLine(
+                    '&aDatabase backup written: ' . $item['database_name'] . ' → ' . $item['path']
+                    . ' (' . $item['table_count'] . ' tables)'
+                );
+            }
+            foreach ($result['errors'] as $error) {
+                MinecraftColorCodeSupport::sendOutputWithNewLine('&cFailed database backup: ' . $error);
+            }
+
+            if ($result['backed_up'] === [] && $result['errors'] === []) {
+                MinecraftColorCodeSupport::sendOutputWithNewLine('&eNo MySQL/MariaDB databases to back up for server: ' . $server['name']);
+                ServerActivity::createActivity([
+                    'server_id' => $server['id'],
+                    'node_id' => $server['node_id'],
+                    'event' => 'schedule_database_backup_skipped_empty',
+                    'metadata' => json_encode(['directory' => $parsed['directory']]),
+                ]);
+
+                return;
+            }
+
+            ServerActivity::createActivity([
+                'server_id' => $server['id'],
+                'node_id' => $server['node_id'],
+                'event' => 'schedule_database_backup',
+                'metadata' => json_encode([
+                    'directory' => $parsed['directory'],
+                    'scope' => $parsed['databases'] === 'all' ? 'all' : 'specific',
+                    'backed_up' => $result['backed_up'],
+                    'errors' => $result['errors'],
+                ]),
+            ]);
+
+            if ($result['errors'] !== []) {
+                throw new \Exception('Some database backups failed: ' . implode('; ', $result['errors']));
+            }
+        } catch (\Exception $e) {
+            $app->getLogger()->error('Failed database backup for server ' . $server['name'] . ': ' . $e->getMessage());
+            MinecraftColorCodeSupport::sendOutputWithNewLine('&cFailed database backup: ' . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    /**
      * Execute power action (start, stop, restart, kill).
      */
     private function executePowerAction(array $server, string $powerAction)
@@ -691,7 +858,7 @@ class AServerScheduleProcessor implements TimeTask
     /**
      * Get Wings connection for a server.
      */
-    private function getWingsConnection(array $server): Wings
+    private function getWingsConnection(array $server, int $timeout = 30): Wings
     {
         // Get node information
         $node = Node::getNodeById($server['node_id']);
@@ -699,7 +866,7 @@ class AServerScheduleProcessor implements TimeTask
             throw new \Exception('Node not found for server: ' . $server['name']);
         }
 
-        return Wings::fromNode($node, 30);
+        return Wings::fromNode($node, $timeout);
     }
 
     /**

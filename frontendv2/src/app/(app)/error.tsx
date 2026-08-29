@@ -17,7 +17,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useEffect } from 'react';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/featherui/Button';
 import { useTheme } from '@/contexts/ThemeContext';
 import { backgroundFitToCssSize } from '@/lib/backgroundImageFit';
 import { useTranslation } from '@/contexts/TranslationContext';

@@ -26,7 +26,8 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
-import { filesApi, FileHashesResponse } from '@/lib/files-api';
+import { type FileHashesResponse } from '@/lib/files-api';
+import { useFileManagerApi } from '@/contexts/FileManagerApiContext';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { toast } from 'sonner';
 
@@ -38,6 +39,7 @@ interface FileHashDialogProps {
 }
 
 export function FileHashDialog({ open, onOpenChange, uuid, path }: FileHashDialogProps) {
+    const filesApi = useFileManagerApi();
     const { t } = useTranslation();
     const [loading, setLoading] = useState(false);
     const [hashes, setHashes] = useState<FileHashesResponse | null>(null);
@@ -87,7 +89,7 @@ export function FileHashDialog({ open, onOpenChange, uuid, path }: FileHashDialo
         return () => {
             cancelled = true;
         };
-    }, [open, path, t, uuid]);
+    }, [filesApi, open, path, t, uuid]);
 
     const copyValue = async (value: string) => {
         try {

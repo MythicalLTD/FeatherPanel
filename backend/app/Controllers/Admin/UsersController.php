@@ -23,9 +23,11 @@ use App\Chat\User;
 use App\Chat\Realm;
 use App\Chat\Spell;
 use App\Chat\Server;
+use App\Chat\WebNode;
 use App\Chat\Activity;
 use App\Chat\MailList;
 use App\Chat\SsoToken;
+use App\Chat\WebSpace;
 use App\Chat\MailQueue;
 use App\Chat\Allocation;
 use App\Chat\VmInstance;
@@ -36,6 +38,7 @@ use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
 use App\Mail\templates\Welcome;
 use App\CloudFlare\CloudFlareRealIP;
+use App\Helpers\FeatherQuilldClient;
 use App\Helpers\AbuseIPDBBanReporter;
 use App\Helpers\EmailDomainValidator;
 use App\Mail\templates\AccountBanned;
@@ -896,6 +899,10 @@ class UsersController
             $data['remember_token'] = User::generateAccountToken();
         }
 
+        if (array_key_exists('webspace_limit', $data)) {
+            $data['webspace_limit'] = max(0, (int) $data['webspace_limit']);
+        }
+
         $staffUser = $request->attributes->get('user');
         $wasBanned = $user['banned'] === 'true';
         $becameBanned = false;
@@ -971,6 +978,7 @@ class UsersController
                 'suspension_reason' => $banReasonForEmail,
             ]);
         } elseif ($becameUnbanned) {
+            self::unsuspendOwnedWebSpaces((int) $user['id']);
             AccountUnBanned::send([
                 'email' => $user['email'],
                 'subject' => 'Your account has been unsuspended on ' . $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
@@ -1856,6 +1864,18 @@ class UsersController
 
         $abuseipdbReport = AbuseIPDBBanReporter::maybeReport($user, $body, $parsed['reason']);
 
+        foreach (WebSpace::listByOwnerId((int) $user['id']) as $space) {
+            $uuid = (string) ($space['uuid'] ?? '');
+            if ($uuid === '') {
+                continue;
+            }
+            $webNode = WebNode::getWebNodeById((int) ($space['web_node_id'] ?? 0));
+            if ($webNode) {
+                FeatherQuilldClient::powerWebSpace($webNode, $uuid, 'stop');
+            }
+            WebSpace::updateStatus($uuid, 'suspended');
+        }
+
         global $eventManager;
         if (isset($eventManager) && $eventManager !== null) {
             $eventManager->emit(
@@ -1940,6 +1960,8 @@ class UsersController
             return ApiResponse::error('Failed to unban user', 'FAILED_TO_UNBAN_USER', 500);
         }
 
+        self::unsuspendOwnedWebSpaces((int) $user['id']);
+
         global $eventManager;
         if (isset($eventManager) && $eventManager !== null) {
             $eventManager->emit(
@@ -1970,5 +1992,26 @@ class UsersController
         $app->getLogger()->info('User ' . $user['uuid'] . ' unbanned by ' . ($request->attributes->get('user')['uuid'] ?? 'unknown'));
 
         return ApiResponse::success([], 'User unbanned successfully', 200);
+    }
+
+    /**
+     * Restore ban-suspended WebSpaces to installed without auto-starting (mirrors WebSpacesController::unsuspend).
+     */
+    private static function unsuspendOwnedWebSpaces(int $ownerId): void
+    {
+        if ($ownerId <= 0) {
+            return;
+        }
+
+        foreach (WebSpace::listByOwnerId($ownerId) as $space) {
+            if (($space['status'] ?? '') !== 'suspended') {
+                continue;
+            }
+            $spaceUuid = (string) ($space['uuid'] ?? '');
+            if ($spaceUuid === '') {
+                continue;
+            }
+            WebSpace::updateStatus($spaceUuid, 'installed');
+        }
     }
 }

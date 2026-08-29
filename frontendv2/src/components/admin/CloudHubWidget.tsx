@@ -59,9 +59,9 @@ export function CloudHubWidget() {
             description: t('admin.cloud_hub.plugins_desc'),
             href: '/admin/plugins',
             icon: Package,
-            color: 'text-fuchsia-500',
-            bg: 'bg-fuchsia-500/10',
-            border: 'border-fuchsia-500/20',
+            color: 'text-primary',
+            bg: 'bg-primary/10',
+            border: 'border-primary/20',
         },
         {
             name: t('admin.cloud_hub.report_issue'),

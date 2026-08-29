@@ -17,7 +17,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useMemo, useState } from 'react';
 import { CheckCircle2, ChevronDown, Code2, Copy, Loader2, TriangleAlert } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/featherui/Button';
 import { Badge } from '@/components/ui/badge';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { copyToClipboard } from '@/lib/utils';

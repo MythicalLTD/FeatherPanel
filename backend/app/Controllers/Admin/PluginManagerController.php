@@ -1723,6 +1723,17 @@ class {$className}CronExample implements TimeTask
                     'priority' => 350,
                 ],
             ],
+            'webspace' => [
+                '/logsui' => [
+                    'name' => "WebSpace Logs {$className}",
+                    'icon' => '📝',
+                    'redirect' => '/logsui',
+                    'component' => 'webspaceui.html',
+                    'description' => 'View WebSpace logs related to the plugin',
+                    'category' => 'webspace',
+                    'priority' => 350,
+                ],
+            ],
         ], JSON_PRETTY_PRINT);
 
         $frontendJsExample = "// ===============================================
@@ -2305,6 +2316,11 @@ A comprehensive example plugin created with FeatherPanel Plugin Manager that dem
 - **Server Logs**: View plugin-related logs
 - **Scheduled Tasks**: Manage cron jobs and tasks
 - **Sidebar Priority**: Use `group: files` and `priority: 350` to place an item between Backups (300) and Import (400)
+
+### WebSpace Section
+- **WebSpace Logs**: View plugin-related WebSpace pages via `/webspace/{uuidShort}/...`
+- **Widgets**: Use page IDs like `webspace-console`, `webspace-files`, `webspace-databases`
+- **Context cookie**: `webspaceUuid` is injected into plugin component URLs
 
 ### Routes & Controllers
 - **Routes**: Files in `Routes/` directory are automatically registered

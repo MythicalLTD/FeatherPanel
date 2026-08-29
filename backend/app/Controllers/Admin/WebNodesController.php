@@ -25,6 +25,7 @@ use App\Helpers\AppUrlHelper;
 use OpenApi\Attributes as OA;
 use App\Helpers\FeatherQuilldProbe;
 use App\CloudFlare\CloudFlareRealIP;
+use App\Helpers\FeatherQuilldClient;
 use App\Helpers\FeatherQuilldCapabilities;
 use App\Helpers\FeatherQuilldConfigBuilder;
 use App\Plugins\Events\Events\WebNodeEvent;
@@ -56,6 +57,14 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'daemonBase', type: 'string', description: 'FeatherQuilld daemon base path'),
         new OA\Property(property: 'websitesPath', type: 'string', nullable: true, description: 'Volumes path (system.data); defaults to {daemonBase}/volumes'),
         new OA\Property(property: 'backupsPath', type: 'string', nullable: true, description: 'Backup path (system.backup_directory); defaults to {daemonBase}/backups'),
+        new OA\Property(property: 'backupsProvider', type: 'string', nullable: true, description: 'Backup storage provider: local or s3', default: 'local'),
+        new OA\Property(property: 'backupsS3Endpoint', type: 'string', nullable: true, description: 'S3-compatible endpoint URL (empty = AWS default)'),
+        new OA\Property(property: 'backupsS3Region', type: 'string', nullable: true, description: 'S3 region', default: 'us-east-1'),
+        new OA\Property(property: 'backupsS3Bucket', type: 'string', nullable: true, description: 'S3 bucket name'),
+        new OA\Property(property: 'backupsS3AccessKey', type: 'string', nullable: true, description: 'S3 access key'),
+        new OA\Property(property: 'backupsS3SecretKey', type: 'string', nullable: true, description: 'S3 secret key'),
+        new OA\Property(property: 'backupsS3Prefix', type: 'string', nullable: true, description: 'S3 object key prefix', default: 'webspaces/'),
+        new OA\Property(property: 'backupsS3ForcePathStyle', type: 'boolean', nullable: true, description: 'Force path-style S3 addressing (MinIO, etc.)'),
         new OA\Property(property: 'addonsPath', type: 'string', nullable: true, description: 'Plugins path (plugins.directory); only emitted in config when explicitly set'),
         new OA\Property(property: 'quilldConfigOverrides', type: 'string', nullable: true, description: 'Optional JSON object merged into generated FeatherQuilld config (docker, api.ssl, etc.)'),
         new OA\Property(property: 'remoteTimeout', type: 'integer', description: 'Panel API request timeout in seconds', default: 30),
@@ -65,6 +74,12 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'sftpKeyAlgorithm', type: 'string', description: 'SSH key algorithm for SFTP host keys', default: 'ssh-ed25519'),
         new OA\Property(property: 'sftpPort', type: 'integer', description: 'SFTP listen port', default: 2222),
         new OA\Property(property: 'sftpDisablePasswordAuth', type: 'integer', description: 'Whether SFTP password authentication is disabled'),
+        new OA\Property(property: 'proxyEnabled', type: 'boolean', nullable: true, description: 'Whether FeatherQuilld terminates HTTP(S) for WebSpaces'),
+        new OA\Property(property: 'proxyProvider', type: 'string', nullable: true, description: 'Reverse proxy provider: caddy, nginx, or traefik'),
+        new OA\Property(property: 'acmeEmail', type: 'string', nullable: true, description: 'ACME contact email for automatic HTTPS'),
+        new OA\Property(property: 'acmeStaging', type: 'boolean', nullable: true, description: 'Use Let’s Encrypt staging ACME directory'),
+        new OA\Property(property: 'backendPortMin', type: 'integer', description: 'Loopback backend port range start (system.proxy.backend_port_min)', default: 20000),
+        new OA\Property(property: 'backendPortMax', type: 'integer', description: 'Loopback backend port range end (system.proxy.backend_port_max)', default: 29999),
         new OA\Property(property: 'created_at', type: 'string', format: 'date-time', description: 'Creation timestamp'),
         new OA\Property(property: 'updated_at', type: 'string', format: 'date-time', description: 'Last update timestamp'),
     ]
@@ -105,6 +120,14 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'daemonBase', type: 'string', description: 'FeatherQuilld daemon base path', default: '/var/lib/featherquilld'),
         new OA\Property(property: 'websitesPath', type: 'string', nullable: true, description: 'Path where hosted websites are stored (defaults to {daemonBase}/websites)'),
         new OA\Property(property: 'backupsPath', type: 'string', nullable: true, description: 'Path where website backups are stored (defaults to {daemonBase}/backups)'),
+        new OA\Property(property: 'backupsProvider', type: 'string', nullable: true, description: 'Backup storage provider: local or s3', default: 'local'),
+        new OA\Property(property: 'backupsS3Endpoint', type: 'string', nullable: true, description: 'S3-compatible endpoint URL (empty = AWS default)'),
+        new OA\Property(property: 'backupsS3Region', type: 'string', nullable: true, description: 'S3 region', default: 'us-east-1'),
+        new OA\Property(property: 'backupsS3Bucket', type: 'string', nullable: true, description: 'S3 bucket name'),
+        new OA\Property(property: 'backupsS3AccessKey', type: 'string', nullable: true, description: 'S3 access key'),
+        new OA\Property(property: 'backupsS3SecretKey', type: 'string', nullable: true, description: 'S3 secret key'),
+        new OA\Property(property: 'backupsS3Prefix', type: 'string', nullable: true, description: 'S3 object key prefix', default: 'webspaces/'),
+        new OA\Property(property: 'backupsS3ForcePathStyle', type: 'boolean', nullable: true, description: 'Force path-style S3 addressing (MinIO, etc.)'),
         new OA\Property(property: 'addonsPath', type: 'string', nullable: true, description: 'Plugins path; only emitted in config when explicitly set'),
         new OA\Property(property: 'quilldConfigOverrides', type: 'string', nullable: true, description: 'Optional JSON merged into generated FeatherQuilld config'),
         new OA\Property(property: 'remoteTimeout', type: 'integer', description: 'Panel API request timeout in seconds', default: 30),
@@ -114,6 +137,12 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'sftpKeyAlgorithm', type: 'string', description: 'SSH key algorithm for SFTP', default: 'ssh-ed25519'),
         new OA\Property(property: 'sftpPort', type: 'integer', description: 'SFTP listen port', default: 2222),
         new OA\Property(property: 'sftpDisablePasswordAuth', type: 'boolean', description: 'Disable SFTP password authentication', default: false),
+        new OA\Property(property: 'proxyEnabled', type: 'boolean', nullable: true, description: 'Whether FeatherQuilld terminates HTTP(S) for WebSpaces'),
+        new OA\Property(property: 'proxyProvider', type: 'string', nullable: true, description: 'Reverse proxy provider: caddy, nginx, or traefik'),
+        new OA\Property(property: 'acmeEmail', type: 'string', nullable: true, description: 'ACME contact email for automatic HTTPS'),
+        new OA\Property(property: 'acmeStaging', type: 'boolean', nullable: true, description: 'Use Let’s Encrypt staging ACME directory'),
+        new OA\Property(property: 'backendPortMin', type: 'integer', description: 'Loopback backend port range start (system.proxy.backend_port_min)', default: 20000),
+        new OA\Property(property: 'backendPortMax', type: 'integer', description: 'Loopback backend port range end (system.proxy.backend_port_max)', default: 29999),
         new OA\Property(property: 'id', type: 'integer', nullable: true, description: 'Optional web node ID (useful for migrations)'),
     ]
 )]
@@ -138,6 +167,14 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'daemonBase', type: 'string', description: 'FeatherQuilld daemon base path'),
         new OA\Property(property: 'websitesPath', type: 'string', nullable: true, description: 'Volumes path (system.data); defaults to {daemonBase}/volumes'),
         new OA\Property(property: 'backupsPath', type: 'string', nullable: true, description: 'Backup path (system.backup_directory); defaults to {daemonBase}/backups'),
+        new OA\Property(property: 'backupsProvider', type: 'string', nullable: true, description: 'Backup storage provider: local or s3', default: 'local'),
+        new OA\Property(property: 'backupsS3Endpoint', type: 'string', nullable: true, description: 'S3-compatible endpoint URL (empty = AWS default)'),
+        new OA\Property(property: 'backupsS3Region', type: 'string', nullable: true, description: 'S3 region', default: 'us-east-1'),
+        new OA\Property(property: 'backupsS3Bucket', type: 'string', nullable: true, description: 'S3 bucket name'),
+        new OA\Property(property: 'backupsS3AccessKey', type: 'string', nullable: true, description: 'S3 access key'),
+        new OA\Property(property: 'backupsS3SecretKey', type: 'string', nullable: true, description: 'S3 secret key'),
+        new OA\Property(property: 'backupsS3Prefix', type: 'string', nullable: true, description: 'S3 object key prefix', default: 'webspaces/'),
+        new OA\Property(property: 'backupsS3ForcePathStyle', type: 'boolean', nullable: true, description: 'Force path-style S3 addressing (MinIO, etc.)'),
         new OA\Property(property: 'addonsPath', type: 'string', nullable: true, description: 'Plugins path; only emitted in config when explicitly set'),
         new OA\Property(property: 'quilldConfigOverrides', type: 'string', nullable: true, description: 'Optional JSON merged into generated FeatherQuilld config'),
         new OA\Property(property: 'remoteTimeout', type: 'integer', description: 'Panel API request timeout in seconds'),
@@ -147,6 +184,12 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'sftpKeyAlgorithm', type: 'string', description: 'SSH key algorithm for SFTP'),
         new OA\Property(property: 'sftpPort', type: 'integer', description: 'SFTP listen port'),
         new OA\Property(property: 'sftpDisablePasswordAuth', type: 'boolean', description: 'Disable SFTP password authentication'),
+        new OA\Property(property: 'proxyEnabled', type: 'boolean', nullable: true, description: 'Whether FeatherQuilld terminates HTTP(S) for WebSpaces'),
+        new OA\Property(property: 'proxyProvider', type: 'string', nullable: true, description: 'Reverse proxy provider: caddy, nginx, or traefik'),
+        new OA\Property(property: 'acmeEmail', type: 'string', nullable: true, description: 'ACME contact email for automatic HTTPS'),
+        new OA\Property(property: 'acmeStaging', type: 'boolean', nullable: true, description: 'Use Let’s Encrypt staging ACME directory'),
+        new OA\Property(property: 'backendPortMin', type: 'integer', description: 'Loopback backend port range start (system.proxy.backend_port_min)'),
+        new OA\Property(property: 'backendPortMax', type: 'integer', description: 'Loopback backend port range end (system.proxy.backend_port_max)'),
     ]
 )]
 class WebNodesController
@@ -666,6 +709,89 @@ class WebNodesController
                 'fqdn' => (string) ($webNode['fqdn'] ?? ''),
             ],
         ], $probe['status'] === 'healthy' ? 'Daemon is healthy' : 'Daemon is unhealthy', 200);
+    }
+
+    public function systemInfo(Request $request, int $id): Response
+    {
+        $webNode = WebNode::getWebNodeById($id);
+        if (!$webNode) {
+            return ApiResponse::error('Web node not found', 'WEB_NODE_NOT_FOUND', 404);
+        }
+
+        $result = FeatherQuilldClient::getSystem($webNode);
+        if (!$result['ok']) {
+            return ApiResponse::error(
+                $result['error'] ?? 'Failed to reach FeatherQuilld system endpoint',
+                'DAEMON_SYSTEM_FAILED',
+                502,
+                ['daemon' => $result],
+            );
+        }
+
+        return ApiResponse::success([
+            'system' => $result['body'],
+            'node' => [
+                'id' => (int) $webNode['id'],
+                'uuid' => (string) ($webNode['uuid'] ?? ''),
+                'fqdn' => (string) ($webNode['fqdn'] ?? ''),
+            ],
+        ], 'OK', 200);
+    }
+
+    public function utilization(Request $request, int $id): Response
+    {
+        $webNode = WebNode::getWebNodeById($id);
+        if (!$webNode) {
+            return ApiResponse::error('Web node not found', 'WEB_NODE_NOT_FOUND', 404);
+        }
+
+        $result = FeatherQuilldClient::getUtilization($webNode);
+        if (!$result['ok']) {
+            return ApiResponse::error(
+                $result['error'] ?? 'Failed to reach FeatherQuilld utilization endpoint',
+                'DAEMON_UTILIZATION_FAILED',
+                502,
+                ['daemon' => $result],
+            );
+        }
+
+        $body = is_array($result['body']) ? $result['body'] : [];
+
+        return ApiResponse::success([
+            'utilization' => $body['utilization'] ?? $body,
+            'node' => [
+                'id' => (int) $webNode['id'],
+                'uuid' => (string) ($webNode['uuid'] ?? ''),
+                'fqdn' => (string) ($webNode['fqdn'] ?? ''),
+            ],
+        ], 'OK', 200);
+    }
+
+    public function diagnostics(Request $request, int $id): Response
+    {
+        $webNode = WebNode::getWebNodeById($id);
+        if (!$webNode) {
+            return ApiResponse::error('Web node not found', 'WEB_NODE_NOT_FOUND', 404);
+        }
+
+        $result = FeatherQuilldClient::getDiagnostics($webNode);
+        if (!$result['ok']) {
+            return ApiResponse::error(
+                $result['error'] ?? 'Failed to reach FeatherQuilld diagnostics endpoint',
+                'DAEMON_DIAGNOSTICS_FAILED',
+                502,
+                ['daemon' => $result],
+            );
+        }
+
+        return ApiResponse::success([
+            'diagnostics' => $result['body'],
+            'node' => [
+                'id' => (int) $webNode['id'],
+                'uuid' => (string) ($webNode['uuid'] ?? ''),
+                'fqdn' => (string) ($webNode['fqdn'] ?? ''),
+            ],
+        ], 'OK', 200);
     }
 
     /**

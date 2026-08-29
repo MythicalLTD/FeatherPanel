@@ -26,16 +26,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
@@ -142,33 +133,26 @@ export function ServerPowerMenu({ uuidShort, serverName, disabled = false }: Ser
                 </DropdownMenuContent>
             </DropdownMenu>
 
-            <AlertDialog open={showKillConfirm} onOpenChange={setShowKillConfirm}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>{t('servers.console.kill_confirm_title')}</AlertDialogTitle>
-                        <AlertDialogDescription>{t('servers.console.kill_confirm_description')}</AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <div className='flex items-center space-x-2 py-4'>
-                        <Checkbox
-                            id={`kill-confirm-${uuidShort}`}
-                            checked={dontAskAgain}
-                            onCheckedChange={(checked) => setDontAskAgain(checked === true)}
-                        />
-                        <Label htmlFor={`kill-confirm-${uuidShort}`} className='cursor-pointer text-sm font-normal'>
-                            {t('servers.console.kill_dont_ask_again')}
-                        </Label>
-                    </div>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
-                        <AlertDialogAction
-                            onClick={() => void handleKillConfirm()}
-                            className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
-                        >
-                            {t('servers.console.kill_confirm')}
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+            <ConfirmDialog
+                open={showKillConfirm}
+                onOpenChange={setShowKillConfirm}
+                title={t('servers.console.kill_confirm_title')}
+                description={t('servers.console.kill_confirm_description')}
+                confirmLabel={t('servers.console.kill_confirm')}
+                cancelLabel={t('common.cancel')}
+                onConfirm={handleKillConfirm}
+            >
+                <div className='flex items-center space-x-2 py-4'>
+                    <Checkbox
+                        id={`kill-confirm-${uuidShort}`}
+                        checked={dontAskAgain}
+                        onCheckedChange={(checked) => setDontAskAgain(checked === true)}
+                    />
+                    <Label htmlFor={`kill-confirm-${uuidShort}`} className='cursor-pointer text-sm font-normal'>
+                        {t('servers.console.kill_dont_ask_again')}
+                    </Label>
+                </div>
+            </ConfirmDialog>
         </>
     );
 }

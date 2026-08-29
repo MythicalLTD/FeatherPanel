@@ -13,6 +13,7 @@ by the Free Software Foundation, either version 3 of the License, or
 See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
+import { APP_MONO_FONT_STACK } from '@/lib/mono-font';
 import { css } from '@codemirror/lang-css';
 import { html } from '@codemirror/lang-html';
 import { javascript } from '@codemirror/lang-javascript';
@@ -29,7 +30,7 @@ const editorTheme = EditorView.theme({
     '&': { height: '100%' },
     '.cm-scroller': {
         overflow: 'auto',
-        fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+        fontFamily: APP_MONO_FONT_STACK,
         fontSize: '14px',
     },
     '.cm-content': { paddingTop: '20px' },

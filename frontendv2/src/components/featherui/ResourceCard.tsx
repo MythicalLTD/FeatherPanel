@@ -181,8 +181,16 @@ export function ResourceCard({
         );
     }
 
+    if (onClick) {
+        return (
+            <button type='button' onClick={onClick} style={style} className={cn(cardClassName, 'w-full text-left')}>
+                {cardBody}
+            </button>
+        );
+    }
+
     return (
-        <div onClick={onClick} style={style} className={cardClassName}>
+        <div style={style} className={cardClassName}>
             {cardBody}
         </div>
     );

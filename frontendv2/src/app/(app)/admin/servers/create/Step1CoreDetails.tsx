@@ -129,6 +129,19 @@ export function Step1CoreDetails({
                             onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, skipScripts: checked }))}
                         />
                     </div>
+
+                    <div className='bg-muted/20 border-border/50 flex items-center justify-between rounded-xl border p-4'>
+                        <div className='space-y-0.5'>
+                            <Label>{t('admin.servers.edit.details.show_on_status')}</Label>
+                            <p className='text-muted-foreground text-xs'>
+                                {t('admin.servers.edit.details.show_on_status_help')}
+                            </p>
+                        </div>
+                        <Switch
+                            checked={formData.showOnStatus}
+                            onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, showOnStatus: checked }))}
+                        />
+                    </div>
                 </div>
             </PageCard>
         </div>

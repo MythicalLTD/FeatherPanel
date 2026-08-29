@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { APP_MONO_FONT_STACK } from '@/lib/mono-font';
 import React, { useRef } from 'react';
 import { Editor, EditorProps, OnMount } from '@monaco-editor/react';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -94,7 +95,7 @@ export function FeatherIDE({ className, containerClassName, options, title, ...p
                         scrollBeyondLastLine: false,
                         automaticLayout: true,
                         padding: { top: 10, bottom: 10 },
-                        fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+                        fontFamily: APP_MONO_FONT_STACK,
                         fontLigatures: true,
                         formatOnPaste: true,
                         formatOnType: true,

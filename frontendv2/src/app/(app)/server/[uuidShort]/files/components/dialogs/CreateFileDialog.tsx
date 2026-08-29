@@ -25,7 +25,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { filesApi } from '@/lib/files-api';
+import { useFileManagerApi } from '@/contexts/FileManagerApiContext';
 import { getFeatherpanelApiErrorMessage } from '@/lib/api';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { Textarea } from '@/components/featherui/Textarea';
@@ -39,6 +39,7 @@ interface CreateFileDialogProps {
 }
 
 export function CreateFileDialog({ open, onOpenChange, uuid, root, onSuccess }: CreateFileDialogProps) {
+    const filesApi = useFileManagerApi();
     const { t } = useTranslation();
     const [name, setName] = useState('');
     const [content, setContent] = useState('');

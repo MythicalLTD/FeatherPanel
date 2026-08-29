@@ -244,10 +244,7 @@ export default function CreatePluginPage() {
             <div className='mx-auto max-w-4xl px-4 py-8'>
                 <EmptyState
                     title={t('admin.dev.developerModeRequired')}
-                    description={
-                        t('admin.dev.developerModeDescription') ||
-                        'Developer mode must be enabled in settings to access developer tools.'
-                    }
+                    description={t('admin.dev.developerModeDescription')}
                     icon={Lock}
                     action={
                         <Button variant='outline' onClick={() => router.push('/admin/settings')}>

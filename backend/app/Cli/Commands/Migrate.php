@@ -201,6 +201,7 @@ class Migrate extends App implements CommandBuilder
         }
 
         self::clearCache();
+        self::seedSystemWebPlates($cliApp);
 
         $totalTime = round((microtime(true) - $startTime) * 1000, 2);
 
@@ -251,6 +252,27 @@ class Migrate extends App implements CommandBuilder
     public static function getSubCommands(): array
     {
         return [];
+    }
+
+    /**
+     * Refresh bundled WebPlate templates (static / PHP / Node / Python).
+     */
+    private static function seedSystemWebPlates(App $cliApp): void
+    {
+        $cliApp->send('&7' . str_repeat('─', 50));
+        $cliApp->send($cliApp->color3 . '&l🌱 Seeding system WebPlates...');
+
+        try {
+            $result = \App\Chat\WebPlate::seedSystemDefaults();
+            $cliApp->send(
+                '&a&l✅ WebPlates: &r&f'
+                . $result['created'] . '&r&a created, &r&f'
+                . $result['updated'] . '&r&a updated, &r&f'
+                . $result['skipped'] . '&r&a skipped',
+            );
+        } catch (\Throwable $e) {
+            $cliApp->send('&c&l⚠️  WebPlate seed failed: &r' . $e->getMessage());
+        }
     }
 
     private static function getMigrationSQL(): string

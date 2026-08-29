@@ -955,8 +955,7 @@ export default function AdminSubdomainsPage() {
                                             {t('admin.subdomains.mappingsTitle')}
                                         </Label>
                                         <p className='text-muted-foreground/60 text-[10px]'>
-                                            {t('admin.subdomains.mappingsDescription') ||
-                                                'Configure spell routing rules.'}
+                                            {t('admin.subdomains.mappingsDescription')}
                                         </p>
                                     </div>
                                     <Button

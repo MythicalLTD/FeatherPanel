@@ -19,6 +19,15 @@ import type { FileObject } from '@/types/server';
 /** Internal trash folder on the server (hidden from file manager listings). */
 export const FEATHER_TRASH_DIR = '.featherpanel-trash';
 
+/** Database dump folder managed via Backups → Database dumps (hidden from file manager). */
+export const DATABASE_BACKUPS_DIR = '.featherpanel-database-backups';
+
+/** Legacy dump folder name (still hidden if leftover dumps exist). */
+export const LEGACY_DATABASE_BACKUPS_DIR = 'database-backups';
+
+/** Panel metadata pack folder written before full Wings backups (hidden from file manager). */
+export const FEATHERPANEL_BACKUP_META_DIR = '.featherpanel-backup';
+
 export type TrashFolderStats = {
     totalSize: number;
     lastModified: string | null;
@@ -66,17 +75,41 @@ export function createTrashFolderEntry(stats?: TrashFolderStats): FileObject {
     };
 }
 
+function normalizeEntryPath(name: string): string {
+    return name.replace(/\\/g, '/').replace(/^\/+/, '');
+}
+
 export function isFeatherTrashEntry(name: string): boolean {
-    const n = name.replace(/\\/g, '/').replace(/^\/+/, '');
+    const n = normalizeEntryPath(name);
     return n === FEATHER_TRASH_DIR || n.startsWith(`${FEATHER_TRASH_DIR}/`);
 }
 
+export function isDatabaseBackupsEntry(name: string): boolean {
+    const n = normalizeEntryPath(name);
+    return (
+        n === DATABASE_BACKUPS_DIR ||
+        n.startsWith(`${DATABASE_BACKUPS_DIR}/`) ||
+        n === LEGACY_DATABASE_BACKUPS_DIR ||
+        n.startsWith(`${LEGACY_DATABASE_BACKUPS_DIR}/`)
+    );
+}
+
+export function isFeatherpanelBackupMetaEntry(name: string): boolean {
+    const n = normalizeEntryPath(name);
+    return n === FEATHERPANEL_BACKUP_META_DIR || n.startsWith(`${FEATHERPANEL_BACKUP_META_DIR}/`);
+}
+
+/** Paths that should not appear or be navigable in the file manager UI. */
+export function isHiddenServerEntry(name: string): boolean {
+    return isFeatherTrashEntry(name) || isDatabaseBackupsEntry(name) || isFeatherpanelBackupMetaEntry(name);
+}
+
 export function filterFeatherTrashFiles<T extends { name: string }>(files: T[]): T[] {
-    return files.filter((f) => !isFeatherTrashEntry(f.name));
+    return files.filter((f) => !isHiddenServerEntry(f.name));
 }
 
 export function filterFeatherTrashNames(names: string[]): string[] {
-    return names.filter((n) => !isFeatherTrashEntry(n));
+    return names.filter((n) => !isHiddenServerEntry(n));
 }
 
 export function filterSelectableFiles<T extends Pick<FileObject, 'isTrashShortcut'>>(files: T[]): T[] {

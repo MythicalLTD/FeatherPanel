@@ -85,7 +85,7 @@ export function UtilizationTab({ loading, data, error, onRefresh }: UtilizationT
             value: percentOf(utilization.memory_used, utilization.memory_total),
             label: `${formatBytes(utilization.memory_used)} / ${formatBytes(utilization.memory_total)}`,
             icon: Zap,
-            color: 'bg-purple-500',
+            color: 'bg-primary',
             stats: [
                 {
                     label: t('admin.node.view.utilization.memory_percent'),

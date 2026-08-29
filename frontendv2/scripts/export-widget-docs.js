@@ -27,6 +27,7 @@ const PUBLIC_DOCS_DIR = path.join(__dirname, '../public/icanhasfeatherpanel');
 const WIDGETS_DOCS_DIR = path.join(PUBLIC_DOCS_DIR, 'widgets');
 
 const SLUG_REGEX = /usePluginWidgets\s*\(\s*['"]([^'"]+)['"]\s*\)/g;
+const WEBSPACE_PAGE_ID_REGEX = /WebSpacePageWidgets\s+pageId\s*=\s*['"]([^'"]+)['"]/g;
 const IP_PROPS_REGEX = /injectionPoint\s*=\s*['"]([^'"]+)['"]/g;
 const IP_GETWIDGETS_REGEX = /getWidgets\s*\(\s*['"][^'"]+['"]\s*,\s*['"]([^'"]+)['"]\s*\)/g;
 
@@ -51,7 +52,10 @@ function extractDocs() {
     files.forEach((file) => {
         const content = fs.readFileSync(file, 'utf8');
 
-        const slugs = [...content.matchAll(SLUG_REGEX)].map((m) => m[1]);
+        const slugs = [
+            ...[...content.matchAll(SLUG_REGEX)].map((m) => m[1]),
+            ...[...content.matchAll(WEBSPACE_PAGE_ID_REGEX)].map((m) => m[1]),
+        ];
 
         if (slugs.length > 0) {
             const relativePath = path.relative(path.join(__dirname, '..'), file);
@@ -75,6 +79,12 @@ function extractDocs() {
                 // Pattern 2: getWidgets(slug, "name")
                 const ipMatches2 = [...content.matchAll(IP_GETWIDGETS_REGEX)].map((m) => m[1]);
                 ipMatches2.forEach((ip) => results[slug].injectionPoints.add(ip));
+
+                // WebSpacePageWidgets always exposes top/bottom slots
+                if (content.includes(`pageId='${slug}'`) || content.includes(`pageId="${slug}"`)) {
+                    results[slug].injectionPoints.add('top-of-page');
+                    results[slug].injectionPoints.add('bottom-of-page');
+                }
             });
         }
     });

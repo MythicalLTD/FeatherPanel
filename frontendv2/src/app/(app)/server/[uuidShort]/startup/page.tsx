@@ -37,6 +37,7 @@ import {
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Textarea } from '@/components/featherui/Textarea';
+import { FormSection } from '@/components/featherui/FormSection';
 import { toast } from 'sonner';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -366,14 +367,12 @@ export default function ServerStartupPage() {
         const envVariable = customVariableForm.env_variable.trim().toUpperCase();
 
         if (!name || !envVariable) {
-            toast.error('Name and environment variable are required');
+            toast.error(t('serverStartup.customEnv.required'));
             return;
         }
 
         if (!/^[A-Z_][A-Z0-9_]*$/.test(envVariable)) {
-            toast.error(
-                'Env variable must use uppercase letters, numbers, and underscores, and cannot start with a number',
-            );
+            toast.error(t('serverStartup.customEnv.invalidEnv'));
             return;
         }
 
@@ -390,15 +389,15 @@ export default function ServerStartupPage() {
             );
 
             if (data.success) {
-                toast.success('Custom variable added');
+                toast.success(t('serverStartup.customEnv.added'));
                 setCustomVariableForm({ name: '', env_variable: '', variable_value: '', is_encrypted: false });
                 await fetchData();
             } else {
-                toast.error(data.message || 'Failed to add custom variable');
+                toast.error(data.message || t('serverStartup.customEnv.addFailed'));
             }
         } catch (error) {
             const axiosError = error as AxiosError<{ message?: string }>;
-            toast.error(axiosError.response?.data?.message || 'Failed to add custom variable');
+            toast.error(axiosError.response?.data?.message || t('serverStartup.customEnv.addFailed'));
         } finally {
             setCustomVariableSaving(false);
         }
@@ -412,14 +411,14 @@ export default function ServerStartupPage() {
             );
 
             if (data.success) {
-                toast.success('Custom variable deleted');
+                toast.success(t('serverStartup.customEnv.deleted'));
                 await fetchData();
             } else {
-                toast.error(data.message || 'Failed to delete custom variable');
+                toast.error(data.message || t('serverStartup.customEnv.deleteFailed'));
             }
         } catch (error) {
             const axiosError = error as AxiosError<{ message?: string }>;
-            toast.error(axiosError.response?.data?.message || 'Failed to delete custom variable');
+            toast.error(axiosError.response?.data?.message || t('serverStartup.customEnv.deleteFailed'));
         } finally {
             setCustomVariableSaving(false);
         }
@@ -443,7 +442,7 @@ export default function ServerStartupPage() {
 
     if (!canRead) {
         return (
-            <div className='bg-card/40 border-border/5 flex flex-col items-center justify-center space-y-8 rounded-[3rem] border py-24 text-center backdrop-blur-3xl'>
+            <div className='bg-card/40 border-border/5 flex flex-col items-center justify-center space-y-8 rounded-3xl border py-24 text-center backdrop-blur-3xl'>
                 <div className='relative'>
                     <div className='absolute inset-0 scale-150 rounded-full bg-red-500/20 blur-3xl' />
                     <div className='relative flex h-32 w-32 rotate-3 items-center justify-center rounded-3xl border-2 border-red-500/20 bg-red-500/10'>
@@ -577,7 +576,7 @@ export default function ServerStartupPage() {
                                                         'h-1.5 w-1.5 rounded-full transition-all duration-300',
                                                         variableErrors[v.variable_id]
                                                             ? 'bg-red-500'
-                                                            : 'bg-purple-500/50 group-hover/var:bg-purple-500',
+                                                            : 'bg-primary/50 group-hover/var:bg-primary',
                                                     )}
                                                 />
                                                 <label className='text-muted-foreground group-hover/var:text-foreground text-[9px] font-black tracking-[0.2em] uppercase transition-colors'>
@@ -629,10 +628,10 @@ export default function ServerStartupPage() {
                             <div className='flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between'>
                                 <div>
                                     <h3 className='text-sm font-black tracking-widest uppercase'>
-                                        Custom environment variables
+                                        {t('serverStartup.customEnv.title')}
                                     </h3>
                                     <p className='text-muted-foreground/50 mt-1 text-xs font-medium'>
-                                        Added directly to this server and synced without a transfer.
+                                        {t('serverStartup.customEnv.description')}
                                     </p>
                                 </div>
                             </div>
@@ -661,7 +660,9 @@ export default function ServerStartupPage() {
                                                 onClick={() => handleDeleteCustomVariable(variable)}
                                                 disabled={!canManageCustomVariables || customVariableSaving}
                                                 className='shrink-0'
-                                                aria-label={`Delete ${variable.env_variable}`}
+                                                aria-label={t('serverStartup.customEnv.deleteAria', {
+                                                    name: variable.env_variable,
+                                                })}
                                             >
                                                 <Trash2 className='h-3.5 w-3.5' />
                                             </Button>
@@ -678,7 +679,7 @@ export default function ServerStartupPage() {
                                             setCustomVariableForm((prev) => ({ ...prev, name: e.target.value }))
                                         }
                                         disabled={customVariableSaving}
-                                        placeholder='Display name'
+                                        placeholder={t('serverStartup.customEnv.namePlaceholder')}
                                     />
                                     <Input
                                         value={customVariableForm.env_variable}
@@ -689,7 +690,7 @@ export default function ServerStartupPage() {
                                             }))
                                         }
                                         disabled={customVariableSaving}
-                                        placeholder='ENV_NAME'
+                                        placeholder={t('serverStartup.customEnv.envPlaceholder')}
                                         className='font-mono text-xs'
                                     />
                                     <div className='flex gap-3'>
@@ -702,7 +703,7 @@ export default function ServerStartupPage() {
                                                 }))
                                             }
                                             disabled={customVariableSaving}
-                                            placeholder='Value'
+                                            placeholder={t('serverStartup.customEnv.valuePlaceholder')}
                                             className='font-mono text-xs'
                                         />
                                         <Button
@@ -729,7 +730,7 @@ export default function ServerStartupPage() {
                                             disabled={customVariableSaving}
                                             className='mt-0.5 h-4 w-4 rounded border-white/20 bg-white/5'
                                         />
-                                        <span>Encrypt this value and hide it after save</span>
+                                        <span>{t('serverStartup.customEnv.encrypt')}</span>
                                     </label>
                                 </div>
                             )}
@@ -838,7 +839,7 @@ export default function ServerStartupPage() {
                     <WidgetRenderer widgets={getWidgets('server-startup', 'after-docker-image')} />
 
                     {canChangeSpell && (
-                        <div className='bg-primary/5 border-primary/10 group relative space-y-6 overflow-hidden rounded-3xl border p-8 backdrop-blur-3xl'>
+                        <FormSection className='bg-primary/5 border-primary/10 group relative overflow-hidden'>
                             <div className='bg-primary/10 group-hover:bg-primary/20 pointer-events-none absolute -right-12 -bottom-12 h-48 w-48 blur-3xl transition-all duration-1000' />
                             <div className='relative z-10 flex items-center gap-5'>
                                 <div className='bg-primary/10 border-primary/20 flex h-12 w-12 items-center justify-center rounded-2xl border transition-all duration-500 group-hover:scale-110 group-hover:rotate-3'>
@@ -867,7 +868,7 @@ export default function ServerStartupPage() {
                                 {t('serverStartup.startTransfer')}
                                 <ChevronRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
                             </Button>
-                        </div>
+                        </FormSection>
                     )}
                     <WidgetRenderer widgets={getWidgets('server-startup', 'after-spell-selection')} />
                 </div>

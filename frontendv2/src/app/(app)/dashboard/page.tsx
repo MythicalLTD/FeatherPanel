@@ -42,6 +42,7 @@ import type { VmInstance } from '@/lib/vms-api';
 
 import { ServerCard } from '@/components/servers/ServerCard';
 import { VmCard } from '@/components/vms/VmCard';
+import { WebSpaceCard, type DashboardWebSpace } from '@/components/webspace/WebSpaceCard';
 import { ActivityFeed } from '@/components/dashboard/ActivityFeed';
 import { AnnouncementBanner } from '@/components/dashboard/AnnouncementBanner';
 import { TicketList } from '@/components/dashboard/TicketList';
@@ -67,7 +68,7 @@ import {
 } from '@/hooks/useDashboardLayout';
 import { useFavoriteServerUuids } from '@/hooks/useFavoriteServerUuids';
 
-type ResourceFilter = 'all' | 'servers' | 'vds';
+type ResourceFilter = 'all' | 'servers' | 'vds' | 'webspaces';
 
 type BlockChromeProps = {
     blockId: DashboardBlockId;
@@ -163,11 +164,14 @@ export default function DashboardPage() {
     const dateOpts = useDateFormatOptions();
     const [allServers, setAllServers] = useState<ServerData[]>([]);
     const [vms, setVms] = useState<VmInstance[]>([]);
+    const [webspaces, setWebspaces] = useState<DashboardWebSpace[]>([]);
     const [serverTotal, setServerTotal] = useState(0);
     const [vmTotal, setVmTotal] = useState(0);
+    const [webspaceTotal, setWebspaceTotal] = useState(0);
     const [activities, setActivities] = useState<Activity[]>([]);
     const [loadingServers, setLoadingServers] = useState(true);
     const [loadingVms, setLoadingVms] = useState(true);
+    const [loadingWebspaces, setLoadingWebspaces] = useState(true);
     const [loadingActivity, setLoadingActivity] = useState(true);
     const [resourceFilter, setResourceFilter] = useState<ResourceFilter>('all');
     const { settings } = useSettings();
@@ -277,6 +281,24 @@ export default function DashboardPage() {
                 setLoadingVms(false);
             }
 
+            try {
+                const { data } = await axios.get('/api/user/webspaces');
+                const list = Array.isArray(data?.data?.webspaces) ? (data.data.webspaces as DashboardWebSpace[]) : [];
+                setWebspaces(list.slice(0, 5));
+                setWebspaceTotal(
+                    typeof data?.data?.pagination?.total === 'number'
+                        ? data.data.pagination.total
+                        : typeof data?.data?.pagination?.total_records === 'number'
+                          ? data.data.pagination.total_records
+                          : list.length,
+                );
+            } catch (err) {
+                console.error('Failed to fetch WebSpaces', err);
+                setWebspaceTotal(0);
+            } finally {
+                setLoadingWebspaces(false);
+            }
+
             // Fetch Activity
             try {
                 const { data } = await axios.get('/api/user/activities?limit=5');
@@ -336,18 +358,37 @@ export default function DashboardPage() {
     };
 
     useEffect(() => {
-        if (loadingServers || loadingVms) {
+        if (loadingServers || loadingVms || loadingWebspaces) {
             return;
         }
-        if (serverTotal > 0 && vmTotal > 0) {
+        const typeCount = [serverTotal > 0, vmTotal > 0, webspaceTotal > 0].filter(Boolean).length;
+        if (typeCount >= 2) {
             return;
         }
         setResourceFilter('all');
-    }, [loadingServers, loadingVms, serverTotal, vmTotal]);
+    }, [loadingServers, loadingVms, loadingWebspaces, serverTotal, vmTotal, webspaceTotal]);
 
     const blockLabel = (id: DashboardBlockId) => t(BLOCK_LABEL_KEYS[id]);
 
-    const showResourceFilterTabs = !loadingServers && !loadingVms && serverTotal > 0 && vmTotal > 0;
+    const resourceTypeCount = [serverTotal > 0, vmTotal > 0, webspaceTotal > 0].filter(Boolean).length;
+    const showResourceFilterTabs = !loadingServers && !loadingVms && !loadingWebspaces && resourceTypeCount >= 2;
+
+    const resourceFilters = (
+        [
+            { id: 'all' as const, label: t('dashboard.resources.filter_all'), show: true },
+            {
+                id: 'servers' as const,
+                label: t('dashboard.resources.filter_servers'),
+                show: serverTotal > 0,
+            },
+            { id: 'vds' as const, label: t('dashboard.resources.filter_vms'), show: vmTotal > 0 },
+            {
+                id: 'webspaces' as const,
+                label: t('dashboard.resources.filter_webspaces'),
+                show: webspaceTotal > 0,
+            },
+        ] as const
+    ).filter((f) => f.show);
 
     const resourcesSection = (
         <div className='space-y-6'>
@@ -357,23 +398,19 @@ export default function DashboardPage() {
                 {showResourceFilterTabs ? (
                     <div className='-mx-0.5 w-full min-w-0 overflow-x-auto overscroll-x-contain px-0.5 pb-0.5 sm:mx-0 sm:w-auto sm:overflow-visible sm:px-0'>
                         <div className='bg-background/30 border-border/50 inline-flex w-max max-w-full items-center gap-0.5 rounded-lg border p-1 sm:flex sm:w-auto'>
-                            {(['all', 'servers', 'vds'] as const).map((filter) => (
+                            {resourceFilters.map((filter) => (
                                 <button
-                                    key={filter}
+                                    key={filter.id}
                                     type='button'
-                                    onClick={() => setResourceFilter(filter)}
+                                    onClick={() => setResourceFilter(filter.id)}
                                     className={cn(
                                         'shrink-0 rounded-md px-3 py-2 text-xs font-medium whitespace-nowrap transition-all sm:px-4 sm:text-sm',
-                                        resourceFilter === filter
+                                        resourceFilter === filter.id
                                             ? 'bg-primary text-primary-foreground shadow-md'
                                             : 'text-muted-foreground hover:text-foreground hover:bg-background/50',
                                     )}
                                 >
-                                    {filter === 'all'
-                                        ? t('dashboard.resources.filter_all')
-                                        : filter === 'servers'
-                                          ? t('dashboard.resources.filter_servers')
-                                          : t('dashboard.resources.filter_vms')}
+                                    {filter.label}
                                 </button>
                             ))}
                         </div>
@@ -381,7 +418,7 @@ export default function DashboardPage() {
                 ) : null}
             </div>
 
-            {loadingServers || loadingVms ? (
+            {loadingServers || loadingVms || loadingWebspaces ? (
                 <div className='flex items-center justify-center py-12'>
                     <Server className='text-muted-foreground h-8 w-8 animate-spin' />
                 </div>
@@ -401,9 +438,12 @@ export default function DashboardPage() {
                                 ? allServers.filter((s) => !favSet.has(s.uuid)).slice(0, 5)
                                 : [];
                         const displayVms = resourceFilter === 'all' || resourceFilter === 'vds' ? vms : [];
+                        const displayWebspaces =
+                            resourceFilter === 'all' || resourceFilter === 'webspaces' ? webspaces : [];
                         const otherResources = [
                             ...displayServers.map((s) => ({ type: 'server' as const, data: s })),
                             ...displayVms.map((v) => ({ type: 'vm' as const, data: v })),
+                            ...displayWebspaces.map((w) => ({ type: 'webspace' as const, data: w })),
                         ];
 
                         if (!showFavoriteBlock && otherResources.length === 0) {
@@ -415,7 +455,9 @@ export default function DashboardPage() {
                                             ? t('dashboard.resources.no_resources')
                                             : resourceFilter === 'servers'
                                               ? t('dashboard.resources.no_servers')
-                                              : t('dashboard.resources.no_vms')}
+                                              : resourceFilter === 'vds'
+                                                ? t('dashboard.resources.no_vms')
+                                                : t('dashboard.resources.no_webspaces')}
                                     </p>
                                     <p className='text-muted-foreground/70 mt-1 text-sm'>
                                         {t('dashboard.resources.create_first')}
@@ -460,11 +502,25 @@ export default function DashboardPage() {
                                 {otherResources.length > 0 ? (
                                     <div className='stagger-children space-y-4'>
                                         {otherResources.map((resource, idx) => (
-                                            <div key={`${resource.type}-${idx}`} className='stagger-child'>
+                                            <div
+                                                key={`${resource.type}-${idx}-${
+                                                    resource.type === 'server'
+                                                        ? (resource.data as ServerData).uuid
+                                                        : resource.type === 'vm'
+                                                          ? (resource.data as VmInstance).id
+                                                          : (resource.data as DashboardWebSpace).uuid
+                                                }`}
+                                                className='stagger-child'
+                                            >
                                                 {resource.type === 'server' ? (
                                                     <ServerCard {...serverCardProps(resource.data as ServerData)} />
-                                                ) : (
+                                                ) : resource.type === 'vm' ? (
                                                     <VmCard vm={resource.data as VmInstance} layout='list' />
+                                                ) : (
+                                                    <WebSpaceCard
+                                                        webspace={resource.data as DashboardWebSpace}
+                                                        layout='list'
+                                                    />
                                                 )}
                                             </div>
                                         ))}

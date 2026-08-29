@@ -38,6 +38,21 @@ export interface WebNodeForm {
     daemonBase: string;
     websitesPath: string;
     backupsPath: string;
+    backupsProvider: string;
+    backupsS3Endpoint: string;
+    backupsS3Region: string;
+    backupsS3Bucket: string;
+    backupsS3AccessKey: string;
+    backupsS3SecretKey: string;
+    backupsS3Prefix: string;
+    backupsS3ForcePathStyle: string;
+    backupsResticRepository: string;
+    backupsResticPassword: string;
+    backupsResticBinary: string;
+    backupsPbsRepository: string;
+    backupsPbsPassword: string;
+    backupsPbsFingerprint: string;
+    backupsPbsBinary: string;
     addonsPath: string;
     quilldConfigOverrides: string;
     remoteTimeout: number;
@@ -47,6 +62,12 @@ export interface WebNodeForm {
     sftpKeyAlgorithm: string;
     sftpPort: number;
     sftpDisablePasswordAuth: string;
+    proxyEnabled: string;
+    proxyProvider: string;
+    acmeEmail: string;
+    acmeStaging: string;
+    backendPortMin: number;
+    backendPortMax: number;
 }
 
 export function parseCustomHeaderEntries(
@@ -136,6 +157,21 @@ export function defaultWebNodeForm(): WebNodeForm {
         daemonBase: '/var/lib/featherquilld',
         websitesPath: '',
         backupsPath: '',
+        backupsProvider: 'local',
+        backupsS3Endpoint: '',
+        backupsS3Region: 'us-east-1',
+        backupsS3Bucket: '',
+        backupsS3AccessKey: '',
+        backupsS3SecretKey: '',
+        backupsS3Prefix: 'webspaces/',
+        backupsS3ForcePathStyle: 'false',
+        backupsResticRepository: '',
+        backupsResticPassword: '',
+        backupsResticBinary: '',
+        backupsPbsRepository: '',
+        backupsPbsPassword: '',
+        backupsPbsFingerprint: '',
+        backupsPbsBinary: '',
         addonsPath: '',
         quilldConfigOverrides: '',
         remoteTimeout: 30,
@@ -145,13 +181,19 @@ export function defaultWebNodeForm(): WebNodeForm {
         sftpKeyAlgorithm: 'ssh-ed25519',
         sftpPort: 2222,
         sftpDisablePasswordAuth: 'false',
+        proxyEnabled: 'true',
+        proxyProvider: 'caddy',
+        acmeEmail: '',
+        acmeStaging: 'false',
+        backendPortMin: 20000,
+        backendPortMax: 29999,
     };
 }
 
 export function buildWebNodeSubmitPayload(form: WebNodeForm) {
     const { remoteCustomHeaderEntries, ...rest } = form;
 
-    return {
+    const payload = {
         ...rest,
         location_id: parseInt(form.location_id, 10),
         public: form.public === 'true',
@@ -165,6 +207,21 @@ export function buildWebNodeSubmitPayload(form: WebNodeForm) {
         daemonListen: Number(form.daemonListen),
         websitesPath: form.websitesPath.trim() || null,
         backupsPath: form.backupsPath.trim() || null,
+        backupsProvider: form.backupsProvider || 'local',
+        backupsS3Endpoint: form.backupsS3Endpoint.trim() || null,
+        backupsS3Region: form.backupsS3Region.trim() || null,
+        backupsS3Bucket: form.backupsS3Bucket.trim() || null,
+        backupsS3AccessKey: form.backupsS3AccessKey.trim() || null,
+        backupsS3SecretKey: form.backupsS3SecretKey.trim() || null,
+        backupsS3Prefix: form.backupsS3Prefix.trim() || null,
+        backupsS3ForcePathStyle: form.backupsS3ForcePathStyle === 'true',
+        backupsResticRepository: form.backupsResticRepository.trim() || null,
+        backupsResticPassword: form.backupsResticPassword.trim() || null,
+        backupsResticBinary: form.backupsResticBinary.trim() || null,
+        backupsPbsRepository: form.backupsPbsRepository.trim() || null,
+        backupsPbsPassword: form.backupsPbsPassword.trim() || null,
+        backupsPbsFingerprint: form.backupsPbsFingerprint.trim() || null,
+        backupsPbsBinary: form.backupsPbsBinary.trim() || null,
         addonsPath: form.addonsPath.trim() || null,
         quilldConfigOverrides: form.quilldConfigOverrides.trim() || null,
         remoteTimeout: Number(form.remoteTimeout),
@@ -174,7 +231,25 @@ export function buildWebNodeSubmitPayload(form: WebNodeForm) {
         sftpKeyAlgorithm: form.sftpKeyAlgorithm,
         sftpPort: Number(form.sftpPort),
         sftpDisablePasswordAuth: form.sftpDisablePasswordAuth === 'true',
+        proxyEnabled: form.proxyEnabled === 'true',
+        proxyProvider: form.proxyProvider || 'caddy',
+        acmeEmail: form.acmeEmail.trim() || null,
+        acmeStaging: form.acmeStaging === 'true',
+        backendPortMin: Number(form.backendPortMin),
+        backendPortMax: Number(form.backendPortMax),
     };
+
+    if (!form.backupsS3SecretKey.trim()) {
+        delete (payload as { backupsS3SecretKey?: string | null }).backupsS3SecretKey;
+    }
+    if (!form.backupsResticPassword.trim()) {
+        delete (payload as { backupsResticPassword?: string | null }).backupsResticPassword;
+    }
+    if (!form.backupsPbsPassword.trim()) {
+        delete (payload as { backupsPbsPassword?: string | null }).backupsPbsPassword;
+    }
+
+    return payload;
 }
 
 export function validateWebNodeForm(
@@ -203,6 +278,15 @@ export function validateWebNodeForm(
     if (form.remoteRetryLimit < 0) newErrors.remoteRetryLimit = t('admin.webNodes.form.remote_retry_limit_invalid');
     if (form.sftpPort < 1 || form.sftpPort > 65535) {
         newErrors.sftpPort = t('admin.webNodes.form.sftp_port_invalid');
+    }
+    if (form.backendPortMin < 1 || form.backendPortMin > 65535) {
+        newErrors.backendPortMin = t('admin.webNodes.form.backend_port_invalid');
+    }
+    if (form.backendPortMax < 1 || form.backendPortMax > 65535) {
+        newErrors.backendPortMax = t('admin.webNodes.form.backend_port_invalid');
+    }
+    if (!newErrors.backendPortMin && !newErrors.backendPortMax && form.backendPortMax < form.backendPortMin) {
+        newErrors.backendPortMax = t('admin.webNodes.form.backend_port_range_invalid');
     }
 
     const seenKeys = new Set<string>();
@@ -249,6 +333,11 @@ const WEB_NODE_FIELD_TABS: Record<string, WebNodeFormTab> = {
     daemonBase: 'config',
     websitesPath: 'config',
     backupsPath: 'config',
+    backupsProvider: 'config',
+    backupsS3Endpoint: 'config',
+    backupsS3Bucket: 'config',
+    backupsResticRepository: 'config',
+    backupsPbsRepository: 'config',
     addonsPath: 'config',
     quilldConfigOverrides: 'config',
     fqdn: 'network',
@@ -256,6 +345,10 @@ const WEB_NODE_FIELD_TABS: Record<string, WebNodeFormTab> = {
     behind_proxy: 'network',
     daemonListen: 'network',
     sftpPort: 'network',
+    backendPortMin: 'network',
+    backendPortMax: 'network',
+    acmeEmail: 'network',
+    acmeStaging: 'network',
     remoteTimeout: 'remote',
     remoteRetryLimit: 'remote',
     remoteCustomHeaders: 'remote',
@@ -274,6 +367,8 @@ const WEB_NODE_VALIDATION_FIELD_ORDER = [
     'daemonBase',
     'daemonListen',
     'sftpPort',
+    'backendPortMin',
+    'backendPortMax',
     'remoteTimeout',
     'remoteRetryLimit',
     'remoteCustomHeaders',

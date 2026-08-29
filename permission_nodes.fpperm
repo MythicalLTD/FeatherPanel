@@ -179,3 +179,15 @@ ADMIN_TICKET_MESSAGES_MANAGE=admin.ticket_messages.manage | Admin Ticket Message
 ADMIN_VM_INSTANCES_VIEW=admin.vm_instances.view | Admin VM Instances | View VM instances
 ADMIN_VM_INSTANCES_EDIT=admin.vm_instances.edit | Admin VM Instances | Edit existing VM instances
 ADMIN_VM_INSTANCES_DELETE=admin.vm_instances.delete | Admin VM Instances | Delete VM instances
+
+# WebPlates Permissions
+ADMIN_WEBPLATES_VIEW=admin.webplates.view | Admin WebPlates | View webplates
+ADMIN_WEBPLATES_CREATE=admin.webplates.create | Admin WebPlates | Create new webplates
+ADMIN_WEBPLATES_EDIT=admin.webplates.edit | Admin WebPlates | Edit existing webplates
+ADMIN_WEBPLATES_DELETE=admin.webplates.delete | Admin WebPlates | Delete webplates
+
+# WebSpaces Permissions (admin role nodes only — user access uses WebSpaceSubuserPermissions)
+ADMIN_WEBSPACES_VIEW=admin.webspaces.view | Admin WebSpaces | View webspaces
+ADMIN_WEBSPACES_CREATE=admin.webspaces.create | Admin WebSpaces | Create new webspaces
+ADMIN_WEBSPACES_EDIT=admin.webspaces.edit | Admin WebSpaces | Edit existing webspaces
+ADMIN_WEBSPACES_DELETE=admin.webspaces.delete | Admin WebSpaces | Delete webspaces

@@ -19,6 +19,7 @@ namespace App\Services\Server;
 
 use App\App;
 use GuzzleHttp\Client;
+use App\Chat\Allocation;
 use App\Chat\ServerActivity;
 use GuzzleHttp\Psr7\Request;
 use App\Services\Wings\Wings;
@@ -28,6 +29,7 @@ use App\Chat\ServerLifecycleHook;
 use App\Helpers\DaemonCapabilities;
 use App\Chat\ServerLifecycleHookStep;
 use App\Plugins\Events\Events\ServerEvent;
+use App\Helpers\ServerEnvPlaceholderHelper;
 
 /**
  * Executes lifecycle hooks before server power actions.
@@ -276,8 +278,19 @@ class LifecycleHookExecutorService
         return $result;
     }
 
-    protected function executeDiscordWebhook(array $payload): array
+    protected function executeDiscordWebhook(array $payload, array $server, array $node): array
     {
+        $allocation = null;
+        if (isset($server['allocation_id'])) {
+            $allocation = Allocation::getAllocationById((int) $server['allocation_id']) ?: null;
+        }
+
+        $environment = ServerEnvPlaceholderHelper::buildEnvironment($server, $node, $allocation);
+        $payload = ServerEnvPlaceholderHelper::replaceInValue($payload, $environment, $server, $allocation);
+        if (!is_array($payload)) {
+            throw new \Exception('Invalid discord webhook payload after placeholder replacement');
+        }
+
         $url = trim((string) ($payload['url'] ?? ''));
         if (!$this->isSafeUrl($url)) {
             throw new \Exception('Invalid discord webhook URL');
@@ -537,7 +550,7 @@ class LifecycleHookExecutorService
     protected function dispatchTaskByType(string $taskType, array $payload, array $server, array $node): array
     {
         return match ($taskType) {
-            'discord_webhook' => $this->executeDiscordWebhook($payload),
+            'discord_webhook' => $this->executeDiscordWebhook($payload, $server, $node),
             'container_command' => $this->executeContainerCommand($payload, $server, $node),
             'container_shell' => $this->executeContainerShell($payload, $server, $node),
             'http_request' => $this->executeHttpRequest($payload),

@@ -18,7 +18,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import { PickerSheet } from '@/components/ui/picker-sheet';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Label } from '@/components/ui/label';
@@ -136,11 +136,11 @@ export function VmTemplatePickerSheet({
         const name = createForm.name.trim();
         const vmid = createForm.template_file.trim();
         if (!name) {
-            toast.error(t('admin.vdsNodes.templates.field_name_required') || 'Template name is required');
+            toast.error(t('admin.vdsNodes.templates.field_name_required'));
             return;
         }
         if (!vmid || !/^\d+$/.test(vmid)) {
-            toast.error(t('admin.vdsNodes.templates.select_vm_first') || 'Select a VM from Proxmox first');
+            toast.error(t('admin.vdsNodes.templates.select_vm_first'));
             return;
         }
         setCreating(true);
@@ -172,193 +172,170 @@ export function VmTemplatePickerSheet({
     };
 
     return (
-        <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent className='overflow-y-auto sm:max-w-2xl'>
-                <SheetHeader>
-                    <SheetTitle>{t('admin.vmInstances.select_template') || 'Select template'}</SheetTitle>
-                    <SheetDescription>
-                        {mode === 'browse'
-                            ? t('admin.vmInstances.template_help') || 'Choose an existing template for this VM.'
-                            : t('admin.vdsNodes.templates.create_desc_select') ||
-                              'Select a VM from Proxmox and create a template.'}
-                    </SheetDescription>
-                </SheetHeader>
-                <div className='mt-6 space-y-4'>
-                    <div className='border-border/60 bg-muted/30 flex gap-1 rounded-xl border p-1'>
-                        <button
-                            type='button'
-                            onClick={() => setMode('browse')}
-                            className={cn(
-                                'inline-flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-                                mode === 'browse'
-                                    ? 'bg-background text-foreground shadow-sm'
-                                    : 'text-muted-foreground hover:text-foreground',
-                            )}
-                        >
-                            <SearchIcon className='h-4 w-4' />
-                            Existing
-                        </button>
-                        <button
-                            type='button'
-                            onClick={() => setMode('create')}
-                            className={cn(
-                                'inline-flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-                                mode === 'create'
-                                    ? 'bg-background text-foreground shadow-sm'
-                                    : 'text-muted-foreground hover:text-foreground',
-                            )}
-                        >
-                            <Plus className='h-4 w-4' />
-                            Create new
-                        </button>
+        <PickerSheet
+            open={open}
+            onOpenChange={onOpenChange}
+            title={t('admin.vmInstances.select_template')}
+            description={
+                mode === 'browse'
+                    ? t('admin.vmInstances.template_help')
+                    : t('admin.vdsNodes.templates.create_desc_select')
+            }
+            search={search}
+            onSearchChange={setSearch}
+            showBrowseChrome={mode === 'browse'}
+            toolbar={
+                <div className='border-border/60 bg-muted/30 flex gap-1 rounded-xl border p-1'>
+                    <button
+                        type='button'
+                        onClick={() => setMode('browse')}
+                        className={cn(
+                            'inline-flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                            mode === 'browse'
+                                ? 'bg-background text-foreground shadow-sm'
+                                : 'text-muted-foreground hover:text-foreground',
+                        )}
+                    >
+                        <SearchIcon className='h-4 w-4' />
+                        Existing
+                    </button>
+                    <button
+                        type='button'
+                        onClick={() => setMode('create')}
+                        className={cn(
+                            'inline-flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                            mode === 'create'
+                                ? 'bg-background text-foreground shadow-sm'
+                                : 'text-muted-foreground hover:text-foreground',
+                        )}
+                    >
+                        <Plus className='h-4 w-4' />
+                        Create new
+                    </button>
+                </div>
+            }
+        >
+            {mode === 'create' ? (
+                <div className='space-y-4'>
+                    <div>
+                        <Label className='mb-2 block'>{t('admin.vdsNodes.templates.field_select_vm')}</Label>
+                        {loadingProxmoxVms ? (
+                            <p className='text-muted-foreground flex items-center gap-2 py-2 text-sm'>
+                                <Loader2 className='h-4 w-4 animate-spin' />
+                                {t('admin.vdsNodes.templates.loading_vms')}
+                            </p>
+                        ) : proxmoxVmsError ? (
+                            <p className='text-destructive text-sm'>{proxmoxVmsError}</p>
+                        ) : (
+                            <Select
+                                value={createForm.template_file || ''}
+                                onChange={(e) => handleProxmoxVmSelect(e.target.value)}
+                            >
+                                <option value=''>{t('admin.vdsNodes.templates.select_vm_placeholder')}</option>
+                                {proxmoxVms.map((vm) => (
+                                    <option key={vm.vmid} value={vm.vmid}>
+                                        {vm.name} (VMID {vm.vmid}){vm.template ? ' Template' : ''}
+                                    </option>
+                                ))}
+                            </Select>
+                        )}
                     </div>
-
-                    {mode === 'browse' ? (
-                        <>
-                            <div className='relative'>
-                                <SearchIcon className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
-                                <Input
-                                    placeholder={t('common.search') || 'Search'}
-                                    value={search}
-                                    onChange={(e) => setSearch(e.target.value)}
-                                    className='pl-10'
-                                />
-                            </div>
-                            <div className='max-h-[60vh] space-y-2 overflow-y-auto'>
-                                {filtered.length === 0 ? (
-                                    <p className='text-muted-foreground py-6 text-center'>{t('common.no_results')}</p>
-                                ) : (
-                                    filtered.map((tpl) => (
-                                        <button
-                                            key={tpl.id}
-                                            type='button'
-                                            onClick={() => {
-                                                onSelectTemplate(tpl.id);
-                                                onOpenChange(false);
-                                            }}
-                                            className={cn(
-                                                'w-full rounded-xl border p-3 text-left transition-all',
-                                                selectedTemplateId === tpl.id
-                                                    ? 'border-primary bg-primary/5'
-                                                    : 'border-border/50 hover:border-primary hover:bg-primary/5',
-                                            )}
-                                        >
-                                            <div className='flex items-start gap-3'>
-                                                <div className='bg-primary/10 mt-0.5 rounded-lg p-2'>
-                                                    {tpl.guest_type === 'lxc' ? (
-                                                        <Cpu className='text-primary h-4 w-4' />
-                                                    ) : (
-                                                        <Monitor className='text-primary h-4 w-4' />
-                                                    )}
-                                                </div>
-                                                <div>
-                                                    <div className='font-semibold'>{tpl.name}</div>
-                                                    <div className='text-muted-foreground font-mono text-xs'>
-                                                        VMID {tpl.template_file ?? '—'} ·{' '}
-                                                        {tpl.guest_type === 'lxc' ? 'LXC' : 'QEMU/KVM'}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </button>
-                                    ))
-                                )}
-                            </div>
-                        </>
-                    ) : (
-                        <div className='space-y-4'>
-                            <div>
-                                <Label className='mb-2 block'>
-                                    {t('admin.vdsNodes.templates.field_select_vm') || 'Select VM from Proxmox'}
-                                </Label>
-                                {loadingProxmoxVms ? (
-                                    <p className='text-muted-foreground flex items-center gap-2 py-2 text-sm'>
-                                        <Loader2 className='h-4 w-4 animate-spin' />
-                                        {t('admin.vdsNodes.templates.loading_vms') || 'Loading VMs…'}
-                                    </p>
-                                ) : proxmoxVmsError ? (
-                                    <p className='text-destructive text-sm'>{proxmoxVmsError}</p>
-                                ) : (
-                                    <Select
-                                        value={createForm.template_file || ''}
-                                        onChange={(e) => handleProxmoxVmSelect(e.target.value)}
-                                    >
-                                        <option value=''>
-                                            {t('admin.vdsNodes.templates.select_vm_placeholder') || 'Select a VM —'}
-                                        </option>
-                                        {proxmoxVms.map((vm) => (
-                                            <option key={vm.vmid} value={vm.vmid}>
-                                                {vm.name} (VMID {vm.vmid}){vm.template ? ' Template' : ''}
-                                            </option>
-                                        ))}
-                                    </Select>
-                                )}
-                            </div>
-                            <div>
-                                <Label className='mb-2 block'>{t('admin.vdsNodes.templates.field_name')}</Label>
-                                <Input
-                                    value={createForm.name}
-                                    onChange={(e) => setCreateForm((f) => ({ ...f, name: e.target.value }))}
-                                    placeholder={t('admin.vdsNodes.templates.field_name_placeholder')}
-                                />
-                            </div>
-                            <div>
-                                <Label className='mb-2 block'>{t('admin.vdsNodes.templates.field_guest_type')}</Label>
-                                <Select
-                                    value={createForm.guest_type}
-                                    onChange={(e) =>
-                                        setCreateForm((f) => ({ ...f, guest_type: e.target.value as 'qemu' | 'lxc' }))
-                                    }
-                                >
-                                    <option value='qemu'>QEMU/KVM</option>
-                                    <option value='lxc'>LXC</option>
-                                </Select>
-                            </div>
-                            {createForm.guest_type === 'lxc' && (
-                                <Alert variant='warning' className='px-3 py-2'>
-                                    <ShieldAlert className='h-4 w-4' />
-                                    <AlertTitle className='text-xs'>
-                                        {t('admin.vdsNodes.templates.security_recommendation')}
-                                    </AlertTitle>
-                                    <AlertDescription className='text-[10px] leading-tight'>
-                                        {t('admin.vdsNodes.templates.lxc_security_warning')}
-                                    </AlertDescription>
-                                </Alert>
-                            )}
-                            <div>
-                                <Label className='mb-2 block'>{t('admin.vdsNodes.templates.field_description')}</Label>
-                                <Input
-                                    value={createForm.description}
-                                    onChange={(e) => setCreateForm((f) => ({ ...f, description: e.target.value }))}
-                                    placeholder={t('common.optional')}
-                                />
-                            </div>
-                            {createForm.guest_type === 'lxc' && (
-                                <div>
-                                    <Label className='mb-2 block'>
-                                        {t('admin.vdsNodes.templates.field_lxc_root_password') ||
-                                            'Default root password'}
-                                    </Label>
-                                    <Input
-                                        value={createForm.lxc_root_password}
-                                        onChange={(e) =>
-                                            setCreateForm((f) => ({ ...f, lxc_root_password: e.target.value }))
-                                        }
-                                    />
-                                </div>
-                            )}
-                            <div className='flex justify-end gap-2 pt-2'>
-                                <Button type='button' variant='outline' onClick={() => setMode('browse')}>
-                                    {t('common.cancel')}
-                                </Button>
-                                <Button type='button' onClick={() => void handleCreate()} loading={creating}>
-                                    <Layers className='mr-2 h-4 w-4' />
-                                    {t('admin.vdsNodes.templates.add')}
-                                </Button>
-                            </div>
+                    <div>
+                        <Label className='mb-2 block'>{t('admin.vdsNodes.templates.field_name')}</Label>
+                        <Input
+                            value={createForm.name}
+                            onChange={(e) => setCreateForm((f) => ({ ...f, name: e.target.value }))}
+                            placeholder={t('admin.vdsNodes.templates.field_name_placeholder')}
+                        />
+                    </div>
+                    <div>
+                        <Label className='mb-2 block'>{t('admin.vdsNodes.templates.field_guest_type')}</Label>
+                        <Select
+                            value={createForm.guest_type}
+                            onChange={(e) =>
+                                setCreateForm((f) => ({ ...f, guest_type: e.target.value as 'qemu' | 'lxc' }))
+                            }
+                        >
+                            <option value='qemu'>QEMU/KVM</option>
+                            <option value='lxc'>LXC</option>
+                        </Select>
+                    </div>
+                    {createForm.guest_type === 'lxc' && (
+                        <Alert variant='warning' className='px-3 py-2'>
+                            <ShieldAlert className='h-4 w-4' />
+                            <AlertTitle className='text-xs'>
+                                {t('admin.vdsNodes.templates.security_recommendation')}
+                            </AlertTitle>
+                            <AlertDescription className='text-[10px] leading-tight'>
+                                {t('admin.vdsNodes.templates.lxc_security_warning')}
+                            </AlertDescription>
+                        </Alert>
+                    )}
+                    <div>
+                        <Label className='mb-2 block'>{t('admin.vdsNodes.templates.field_description')}</Label>
+                        <Input
+                            value={createForm.description}
+                            onChange={(e) => setCreateForm((f) => ({ ...f, description: e.target.value }))}
+                            placeholder={t('common.optional')}
+                        />
+                    </div>
+                    {createForm.guest_type === 'lxc' && (
+                        <div>
+                            <Label className='mb-2 block'>
+                                {t('admin.vdsNodes.templates.field_lxc_root_password')}
+                            </Label>
+                            <Input
+                                value={createForm.lxc_root_password}
+                                onChange={(e) => setCreateForm((f) => ({ ...f, lxc_root_password: e.target.value }))}
+                            />
                         </div>
                     )}
+                    <div className='flex justify-end gap-2 pt-2'>
+                        <Button type='button' variant='outline' onClick={() => setMode('browse')}>
+                            {t('common.cancel')}
+                        </Button>
+                        <Button type='button' onClick={() => void handleCreate()} loading={creating}>
+                            <Layers className='mr-2 h-4 w-4' />
+                            {t('admin.vdsNodes.templates.add')}
+                        </Button>
+                    </div>
                 </div>
-            </SheetContent>
-        </Sheet>
+            ) : filtered.length === 0 ? (
+                <p className='text-muted-foreground py-6 text-center'>{t('common.no_results')}</p>
+            ) : (
+                filtered.map((tpl) => (
+                    <button
+                        key={tpl.id}
+                        type='button'
+                        onClick={() => {
+                            onSelectTemplate(tpl.id);
+                            onOpenChange(false);
+                        }}
+                        className={cn(
+                            'w-full rounded-xl border p-3 text-left transition-all',
+                            selectedTemplateId === tpl.id
+                                ? 'border-primary bg-primary/5'
+                                : 'border-border/50 hover:border-primary hover:bg-primary/5',
+                        )}
+                    >
+                        <div className='flex items-start gap-3'>
+                            <div className='bg-primary/10 mt-0.5 rounded-lg p-2'>
+                                {tpl.guest_type === 'lxc' ? (
+                                    <Cpu className='text-primary h-4 w-4' />
+                                ) : (
+                                    <Monitor className='text-primary h-4 w-4' />
+                                )}
+                            </div>
+                            <div>
+                                <div className='font-semibold'>{tpl.name}</div>
+                                <div className='text-muted-foreground font-mono text-xs'>
+                                    VMID {tpl.template_file ?? '—'} · {tpl.guest_type === 'lxc' ? 'LXC' : 'QEMU/KVM'}
+                                </div>
+                            </div>
+                        </div>
+                    </button>
+                ))
+            )}
+        </PickerSheet>
     );
 }

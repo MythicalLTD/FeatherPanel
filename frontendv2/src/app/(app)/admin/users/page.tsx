@@ -630,14 +630,14 @@ export default function UsersPage() {
                         if (user.discord_oauth2_linked === 'true') {
                             badges.push({
                                 label: t('admin.users.badges.discord_linked'),
-                                className: 'bg-indigo-500/10 text-indigo-600 border-indigo-500/20',
+                                className: 'bg-primary/10 text-primary border-primary/20',
                             });
                         }
 
                         if (user.ldap_provider_uuid && user.ldap_dn) {
                             badges.push({
                                 label: t('admin.users.badges.ldap'),
-                                className: 'bg-purple-500/10 text-purple-600 border-purple-500/20',
+                                className: 'bg-primary/10 text-primary border-primary/20',
                             });
                         } else if (user.oidc_provider && user.oidc_subject) {
                             badges.push({
@@ -697,7 +697,7 @@ export default function UsersPage() {
                                         </div>
                                         {user.discord_oauth2_username && (
                                             <div className='text-muted-foreground flex items-center gap-1.5 pt-1 text-xs'>
-                                                <span className='font-semibold text-indigo-500/80'>
+                                                <span className='text-primary/80 font-semibold'>
                                                     {t('admin.users.edit.account_info.discord_user')}:
                                                 </span>
                                                 {user.discord_oauth2_username}

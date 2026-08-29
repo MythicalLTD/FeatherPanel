@@ -17,8 +17,8 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
-import { Dialog, DialogPanel, DialogTitle, Description as DialogDescription } from '@headlessui/react';
-import { Button } from '@/components/ui/button';
+import { Dialog, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { cn } from '@/lib/utils';
 import { Mail, RefreshCw, Clock, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
@@ -365,61 +365,57 @@ export default function MailTab() {
                 </div>
             )}
 
-            <Dialog open={mailModalOpen} onClose={() => setMailModalOpen(false)} className='relative z-50'>
-                <div className='fixed inset-0 bg-black/30' aria-hidden='true' />
-                <div className='fixed inset-0 flex items-center justify-center p-4'>
-                    <DialogPanel className='bg-card/50 border-border/50 flex max-h-[90vh] w-full max-w-5xl flex-col rounded-xl border p-6 backdrop-blur-xl'>
-                        <DialogTitle className='text-foreground mb-2 text-xl font-semibold'>
-                            {selectedMail?.subject}
-                        </DialogTitle>
-                        <DialogDescription className='text-muted-foreground mb-4 flex items-center gap-4 text-sm'>
-                            <div className='flex items-center gap-2'>
-                                <Clock className='h-4 w-4' />
-                                <span>{selectedMail ? formatDate(selectedMail.created_at) : ''}</span>
-                            </div>
-                            <div
-                                className={cn(
-                                    'rounded px-2 py-1 text-xs font-medium',
-                                    getStatusVariant(selectedMail?.status || 'pending'),
-                                )}
-                            >
-                                {selectedMail ? t(`account.mail.status.${selectedMail.status}`) : ''}
-                            </div>
-                        </DialogDescription>
-
-                        <div className='flex-1 overflow-y-auto'>
-                            {selectedMail && (
-                                <iframe
-                                    srcDoc={getIframeContent(selectedMail.body)}
-                                    className='h-full min-h-[60vh] w-full rounded border-0 bg-white'
-                                    sandbox='allow-same-origin'
-                                    title={t('account.mail.mailContent')}
-                                />
-                            )}
+            <Dialog
+                open={mailModalOpen}
+                onClose={() => setMailModalOpen(false)}
+                className='flex max-h-[90vh] max-w-5xl flex-col'
+            >
+                <DialogHeader>
+                    <DialogTitle className='text-xl'>{selectedMail?.subject}</DialogTitle>
+                    <div className='text-muted-foreground mt-2 flex items-center gap-4 text-sm'>
+                        <div className='flex items-center gap-2'>
+                            <Clock className='h-4 w-4' />
+                            <span>{selectedMail ? formatDate(selectedMail.created_at) : ''}</span>
                         </div>
-
-                        <div className='mt-4 flex justify-end gap-2'>
-                            {selectedMail?.status === 'failed' && (
-                                <Button
-                                    variant='default'
-                                    disabled={resendingMailId === selectedMail.id}
-                                    onClick={() => selectedMail && handleResendMail(selectedMail)}
-                                >
-                                    <RotateCcw
-                                        className={cn(
-                                            'mr-2 h-4 w-4',
-                                            resendingMailId === selectedMail.id && 'animate-spin',
-                                        )}
-                                    />
-                                    {t('account.mail.resend')}
-                                </Button>
+                        <div
+                            className={cn(
+                                'rounded px-2 py-1 text-xs font-medium',
+                                getStatusVariant(selectedMail?.status || 'pending'),
                             )}
-                            <Button variant='outline' onClick={() => setMailModalOpen(false)}>
-                                {t('account.mail.close')}
-                            </Button>
+                        >
+                            {selectedMail ? t(`account.mail.status.${selectedMail.status}`) : ''}
                         </div>
-                    </DialogPanel>
+                    </div>
+                </DialogHeader>
+
+                <div className='min-h-0 flex-1 overflow-y-auto'>
+                    {selectedMail && (
+                        <iframe
+                            srcDoc={getIframeContent(selectedMail.body)}
+                            className='h-full min-h-[60vh] w-full rounded border-0 bg-white'
+                            sandbox='allow-same-origin'
+                            title={t('account.mail.mailContent')}
+                        />
+                    )}
                 </div>
+
+                <DialogFooter>
+                    {selectedMail?.status === 'failed' && (
+                        <Button
+                            variant='default'
+                            disabled={resendingMailId === selectedMail.id}
+                            onClick={() => selectedMail && handleResendMail(selectedMail)}
+                        >
+                            <RotateCcw
+                                className={cn('mr-2 h-4 w-4', resendingMailId === selectedMail.id && 'animate-spin')}
+                            />
+                            {t('account.mail.resend')}
+                        </Button>
+                    )}
+                    <Button variant='outline' onClick={() => setMailModalOpen(false)}>
+                        {t('account.mail.close')}
+                    </Button>
+                </DialogFooter>
             </Dialog>
         </div>
     );

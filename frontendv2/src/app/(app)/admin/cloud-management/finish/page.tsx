@@ -21,7 +21,7 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { AlertCircle, ArrowRight, CheckCircle2, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/featherui/Button';
 
 function param(searchParams: URLSearchParams, ...keys: string[]): string | null {
     for (const key of keys) {

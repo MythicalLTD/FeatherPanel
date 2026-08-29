@@ -146,5 +146,15 @@ export function getPluginPaths(pluginData: PluginSidebarResponse['data']['sideba
         });
     }
 
+    // Extract webspace plugin paths
+    if (pluginData.webspace) {
+        Object.values(pluginData.webspace).forEach((item) => {
+            if (item.redirect) {
+                const redirectPath = item.redirect.startsWith('/') ? item.redirect : `/${item.redirect}`;
+                paths.push(redirectPath);
+            }
+        });
+    }
+
     return paths;
 }

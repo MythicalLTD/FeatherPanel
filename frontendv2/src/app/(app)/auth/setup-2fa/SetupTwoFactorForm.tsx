@@ -17,8 +17,8 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Button } from '@/components/featherui/Button';
+import { Input } from '@/components/featherui/Input';
 import QRCode from 'react-qr-code';
 import { ShieldCheck, ArrowRight, Clipboard } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';

@@ -24,7 +24,7 @@ import { Button } from '@/components/featherui/Button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/featherui/Input';
 import { Textarea } from '@/components/featherui/Textarea';
-import { HeadlessModal } from '@/components/ui/headless-modal';
+import { Dialog, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import {
@@ -720,11 +720,18 @@ export function ActionsTab({
                 </AlertDialogContent>
             </AlertDialog>
 
-            <HeadlessModal
-                isOpen={nodeModalOpen}
+            <Dialog
+                open={nodeModalOpen}
                 onClose={() => setNodeModalOpen(false)}
-                title={t('admin.servers.transfer.destination_node')}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setNodeModalOpen(false);
+                    }
+                }}
             >
+                <DialogHeader>
+                    <DialogTitle>{t('admin.servers.transfer.destination_node')}</DialogTitle>
+                </DialogHeader>
                 <div className='space-y-3'>
                     <div className='relative'>
                         <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
@@ -761,13 +768,20 @@ export function ActionsTab({
                         )}
                     </div>
                 </div>
-            </HeadlessModal>
+            </Dialog>
 
-            <HeadlessModal
-                isOpen={allocationModalOpen}
+            <Dialog
+                open={allocationModalOpen}
                 onClose={() => setAllocationModalOpen(false)}
-                title={t('admin.servers.transfer.destination_allocation')}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setAllocationModalOpen(false);
+                    }
+                }}
             >
+                <DialogHeader>
+                    <DialogTitle>{t('admin.servers.transfer.destination_allocation')}</DialogTitle>
+                </DialogHeader>
                 <div className='space-y-3'>
                     <div className='relative'>
                         <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
@@ -805,7 +819,7 @@ export function ActionsTab({
                         )}
                     </div>
                 </div>
-            </HeadlessModal>
+            </Dialog>
         </div>
     );
 }

@@ -18,8 +18,8 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Button } from '@/components/featherui/Button';
+import { Input } from '@/components/featherui/Input';
 import { Dialog, DialogHeader, DialogTitleCustom, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { CheckCircle, Mail, ArrowRight } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';

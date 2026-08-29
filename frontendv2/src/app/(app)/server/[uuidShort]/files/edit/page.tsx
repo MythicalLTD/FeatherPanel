@@ -18,7 +18,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { useEffect, useState, useRef, useCallback, use, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import type { OnMount } from '@monaco-editor/react';
-import { filesApi } from '@/lib/files-api';
+import { filesApi, isFileNotFoundError } from '@/lib/files-api';
 import { toast } from 'sonner';
 import { Save, Loader2, FileCode, Lock, CheckCircle2, Boxes, Monitor, Smartphone } from 'lucide-react';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
@@ -40,6 +40,7 @@ import { BukkitConfigurationEditor } from '@/components/server/files/editors/Buk
 import { CommandsEditor } from '@/components/server/files/editors/CommandsEditor';
 import { isBinaryLikeFileName } from '@/lib/binary-like-file-names';
 import { safeBack } from '@/lib/safe-back';
+import { joinServerFilePath } from '@/lib/server-switch';
 
 export default function FileEditorPage({
     params,
@@ -50,10 +51,11 @@ export default function FileEditorPage({
 }) {
     const { t } = useTranslation();
     const { uuidShort } = use(params);
-    const { file: fileName = 'file.txt', directory = '/' } = use(searchParams);
+    const { file: rawFileName, directory = '/' } = use(searchParams);
+    const fileName = rawFileName?.trim() ?? '';
     const router = useRouter();
     const { theme } = useTheme();
-    const fullPath = directory.endsWith('/') ? `${directory}${fileName}` : `${directory}/${fileName}`;
+    const fullPath = fileName ? joinServerFilePath(directory, fileName) : '';
 
     const [content, setContent] = useState('');
     const [originalContent, setOriginalContent] = useState('');
@@ -226,6 +228,8 @@ export default function FileEditorPage({
     ]);
 
     const fetchContent = useCallback(async () => {
+        if (!fileName || !fullPath) return;
+
         setLoading(true);
         try {
             const controller = new AbortController();
@@ -241,6 +245,10 @@ export default function FileEditorPage({
             setOriginalContent(data);
         } catch (error) {
             console.error(error);
+            if (isFileNotFoundError(error)) {
+                router.replace(`/server/${uuidShort}/files`);
+                return;
+            }
             if (error instanceof Error && error.message === 'Request timeout') {
                 toast.error(t('files.editor.load_timeout'));
             } else {
@@ -249,13 +257,17 @@ export default function FileEditorPage({
         } finally {
             setLoading(false);
         }
-    }, [uuidShort, fullPath, t]);
+    }, [uuidShort, fullPath, fileName, t, router]);
 
     useEffect(() => {
-        if (uuidShort && fileName && directory) {
+        if (!fileName) {
+            router.replace(`/server/${uuidShort}/files`);
+            return;
+        }
+        if (uuidShort && directory) {
             fetchContent();
         }
-    }, [uuidShort, fileName, directory, fetchContent]);
+    }, [uuidShort, fileName, directory, fetchContent, router]);
 
     useEffect(() => {
         fetchWidgets();

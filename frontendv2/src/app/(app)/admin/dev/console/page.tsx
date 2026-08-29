@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { APP_MONO_FONT_STACK } from '@/lib/mono-font';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useRouter } from 'next/navigation';
@@ -290,10 +291,7 @@ export default function ConsolePage() {
             <div className='space-y-6'>
                 <EmptyState
                     title={t('admin.dev.developerModeRequired')}
-                    description={
-                        t('admin.dev.developerModeDescription') ||
-                        'Developer mode must be enabled in settings to access developer tools.'
-                    }
+                    description={t('admin.dev.developerModeDescription')}
                     icon={Lock}
                     action={
                         <Button variant='outline' onClick={() => router.push('/admin/settings')}>
@@ -407,15 +405,12 @@ export default function ConsolePage() {
 
                 <PageCard title={t('admin.dev.console.terminal')}>
                     <div className='space-y-4'>
-                        <p className='text-muted-foreground text-xs'>
-                            {t('admin.dev.console.terminal_help') ||
-                                'Use Arrow Up/Down for command history, Ctrl+L to clear'}
-                        </p>
+                        <p className='text-muted-foreground text-xs'>{t('admin.dev.console.terminal_help')}</p>
 
                         <div
                             ref={terminalRef}
                             className='border-border/50 h-96 overflow-auto rounded-xl border bg-black p-4 font-mono text-sm text-green-400'
-                            style={{ fontFamily: "'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', monospace" }}
+                            style={{ fontFamily: APP_MONO_FONT_STACK }}
                         >
                             {terminalLines.map((line) => (
                                 <div key={line.id} className='mb-1'>

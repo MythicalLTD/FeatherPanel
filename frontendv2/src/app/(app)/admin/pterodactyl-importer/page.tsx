@@ -22,8 +22,8 @@ import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import axios from 'axios';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Button } from '@/components/featherui/Button';
+import { Input } from '@/components/featherui/Input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select-native';
 import {

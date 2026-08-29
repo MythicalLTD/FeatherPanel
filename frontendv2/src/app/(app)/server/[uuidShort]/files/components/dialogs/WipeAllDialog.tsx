@@ -16,17 +16,9 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useState } from 'react';
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogFooter,
-    DialogDescription,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/featherui/Button';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { toast } from 'sonner';
-import { filesApi } from '@/lib/files-api';
+import { useFileManagerApi } from '@/contexts/FileManagerApiContext';
 import { AlertTriangle, Trash2 } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
 
@@ -38,6 +30,7 @@ interface WipeAllDialogProps {
 }
 
 export function WipeAllDialog({ open, onOpenChange, uuid, onSuccess }: WipeAllDialogProps) {
+    const filesApi = useFileManagerApi();
     const { t } = useTranslation();
     const [loading, setLoading] = useState(false);
 
@@ -57,40 +50,32 @@ export function WipeAllDialog({ open, onOpenChange, uuid, onSuccess }: WipeAllDi
     };
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className='border-red-500/20 bg-red-950/10 backdrop-blur-xl sm:max-w-md'>
-                <DialogHeader>
-                    <div className='flex items-center gap-3'>
-                        <div className='flex h-12 w-12 items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/10 text-red-500'>
-                            <AlertTriangle className='h-6 w-6' />
-                        </div>
-                        <div>
-                            <DialogTitle className='text-xl font-bold text-red-500'>
-                                {t('files.dialogs.wipe.title')}
-                            </DialogTitle>
-                            <DialogDescription className='text-red-400/80'>
-                                {t('files.dialogs.wipe.description')}
-                            </DialogDescription>
-                        </div>
-                    </div>
-                </DialogHeader>
-
-                <div className='py-6'>
-                    <p className='rounded-xl border border-red-500/10 bg-red-500/5 p-4 text-sm leading-relaxed font-medium text-white/90'>
-                        {t('files.dialogs.wipe.confirmation')}
-                    </p>
-                </div>
-
-                <DialogFooter className='gap-2 sm:gap-0'>
-                    <Button variant='ghost' onClick={() => onOpenChange(false)} className='hover:bg-white/5'>
-                        {t('files.dialogs.wipe.cancel')}
-                    </Button>
-                    <Button variant='destructive' onClick={handleWipe} disabled={loading} className='h-10 px-6'>
-                        <Trash2 className='mr-2 h-4 w-4' />
-                        {t('files.dialogs.wipe.confirm')}
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+        <ConfirmDialog
+            open={open}
+            onOpenChange={onOpenChange}
+            dangerFrame
+            title={
+                <span className='flex items-center gap-3'>
+                    <span className='flex h-12 w-12 items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/10 text-red-500'>
+                        <AlertTriangle className='h-6 w-6' />
+                    </span>
+                    <span className='text-xl font-bold text-red-500'>{t('files.dialogs.wipe.title')}</span>
+                </span>
+            }
+            description={t('files.dialogs.wipe.description')}
+            cancelLabel={t('files.dialogs.wipe.cancel')}
+            confirmLabel={
+                <>
+                    <Trash2 className='mr-2 h-4 w-4' />
+                    {t('files.dialogs.wipe.confirm')}
+                </>
+            }
+            onConfirm={handleWipe}
+            loading={loading}
+        >
+            <p className='rounded-xl border border-red-500/10 bg-red-500/5 p-4 text-sm leading-relaxed font-medium text-white/90'>
+                {t('files.dialogs.wipe.confirmation')}
+            </p>
+        </ConfirmDialog>
     );
 }

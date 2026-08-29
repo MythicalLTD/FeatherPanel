@@ -1104,6 +1104,38 @@ class ServerUserController
                     return $permissionCheck;
                 }
             }
+
+            $requestedSpellId = isset($data['spell_id']) ? (int) $data['spell_id'] : 0;
+            $spellChangeRequested = $requestedSpellId > 0 && $requestedSpellId !== (int) $server['spell_id'];
+
+            // Spell/egg change requires settings.change-egg; the forced reinstall also needs settings.reinstall
+            if ($spellChangeRequested) {
+                $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::SETTINGS_CHANGE_EGG);
+                if ($permissionCheck !== null) {
+                    return $permissionCheck;
+                }
+
+                $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::SETTINGS_REINSTALL);
+                if ($permissionCheck !== null) {
+                    return $permissionCheck;
+                }
+            }
+
+            // wipe_files forces a destructive delete; require the same gate as reinstallServer()
+            if ($wipeFilesRequested) {
+                $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::SETTINGS_REINSTALL);
+                if ($permissionCheck !== null) {
+                    return $permissionCheck;
+                }
+            }
+
+            // Standalone variable edits use the same gate as other startup mutations
+            if (isset($data['variables']) && !$spellChangeRequested) {
+                $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::STARTUP_UPDATE);
+                if ($permissionCheck !== null) {
+                    return $permissionCheck;
+                }
+            }
         }
 
         // Validate and sanitize input
@@ -1360,7 +1392,7 @@ class ServerUserController
                     $spellVarMap[(int) $sv['id']] = $sv;
                 }
 
-                $validatedVariables = [];
+                $providedValues = [];
                 foreach ($variablesPayload as $item) {
                     $varId = (int) $item['variable_id'];
                     $val = (string) $item['variable_value'];
@@ -1371,15 +1403,29 @@ class ServerUserController
 
                     $sv = $spellVarMap[$varId];
 
+                    // Same editability gate as non-spell variable updates
+                    if ((int) $sv['user_editable'] !== 1) {
+                        return ApiResponse::error('Variable is not editable: ' . $sv['env_variable'], 'VARIABLE_NOT_EDITABLE', 403);
+                    }
+
                     // Validate variable value
                     $error = $this->validateVariableValue($val, (string) ($sv['rules'] ?? ''), (string) ($sv['field_type'] ?? ''));
                     if ($error !== null) {
                         return ApiResponse::error('Validation failed for ' . $sv['env_variable'] . ': ' . $error, 'INVALID_VARIABLE_VALUE', 422);
                     }
 
+                    $providedValues[$varId] = $val;
+                }
+
+                // Full variable set for the new spell: user-provided editable values + defaults for the rest
+                $validatedVariables = [];
+                foreach ($newSpellVariables as $sv) {
+                    $varId = (int) $sv['id'];
                     $validatedVariables[] = [
                         'variable_id' => $varId,
-                        'variable_value' => $val,
+                        'variable_value' => array_key_exists($varId, $providedValues)
+                            ? $providedValues[$varId]
+                            : (string) ($sv['default_value'] ?? ''),
                     ];
                 }
 

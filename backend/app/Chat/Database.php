@@ -29,6 +29,9 @@ class Database
     private $password;
     private $port;
 
+    /** Request-scoped shared PDO — required for transactions that span helper methods. */
+    private static ?\PDO $sharedPdo = null;
+
     /**
      * Database constructor.
      *
@@ -84,10 +87,17 @@ class Database
     /**
      * Get the PDO connection.
      *
+     * Reuses one connection per PHP process/request so beginTransaction() + nested
+     * Chat helpers do not open a second connection and deadlock on row locks.
+     *
      * @return \PDO the PDO connection
      */
     public static function getPdoConnection(): \PDO
     {
+        if (self::$sharedPdo instanceof \PDO) {
+            return self::$sharedPdo;
+        }
+
         /**
          * Load the environment variables.
          */
@@ -100,7 +110,9 @@ class Database
             (int) \App\App::env('DATABASE_PORT', '3306'),
         );
 
-        return $con->getPdo();
+        self::$sharedPdo = $con->getPdo();
+
+        return self::$sharedPdo;
     }
 
     /**

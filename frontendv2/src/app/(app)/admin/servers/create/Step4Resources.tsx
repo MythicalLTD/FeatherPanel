@@ -196,8 +196,8 @@ export function Step4Resources({ formData, setFormData }: StepProps) {
 
                     <div className='space-y-4'>
                         <div className='flex items-center gap-3'>
-                            <div className='rounded-lg bg-purple-500/10 p-2'>
-                                <Cpu className='h-5 w-5 text-purple-500' />
+                            <div className='bg-primary/10 rounded-lg p-2'>
+                                <Cpu className='text-primary h-5 w-5' />
                             </div>
                             <Label className='text-base font-semibold'>{t('admin.servers.form.cpu')}</Label>
                         </div>

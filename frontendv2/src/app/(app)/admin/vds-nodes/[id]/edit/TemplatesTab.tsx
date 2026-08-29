@@ -135,11 +135,11 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
         const name = createForm.name.trim();
         const vmid = createForm.template_file.trim();
         if (!name) {
-            toast.error(t('admin.vdsNodes.templates.field_name_required') || 'Template name is required');
+            toast.error(t('admin.vdsNodes.templates.field_name_required'));
             return;
         }
         if (!vmid || !/^\d+$/.test(vmid)) {
-            toast.error(t('admin.vdsNodes.templates.select_vm_first') || 'Select a VM from Proxmox first');
+            toast.error(t('admin.vdsNodes.templates.select_vm_first'));
             return;
         }
         setCreating(true);
@@ -311,19 +311,16 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
                     <SheetHeader>
                         <SheetTitle>{t('admin.vdsNodes.templates.create_title')}</SheetTitle>
                         <p className='text-muted-foreground text-sm'>
-                            {t('admin.vdsNodes.templates.create_desc_select') ||
-                                'Select a VM from Proxmox name and VMID will be filled. Use a VM you converted to template in Proxmox.'}
+                            {t('admin.vdsNodes.templates.create_desc_select')}
                         </p>
                     </SheetHeader>
                     <form onSubmit={handleCreate} className='mt-6 space-y-4'>
                         <div>
-                            <Label className='mb-2 block'>
-                                {t('admin.vdsNodes.templates.field_select_vm') || 'Select VM from Proxmox'}
-                            </Label>
+                            <Label className='mb-2 block'>{t('admin.vdsNodes.templates.field_select_vm')}</Label>
                             {loadingProxmoxVms ? (
                                 <p className='text-muted-foreground flex items-center gap-2 py-2 text-sm'>
                                     <Loader2 className='h-4 w-4 animate-spin' />
-                                    {t('admin.vdsNodes.templates.loading_vms') || 'Loading VMs…'}
+                                    {t('admin.vdsNodes.templates.loading_vms')}
                                 </p>
                             ) : proxmoxVmsError ? (
                                 <p className='text-destructive text-sm'>{proxmoxVmsError}</p>
@@ -332,9 +329,7 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
                                     value={createForm.template_file || ''}
                                     onChange={(e) => handleProxmoxVmSelect(e.target.value)}
                                 >
-                                    <option value=''>
-                                        {t('admin.vdsNodes.templates.select_vm_placeholder') || 'Select a VM —'}
-                                    </option>
+                                    <option value=''>{t('admin.vdsNodes.templates.select_vm_placeholder')}</option>
                                     {proxmoxVms.map((vm) => (
                                         <option key={vm.vmid} value={vm.vmid}>
                                             {vm.name} (VMID {vm.vmid}){vm.template ? ' Template' : ''}
@@ -344,8 +339,7 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
                             )}
                             {proxmoxVms.length === 0 && !loadingProxmoxVms && !proxmoxVmsError && (
                                 <p className='text-muted-foreground mt-1 text-xs'>
-                                    {t('admin.vdsNodes.templates.no_vms') ||
-                                        'No VMs found. Create and convert to template in Proxmox first.'}
+                                    {t('admin.vdsNodes.templates.no_vms')}
                                 </p>
                             )}
                         </div>
@@ -357,8 +351,7 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
                                 placeholder={t('admin.vdsNodes.templates.field_name_placeholder')}
                             />
                             <p className='text-muted-foreground mt-1 text-xs'>
-                                {t('admin.vdsNodes.templates.field_name_help') ||
-                                    'Editable; used as the template name in the panel.'}
+                                {t('admin.vdsNodes.templates.field_name_help')}
                             </p>
                         </div>
                         <div>
@@ -394,7 +387,7 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
                         {createForm.guest_type === 'lxc' && (
                             <div>
                                 <Label className='mb-2 block'>
-                                    {t('admin.vdsNodes.templates.field_lxc_root_password') || 'Default root password'}
+                                    {t('admin.vdsNodes.templates.field_lxc_root_password')}
                                 </Label>
                                 <Input
                                     type='text'
@@ -402,14 +395,10 @@ export function TemplatesTab({ nodeId }: TemplatesTabProps) {
                                     onChange={(e) =>
                                         setCreateForm((f) => ({ ...f, lxc_root_password: e.target.value }))
                                     }
-                                    placeholder={
-                                        t('admin.vdsNodes.templates.field_lxc_root_password_placeholder') ||
-                                        'e.g. P@ssw0rd (shown to users after deploy)'
-                                    }
+                                    placeholder={t('admin.vdsNodes.templates.field_lxc_root_password_placeholder')}
                                 />
                                 <p className='text-muted-foreground mt-1 text-xs'>
-                                    {t('admin.vdsNodes.templates.field_lxc_root_password_help') ||
-                                        'Optional. Informational only FeatherPanel does not change the root password on the container; this is just shown to users as the default password for this template.'}
+                                    {t('admin.vdsNodes.templates.field_lxc_root_password_help')}
                                 </p>
                             </div>
                         )}

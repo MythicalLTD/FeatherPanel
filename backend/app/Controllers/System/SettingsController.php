@@ -52,9 +52,15 @@ class SettingsController
         $appInstance = App::getInstance(true);
         $settingsPublic = PublicConfig::getPublicSettingsWithDefaults();
         $settings = $appInstance->getConfig()->getSettings(array_keys($settingsPublic));
-        // Fill in any missing settings with defaults
+        // Fill in any missing or empty settings with defaults
         foreach ($settingsPublic as $key => $defaultValue) {
-            if (!isset($settings[$key])) {
+            if (!array_key_exists($key, $settings)) {
+                $settings[$key] = $defaultValue;
+                continue;
+            }
+
+            $value = $settings[$key];
+            if ($value === null || (is_string($value) && trim($value) === '')) {
                 $settings[$key] = $defaultValue;
             }
         }

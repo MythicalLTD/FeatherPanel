@@ -23,7 +23,7 @@ import { ArrowLeft, Info, Lock, RefreshCw, Send, Unlock, Paperclip, X, Settings 
 
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
-import { Textarea } from '@/components/ui/textarea';
+import { Textarea } from '@/components/featherui/Textarea';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';

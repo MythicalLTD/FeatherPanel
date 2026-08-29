@@ -28,7 +28,8 @@ import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Select } from '@/components/ui/select-native';
 import { toast } from 'sonner';
-import { filesApi, ShareFileResult } from '@/lib/files-api';
+import { type ShareFileResult } from '@/lib/files-api';
+import { useFileManagerApi } from '@/contexts/FileManagerApiContext';
 import { Share2, Copy, Check } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { copyToClipboard } from '@/lib/utils';
@@ -42,6 +43,7 @@ interface ShareFileDialogProps {
 }
 
 export function ShareFileDialog({ open, onOpenChange, uuid, filePath, fileName }: ShareFileDialogProps) {
+    const filesApi = useFileManagerApi();
     const { t } = useTranslation();
     const [ttlDays, setTtlDays] = useState<1 | 5>(1);
     const [password, setPassword] = useState('');

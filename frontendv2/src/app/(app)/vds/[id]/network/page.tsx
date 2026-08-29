@@ -158,10 +158,10 @@ export default function VdsNetworkingPage() {
                             size='sm'
                             onClick={fetchNetworking}
                             disabled={loading}
-                            aria-label={t('navigation.items.refresh') || 'Refresh'}
+                            aria-label={t('navigation.items.refresh')}
                         >
                             <RefreshCw className={cn('h-4 w-4 sm:mr-1.5', loading && 'animate-spin')} />
-                            <span className='hidden sm:inline'>{t('navigation.items.refresh') || 'Refresh'}</span>
+                            <span className='hidden sm:inline'>{t('navigation.items.refresh')}</span>
                         </Button>
                     </div>
                 }

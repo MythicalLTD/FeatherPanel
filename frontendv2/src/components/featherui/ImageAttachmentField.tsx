@@ -22,7 +22,7 @@ import { ImageIcon, Loader2, Trash2, Upload } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/featherui/Input';
 import { Button } from '@/components/featherui/Button';
-import { resolveAttachmentUrl, cn } from '@/lib/utils';
+import { resolveAttachmentUrl, safeImageSrc, cn } from '@/lib/utils';
 import { useTranslation } from '@/contexts/TranslationContext';
 
 type ImageAttachmentFieldProps = {
@@ -59,7 +59,7 @@ export function ImageAttachmentField({
     const { t } = useTranslation();
     const inputRef = useRef<HTMLInputElement>(null);
     const [uploading, setUploading] = useState(false);
-    const previewUrl = resolveAttachmentUrl(value) || value.trim() || null;
+    const previewUrl = safeImageSrc(resolveAttachmentUrl(value) || value);
 
     const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -106,7 +106,10 @@ export function ImageAttachmentField({
 
             <div className='flex flex-wrap items-start gap-4'>
                 <div className='border-border bg-muted/40 flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border'>
-                    {previewUrl ? (
+                    {previewUrl &&
+                    ((previewUrl.startsWith('/') && !previewUrl.startsWith('//')) ||
+                        previewUrl.startsWith('https://') ||
+                        previewUrl.startsWith('http://')) ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
                             src={previewUrl}

@@ -206,6 +206,26 @@ class UpdateTaskTool implements ToolInterface
             }
         }
 
+        if (in_array($finalAction, ['backup', 'database_backup'], true)) {
+            $effectivePayload = $updateData['payload'] ?? ($task['payload'] ?? '');
+            try {
+                if ($finalAction === 'database_backup' && trim((string) $effectivePayload) === '') {
+                    return [
+                        'success' => false,
+                        'error' => "Task action '{$finalAction}' requires a payload",
+                        'action_type' => 'update_task',
+                    ];
+                }
+                \App\Services\Database\ServerDatabaseDumpService::parseBackupPayload((string) $effectivePayload);
+            } catch (\InvalidArgumentException $e) {
+                return [
+                    'success' => false,
+                    'error' => $e->getMessage(),
+                    'action_type' => 'update_task',
+                ];
+            }
+        }
+
         // Update task
         if (!Task::updateTask((int) $taskId, $updateData)) {
             return [

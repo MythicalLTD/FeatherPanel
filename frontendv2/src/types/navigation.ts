@@ -70,6 +70,7 @@ export interface PluginSidebarResponse {
         sidebar: {
             server: Record<string, PluginSidebarItem>;
             vds: Record<string, PluginSidebarItem>;
+            webspace: Record<string, PluginSidebarItem>;
             client: Record<string, PluginSidebarItem>;
             admin: Record<string, PluginSidebarItem>;
         };

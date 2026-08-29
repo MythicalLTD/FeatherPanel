@@ -24,13 +24,16 @@ import {
     getServerNavigationItems,
     getMainNavigationItems,
     getVdsNavigationItems,
+    getWebSpaceNavigationItems,
 } from '@/config/navigation';
 import { usePluginRoutes } from '@/hooks/usePluginRoutes';
 import { useServerPermissions } from '@/hooks/useServerPermissions';
 import { useVdsPermissions } from '@/hooks/useVdsPermissions';
+import { useWebSpacePermissions } from '@/hooks/useWebSpacePermissions';
 import { useDeveloperMode } from '@/hooks/useDeveloperMode';
 import { useMainNavResourceCounts } from '@/hooks/useMainNavResourceCounts';
 import { applySidebarCustomization, parseSidebarNavigationConfig, type SidebarScope } from '@/lib/sidebarCustomization';
+import { WebSpaceSubuserPermissions } from '@/lib/webspace-permissions';
 
 const normalizeSpellId = (spellId: number | string | null | undefined): number | null => {
     if (spellId === null || spellId === undefined) return null;
@@ -64,9 +67,13 @@ export function useNavigation() {
     const isVds = pathname.startsWith('/vds/');
     const vdsId = isVds ? pathname.split('/')[2] : null;
 
+    const isWebspace = pathname.startsWith('/webspace/');
+    const webspaceUuid = isWebspace ? pathname.split('/')[2] : null;
+
     // Call hook at top level - valid usage
     const { hasPermission: hasServerPermission, server } = useServerPermissions(serverUuid || '');
     const { hasPermission: hasVdsPermission } = useVdsPermissions();
+    const { hasPermission: hasWebSpacePermission } = useWebSpacePermissions(webspaceUuid || '');
 
     const mainNavResourceCountsEnabled =
         isSessionChecked &&
@@ -74,7 +81,8 @@ export function useNavigation() {
         !!user &&
         !pathname.startsWith('/admin') &&
         !pathname.startsWith('/server/') &&
-        !pathname.startsWith('/vds/');
+        !pathname.startsWith('/vds/') &&
+        !pathname.startsWith('/webspace/');
 
     const mainNavResourceCounts = useMainNavResourceCounts(mainNavResourceCountsEnabled, user?.uuid);
 
@@ -85,10 +93,11 @@ export function useNavigation() {
     const convertPluginItems = useCallback(
         (
             pluginItems: Record<string, PluginSidebarItem>,
-            category: 'main' | 'admin' | 'server' | 'vds',
+            category: 'main' | 'admin' | 'server' | 'vds' | 'webspace',
             serverUuid?: string,
             vdsId?: string,
             spellId?: number | null,
+            webspaceUuid?: string,
         ): NavigationItem[] => {
             // Use outer serverSpellId for filtering to ensure we capture the latest value
             const currentSpellId = category === 'server' ? serverSpellId : spellId;
@@ -130,6 +139,15 @@ export function useNavigation() {
                         }
                     }
 
+                    if (category === 'webspace') {
+                        if (webspaceUuid) {
+                            prefix = `/webspace/${webspaceUuid}`;
+                        }
+                        if (processedUrl.startsWith('/webspace')) {
+                            processedUrl = processedUrl.replace('/webspace', '');
+                        }
+                    }
+
                     const cleanUrl = processedUrl.startsWith('/') ? processedUrl : `/${processedUrl}`;
                     const fullUrl = `${prefix}${cleanUrl}`;
 
@@ -140,6 +158,9 @@ export function useNavigation() {
                     }
                     if (category === 'vds' && redirectUrl && redirectUrl.startsWith('/vds')) {
                         redirectUrl = redirectUrl.replace('/vds', '');
+                    }
+                    if (category === 'webspace' && redirectUrl && redirectUrl.startsWith('/webspace')) {
+                        redirectUrl = redirectUrl.replace('/webspace', '');
                     }
 
                     const cleanRedirect = redirectUrl
@@ -154,6 +175,7 @@ export function useNavigation() {
                     const builtInGroups: Record<string, string[]> = {
                         server: ['management', 'files', 'networking', 'automation', 'configuration'],
                         vds: ['management', 'files', 'networking', 'automation', 'configuration'],
+                        webspace: ['management', 'files', 'networking', 'automation', 'configuration'],
                         admin: [
                             'overview',
                             'feathercloud',
@@ -295,6 +317,34 @@ export function useNavigation() {
             return items.filter((item) => !item.permission || hasVdsPermission(item.permission));
         }
 
+        if (isWebspace && webspaceUuid) {
+            let items = getWebSpaceNavigationItems(t, webspaceUuid);
+            items = items.map((item) => ({
+                ...item,
+                isActive: checkActive(item.url, item.url === `/webspace/${webspaceUuid}`),
+            }));
+
+            if (pluginRoutes?.webspace) {
+                const webspacePlugins = convertPluginItems(
+                    pluginRoutes.webspace,
+                    'webspace',
+                    undefined,
+                    undefined,
+                    undefined,
+                    webspaceUuid,
+                );
+                items.push(...webspacePlugins);
+            }
+
+            return items.filter((item) => {
+                if (!item.permission) return true;
+                const perm =
+                    WebSpaceSubuserPermissions[item.permission as keyof typeof WebSpaceSubuserPermissions] ||
+                    item.permission;
+                return hasWebSpacePermission(perm);
+            });
+        }
+
         // MAIN NAVIGATION
         let items = getMainNavigationItems(t, settings, hasPermission, mainNavResourceCounts);
 
@@ -333,6 +383,9 @@ export function useNavigation() {
         isVds,
         vdsId,
         hasVdsPermission,
+        isWebspace,
+        webspaceUuid,
+        hasWebSpacePermission,
         mainNavResourceCounts,
     ]);
 

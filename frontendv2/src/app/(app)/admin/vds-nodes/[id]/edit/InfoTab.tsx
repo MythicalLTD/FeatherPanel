@@ -199,7 +199,7 @@ function NodeCard({ node }: { node: ProxmoxNode }) {
 
     const cpuColor = cpuPct > 80 ? 'text-red-500' : cpuPct > 60 ? 'text-amber-500' : 'text-green-500';
     const memColor = memPct > 80 ? 'text-red-500' : memPct > 60 ? 'text-amber-500' : 'text-blue-500';
-    const diskColor = diskPct > 80 ? 'text-red-500' : diskPct > 60 ? 'text-amber-500' : 'text-purple-500';
+    const diskColor = diskPct > 80 ? 'text-red-500' : diskPct > 60 ? 'text-amber-500' : 'text-primary';
 
     return (
         <div
@@ -299,9 +299,7 @@ function NodeCard({ node }: { node: ProxmoxNode }) {
                                 used={formatBytes(diskUsed)}
                                 max={formatBytes(diskMax)}
                                 pct={diskPct}
-                                colorClass={
-                                    diskPct > 80 ? 'bg-red-500' : diskPct > 60 ? 'bg-amber-500' : 'bg-purple-500'
-                                }
+                                colorClass={diskPct > 80 ? 'bg-red-500' : diskPct > 60 ? 'bg-amber-500' : 'bg-primary'}
                             />
                         )}
                     </div>

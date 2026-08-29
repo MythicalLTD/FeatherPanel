@@ -26,7 +26,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/featherui/Input';
 import { toast } from 'sonner';
 import { RefreshCw, AlertTriangle, Loader2, RotateCcw, Lock, Server, Eye, EyeOff } from 'lucide-react';
-import { HeadlessModal } from '@/components/ui/headless-modal';
+import { Dialog, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
@@ -746,12 +746,19 @@ export default function VdsSettingsPage() {
             )}
 
             {/* Reinstall confirm modal */}
-            <HeadlessModal
-                isOpen={reinstallOpen}
+            <Dialog
+                open={reinstallOpen}
                 onClose={() => setReinstallOpen(false)}
-                title={t('vds.settings.reinstall.confirm_title')}
-                description={t('vds.settings.reinstall.confirm_desc')}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setReinstallOpen(false);
+                    }
+                }}
             >
+                <DialogHeader>
+                    <DialogTitle>{t('vds.settings.reinstall.confirm_title')}</DialogTitle>
+                    <DialogDescription>{t('vds.settings.reinstall.confirm_desc')}</DialogDescription>
+                </DialogHeader>
                 <div className='space-y-6 py-4'>
                     <div className='flex items-start gap-4 rounded-2xl border border-red-500/20 bg-red-500/10 p-4'>
                         <AlertTriangle className='mt-0.5 h-5 w-5 shrink-0 text-red-400' />
@@ -853,7 +860,7 @@ export default function VdsSettingsPage() {
                         {t('vds.settings.reinstall.confirm_button')}
                     </Button>
                 </div>
-            </HeadlessModal>
+            </Dialog>
 
             <WidgetRenderer widgets={getWidgets('vds-settings', 'bottom-of-page')} />
         </div>

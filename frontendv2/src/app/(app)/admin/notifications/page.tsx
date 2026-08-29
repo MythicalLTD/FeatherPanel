@@ -519,7 +519,7 @@ export default function NotificationsPage() {
                         if (notification.is_sticky) {
                             badges.push({
                                 label: t('admin.notifications.sticky'),
-                                className: 'bg-purple-500/10 text-purple-600 border-purple-500/20',
+                                className: 'bg-primary/10 text-primary border-primary/20',
                             });
                         }
                         if (!notification.is_dismissible) {

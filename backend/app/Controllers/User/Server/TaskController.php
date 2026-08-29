@@ -392,6 +392,17 @@ class TaskController
             $payload = is_string($rawPayload) ? $payload : '';
         }
 
+        if (in_array($action, ['backup', 'database_backup'], true)) {
+            try {
+                if ($action === 'database_backup' && $payload === '') {
+                    return ApiResponse::error('Missing required field: payload', 'MISSING_REQUIRED_FIELD', 400);
+                }
+                \App\Services\Database\ServerDatabaseDumpService::parseBackupPayload($payload);
+            } catch (\InvalidArgumentException $e) {
+                return ApiResponse::error($e->getMessage(), 'INVALID_PAYLOAD', 400);
+            }
+        }
+
         // Get next sequence ID for this schedule
         $nextSequenceId = Task::getNextSequenceId($scheduleId);
 
@@ -557,6 +568,18 @@ class TaskController
             $effectivePayload = array_key_exists('payload', $body) ? $body['payload'] : ($task['payload'] ?? '');
             if (trim((string) $effectivePayload) === '') {
                 return ApiResponse::error('Missing required field: payload', 'MISSING_REQUIRED_FIELD', 400);
+            }
+        }
+
+        if (in_array($finalAction, ['backup', 'database_backup'], true)) {
+            $effectivePayload = array_key_exists('payload', $body) ? $body['payload'] : ($task['payload'] ?? '');
+            try {
+                if ($finalAction === 'database_backup' && trim((string) $effectivePayload) === '') {
+                    return ApiResponse::error('Missing required field: payload', 'MISSING_REQUIRED_FIELD', 400);
+                }
+                \App\Services\Database\ServerDatabaseDumpService::parseBackupPayload((string) $effectivePayload);
+            } catch (\InvalidArgumentException $e) {
+                return ApiResponse::error($e->getMessage(), 'INVALID_PAYLOAD', 400);
             }
         }
 

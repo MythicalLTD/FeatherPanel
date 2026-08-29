@@ -41,8 +41,8 @@ export function QuickStatsCards({ node, systemInfoData }: QuickStatsCardsProps) 
             value: node.memory,
             subtitle: 'MiB',
             icon: Zap,
-            color: 'text-purple-500',
-            bg: 'bg-purple-500/10',
+            color: 'text-primary',
+            bg: 'bg-primary/10',
         },
         {
             title: t('admin.node.view.stats.disk'),

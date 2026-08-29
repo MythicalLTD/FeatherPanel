@@ -215,6 +215,102 @@ class FeatherQuilldConfigBuilder
             $system['backup_directory'] = self::normalizePath((string) $node['backupsPath']);
         }
 
+        $backupsProvider = strtolower(trim((string) ($node['backupsProvider'] ?? 'local')));
+        if ($backupsProvider === '') {
+            $backupsProvider = 'local';
+        }
+        $backups = ['provider' => $backupsProvider];
+        if ($backupsProvider === 's3') {
+            $s3 = [];
+            $endpoint = trim((string) ($node['backupsS3Endpoint'] ?? ''));
+            if ($endpoint !== '') {
+                $s3['endpoint'] = $endpoint;
+            }
+            $region = trim((string) ($node['backupsS3Region'] ?? 'us-east-1'));
+            $s3['region'] = $region !== '' ? $region : 'us-east-1';
+            $bucket = trim((string) ($node['backupsS3Bucket'] ?? ''));
+            if ($bucket !== '') {
+                $s3['bucket'] = $bucket;
+            }
+            $access = trim((string) ($node['backupsS3AccessKey'] ?? ''));
+            if ($access !== '') {
+                $s3['access_key'] = $access;
+            }
+            $secret = trim((string) ($node['backupsS3SecretKey'] ?? ''));
+            if ($secret !== '') {
+                $s3['secret_key'] = $secret;
+            }
+            $prefix = trim((string) ($node['backupsS3Prefix'] ?? 'webspaces/'));
+            $s3['prefix'] = $prefix !== '' ? $prefix : 'webspaces/';
+            $s3['force_path_style'] = filter_var($node['backupsS3ForcePathStyle'] ?? false, FILTER_VALIDATE_BOOLEAN);
+            $backups['s3'] = $s3;
+        }
+        if ($backupsProvider === 'restic') {
+            $restic = [];
+            $repo = trim((string) ($node['backupsResticRepository'] ?? ''));
+            if ($repo !== '') {
+                $restic['repository'] = $repo;
+            }
+            $password = trim((string) ($node['backupsResticPassword'] ?? ''));
+            if ($password !== '') {
+                $restic['password'] = $password;
+            }
+            $binary = trim((string) ($node['backupsResticBinary'] ?? ''));
+            if ($binary !== '') {
+                $restic['binary'] = $binary;
+            }
+            $backups['restic'] = $restic;
+        }
+        if ($backupsProvider === 'pbs') {
+            $pbs = [];
+            $repo = trim((string) ($node['backupsPbsRepository'] ?? ''));
+            if ($repo !== '') {
+                $pbs['repository'] = $repo;
+            }
+            $password = trim((string) ($node['backupsPbsPassword'] ?? ''));
+            if ($password !== '') {
+                $pbs['password'] = $password;
+            }
+            $fp = trim((string) ($node['backupsPbsFingerprint'] ?? ''));
+            if ($fp !== '') {
+                $pbs['fingerprint'] = $fp;
+            }
+            $binary = trim((string) ($node['backupsPbsBinary'] ?? ''));
+            if ($binary !== '') {
+                $pbs['binary'] = $binary;
+            }
+            $backups['pbs'] = $pbs;
+        }
+        $system['backups'] = $backups;
+
+        $proxy = [];
+        $proxyEnabled = filter_var($node['proxyEnabled'] ?? true, FILTER_VALIDATE_BOOLEAN);
+        $proxy['enabled'] = $proxyEnabled;
+        $provider = strtolower(trim((string) ($node['proxyProvider'] ?? 'caddy')));
+        if ($provider === '') {
+            $provider = 'caddy';
+        }
+        $proxy['provider'] = $provider;
+        $acme = trim((string) ($node['acmeEmail'] ?? ''));
+        if ($acme !== '') {
+            $proxy['acme_email'] = $acme;
+        }
+        $proxy['acme_staging'] = filter_var($node['acmeStaging'] ?? false, FILTER_VALIDATE_BOOLEAN);
+        $backendPortMin = (int) ($node['backendPortMin'] ?? 20000);
+        $backendPortMax = (int) ($node['backendPortMax'] ?? 29999);
+        if ($backendPortMin < 1) {
+            $backendPortMin = 20000;
+        }
+        if ($backendPortMax < 1) {
+            $backendPortMax = 29999;
+        }
+        if ($backendPortMax < $backendPortMin) {
+            $backendPortMax = $backendPortMin;
+        }
+        $proxy['backend_port_min'] = $backendPortMin;
+        $proxy['backend_port_max'] = $backendPortMax;
+        $system['proxy'] = $proxy;
+
         return $system;
     }
 

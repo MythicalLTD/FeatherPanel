@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { APP_MONO_FONT_STACK } from '@/lib/mono-font';
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import axios, { isAxiosError } from 'axios';
@@ -510,7 +511,7 @@ export default function TranslationsPage() {
                                 scrollBeyondLastLine: false,
                                 automaticLayout: true,
                                 padding: { top: 20 },
-                                fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+                                fontFamily: APP_MONO_FONT_STACK,
                                 fontLigatures: true,
                                 formatOnPaste: true,
                                 formatOnType: true,

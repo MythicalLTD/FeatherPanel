@@ -47,7 +47,7 @@ import { PageCard } from '@/components/featherui/PageCard';
 import { ResourceCard } from '@/components/featherui/ResourceCard';
 import { EmptyState } from '@/components/featherui/EmptyState';
 import { Button } from '@/components/featherui/Button';
-import { HeadlessModal } from '@/components/ui/headless-modal';
+import { Dialog, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import type { LifecycleHook, LifecycleHookStep, LifecycleHookType, LifecycleTaskType } from '@/types/server';
 import { LIFECYCLE_HOOK_TYPES } from '@/types/server';
 import { computeMovedSequence } from './form-utils';
@@ -695,12 +695,19 @@ export default function ServerLifecycleHooksPage() {
                     </div>
                 )}
 
-                <HeadlessModal
-                    isOpen={isDeleteOpen}
+                <Dialog
+                    open={isDeleteOpen}
                     onClose={() => setIsDeleteOpen(false)}
-                    title={t('lifecycleHooks.deleteModalTitle')}
-                    description={t('lifecycleHooks.deleteModalDescription')}
+                    onOpenChange={(open) => {
+                        if (!open) {
+                            setIsDeleteOpen(false);
+                        }
+                    }}
                 >
+                    <DialogHeader>
+                        <DialogTitle>{t('lifecycleHooks.deleteModalTitle')}</DialogTitle>
+                        <DialogDescription>{t('lifecycleHooks.deleteModalDescription')}</DialogDescription>
+                    </DialogHeader>
                     <div className='flex justify-end gap-2 pt-4'>
                         <Button variant='glass' onClick={() => setIsDeleteOpen(false)} disabled={deleting}>
                             {t('common.cancel')}
@@ -709,7 +716,7 @@ export default function ServerLifecycleHooksPage() {
                             {t('common.delete')}
                         </Button>
                     </div>
-                </HeadlessModal>
+                </Dialog>
             </div>
             <WidgetRenderer widgets={getWidgets('server-lifecycle-hooks', 'bottom-of-page')} />
         </>

@@ -56,12 +56,12 @@ interface FileActionToolbarProps {
     onArchiveSelected: () => void;
     onClearSelection: () => void;
     onPullFile: () => void;
-    onWipeAll: () => void;
-    onIgnoredContent: () => void;
+    onWipeAll?: () => void;
+    onIgnoredContent?: () => void;
     onCopySelected: () => void;
     onMoveSelected: () => void;
     onPermissionsSelected: () => void;
-    onOpenInIDE: () => void;
+    onOpenInIDE?: () => void;
     onOpenInCalagopus?: () => void;
     canCreate: boolean;
     canDelete: boolean;
@@ -244,15 +244,17 @@ export function FileActionToolbar({
                                     </Button>
                                 ))}
 
-                            <Button
-                                variant='ghost'
-                                size='sm'
-                                onClick={onOpenInIDE}
-                                className='text-muted-foreground hover:text-foreground h-9 shrink-0 px-3 hover:bg-black/5 dark:hover:bg-white/5'
-                            >
-                                <Boxes className='mr-2 h-4 w-4 shrink-0' />
-                                <span className='xs:inline hidden'>{t('files.toolbar.open_in_ide')}</span>
-                            </Button>
+                            {onOpenInIDE && (
+                                <Button
+                                    variant='ghost'
+                                    size='sm'
+                                    onClick={onOpenInIDE}
+                                    className='text-muted-foreground hover:text-foreground h-9 shrink-0 px-3 hover:bg-black/5 dark:hover:bg-white/5'
+                                >
+                                    <Boxes className='mr-2 h-4 w-4 shrink-0' />
+                                    <span className='xs:inline hidden'>{t('files.toolbar.open_in_ide')}</span>
+                                </Button>
+                            )}
 
                             {onOpenInCalagopus && (
                                 <Button
@@ -266,30 +268,34 @@ export function FileActionToolbar({
                                 </Button>
                             )}
 
-                            <DropdownMenu>
-                                <DropdownMenuTrigger
-                                    as={Button}
-                                    variant='ghost'
-                                    size='sm'
-                                    className='text-muted-foreground hover:text-foreground h-9 w-9 shrink-0 p-0 hover:bg-black/5 dark:hover:bg-white/5'
-                                >
-                                    <Settings className='h-4 w-4 shrink-0' />
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align='end'>
-                                    <DropdownMenuItem onClick={onIgnoredContent}>
-                                        <ShieldCheck className='mr-2 h-4 w-4' />
-                                        {t('files.toolbar.ignored_content')}
-                                    </DropdownMenuItem>
-                                    {canDelete && currentDirectory === '/' && (
-                                        <DropdownMenuItem
-                                            onClick={onWipeAll}
-                                            className='text-red-500 focus:bg-red-500/10 focus:text-red-500'
-                                        >
-                                            <Trash2 className='mr-2 h-4 w-4' /> {t('files.toolbar.wipe_all')}
-                                        </DropdownMenuItem>
-                                    )}
-                                </DropdownMenuContent>
-                            </DropdownMenu>
+                            {(onIgnoredContent || (onWipeAll && canDelete && currentDirectory === '/')) && (
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger
+                                        as={Button}
+                                        variant='ghost'
+                                        size='sm'
+                                        className='text-muted-foreground hover:text-foreground h-9 w-9 shrink-0 p-0 hover:bg-black/5 dark:hover:bg-white/5'
+                                    >
+                                        <Settings className='h-4 w-4 shrink-0' />
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align='end'>
+                                        {onIgnoredContent && (
+                                            <DropdownMenuItem onClick={onIgnoredContent}>
+                                                <ShieldCheck className='mr-2 h-4 w-4' />
+                                                {t('files.toolbar.ignored_content')}
+                                            </DropdownMenuItem>
+                                        )}
+                                        {onWipeAll && canDelete && currentDirectory === '/' && (
+                                            <DropdownMenuItem
+                                                onClick={onWipeAll}
+                                                className='text-red-500 focus:bg-red-500/10 focus:text-red-500'
+                                            >
+                                                <Trash2 className='mr-2 h-4 w-4' /> {t('files.toolbar.wipe_all')}
+                                            </DropdownMenuItem>
+                                        )}
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            )}
                         </div>
                     </>
                 )}

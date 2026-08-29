@@ -16,6 +16,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { useEffect, useRef, useState, useCallback } from 'react';
 import axios from 'axios';
 import { toast } from 'sonner';
+import { useTranslation } from '@/contexts/TranslationContext';
 
 interface WingsMessage {
     event: string;
@@ -113,6 +114,12 @@ export function useWingsWebSocket({
     onFileOperation,
     connect: shouldConnect = true,
 }: WingsWebSocketOptions): WingsWebSocketReturn {
+    const { t } = useTranslation();
+    const tRef = useRef(t);
+    useEffect(() => {
+        tRef.current = t;
+    }, [t]);
+
     const wsRef = useRef<WebSocket | null>(null);
     const jwtTokenRef = useRef<string>('');
     const [isConnected, setIsConnected] = useState(false);
@@ -583,35 +590,44 @@ export function useWingsWebSocket({
                                 const toastId = `file-op-${operationId}`;
                                 if (data.event === 'operation progress') {
                                     trackFileOpToast(toastId);
-                                    toast.loading('File operation in progress…', { id: toastId, duration: 15000 });
+                                    toast.loading(tRef.current('files.messages.file_operation_progress'), {
+                                        id: toastId,
+                                        duration: 15000,
+                                    });
                                 } else if (data.event === 'operation completed') {
                                     untrackFileOpToast(toastId);
-                                    toast.success('File operation completed', { id: toastId });
+                                    toast.success(tRef.current('files.messages.file_operation_completed'), {
+                                        id: toastId,
+                                    });
                                 } else if (data.event === 'operation error') {
                                     untrackFileOpToast(toastId);
                                     const message =
                                         typeof data.args?.[1] === 'string' && data.args[1]
                                             ? data.args[1]
-                                            : 'File operation failed';
+                                            : tRef.current('files.messages.file_operation_failed');
                                     toast.error(message, { id: toastId });
                                 } else if (data.event === 'operation aborted') {
                                     untrackFileOpToast(toastId);
-                                    toast.message('File operation aborted', { id: toastId });
+                                    toast.message(tRef.current('files.messages.file_operation_aborted'), {
+                                        id: toastId,
+                                    });
                                 }
                             } else if (data.event === 'operation progress') {
                                 // No stable operation id — fire an untracked toast so it
                                 // cannot collide with or be bulk-dismissed by other ops.
-                                toast.loading('File operation in progress…', { duration: 15000 });
+                                toast.loading(tRef.current('files.messages.file_operation_progress'), {
+                                    duration: 15000,
+                                });
                             } else if (data.event === 'operation completed') {
-                                toast.success('File operation completed');
+                                toast.success(tRef.current('files.messages.file_operation_completed'));
                             } else if (data.event === 'operation error') {
                                 const message =
                                     typeof data.args?.[1] === 'string' && data.args[1]
                                         ? data.args[1]
-                                        : 'File operation failed';
+                                        : tRef.current('files.messages.file_operation_failed');
                                 toast.error(message);
                             } else if (data.event === 'operation aborted') {
-                                toast.message('File operation aborted');
+                                toast.message(tRef.current('files.messages.file_operation_aborted'));
                             }
                             return;
                         }

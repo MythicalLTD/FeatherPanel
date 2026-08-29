@@ -339,8 +339,8 @@ export default function ServerActivityPage() {
         if (eventLower.includes('restart')) return 'text-yellow-500 bg-yellow-500/10 border-yellow-500/20';
         if (eventLower.includes('power')) return 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20';
         if (eventLower.includes('file')) return 'text-orange-500 bg-orange-500/10 border-orange-500/20';
-        if (eventLower.includes('database')) return 'text-indigo-500 bg-indigo-500/10 border-indigo-500/20';
-        if (eventLower.includes('schedule')) return 'text-purple-500 bg-purple-500/10 border-purple-500/20';
+        if (eventLower.includes('database')) return 'text-primary bg-primary/10 border-primary/20';
+        if (eventLower.includes('schedule')) return 'text-primary bg-primary/10 border-primary/20';
         if (eventLower.includes('task')) return 'text-pink-500 bg-pink-500/10 border-pink-500/20';
         if (['subuser', 'user'].some((x) => eventLower.includes(x)))
             return 'text-cyan-500 bg-cyan-500/10 border-cyan-500/20';

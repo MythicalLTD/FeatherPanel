@@ -15,7 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { Button } from '@/components/featherui/Button';
 import { ChevronRight, Home, Search, Settings2, X } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { Input } from '@/components/featherui/Input';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useRef, useState } from 'react';
 import { cn } from '@/lib/utils';

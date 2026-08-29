@@ -24,6 +24,7 @@ import { Calendar, Save, ExternalLink, Lock } from 'lucide-react';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
+import { FormSection } from '@/components/featherui/FormSection';
 import { Label } from '@/components/ui/label';
 import { HeadlessSelect } from '@/components/ui/headless-select';
 import { toast } from 'sonner';
@@ -191,7 +192,7 @@ export default function EditSchedulePage() {
             <form onSubmit={handleUpdate} className='space-y-8'>
                 <div className='from-primary/5 pointer-events-none fixed inset-0 -z-10 bg-linear-to-br via-transparent to-blue-500/5' />
 
-                <div className='bg-card/50 border-border/50 space-y-6 rounded-3xl border p-8 backdrop-blur-3xl'>
+                <FormSection>
                     <div className='border-border/10 flex items-center gap-4 border-b pb-6'>
                         <div className='bg-primary/10 border-primary/20 flex h-10 w-10 items-center justify-center rounded-xl border'>
                             <Calendar className='text-primary h-5 w-5' />
@@ -223,9 +224,9 @@ export default function EditSchedulePage() {
                         />
                         <p className='text-muted-foreground ml-1 text-xs'>{t('serverSchedules.nameHelp')}</p>
                     </div>
-                </div>
+                </FormSection>
 
-                <div className='bg-card/50 border-border/50 space-y-6 rounded-3xl border p-8 backdrop-blur-3xl'>
+                <FormSection>
                     <div className='border-border/10 flex items-center justify-between border-b pb-6'>
                         <div className='flex items-center gap-4'>
                             <div className='bg-primary/10 border-primary/20 flex h-10 w-10 items-center justify-center rounded-xl border'>
@@ -341,9 +342,9 @@ export default function EditSchedulePage() {
                         />
                         <p className='text-muted-foreground ml-1 text-xs'>{t('serverSchedules.timezoneHelp')}</p>
                     </div>
-                </div>
+                </FormSection>
 
-                <div className='bg-card/50 border-border/50 space-y-6 rounded-3xl border p-8 backdrop-blur-3xl'>
+                <FormSection>
                     <div className='border-border/10 flex items-center gap-4 border-b pb-6'>
                         <div className='bg-primary/10 border-primary/20 flex h-10 w-10 items-center justify-center rounded-xl border'>
                             <Calendar className='text-primary h-5 w-5' />
@@ -397,7 +398,7 @@ export default function EditSchedulePage() {
                             </p>
                         </div>
                     </div>
-                </div>
+                </FormSection>
 
                 <div className='flex flex-col gap-3 md:hidden'>
                     <Button

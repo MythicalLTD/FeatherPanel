@@ -19,8 +19,8 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import axios from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
-import { Dialog, DialogPanel, DialogTitle, Description as DialogDescription } from '@headlessui/react';
-import { Button } from '@/components/ui/button';
+import { Dialog, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/featherui/Button';
 import { cn } from '@/lib/utils';
 import { Mail, RefreshCw, Clock } from 'lucide-react';
 
@@ -217,46 +217,45 @@ export function DashboardRecentMails() {
                 )}
             </div>
 
-            <Dialog open={mailModalOpen} onClose={() => setMailModalOpen(false)} className='relative z-50'>
-                <div className='fixed inset-0 bg-black/30' aria-hidden='true' />
-                <div className='fixed inset-0 flex items-center justify-center p-4'>
-                    <DialogPanel className='bg-card/50 border-border/50 flex max-h-[90vh] w-full max-w-5xl flex-col rounded-xl border p-6 backdrop-blur-xl'>
-                        <DialogTitle className='text-foreground mb-2 text-xl font-semibold'>
-                            {selectedMail?.subject}
-                        </DialogTitle>
-                        <DialogDescription className='text-muted-foreground mb-4 flex items-center gap-4 text-sm'>
-                            <div className='flex items-center gap-2'>
-                                <Clock className='h-4 w-4' />
-                                <span>{selectedMail ? formatDate(selectedMail.created_at) : ''}</span>
-                            </div>
-                            <div
-                                className={cn(
-                                    'rounded px-2 py-1 text-xs font-medium',
-                                    getStatusVariant(selectedMail?.status || 'pending'),
-                                )}
-                            >
-                                {selectedMail ? t(`account.mail.status.${selectedMail.status}`) : ''}
-                            </div>
-                        </DialogDescription>
-
-                        <div className='min-h-0 flex-1 overflow-y-auto'>
-                            {selectedMail && (
-                                <iframe
-                                    srcDoc={getIframeContent(selectedMail.body)}
-                                    className='min-h-[50vh] w-full rounded border-0 bg-white'
-                                    sandbox='allow-same-origin'
-                                    title={t('account.mail.mailContent')}
-                                />
+            <Dialog
+                open={mailModalOpen}
+                onClose={() => setMailModalOpen(false)}
+                className='flex max-h-[90vh] max-w-5xl flex-col'
+            >
+                <DialogHeader>
+                    <DialogTitle className='text-xl'>{selectedMail?.subject}</DialogTitle>
+                    <div className='text-muted-foreground mt-2 flex items-center gap-4 text-sm'>
+                        <div className='flex items-center gap-2'>
+                            <Clock className='h-4 w-4' />
+                            <span>{selectedMail ? formatDate(selectedMail.created_at) : ''}</span>
+                        </div>
+                        <div
+                            className={cn(
+                                'rounded px-2 py-1 text-xs font-medium',
+                                getStatusVariant(selectedMail?.status || 'pending'),
                             )}
+                        >
+                            {selectedMail ? t(`account.mail.status.${selectedMail.status}`) : ''}
                         </div>
+                    </div>
+                </DialogHeader>
 
-                        <div className='mt-4 flex justify-end'>
-                            <Button variant='outline' type='button' onClick={() => setMailModalOpen(false)}>
-                                {t('account.mail.close')}
-                            </Button>
-                        </div>
-                    </DialogPanel>
+                <div className='min-h-0 flex-1 overflow-y-auto'>
+                    {selectedMail && (
+                        <iframe
+                            srcDoc={getIframeContent(selectedMail.body)}
+                            className='min-h-[50vh] w-full rounded border-0 bg-white'
+                            sandbox='allow-same-origin'
+                            title={t('account.mail.mailContent')}
+                        />
+                    )}
                 </div>
+
+                <DialogFooter>
+                    <Button variant='outline' type='button' onClick={() => setMailModalOpen(false)}>
+                        {t('account.mail.close')}
+                    </Button>
+                </DialogFooter>
             </Dialog>
         </div>
     );

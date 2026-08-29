@@ -44,6 +44,31 @@ export function resolveAttachmentUrl(url: string | null | undefined): string | n
 }
 
 /**
+ * Allow only schemes safe for <img src> / CSS url().
+ * Rejects javascript:, data:, and protocol-relative URLs so DOM-sourced text
+ * cannot be reinterpreted as executable markup (CodeQL js/xss-through-dom).
+ *
+ * Uses startsWith prefix checks (not URL.protocol) so CodeQL recognizes them
+ * as URL-scheme sanitizer guards and drops the taint flow.
+ */
+export function safeImageSrc(url: string | null | undefined): string | null {
+    if (!url) return null;
+    const trimmed = url.trim();
+    if (trimmed === '') return null;
+
+    // Same-origin path only — not protocol-relative "//evil.example".
+    if (trimmed.startsWith('/') && !trimmed.startsWith('//')) {
+        return trimmed;
+    }
+
+    if (trimmed.startsWith('https://') || trimmed.startsWith('http://')) {
+        return trimmed;
+    }
+
+    return null;
+}
+
+/**
  * Copy text to clipboard with fallback
  */
 export async function copyToClipboard(text: string, t?: (key: string) => string) {
@@ -81,6 +106,19 @@ export function isEnabled(val?: string | boolean | number | null): boolean {
         return val === 'true' || val === '1';
     }
     return false;
+}
+
+/**
+ * For settings that default to enabled unless explicitly disabled (opt-out).
+ * Matches backend gates like `getSetting($key, 'true') == 'false'`.
+ */
+export function isEnabledUnlessExplicitlyFalse(val?: string | boolean | number | null): boolean {
+    if (val === undefined || val === null) return true;
+    if (typeof val === 'boolean') return val;
+    if (typeof val === 'number') return val !== 0;
+    const normalized = val.trim().toLowerCase();
+    if (normalized === '') return true;
+    return normalized !== 'false' && normalized !== '0';
 }
 
 export function getCookie(name: string): string | null {

@@ -50,6 +50,12 @@ class WebNode
         'public',
         'scheme',
         'behind_proxy',
+        'proxyEnabled',
+        'proxyProvider',
+        'acmeEmail',
+        'acmeStaging',
+        'backendPortMin',
+        'backendPortMax',
         'maintenance_mode',
         'memory',
         'memory_overallocate',
@@ -62,6 +68,21 @@ class WebNode
         'daemonBase',
         'websitesPath',
         'backupsPath',
+        'backupsProvider',
+        'backupsS3Endpoint',
+        'backupsS3Region',
+        'backupsS3Bucket',
+        'backupsS3AccessKey',
+        'backupsS3SecretKey',
+        'backupsS3Prefix',
+        'backupsS3ForcePathStyle',
+        'backupsResticRepository',
+        'backupsResticPassword',
+        'backupsResticBinary',
+        'backupsPbsRepository',
+        'backupsPbsPassword',
+        'backupsPbsFingerprint',
+        'backupsPbsBinary',
         'addonsPath',
         'quilldConfigOverrides',
         'remoteTimeout',
@@ -170,6 +191,23 @@ class WebNode
             $errors[] = 'sftpPort must be a valid TCP port (1-65535)';
         }
 
+        if (isset($data['backendPortMin']) && (!is_numeric($data['backendPortMin']) || (int) $data['backendPortMin'] < 1 || (int) $data['backendPortMin'] > 65535)) {
+            $errors[] = 'backendPortMin must be a valid TCP port (1-65535)';
+        }
+
+        if (isset($data['backendPortMax']) && (!is_numeric($data['backendPortMax']) || (int) $data['backendPortMax'] < 1 || (int) $data['backendPortMax'] > 65535)) {
+            $errors[] = 'backendPortMax must be a valid TCP port (1-65535)';
+        }
+
+        if (
+            isset($data['backendPortMin'], $data['backendPortMax'])
+            && is_numeric($data['backendPortMin'])
+            && is_numeric($data['backendPortMax'])
+            && (int) $data['backendPortMax'] < (int) $data['backendPortMin']
+        ) {
+            $errors[] = 'backendPortMax must be greater than or equal to backendPortMin';
+        }
+
         return $errors;
     }
 
@@ -216,10 +254,58 @@ class WebNode
 
         $data['location_id'] = (int) $data['location_id'];
 
-        $booleanFields = ['public', 'behind_proxy', 'maintenance_mode', 'sftpEnabled', 'sftpDisablePasswordAuth'];
+        $booleanFields = [
+            'public',
+            'behind_proxy',
+            'proxyEnabled',
+            'acmeStaging',
+            'maintenance_mode',
+            'sftpEnabled',
+            'sftpDisablePasswordAuth',
+            'backupsS3ForcePathStyle',
+        ];
         foreach ($booleanFields as $field) {
             if (isset($data[$field])) {
                 $data[$field] = filter_var($data[$field], FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
+            }
+        }
+
+        if (isset($data['proxyProvider'])) {
+            $provider = strtolower(trim((string) $data['proxyProvider']));
+            $data['proxyProvider'] = in_array($provider, ['caddy', 'nginx', 'traefik'], true) ? $provider : 'caddy';
+        }
+
+        if (array_key_exists('acmeEmail', $data)) {
+            $email = trim((string) ($data['acmeEmail'] ?? ''));
+            $data['acmeEmail'] = $email !== '' ? $email : null;
+        }
+
+        if (isset($data['backupsProvider'])) {
+            $bp = strtolower(trim((string) $data['backupsProvider']));
+            $data['backupsProvider'] = in_array($bp, ['local', 's3', 'restic', 'pbs'], true) ? $bp : 'local';
+        }
+
+        foreach (['backupsS3Endpoint', 'backupsS3Region', 'backupsS3Bucket', 'backupsS3AccessKey', 'backupsS3SecretKey', 'backupsS3Prefix'] as $s3Field) {
+            if (array_key_exists($s3Field, $data)) {
+                $val = trim((string) ($data[$s3Field] ?? ''));
+                $data[$s3Field] = $val !== '' ? $val : null;
+            }
+        }
+
+        foreach (
+            [
+                'backupsResticRepository',
+                'backupsResticPassword',
+                'backupsResticBinary',
+                'backupsPbsRepository',
+                'backupsPbsPassword',
+                'backupsPbsFingerprint',
+                'backupsPbsBinary',
+            ] as $backupField
+        ) {
+            if (array_key_exists($backupField, $data)) {
+                $val = trim((string) ($data[$backupField] ?? ''));
+                $data[$backupField] = $val !== '' ? $val : null;
             }
         }
 
@@ -261,6 +347,18 @@ class WebNode
 
         if (!isset($data['sftpPort']) || !is_numeric($data['sftpPort'])) {
             $data['sftpPort'] = 2222;
+        }
+
+        if (!isset($data['backendPortMin']) || !is_numeric($data['backendPortMin'])) {
+            $data['backendPortMin'] = 20000;
+        } else {
+            $data['backendPortMin'] = (int) $data['backendPortMin'];
+        }
+
+        if (!isset($data['backendPortMax']) || !is_numeric($data['backendPortMax'])) {
+            $data['backendPortMax'] = 29999;
+        } else {
+            $data['backendPortMax'] = (int) $data['backendPortMax'];
         }
 
         if (!isset($data['sftpEnabled'])) {
@@ -503,10 +601,68 @@ class WebNode
             }
         }
 
-        $booleanFields = ['public', 'behind_proxy', 'maintenance_mode', 'sftpEnabled', 'sftpDisablePasswordAuth'];
+        $booleanFields = [
+            'public',
+            'behind_proxy',
+            'proxyEnabled',
+            'acmeStaging',
+            'maintenance_mode',
+            'sftpEnabled',
+            'sftpDisablePasswordAuth',
+            'backupsS3ForcePathStyle',
+        ];
         foreach ($booleanFields as $field) {
             if (isset($data[$field])) {
                 $data[$field] = filter_var($data[$field], FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
+            }
+        }
+
+        if (isset($data['proxyProvider'])) {
+            $provider = strtolower(trim((string) $data['proxyProvider']));
+            $data['proxyProvider'] = in_array($provider, ['caddy', 'nginx', 'traefik'], true) ? $provider : 'caddy';
+        }
+
+        if (array_key_exists('acmeEmail', $data)) {
+            $email = trim((string) ($data['acmeEmail'] ?? ''));
+            $data['acmeEmail'] = $email !== '' ? $email : null;
+        }
+
+        if (isset($data['backupsProvider'])) {
+            $bp = strtolower(trim((string) $data['backupsProvider']));
+            $data['backupsProvider'] = in_array($bp, ['local', 's3', 'restic', 'pbs'], true) ? $bp : 'local';
+        }
+
+        foreach (['backupsS3Endpoint', 'backupsS3Region', 'backupsS3Bucket', 'backupsS3AccessKey', 'backupsS3SecretKey', 'backupsS3Prefix'] as $s3Field) {
+            if (array_key_exists($s3Field, $data)) {
+                $val = trim((string) ($data[$s3Field] ?? ''));
+                // Keep existing secret when the form submits an empty value.
+                if ($s3Field === 'backupsS3SecretKey' && $val === '') {
+                    unset($data[$s3Field]);
+                    continue;
+                }
+                $data[$s3Field] = $val !== '' ? $val : null;
+            }
+        }
+
+        foreach (
+            [
+                'backupsResticRepository',
+                'backupsResticPassword',
+                'backupsResticBinary',
+                'backupsPbsRepository',
+                'backupsPbsPassword',
+                'backupsPbsFingerprint',
+                'backupsPbsBinary',
+            ] as $backupField
+        ) {
+            if (array_key_exists($backupField, $data)) {
+                $val = trim((string) ($data[$backupField] ?? ''));
+                // Keep existing secrets when the form submits an empty value.
+                if (($backupField === 'backupsResticPassword' || $backupField === 'backupsPbsPassword') && $val === '') {
+                    unset($data[$backupField]);
+                    continue;
+                }
+                $data[$backupField] = $val !== '' ? $val : null;
             }
         }
 
@@ -528,6 +684,13 @@ class WebNode
         }
         if (isset($data['daemon_token']) && is_string($data['daemon_token']) && $data['daemon_token'] !== '') {
             $data['daemon_token'] = App::getInstance(true)->encryptValue($data['daemon_token']);
+        }
+
+        if (isset($data['backendPortMin']) && is_numeric($data['backendPortMin'])) {
+            $data['backendPortMin'] = (int) $data['backendPortMin'];
+        }
+        if (isset($data['backendPortMax']) && is_numeric($data['backendPortMax'])) {
+            $data['backendPortMax'] = (int) $data['backendPortMax'];
         }
 
         $filteredData = array_intersect_key($data, array_flip(self::$allowedFields));
@@ -776,6 +939,18 @@ class WebNode
             $row['remoteCustomHeaders'] = WebNodeCustomHeaders::redactForAdmin(
                 is_string($row['remoteCustomHeaders']) ? $row['remoteCustomHeaders'] : null,
             );
+        }
+
+        if (!empty($row['backupsS3SecretKey'])) {
+            $row['backupsS3SecretKey'] = '';
+        }
+
+        if (!empty($row['backupsResticPassword'])) {
+            $row['backupsResticPassword'] = '';
+        }
+
+        if (!empty($row['backupsPbsPassword'])) {
+            $row['backupsPbsPassword'] = '';
         }
 
         return $row;

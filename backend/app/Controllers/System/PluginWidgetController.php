@@ -324,6 +324,7 @@ class PluginWidgetController
             '<userUuid>' => 'testData',
             '<serverUuid>' => 'testData',
             '<vdsId>' => 'testData',
+            '<webspaceUuid>' => 'testData',
             '<realmUuid>' => 'testData',
             '<spellUuid>' => 'testData',
         ];
@@ -354,6 +355,11 @@ class PluginWidgetController
         // Add vdsId if available from cookie
         if (isset($_COOKIE['vdsId']) && strpos($component, 'vdsId=') === false) {
             $queryParams['vdsId'] = $_COOKIE['vdsId'];
+        }
+
+        // Add webspaceUuid if available from cookie
+        if (isset($_COOKIE['webspaceUuid']) && strpos($component, 'webspaceUuid=') === false) {
+            $queryParams['webspaceUuid'] = $_COOKIE['webspaceUuid'];
         }
 
         if (!empty($queryParams)) {

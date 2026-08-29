@@ -54,7 +54,7 @@ export default function ServerTransferSpellPage() {
     const pathname = usePathname();
     const { t } = useTranslation();
     const { settings, loading: settingsLoading } = useSettings();
-    const { loading: permissionsLoading, hasPermission } = useServerPermissions(uuidShort);
+    const { loading: permissionsLoading } = useServerPermissions(uuidShort);
     const { getWidgets } = usePluginWidgets('server-startup-transfer-spell');
 
     const canChangeSpell = isEnabled(settings?.server_allow_egg_change);
@@ -377,16 +377,12 @@ export default function ServerTransferSpellPage() {
         }
 
         try {
-            const canUpdateStartup = hasPermission('startup.update');
             const payload = {
                 spell_id: targetSpell.id,
                 wipe_files: wipeFiles,
+                // Only user-editable variables may be written; non-editable use spell defaults server-side
                 variables: targetVariables
-                    .filter(
-                        (v) =>
-                            v.user_editable === 1 ||
-                            (canUpdateStartup && isEnabled(settings?.server_allow_startup_change)),
-                    )
+                    .filter((v) => v.user_editable === 1)
                     .map((v) => ({
                         variable_id: v.variable_id,
                         variable_value: variableValues[v.variable_id] || '',
@@ -424,7 +420,7 @@ export default function ServerTransferSpellPage() {
 
     if (!canChangeSpell) {
         return (
-            <div className='flex flex-col items-center justify-center space-y-8 rounded-[3rem] border border-white/5 bg-[#0A0A0A]/40 py-24 text-center backdrop-blur-3xl'>
+            <div className='bg-card/40 border-border/50 flex flex-col items-center justify-center space-y-8 rounded-3xl border py-24 text-center backdrop-blur-xl'>
                 <div className='relative'>
                     <div className='absolute inset-0 scale-150 rounded-full bg-red-500/20 blur-3xl' />
                     <div className='relative flex h-32 w-32 rotate-3 items-center justify-center rounded-3xl border-2 border-red-500/20 bg-red-500/10'>

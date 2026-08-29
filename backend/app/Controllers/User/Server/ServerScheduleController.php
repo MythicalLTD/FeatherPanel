@@ -1216,7 +1216,7 @@ class ServerScheduleController
             return ApiResponse::error('Tasks must be an array', 'INVALID_TASKS', 400);
         }
 
-        $validActions = ['power', 'start', 'stop', 'restart', 'kill', 'backup', 'command', 'install', 'update'];
+        $validActions = ['power', 'start', 'stop', 'restart', 'kill', 'backup', 'command', 'install', 'update', 'database_backup'];
         foreach ($tasks as $index => $task) {
             if (!isset($task['action']) || !in_array($task['action'], $validActions, true)) {
                 return ApiResponse::error("Task at index {$index} has an invalid or missing action", 'INVALID_TASK_ACTION', 400);

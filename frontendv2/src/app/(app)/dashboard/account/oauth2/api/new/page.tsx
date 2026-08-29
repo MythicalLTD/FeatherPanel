@@ -19,7 +19,7 @@ import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ShieldCheck, Loader2, ExternalLink, Globe, KeyRound, TriangleAlert } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/featherui/Button';
 import { toast } from 'sonner';
 import { useTranslation } from '@/contexts/TranslationContext';
 import Image from 'next/image';

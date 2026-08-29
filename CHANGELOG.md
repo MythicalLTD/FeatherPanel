@@ -1,5 +1,43 @@
 # Changelog
 
+## v1.4.0 STABLE 
+
+### Added 
+
+- Plugins can now add WebSpace sidebar pages, widgets, and listen to WebSpace events (`featherpanel:webspace:*`), matching server and VDS plugin integration. by @nayskutzu
+- WebSpaces now appear in the dashboard Resources list (with a WebSpaces filter) and use the left sidebar for navigation like servers and VDS. by @nayskutzu
+- The user WebSpaces list now matches the servers/VMs list UI (search, sort, grid/list). Self-service “Order WebSpace” was removed; admins provision WebSpaces. by @nayskutzu
+- Server **lifecycle hooks**: Discord webhook steps resolve container environment placeholders (e.g. `{{env.SERVER_PORT}}`, `{{env.YOUR_VAR}}`) in content, username, and embeds when the webhook is sent. by @nayskutzu
+- Servers can be chosen to be hidden from the public status page. by @nayskutzu
+- WebHosting was now added to the panel. by @nayskutzu
+- Database backups was added to the panel. by @nayskutzu
+- Backups now support the ability to dump the database to a folder. by @nayskutzu
+- New type of serve backup added `FeatherBackup` witch is a backup that dumps all the files and the database of the server including metadata and more. by @nayskutzu
+
+### Improved 
+
+- Admin WebPlates list/create/edit now match Spells/Realms UI (filter chrome, ResourceCards, ghost actions, dual pagination, help cards). by @nayskutzu
+- Removed mistaken `user.webspaces.*` role permission nodes; panel roles stay `admin.*` only, and user WebSpace access uses subuser permissions (`settings.update`, etc.). by @nayskutzu
+- Admin WebSpaces list/create now match Servers/VDS (filter chrome, ghost actions, owner picker, owner on cards). by @nayskutzu
+- WebSpace file manager UI now matches the game server file manager. by @nayskutzu
+- WebSpace resource pages (`/webspace/...`) now match server chrome: compact header/info tiles on overview, themed console, settings/SFTP copy fields, glass file toolbars, and no jumbo PageHeader icons. by @nayskutzu
+- The colors of the power buttons were improved. by @nayskutzu
+- You can now use ENV variables in the server lifecycle hooks. by @nayskutzu
+- If you change the server while editing a file no longer fails. by @nayskutzu
+- Security for cookies were improved. by @nayskutzu
+- Multiple ui improvements were made. by @nayskutzu
+- Admin nav: WebSpaces sit under Servers (with game/VDS), WebPlates under Realms (with Spells); Web Nodes stay under Locations & Nodes. Admin Area from a user WebSpace goes to `/admin/webspaces/{uuid}/edit`. by @nayskutzu
+- English translations were improved to not reflect LLM generated text. by @nayskutzu
+
+### Fixed
+
+- WebSpace schedule create/update no longer deadlocks MySQL (transaction used a second PDO connection) or hangs the UI waiting on daemon sync. by @nayskutzu
+- Fixed: Missing authorization in ServerUserController::updateServer allowed a low-privilege subuser to perform server reinstalls, wipe files, and change the server egg/spell without the proper subuser permissions. by @nayskutzu
+- Fixed: FeatherCloud OAuth2 callback previously ran without middleware and skipped the conditional identity check, allowing a single unauthenticated POST to overwrite Mythic-credential integration keys. by @nayskutzu
+- Multiple text validation issues were fixed. by @nayskutzu
+- Fixed an issue where the Schedules tab was incorrectly hidden when the `server_allow_schedules` setting was unset; it now defaults to visible as intended. by @nayskutzu
+- Fixed: Schedule creation no longer fails with a 500 error when `is_active` is submitted as a boolean; boolean values are handled correctly.
+
 ## v1.3.7.10 STABLE
 
 ### Added

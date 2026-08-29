@@ -61,8 +61,11 @@ import {
     ShieldAlert,
     Bug,
     Lightbulb,
+    LayoutTemplate,
+    AppWindow,
+    Mail,
 } from 'lucide-react';
-import { isEnabled } from '@/lib/utils';
+import { isEnabled, isEnabledUnlessExplicitlyFalse } from '@/lib/utils';
 import { supportsDaemonFeature, type DaemonFeature } from '@/lib/daemonCapabilities';
 
 type TFunction = (key: string) => string;
@@ -284,6 +287,18 @@ export const getAdminNavigationItems = (
                     permission: Permissions.ADMIN_NODES_VIEW,
                     group: 'infrastructure',
                 },
+                {
+                    id: 'admin-webspaces',
+                    name: t('navigation.items.webSpaces'),
+                    title: t('navigation.items.webSpaces'),
+                    url: '/admin/webspaces',
+                    icon: AppWindow,
+                    isActive: false,
+                    category: 'admin',
+                    permission: Permissions.ADMIN_WEBSPACES_VIEW,
+                    group: 'infrastructure',
+                    badge: 'WEB',
+                },
             ],
         },
         {
@@ -341,6 +356,18 @@ export const getAdminNavigationItems = (
                     isActive: false,
                     category: 'admin',
                     permission: Permissions.ADMIN_NODES_VIEW,
+                    group: 'infrastructure',
+                    badge: 'WEB',
+                },
+                {
+                    id: 'admin-mail-hosts',
+                    name: 'Mail hosts',
+                    title: 'Mail hosts',
+                    url: '/admin/mail-hosts',
+                    icon: Mail,
+                    isActive: false,
+                    category: 'admin',
+                    permission: Permissions.ADMIN_WEBSPACES_VIEW,
                     group: 'infrastructure',
                     badge: 'WEB',
                 },
@@ -412,6 +439,18 @@ export const getAdminNavigationItems = (
                     category: 'admin',
                     permission: Permissions.ADMIN_REALMS_VIEW,
                     group: 'infrastructure',
+                },
+                {
+                    id: 'admin-webplates',
+                    name: t('navigation.items.webPlates'),
+                    title: t('navigation.items.webPlates'),
+                    url: '/admin/webplates',
+                    icon: LayoutTemplate,
+                    isActive: false,
+                    category: 'admin',
+                    permission: Permissions.ADMIN_WEBPLATES_VIEW,
+                    group: 'infrastructure',
+                    badge: 'WEB',
                 },
             ],
         },
@@ -798,7 +837,7 @@ export const getServerNavigationItems = (
         });
     }
 
-    if (isEnabled(settings?.server_allow_schedules)) {
+    if (isEnabledUnlessExplicitlyFalse(settings?.server_allow_schedules)) {
         items.push({
             id: 'server-schedules',
             name: t('navigation.items.schedules'),
@@ -987,6 +1026,17 @@ export const getMainNavigationItems = (
     }
 
     items.push({
+        id: 'webspaces',
+        name: t('navigation.items.webSpaces'),
+        title: t('navigation.items.webSpaces'),
+        url: '/webspaces',
+        icon: AppWindow,
+        isActive: false,
+        category: 'main',
+        group: 'overview',
+    });
+
+    items.push({
         id: 'account',
         name: t('navigation.items.account'),
         title: t('navigation.items.account'),
@@ -1056,8 +1106,8 @@ export const getVdsNavigationItems = (t: TFunction, instanceId: string): Navigat
     const items: NavigationItem[] = [
         {
             id: 'vds-overview',
-            name: t('navigation.items.console') || 'Overview',
-            title: t('navigation.items.console') || 'Overview',
+            name: t('navigation.items.console'),
+            title: t('navigation.items.console'),
             url: `/vds/${instanceId}`,
             icon: SquareTerminal,
             isActive: false,
@@ -1066,8 +1116,8 @@ export const getVdsNavigationItems = (t: TFunction, instanceId: string): Navigat
         },
         {
             id: 'vds-activities',
-            name: t('navigation.items.activities') || 'Activity Log',
-            title: t('navigation.items.activities') || 'Activity Log',
+            name: t('navigation.items.activities'),
+            title: t('navigation.items.activities'),
             url: `/vds/${instanceId}/activities`,
             icon: Clock,
             isActive: false,
@@ -1077,8 +1127,8 @@ export const getVdsNavigationItems = (t: TFunction, instanceId: string): Navigat
         },
         {
             id: 'vds-backups',
-            name: t('navigation.items.backups') || 'Backups',
-            title: t('navigation.items.backups') || 'Backups',
+            name: t('navigation.items.backups'),
+            title: t('navigation.items.backups'),
             url: `/vds/${instanceId}/backups`,
             icon: Archive,
             isActive: false,
@@ -1088,8 +1138,8 @@ export const getVdsNavigationItems = (t: TFunction, instanceId: string): Navigat
         },
         {
             id: 'vds-users',
-            name: t('navigation.items.users') || 'Subusers',
-            title: t('navigation.items.users') || 'Subusers',
+            name: t('navigation.items.users'),
+            title: t('navigation.items.users'),
             url: `/vds/${instanceId}/users`,
             icon: Users,
             isActive: false,
@@ -1099,8 +1149,8 @@ export const getVdsNavigationItems = (t: TFunction, instanceId: string): Navigat
         },
         {
             id: 'vds-network',
-            name: t('navigation.items.network') || 'Networking',
-            title: t('navigation.items.network') || 'Networking',
+            name: t('navigation.items.network'),
+            title: t('navigation.items.network'),
             url: `/vds/${instanceId}/network`,
             icon: Network,
             isActive: false,
@@ -1109,8 +1159,8 @@ export const getVdsNavigationItems = (t: TFunction, instanceId: string): Navigat
         },
         {
             id: 'vds-settings',
-            name: t('navigation.items.settings') || 'Settings',
-            title: t('navigation.items.settings') || 'Settings',
+            name: t('navigation.items.settings'),
+            title: t('navigation.items.settings'),
             url: `/vds/${instanceId}/settings`,
             icon: Settings,
             isActive: false,
@@ -1121,4 +1171,120 @@ export const getVdsNavigationItems = (t: TFunction, instanceId: string): Navigat
     ];
 
     return items;
+};
+
+export const getWebSpaceNavigationItems = (t: TFunction, uuidShort: string): NavigationItem[] => {
+    const base = `/webspace/${uuidShort}`;
+
+    return [
+        {
+            id: 'webspace-overview',
+            name: t('webSpaces.nav.overview'),
+            title: t('webSpaces.nav.overview'),
+            url: base,
+            icon: AppWindow,
+            isActive: false,
+            category: 'server',
+            group: 'management',
+        },
+        {
+            id: 'webspace-console',
+            name: t('webSpaces.nav.console'),
+            title: t('webSpaces.nav.console'),
+            url: `${base}/console`,
+            icon: SquareTerminal,
+            isActive: false,
+            category: 'server',
+            group: 'management',
+            permission: 'console.output',
+        },
+        {
+            id: 'webspace-activities',
+            name: t('webSpaces.nav.activity'),
+            title: t('webSpaces.nav.activity'),
+            url: `${base}/activities`,
+            icon: Clock,
+            isActive: false,
+            category: 'server',
+            group: 'management',
+            permission: 'activity.read',
+        },
+        {
+            id: 'webspace-files',
+            name: t('webSpaces.nav.files'),
+            title: t('webSpaces.nav.files'),
+            url: `${base}/files`,
+            icon: Folder,
+            isActive: false,
+            category: 'server',
+            group: 'files',
+            permission: 'file.read',
+        },
+        {
+            id: 'webspace-backups',
+            name: t('webSpaces.nav.backups'),
+            title: t('webSpaces.nav.backups'),
+            url: `${base}/backups`,
+            icon: Archive,
+            isActive: false,
+            category: 'server',
+            group: 'files',
+            permission: 'backup.read',
+        },
+        {
+            id: 'webspace-schedules',
+            name: t('webSpaces.nav.schedules'),
+            title: t('webSpaces.nav.schedules'),
+            url: `${base}/schedules`,
+            icon: Calendar,
+            isActive: false,
+            category: 'server',
+            group: 'automation',
+            permission: 'schedule.read',
+        },
+        {
+            id: 'webspace-databases',
+            name: t('webSpaces.nav.databases'),
+            title: t('webSpaces.nav.databases'),
+            url: `${base}/databases`,
+            icon: Database,
+            isActive: false,
+            category: 'server',
+            group: 'configuration',
+            permission: 'database.read',
+        },
+        {
+            id: 'webspace-email',
+            name: t('webSpaces.nav.email'),
+            title: t('webSpaces.nav.email'),
+            url: `${base}/email`,
+            icon: Mail,
+            isActive: false,
+            category: 'server',
+            group: 'configuration',
+            permission: 'mail.read',
+        },
+        {
+            id: 'webspace-users',
+            name: t('webSpaces.nav.users'),
+            title: t('webSpaces.nav.users'),
+            url: `${base}/users`,
+            icon: Users,
+            isActive: false,
+            category: 'server',
+            group: 'configuration',
+            permission: 'user.read',
+        },
+        {
+            id: 'webspace-settings',
+            name: t('webSpaces.nav.settings'),
+            title: t('webSpaces.nav.settings'),
+            url: `${base}/settings`,
+            icon: Settings,
+            isActive: false,
+            category: 'server',
+            group: 'configuration',
+            permission: 'settings.read',
+        },
+    ];
 };

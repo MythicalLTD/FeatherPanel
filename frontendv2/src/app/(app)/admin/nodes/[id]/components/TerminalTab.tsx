@@ -28,6 +28,7 @@ import { Terminal as TerminalIcon, Zap, Trash2, AlertTriangle } from 'lucide-rea
 import { NodeData, CommandExecutionResponse } from '../types';
 import axios from 'axios';
 import { toast } from 'sonner';
+import { APP_MONO_FONT_STACK } from '@/lib/mono-font';
 
 interface TerminalTabProps {
     node: NodeData;
@@ -47,7 +48,7 @@ export function TerminalTab({ node }: TerminalTabProps) {
         const terminal = new Terminal({
             cursorBlink: true,
             fontSize: 14,
-            fontFamily: 'Menlo, Monaco, "Courier New", monospace',
+            fontFamily: APP_MONO_FONT_STACK,
             theme: {
                 background: '#000000',
                 foreground: '#d1d5db',

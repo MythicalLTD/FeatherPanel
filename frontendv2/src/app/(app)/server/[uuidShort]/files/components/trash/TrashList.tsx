@@ -23,7 +23,7 @@ import { formatDateTimeInTz, formatRelativeTime, parseApiDate } from '@/lib/date
 import { useDateFormatOptions } from '@/contexts/PreferencesContext';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
-import { FileText, Folder, Loader2, Sparkles, Trash2 } from 'lucide-react';
+import { FileText, Folder, Loader2, Trash2 } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
 
 interface TrashListProps {
@@ -138,23 +138,13 @@ export function TrashList({ entries, loading, selectedIds, onToggle, onToggleAll
 
     if (entries.length === 0) {
         return (
-            <div className='text-muted-foreground animate-in fade-in zoom-in-95 group relative flex h-[400px] flex-col items-center justify-center gap-6 overflow-hidden rounded-3xl border border-dashed border-white/10 bg-white/2 backdrop-blur-3xl duration-700'>
-                <div className='from-primary/5 absolute inset-0 bg-linear-to-br via-transparent to-transparent opacity-0 transition-opacity duration-1000 group-hover:opacity-100' />
-
-                <div className='relative'>
-                    <div className='relative z-10 flex h-24 w-24 items-center justify-center rounded-3xl border border-white/10 bg-white/5 text-white/20'>
-                        <Trash2 className='h-10 w-10 opacity-40 transition-transform duration-500 group-hover:scale-110' />
-                    </div>
-
-                    <div className='bg-primary/20 absolute -top-2 -right-2 h-8 w-8 animate-pulse rounded-full blur-xl' />
-                    <div className='bg-primary/10 absolute -bottom-4 -left-4 h-12 w-12 animate-pulse rounded-full blur-2xl delay-700' />
-                    <Sparkles className='text-primary/40 absolute -top-6 -left-6 h-6 w-6 animate-bounce delay-300' />
+            <div className='text-muted-foreground flex h-[400px] flex-col items-center justify-center gap-6 rounded-2xl border border-dashed border-white/10 bg-white/2'>
+                <div className='flex h-24 w-24 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-white/20'>
+                    <Trash2 className='h-10 w-10 opacity-40' />
                 </div>
 
-                <div className='relative z-10 space-y-2 text-center'>
-                    <h3 className='bg-linear-to-br from-white to-white/40 bg-clip-text text-xl font-bold text-transparent'>
-                        {t('files.trash.empty_title')}
-                    </h3>
+                <div className='space-y-2 text-center'>
+                    <h3 className='text-xl font-bold text-white/80'>{t('files.trash.empty_title')}</h3>
                     <p className='mx-auto max-w-[280px] text-sm leading-relaxed text-white/40'>
                         {t('files.trash.empty')}
                     </p>

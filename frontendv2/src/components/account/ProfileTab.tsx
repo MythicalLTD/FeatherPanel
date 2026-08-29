@@ -21,7 +21,7 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { useSession } from '@/contexts/SessionContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { Description, Field, Fieldset, Label } from '@headlessui/react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Textarea } from '@/components/featherui/Textarea';
 import axios from 'axios';

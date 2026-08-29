@@ -53,7 +53,8 @@
     --color-ring: hsl(var(--ring));
     /* Tie Tailwind's font-sans to the app font variable. */
     --font-sans: var(--app-font-family);
-    --font-mono: var(--font-geist-mono);
+    /* System mono stack (Geist mono was never loaded via next/font). */
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
 }
 
 .dark {

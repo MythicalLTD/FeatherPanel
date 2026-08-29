@@ -24,7 +24,7 @@ import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Sheet, SheetHeader, SheetTitle, SheetDescription, SheetContent } from '@/components/ui/sheet';
-import { Input } from '@/components/ui/input';
+import { Input } from '@/components/featherui/Input';
 import { toast } from 'sonner';
 import {
     Server,

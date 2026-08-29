@@ -24,7 +24,7 @@ import {
     DialogDescription,
     DialogFooter,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/featherui/Button';
 import { Server } from '@/types/server';
 
 interface PidLimitDialogProps {

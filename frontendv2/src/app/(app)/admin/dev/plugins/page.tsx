@@ -416,10 +416,7 @@ export default function PluginManagerPage() {
                 <WidgetRenderer widgets={getWidgets('admin-dev-plugins', 'top-of-page')} />
                 <EmptyState
                     title={t('admin.dev.developerModeRequired')}
-                    description={
-                        t('admin.dev.developerModeDescription') ||
-                        'Developer mode must be enabled in settings to access developer tools.'
-                    }
+                    description={t('admin.dev.developerModeDescription')}
                     icon={Lock}
                     action={
                         <Button variant='outline' onClick={() => router.push('/admin/settings')}>

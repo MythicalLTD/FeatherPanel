@@ -17,7 +17,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { filesApi } from '@/lib/files-api';
+import { useFileManagerApi } from '@/contexts/FileManagerApiContext';
 import { useTranslation } from '@/contexts/TranslationContext';
 
 interface RenameDialogProps {
@@ -30,6 +30,7 @@ interface RenameDialogProps {
 }
 
 export function RenameDialog({ open, onOpenChange, uuid, root, fileName, onSuccess }: RenameDialogProps) {
+    const filesApi = useFileManagerApi();
     const { t } = useTranslation();
     const [newName, setNewName] = useState(fileName);
     const [loading, setLoading] = useState(false);

@@ -19,8 +19,9 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Input } from '@/components/featherui/Input';
 import { Textarea } from '@/components/featherui/Textarea';
+import { Select } from '@/components/ui/select-native';
 import { Label } from '@/components/ui/label';
-import { Settings2, FolderTree, Braces } from 'lucide-react';
+import { Settings2, FolderTree, Braces, Cloud } from 'lucide-react';
 import { type WebNodeForm } from '../../types';
 
 interface ConfigurationTabProps {
@@ -184,6 +185,225 @@ export function ConfigurationTab({ form, setForm, errors }: ConfigurationTabProp
                             {t('admin.webNodes.form.addons_path_help')}
                         </p>
                     </div>
+                </div>
+            </PageCard>
+
+            <PageCard
+                title={t('admin.webNodes.form.card_backups_provider')}
+                description={t('admin.webNodes.form.card_backups_provider_description')}
+                icon={Cloud}
+            >
+                <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
+                    <div className='space-y-2 md:col-span-2'>
+                        <Label className='text-sm font-semibold'>{t('admin.webNodes.form.backups_provider')}</Label>
+                        <Select
+                            value={form.backupsProvider}
+                            onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                                setForm({ ...form, backupsProvider: e.target.value })
+                            }
+                        >
+                            <option value='local'>Local</option>
+                            <option value='s3'>S3-compatible</option>
+                            <option value='restic'>Restic</option>
+                            <option value='pbs'>Proxmox Backup Server</option>
+                        </Select>
+                        <p className='text-muted-foreground/70 text-xs italic'>
+                            {t('admin.webNodes.form.backups_provider_help')}
+                        </p>
+                    </div>
+                    {form.backupsProvider === 's3' && (
+                        <>
+                            <div className='space-y-2'>
+                                <Label className='text-sm font-semibold'>
+                                    {t('admin.webNodes.form.backups_s3_endpoint')}
+                                </Label>
+                                <Input
+                                    placeholder='https://s3.amazonaws.com (empty = AWS default)'
+                                    value={form.backupsS3Endpoint}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                        setForm({ ...form, backupsS3Endpoint: e.target.value })
+                                    }
+                                />
+                            </div>
+                            <div className='space-y-2'>
+                                <Label className='text-sm font-semibold'>
+                                    {t('admin.webNodes.form.backups_s3_region')}
+                                </Label>
+                                <Input
+                                    placeholder='us-east-1'
+                                    value={form.backupsS3Region}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                        setForm({ ...form, backupsS3Region: e.target.value })
+                                    }
+                                />
+                            </div>
+                            <div className='space-y-2'>
+                                <Label className='text-sm font-semibold'>
+                                    {t('admin.webNodes.form.backups_s3_bucket')}
+                                </Label>
+                                <Input
+                                    placeholder='featherquilld-backups'
+                                    value={form.backupsS3Bucket}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                        setForm({ ...form, backupsS3Bucket: e.target.value })
+                                    }
+                                />
+                            </div>
+                            <div className='space-y-2'>
+                                <Label className='text-sm font-semibold'>
+                                    {t('admin.webNodes.form.backups_s3_prefix')}
+                                </Label>
+                                <Input
+                                    placeholder='webspaces/'
+                                    value={form.backupsS3Prefix}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                        setForm({ ...form, backupsS3Prefix: e.target.value })
+                                    }
+                                />
+                            </div>
+                            <div className='space-y-2'>
+                                <Label className='text-sm font-semibold'>
+                                    {t('admin.webNodes.form.backups_s3_access_key')}
+                                </Label>
+                                <Input
+                                    value={form.backupsS3AccessKey}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                        setForm({ ...form, backupsS3AccessKey: e.target.value })
+                                    }
+                                />
+                            </div>
+                            <div className='space-y-2'>
+                                <Label className='text-sm font-semibold'>
+                                    {t('admin.webNodes.form.backups_s3_secret_key')}
+                                </Label>
+                                <Input
+                                    type='password'
+                                    autoComplete='new-password'
+                                    value={form.backupsS3SecretKey}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                        setForm({ ...form, backupsS3SecretKey: e.target.value })
+                                    }
+                                />
+                            </div>
+                            <div className='space-y-2 md:col-span-2'>
+                                <Label className='text-sm font-semibold'>
+                                    {t('admin.webNodes.form.backups_s3_force_path_style')}
+                                </Label>
+                                <Select
+                                    value={form.backupsS3ForcePathStyle}
+                                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                                        setForm({ ...form, backupsS3ForcePathStyle: e.target.value })
+                                    }
+                                >
+                                    <option value='false'>{t('common.no')}</option>
+                                    <option value='true'>{t('common.yes')}</option>
+                                </Select>
+                                <p className='text-muted-foreground/70 text-xs italic'>
+                                    {t('admin.webNodes.form.backups_s3_force_path_style_help')}
+                                </p>
+                            </div>
+                        </>
+                    )}
+                    {form.backupsProvider === 'restic' && (
+                        <>
+                            <div className='space-y-2 md:col-span-2'>
+                                <Label className='text-sm font-semibold'>
+                                    {t('admin.webNodes.form.backups_restic_repository')}
+                                </Label>
+                                <Input
+                                    placeholder='s3:s3.amazonaws.com/bucket or /var/backups/restic'
+                                    value={form.backupsResticRepository}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                        setForm({ ...form, backupsResticRepository: e.target.value })
+                                    }
+                                />
+                            </div>
+                            <div className='space-y-2'>
+                                <Label className='text-sm font-semibold'>
+                                    {t('admin.webNodes.form.backups_restic_password')}
+                                </Label>
+                                <Input
+                                    type='password'
+                                    autoComplete='new-password'
+                                    value={form.backupsResticPassword}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                        setForm({ ...form, backupsResticPassword: e.target.value })
+                                    }
+                                />
+                                <p className='text-muted-foreground/70 text-xs italic'>
+                                    Leave blank on update to keep the current password.
+                                </p>
+                            </div>
+                            <div className='space-y-2'>
+                                <Label className='text-sm font-semibold'>
+                                    {t('admin.webNodes.form.backups_restic_binary')}
+                                </Label>
+                                <Input
+                                    placeholder='restic'
+                                    value={form.backupsResticBinary}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                        setForm({ ...form, backupsResticBinary: e.target.value })
+                                    }
+                                />
+                            </div>
+                        </>
+                    )}
+                    {form.backupsProvider === 'pbs' && (
+                        <>
+                            <div className='space-y-2 md:col-span-2'>
+                                <Label className='text-sm font-semibold'>
+                                    {t('admin.webNodes.form.backups_pbs_repository')}
+                                </Label>
+                                <Input
+                                    placeholder='user@pbs@host:datastore'
+                                    value={form.backupsPbsRepository}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                        setForm({ ...form, backupsPbsRepository: e.target.value })
+                                    }
+                                />
+                            </div>
+                            <div className='space-y-2'>
+                                <Label className='text-sm font-semibold'>
+                                    {t('admin.webNodes.form.backups_pbs_password')}
+                                </Label>
+                                <Input
+                                    type='password'
+                                    autoComplete='new-password'
+                                    value={form.backupsPbsPassword}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                        setForm({ ...form, backupsPbsPassword: e.target.value })
+                                    }
+                                />
+                                <p className='text-muted-foreground/70 text-xs italic'>
+                                    Leave blank on update to keep the current password.
+                                </p>
+                            </div>
+                            <div className='space-y-2'>
+                                <Label className='text-sm font-semibold'>
+                                    {t('admin.webNodes.form.backups_pbs_fingerprint')}
+                                </Label>
+                                <Input
+                                    placeholder='optional SHA256 fingerprint'
+                                    value={form.backupsPbsFingerprint}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                        setForm({ ...form, backupsPbsFingerprint: e.target.value })
+                                    }
+                                />
+                            </div>
+                            <div className='space-y-2 md:col-span-2'>
+                                <Label className='text-sm font-semibold'>
+                                    {t('admin.webNodes.form.backups_pbs_binary')}
+                                </Label>
+                                <Input
+                                    placeholder='proxmox-backup-client'
+                                    value={form.backupsPbsBinary}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                        setForm({ ...form, backupsPbsBinary: e.target.value })
+                                    }
+                                />
+                            </div>
+                        </>
+                    )}
                 </div>
             </PageCard>
 

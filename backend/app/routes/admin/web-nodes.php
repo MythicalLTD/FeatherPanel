@@ -151,4 +151,49 @@ return function (RouteCollection $routes): void {
         },
         Permissions::ADMIN_NODES_VIEW,
     );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-web-nodes-system',
+        '/api/admin/web-nodes/{id}/system',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
+
+            return (new WebNodesController())->systemInfo($request, (int) $id);
+        },
+        Permissions::ADMIN_NODES_VIEW,
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-web-nodes-utilization',
+        '/api/admin/web-nodes/{id}/utilization',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
+
+            return (new WebNodesController())->utilization($request, (int) $id);
+        },
+        Permissions::ADMIN_NODES_VIEW,
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-web-nodes-diagnostics',
+        '/api/admin/web-nodes/{id}/diagnostics',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
+
+            return (new WebNodesController())->diagnostics($request, (int) $id);
+        },
+        Permissions::ADMIN_NODES_VIEW,
+    );
 };

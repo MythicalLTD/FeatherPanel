@@ -78,18 +78,22 @@ interface EggReview {
     user?: { id?: number | string; name?: string; username?: string };
 }
 
-function mythicCloudErrorMessage(err: unknown, fallback: string): string {
+function mythicCloudErrorMessage(
+    err: unknown,
+    fallback: string,
+    t: (key: string, params?: Record<string, string>) => string,
+): string {
     if (!axios.isAxiosError(err)) return fallback;
     const code = String(err.response?.data?.error_code || '');
     const message = err.response?.data?.message || fallback;
     switch (code) {
         case 'PANEL_DOWNLOADS_DISABLED':
-            return 'This product does not allow MythicalCloud panel downloads.';
+            return t('admin.marketplace.spells.toasts.panel_downloads_disabled');
         case 'ACCESS_DENIED':
-            return 'Access denied for this Mythic marketplace action.';
+            return t('admin.marketplace.spells.toasts.access_denied');
         case 'INVALID_USER_UUID':
         case 'MEMBER_UUID_REQUIRED':
-            return 'Your panel user is not mapped to a Mythic team member. Re-link Cloud Connections with a matching email.';
+            return t('admin.marketplace.spells.toasts.member_uuid_required');
         default:
             return message;
     }
@@ -264,7 +268,7 @@ export default function SpellsPage() {
                 reviewCount: Number.isFinite(reviewCount) ? reviewCount : undefined,
             });
         } catch (err) {
-            toast.error(mythicCloudErrorMessage(err, 'Failed to load reviews'));
+            toast.error(mythicCloudErrorMessage(err, t('admin.marketplace.spells.toasts.review_load_failed'), t));
         } finally {
             setReviewsLoading(false);
         }
@@ -278,10 +282,10 @@ export default function SpellsPage() {
                 rating: reviewRating,
                 comment: reviewComment.trim() || undefined,
             });
-            toast.success('Review saved');
+            toast.success(t('admin.marketplace.spells.toasts.review_saved'));
             await openReviews(reviewSpell);
         } catch (err) {
-            toast.error(mythicCloudErrorMessage(err, 'Failed to save review'));
+            toast.error(mythicCloudErrorMessage(err, t('admin.marketplace.spells.toasts.review_save_failed'), t));
         } finally {
             setSavingReview(false);
         }
@@ -292,10 +296,10 @@ export default function SpellsPage() {
         setSavingReview(true);
         try {
             await axios.delete(`/api/admin/cloud/data/eggs/${encodeURIComponent(eggIdFor(reviewSpell))}/reviews`);
-            toast.success('Review deleted');
+            toast.success(t('admin.marketplace.spells.toasts.review_deleted'));
             await openReviews(reviewSpell);
         } catch (err) {
-            toast.error(mythicCloudErrorMessage(err, 'Failed to delete review'));
+            toast.error(mythicCloudErrorMessage(err, t('admin.marketplace.spells.toasts.review_delete_failed'), t));
         } finally {
             setSavingReview(false);
         }
@@ -317,9 +321,9 @@ export default function SpellsPage() {
             a.click();
             a.remove();
             URL.revokeObjectURL(url);
-            toast.success('Egg JSON downloaded');
+            toast.success(t('admin.marketplace.spells.toasts.egg_downloaded'));
         } catch (err) {
-            toast.error(mythicCloudErrorMessage(err, 'Download failed'));
+            toast.error(mythicCloudErrorMessage(err, t('admin.marketplace.spells.toasts.egg_download_failed'), t));
         } finally {
             setDownloadingEggId(null);
         }
@@ -484,7 +488,7 @@ export default function SpellsPage() {
                         className='border-border bg-background h-9 rounded-md border px-3 text-sm'
                         value={channel}
                         onChange={(e) => setChannel(e.target.value)}
-                        aria-label='Channel'
+                        aria-label={t('admin.marketplace.spells.aria.channel')}
                     >
                         <option value=''>All channels</option>
                         <option value='mythicalsystems'>Mythic</option>
@@ -494,7 +498,7 @@ export default function SpellsPage() {
                         className='border-border bg-background h-9 rounded-md border px-3 text-sm'
                         value={sort}
                         onChange={(e) => setSort(e.target.value)}
-                        aria-label='Sort'
+                        aria-label={t('admin.marketplace.spells.aria.sort')}
                     >
                         <option value='downloads'>Downloads</option>
                         <option value='rating'>Rating</option>
@@ -647,7 +651,7 @@ export default function SpellsPage() {
                                         <Button
                                             size='sm'
                                             variant='outline'
-                                            title='Download egg JSON'
+                                            title={t('admin.marketplace.spells.grid.download_egg')}
                                             disabled={downloadingEggId === eggIdFor(spell)}
                                             onClick={() => void downloadEggJson(spell)}
                                         >
@@ -660,7 +664,7 @@ export default function SpellsPage() {
                                         <Button
                                             size='sm'
                                             variant='outline'
-                                            title='Reviews'
+                                            title={t('admin.marketplace.spells.grid.reviews')}
                                             onClick={() => void openReviews(spell)}
                                         >
                                             <Star className='h-3.5 w-3.5' />

@@ -21,7 +21,7 @@ import { RefreshCw, ArrowUpCircle, Shield, Info, GitBranch, Globe, Settings2, Te
 import axios from 'axios';
 import { SystemInfoResponse, VersionStatus } from '../types';
 import { toast } from 'sonner';
-import { Input } from '@/components/ui/input';
+import { Input } from '@/components/featherui/Input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 

@@ -25,7 +25,7 @@ import { Button } from '@/components/featherui/Button';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
 import { EmptyState } from '@/components/featherui/EmptyState';
-import { Input } from '@/components/ui/input';
+import { Input } from '@/components/featherui/Input';
 import { Label } from '@/components/ui/label';
 import { Download, Loader2, Copy, CheckCircle2, AlertCircle, Info } from 'lucide-react';
 import { toast } from 'sonner';

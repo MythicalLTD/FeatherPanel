@@ -22,7 +22,7 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { RefreshCw, AlertTriangle, ArrowLeft, Home, FileQuestion } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/featherui/Button';
 import { cn, isEnabled } from '@/lib/utils';
 import type { PluginSidebarItem } from '@/types/navigation';
 import { usePluginRoutes } from '@/hooks/usePluginRoutes';
@@ -32,12 +32,13 @@ import { getPluginIframeThemeOverrideCss } from '@/lib/pluginIframeThemeCss';
 import { safeBack } from '@/lib/safe-back';
 
 interface PluginPageProps {
-    context: 'admin' | 'client' | 'server' | 'vds';
+    context: 'admin' | 'client' | 'server' | 'vds' | 'webspace';
     serverUuid?: string;
     vdsId?: string;
+    webspaceUuid?: string;
 }
 
-export default function PluginPage({ context, serverUuid, vdsId }: PluginPageProps) {
+export default function PluginPage({ context, serverUuid, vdsId, webspaceUuid }: PluginPageProps) {
     const { t } = useTranslation();
     const { settings } = useSettings();
     const { theme } = useTheme();
@@ -152,10 +153,13 @@ export default function PluginPage({ context, serverUuid, vdsId }: PluginPagePro
             setError(null);
 
             if (context === 'server' && serverUuid) {
-                document.cookie = `serverUuid=${serverUuid}; path=/; max-age=3600; SameSite=Lax`;
+                document.cookie = `serverUuid=${serverUuid}; path=/; max-age=3600; SameSite=Lax; Secure`;
             }
             if (context === 'vds' && vdsId) {
-                document.cookie = `vdsId=${vdsId}; path=/; max-age=3600; SameSite=Lax`;
+                document.cookie = `vdsId=${vdsId}; path=/; max-age=3600; SameSite=Lax; Secure`;
+            }
+            if (context === 'webspace' && webspaceUuid) {
+                document.cookie = `webspaceUuid=${webspaceUuid}; path=/; max-age=3600; SameSite=Lax; Secure`;
             }
 
             try {
@@ -169,6 +173,8 @@ export default function PluginPage({ context, serverUuid, vdsId }: PluginPagePro
                     sidebarSection = pluginData.admin || {};
                 } else if (context === 'vds') {
                     sidebarSection = pluginData.vds || {};
+                } else if (context === 'webspace') {
+                    sidebarSection = pluginData.webspace || {};
                 } else if (context === 'server') {
                     sidebarSection = pluginData.server || {};
                 } else {
@@ -181,6 +187,9 @@ export default function PluginPage({ context, serverUuid, vdsId }: PluginPagePro
                 } else if (context === 'vds' && vdsId) {
                     const vdsPrefix = `/vds/${vdsId}`;
                     pluginPath = pathname.replace(vdsPrefix, '');
+                } else if (context === 'webspace' && webspaceUuid) {
+                    const webspacePrefix = `/webspace/${webspaceUuid}`;
+                    pluginPath = pathname.replace(webspacePrefix, '');
                 } else if (context === 'server' && serverUuid) {
                     const serverPrefix = `/server/${serverUuid}`;
                     pluginPath = pathname.replace(serverPrefix, '');
@@ -248,6 +257,18 @@ export default function PluginPage({ context, serverUuid, vdsId }: PluginPagePro
                         }
                     }
 
+                    if (context === 'webspace' && webspaceUuid) {
+                        if (componentUrl.includes('webspaceUuid=notFound')) {
+                            componentUrl = componentUrl.replace(
+                                'webspaceUuid=notFound',
+                                `webspaceUuid=${webspaceUuid}`,
+                            );
+                        } else if (!componentUrl.includes('webspaceUuid=')) {
+                            const separator = componentUrl.includes('?') ? '&' : '?';
+                            componentUrl += `${separator}webspaceUuid=${webspaceUuid}`;
+                        }
+                    }
+
                     // Add theme as URL parameter for immediate access on load
                     const themeSeparator = componentUrl.includes('?') ? '&' : '?';
                     const urlWithTheme = `${componentUrl}${themeSeparator}__theme=${theme}`;
@@ -264,7 +285,7 @@ export default function PluginPage({ context, serverUuid, vdsId }: PluginPagePro
         };
 
         processPluginData();
-    }, [pathname, context, serverUuid, vdsId, t, pluginData, serverSpellId, theme]);
+    }, [pathname, context, serverUuid, vdsId, webspaceUuid, t, pluginData, serverSpellId, theme]);
 
     const injectScrollbarStyles = () => {
         if (!iframeRef.current) return;

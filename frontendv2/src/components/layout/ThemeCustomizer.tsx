@@ -15,8 +15,8 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from '@headlessui/react';
-import { Fragment, useState } from 'react';
+import { Dialog, DialogTitle } from '@/components/ui/dialog';
+import { useState } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -120,322 +120,251 @@ export default function ThemeCustomizer() {
                 />
             </button>
 
-            <Transition appear show={customizerOpen} as={Fragment}>
-                <Dialog as='div' className='relative z-90' onClose={setCustomizerOpen}>
-                    <TransitionChild
-                        as={Fragment}
-                        enter='ease-out duration-200'
-                        enterFrom='opacity-0'
-                        enterTo='opacity-100'
-                        leave='ease-in duration-150'
-                        leaveFrom='opacity-100'
-                        leaveTo='opacity-0'
-                    >
-                        <div className='fixed inset-0 bg-black/50 backdrop-blur-sm' />
-                    </TransitionChild>
+            <Dialog
+                open={customizerOpen}
+                onClose={() => setCustomizerOpen(false)}
+                onOpenChange={setCustomizerOpen}
+                className={cn(dialogPanelClass, 'z-90 p-0')}
+            >
+                <div className='border-border bg-background border-b px-4 py-3.5'>
+                    <div className='flex items-start justify-between gap-3'>
+                        <div>
+                            <DialogTitle className='text-foreground text-base leading-tight font-semibold'>
+                                {t('appearance.settingsMenuTitle')}
+                            </DialogTitle>
+                            <p className='text-muted-foreground/95 text-sm'>{t('appearance.settingsMenuSubtitle')}</p>
+                        </div>
+                        <button
+                            type='button'
+                            onClick={() => setCustomizerOpen(false)}
+                            className='text-muted-foreground hover:bg-accent hover:text-foreground rounded-lg p-1 transition-colors'
+                        >
+                            <XIcon className='h-5 w-5' />
+                        </button>
+                    </div>
+                </div>
 
-                    <div className='fixed inset-0 overflow-y-auto'>
-                        <div className='flex min-h-full items-start justify-center p-2 pt-16 sm:items-center sm:p-4'>
-                            <TransitionChild
-                                as={Fragment}
-                                enter='ease-out duration-200'
-                                enterFrom='opacity-0 translate-y-2 sm:translate-y-0 sm:scale-95'
-                                enterTo='opacity-100 translate-y-0 sm:scale-100'
-                                leave='ease-in duration-150'
-                                leaveFrom='opacity-100 translate-y-0 sm:scale-100'
-                                leaveTo='opacity-0 translate-y-2 sm:translate-y-0 sm:scale-95'
-                            >
-                                <DialogPanel className={dialogPanelClass}>
-                                    <div className='border-border bg-background border-b px-4 py-3.5'>
-                                        <div className='flex items-start justify-between gap-3'>
-                                            <div>
-                                                <DialogTitle className='text-foreground text-base leading-tight font-semibold'>
-                                                    {t('appearance.settingsMenuTitle')}
-                                                </DialogTitle>
-                                                <p className='text-muted-foreground/95 text-sm'>
-                                                    {t('appearance.settingsMenuSubtitle')}
-                                                </p>
-                                            </div>
-                                            <button
-                                                type='button'
-                                                onClick={() => setCustomizerOpen(false)}
-                                                className='text-muted-foreground hover:bg-accent hover:text-foreground rounded-lg p-1 transition-colors'
-                                            >
-                                                <XIcon className='h-5 w-5' />
-                                            </button>
-                                        </div>
-                                    </div>
+                <div className='max-h-[calc(100dvh-8rem)] overflow-y-auto overscroll-contain p-3 sm:max-h-[min(32rem,78dvh)]'>
+                    <div className='mb-3 grid grid-cols-2 gap-2'>
+                        <button
+                            type='button'
+                            onClick={() => !isThemeLocked && toggleTheme()}
+                            disabled={isThemeLocked}
+                            title={
+                                isThemeLocked
+                                    ? t('appearance.theme.lockedByAdmin')
+                                    : theme === 'dark'
+                                      ? t('appearance.theme.switchToLight')
+                                      : t('appearance.theme.switchToDark')
+                            }
+                            className={cn(
+                                'border-border/60 bg-muted/25 flex h-12 w-full items-center justify-center gap-2 rounded-xl border px-3 text-sm font-medium transition-colors sm:h-10 sm:text-xs',
+                                isThemeLocked ? 'cursor-not-allowed opacity-50' : 'hover:bg-accent/50',
+                            )}
+                        >
+                            {theme === 'dark' ? (
+                                <Sun className='h-4 w-4 text-amber-400' aria-hidden />
+                            ) : (
+                                <Moon className='h-4 w-4 text-slate-500' aria-hidden />
+                            )}
+                            <span>{theme === 'dark' ? t('appearance.theme.light') : t('appearance.theme.dark')}</span>
+                            {isThemeLocked && <span className='text-muted-foreground text-xs'>(Locked)</span>}
+                        </button>
 
-                                    <div className='max-h-[calc(100dvh-8rem)] overflow-y-auto overscroll-contain p-3 sm:max-h-[min(32rem,78dvh)]'>
-                                        <div className='mb-3 grid grid-cols-2 gap-2'>
-                                            <button
-                                                type='button'
-                                                onClick={() => !isThemeLocked && toggleTheme()}
-                                                disabled={isThemeLocked}
-                                                title={
-                                                    isThemeLocked
-                                                        ? t('appearance.theme.lockedByAdmin')
-                                                        : theme === 'dark'
-                                                          ? t('appearance.theme.switchToLight')
-                                                          : t('appearance.theme.switchToDark')
-                                                }
+                        <button
+                            type='button'
+                            title={
+                                isBackgroundDisabled
+                                    ? t('appearance.background.disabledInLightMode')
+                                    : t('appearance.background.customize')
+                            }
+                            onClick={() => {
+                                if (isBackgroundDisabled) return;
+                                setCustomizerOpen(false);
+                                setBackgroundDialogOpen(true);
+                            }}
+                            disabled={isBackgroundDisabled}
+                            className={cn(
+                                'border-border/60 bg-muted/25 flex h-12 w-full items-center justify-center gap-2 rounded-xl border px-3 text-sm font-medium transition-colors sm:h-10 sm:text-xs',
+                                isBackgroundDisabled ? 'cursor-not-allowed opacity-50' : 'hover:bg-accent/50',
+                            )}
+                        >
+                            <ImageIcon className='text-muted-foreground h-4 w-4' aria-hidden />
+                            <span>
+                                {theme === 'light'
+                                    ? t('appearance.background.notAvailableInLight')
+                                    : t('appearance.background.change')}
+                            </span>
+                        </button>
+                    </div>
+
+                    <div className='border-border divide-border bg-card divide-y rounded-2xl border'>
+                        <div className={panelSectionClass}>
+                            <p className={sectionLabelClass}>{t('appearance.accentColor')}</p>
+                            <div className='grid grid-cols-5 gap-2.5 sm:gap-2'>
+                                {accentColorOptions.map((option) => (
+                                    <button
+                                        key={option.value}
+                                        type='button'
+                                        title={isAccentColorLocked ? `${option.name} (Locked)` : option.name}
+                                        onClick={() => !isAccentColorLocked && setAccentColor(option.value)}
+                                        disabled={isAccentColorLocked}
+                                        className={cn(
+                                            'ring-border/60 relative mx-auto flex h-10 w-10 items-center justify-center rounded-full ring-1 transition-transform sm:h-8 sm:w-8',
+                                            accentColor === option.value &&
+                                                'ring-primary ring-offset-card ring-2 ring-offset-1',
+                                            isAccentColorLocked ? 'cursor-not-allowed opacity-50' : 'hover:scale-105',
+                                        )}
+                                        style={{ backgroundColor: option.color }}
+                                    >
+                                        {accentColor === option.value && (
+                                            <Check
                                                 className={cn(
-                                                    'border-border/60 bg-muted/25 flex h-12 w-full items-center justify-center gap-2 rounded-xl border px-3 text-sm font-medium transition-colors sm:h-10 sm:text-xs',
-                                                    isThemeLocked
-                                                        ? 'cursor-not-allowed opacity-50'
-                                                        : 'hover:bg-accent/50',
+                                                    'h-3 w-3 drop-shadow-sm sm:h-2.5 sm:w-2.5',
+                                                    option.value === 'yellow' ? 'text-foreground' : 'text-white',
                                                 )}
-                                            >
-                                                {theme === 'dark' ? (
-                                                    <Sun className='h-4 w-4 text-amber-400' aria-hidden />
-                                                ) : (
-                                                    <Moon className='h-4 w-4 text-slate-500' aria-hidden />
-                                                )}
-                                                <span>
-                                                    {theme === 'dark'
-                                                        ? t('appearance.theme.light')
-                                                        : t('appearance.theme.dark')}
-                                                </span>
-                                                {isThemeLocked && (
-                                                    <span className='text-muted-foreground text-xs'>(Locked)</span>
-                                                )}
-                                            </button>
+                                                strokeWidth={3}
+                                                aria-hidden
+                                            />
+                                        )}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
 
-                                            <button
-                                                type='button'
-                                                title={
-                                                    isBackgroundDisabled
-                                                        ? t('appearance.background.disabledInLightMode')
-                                                        : t('appearance.background.customize')
-                                                }
-                                                onClick={() => {
-                                                    if (isBackgroundDisabled) return;
-                                                    setCustomizerOpen(false);
-                                                    setBackgroundDialogOpen(true);
-                                                }}
-                                                disabled={isBackgroundDisabled}
-                                                className={cn(
-                                                    'border-border/60 bg-muted/25 flex h-12 w-full items-center justify-center gap-2 rounded-xl border px-3 text-sm font-medium transition-colors sm:h-10 sm:text-xs',
-                                                    isBackgroundDisabled
-                                                        ? 'cursor-not-allowed opacity-50'
-                                                        : 'hover:bg-accent/50',
-                                                )}
-                                            >
-                                                <ImageIcon className='text-muted-foreground h-4 w-4' aria-hidden />
-                                                <span>
-                                                    {theme === 'light'
-                                                        ? t('appearance.background.notAvailableInLight')
-                                                        : t('appearance.background.change')}
-                                                </span>
-                                            </button>
-                                        </div>
-
-                                        <div className='border-border divide-border bg-card divide-y rounded-2xl border'>
-                                            <div className={panelSectionClass}>
-                                                <p className={sectionLabelClass}>{t('appearance.accentColor')}</p>
-                                                <div className='grid grid-cols-5 gap-2.5 sm:gap-2'>
-                                                    {accentColorOptions.map((option) => (
-                                                        <button
-                                                            key={option.value}
-                                                            type='button'
-                                                            title={
-                                                                isAccentColorLocked
-                                                                    ? `${option.name} (Locked)`
-                                                                    : option.name
-                                                            }
-                                                            onClick={() =>
-                                                                !isAccentColorLocked && setAccentColor(option.value)
-                                                            }
-                                                            disabled={isAccentColorLocked}
-                                                            className={cn(
-                                                                'ring-border/60 relative mx-auto flex h-10 w-10 items-center justify-center rounded-full ring-1 transition-transform sm:h-8 sm:w-8',
-                                                                accentColor === option.value &&
-                                                                    'ring-primary ring-offset-card ring-2 ring-offset-1',
-                                                                isAccentColorLocked
-                                                                    ? 'cursor-not-allowed opacity-50'
-                                                                    : 'hover:scale-105',
-                                                            )}
-                                                            style={{ backgroundColor: option.color }}
-                                                        >
-                                                            {accentColor === option.value && (
-                                                                <Check
-                                                                    className={cn(
-                                                                        'h-3 w-3 drop-shadow-sm sm:h-2.5 sm:w-2.5',
-                                                                        option.value === 'yellow'
-                                                                            ? 'text-foreground'
-                                                                            : 'text-white',
-                                                                    )}
-                                                                    strokeWidth={3}
-                                                                    aria-hidden
-                                                                />
-                                                            )}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            </div>
-
-                                            <div className={panelSectionClass}>
-                                                <p className={sectionLabelClass}>
-                                                    {t('appearance.chromeLayout.title')}
-                                                </p>
-                                                <div className='mb-2 grid grid-cols-2 gap-2.5 sm:gap-2'>
-                                                    <button
-                                                        type='button'
-                                                        title={t('appearance.chromeLayout.modernHint')}
-                                                        onClick={() => setChromeLayout('modern')}
-                                                        className={segmentButtonClass(chromeLayout === 'modern')}
-                                                    >
-                                                        <LayoutTemplate className='h-3 w-3 shrink-0' aria-hidden />
-                                                        <span className='truncate'>
-                                                            {t('appearance.chromeLayout.compactModern')}
-                                                        </span>
-                                                    </button>
-                                                    <button
-                                                        type='button'
-                                                        title={t('appearance.chromeLayout.classicHint')}
-                                                        onClick={() => setChromeLayout('classic')}
-                                                        className={segmentButtonClass(chromeLayout === 'classic')}
-                                                    >
-                                                        <PanelTop className='h-3 w-3 shrink-0' aria-hidden />
-                                                        <span className='truncate'>
-                                                            {t('appearance.chromeLayout.compactClassic')}
-                                                        </span>
-                                                    </button>
-                                                </div>
-                                                <p className={sectionLabelClass}>
-                                                    {t('appearance.navbarSticky.title')}
-                                                </p>
-                                                <div className='mb-2 grid grid-cols-2 gap-2.5 sm:gap-2'>
-                                                    <button
-                                                        type='button'
-                                                        title={t('appearance.navbarSticky.onHint')}
-                                                        onClick={() => setNavbarSticky(true)}
-                                                        className={segmentButtonClass(navbarSticky)}
-                                                    >
-                                                        {t('appearance.navbarSticky.on')}
-                                                    </button>
-                                                    <button
-                                                        type='button'
-                                                        title={t('appearance.navbarSticky.offHint')}
-                                                        onClick={() => setNavbarSticky(false)}
-                                                        className={segmentButtonClass(!navbarSticky)}
-                                                    >
-                                                        {t('appearance.navbarSticky.off')}
-                                                    </button>
-                                                </div>
-                                                {chromeLayout === 'modern' && (
-                                                    <>
-                                                        <p className={sectionLabelClass}>
-                                                            {t('appearance.navbarHoverReveal.title')}
-                                                        </p>
-                                                        <div className='grid grid-cols-2 gap-2.5 sm:gap-2'>
-                                                            <button
-                                                                type='button'
-                                                                title={t('appearance.navbarHoverReveal.off')}
-                                                                onClick={() => setNavbarHoverReveal(false)}
-                                                                className={segmentButtonClass(!navbarHoverReveal)}
-                                                            >
-                                                                {t('appearance.navbarHoverReveal.compactOff')}
-                                                            </button>
-                                                            <button
-                                                                type='button'
-                                                                title={t('appearance.navbarHoverReveal.onHint')}
-                                                                onClick={() => setNavbarHoverReveal(true)}
-                                                                className={segmentButtonClass(navbarHoverReveal)}
-                                                            >
-                                                                {t('appearance.navbarHoverReveal.compactOn')}
-                                                            </button>
-                                                        </div>
-                                                    </>
-                                                )}
-                                            </div>
-
-                                            <div className={panelSectionClass}>
-                                                <p className={sectionLabelClass}>{t('appearance.fontFamilyTitle')}</p>
-                                                <div className='flex flex-col gap-1.5 sm:gap-1'>
-                                                    {fontOptions.map((option) => (
-                                                        <button
-                                                            key={option.value}
-                                                            type='button'
-                                                            onClick={() => setFontFamily(option.value)}
-                                                            className={cn(
-                                                                'flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm transition-colors sm:py-2 sm:text-xs',
-                                                                fontFamily === option.value
-                                                                    ? 'bg-primary/15 text-primary font-medium'
-                                                                    : 'text-foreground hover:bg-accent/40',
-                                                            )}
-                                                            style={{ fontFamily: option.preview }}
-                                                        >
-                                                            <span className='truncate'>{option.name}</span>
-                                                            {fontFamily === option.value && (
-                                                                <Check
-                                                                    className='text-primary h-3 w-3 shrink-0'
-                                                                    aria-hidden
-                                                                />
-                                                            )}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            </div>
-
-                                            <div className={cn(panelSectionClass, 'pb-1')}>
-                                                <p className={cn(sectionLabelClass, 'flex items-center gap-1')}>
-                                                    <Globe className='h-3 w-3' aria-hidden />
-                                                    {t('appearance.language')}
-                                                    {isLocaleLocked && (
-                                                        <span className='text-muted-foreground normal-case'>
-                                                            ({t('appearance.languageLocked')})
-                                                        </span>
-                                                    )}
-                                                </p>
-                                                <div className='max-h-44 space-y-1.5 overflow-y-auto pr-0.5 sm:max-h-40 sm:space-y-1'>
-                                                    {availableLanguages.map((language) => (
-                                                        <button
-                                                            key={language.code}
-                                                            type='button'
-                                                            disabled={isLocaleLocked}
-                                                            title={
-                                                                isLocaleLocked
-                                                                    ? t('appearance.languageLockedByAdmin')
-                                                                    : undefined
-                                                            }
-                                                            onClick={() => !isLocaleLocked && setLocale(language.code)}
-                                                            className={cn(
-                                                                'flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm transition-colors sm:py-2 sm:text-xs',
-                                                                isLocaleLocked && 'cursor-not-allowed opacity-50',
-                                                                locale === language.code
-                                                                    ? 'bg-primary/15 text-primary font-medium'
-                                                                    : !isLocaleLocked && 'hover:bg-accent/40',
-                                                            )}
-                                                        >
-                                                            <span className='min-w-0 flex-1 truncate'>
-                                                                <span className='font-medium'>
-                                                                    {language.nativeName}
-                                                                </span>
-                                                                {language.name !== language.nativeName && (
-                                                                    <span className='text-muted-foreground ml-1'>
-                                                                        ({language.name})
-                                                                    </span>
-                                                                )}
-                                                            </span>
-                                                            {locale === language.code && (
-                                                                <Check
-                                                                    className='text-primary h-3 w-3 shrink-0'
-                                                                    aria-hidden
-                                                                />
-                                                            )}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        </div>
+                        <div className={panelSectionClass}>
+                            <p className={sectionLabelClass}>{t('appearance.chromeLayout.title')}</p>
+                            <div className='mb-2 grid grid-cols-2 gap-2.5 sm:gap-2'>
+                                <button
+                                    type='button'
+                                    title={t('appearance.chromeLayout.modernHint')}
+                                    onClick={() => setChromeLayout('modern')}
+                                    className={segmentButtonClass(chromeLayout === 'modern')}
+                                >
+                                    <LayoutTemplate className='h-3 w-3 shrink-0' aria-hidden />
+                                    <span className='truncate'>{t('appearance.chromeLayout.compactModern')}</span>
+                                </button>
+                                <button
+                                    type='button'
+                                    title={t('appearance.chromeLayout.classicHint')}
+                                    onClick={() => setChromeLayout('classic')}
+                                    className={segmentButtonClass(chromeLayout === 'classic')}
+                                >
+                                    <PanelTop className='h-3 w-3 shrink-0' aria-hidden />
+                                    <span className='truncate'>{t('appearance.chromeLayout.compactClassic')}</span>
+                                </button>
+                            </div>
+                            <p className={sectionLabelClass}>{t('appearance.navbarSticky.title')}</p>
+                            <div className='mb-2 grid grid-cols-2 gap-2.5 sm:gap-2'>
+                                <button
+                                    type='button'
+                                    title={t('appearance.navbarSticky.onHint')}
+                                    onClick={() => setNavbarSticky(true)}
+                                    className={segmentButtonClass(navbarSticky)}
+                                >
+                                    {t('appearance.navbarSticky.on')}
+                                </button>
+                                <button
+                                    type='button'
+                                    title={t('appearance.navbarSticky.offHint')}
+                                    onClick={() => setNavbarSticky(false)}
+                                    className={segmentButtonClass(!navbarSticky)}
+                                >
+                                    {t('appearance.navbarSticky.off')}
+                                </button>
+                            </div>
+                            {chromeLayout === 'modern' && (
+                                <>
+                                    <p className={sectionLabelClass}>{t('appearance.navbarHoverReveal.title')}</p>
+                                    <div className='grid grid-cols-2 gap-2.5 sm:gap-2'>
+                                        <button
+                                            type='button'
+                                            title={t('appearance.navbarHoverReveal.off')}
+                                            onClick={() => setNavbarHoverReveal(false)}
+                                            className={segmentButtonClass(!navbarHoverReveal)}
+                                        >
+                                            {t('appearance.navbarHoverReveal.compactOff')}
+                                        </button>
+                                        <button
+                                            type='button'
+                                            title={t('appearance.navbarHoverReveal.onHint')}
+                                            onClick={() => setNavbarHoverReveal(true)}
+                                            className={segmentButtonClass(navbarHoverReveal)}
+                                        >
+                                            {t('appearance.navbarHoverReveal.compactOn')}
+                                        </button>
                                     </div>
-                                </DialogPanel>
-                            </TransitionChild>
+                                </>
+                            )}
+                        </div>
+
+                        <div className={panelSectionClass}>
+                            <p className={sectionLabelClass}>{t('appearance.fontFamilyTitle')}</p>
+                            <div className='flex flex-col gap-1.5 sm:gap-1'>
+                                {fontOptions.map((option) => (
+                                    <button
+                                        key={option.value}
+                                        type='button'
+                                        onClick={() => setFontFamily(option.value)}
+                                        className={cn(
+                                            'flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm transition-colors sm:py-2 sm:text-xs',
+                                            fontFamily === option.value
+                                                ? 'bg-primary/15 text-primary font-medium'
+                                                : 'text-foreground hover:bg-accent/40',
+                                        )}
+                                        style={{ fontFamily: option.preview }}
+                                    >
+                                        <span className='truncate'>{option.name}</span>
+                                        {fontFamily === option.value && (
+                                            <Check className='text-primary h-3 w-3 shrink-0' aria-hidden />
+                                        )}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className={cn(panelSectionClass, 'pb-1')}>
+                            <p className={cn(sectionLabelClass, 'flex items-center gap-1')}>
+                                <Globe className='h-3 w-3' aria-hidden />
+                                {t('appearance.language')}
+                                {isLocaleLocked && (
+                                    <span className='text-muted-foreground normal-case'>
+                                        ({t('appearance.languageLocked')})
+                                    </span>
+                                )}
+                            </p>
+                            <div className='max-h-44 space-y-1.5 overflow-y-auto pr-0.5 sm:max-h-40 sm:space-y-1'>
+                                {availableLanguages.map((language) => (
+                                    <button
+                                        key={language.code}
+                                        type='button'
+                                        disabled={isLocaleLocked}
+                                        title={isLocaleLocked ? t('appearance.languageLockedByAdmin') : undefined}
+                                        onClick={() => !isLocaleLocked && setLocale(language.code)}
+                                        className={cn(
+                                            'flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm transition-colors sm:py-2 sm:text-xs',
+                                            isLocaleLocked && 'cursor-not-allowed opacity-50',
+                                            locale === language.code
+                                                ? 'bg-primary/15 text-primary font-medium'
+                                                : !isLocaleLocked && 'hover:bg-accent/40',
+                                        )}
+                                    >
+                                        <span className='min-w-0 flex-1 truncate'>
+                                            <span className='font-medium'>{language.nativeName}</span>
+                                            {language.name !== language.nativeName && (
+                                                <span className='text-muted-foreground ml-1'>({language.name})</span>
+                                            )}
+                                        </span>
+                                        {locale === language.code && (
+                                            <Check className='text-primary h-3 w-3 shrink-0' aria-hidden />
+                                        )}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
                     </div>
-                </Dialog>
-            </Transition>
+                </div>
+            </Dialog>
 
             <BackgroundCustomizer open={backgroundDialogOpen} onOpenChange={setBackgroundDialogOpen} />
         </>

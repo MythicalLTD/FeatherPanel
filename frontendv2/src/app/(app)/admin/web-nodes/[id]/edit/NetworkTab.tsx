@@ -20,7 +20,7 @@ import { PageCard } from '@/components/featherui/PageCard';
 import { Input } from '@/components/featherui/Input';
 import { Select } from '@/components/ui/select-native';
 import { Label } from '@/components/ui/label';
-import { Network, Plug, ShieldCheck } from 'lucide-react';
+import { Layers, Network, Plug, ShieldCheck } from 'lucide-react';
 import { type WebNodeForm } from '../../types';
 
 interface NetworkTabProps {
@@ -83,6 +83,66 @@ export function NetworkTab({ form, setForm, errors }: NetworkTabProps) {
                         </Select>
                         <p className='text-muted-foreground/70 text-xs italic'>{t('admin.node.form.proxy_help')}</p>
                     </div>
+                    <div className='space-y-2'>
+                        <Label className='text-sm font-semibold'>{t('admin.webNodes.form.proxy_enabled')}</Label>
+                        <Select
+                            value={form.proxyEnabled}
+                            onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                                setForm({ ...form, proxyEnabled: e.target.value })
+                            }
+                        >
+                            <option value='true'>{t('common.enabled')}</option>
+                            <option value='false'>{t('common.disabled')}</option>
+                        </Select>
+                        <p className='text-muted-foreground/70 text-xs italic'>
+                            {t('admin.webNodes.form.proxy_enabled_help')}
+                        </p>
+                    </div>
+                    <div className='space-y-2'>
+                        <Label className='text-sm font-semibold'>{t('admin.webNodes.form.proxy_provider')}</Label>
+                        <Select
+                            value={form.proxyProvider}
+                            onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                                setForm({ ...form, proxyProvider: e.target.value })
+                            }
+                            disabled={form.proxyEnabled !== 'true'}
+                        >
+                            <option value='caddy'>Caddy</option>
+                            <option value='nginx'>Nginx</option>
+                            <option value='traefik'>Traefik</option>
+                        </Select>
+                    </div>
+                    <div className='space-y-2'>
+                        <Label className='text-sm font-semibold'>{t('admin.webNodes.form.acme_email')}</Label>
+                        <Input
+                            type='email'
+                            placeholder='admin@example.com'
+                            value={form.acmeEmail}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                setForm({ ...form, acmeEmail: e.target.value })
+                            }
+                            disabled={form.proxyEnabled !== 'true'}
+                        />
+                        <p className='text-muted-foreground/70 text-xs italic'>
+                            {t('admin.webNodes.form.acme_email_help')}
+                        </p>
+                    </div>
+                    <div className='space-y-2'>
+                        <Label className='text-sm font-semibold'>{t('admin.webNodes.form.acme_staging')}</Label>
+                        <Select
+                            value={form.acmeStaging}
+                            onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                                setForm({ ...form, acmeStaging: e.target.value })
+                            }
+                            disabled={form.proxyEnabled !== 'true'}
+                        >
+                            <option value='false'>{t('common.disabled')}</option>
+                            <option value='true'>{t('common.enabled')}</option>
+                        </Select>
+                        <p className='text-muted-foreground/70 text-xs italic'>
+                            {t('admin.webNodes.form.acme_staging_help')}
+                        </p>
+                    </div>
                 </div>
             </PageCard>
 
@@ -129,6 +189,53 @@ export function NetworkTab({ form, setForm, errors }: NetworkTabProps) {
                         )}
                         <p className='text-muted-foreground/70 text-xs italic'>
                             {t('admin.webNodes.form.sftp_port_help')}
+                        </p>
+                    </div>
+                </div>
+            </PageCard>
+
+            <PageCard
+                title={t('admin.webNodes.form.card_backend_ports')}
+                description={t('admin.webNodes.form.card_backend_ports_description')}
+                icon={Layers}
+            >
+                <div className='grid grid-cols-1 gap-6 sm:grid-cols-2'>
+                    <div className='space-y-2'>
+                        <Label className='text-sm font-semibold'>{t('admin.webNodes.form.backend_port_min')}</Label>
+                        <Input
+                            type='number'
+                            min={1}
+                            max={65535}
+                            value={form.backendPortMin}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                setForm({ ...form, backendPortMin: parseInt(e.target.value, 10) || 0 })
+                            }
+                            error={!!errors.backendPortMin}
+                        />
+                        {errors.backendPortMin && (
+                            <p className='text-[10px] font-bold text-red-500 uppercase'>{errors.backendPortMin}</p>
+                        )}
+                        <p className='text-muted-foreground/70 text-xs italic'>
+                            {t('admin.webNodes.form.backend_port_min_help')}
+                        </p>
+                    </div>
+                    <div className='space-y-2'>
+                        <Label className='text-sm font-semibold'>{t('admin.webNodes.form.backend_port_max')}</Label>
+                        <Input
+                            type='number'
+                            min={1}
+                            max={65535}
+                            value={form.backendPortMax}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                setForm({ ...form, backendPortMax: parseInt(e.target.value, 10) || 0 })
+                            }
+                            error={!!errors.backendPortMax}
+                        />
+                        {errors.backendPortMax && (
+                            <p className='text-[10px] font-bold text-red-500 uppercase'>{errors.backendPortMax}</p>
+                        )}
+                        <p className='text-muted-foreground/70 text-xs italic'>
+                            {t('admin.webNodes.form.backend_port_max_help')}
                         </p>
                     </div>
                 </div>

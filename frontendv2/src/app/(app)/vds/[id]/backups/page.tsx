@@ -296,12 +296,10 @@ export default function VdsBackupsPage() {
             <WidgetRenderer widgets={getWidgets('vds-backups', 'top-of-page')} />
 
             <PageHeader
-                title={t('serverBackups.title') || 'Backups'}
+                title={t('serverBackups.title')}
                 description={
                     <div className='flex items-center gap-3'>
-                        <span>
-                            {t('serverBackups.description') || 'Manage filesystem backups for this VDS instance.'}
-                        </span>
+                        <span>{t('serverBackups.description')}</span>
                         <span className='bg-primary/5 text-primary border-primary/20 rounded-full border px-3 py-1 text-[10px] font-black tracking-widest uppercase'>
                             {backups.length} / {formatBackupLimitLabel(backupLimit, t('common.disabled'))}
                             {fifoRolling ? ' · FIFO' : ''}
@@ -318,7 +316,7 @@ export default function VdsBackupsPage() {
                                 className='order-1 w-full transition-all active:scale-95 sm:order-2 sm:w-auto'
                             >
                                 <Plus className='mr-2 h-5 w-5' />
-                                {t('serverBackups.createBackup') || 'Create backup'}
+                                {t('serverBackups.createBackup')}
                             </Button>
                         )}
                         <Button
@@ -327,10 +325,10 @@ export default function VdsBackupsPage() {
                             onClick={fetchBackups}
                             disabled={loading}
                             className='order-2 sm:order-1'
-                            aria-label={t('serverBackups.refresh') || 'Refresh'}
+                            aria-label={t('serverBackups.refresh')}
                         >
                             <RefreshCw className={cn('h-5 w-5 sm:mr-2', loading && 'animate-spin')} />
-                            <span className='hidden sm:inline'>{t('serverBackups.refresh') || 'Refresh'}</span>
+                            <span className='hidden sm:inline'>{t('serverBackups.refresh')}</span>
                         </Button>
                     </div>
                 }
@@ -362,7 +360,7 @@ export default function VdsBackupsPage() {
                         </div>
                         <div className='space-y-1'>
                             <h3 className='text-lg leading-none font-bold text-yellow-500'>
-                                {t('serverBackups.backupLimitReached') || 'Backup limit reached'}
+                                {t('serverBackups.backupLimitReached')}
                             </h3>
                             <p className='text-sm leading-relaxed font-medium text-yellow-500/80'>
                                 {t('serverBackups.backupLimitReachedDescription', {
@@ -379,7 +377,7 @@ export default function VdsBackupsPage() {
                     <div className='group relative flex-1'>
                         <Search className='text-muted-foreground/80 group-focus-within:text-foreground absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 transition-colors' />
                         <Input
-                            placeholder={t('serverBackups.searchPlaceholder') || 'Search backups…'}
+                            placeholder={t('serverBackups.searchPlaceholder')}
                             className='h-14 pl-12 text-base'
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
@@ -389,12 +387,11 @@ export default function VdsBackupsPage() {
 
                 {filteredBackups.length === 0 ? (
                     <EmptyState
-                        title={t('serverBackups.noBackups') || 'No backups yet'}
+                        title={t('serverBackups.noBackups')}
                         description={
                             backupLimit === 0
-                                ? t('serverBackups.noBackupsNoLimit') || 'Backups are disabled for this instance.'
-                                : t('serverBackups.noBackupsDescription') ||
-                                  'Create your first backup to protect this VDS instance.'
+                                ? t('serverBackups.noBackupsNoLimit')
+                                : t('serverBackups.noBackupsDescription')
                         }
                         icon={Archive}
                         action={
@@ -406,7 +403,7 @@ export default function VdsBackupsPage() {
                                     disabled={loading}
                                 >
                                     <Plus className='mr-2 h-6 w-6' />
-                                    {t('serverBackups.createBackup') || 'Create backup'}
+                                    {t('serverBackups.createBackup')}
                                 </Button>
                             ) : undefined
                         }
@@ -433,15 +430,14 @@ export default function VdsBackupsPage() {
                                                 <div className='flex items-center gap-2 text-blue-500'>
                                                     <Loader2 className='h-4 w-4 animate-spin' />
                                                     <span className='text-sm font-semibold'>
-                                                        {t('serverBackups.creating') ||
-                                                            'Creating backup, please wait...'}
+                                                        {t('serverBackups.creating')}
                                                     </span>
                                                 </div>
                                             ) : isFailed ? (
                                                 <div className='flex items-center gap-2 text-red-500'>
                                                     <AlertTriangle className='h-4 w-4' />
                                                     <span className='text-sm font-semibold'>
-                                                        {t('serverBackups.failed') || 'Backup failed'}
+                                                        {t('serverBackups.failed')}
                                                     </span>
                                                 </div>
                                             ) : (
@@ -471,12 +467,12 @@ export default function VdsBackupsPage() {
                                             )}
                                             {isPending && (
                                                 <span className='animate-pulse rounded-full border border-blue-500/20 bg-blue-500/10 px-3 py-1 text-[10px] leading-none font-black tracking-widest text-blue-500 uppercase'>
-                                                    {t('serverBackups.inProgress') || 'IN PROGRESS'}
+                                                    {t('serverBackups.inProgress')}
                                                 </span>
                                             )}
                                             {isFailed && (
                                                 <span className='rounded-full border border-red-500/20 bg-red-500/10 px-3 py-1 text-[10px] leading-none font-black tracking-widest text-red-500 uppercase'>
-                                                    {t('serverBackups.failed') || 'FAILED'}
+                                                    {t('serverBackups.failed')}
                                                 </span>
                                             )}
                                         </div>
@@ -485,7 +481,7 @@ export default function VdsBackupsPage() {
                                         isPending ? (
                                             <div className='text-muted-foreground flex items-center gap-2 text-sm'>
                                                 <Loader2 className='h-4 w-4 animate-spin' />
-                                                <span>{t('serverBackups.pleaseWait') || 'Please wait...'}</span>
+                                                <span>{t('serverBackups.pleaseWait')}</span>
                                             </div>
                                         ) : (
                                             <div className='flex items-center gap-2'>
@@ -500,7 +496,7 @@ export default function VdsBackupsPage() {
                                                         }}
                                                     >
                                                         <RotateCcw className='mr-1.5 h-3.5 w-3.5' />
-                                                        {t('serverBackups.restore') || 'Restore'}
+                                                        {t('serverBackups.restore')}
                                                     </Button>
                                                 )}
                                                 <Button
@@ -513,7 +509,7 @@ export default function VdsBackupsPage() {
                                                     }}
                                                 >
                                                     <AlertTriangle className='mr-1.5 h-3.5 w-3.5' />
-                                                    {t('serverBackups.delete') || 'Delete'}
+                                                    {t('serverBackups.delete')}
                                                 </Button>
                                             </div>
                                         )
@@ -529,11 +525,8 @@ export default function VdsBackupsPage() {
             <Dialog open={confirmCreateOpen} onOpenChange={setConfirmCreateOpen}>
                 <div className='space-y-6 p-4'>
                     <DialogHeader>
-                        <DialogTitle>{t('serverBackups.createBackup') || 'Create backup'}</DialogTitle>
-                        <DialogDescription>
-                            {t('serverBackups.createBackupDescription') ||
-                                'This will create a new Proxmox backup for this VDS instance.'}
-                        </DialogDescription>
+                        <DialogTitle>{t('serverBackups.createBackup')}</DialogTitle>
+                        <DialogDescription>{t('serverBackups.createBackupDescription')}</DialogDescription>
                     </DialogHeader>
                     <DialogFooter className='flex justify-end gap-3'>
                         <Button
@@ -551,7 +544,7 @@ export default function VdsBackupsPage() {
                             className='rounded-xl'
                         >
                             {creating ? <Loader2 className='mr-2 h-4 w-4 animate-spin' /> : null}
-                            {t('serverBackups.create') || 'Create'}
+                            {t('serverBackups.create')}
                         </Button>
                     </DialogFooter>
                 </div>
@@ -561,11 +554,8 @@ export default function VdsBackupsPage() {
             <Dialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
                 <div className='space-y-6 p-4'>
                     <DialogHeader>
-                        <DialogTitle>{t('serverBackups.confirmDeleteTitle') || 'Delete backup?'}</DialogTitle>
-                        <DialogDescription>
-                            {t('serverBackups.deleteConfirm') ||
-                                'This will permanently delete this backup from storage.'}
-                        </DialogDescription>
+                        <DialogTitle>{t('serverBackups.confirmDeleteTitle')}</DialogTitle>
+                        <DialogDescription>{t('serverBackups.deleteConfirm')}</DialogDescription>
                     </DialogHeader>
                     <DialogFooter className='flex justify-end gap-3'>
                         <Button
@@ -583,7 +573,7 @@ export default function VdsBackupsPage() {
                             className='rounded-xl'
                         >
                             {deleting ? <Loader2 className='mr-2 h-4 w-4 animate-spin' /> : null}
-                            {t('serverBackups.delete') || 'Delete'}
+                            {t('serverBackups.delete')}
                         </Button>
                     </DialogFooter>
                 </div>
@@ -593,18 +583,14 @@ export default function VdsBackupsPage() {
             <Dialog open={confirmRestoreOpen} onOpenChange={setConfirmRestoreOpen}>
                 <div className='space-y-6 p-4'>
                     <DialogHeader>
-                        <DialogTitle>{t('serverBackups.confirmRestoreTitle') || 'Restore from backup?'}</DialogTitle>
+                        <DialogTitle>{t('serverBackups.confirmRestoreTitle')}</DialogTitle>
                         <DialogDescription>
                             <div className='space-y-3'>
                                 <p className='flex items-center gap-2 font-semibold text-yellow-500'>
                                     <AlertTriangle className='h-4 w-4' />
-                                    {t('serverBackups.restoreWarning') ||
-                                        'Warning: This will overwrite all current data!'}
+                                    {t('serverBackups.restoreWarning')}
                                 </p>
-                                <p>
-                                    {t('serverBackups.restoreConfirm') ||
-                                        'The VM will be stopped and restored to the state of this backup. All current data will be replaced. This action cannot be undone.'}
-                                </p>
+                                <p>{t('serverBackups.restoreConfirm')}</p>
                                 {selectedForRestore && (
                                     <div className='bg-muted/50 border-border/50 mt-4 rounded-lg border p-3'>
                                         <p className='text-muted-foreground font-mono text-sm'>
@@ -638,7 +624,7 @@ export default function VdsBackupsPage() {
                             ) : (
                                 <RotateCcw className='mr-2 h-4 w-4' />
                             )}
-                            {t('serverBackups.restore') || 'Restore'}
+                            {t('serverBackups.restore')}
                         </Button>
                     </DialogFooter>
                 </div>

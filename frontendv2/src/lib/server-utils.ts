@@ -204,7 +204,7 @@ export function getStatusDotColor(status: string): string {
         case 'transferring':
             return 'bg-amber-500 shadow-amber-500/50 shadow-lg animate-pulse';
         case 'suspended':
-            return 'bg-purple-500 shadow-purple-500/50 shadow-lg';
+            return 'bg-primary shadow-primary/50 shadow-lg';
         case 'error':
             return 'bg-red-600 shadow-red-600/50 shadow-lg animate-pulse';
         default:

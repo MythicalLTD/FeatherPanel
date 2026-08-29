@@ -64,7 +64,7 @@ export default function VdsPerformance({
     const charts = [
         {
             id: 'cpu',
-            title: t('vds.console.performance.cpu') || 'CPU Usage',
+            title: t('vds.console.performance.cpu'),
             data: cpuData,
             color: '#ef4444',
             icon: Cpu,
@@ -74,7 +74,7 @@ export default function VdsPerformance({
         },
         {
             id: 'memory',
-            title: t('vds.console.performance.memory') || 'Memory Usage',
+            title: t('vds.console.performance.memory'),
             data: memoryData,
             color: '#3b82f6',
             icon: Database,
@@ -84,7 +84,7 @@ export default function VdsPerformance({
         },
         {
             id: 'net',
-            title: t('vds.console.performance.network') || 'Network',
+            title: t('vds.console.performance.network'),
             data: networkRxData.map((point, idx) => ({
                 timestamp: point.timestamp,
                 value: point.value + (networkTxData[idx]?.value ?? 0),

@@ -304,6 +304,7 @@ class SettingsController
                 ConfigInterface::STATUS_PAGE_ALLOW_IFRAME,
                 ConfigInterface::STATUS_PAGE_SHOW_RAW_VALUES,
                 ConfigInterface::STATUS_PAGE_SHOW_PLAYER_COUNT,
+                ConfigInterface::STATUS_PAGE_SERVERS_VISIBLE_BY_DEFAULT,
             ],
         ],
         'knowledgebase' => [
@@ -2843,6 +2844,22 @@ class SettingsController
                 'type' => 'select',
                 'required' => true,
                 'placeholder' => 'false',
+                'validation' => 'required|string|max:255',
+                'options' => ['true', 'false'],
+                'category' => 'status_page',
+            ],
+            ConfigInterface::STATUS_PAGE_SERVERS_VISIBLE_BY_DEFAULT => [
+                'name' => ConfigInterface::STATUS_PAGE_SERVERS_VISIBLE_BY_DEFAULT,
+                'value' => $this->app
+                    ->getConfig()
+                    ->getSetting(
+                        ConfigInterface::STATUS_PAGE_SERVERS_VISIBLE_BY_DEFAULT,
+                        'true',
+                    ),
+                'description' => 'Default "Show on Status Page" value for newly created servers. Existing servers are unchanged; set false to hide new servers from the public status page unless explicitly opted in.',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'true',
                 'validation' => 'required|string|max:255',
                 'options' => ['true', 'false'],
                 'category' => 'status_page',

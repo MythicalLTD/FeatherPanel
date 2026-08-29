@@ -159,7 +159,7 @@ export function ServerProvider({ children, uuidShort, initialServer }: ServerPro
 
     useEffect(() => {
         if (typeof document === 'undefined' || !uuidShort) return;
-        document.cookie = `serverUuid=${encodeURIComponent(uuidShort)}; path=/; max-age=3600; SameSite=Lax`;
+        document.cookie = `serverUuid=${encodeURIComponent(uuidShort)}; path=/; max-age=3600; SameSite=Lax; Secure`;
     }, [uuidShort]);
 
     const hasPermission = useCallback(

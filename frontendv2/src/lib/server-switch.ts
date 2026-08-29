@@ -85,11 +85,42 @@ export function sortServersWithFavoritesFirst(servers: Server[], favoriteUuids: 
     });
 }
 
-/** Preserve the current server sub-route when switching (e.g. /files → /files). */
-export function buildServerSwitchUrl(targetUuidShort: string, pathname: string): string {
+function normalizeSearch(search?: string): string {
+    if (!search) return '';
+    if (search === '?') return '';
+    return search.startsWith('?') ? search : `?${search}`;
+}
+
+/** True when the current path is the standalone file editor or IDE. */
+export function isServerFileViewerPath(pathname: string): boolean {
+    return /^\/server\/[^/]+\/files\/(edit|ide)\/?$/.test(pathname);
+}
+
+/**
+ * Preserve the current server sub-route when switching (e.g. /files → /files).
+ * Pass `search` (including `?file=` / `?path=`) so file/directory context is kept.
+ * File editor without a `file` query falls back to the files root.
+ */
+export function buildServerSwitchUrl(targetUuidShort: string, pathname: string, search?: string): string {
     const match = pathname.match(/^\/server\/[^/]+(\/.*)?$/);
     const subpath = match?.[1] ?? '';
-    return `/server/${targetUuidShort}${subpath}`;
+    const qs = normalizeSearch(search);
+    const params = new URLSearchParams(qs.startsWith('?') ? qs.slice(1) : qs);
+
+    if (isServerFileViewerPath(pathname) && !params.get('file')?.trim()) {
+        return `/server/${targetUuidShort}/files`;
+    }
+
+    return `/server/${targetUuidShort}${subpath}${qs}`;
+}
+
+/** Join a directory + file name into a server absolute path. */
+export function joinServerFilePath(directory: string | null | undefined, fileName: string): string {
+    const dir = (directory || '/').trim() || '/';
+    const name = fileName.trim();
+    if (!name) return dir.endsWith('/') ? dir.slice(0, -1) || '/' : dir;
+    if (dir.endsWith('/')) return `${dir}${name}`;
+    return `${dir}/${name}`;
 }
 
 export function getCurrentServerUuidShort(pathname: string): string | null {

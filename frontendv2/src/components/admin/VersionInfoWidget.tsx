@@ -28,6 +28,7 @@ import {
     RefreshCcw,
 } from 'lucide-react';
 import { PageCard } from '@/components/featherui/PageCard';
+import { Button } from '@/components/featherui/Button';
 import Link from 'next/link';
 import { ReleaseNotesPanel } from './ReleaseNotesPanel';
 import { IntegrityCheckDialog } from './IntegrityCheckDialog';
@@ -174,9 +175,9 @@ export function VersionInfoWidget({ version, loading }: VersionInfoWidgetProps) 
         <PageCard title={t('admin.version.title')} description={t('admin.version.description')} icon={Package}>
             <div className='space-y-4 md:space-y-6'>
                 <div className='grid gap-3 sm:grid-cols-2'>
-                    <div className='bg-secondary/30 border-border/50 relative overflow-hidden rounded-2xl border p-3 md:rounded-3xl md:p-4'>
+                    <div className='bg-secondary/30 border-border/50 relative overflow-hidden rounded-2xl border p-3 md:p-4'>
                         <div className='bg-primary/5 pointer-events-none absolute -top-8 -right-8 h-24 w-24 rounded-full blur-2xl' />
-                        <p className='text-muted-foreground relative text-[9px] font-black tracking-widest uppercase md:text-[10px]'>
+                        <p className='text-muted-foreground relative text-xs font-medium'>
                             {t('admin.version.current_build')}
                         </p>
                         <h4 className='relative mt-1 truncate text-lg font-black md:text-xl'>
@@ -188,7 +189,7 @@ export function VersionInfoWidget({ version, loading }: VersionInfoWidgetProps) 
                             </p>
                         ) : null}
                         {current?.published_at ? (
-                            <p className='text-muted-foreground mt-1 text-[9px] font-medium md:text-[10px]'>
+                            <p className='text-muted-foreground mt-1 text-xs font-medium'>
                                 {t('admin.version.published_at', {
                                     date: new Date(
                                         current.published_at.includes('T')
@@ -199,11 +200,11 @@ export function VersionInfoWidget({ version, loading }: VersionInfoWidgetProps) 
                             </p>
                         ) : null}
                         <div className='mt-3 flex flex-wrap items-center gap-2'>
-                            <span className='bg-primary/20 text-primary border-primary/30 inline-block rounded-full border px-2 py-1 text-[9px] font-black tracking-widest uppercase md:px-3 md:text-[10px]'>
+                            <span className='bg-primary/20 text-primary border-primary/30 inline-block rounded-full border px-2 py-1 text-xs font-medium md:px-3'>
                                 {current?.type || 'Stable'}
                             </span>
                             {current?.is_security_release ? (
-                                <span className='inline-block rounded-full border border-rose-500/30 bg-rose-500/15 px-2 py-1 text-[9px] font-black tracking-widest text-rose-500 uppercase md:px-3 md:text-[10px]'>
+                                <span className='inline-block rounded-full border border-rose-500/30 bg-rose-500/15 px-2 py-1 text-xs font-medium text-rose-500 md:px-3'>
                                     {t('admin.version.security_release')}
                                 </span>
                             ) : null}
@@ -211,14 +212,14 @@ export function VersionInfoWidget({ version, loading }: VersionInfoWidgetProps) 
                     </div>
 
                     <div
-                        className={`relative overflow-hidden rounded-2xl border p-3 md:rounded-3xl md:p-4 ${
+                        className={`relative overflow-hidden rounded-2xl border p-3 md:p-4 ${
                             !isLatest ? 'border-amber-500/30 bg-amber-500/5' : 'bg-secondary/30 border-border/50'
                         }`}
                     >
                         {!isLatest && (
                             <div className='pointer-events-none absolute -top-8 -right-8 h-24 w-24 rounded-full bg-amber-500/15 blur-2xl' />
                         )}
-                        <p className='text-muted-foreground relative text-[9px] font-black tracking-widest uppercase md:text-[10px]'>
+                        <p className='text-muted-foreground relative text-xs font-medium'>
                             {t('admin.version.latest_build')}
                         </p>
                         <h4 className='relative mt-1 truncate text-lg font-black md:text-xl'>
@@ -230,7 +231,7 @@ export function VersionInfoWidget({ version, loading }: VersionInfoWidgetProps) 
                             </p>
                         ) : null}
                         {latest?.published_at ? (
-                            <p className='text-muted-foreground mt-1 text-[9px] font-medium md:text-[10px]'>
+                            <p className='text-muted-foreground mt-1 text-xs font-medium'>
                                 {t('admin.version.published_at', {
                                     date: new Date(
                                         latest.published_at.includes('T')
@@ -242,12 +243,12 @@ export function VersionInfoWidget({ version, loading }: VersionInfoWidgetProps) 
                         ) : null}
                         <div className='mt-3 flex flex-wrap items-center gap-2'>
                             {latest?.type ? (
-                                <span className='bg-primary/20 text-primary border-primary/30 inline-block rounded-full border px-2 py-1 text-[9px] font-black tracking-widest uppercase md:px-3 md:text-[10px]'>
+                                <span className='bg-primary/20 text-primary border-primary/30 inline-block rounded-full border px-2 py-1 text-xs font-medium md:px-3'>
                                     {latest.type}
                                 </span>
                             ) : null}
                             {latest?.is_security_release ? (
-                                <span className='inline-block rounded-full border border-rose-500/30 bg-rose-500/15 px-2 py-1 text-[9px] font-black tracking-widest text-rose-500 uppercase md:px-3 md:text-[10px]'>
+                                <span className='inline-block rounded-full border border-rose-500/30 bg-rose-500/15 px-2 py-1 text-xs font-medium text-rose-500 md:px-3'>
                                     {t('admin.version.security_release')}
                                 </span>
                             ) : null}
@@ -262,9 +263,7 @@ export function VersionInfoWidget({ version, loading }: VersionInfoWidgetProps) 
                     >
                         <AlertTriangle className='mt-0.5 h-5 w-5 shrink-0' aria-hidden />
                         <div className='min-w-0 space-y-1'>
-                            <p className='text-[10px] font-black tracking-wide uppercase md:text-xs'>
-                                {t('admin.version.unlisted_update_server_badge')}
-                            </p>
+                            <p className='text-xs font-medium'>{t('admin.version.unlisted_update_server_badge')}</p>
                             <p className='text-[10px] leading-relaxed font-medium opacity-90 md:text-xs'>
                                 {t('admin.version.unlisted_update_server_hint')}
                             </p>
@@ -279,15 +278,12 @@ export function VersionInfoWidget({ version, loading }: VersionInfoWidgetProps) 
                                 <CheckCircle2 className='h-5 w-5' />
                                 <p className='text-sm font-bold'>{t('admin.version.up_to_date')}</p>
                             </div>
-                            <Link
-                                href='/admin/updates'
-                                className='rounded-lg bg-emerald-500/10 px-3 py-1 text-[10px] font-black tracking-widest uppercase transition-colors hover:bg-emerald-500/20'
-                            >
-                                {t('common.view')}
-                            </Link>
+                            <Button variant='ghost' size='sm' asChild>
+                                <Link href='/admin/updates'>{t('common.view')}</Link>
+                            </Button>
                         </div>
                     ) : (
-                        <div className='flex flex-col gap-4 rounded-3xl border border-amber-500/20 bg-amber-500/5 p-5 text-amber-500'>
+                        <div className='flex flex-col gap-4 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-5 text-amber-500'>
                             <div className='flex items-center justify-between gap-3'>
                                 <div className='flex items-center gap-3'>
                                     <Download className='h-5 w-5 animate-bounce' />
@@ -303,22 +299,21 @@ export function VersionInfoWidget({ version, loading }: VersionInfoWidgetProps) 
                                         </p>
                                     </div>
                                 </div>
-                                <Link
-                                    href='/admin/updates'
-                                    className='rounded-lg bg-amber-500 px-3 py-1 text-[10px] font-black tracking-widest text-amber-950 uppercase transition-colors hover:bg-amber-400'
-                                >
-                                    {t('admin_updates.title')}
-                                </Link>
+                                <Button size='sm' className='bg-amber-500 text-amber-950 hover:bg-amber-400' asChild>
+                                    <Link href='/admin/updates'>{t('admin_updates.title')}</Link>
+                                </Button>
                             </div>
-                            <button
+                            <Button
+                                variant='warning'
+                                className='w-full'
                                 onClick={() => setShowUpdateModal(true)}
                                 disabled={isUpdatingDocker || updateInProgress}
-                                className='w-full rounded-xl border border-amber-500/20 bg-amber-500/10 py-3 text-[10px] font-black tracking-widest text-amber-500 uppercase transition-colors hover:bg-amber-500/20 disabled:cursor-not-allowed disabled:opacity-60'
+                                loading={isUpdatingDocker}
                             >
                                 {isUpdatingDocker
                                     ? t('admin.settings.docker_update.updating')
                                     : t('admin.version.update_now')}
-                            </button>
+                            </Button>
                         </div>
                     )}
 
@@ -362,19 +357,20 @@ export function VersionInfoWidget({ version, loading }: VersionInfoWidgetProps) 
                     <div className='mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2 md:gap-3'>
                         <Link
                             href='/admin/updates'
-                            className='bg-muted/20 border-border/50 hover:bg-muted/30 group flex items-center justify-center gap-2 rounded-xl border p-2.5 text-[9px] font-black tracking-widest uppercase transition-all md:p-3 md:text-[10px]'
+                            className='bg-muted/20 border-border/50 hover:bg-muted/30 group flex items-center justify-center gap-2 rounded-xl border p-2.5 text-xs font-medium transition-all md:p-3'
                         >
                             <RefreshCcw className='text-primary h-3.5 w-3.5 shrink-0 transition-transform duration-500 group-hover:rotate-180 md:h-4 md:w-4' />
                             <span className='truncate'>{t('admin_updates.title')}</span>
                         </Link>
-                        <button
+                        <Button
                             type='button'
+                            variant='outline'
+                            className='bg-muted/20 border-border/50 hover:bg-muted/30 group h-auto justify-center gap-2 rounded-xl p-2.5 text-xs font-medium md:p-3'
                             onClick={() => setIntegrityOpen(true)}
-                            className='bg-muted/20 border-border/50 hover:bg-muted/30 group flex items-center justify-center gap-2 rounded-xl border p-2.5 text-[9px] font-black tracking-widest uppercase transition-all md:p-3 md:text-[10px]'
                         >
-                            <ShieldCheck className='text-primary h-3.5 w-3.5 shrink-0 transition-transform group-hover:scale-110 md:h-4 md:w-4' />
+                            <ShieldCheck className='text-primary h-3.5 w-3.5 shrink-0 md:h-4 md:w-4' />
                             <span className='truncate'>{t('admin.version.verify_integrity')}</span>
-                        </button>
+                        </Button>
                         {(latest?.github_html_url || current?.github_html_url || version?.project?.github_url) && (
                             <a
                                 href={
@@ -384,7 +380,7 @@ export function VersionInfoWidget({ version, loading }: VersionInfoWidgetProps) 
                                 }
                                 target='_blank'
                                 rel='noopener noreferrer'
-                                className='bg-muted/20 border-border/50 hover:bg-muted/30 group flex items-center justify-center gap-2 rounded-xl border p-2.5 text-[9px] font-black tracking-widest uppercase transition-all md:p-3 md:text-[10px]'
+                                className='bg-muted/20 border-border/50 hover:bg-muted/30 group flex items-center justify-center gap-2 rounded-xl border p-2.5 text-xs font-medium transition-all md:p-3'
                             >
                                 <ExternalLink className='text-primary h-3.5 w-3.5 shrink-0 transition-transform group-hover:scale-110 md:h-4 md:w-4' />
                                 <span className='truncate'>{t('admin.version.view_on_github')}</span>
@@ -394,7 +390,7 @@ export function VersionInfoWidget({ version, loading }: VersionInfoWidgetProps) 
                             href='https://featherpanel.com'
                             target='_blank'
                             rel='noopener noreferrer'
-                            className='bg-muted/20 border-border/50 hover:bg-muted/30 group flex items-center justify-center gap-2 rounded-xl border p-2.5 text-[9px] font-black tracking-widest uppercase transition-all md:p-3 md:text-[10px]'
+                            className='bg-muted/20 border-border/50 hover:bg-muted/30 group flex items-center justify-center gap-2 rounded-xl border p-2.5 text-xs font-medium transition-all md:p-3'
                         >
                             <ExternalLink className='text-primary h-3.5 w-3.5 shrink-0 transition-transform group-hover:scale-110 md:h-4 md:w-4' />
                             <span className='truncate'>{t('admin.version.official_site')}</span>
@@ -402,7 +398,7 @@ export function VersionInfoWidget({ version, loading }: VersionInfoWidgetProps) 
                     </div>
 
                     {version?.last_checked && (
-                        <p className='text-muted-foreground text-center text-[9px] font-bold tracking-widest uppercase opacity-40'>
+                        <p className='text-muted-foreground text-center text-xs font-medium opacity-40'>
                             {t('admin.version.last_checked', { date: new Date(version.last_checked).toLocaleString() })}
                         </p>
                     )}
@@ -413,7 +409,7 @@ export function VersionInfoWidget({ version, loading }: VersionInfoWidgetProps) 
 
             {showUpdateModal && !updateInProgress && (
                 <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm'>
-                    <div className='bg-background border-border animate-in fade-in zoom-in-95 w-full max-w-xl rounded-2xl border shadow-2xl duration-300 md:rounded-3xl'>
+                    <div className='bg-background border-border animate-in fade-in zoom-in-95 w-full max-w-xl rounded-2xl border shadow-2xl duration-300 md:rounded-2xl'>
                         <div className='border-border bg-card/50 border-b p-4 backdrop-blur-xl md:p-6'>
                             <h2 className='text-lg font-black md:text-2xl'>
                                 {t('admin.settings.docker_update.confirm_modal.title')}
@@ -423,21 +419,14 @@ export function VersionInfoWidget({ version, loading }: VersionInfoWidgetProps) 
                             </p>
                         </div>
                         <div className='flex justify-end gap-2 p-4 md:p-6'>
-                            <button
-                                onClick={() => setShowUpdateModal(false)}
-                                className='border-border hover:bg-muted rounded-xl border px-4 py-2 text-sm font-semibold transition-colors md:px-6 md:py-3 md:text-base'
-                            >
+                            <Button variant='outline' onClick={() => setShowUpdateModal(false)}>
                                 {t('admin.settings.docker_update.confirm_modal.cancel')}
-                            </button>
-                            <button
-                                onClick={handleUpdateNow}
-                                disabled={isUpdatingDocker}
-                                className='bg-primary text-primary-foreground rounded-xl px-4 py-2 text-sm font-semibold transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 md:px-6 md:py-3 md:text-base'
-                            >
+                            </Button>
+                            <Button onClick={handleUpdateNow} disabled={isUpdatingDocker} loading={isUpdatingDocker}>
                                 {isUpdatingDocker
                                     ? t('admin.settings.docker_update.updating')
                                     : t('admin.settings.docker_update.confirm_modal.confirm')}
-                            </button>
+                            </Button>
                         </div>
                     </div>
                 </div>
@@ -445,7 +434,7 @@ export function VersionInfoWidget({ version, loading }: VersionInfoWidgetProps) 
 
             {showUpdateModal && updateInProgress && (
                 <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm'>
-                    <div className='bg-background border-border animate-in fade-in zoom-in-95 w-full max-w-xl rounded-2xl border shadow-2xl duration-300 md:rounded-3xl'>
+                    <div className='bg-background border-border animate-in fade-in zoom-in-95 w-full max-w-xl rounded-2xl border shadow-2xl duration-300 md:rounded-2xl'>
                         <div className='border-border bg-card/50 flex items-center justify-between border-b p-4 backdrop-blur-xl md:p-6'>
                             <div>
                                 <h2 className='text-lg font-black md:text-2xl'>

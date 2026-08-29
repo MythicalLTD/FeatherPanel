@@ -21,7 +21,7 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { useSession } from '@/contexts/SessionContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { usePreferences, useDateFormatOptions } from '@/contexts/PreferencesContext';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/featherui/Button';
 import { ShieldCheck, Check, Fingerprint, Pencil, FileText, Clock, Network, Trash2 } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'sonner';
@@ -46,7 +46,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
+import { Input } from '@/components/featherui/Input';
 import { Select } from '@/components/ui/select-native';
 
 type AuthProvider = {

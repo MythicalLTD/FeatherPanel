@@ -72,6 +72,21 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                 return pathname.startsWith(constructedPath);
             }
         }
+        if (pathname.startsWith('/webspace/')) {
+            const uuid = pathname.split('/')[2];
+            if (uuid) {
+                let cleanPluginPath = pluginPath;
+                if (cleanPluginPath.startsWith('/webspace')) {
+                    cleanPluginPath = cleanPluginPath.replace('/webspace', '');
+                }
+                if (!cleanPluginPath.startsWith('/')) {
+                    cleanPluginPath = '/' + cleanPluginPath;
+                }
+
+                const constructedPath = `/webspace/${uuid}${cleanPluginPath}`;
+                return pathname.startsWith(constructedPath);
+            }
+        }
         return pathname.startsWith(pluginPath);
     });
 

@@ -15,6 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
+import { APP_MONO_FONT_STACK } from '@/lib/mono-font';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
@@ -106,7 +107,7 @@ function ansiLineClass(line: string): string {
     if (/\x1b\[33m|WARN|⚠|warning/i.test(line)) return 'text-yellow-400';
     if (/\x1b\[32m|INFO|✅|🚀|📡|✨|💾|🔄|connected|started/i.test(line)) return 'text-green-400';
     if (/\x1b\[36m|DEBUG/i.test(line)) return 'text-cyan-400';
-    if (/\x1b\[35m/.test(line)) return 'text-purple-400';
+    if (/\x1b\[35m/.test(line)) return 'text-primary';
     return 'text-slate-300';
 }
 
@@ -119,7 +120,7 @@ function stripAnsi(str: string): string {
 const LOG_TYPE_META: Record<LogType, { label: string; icon: React.FC<{ className?: string }>; color: string }> = {
     app: { label: 'App', icon: Terminal, color: 'text-blue-400' },
     web: { label: 'Web', icon: Globe, color: 'text-emerald-400' },
-    runner: { label: 'Runner', icon: Cpu, color: 'text-purple-400' },
+    runner: { label: 'Runner', icon: Cpu, color: 'text-primary' },
 };
 
 const LINE_OPTIONS = [50, 100, 200, 500, 1000] as const;
@@ -151,8 +152,8 @@ function TerminalOutput({
     return (
         <div
             ref={containerRef}
-            className='max-h-[68vh] min-h-105 overflow-auto bg-[#0d1117] p-4 font-mono text-[12px] leading-5'
-            style={{ fontFamily: "'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace" }}
+            className='bg-muted max-h-[68vh] min-h-105 overflow-auto p-4 font-mono text-[12px] leading-5'
+            style={{ fontFamily: APP_MONO_FONT_STACK }}
         >
             {loading ? (
                 <div className='flex items-center gap-3 py-4 text-slate-500'>
@@ -1100,7 +1101,7 @@ export default function AdminLogsPage() {
 
                         {/* No node selected */}
                         {!selectedNodeId && !nodesLoading && (
-                            <div className='flex h-48 flex-col items-center justify-center gap-3 bg-[#0d1117] text-slate-600'>
+                            <div className='bg-muted flex h-48 flex-col items-center justify-center gap-3 text-slate-600'>
                                 <Server className='h-10 w-10 opacity-30' />
                                 <span className='text-sm'>{t('admin.logs.wings_no_node_selected')}</span>
                             </div>

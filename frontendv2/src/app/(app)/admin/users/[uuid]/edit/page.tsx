@@ -44,7 +44,7 @@ import { Input } from '@/components/featherui/Input';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { Textarea } from '@/components/featherui/Textarea';
 import { Select } from '@/components/ui/select-native';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
@@ -113,6 +113,7 @@ interface ApiUser {
     updated_at?: string;
     role_id?: number;
     role?: UserRole;
+    webspace_limit?: number;
     discord_oauth2_id?: string | null;
     discord_oauth2_linked?: string;
     discord_oauth2_username?: string | null;
@@ -133,6 +134,7 @@ interface EditForm {
     role_id: string;
     external_id?: number | null;
     password?: string;
+    webspace_limit?: string;
 }
 
 interface Server {
@@ -236,6 +238,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
         role_id: '',
         external_id: undefined,
         password: '',
+        webspace_limit: '0',
     });
 
     const fetchUser = async () => {
@@ -278,6 +281,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                         ? Number(apiUser.external_id)
                         : undefined,
                 password: '',
+                webspace_limit: String(apiUser.webspace_limit ?? 0),
             });
 
             try {
@@ -357,14 +361,18 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
 
         setSubmitting(true);
         try {
-            const patchData: Partial<EditForm> = { ...editForm };
+            const patchData: Record<string, unknown> = { ...editForm };
 
-            if (!patchData.password || patchData.password.trim() === '') {
+            if (!patchData.password || String(patchData.password).trim() === '') {
                 delete patchData.password;
             }
 
             if (patchData.external_id === undefined || patchData.external_id === null || patchData.external_id === 0) {
                 delete patchData.external_id;
+            }
+
+            if (patchData.webspace_limit !== undefined) {
+                patchData.webspace_limit = Math.max(0, Number(patchData.webspace_limit) || 0);
             }
 
             const { data } = await axios.patch(`/api/admin/users/${user.uuid}`, patchData);
@@ -727,6 +735,19 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                             </div>
 
                             <div>
+                                <Label htmlFor='edit-webspace-limit'>WebSpace limit</Label>
+                                <Input
+                                    id='edit-webspace-limit'
+                                    type='number'
+                                    min={0}
+                                    value={editForm.webspace_limit ?? '0'}
+                                    onChange={(e) => setEditForm({ ...editForm, webspace_limit: e.target.value })}
+                                    className='mt-2'
+                                />
+                                <p className='text-muted-foreground mt-1 text-xs'>0 = unlimited self-service orders</p>
+                            </div>
+
+                            <div>
                                 <Label htmlFor='edit-externalid'>{t('admin.users.edit.form.external_id')}</Label>
                                 <Input
                                     id='edit-externalid'
@@ -811,7 +832,7 @@ export default function UserEditPage({ params }: { params: Promise<{ uuid: strin
                                     </Badge>
                                 )}
                                 {user.ldap_provider_uuid && user.ldap_dn ? (
-                                    <Badge className='border-purple-500/20 bg-purple-500/10 text-purple-600'>
+                                    <Badge className='border-primary/20 bg-primary/10 text-primary'>
                                         {t('admin.users.badges.ldap')}
                                     </Badge>
                                 ) : user.oidc_provider && user.oidc_subject ? (

@@ -21,10 +21,10 @@ import Link from 'next/link';
 import axios from 'axios';
 import { Paperclip, X, Upload, ChevronLeft, ChevronsUpDown, Trash2, Server as ServerIcon } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Button } from '@/components/featherui/Button';
+import { Input } from '@/components/featherui/Input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { Textarea } from '@/components/featherui/Textarea';
 import { HeadlessSelect } from '@/components/ui/headless-select';
 import { ServerSelectionModal } from '@/components/dashboard/ServerSelectionModal';
 import { toast } from 'sonner';
@@ -284,10 +284,7 @@ export default function CreateTicketPage() {
                             <Input
                                 id='title'
                                 label={t('tickets.titleLabel')}
-                                description={
-                                    t('tickets.titleDescription') ||
-                                    'Enter a concise summary of the issue you are facing.'
-                                }
+                                description={t('tickets.titleDescription')}
                                 value={title}
                                 onChange={(e) => setTitle(e.target.value)}
                                 placeholder={t('tickets.titlePlaceholder')}
@@ -299,10 +296,7 @@ export default function CreateTicketPage() {
                         <div className='space-y-2.5'>
                             <HeadlessSelect
                                 label={t('tickets.categoryLabel')}
-                                description={
-                                    t('tickets.categoryDescription') ||
-                                    'Select the category that best describes your issue.'
-                                }
+                                description={t('tickets.categoryDescription')}
                                 value={categoryId}
                                 onChange={setCategoryId}
                                 options={categoryOptions}
@@ -325,10 +319,7 @@ export default function CreateTicketPage() {
                             <Textarea
                                 id='description'
                                 label={t('tickets.descriptionLabel')}
-                                description={
-                                    t('tickets.descriptionDetail') ||
-                                    'Please provide as much detail as possible so we can assist you better.'
-                                }
+                                description={t('tickets.descriptionDetail')}
                                 value={description}
                                 onChange={(e) => setDescription(e.target.value)}
                                 placeholder={t('tickets.descriptionPlaceholder')}

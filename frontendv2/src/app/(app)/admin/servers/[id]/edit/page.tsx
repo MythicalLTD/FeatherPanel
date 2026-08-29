@@ -21,7 +21,7 @@ import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigat
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useDateFormatOptions } from '@/contexts/PreferencesContext';
 import { Button } from '@/components/featherui/Button';
-import { Input } from '@/components/ui/input';
+import { Input } from '@/components/featherui/Input';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import {
     Save,
@@ -84,6 +84,7 @@ const initialFormData: ServerFormData = {
     owner_id: null,
     skip_scripts: false,
     skip_zerotrust: false,
+    show_on_status: true,
     external_id: '',
     expires_at: null,
     realms_id: null,
@@ -410,6 +411,7 @@ export default function EditServerPage() {
                     owner_id: server.owner_id,
                     skip_scripts: Boolean(server.skip_scripts),
                     skip_zerotrust: Boolean(server.skip_zerotrust),
+                    show_on_status: server.show_on_status === undefined ? true : Boolean(server.show_on_status),
                     external_id: server.external_id || '',
                     expires_at: server.expires_at ? server.expires_at.slice(0, 16) : null,
                     realms_id: server.realms_id,
@@ -516,14 +518,12 @@ export default function EditServerPage() {
         const envVariable = customVariableForm.env_variable.trim().toUpperCase();
 
         if (!name || !envVariable) {
-            toast.error('Name and environment variable are required');
+            toast.error(t('serverStartup.customEnv.required'));
             return;
         }
 
         if (!/^[A-Z_][A-Z0-9_]*$/.test(envVariable)) {
-            toast.error(
-                'Env variable must use uppercase letters, numbers, and underscores, and cannot start with a number',
-            );
+            toast.error(t('serverStartup.customEnv.invalidEnv'));
             return;
         }
 
@@ -540,22 +540,22 @@ export default function EditServerPage() {
             );
 
             if (data.success) {
-                toast.success('Custom variable added');
+                toast.success(t('serverStartup.customEnv.added'));
                 setCustomVariableForm({ name: '', env_variable: '', variable_value: '', is_encrypted: false });
                 await fetchServerData();
             } else {
-                toast.error(data.message || 'Failed to add custom variable');
+                toast.error(data.message || t('serverStartup.customEnv.addFailed'));
             }
         } catch (error) {
             toast.error(
                 axios.isAxiosError(error)
-                    ? error.response?.data?.message || 'Failed to add custom variable'
-                    : 'Failed to add custom variable',
+                    ? error.response?.data?.message || t('serverStartup.customEnv.addFailed')
+                    : t('serverStartup.customEnv.addFailed'),
             );
         } finally {
             setCustomVariableSaving(false);
         }
-    }, [customVariableForm, fetchServerData, serverId]);
+    }, [customVariableForm, fetchServerData, serverId, t]);
 
     const handleDeleteCustomVariable = useCallback(
         async (variable: CustomVariable) => {
@@ -566,22 +566,22 @@ export default function EditServerPage() {
                 );
 
                 if (data.success) {
-                    toast.success('Custom variable deleted');
+                    toast.success(t('serverStartup.customEnv.deleted'));
                     await fetchServerData();
                 } else {
-                    toast.error(data.message || 'Failed to delete custom variable');
+                    toast.error(data.message || t('serverStartup.customEnv.deleteFailed'));
                 }
             } catch (error) {
                 toast.error(
                     axios.isAxiosError(error)
-                        ? error.response?.data?.message || 'Failed to delete custom variable'
-                        : 'Failed to delete custom variable',
+                        ? error.response?.data?.message || t('serverStartup.customEnv.deleteFailed')
+                        : t('serverStartup.customEnv.deleteFailed'),
                 );
             } finally {
                 setCustomVariableSaving(false);
             }
         },
-        [fetchServerData, serverId],
+        [fetchServerData, serverId, t],
     );
 
     useEffect(() => {
@@ -988,6 +988,7 @@ export default function EditServerPage() {
                 owner_id: form.owner_id,
                 skip_scripts: form.skip_scripts,
                 skip_zerotrust: form.skip_zerotrust,
+                show_on_status: form.show_on_status,
                 external_id: form.external_id?.trim() || null,
                 expires_at: form.expires_at || null,
                 realms_id: form.realms_id,

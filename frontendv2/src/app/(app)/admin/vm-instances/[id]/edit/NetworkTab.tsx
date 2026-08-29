@@ -205,7 +205,7 @@ export function NetworkTab({
             <div className='mt-4 flex justify-end'>
                 <Button type='submit' loading={saving}>
                     <Save className='mr-2 h-4 w-4' />
-                    {t('common.save_changes')}
+                    {t('common.saveChanges')}
                 </Button>
             </div>
         </form>

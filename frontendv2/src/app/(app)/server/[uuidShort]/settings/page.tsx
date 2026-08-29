@@ -44,6 +44,7 @@ import {
 import { copyToClipboard } from '@/lib/utils';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import {
     Dialog,
@@ -286,7 +287,7 @@ export default function ServerSettingsPage() {
 
     if (!canRename && !canReinstall && !canViewSftp) {
         return (
-            <div className='bg-card/40 border-border/5 flex flex-col items-center justify-center space-y-8 rounded-[3rem] border py-24 text-center backdrop-blur-3xl'>
+            <div className='bg-card/40 border-border/5 flex flex-col items-center justify-center space-y-8 rounded-3xl border py-24 text-center backdrop-blur-3xl'>
                 <div className='relative'>
                     <div className='absolute inset-0 scale-150 rounded-full bg-red-500/20 blur-3xl' />
                     <div className='relative flex h-32 w-32 rotate-3 items-center justify-center rounded-3xl border-2 border-red-500/20 bg-red-500/10'>
@@ -669,12 +670,10 @@ export default function ServerSettingsPage() {
                             </p>
                         </div>
                         <div className='flex items-center gap-2 rounded-xl border border-orange-500/20 bg-orange-500/5 p-4'>
-                            <input
-                                type='checkbox'
+                            <Checkbox
                                 id='wipeFiles'
                                 checked={wipeFilesOnReinstall}
-                                onChange={(e) => setWipeFilesOnReinstall(e.target.checked)}
-                                className='h-4 w-4 rounded border-white/20 bg-white/5 checked:bg-orange-500'
+                                onCheckedChange={setWipeFilesOnReinstall}
                             />
                             <Label htmlFor='wipeFiles' className='cursor-pointer text-sm text-orange-200'>
                                 {t('serverSettings.wipeFiles')}
@@ -722,12 +721,10 @@ export default function ServerSettingsPage() {
                                     {t('serverSettings.deleteServerStep2Description')}
                                 </p>
                                 <div className='flex items-center gap-2'>
-                                    <input
-                                        type='checkbox'
+                                    <Checkbox
                                         id='confirmIrreversible'
                                         checked={confirmIrreversible}
-                                        onChange={(e) => setConfirmIrreversible(e.target.checked)}
-                                        className='h-4 w-4 rounded border-white/20 bg-white/5'
+                                        onCheckedChange={setConfirmIrreversible}
                                     />
                                     <Label htmlFor='confirmIrreversible' className='cursor-pointer'>
                                         {t('serverSettings.deleteServerStep2Confirm')}

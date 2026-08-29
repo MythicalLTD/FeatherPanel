@@ -30,7 +30,18 @@ import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { usePersistedListFilters } from '@/hooks/usePersistedListFilters';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 import { toast } from 'sonner';
-import { Server, Plus, Search, Pencil, Trash2, ChevronLeft, ChevronRight, MapPin, LayoutTemplate } from 'lucide-react';
+import {
+    Server,
+    Plus,
+    Search,
+    Pencil,
+    Trash2,
+    ChevronLeft,
+    ChevronRight,
+    MapPin,
+    LayoutTemplate,
+    Activity,
+} from 'lucide-react';
 
 interface WebNode {
     id: number;
@@ -65,6 +76,8 @@ interface Pagination {
     hasPrev: boolean;
 }
 
+type NodeHealth = 'online' | 'offline' | 'checking';
+
 const WEB_NODES_LIST_FILTERS_KEY = 'featherpanel_admin_web_nodes_filters_v1';
 const WEB_NODES_LIST_FILTERS_DEFAULTS = {
     searchQuery: '',
@@ -93,6 +106,8 @@ export default function WebNodesPage() {
     const [refreshKey, setRefreshKey] = useState(0);
     const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
     const [deleting, setDeleting] = useState(false);
+    const [nodeHealth, setNodeHealth] = useState<Record<number, NodeHealth>>({});
+    const [isCheckingHealth, setIsCheckingHealth] = useState(false);
 
     const [pagination, setPagination] = useState<Omit<Pagination, 'page' | 'pageSize'>>({
         total: 0,
@@ -131,6 +146,29 @@ export default function WebNodesPage() {
         fetchLocations();
     }, []);
 
+    const checkNodeHealth = useCallback(async (nodeId: number) => {
+        setNodeHealth((prev) => ({ ...prev, [nodeId]: 'checking' }));
+        try {
+            const { data } = await axios.get(`/api/admin/web-nodes/${nodeId}/health`);
+            const status = data?.data?.health?.status === 'healthy' ? 'online' : 'offline';
+            setNodeHealth((prev) => ({ ...prev, [nodeId]: status }));
+        } catch {
+            setNodeHealth((prev) => ({ ...prev, [nodeId]: 'offline' }));
+        }
+    }, []);
+
+    const checkAllNodesHealth = useCallback(
+        async (nodesToCheck: WebNode[]) => {
+            setIsCheckingHealth(true);
+            try {
+                await Promise.all(nodesToCheck.map((node) => checkNodeHealth(node.id)));
+            } finally {
+                setIsCheckingHealth(false);
+            }
+        },
+        [checkNodeHealth],
+    );
+
     const fetchWebNodes = useCallback(async () => {
         if (!hydrated) {
             return;
@@ -147,7 +185,8 @@ export default function WebNodesPage() {
                 },
             });
 
-            setWebNodes((data.data.web_nodes || []) as WebNode[]);
+            const fetched = (data.data.web_nodes || []) as WebNode[];
+            setWebNodes(fetched);
             const apiPagination = data.data.pagination;
             setPagination({
                 total: apiPagination.total_records,
@@ -155,13 +194,17 @@ export default function WebNodesPage() {
                 hasNext: apiPagination.has_next,
                 hasPrev: apiPagination.has_prev,
             });
+
+            if (fetched.length > 0) {
+                void checkAllNodesHealth(fetched);
+            }
         } catch (error) {
             console.error('Error fetching web nodes:', error);
             toast.error(t('admin.webNodes.messages.fetch_failed'));
         } finally {
             setLoading(false);
         }
-    }, [page, pageSize, searchQueryDebounced, locationIdFilter, t, hydrated]);
+    }, [page, pageSize, searchQueryDebounced, locationIdFilter, t, hydrated, checkAllNodesHealth]);
 
     useEffect(() => {
         fetchWebNodes();
@@ -205,10 +248,21 @@ export default function WebNodesPage() {
                 }
                 icon={LayoutTemplate}
                 actions={
-                    <Button onClick={() => router.push('/admin/web-nodes/create')}>
-                        <Plus className='mr-2 h-4 w-4' />
-                        {t('admin.webNodes.create')}
-                    </Button>
+                    <div className='flex flex-wrap gap-2'>
+                        <Button
+                            variant='outline'
+                            onClick={() => void checkAllNodesHealth(webNodes)}
+                            loading={isCheckingHealth}
+                            disabled={webNodes.length === 0}
+                        >
+                            <Activity className='mr-2 h-4 w-4' />
+                            {t('admin.webNodes.status.check_health')}
+                        </Button>
+                        <Button onClick={() => router.push('/admin/web-nodes/create')}>
+                            <Plus className='mr-2 h-4 w-4' />
+                            {t('admin.webNodes.create')}
+                        </Button>
+                    </div>
                 }
             />
 
@@ -267,10 +321,25 @@ export default function WebNodesPage() {
             ) : (
                 <div className='grid grid-cols-1 gap-4'>
                     {webNodes.map((node) => {
+                        const health = nodeHealth[node.id];
                         const badges: ResourceBadge[] = [
                             {
+                                label:
+                                    health === 'online'
+                                        ? t('admin.webNodes.status.online')
+                                        : health === 'offline'
+                                          ? t('admin.webNodes.status.offline')
+                                          : t('admin.webNodes.status.checking'),
+                                className:
+                                    health === 'online'
+                                        ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                                        : health === 'offline'
+                                          ? 'bg-red-500/10 text-red-500 border-red-500/20'
+                                          : 'bg-muted text-muted-foreground border-border',
+                            },
+                            {
                                 label: getLocationName(node.location_id),
-                                className: 'bg-violet-500/10 text-violet-500 border-violet-500/20',
+                                className: 'bg-primary/10 text-primary border-primary/20',
                             },
                             ...(node.maintenance_mode
                                 ? [

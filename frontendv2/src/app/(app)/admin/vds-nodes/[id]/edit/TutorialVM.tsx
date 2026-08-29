@@ -13,14 +13,19 @@ by the Free Software Foundation, either version 3 of the License, or
 See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
+'use client';
+
 import { Info, ShieldAlert } from 'lucide-react';
 import { PageCard } from '@/components/featherui/PageCard';
+import { useTranslation } from '@/contexts/TranslationContext';
 
 export function TutorialVM() {
+    const { t } = useTranslation();
+
     return (
-        <PageCard title='How to create Debian 13 / Ubuntu 24.04 Proxmox templates' icon={Info} className='mt-6'>
+        <PageCard title={t('admin.vdsNodes.tutorial.vm.title')} icon={Info} className='mt-6'>
             <div className='text-muted-foreground space-y-4 text-sm'>
-                <p className='font-medium'>1. Download latest cloud images on your Proxmox node</p>
+                <p className='font-medium'>{t('admin.vdsNodes.tutorial.vm.step1')}</p>
                 <pre className='bg-muted/60 overflow-x-auto rounded-md p-3 text-xs'>
                     <code>{`cd /var/lib/vz/template/iso
 
@@ -31,7 +36,7 @@ wget https://cloud.debian.org/images/cloud/trixie/latest/debian-13-genericcloud-
 wget https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img`}</code>
                 </pre>
 
-                <p className='font-medium'>2. Create a Debian 13 cloud-init template (example VMID 9000)</p>
+                <p className='font-medium'>{t('admin.vdsNodes.tutorial.vm.step2')}</p>
                 <p>In the Proxmox UI, use these settings when you click &quot;Create VM&quot;:</p>
                 <ul className='list-inside list-disc space-y-1 text-xs'>
                     <li>
@@ -121,7 +126,7 @@ qm set 9000 --serial0 socket --vga serial0`}</code>
                     clients to fail SSH logins after deployment.
                 </p>
 
-                <p className='font-medium'>3. Create an Ubuntu 24.04 cloud-init template (example VMID 9001)</p>
+                <p className='font-medium'>{t('admin.vdsNodes.tutorial.vm.step3')}</p>
                 <p>In the Proxmox UI, repeat the same VM creation flow for Ubuntu:</p>
                 <ul className='list-inside list-disc space-y-1 text-xs'>
                     <li>
@@ -186,7 +191,7 @@ qm set 9001 --serial0 socket --vga serial0`}</code>
                     configured, deployed clients may not be able to SSH into their servers.
                 </p>
 
-                <p className='font-medium'>4. Hook into FeatherPanel</p>
+                <p className='font-medium'>{t('admin.vdsNodes.tutorial.vm.step4')}</p>
                 <p>
                     In your plans / products, use template ID <code>9000</code> for Debian 13 and <code>9001</code> for
                     Ubuntu 24.04. FeatherPanel will clone these templates, apply cloud-init (IP, user, password / SSH
@@ -195,7 +200,7 @@ qm set 9001 --serial0 socket --vga serial0`}</code>
                     that ship proper cloud-init images and UEFI support.
                 </p>
 
-                <p className='font-medium'>5. Avoid disk resize timeouts (recommended)</p>
+                <p className='font-medium'>{t('admin.vdsNodes.tutorial.vm.step5')}</p>
                 <p className='text-xs'>
                     If creates fail with <code>qemu-img resize … failed: got timeout</code>, Proxmox is timing out while
                     allocating qcow2 metadata on your storage. On the Proxmox node, disable metadata preallocation for
@@ -213,7 +218,7 @@ qm set 9001 --serial0 socket --vga serial0`}</code>
                 <div className='bg-primary/5 border-primary/20 mt-6 rounded-lg border p-4'>
                     <p className='text-primary flex items-center gap-2 font-medium'>
                         <ShieldAlert className='h-4 w-4' />
-                        Best Practice: Why use VMs?
+                        {t('admin.vdsNodes.tutorial.vm.best_practice_title')}
                     </p>
                     <p className='text-muted-foreground mt-1 text-xs'>
                         VMs (QEMU/KVM) provide the strongest isolation and best compatibility with modern workloads like

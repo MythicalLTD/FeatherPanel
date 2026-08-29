@@ -768,6 +768,181 @@ class ServerDatabaseController
     }
 
     /**
+     * Bulk delete server databases.
+     *
+     * @param Request $request The HTTP request
+     * @param string $serverUuid The server UUID
+     *
+     * @return Response The HTTP response
+     */
+    #[OA\Delete(
+        path: '/api/user/servers/{uuidShort}/databases/bulk-delete',
+        summary: 'Bulk delete server databases',
+        description: 'Delete multiple databases at once. Pass an array of database IDs, or set all=true to delete every database for the server.',
+        tags: ['User - Server Databases'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: 'ids', type: 'array', items: new OA\Items(type: 'integer'), description: 'Database IDs to delete'),
+                    new OA\Property(property: 'all', type: 'boolean', description: 'When true, delete all databases for the server'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Bulk delete completed',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'deleted_count', type: 'integer'),
+                        new OA\Property(property: 'failed_count', type: 'integer'),
+                        new OA\Property(property: 'failed', type: 'array', items: new OA\Items(type: 'object')),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Invalid or missing parameters'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server or node not found'),
+            new OA\Response(response: 500, description: 'Internal server error'),
+        ]
+    )]
+    public function bulkDeleteServerDatabases(Request $request, string $serverUuid): Response
+    {
+        $server = Server::getServerByUuid($serverUuid);
+        if (!$server) {
+            return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+        }
+
+        $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::DATABASE_DELETE);
+        if ($permissionCheck !== null) {
+            return $permissionCheck;
+        }
+
+        $data = json_decode($request->getContent(), true);
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
+            return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
+        }
+
+        $deleteAll = !empty($data['all']);
+        $ids = $data['ids'] ?? [];
+
+        if (!$deleteAll) {
+            if (!is_array($ids) || empty($ids)) {
+                return ApiResponse::error('Provide a non-empty ids array or set all=true', 'MISSING_IDS', 400);
+            }
+            if (count($ids) > 100) {
+                return ApiResponse::error('Cannot delete more than 100 databases at once', 'TOO_MANY_IDS', 400);
+            }
+            $normalizedIds = [];
+            foreach ($ids as $id) {
+                if (!is_numeric($id) || (int) $id <= 0) {
+                    return ApiResponse::error('All IDs must be positive integers', 'INVALID_IDS', 400);
+                }
+                $normalizedIds[] = (int) $id;
+            }
+            $ids = array_values(array_unique($normalizedIds));
+        }
+
+        $node = Node::getNodeById($server['node_id']);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+
+        $databasesToDelete = [];
+        if ($deleteAll) {
+            $databasesToDelete = ServerDatabase::getServerDatabasesWithDetailsByServerId((int) $server['id']);
+        } else {
+            foreach ($ids as $databaseId) {
+                $database = ServerDatabase::getServerDatabaseWithDetails($databaseId);
+                if (!$database || (int) $database['server_id'] !== (int) $server['id']) {
+                    continue;
+                }
+                $databasesToDelete[] = $database;
+            }
+        }
+
+        if (empty($databasesToDelete)) {
+            return ApiResponse::error('No databases to delete', 'NO_DATABASES', 400);
+        }
+
+        $deletedCount = 0;
+        $failed = [];
+        $user = $request->attributes->get('user');
+
+        foreach ($databasesToDelete as $database) {
+            $databaseId = (int) $database['id'];
+            try {
+                $databaseHost = DatabaseInstance::getDatabaseById($database['database_host_id']);
+                if (!$databaseHost) {
+                    $failed[] = [
+                        'id' => $databaseId,
+                        'error' => 'Database host not found',
+                    ];
+                    continue;
+                }
+
+                $this->deleteDatabaseFromHost($databaseHost, $database['database'], $database['username']);
+
+                if (!ServerDatabase::deleteServerDatabase($databaseId)) {
+                    $failed[] = [
+                        'id' => $databaseId,
+                        'error' => 'Failed to delete server database record',
+                    ];
+                    continue;
+                }
+
+                $this->logActivity($server, $node, 'database_deleted', [
+                    'database_id' => $databaseId,
+                    'database_name' => $database['database'],
+                    'username' => $database['username'],
+                    'database_host_name' => $databaseHost['name'],
+                    'bulk' => true,
+                ], $user);
+
+                global $eventManager;
+                if (isset($eventManager) && $eventManager !== null) {
+                    $eventManager->emit(
+                        ServerDatabaseEvent::onServerDatabaseDeleted(),
+                        [
+                            'user_uuid' => $user['uuid'] ?? null,
+                            'server_uuid' => $server['uuid'],
+                            'database_id' => $databaseId,
+                            'bulk' => true,
+                        ]
+                    );
+                }
+
+                ++$deletedCount;
+            } catch (\Exception $e) {
+                App::getInstance(true)->getLogger()->error(
+                    'Failed to bulk delete database ' . $databaseId . ': ' . $e->getMessage()
+                );
+                $failed[] = [
+                    'id' => $databaseId,
+                    'error' => $e->getMessage(),
+                ];
+            }
+        }
+
+        return ApiResponse::success([
+            'deleted_count' => $deletedCount,
+            'failed_count' => count($failed),
+            'failed' => $failed,
+        ], 'Bulk database delete completed', 200);
+    }
+
+    /**
      * Get available database hosts.
      *
      * @param Request $request The HTTP request
@@ -1159,80 +1334,25 @@ class ServerDatabaseController
         }
 
         try {
-            $options = [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION, \PDO::ATTR_TIMEOUT => 30];
-            $dbPort = (int) $database['database_port'];
-            $dsn = "mysql:host={$database['database_host']};port={$dbPort};dbname={$database['database']};charset=utf8mb4";
-            $pdo = new \PDO($dsn, $database['username'], $database['password'], $options);
-
-            $exportedAt = date('Y-m-d H:i:s');
-            $lines = [
-                '-- FeatherPanel SQL Dump',
-                "-- Database: {$database['database']}",
-                "-- Generated: {$exportedAt}",
-                "-- Host: {$database['database_host']}:{$database['database_port']}",
-                '',
-                'SET FOREIGN_KEY_CHECKS=0;',
-                "SET SQL_MODE='NO_AUTO_VALUE_ON_ZERO';",
-                "SET time_zone='+00:00';",
-                '',
-            ];
-
-            $tables = $pdo->query('SHOW TABLES')->fetchAll(\PDO::FETCH_COLUMN);
-            $tableCount = count($tables);
-
-            foreach ($tables as $table) {
-                $safeTable = $this->quoteIdentifierMySQL($table);
-
-                $lines[] = "-- Table: {$table}";
-                $lines[] = "DROP TABLE IF EXISTS {$safeTable};";
-
-                $createRow = $pdo->query("SHOW CREATE TABLE {$safeTable}")->fetch(\PDO::FETCH_NUM);
-                $lines[] = $createRow[1] . ';';
-                $lines[] = '';
-
-                $rows = $pdo->query("SELECT * FROM {$safeTable} LIMIT 10000")->fetchAll(\PDO::FETCH_ASSOC);
-                if (!empty($rows)) {
-                    $columns = '(' . implode(', ', array_map(fn ($c) => $this->quoteIdentifierMySQL($c), array_keys($rows[0]))) . ')';
-                    $chunks = array_chunk($rows, 250);
-                    foreach ($chunks as $chunk) {
-                        $valuesList = array_map(function (array $row) use ($pdo): string {
-                            $vals = array_map(function ($v) use ($pdo): string {
-                                if ($v === null) {
-                                    return 'NULL';
-                                }
-
-                                return $pdo->quote((string) $v);
-                            }, array_values($row));
-
-                            return '(' . implode(', ', $vals) . ')';
-                        }, $chunk);
-                        $lines[] = "INSERT INTO {$safeTable} {$columns} VALUES";
-                        $lines[] = implode(",\n", $valuesList) . ';';
-                    }
-                    $lines[] = '';
-                }
-            }
-
-            $lines[] = 'SET FOREIGN_KEY_CHECKS=1;';
-
-            $sql = implode("\n", $lines);
+            $dump = \App\Services\Database\ServerDatabaseDumpService::exportToSql(
+                $database,
+                \App\Services\Database\ServerDatabaseDumpService::DEFAULT_MAX_ROWS_PER_TABLE
+            );
 
             $node = Node::getNodeById($server['node_id']);
             if ($node) {
                 $this->logActivity($server, $node, 'database_exported', [
                     'database_id' => $databaseId,
                     'database_name' => $database['database'],
-                    'table_count' => $tableCount,
+                    'table_count' => $dump['table_count'],
                 ], $user);
             }
 
-            $filename = $database['database'] . '_' . date('Y-m-d_H-i-s') . '.sql';
-
             return ApiResponse::success([
-                'sql' => $sql,
-                'filename' => $filename,
-                'table_count' => $tableCount,
-                'exported_at' => $exportedAt,
+                'sql' => $dump['sql'],
+                'filename' => $dump['filename'],
+                'table_count' => $dump['table_count'],
+                'exported_at' => $dump['exported_at'],
             ], 'Database exported successfully', 200);
         } catch (\Exception $e) {
             App::getInstance(true)->getLogger()->error('Failed to export database: ' . $e->getMessage());
@@ -1328,69 +1448,28 @@ class ServerDatabaseController
         $sql = $body['sql'];
         $ignoreErrors = (bool) ($body['ignore_errors'] ?? false);
 
-        if (strlen($sql) > 50 * 1024 * 1024) {
-            return ApiResponse::error('SQL content exceeds 50 MB limit', 'SQL_TOO_LARGE', 400);
-        }
-
         try {
-            $dbPort = (int) $database['database_port'];
-
-            if (in_array($database['database_type'], ['mysql', 'mariadb'])) {
-                $options = [
-                    \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
-                    \PDO::ATTR_TIMEOUT => 60,
-                    \PDO::MYSQL_ATTR_MULTI_STATEMENTS => false,
-                ];
-                $dsn = "mysql:host={$database['database_host']};port={$dbPort};dbname={$database['database']};charset=utf8mb4";
-            } else {
-                $options = [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION, \PDO::ATTR_TIMEOUT => 60];
-                $dsn = "pgsql:host={$database['database_host']};port={$dbPort};dbname={$database['database']}";
-            }
-
-            $pdo = new \PDO($dsn, $database['username'], $database['password'], $options);
-
-            $statements = $this->splitSqlStatements($sql);
-            $executed = 0;
-            $errors = [];
-
-            foreach ($statements as $statement) {
-                $statement = trim($statement);
-                if ($statement === '' || str_starts_with($statement, '--') || str_starts_with($statement, '#')) {
-                    continue;
-                }
-                if ($this->isDangerousStatement($statement)) {
-                    $errors[] = 'Blocked dangerous statement: ' . mb_substr($statement, 0, 120);
-                    if (!$ignoreErrors) {
-                        break;
-                    }
-                    continue;
-                }
-                try {
-                    $pdo->exec($statement);
-                    ++$executed;
-                } catch (\PDOException $e) {
-                    $errors[] = $e->getMessage();
-                    if (!$ignoreErrors) {
-                        break;
-                    }
-                }
-            }
+            $result = \App\Services\Database\ServerDatabaseDumpService::importSql($database, $sql, $ignoreErrors);
 
             $node = Node::getNodeById($server['node_id']);
             if ($node) {
                 $this->logActivity($server, $node, 'database_imported', [
                     'database_id' => $databaseId,
                     'database_name' => $database['database'],
-                    'executed_statements' => $executed,
-                    'errors' => count($errors),
+                    'executed_statements' => $result['executed_statements'],
+                    'errors' => count($result['errors']),
                 ], $user);
             }
 
             return ApiResponse::success([
-                'executed_statements' => $executed,
-                'errors' => $errors,
-                'success' => empty($errors),
+                'executed_statements' => $result['executed_statements'],
+                'errors' => $result['errors'],
+                'success' => $result['success'],
             ], 'SQL import completed', 200);
+        } catch (\InvalidArgumentException $e) {
+            $code = str_contains($e->getMessage(), '50 MB') ? 'SQL_TOO_LARGE' : 'IMPORT_FAILED';
+
+            return ApiResponse::error($e->getMessage(), $code, 400);
         } catch (\Exception $e) {
             App::getInstance(true)->getLogger()->error('Failed to import database: ' . $e->getMessage());
 

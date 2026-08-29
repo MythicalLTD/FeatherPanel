@@ -20,7 +20,7 @@ import axios, { isAxiosError } from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { Button } from '@/components/featherui/Button';
 import { Input } from '@/components/featherui/Input';
-import { HeadlessModal } from '@/components/ui/headless-modal';
+import { Dialog, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { ArrowLeftRight, ChevronRight, Loader2, Search } from 'lucide-react';
@@ -224,12 +224,21 @@ export function MassTransferServersDialog({
 
     return (
         <>
-            <HeadlessModal
-                isOpen={open}
+            <Dialog
+                open={open}
                 onClose={() => onOpenChange(false)}
-                title={t('admin.node.mass_transfer.title')}
-                description={t('admin.node.mass_transfer.description', { node: sourceNodeName })}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        onOpenChange(false);
+                    }
+                }}
             >
+                <DialogHeader>
+                    <DialogTitle>{t('admin.node.mass_transfer.title')}</DialogTitle>
+                    <DialogDescription>
+                        {t('admin.node.mass_transfer.description', { node: sourceNodeName })}
+                    </DialogDescription>
+                </DialogHeader>
                 <div className='space-y-6'>
                     <div className='space-y-2'>
                         <label className='text-sm font-bold'>{t('admin.node.mass_transfer.destination_node')}</label>
@@ -371,13 +380,20 @@ export function MassTransferServersDialog({
                         </Button>
                     </div>
                 </div>
-            </HeadlessModal>
+            </Dialog>
 
-            <HeadlessModal
-                isOpen={nodeModalOpen}
+            <Dialog
+                open={nodeModalOpen}
                 onClose={() => setNodeModalOpen(false)}
-                title={t('admin.node.mass_transfer.destination_node')}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setNodeModalOpen(false);
+                    }
+                }}
             >
+                <DialogHeader>
+                    <DialogTitle>{t('admin.node.mass_transfer.destination_node')}</DialogTitle>
+                </DialogHeader>
                 <div className='space-y-4'>
                     <div className='relative'>
                         <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
@@ -413,7 +429,7 @@ export function MassTransferServersDialog({
                         )}
                     </div>
                 </div>
-            </HeadlessModal>
+            </Dialog>
 
             <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
                 <AlertDialogContent>

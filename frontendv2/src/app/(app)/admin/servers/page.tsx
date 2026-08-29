@@ -75,7 +75,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select } from '@/components/ui/select-native';
-import { HeadlessModal } from '@/components/ui/headless-modal';
+import { Dialog, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { TransferServerDialog } from '@/components/admin/TransferServerDialog';
@@ -1300,11 +1300,18 @@ export default function ServersPage() {
                 </AlertDialogContent>
             </AlertDialog>
 
-            <HeadlessModal
-                isOpen={isOwnerFilterModalOpen}
+            <Dialog
+                open={isOwnerFilterModalOpen}
                 onClose={() => setIsOwnerFilterModalOpen(false)}
-                title={t('admin.servers.filters.user')}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setIsOwnerFilterModalOpen(false);
+                    }
+                }}
             >
+                <DialogHeader>
+                    <DialogTitle>{t('admin.servers.filters.user')}</DialogTitle>
+                </DialogHeader>
                 <div className='space-y-4'>
                     <div className='relative'>
                         <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
@@ -1372,13 +1379,20 @@ export default function ServersPage() {
                         </Button>
                     )}
                 </div>
-            </HeadlessModal>
+            </Dialog>
 
-            <HeadlessModal
-                isOpen={isNodeFilterModalOpen}
+            <Dialog
+                open={isNodeFilterModalOpen}
                 onClose={() => setIsNodeFilterModalOpen(false)}
-                title={t('admin.servers.filters.node')}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setIsNodeFilterModalOpen(false);
+                    }
+                }}
             >
+                <DialogHeader>
+                    <DialogTitle>{t('admin.servers.filters.node')}</DialogTitle>
+                </DialogHeader>
                 <div className='space-y-4'>
                     <div className='relative'>
                         <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
@@ -1443,13 +1457,20 @@ export default function ServersPage() {
                         </Button>
                     )}
                 </div>
-            </HeadlessModal>
+            </Dialog>
 
-            <HeadlessModal
-                isOpen={isRealmFilterModalOpen}
+            <Dialog
+                open={isRealmFilterModalOpen}
                 onClose={() => setIsRealmFilterModalOpen(false)}
-                title={t('admin.servers.filters.realm')}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setIsRealmFilterModalOpen(false);
+                    }
+                }}
             >
+                <DialogHeader>
+                    <DialogTitle>{t('admin.servers.filters.realm')}</DialogTitle>
+                </DialogHeader>
                 <div className='space-y-4'>
                     <div className='relative'>
                         <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
@@ -1524,13 +1545,20 @@ export default function ServersPage() {
                         </Button>
                     )}
                 </div>
-            </HeadlessModal>
+            </Dialog>
 
-            <HeadlessModal
-                isOpen={isSpellFilterModalOpen}
+            <Dialog
+                open={isSpellFilterModalOpen}
                 onClose={() => setIsSpellFilterModalOpen(false)}
-                title={t('admin.servers.filters.spell')}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setIsSpellFilterModalOpen(false);
+                    }
+                }}
             >
+                <DialogHeader>
+                    <DialogTitle>{t('admin.servers.filters.spell')}</DialogTitle>
+                </DialogHeader>
                 <div className='space-y-4'>
                     <div className='relative'>
                         <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
@@ -1610,13 +1638,20 @@ export default function ServersPage() {
                         </Button>
                     )}
                 </div>
-            </HeadlessModal>
+            </Dialog>
 
-            <HeadlessModal
-                isOpen={isLocationFilterModalOpen}
+            <Dialog
+                open={isLocationFilterModalOpen}
                 onClose={() => setIsLocationFilterModalOpen(false)}
-                title={t('admin.servers.filters.location')}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setIsLocationFilterModalOpen(false);
+                    }
+                }}
             >
+                <DialogHeader>
+                    <DialogTitle>{t('admin.servers.filters.location')}</DialogTitle>
+                </DialogHeader>
                 <div className='space-y-4'>
                     <div className='relative'>
                         <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
@@ -1696,7 +1731,7 @@ export default function ServersPage() {
                         </Button>
                     )}
                 </div>
-            </HeadlessModal>
+            </Dialog>
 
             <TransferServerDialog
                 server={transferServer}

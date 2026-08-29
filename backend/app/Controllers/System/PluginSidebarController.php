@@ -34,6 +34,7 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'sidebar', type: 'object', properties: [
             new OA\Property(property: 'server', type: 'object', description: 'Server section sidebar items'),
             new OA\Property(property: 'vds', type: 'object', description: 'VDS section sidebar items'),
+            new OA\Property(property: 'webspace', type: 'object', description: 'WebSpace section sidebar items'),
             new OA\Property(property: 'client', type: 'object', description: 'Client section sidebar items'),
             new OA\Property(property: 'admin', type: 'object', description: 'Admin section sidebar items'),
         ], description: 'Complete sidebar structure with plugin items'),
@@ -75,6 +76,7 @@ class PluginSidebarController
         $sidebarData = [
             'server' => [],
             'vds' => [],
+            'webspace' => [],
             'client' => [],
             'admin' => [],
         ];
@@ -119,7 +121,7 @@ class PluginSidebarController
 
                         if (json_last_error() === JSON_ERROR_NONE && is_array($sidebarConfig)) {
                             // Merge plugin sidebar items into main structure
-                            foreach (['server', 'vds', 'client', 'admin'] as $section) {
+                            foreach (['server', 'vds', 'webspace', 'client', 'admin'] as $section) {
                                 if (isset($sidebarConfig[$section]) && is_array($sidebarConfig[$section])) {
                                     foreach ($sidebarConfig[$section] as $key => $item) {
                                         // Add plugin identifier to avoid conflicts
@@ -273,6 +275,7 @@ class PluginSidebarController
             '<userUuid>' => 'testData',
             '<serverUuid>' => 'testData',
             '<vdsId>' => 'testData',
+            '<webspaceUuid>' => 'testData',
         ];
         $component = strtr($component, $placeholders);
 
@@ -309,6 +312,14 @@ class PluginSidebarController
                 $queryParams['vdsId'] = 'vdsId=' . $_COOKIE['vdsId'];
             } else {
                 $queryParams['vdsId'] = 'notFound';
+            }
+        }
+
+        if ($section === 'webspace' && strpos($component, 'webspaceUuid=testData') === false) {
+            if (isset($_COOKIE['webspaceUuid'])) {
+                $queryParams['webspaceUuid'] = 'webspaceUuid=' . $_COOKIE['webspaceUuid'];
+            } else {
+                $queryParams['webspaceUuid'] = 'notFound';
             }
         }
 

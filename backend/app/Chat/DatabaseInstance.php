@@ -36,6 +36,7 @@ class DatabaseInstance
         'id',
         'name',
         'node_id',
+        'web_node_id',
         'database_type',
         'database_port',
         'database_username',
@@ -161,6 +162,23 @@ class DatabaseInstance
         if (isset($data['node_id']) && $data['node_id'] !== null && $data['node_id'] !== '') {
             $fields[] = 'node_id';
             $insert['node_id'] = $data['node_id'];
+        }
+
+        // Add web_node_id if provided (NULL = available to all web nodes)
+        if (array_key_exists('web_node_id', $data)) {
+            if ($data['web_node_id'] === null || $data['web_node_id'] === '') {
+                $fields[] = 'web_node_id';
+                $insert['web_node_id'] = null;
+            } elseif (is_numeric($data['web_node_id']) && (int) $data['web_node_id'] > 0) {
+                if (!WebNode::getWebNodeById((int) $data['web_node_id'])) {
+                    $sanitizedData = self::sanitizeDataForLogging($data);
+                    App::getInstance(true)->getLogger()->error('Invalid web_node_id: ' . $data['web_node_id'] . ' for database: ' . $data['name'] . ' with data: ' . json_encode($sanitizedData));
+
+                    return false;
+                }
+                $fields[] = 'web_node_id';
+                $insert['web_node_id'] = (int) $data['web_node_id'];
+            }
         }
 
         // Handle optional ID for migrations (EXACT same pattern as Location.php)
@@ -351,6 +369,20 @@ class DatabaseInstance
             }
         }
 
+        // Validate web_node_id if present (null = all web nodes)
+        if (array_key_exists('web_node_id', $data)) {
+            if ($data['web_node_id'] !== null && $data['web_node_id'] !== '') {
+                if (!is_numeric($data['web_node_id']) || (int) $data['web_node_id'] <= 0 || !WebNode::getWebNodeById((int) $data['web_node_id'])) {
+                    App::getInstance(true)->getLogger()->error('Invalid web_node_id: ' . $data['web_node_id'] . ' for database update with data: ' . json_encode($data));
+
+                    return false;
+                }
+                $data['web_node_id'] = (int) $data['web_node_id'];
+            } else {
+                $data['web_node_id'] = null;
+            }
+        }
+
         // Validate database_type if provided
         if (isset($data['database_type'])) {
             $allowedTypes = ['mysql', 'postgresql', 'mariadb', 'mongodb', 'redis'];
@@ -490,6 +522,35 @@ class DatabaseInstance
             ORDER BY d.name ASC
         ');
         $stmt->execute(['node_id' => $serverNodeId]);
+        $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        foreach ($rows as &$row) {
+            $row = self::decryptSensitiveFields($row);
+        }
+
+        return $rows;
+    }
+
+    /**
+     * Database hosts available for WebSpaces on a given web node:
+     * global hosts (web_node_id NULL) plus hosts tied to that web node.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public static function getDatabasesForWebNode(int $webNodeId): array
+    {
+        if ($webNodeId <= 0) {
+            return [];
+        }
+
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare('
+            SELECT d.*, wn.name as web_node_name
+            FROM ' . self::$table . ' d
+            LEFT JOIN featherpanel_web_nodes wn ON d.web_node_id = wn.id
+            WHERE d.web_node_id IS NULL OR d.web_node_id = :web_node_id
+            ORDER BY d.name ASC
+        ');
+        $stmt->execute(['web_node_id' => $webNodeId]);
         $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
         foreach ($rows as &$row) {
             $row = self::decryptSensitiveFields($row);

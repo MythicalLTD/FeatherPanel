@@ -420,6 +420,7 @@ interface ConfigInterface
     public const STATUS_PAGE_ALLOW_IFRAME = 'status_page_allow_iframe';
     public const STATUS_PAGE_SHOW_RAW_VALUES = 'status_page_show_raw_values';
     public const STATUS_PAGE_SHOW_PLAYER_COUNT = 'status_page_show_player_count';
+    public const STATUS_PAGE_SERVERS_VISIBLE_BY_DEFAULT = 'status_page_servers_visible_by_default';
 
     /**
      * Knowledgebase Settings.

@@ -79,12 +79,14 @@ class ServerSchedule
                     return false;
                 }
             } elseif (in_array($field, ['is_active', 'is_processing'])) {
-                if (!is_numeric($data[$field]) || !in_array((int) $data[$field], [0, 1])) {
+                $normalized = self::normalizeBooleanFlag($data[$field]);
+                if ($normalized === null) {
                     $sanitizedData = self::sanitizeDataForLogging($data);
                     App::getInstance(true)->getLogger()->error('Invalid ' . $field . ': ' . $data[$field] . ' for schedule: ' . $data['name'] . ' with data: ' . json_encode($sanitizedData));
 
                     return false;
                 }
+                $data[$field] = $normalized;
             } else {
                 // String fields validation
                 if (!is_string($data[$field]) || trim($data[$field]) === '') {
@@ -105,7 +107,18 @@ class ServerSchedule
         }
 
         // Set default values for optional fields
-        $data['only_when_online'] = $data['only_when_online'] ?? 0;
+        if (isset($data['only_when_online'])) {
+            $onlyWhenOnline = self::normalizeBooleanFlag($data['only_when_online']);
+            if ($onlyWhenOnline === null) {
+                $sanitizedData = self::sanitizeDataForLogging($data);
+                App::getInstance(true)->getLogger()->error('Invalid only_when_online: ' . $data['only_when_online'] . ' for schedule: ' . $data['name'] . ' with data: ' . json_encode($sanitizedData));
+
+                return false;
+            }
+            $data['only_when_online'] = $onlyWhenOnline;
+        } else {
+            $data['only_when_online'] = 0;
+        }
         $data['created_at'] = $data['created_at'] ?? date('Y-m-d H:i:s');
         $data['updated_at'] = $data['updated_at'] ?? date('Y-m-d H:i:s');
 
@@ -318,6 +331,21 @@ class ServerSchedule
 
                 return false;
             }
+
+            foreach (['is_active', 'is_processing', 'only_when_online'] as $flag) {
+                if (!isset($data[$flag])) {
+                    continue;
+                }
+
+                $normalized = self::normalizeBooleanFlag($data[$flag]);
+                if ($normalized === null) {
+                    App::getInstance(true)->getLogger()->error('Invalid ' . $flag . ' for schedule update: ' . $data[$flag]);
+
+                    return false;
+                }
+                $data[$flag] = $normalized;
+            }
+
             // Prevent updating primary key/id
             if (isset($data['id'])) {
                 unset($data['id']);
@@ -862,6 +890,38 @@ class ServerSchedule
         }
 
         return false;
+    }
+
+    /**
+     * Normalize schedule boolean flags (0/1) from JSON booleans, integers, or strings.
+     */
+    private static function normalizeBooleanFlag(mixed $value): ?int
+    {
+        if (is_bool($value)) {
+            return $value ? 1 : 0;
+        }
+
+        if (is_numeric($value)) {
+            $int = (int) $value;
+
+            return in_array($int, [0, 1], true) ? $int : null;
+        }
+
+        if (is_string($value)) {
+            $trimmed = trim($value);
+            if ($trimmed === '') {
+                return null;
+            }
+
+            $filtered = filter_var($trimmed, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+            if ($filtered === null) {
+                return null;
+            }
+
+            return $filtered ? 1 : 0;
+        }
+
+        return null;
     }
 
     /**

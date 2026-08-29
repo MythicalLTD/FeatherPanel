@@ -23,7 +23,7 @@ import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Sheet, SheetHeader, SheetTitle, SheetDescription, SheetContent } from '@/components/ui/sheet';
-import { Input } from '@/components/ui/input';
+import { Input } from '@/components/featherui/Input';
 import { toast } from 'sonner';
 import {
     Server,
@@ -40,6 +40,7 @@ import {
     MapPin,
     ChevronLeft,
     ChevronRight,
+    HeartPulse,
 } from 'lucide-react';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
@@ -51,6 +52,7 @@ import { NetworkTab } from './NetworkTab';
 import { RemoteSftpTab } from './RemoteSftpTab';
 import { AdvancedTab } from './AdvancedTab';
 import { FeatherQuilldTab } from './FeatherQuilldTab';
+import { StatusTab } from './StatusTab';
 import {
     type WebNodeForm,
     defaultWebNodeForm,
@@ -83,7 +85,13 @@ export default function EditWebNodePage() {
     const [resettingToken, setResettingToken] = useState(false);
     const [configRefreshKey, setConfigRefreshKey] = useState(0);
     const [activeTab, setActiveTab] = useState(
-        tabFromUrl === 'quilld' ? 'quilld' : tabFromUrl === 'config' ? 'config' : 'details',
+        tabFromUrl === 'quilld'
+            ? 'quilld'
+            : tabFromUrl === 'status'
+              ? 'status'
+              : tabFromUrl === 'config'
+                ? 'config'
+                : 'details',
     );
     const [locationModalOpen, setLocationModalOpen] = useState(false);
     const [locationPagination, setLocationPagination] = useState({
@@ -189,6 +197,22 @@ export default function EditWebNodePage() {
                 daemonBase: node.daemonBase || '/var/lib/featherquilld',
                 websitesPath: node.websitesPath || '',
                 backupsPath: node.backupsPath || '',
+                backupsProvider: node.backupsProvider || 'local',
+                backupsS3Endpoint: node.backupsS3Endpoint || '',
+                backupsS3Region: node.backupsS3Region || 'us-east-1',
+                backupsS3Bucket: node.backupsS3Bucket || '',
+                backupsS3AccessKey: node.backupsS3AccessKey || '',
+                backupsS3SecretKey: node.backupsS3SecretKey || '',
+                backupsS3Prefix: node.backupsS3Prefix || 'webspaces/',
+                backupsS3ForcePathStyle:
+                    node.backupsS3ForcePathStyle === true || node.backupsS3ForcePathStyle === 1 ? 'true' : 'false',
+                backupsResticRepository: node.backupsResticRepository || '',
+                backupsResticPassword: node.backupsResticPassword || '',
+                backupsResticBinary: node.backupsResticBinary || '',
+                backupsPbsRepository: node.backupsPbsRepository || '',
+                backupsPbsPassword: node.backupsPbsPassword || '',
+                backupsPbsFingerprint: node.backupsPbsFingerprint || '',
+                backupsPbsBinary: node.backupsPbsBinary || '',
                 addonsPath: node.addonsPath || '',
                 quilldConfigOverrides: node.quilldConfigOverrides || '',
                 remoteTimeout: Number(node.remoteTimeout ?? 30),
@@ -198,6 +222,12 @@ export default function EditWebNodePage() {
                 sftpKeyAlgorithm: node.sftpKeyAlgorithm || 'ssh-ed25519',
                 sftpPort: Number(node.sftpPort ?? 2222),
                 sftpDisablePasswordAuth: node.sftpDisablePasswordAuth ? 'true' : 'false',
+                proxyEnabled: node.proxyEnabled === false || node.proxyEnabled === 0 ? 'false' : 'true',
+                proxyProvider: node.proxyProvider || 'caddy',
+                acmeEmail: node.acmeEmail || '',
+                acmeStaging: node.acmeStaging === true || node.acmeStaging === 1 ? 'true' : 'false',
+                backendPortMin: Number(node.backendPortMin ?? 20000),
+                backendPortMax: Number(node.backendPortMax ?? 29999),
             });
         } catch (error) {
             console.error('Error loading web node:', error);
@@ -214,6 +244,7 @@ export default function EditWebNodePage() {
 
     const tabs = useMemo(
         () => [
+            { id: 'status', label: t('admin.webNodes.status.tab'), icon: HeartPulse },
             { id: 'details', label: t('admin.webNodes.form.basic_details'), icon: Database },
             { id: 'config', label: t('admin.webNodes.form.configuration'), icon: Settings2 },
             { id: 'network', label: t('admin.webNodes.form.network'), icon: Network },
@@ -346,6 +377,10 @@ export default function EditWebNodePage() {
                     </aside>
 
                     <div className='min-w-0 flex-1 space-y-6'>
+                        <TabsContent value='status' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
+                            <StatusTab nodeId={id} />
+                        </TabsContent>
+
                         <TabsContent value='details' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
                             <DetailsTab
                                 form={form}
@@ -383,7 +418,7 @@ export default function EditWebNodePage() {
                             />
                         </TabsContent>
 
-                        {activeTab !== 'quilld' && (
+                        {activeTab !== 'quilld' && activeTab !== 'status' && (
                             <div className='flex justify-end'>
                                 <Button onClick={() => handleSave()} loading={saving}>
                                     <Save className='mr-2 h-4 w-4' />

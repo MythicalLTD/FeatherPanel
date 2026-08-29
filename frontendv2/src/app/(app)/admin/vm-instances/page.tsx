@@ -62,7 +62,7 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Select } from '@/components/ui/select-native';
-import { HeadlessModal } from '@/components/ui/headless-modal';
+import { Dialog, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 
 interface VmInstance {
@@ -659,12 +659,19 @@ export default function VmInstancesPage() {
                 </AlertDialogContent>
             </AlertDialog>
 
-            <HeadlessModal
-                isOpen={isOwnerFilterModalOpen}
+            <Dialog
+                open={isOwnerFilterModalOpen}
                 onClose={() => setIsOwnerFilterModalOpen(false)}
-                title={t('admin.vmInstances.filters.select_user')}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setIsOwnerFilterModalOpen(false);
+                    }
+                }}
             >
-                <div className='p-6'>
+                <DialogHeader>
+                    <DialogTitle>{t('admin.vmInstances.filters.select_user')}</DialogTitle>
+                </DialogHeader>
+                <div className='space-y-4'>
                     <Input
                         placeholder={t('common.search')}
                         value={ownerFilterSearch}
@@ -705,14 +712,21 @@ export default function VmInstancesPage() {
                         )}
                     </div>
                 </div>
-            </HeadlessModal>
+            </Dialog>
 
-            <HeadlessModal
-                isOpen={isNodeFilterModalOpen}
+            <Dialog
+                open={isNodeFilterModalOpen}
                 onClose={() => setIsNodeFilterModalOpen(false)}
-                title={t('admin.vmInstances.filters.select_node')}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setIsNodeFilterModalOpen(false);
+                    }
+                }}
             >
-                <div className='p-6'>
+                <DialogHeader>
+                    <DialogTitle>{t('admin.vmInstances.filters.select_node')}</DialogTitle>
+                </DialogHeader>
+                <div className='space-y-4'>
                     <div className='max-h-100 space-y-2 overflow-y-auto'>
                         {loadingNodes ? (
                             <div className='py-4 text-center'>
@@ -744,7 +758,7 @@ export default function VmInstancesPage() {
                         )}
                     </div>
                 </div>
-            </HeadlessModal>
+            </Dialog>
 
             <Sheet open={isViewDrawerOpen} onOpenChange={setIsViewDrawerOpen}>
                 <SheetContent side='right' className='custom-scrollbar overflow-y-auto sm:max-w-2xl'>

@@ -7,7 +7,7 @@ Copyright (C) 2025 Cassian Gherman (aka NaysKutzu)
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published
-by the Free Software Foundation, either version 3 of the License, or
+    40|by the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
 See the LICENSE file or <https://www.gnu.org/licenses/>.
@@ -81,7 +81,7 @@ export function PageCard({
         <div
             id={id}
             className={cn(
-                'group relative space-y-6 overflow-visible rounded-3xl border p-8 backdrop-blur-xl transition-all',
+                'group relative space-y-6 overflow-visible rounded-2xl border p-8 backdrop-blur-sm transition-all',
                 styles.bg,
                 styles.border,
                 className,
@@ -107,16 +107,13 @@ export function PageCard({
                     )}
                     <div className='min-w-0 flex-1 space-y-0.5'>
                         <h2
-                            className={cn(
-                                'line-clamp-2 text-lg font-black tracking-tight break-all uppercase',
-                                styles.title,
-                            )}
+                            className={cn('line-clamp-2 text-lg font-semibold tracking-tight break-all', styles.title)}
                             title={title}
                         >
                             {title}
                         </h2>
                         {description && (
-                            <p className='text-muted-foreground line-clamp-3 text-[9px] leading-relaxed font-bold tracking-widest break-words uppercase opacity-50'>
+                            <p className='text-muted-foreground line-clamp-3 text-xs leading-relaxed font-normal break-words'>
                                 {description}
                             </p>
                         )}

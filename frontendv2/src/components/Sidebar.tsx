@@ -205,6 +205,11 @@ function SidebarContent({
             return pathname === href;
         }
 
+        const webspaceRootRegex = /^\/webspace\/[^/]+$/;
+        if (webspaceRootRegex.test(href)) {
+            return pathname === href;
+        }
+
         return pathname.startsWith(href + '/');
     };
 

@@ -135,7 +135,7 @@ export function DiagnosticsTab({ nodeId, systemLogsEnabled = false }: Diagnostic
 
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text);
-        toast.success(t('common.copied_to_clipboard'));
+        toast.success(t('common.copiedToClipboard'));
     };
 
     return (

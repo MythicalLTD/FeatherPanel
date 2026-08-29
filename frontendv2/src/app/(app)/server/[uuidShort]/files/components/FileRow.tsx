@@ -102,6 +102,8 @@ interface FileRowProps {
     /** Show download-folder action when daemon supports directory_download */
     canDownloadDirectory?: boolean;
     serverUuid: string;
+    /** When set, edit links use `${filesBasePath}/edit?...` instead of `/server/{uuid}/files/edit?...`. */
+    filesBasePath?: string;
     currentDirectory: string;
 }
 
@@ -229,6 +231,7 @@ export function FileRow({
     canBrowseArchiveFeature = true,
     canDownloadDirectory = false,
     serverUuid,
+    filesBasePath,
     currentDirectory,
 }: FileRowProps) {
     const { t } = useTranslation();
@@ -509,9 +512,10 @@ export function FileRow({
                             </Link>
                         );
                     } else if (isEditableFile(file.size, file.name) && canEdit) {
+                        const editBase = filesBasePath || `/server/${serverUuid}/files`;
                         return (
                             <Link
-                                href={`/server/${serverUuid}/files/edit?file=${encodeURIComponent(file.name)}&directory=${encodeURIComponent(currentDirectory || '/')}`}
+                                href={`${editBase}/edit?file=${encodeURIComponent(file.name)}&directory=${encodeURIComponent(currentDirectory || '/')}`}
                                 className='text-foreground block truncate text-sm font-semibold'
                                 onClick={(e) => {
                                     if (onRowClick?.(file, e)) {

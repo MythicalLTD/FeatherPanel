@@ -70,7 +70,7 @@ export const ACCENT_BEAM_LIGHT_HEX: Record<string, string> = {
     slate: '#94a3b8',
 };
 
-/** Hue in degrees (0–360) per accent – for DarkVeil hueShift */
+/** Hue in degrees (0–360) per accent – for animated backgrounds / theme tooling */
 export const ACCENT_HUE: Record<string, number> = {
     purple: 262,
     blue: 217,

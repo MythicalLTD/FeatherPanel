@@ -115,10 +115,10 @@ const LOCATION_TYPES: {
     {
         value: 'web',
         icon: LayoutTemplate,
-        colorClass: 'text-violet-500',
+        colorClass: 'text-primary',
         selectedBorderClass: 'border-violet-500/60',
-        selectedBgClass: 'bg-violet-500/10',
-        badgeClass: 'bg-violet-500/10 text-violet-500 border-violet-500/20',
+        selectedBgClass: 'bg-primary/10',
+        badgeClass: 'bg-primary/10 text-primary border-primary/20',
         comingSoon: NO_WEBHOSTING,
     },
 ];
