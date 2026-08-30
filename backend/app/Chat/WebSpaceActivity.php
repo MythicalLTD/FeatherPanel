@@ -152,4 +152,47 @@ class WebSpaceActivity
             ],
         ];
     }
+
+    /**
+     * @return array{total: int, by_day: list<array{date: string, count: int}>, top_events: list<array{event: string, count: int}>}
+     */
+    public static function summarizeRecent(int $webspaceId, int $days = 30): array
+    {
+        $pdo = Database::getPdoConnection();
+        $days = max(1, min(90, $days));
+
+        $totalStmt = $pdo->prepare(
+            'SELECT COUNT(*) FROM ' . self::$table . ' WHERE webspace_id = :id AND timestamp >= DATE_SUB(NOW(), INTERVAL :days DAY)',
+        );
+        $totalStmt->execute(['id' => $webspaceId, 'days' => $days]);
+        $total = (int) $totalStmt->fetchColumn();
+
+        $byDayStmt = $pdo->prepare(
+            'SELECT DATE(timestamp) AS day, COUNT(*) AS cnt FROM ' . self::$table
+            . ' WHERE webspace_id = :id AND timestamp >= DATE_SUB(NOW(), INTERVAL :days DAY)'
+            . ' GROUP BY DATE(timestamp) ORDER BY day ASC',
+        );
+        $byDayStmt->execute(['id' => $webspaceId, 'days' => $days]);
+        $byDay = [];
+        foreach ($byDayStmt->fetchAll(\PDO::FETCH_ASSOC) as $row) {
+            $byDay[] = ['date' => (string) $row['day'], 'count' => (int) $row['cnt']];
+        }
+
+        $topStmt = $pdo->prepare(
+            'SELECT event, COUNT(*) AS cnt FROM ' . self::$table
+            . ' WHERE webspace_id = :id AND timestamp >= DATE_SUB(NOW(), INTERVAL :days DAY)'
+            . ' GROUP BY event ORDER BY cnt DESC LIMIT 10',
+        );
+        $topStmt->execute(['id' => $webspaceId, 'days' => $days]);
+        $topEvents = [];
+        foreach ($topStmt->fetchAll(\PDO::FETCH_ASSOC) as $row) {
+            $topEvents[] = ['event' => (string) $row['event'], 'count' => (int) $row['cnt']];
+        }
+
+        return [
+            'total' => $total,
+            'by_day' => $byDay,
+            'top_events' => $topEvents,
+        ];
+    }
 }

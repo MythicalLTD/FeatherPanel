@@ -17,12 +17,11 @@
 
 namespace App\Helpers;
 
-use App\Chat\DatabaseInstance;
-use App\Chat\DnsHost;
-use App\Chat\MailHost;
 use App\Chat\User;
 use App\Chat\WebNode;
+use App\Chat\MailHost;
 use App\Chat\WebPlate;
+use App\Chat\DatabaseInstance;
 
 /**
  * Aggregates panel + FeatherQuilld readiness for WebSpace provisioning.
@@ -520,14 +519,14 @@ class WebSpaceInfrastructureReadiness
     {
         $summary = ['total' => 0, 'ok' => 0, 'warn' => 0, 'fail' => 0];
         foreach ($checks as $check) {
-            $summary['total']++;
+            ++$summary['total'];
             $status = (string) ($check['status'] ?? 'ok');
             if ($status === 'fail') {
-                $summary['fail']++;
+                ++$summary['fail'];
             } elseif ($status === 'warn') {
-                $summary['warn']++;
+                ++$summary['warn'];
             } else {
-                $summary['ok']++;
+                ++$summary['ok'];
             }
         }
 

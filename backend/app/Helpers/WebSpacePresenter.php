@@ -66,6 +66,9 @@ class WebSpacePresenter
         if ($webNode) {
             $space['sftp_host'] = (string) ($webNode['fqdn'] ?? '');
             $space['sftp_port'] = (int) ($webNode['sftpPort'] ?? 2222);
+            $space['ftp_host'] = (string) ($webNode['fqdn'] ?? '');
+            $space['ftp_port'] = (int) ($webNode['ftpPort'] ?? 21);
+            $space['ftp_enabled'] = filter_var($webNode['ftpEnabled'] ?? false, FILTER_VALIDATE_BOOLEAN);
 
             $daemon = FeatherQuilldClient::request($webNode, 'GET', '/api/webspaces/' . ($space['uuid'] ?? ''));
             if ($daemon['ok'] && is_array($daemon['body'])) {
@@ -79,6 +82,58 @@ class WebSpacePresenter
             }
         }
 
+        return self::enrichAccess($space);
+    }
+
+    /**
+     * @param array<string, mixed> $space
+     *
+     * @return array<string, mixed>
+     */
+    public static function enrichAccess(array $space): array
+    {
+        $webNode = WebNode::getWebNodeById((int) ($space['web_node_id'] ?? 0));
+        if (!$webNode) {
+            return $space;
+        }
+
+        $fqdn = trim((string) ($webNode['fqdn'] ?? ''));
+        $backendPort = (int) ($space['backend_port'] ?? 0);
+        $ssl = !empty($space['ssl']);
+        $domains = is_array($space['domains'] ?? null) ? $space['domains'] : [];
+        $scheme = $ssl ? 'https' : 'http';
+        $directHost = self::resolveNodeDirectHost($webNode);
+
+        $public = [];
+        foreach ($domains as $domain) {
+            $d = trim((string) $domain);
+            if ($d === '') {
+                continue;
+            }
+            $public[] = [
+                'domain' => $d,
+                'url' => $scheme . '://' . $d,
+            ];
+        }
+
+        $internalUrl = ($backendPort > 0 && $directHost !== null)
+            ? 'http://' . $directHost . ':' . $backendPort
+            : ($backendPort > 0 ? 'http://127.0.0.1:' . $backendPort : null);
+        $loopbackUrl = ($backendPort > 0 && $directHost !== null && $directHost !== '127.0.0.1')
+            ? 'http://127.0.0.1:' . $backendPort
+            : null;
+
+        $space['web_node_fqdn'] = $fqdn;
+        $space['web_node_scheme'] = (string) ($webNode['scheme'] ?? 'https');
+        $space['access'] = [
+            'public' => $public,
+            'internal_url' => $internalUrl,
+            'loopback_url' => $loopbackUrl,
+            'node_fqdn' => $fqdn !== '' ? $fqdn : null,
+            'node_ip' => $directHost,
+            'backend_port' => $backendPort > 0 ? $backendPort : null,
+        ];
+
         if (strtolower((string) ($space['status'] ?? '')) === 'suspended') {
             $space['suspended'] = 1;
         } else {
@@ -86,5 +141,44 @@ class WebSpacePresenter
         }
 
         return $space;
+    }
+
+    /**
+     * @param array<string, mixed> $space
+     *
+     * @return array<string, mixed>
+     */
+    public static function forAdmin(array $space): array
+    {
+        return self::enrichAccess($space);
+    }
+
+    /**
+     * @param array<string, mixed> $webNode
+     */
+    private static function resolveNodeDirectHost(array $webNode): ?string
+    {
+        foreach (['proxyBackendBindHost', 'proxyBackendHost', 'public_ip', 'ip'] as $key) {
+            $value = trim((string) ($webNode[$key] ?? ''));
+            if (self::isDirectAccessIp($value)) {
+                return $value;
+            }
+        }
+
+        $fqdn = trim((string) ($webNode['fqdn'] ?? ''));
+        if ($fqdn !== '' && filter_var($fqdn, FILTER_VALIDATE_IP) && self::isDirectAccessIp($fqdn)) {
+            return $fqdn;
+        }
+
+        return null;
+    }
+
+    private static function isDirectAccessIp(string $value): bool
+    {
+        if ($value === '' || !filter_var($value, FILTER_VALIDATE_IP)) {
+            return false;
+        }
+
+        return !in_array($value, ['127.0.0.1', '0.0.0.0', '::', '::1'], true);
     }
 }

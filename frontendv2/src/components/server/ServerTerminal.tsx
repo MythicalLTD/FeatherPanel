@@ -379,6 +379,7 @@ interface ServerTerminalProps {
     fullHeight?: boolean;
     showPopoutButton?: boolean;
     onUploadLogs?: () => void;
+    subtitle?: string;
 }
 
 const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
@@ -392,6 +393,7 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
             fullHeight = false,
             showPopoutButton = true,
             onUploadLogs,
+            subtitle,
         },
         ref,
     ) => {
@@ -817,7 +819,7 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                                 {t('servers.console.terminal.title')}
                             </h3>
                             <p className='text-muted-foreground mt-1 hidden max-w-2xl text-xs leading-relaxed sm:block'>
-                                {t('servers.console.terminal.subtitle')}
+                                {subtitle ?? t('servers.console.terminal.subtitle')}
                             </p>
                         </div>
                         <div className='border-border/50 bg-muted/25 flex w-full flex-wrap items-center gap-1 rounded-lg border p-1 sm:w-auto lg:justify-end'>
@@ -894,48 +896,52 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                                     </Menu>
                                 </>
                             )}
-                            <Button
-                                type='button'
-                                variant='outline'
-                                size='icon'
-                                className='h-8 w-8 shrink-0 rounded-lg sm:hidden'
-                                aria-label={t('servers.console.terminal.history_title')}
-                                onClick={() => setShowHistory(true)}
-                            >
-                                <History className='h-3.5 w-3.5' />
-                            </Button>
-                            <Menu as='div' className='relative hidden sm:block'>
-                                <Menu.Button
-                                    as={Button}
-                                    variant='outline'
-                                    size='icon'
-                                    className='h-8 w-8 shrink-0 rounded-lg'
-                                    aria-label={t('servers.console.terminal.history_title')}
-                                >
-                                    <History className='h-3.5 w-3.5' />
-                                </Menu.Button>
-                                <Transition
-                                    as={Fragment}
-                                    enter='transition ease-out duration-100'
-                                    enterFrom='transform opacity-0 scale-95'
-                                    enterTo='transform opacity-100 scale-100'
-                                    leave='transition ease-in duration-75'
-                                    leaveFrom='transform opacity-100 scale-100'
-                                    leaveTo='transform opacity-0 scale-95'
-                                >
-                                    <Menu.Items className='bg-popover border-border/50 absolute right-0 z-20 mt-2 w-64 origin-top-right overflow-hidden rounded-xl border shadow-lg focus:outline-none'>
-                                        <div className='border-border/50 bg-muted/30 border-b p-2'>
-                                            <p className='text-muted-foreground px-2 text-xs font-medium'>
-                                                {t('servers.console.terminal.history_title')}
-                                            </p>
-                                        </div>
-                                        <CommandHistoryList
-                                            commandHistory={commandHistory}
-                                            onSelect={loadHistoryCommand}
-                                        />
-                                    </Menu.Items>
-                                </Transition>
-                            </Menu>
+                            {onSendCommand && (
+                                <>
+                                    <Button
+                                        type='button'
+                                        variant='outline'
+                                        size='icon'
+                                        className='h-8 w-8 shrink-0 rounded-lg sm:hidden'
+                                        aria-label={t('servers.console.terminal.history_title')}
+                                        onClick={() => setShowHistory(true)}
+                                    >
+                                        <History className='h-3.5 w-3.5' />
+                                    </Button>
+                                    <Menu as='div' className='relative hidden sm:block'>
+                                        <Menu.Button
+                                            as={Button}
+                                            variant='outline'
+                                            size='icon'
+                                            className='h-8 w-8 shrink-0 rounded-lg'
+                                            aria-label={t('servers.console.terminal.history_title')}
+                                        >
+                                            <History className='h-3.5 w-3.5' />
+                                        </Menu.Button>
+                                        <Transition
+                                            as={Fragment}
+                                            enter='transition ease-out duration-100'
+                                            enterFrom='transform opacity-0 scale-95'
+                                            enterTo='transform opacity-100 scale-100'
+                                            leave='transition ease-in duration-75'
+                                            leaveFrom='transform opacity-100 scale-100'
+                                            leaveTo='transform opacity-0 scale-95'
+                                        >
+                                            <Menu.Items className='bg-popover border-border/50 absolute right-0 z-20 mt-2 w-64 origin-top-right overflow-hidden rounded-xl border shadow-lg focus:outline-none'>
+                                                <div className='border-border/50 bg-muted/30 border-b p-2'>
+                                                    <p className='text-muted-foreground px-2 text-xs font-medium'>
+                                                        {t('servers.console.terminal.history_title')}
+                                                    </p>
+                                                </div>
+                                                <CommandHistoryList
+                                                    commandHistory={commandHistory}
+                                                    onSelect={loadHistoryCommand}
+                                                />
+                                            </Menu.Items>
+                                        </Transition>
+                                    </Menu>
+                                </>
+                            )}
                             <DropdownMenu>
                                 <DropdownMenuTrigger
                                     as={Button}
@@ -1032,45 +1038,47 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                 {onSendCommand && (
                     <CardFooter className='border-border/50 bg-card flex w-full min-w-0 shrink-0 flex-col items-stretch gap-1.5 border-t px-3 py-2 sm:px-4 sm:py-2.5'>
                         <div className='flex w-full min-w-0 items-center gap-2'>
-                            <Input
-                                value={commandInput}
-                                onChange={(e) => setCommandInput(e.target.value)}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter') sendCommand();
-                                    if (e.key === 'ArrowUp') {
-                                        e.preventDefault();
-                                        navigateHistory('up');
-                                    }
-                                    if (e.key === 'ArrowDown') {
-                                        e.preventDefault();
-                                        navigateHistory('down');
-                                    }
-                                    if (e.ctrlKey && e.code === 'KeyC') {
-                                        const termHasSelection = terminalInstanceRef.current?.hasSelection();
-                                        const target = e.target as HTMLInputElement;
-                                        const inputHasSelection = target.selectionStart !== target.selectionEnd;
-
-                                        if (termHasSelection && !inputHasSelection) {
-                                            const selection = terminalInstanceRef.current?.getSelection();
-                                            if (selection) {
-                                                navigator.clipboard.writeText(selection);
-                                            }
+                            <div className='min-w-0 flex-1'>
+                                <Input
+                                    value={commandInput}
+                                    onChange={(e) => setCommandInput(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') sendCommand();
+                                        if (e.key === 'ArrowUp') {
                                             e.preventDefault();
-                                            e.stopPropagation();
-                                        } else if (!termHasSelection && !inputHasSelection && onSendCommand) {
-                                            e.preventDefault();
-                                            e.stopPropagation();
-                                            onSendCommand('\x03');
-                                            setCommandInput('');
+                                            navigateHistory('up');
                                         }
-                                    }
-                                }}
-                                type='text'
-                                className='focus:ring-primary/15 h-9 min-w-0 flex-1 rounded-lg border px-3 py-2 font-mono text-xs font-semibold shadow-none focus:ring-2'
-                                placeholder={t('servers.console.terminal.placeholder')}
-                                title={t('servers.console.terminal.input_hint')}
-                                disabled={!canSend}
-                            />
+                                        if (e.key === 'ArrowDown') {
+                                            e.preventDefault();
+                                            navigateHistory('down');
+                                        }
+                                        if (e.ctrlKey && e.code === 'KeyC') {
+                                            const termHasSelection = terminalInstanceRef.current?.hasSelection();
+                                            const target = e.target as HTMLInputElement;
+                                            const inputHasSelection = target.selectionStart !== target.selectionEnd;
+
+                                            if (termHasSelection && !inputHasSelection) {
+                                                const selection = terminalInstanceRef.current?.getSelection();
+                                                if (selection) {
+                                                    navigator.clipboard.writeText(selection);
+                                                }
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                            } else if (!termHasSelection && !inputHasSelection && onSendCommand) {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                onSendCommand('\x03');
+                                                setCommandInput('');
+                                            }
+                                        }
+                                    }}
+                                    type='text'
+                                    className='focus:ring-primary/15 h-9 rounded-lg border px-3 py-2 font-mono text-xs font-semibold shadow-none focus:ring-2'
+                                    placeholder={t('servers.console.terminal.placeholder')}
+                                    title={t('servers.console.terminal.input_hint')}
+                                    disabled={!canSend}
+                                />
+                            </div>
                             <Button
                                 type='button'
                                 variant='outline'

@@ -47,6 +47,7 @@ class WebSpaceScheduleController
         $schedules = WebSpaceSchedule::listByWebspaceId((int) $space['id']);
         foreach ($schedules as &$schedule) {
             $schedule['tasks'] = WebSpaceSchedule::listTasks((int) $schedule['id']);
+            $schedule['is_locked'] = WebSpaceSchedule::isLocked($schedule);
         }
         unset($schedule);
 
@@ -67,6 +68,7 @@ class WebSpaceScheduleController
         }
 
         $schedule['tasks'] = WebSpaceSchedule::listTasks($scheduleId);
+        $schedule['is_locked'] = WebSpaceSchedule::isLocked($schedule);
 
         return ApiResponse::success(['schedule' => $schedule], 'OK', 200);
     }
@@ -164,6 +166,11 @@ class WebSpaceScheduleController
             return $schedule;
         }
 
+        $locked = $this->rejectIfLocked($schedule);
+        if ($locked instanceof Response) {
+            return $locked;
+        }
+
         $body = json_decode($request->getContent(), true);
         if (!is_array($body) || $body === []) {
             return ApiResponse::error('Invalid request body', 'INVALID_REQUEST_BODY', 400);
@@ -256,6 +263,11 @@ class WebSpaceScheduleController
             return $schedule;
         }
 
+        $locked = $this->rejectIfLocked($schedule);
+        if ($locked instanceof Response) {
+            return $locked;
+        }
+
         if (!WebSpaceSchedule::delete($scheduleId)) {
             return ApiResponse::error('Failed to delete schedule', 'DELETE_FAILED', 500);
         }
@@ -293,6 +305,11 @@ class WebSpaceScheduleController
         $schedule = $this->findScheduleForSpace($scheduleId, $resolved['space']);
         if ($schedule instanceof Response) {
             return $schedule;
+        }
+
+        $locked = $this->rejectIfLocked($schedule);
+        if ($locked instanceof Response) {
+            return $locked;
         }
 
         if (!WebSpaceSchedule::toggleActive($scheduleId)) {
@@ -443,6 +460,22 @@ class WebSpaceScheduleController
         }
 
         return $schedule;
+    }
+
+    /**
+     * @param array<string, mixed> $schedule
+     */
+    private function rejectIfLocked(array $schedule): ?Response
+    {
+        if (!WebSpaceSchedule::isLocked($schedule)) {
+            return null;
+        }
+
+        return ApiResponse::error(
+            'This schedule is managed by the WebPlate and cannot be changed',
+            'SCHEDULE_LOCKED',
+            403,
+        );
     }
 
     /**

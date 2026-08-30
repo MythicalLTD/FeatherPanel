@@ -1,0 +1,5 @@
+ALTER TABLE `featherpanel_web_nodes`
+	ADD COLUMN `ftpEnabled` TINYINT(1) NOT NULL DEFAULT 0 AFTER `sftpDisablePasswordAuth`,
+	ADD COLUMN `ftpPort` INT(10) UNSIGNED NOT NULL DEFAULT 21 AFTER `ftpEnabled`,
+	ADD COLUMN `ftpPassivePortMin` INT(10) UNSIGNED NOT NULL DEFAULT 50000 AFTER `ftpPort`,
+	ADD COLUMN `ftpPassivePortMax` INT(10) UNSIGNED NOT NULL DEFAULT 50100 AFTER `ftpPassivePortMin`;

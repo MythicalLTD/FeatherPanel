@@ -520,6 +520,8 @@ export default function DashboardPage() {
                                                     <WebSpaceCard
                                                         webspace={resource.data as DashboardWebSpace}
                                                         layout='list'
+                                                        webspaceUrl={`/webspace/${(resource.data as DashboardWebSpace).uuidShort || (resource.data as DashboardWebSpace).uuid.slice(0, 8)}`}
+                                                        t={t}
                                                     />
                                                 )}
                                             </div>

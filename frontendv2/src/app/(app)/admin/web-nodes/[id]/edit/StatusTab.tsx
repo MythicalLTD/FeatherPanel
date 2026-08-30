@@ -23,17 +23,7 @@ import { Button } from '@/components/featherui/Button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { formatBytes } from '@/lib/format';
-import {
-    Activity,
-    AlertCircle,
-    CheckCircle2,
-    Cpu,
-    HardDrive,
-    HeartPulse,
-    RefreshCw,
-    Server,
-    Stethoscope,
-} from 'lucide-react';
+import { Activity, AlertCircle, CheckCircle2, Cpu, HardDrive, HeartPulse, RefreshCw, Server } from 'lucide-react';
 
 interface StatusTabProps {
     nodeId: string;
@@ -87,13 +77,6 @@ interface UtilizationPayload {
     load_average15?: number;
 }
 
-interface DiagnosticCheck {
-    id: string;
-    status: string;
-    message: string;
-    detail?: string | null;
-}
-
 function percentOf(used: number, total: number): number {
     return total > 0 ? (used / total) * 100 : 0;
 }
@@ -115,17 +98,15 @@ export function StatusTab({ nodeId }: StatusTabProps) {
     const [health, setHealth] = useState<HealthPayload | null>(null);
     const [system, setSystem] = useState<SystemPayload | null>(null);
     const [utilization, setUtilization] = useState<UtilizationPayload | null>(null);
-    const [checks, setChecks] = useState<DiagnosticCheck[]>([]);
 
     const load = useCallback(async () => {
         setLoading(true);
         setError(null);
         try {
-            const [healthRes, systemRes, utilRes, diagRes] = await Promise.allSettled([
+            const [healthRes, systemRes, utilRes] = await Promise.allSettled([
                 axios.get(`/api/admin/web-nodes/${nodeId}/health`),
                 axios.get(`/api/admin/web-nodes/${nodeId}/system`),
                 axios.get(`/api/admin/web-nodes/${nodeId}/utilization`),
-                axios.get(`/api/admin/web-nodes/${nodeId}/diagnostics`),
             ]);
 
             if (healthRes.status === 'fulfilled' && healthRes.value.data?.success) {
@@ -144,13 +125,6 @@ export function StatusTab({ nodeId }: StatusTabProps) {
                 setUtilization(utilRes.value.data.data.utilization as UtilizationPayload);
             } else {
                 setUtilization(null);
-            }
-
-            if (diagRes.status === 'fulfilled' && diagRes.value.data?.success) {
-                const diag = diagRes.value.data.data.diagnostics;
-                setChecks((diag?.checks || []) as DiagnosticCheck[]);
-            } else {
-                setChecks([]);
             }
 
             const anyOk =
@@ -330,38 +304,6 @@ export function StatusTab({ nodeId }: StatusTabProps) {
                         {system?.system?.memory_bytes ? formatBytes(system.system.memory_bytes) : '—'}
                     </div>
                 </div>
-            </PageCard>
-
-            <PageCard title={t('admin.webNodes.status.diagnostics')} icon={Stethoscope}>
-                {checks.length === 0 ? (
-                    <p className='text-muted-foreground text-sm'>{t('admin.webNodes.status.no_checks')}</p>
-                ) : (
-                    <div className='divide-border/50 divide-y'>
-                        {checks.map((check) => (
-                            <div key={check.id} className='flex items-start justify-between gap-3 py-2.5'>
-                                <div className='min-w-0'>
-                                    <p className='font-medium'>{check.message}</p>
-                                    {check.detail && (
-                                        <p className='text-muted-foreground truncate font-mono text-xs'>
-                                            {check.detail}
-                                        </p>
-                                    )}
-                                </div>
-                                <Badge
-                                    className={
-                                        check.status === 'ok'
-                                            ? 'bg-emerald-500/15 text-emerald-600'
-                                            : check.status === 'warn'
-                                              ? 'bg-amber-500/15 text-amber-600'
-                                              : 'bg-red-500/15 text-red-600'
-                                    }
-                                >
-                                    {check.status}
-                                </Badge>
-                            </div>
-                        ))}
-                    </div>
-                )}
             </PageCard>
         </div>
     );

@@ -22,16 +22,22 @@ use App\Chat\User;
 use App\Chat\WebNode;
 use App\Chat\WebPlate;
 use App\Chat\WebSpace;
+use App\Chat\HostingPackage;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Chat\WebSpaceSchedule;
+use App\Helpers\DnsProvisioner;
+use App\Helpers\WebSpacePresenter;
+use App\Helpers\WebSpaceDaemonSync;
 use App\Helpers\FeatherQuilldClient;
 use App\Helpers\WebSpacePluginEvents;
 use App\Helpers\WebSpaceScheduleTasks;
 use App\Helpers\WebSpaceActivityLogger;
+use App\Helpers\WebSpaceHostingMaturity;
 use App\Plugins\Events\Events\WebSpaceEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Helpers\WebSpaceInfrastructureReadiness;
 
 /**
  * Admin CRUD for WebSpaces — persists on the panel, then tells FeatherQuilld to pull.
@@ -70,6 +76,48 @@ class WebSpacesController
         ], 'OK', 200);
     }
 
+    #[OA\Get(path: '/api/admin/webspaces/infrastructure-readiness', summary: 'WebSpace infrastructure readiness', tags: ['Admin - WebSpaces'])]
+    public function infrastructureReadiness(Request $request): Response
+    {
+        $webNodeId = (int) $request->query->get('web_node_id', 0);
+        $ssl = filter_var($request->query->get('ssl', false), FILTER_VALIDATE_BOOLEAN);
+        $databaseLimit = max(0, (int) $request->query->get('database_limit', 0));
+        $mailboxLimit = max(0, (int) $request->query->get('mailbox_limit', 0));
+        $hasDomains = filter_var($request->query->get('has_domains', false), FILTER_VALIDATE_BOOLEAN);
+
+        $payload = WebSpaceInfrastructureReadiness::inspect(
+            $webNodeId > 0 ? $webNodeId : null,
+            $ssl,
+            $databaseLimit,
+            $mailboxLimit,
+            $hasDomains,
+        );
+
+        return ApiResponse::success($payload, 'OK', 200);
+    }
+
+    #[OA\Get(path: '/api/admin/webspaces/hosting-maturity', summary: 'Web hosting platform maturity', tags: ['Admin - WebSpaces'])]
+    public function hostingMaturity(Request $request): Response
+    {
+        $webNodeId = (int) $request->query->get('web_node_id', 0);
+        $payload = WebSpaceHostingMaturity::assess($webNodeId > 0 ? $webNodeId : null);
+
+        return ApiResponse::success($payload, 'OK', 200);
+    }
+
+    public function installPanelWebmail(Request $request): Response
+    {
+        try {
+            \App\Helpers\Roundcube::ensureInstalled();
+        } catch (\Throwable $e) {
+            return ApiResponse::error('Webmail install failed: ' . $e->getMessage(), 'WEBMAIL_INSTALL_FAILED', 500);
+        }
+
+        return ApiResponse::success([
+            'installed' => \App\Helpers\Roundcube::isInstalled(),
+        ], 'Panel webmail installed', 200);
+    }
+
     #[OA\Get(path: '/api/admin/webspaces/{uuid}', summary: 'Get WebSpace', tags: ['Admin - WebSpaces'])]
     public function show(Request $request, string $uuid): Response
     {
@@ -78,7 +126,7 @@ class WebSpacesController
             return ApiResponse::error('WebSpace not found', 'WEBSPACE_NOT_FOUND', 404);
         }
 
-        return ApiResponse::success($space, 'OK', 200);
+        return ApiResponse::success(WebSpacePresenter::forAdmin($space), 'OK', 200);
     }
 
     #[OA\Patch(path: '/api/admin/webspaces/{uuid}', summary: 'Update WebSpace settings', tags: ['Admin - WebSpaces'])]
@@ -110,6 +158,23 @@ class WebSpacesController
         if (array_key_exists('disk', $content)) {
             $fields['disk'] = (int) $content['disk'];
         }
+        if (array_key_exists('cpu_limit', $content)) {
+            $fields['cpu_limit'] = max(0, (float) $content['cpu_limit']);
+        }
+        if (array_key_exists('memory_limit', $content)) {
+            $fields['memory_limit'] = max(0, (int) $content['memory_limit']);
+        }
+        if (array_key_exists('bandwidth_limit_gb', $content)) {
+            $fields['bandwidth_limit_gb'] = $content['bandwidth_limit_gb'] === null || $content['bandwidth_limit_gb'] === ''
+                ? null
+                : max(0, (int) $content['bandwidth_limit_gb']);
+        }
+        if (array_key_exists('waf_enabled', $content)) {
+            $fields['waf_enabled'] = !empty($content['waf_enabled']) ? 1 : 0;
+        }
+        if (array_key_exists('waf_deny_ips', $content)) {
+            $fields['waf_deny_ips'] = $content['waf_deny_ips'];
+        }
         if (array_key_exists('database_limit', $content)) {
             $fields['database_limit'] = max(0, (int) $content['database_limit']);
         }
@@ -119,9 +184,42 @@ class WebSpacesController
         if (array_key_exists('document_root', $content)) {
             $fields['document_root'] = trim((string) $content['document_root']);
         }
+        if (array_key_exists('webplate_id', $content)) {
+            $fields['webplate_id'] = (int) $content['webplate_id'];
+        }
+        if (array_key_exists('domain_routes', $content) && is_array($content['domain_routes'])) {
+            $fields['domain_routes'] = $content['domain_routes'];
+        }
+        if (array_key_exists('ssl_mode', $content)) {
+            $fields['ssl_mode'] = trim((string) $content['ssl_mode']);
+        }
+        if (array_key_exists('backend_host', $content)) {
+            $fields['backend_host'] = trim((string) $content['backend_host']);
+        }
 
         if ($fields === []) {
             return ApiResponse::error('No updatable fields provided', 'MISSING_FIELDS', 400);
+        }
+
+        $previousSpace = $space;
+
+        if (isset($fields['webplate_id'])) {
+            $newPlateId = (int) $fields['webplate_id'];
+            $newPlate = WebPlate::getById($newPlateId);
+            if (!$newPlate) {
+                return ApiResponse::error('WebPlate not found', 'WEBPLATE_NOT_FOUND', 404);
+            }
+            $currentPlate = WebPlate::getById((int) $space['webplate_id']);
+            $currentRuntime = strtolower(trim((string) ($currentPlate['runtime'] ?? 'static')));
+            $newRuntime = strtolower(trim((string) ($newPlate['runtime'] ?? 'static')));
+            if ($currentRuntime !== $newRuntime) {
+                return ApiResponse::error(
+                    'WebPlate runtime family must match the current WebSpace (e.g. php → php only)',
+                    'RUNTIME_FAMILY_MISMATCH',
+                    400,
+                );
+            }
+            $fields['image'] = (string) ($newPlate['docker_image'] ?? '');
         }
 
         $webNode = WebNode::getWebNodeById((int) $space['web_node_id']);
@@ -130,9 +228,9 @@ class WebSpacesController
         }
 
         $sslEnabled = array_key_exists('ssl', $fields) ? (bool) $fields['ssl'] : !empty($space['ssl']);
-        if ($sslEnabled && trim((string) ($webNode['acmeEmail'] ?? '')) === '') {
+        if ($sslEnabled && !WebSpaceInfrastructureReadiness::hasAcmeContact($space, $webNode)) {
             return ApiResponse::error(
-                'Web node acmeEmail is required when SSL is enabled',
+                'The site owner\'s account email is required when SSL is enabled (or set a fallback acmeEmail on the web node)',
                 'MISSING_ACME_EMAIL',
                 400,
             );
@@ -144,7 +242,7 @@ class WebSpacesController
 
         $space = WebSpace::getByUuid($uuid) ?? $space;
 
-        $daemon = FeatherQuilldClient::syncWebSpace($webNode, $uuid);
+        $daemon = WebSpaceDaemonSync::syncAfterUpdate($webNode, $space, $previousSpace);
         if (!$daemon['ok']) {
             return ApiResponse::error(
                 'WebSpace saved on panel but daemon sync failed: ' . ($daemon['error'] ?? 'unknown'),
@@ -171,11 +269,12 @@ class WebSpacesController
             ],
         ));
 
-        $body = is_array($daemon['body']) ? $daemon['body'] : [];
+        $body = is_array($daemon['sync']['body'] ?? null) ? $daemon['sync']['body'] : [];
 
         return ApiResponse::success([
             'webspace' => $space,
             'daemon' => $body,
+            'runtime_recreated' => isset($daemon['recreate']),
         ], 'WebSpace updated', 200);
     }
 
@@ -187,11 +286,19 @@ class WebSpacesController
             return ApiResponse::error('Invalid JSON payload', 'INVALID_JSON', 400);
         }
 
+        $content = HostingPackage::applyToCreatePayload($content);
+
         $name = trim((string) ($content['name'] ?? ''));
         $webNodeId = (int) ($content['web_node_id'] ?? 0);
         $webplateId = (int) ($content['webplate_id'] ?? 0);
+        $hostingPackageId = isset($content['hosting_package_id']) ? (int) $content['hosting_package_id'] : 0;
         $ownerId = isset($content['owner_id']) ? (int) $content['owner_id'] : 0;
         $disk = isset($content['disk']) ? (int) $content['disk'] : 1024;
+        $cpuLimit = isset($content['cpu_limit']) ? max(0, (float) $content['cpu_limit']) : 0;
+        $memoryLimit = isset($content['memory_limit']) ? max(0, (int) $content['memory_limit']) : 0;
+        $bandwidthLimitGb = array_key_exists('bandwidth_limit_gb', $content) && $content['bandwidth_limit_gb'] !== null && $content['bandwidth_limit_gb'] !== ''
+            ? max(0, (int) $content['bandwidth_limit_gb'])
+            : null;
         $databaseLimit = isset($content['database_limit']) ? max(0, (int) $content['database_limit']) : 1;
         $mailboxLimit = isset($content['mailbox_limit']) ? max(0, (int) $content['mailbox_limit']) : 0;
         $domains = $content['domains'] ?? [];
@@ -218,9 +325,9 @@ class WebSpacesController
             return ApiResponse::error('Web node not found', 'WEB_NODE_NOT_FOUND', 404);
         }
 
-        if ($ssl && trim((string) ($webNode['acmeEmail'] ?? '')) === '') {
+        if ($ssl && !WebSpaceInfrastructureReadiness::hasAcmeContact($owner, $webNode)) {
             return ApiResponse::error(
-                'Web node acmeEmail is required when SSL is enabled',
+                'The site owner\'s account email is required when SSL is enabled (or set a fallback acmeEmail on the web node)',
                 'MISSING_ACME_EMAIL',
                 400,
             );
@@ -229,6 +336,20 @@ class WebSpacesController
         $plate = WebPlate::getById($webplateId);
         if (!$plate) {
             return ApiResponse::error('WebPlate not found', 'WEBPLATE_NOT_FOUND', 404);
+        }
+
+        $runtime = strtolower(trim((string) ($plate['runtime'] ?? 'static')));
+        $hostingGate = WebSpaceInfrastructureReadiness::blockingForCreate($webNodeId, $ssl, $runtime);
+        if (!$hostingGate['ready']) {
+            return ApiResponse::error(
+                'Web hosting infrastructure is not ready on the selected web node',
+                'HOSTING_NOT_READY',
+                400,
+                [
+                    'blocking_checks' => $hostingGate['checks'],
+                    'readiness' => $hostingGate['inspection'],
+                ],
+            );
         }
 
         if ($documentRoot === '') {
@@ -245,7 +366,11 @@ class WebSpacesController
             'description' => (string) ($content['description'] ?? ''),
             'web_node_id' => $webNodeId,
             'webplate_id' => $webplateId,
+            'hosting_package_id' => $hostingPackageId > 0 ? $hostingPackageId : null,
             'disk' => max(1, $disk),
+            'cpu_limit' => $cpuLimit,
+            'memory_limit' => $memoryLimit,
+            'bandwidth_limit_gb' => $bandwidthLimitGb,
             'database_limit' => $databaseLimit,
             'mailbox_limit' => $mailboxLimit,
             'domains' => $domains,
@@ -290,6 +415,41 @@ class WebSpacesController
         }
 
         $body = is_array($daemon['body']) ? $daemon['body'] : [];
+        $daemonStatus = (int) ($daemon['status'] ?? 0);
+
+        if ($daemonStatus === 202 || (($body['status'] ?? '') === 'installing')) {
+            WebSpace::updateStatus((string) $space['uuid'], 'installing');
+            if (isset($body['state'])) {
+                WebSpace::updateRuntimeState(
+                    (string) $space['uuid'],
+                    (string) $body['state'],
+                    isset($body['backend_port']) ? (int) $body['backend_port'] : null,
+                );
+            }
+
+            $space = WebSpace::getByUuid((string) $space['uuid']) ?? $space;
+
+            $seededSchedules = 0;
+            $defaults = WebSpaceScheduleTasks::validateAndNormalizeSchedules(WebPlate::getDefaultSchedules($plate));
+            if (is_array($defaults) && $defaults !== []) {
+                $seededSchedules = WebSpaceSchedule::seedFromDefaults((int) $space['id'], $defaults);
+            }
+
+            $user = $request->attributes->get('user');
+            WebSpacePluginEvents::emit(WebSpaceEvent::onWebSpaceCreated(), WebSpacePluginEvents::basePayload(
+                is_array($user) ? ($user['uuid'] ?? null) : null,
+                $space,
+                ['context' => ['source' => 'admin', 'seeded_schedules' => $seededSchedules, 'installing' => true]],
+            ));
+
+            return ApiResponse::success([
+                'webspace' => $space,
+                'daemon' => $body,
+                'seeded_schedules' => $seededSchedules,
+                'installing' => true,
+            ], 'WebSpace install started', 202);
+        }
+
         if (isset($body['state'])) {
             WebSpace::updateRuntimeState(
                 (string) $space['uuid'],
@@ -487,6 +647,36 @@ class WebSpacesController
         return ApiResponse::success($body, 'OK', 200);
     }
 
+    public function resetBandwidth(Request $request, string $uuid): Response
+    {
+        $space = WebSpace::getByUuid($uuid);
+        if (!$space) {
+            return ApiResponse::error('WebSpace not found', 'WEBSPACE_NOT_FOUND', 404);
+        }
+
+        $webNode = WebNode::getWebNodeById((int) $space['web_node_id']);
+        if (!$webNode) {
+            return ApiResponse::error('Web node not found', 'WEB_NODE_NOT_FOUND', 404);
+        }
+
+        $daemon = FeatherQuilldClient::resetWebSpaceBandwidth($webNode, $uuid);
+        if (!$daemon['ok']) {
+            return ApiResponse::error(
+                $daemon['error'] ?? 'Daemon bandwidth reset failed',
+                'DAEMON_BANDWIDTH_RESET_FAILED',
+                502,
+                ['daemon' => $daemon],
+            );
+        }
+
+        $body = is_array($daemon['body']) ? $daemon['body'] : [];
+        if (isset($body['bandwidth_used_bytes'])) {
+            WebSpace::updateBandwidthUsage($uuid, (int) $body['bandwidth_used_bytes']);
+        }
+
+        return ApiResponse::success($body, 'Bandwidth usage reset', 200);
+    }
+
     public function installLogs(Request $request, string $uuid): Response
     {
         $space = WebSpace::getByUuid($uuid);
@@ -568,6 +758,87 @@ class WebSpacesController
             'webspace' => $space,
             'daemon' => $body,
         ], 'OK', 200);
+    }
+
+    public function sync(Request $request, string $uuid): Response
+    {
+        $space = WebSpace::getByUuid($uuid);
+        if (!$space) {
+            return ApiResponse::error('WebSpace not found', 'WEBSPACE_NOT_FOUND', 404);
+        }
+
+        $webNode = WebNode::getWebNodeById((int) $space['web_node_id']);
+        if (!$webNode) {
+            return ApiResponse::error('Web node not found', 'WEB_NODE_NOT_FOUND', 404);
+        }
+
+        $daemon = FeatherQuilldClient::syncWebSpace($webNode, $uuid);
+        if (!$daemon['ok']) {
+            return ApiResponse::error(
+                $daemon['error'] ?? 'Daemon sync failed',
+                'DAEMON_SYNC_FAILED',
+                502,
+                ['daemon' => $daemon],
+            );
+        }
+
+        $body = is_array($daemon['body']) ? $daemon['body'] : [];
+        if (isset($body['state'])) {
+            WebSpace::updateRuntimeState(
+                $uuid,
+                (string) $body['state'],
+                isset($body['backend_port']) ? (int) $body['backend_port'] : null,
+            );
+        }
+
+        $space = WebSpace::getByUuid($uuid) ?? $space;
+
+        return ApiResponse::success([
+            'webspace' => $space,
+            'daemon' => $body,
+        ], 'Config synced from panel', 200);
+    }
+
+    public function recreateRuntime(Request $request, string $uuid): Response
+    {
+        $space = WebSpace::getByUuid($uuid);
+        if (!$space) {
+            return ApiResponse::error('WebSpace not found', 'WEBSPACE_NOT_FOUND', 404);
+        }
+
+        $webNode = WebNode::getWebNodeById((int) $space['web_node_id']);
+        if (!$webNode) {
+            return ApiResponse::error('Web node not found', 'WEB_NODE_NOT_FOUND', 404);
+        }
+
+        $daemon = FeatherQuilldClient::recreateRuntime($webNode, $uuid);
+        if (!$daemon['ok']) {
+            return ApiResponse::error(
+                $daemon['error'] ?? 'Daemon recreate failed',
+                'DAEMON_RECREATE_FAILED',
+                502,
+                ['daemon' => $daemon],
+            );
+        }
+
+        $body = is_array($daemon['body']) ? $daemon['body'] : [];
+        if (isset($body['state'])) {
+            WebSpace::updateRuntimeState(
+                $uuid,
+                (string) $body['state'],
+                isset($body['backend_port']) ? (int) $body['backend_port'] : null,
+            );
+        }
+        if (isset($body['status'])) {
+            WebSpace::updateStatus($uuid, (string) $body['status']);
+        }
+
+        $space = WebSpace::getByUuid($uuid) ?? $space;
+
+        return ApiResponse::success([
+            'webspace' => $space,
+            'daemon' => $body,
+        ], 'Runtime recreated', 200);
     }
 
     public function ssl(Request $request, string $uuid): Response
@@ -725,6 +996,112 @@ class WebSpacesController
         ], 'OK', 200);
     }
 
+    #[OA\Post(path: '/api/admin/webspaces/{uuid}/dns/provision', summary: 'Provision DNS A records', tags: ['Admin - WebSpaces'])]
+    public function provisionDns(Request $request, string $uuid): Response
+    {
+        $space = WebSpace::getByUuid($uuid);
+        if (!$space) {
+            return ApiResponse::error('WebSpace not found', 'WEBSPACE_NOT_FOUND', 404);
+        }
+
+        $webNode = WebNode::getWebNodeById((int) $space['web_node_id']);
+        if (!$webNode) {
+            return ApiResponse::error('Web node not found', 'WEB_NODE_NOT_FOUND', 404);
+        }
+
+        $domains = DnsProvisioner::collectProvisionDomains($space);
+        if ($domains === []) {
+            return ApiResponse::error('No domains configured on this WebSpace', 'NO_DOMAINS', 400);
+        }
+
+        $result = DnsProvisioner::provisionARecords($webNode, $domains, $space);
+        if (!$result['ok']) {
+            return ApiResponse::error(
+                'DNS provision failed — link a DNS zone or configure DNS credentials on the web node',
+                'DNS_PROVISION_FAILED',
+                502,
+                $result,
+            );
+        }
+
+        return ApiResponse::success($result, 'DNS records provisioned', 200);
+    }
+
+    #[OA\Get(path: '/api/admin/webspaces/{uuid}/ssl/custom', summary: 'Custom SSL status', tags: ['Admin - WebSpaces'])]
+    public function customSslStatus(Request $request, string $uuid): Response
+    {
+        $space = WebSpace::getByUuid($uuid);
+        if (!$space) {
+            return ApiResponse::error('WebSpace not found', 'WEBSPACE_NOT_FOUND', 404);
+        }
+
+        $webNode = WebNode::getWebNodeById((int) $space['web_node_id']);
+        if (!$webNode) {
+            return ApiResponse::error('Web node not found', 'WEB_NODE_NOT_FOUND', 404);
+        }
+
+        $daemon = FeatherQuilldClient::getCustomSsl($webNode, $uuid);
+
+        return $daemon['ok']
+            ? ApiResponse::success($daemon['body'], 'OK', 200)
+            : ApiResponse::error($daemon['error'] ?? 'Daemon request failed', 'DAEMON_ERROR', 502);
+    }
+
+    public function uploadCustomSsl(Request $request, string $uuid): Response
+    {
+        $space = WebSpace::getByUuid($uuid);
+        if (!$space) {
+            return ApiResponse::error('WebSpace not found', 'WEBSPACE_NOT_FOUND', 404);
+        }
+
+        $webNode = WebNode::getWebNodeById((int) $space['web_node_id']);
+        if (!$webNode) {
+            return ApiResponse::error('Web node not found', 'WEB_NODE_NOT_FOUND', 404);
+        }
+
+        $cert = $request->files->get('cert');
+        $key = $request->files->get('key');
+        if ($cert === null || $key === null) {
+            return ApiResponse::error('cert and key files are required', 'MISSING_FILES', 400);
+        }
+
+        $daemon = FeatherQuilldClient::uploadCustomSsl(
+            $webNode,
+            $uuid,
+            $cert->getPathname(),
+            $key->getPathname(),
+        );
+        if (!$daemon['ok']) {
+            return ApiResponse::error($daemon['error'] ?? 'Upload failed', 'DAEMON_ERROR', 502);
+        }
+
+        WebSpace::update($uuid, ['ssl' => true, 'ssl_mode' => 'custom']);
+
+        return ApiResponse::success($daemon['body'], 'Custom SSL uploaded', 200);
+    }
+
+    public function deleteCustomSsl(Request $request, string $uuid): Response
+    {
+        $space = WebSpace::getByUuid($uuid);
+        if (!$space) {
+            return ApiResponse::error('WebSpace not found', 'WEBSPACE_NOT_FOUND', 404);
+        }
+
+        $webNode = WebNode::getWebNodeById((int) $space['web_node_id']);
+        if (!$webNode) {
+            return ApiResponse::error('Web node not found', 'WEB_NODE_NOT_FOUND', 404);
+        }
+
+        $daemon = FeatherQuilldClient::deleteCustomSsl($webNode, $uuid);
+        if (!$daemon['ok']) {
+            return ApiResponse::error($daemon['error'] ?? 'Delete failed', 'DAEMON_ERROR', 502);
+        }
+
+        WebSpace::update($uuid, ['ssl_mode' => 'acme']);
+
+        return ApiResponse::success($daemon['body'], 'Custom SSL removed', 200);
+    }
+
     public function listBackups(Request $request, string $uuid): Response
     {
         $space = WebSpace::getByUuid($uuid);
@@ -796,6 +1173,12 @@ class WebSpacesController
         $content = json_decode($request->getContent(), true);
         if (!is_array($content)) {
             $content = [];
+        }
+
+        try {
+            \App\Helpers\WebSpaceDatabaseDumpService::writeDumpsToWebSpace($space);
+        } catch (\Throwable $e) {
+            App::getInstance(true)->getLogger()->warning('WebSpace DB dump before backup failed: ' . $e->getMessage());
         }
 
         $daemon = FeatherQuilldClient::createWebSpaceBackup($webNode, $uuid, [
@@ -908,9 +1291,23 @@ class WebSpacesController
             return ApiResponse::error('Web node not found', 'WEB_NODE_NOT_FOUND', 404);
         }
 
-        $daemon = FeatherQuilldClient::restoreWebSpaceBackup($webNode, $uuid, $backupUuid, [
-            'async' => true,
-        ]);
+        $content = json_decode($request->getContent(), true);
+        $paths = [];
+        if (is_array($content) && isset($content['paths']) && is_array($content['paths'])) {
+            foreach ($content['paths'] as $path) {
+                $path = trim((string) $path);
+                if ($path !== '') {
+                    $paths[] = $path;
+                }
+            }
+        }
+
+        $payload = ['async' => true];
+        if ($paths !== []) {
+            $payload['paths'] = array_values($paths);
+        }
+
+        $daemon = FeatherQuilldClient::restoreWebSpaceBackup($webNode, $uuid, $backupUuid, $payload);
         if (!$daemon['ok'] && ($daemon['status'] ?? 0) !== 202) {
             return ApiResponse::error($daemon['error'] ?? 'Daemon restore failed', 'DAEMON_BACKUP_RESTORE_FAILED', 502, ['daemon' => $daemon]);
         }
@@ -954,7 +1351,36 @@ class WebSpacesController
             ],
         ));
 
+        try {
+            if ($paths === []) {
+                \App\Helpers\WebSpaceDatabaseDumpService::importDumpsFromWebSpace($space);
+            }
+        } catch (\Throwable $e) {
+            App::getInstance(true)->getLogger()->warning('WebSpace DB import after restore failed: ' . $e->getMessage());
+        }
+
         return ApiResponse::success(['ok' => true], 'OK', 200);
+    }
+
+    public function listBackupFiles(Request $request, string $uuid, string $backupUuid): Response
+    {
+        $space = WebSpace::getByUuid($uuid);
+        if (!$space) {
+            return ApiResponse::error('WebSpace not found', 'WEBSPACE_NOT_FOUND', 404);
+        }
+
+        $webNode = WebNode::getWebNodeById((int) $space['web_node_id']);
+        if (!$webNode) {
+            return ApiResponse::error('Web node not found', 'WEB_NODE_NOT_FOUND', 404);
+        }
+
+        $directory = (string) $request->query->get('directory', '/');
+        $daemon = FeatherQuilldClient::listWebSpaceBackupFiles($webNode, $uuid, $backupUuid, $directory);
+        if (!$daemon['ok']) {
+            return ApiResponse::error($daemon['error'] ?? 'Failed to list backup files', 'DAEMON_BACKUP_FILES_FAILED', 502, ['daemon' => $daemon]);
+        }
+
+        return ApiResponse::success(is_array($daemon['body']) ? $daemon['body'] : [], 'OK', 200);
     }
 
     public function downloadBackup(Request $request, string $uuid, string $backupUuid): Response
@@ -1179,6 +1605,7 @@ class WebSpacesController
             return ApiResponse::success([
                 'token' => $jwt,
                 'socket' => $socket,
+                'connection_string' => $socket,
             ], 'OK', 200);
         } catch (\Throwable $e) {
             return ApiResponse::error(

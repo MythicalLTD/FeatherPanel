@@ -67,6 +67,7 @@ export interface WebPlateDefaultSchedule {
     cron_day_of_week: string;
     timezone?: string;
     is_active?: boolean;
+    is_locked?: boolean;
     tasks: WebPlateDefaultScheduleTask[];
 }
 
@@ -134,6 +135,7 @@ export function webPlateToForm(plate: WebPlate): WebPlateFormState {
               cron_day_of_week: schedule.cron_day_of_week || '*',
               timezone: schedule.timezone || 'UTC',
               is_active: schedule.is_active !== false,
+              is_locked: schedule.is_locked !== false,
               tasks: (schedule.tasks || []).map((task, index) => ({
                   action: task.action || 'command',
                   payload: task.payload || '',
@@ -173,6 +175,7 @@ export function webPlateFormPayload(form: WebPlateFormState) {
         default_schedules: form.default_schedules.map((schedule) => ({
             ...schedule,
             is_active: schedule.is_active !== false,
+            is_locked: schedule.is_locked !== false,
             tasks: schedule.tasks.map((task, index) => ({
                 action: task.action,
                 payload: task.payload ?? '',

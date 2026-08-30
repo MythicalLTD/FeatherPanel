@@ -21,6 +21,7 @@ import { ArchiveRestore, ArrowLeft, RefreshCw, Trash2 } from 'lucide-react';
 
 interface TrashActionToolbarProps {
     serverUuid: string;
+    filesHref?: string;
     loading: boolean;
     selectedCount: number;
     canUpdate: boolean;
@@ -36,6 +37,7 @@ interface TrashActionToolbarProps {
 
 export function TrashActionToolbar({
     serverUuid,
+    filesHref,
     loading,
     selectedCount,
     canUpdate,
@@ -109,7 +111,7 @@ export function TrashActionToolbar({
                                 size='sm'
                                 className='text-muted-foreground hover:text-foreground h-9 px-3 hover:bg-black/5 dark:hover:bg-white/5'
                             >
-                                <Link href={`/server/${serverUuid}/files`}>
+                                <Link href={filesHref ?? `/server/${serverUuid}/files`}>
                                     <ArrowLeft className='mr-2 h-4 w-4' />
                                     <span className='xs:inline hidden'>{t('files.trash.back_to_files')}</span>
                                 </Link>

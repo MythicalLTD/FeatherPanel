@@ -2,6 +2,21 @@
 This file is part of FeatherPanel.
  */
 
+/*
+This file is part of FeatherPanel.
+
+Copyright (C) 2025 MythicalSystems Studios
+Copyright (C) 2025 FeatherPanel Contributors
+Copyright (C) 2025 Cassian Gherman (aka NaysKutzu)
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published
+by the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+See the LICENSE file or <https://www.gnu.org/licenses/>.
+*/
+
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -114,7 +129,7 @@ export function PackageManagerTab({ nodeId }: PackageManagerTabProps) {
                     ? t('admin.webNodes.packages.install_success', { name: pkg.display_name })
                     : t('admin.webNodes.packages.remove_success', { name: pkg.display_name }),
             );
-            if (action === 'install' && pkg.id === 'mailserver' && data?.data?.mail_host_id) {
+            if (action === 'install' && (pkg.id === 'mailserver' || pkg.id === 'webmail') && data?.data?.mail_host_id) {
                 toast.message(t('admin.webNodes.packages.mail_host_created'));
             }
             await load();
@@ -153,7 +168,11 @@ export function PackageManagerTab({ nodeId }: PackageManagerTabProps) {
 
             {error && <p className='text-destructive text-sm'>{error}</p>}
 
-            <PageCard title={t('admin.webNodes.packages.title')} description={t('admin.webNodes.packages.description')} icon={Box}>
+            <PageCard
+                title={t('admin.webNodes.packages.title')}
+                description={t('admin.webNodes.packages.description')}
+                icon={Box}
+            >
                 {packageManager && (
                     <p className='text-muted-foreground mb-4 text-xs'>
                         {t('admin.webNodes.packages.detected_manager', { manager: packageManager })}
@@ -175,7 +194,9 @@ export function PackageManagerTab({ nodeId }: PackageManagerTabProps) {
                             <div className='min-w-0 space-y-1'>
                                 <div className='flex flex-wrap items-center gap-2'>
                                     <p className='font-semibold'>{pkg.display_name}</p>
-                                    <Badge variant='outline'>{t(`admin.webNodes.packages.categories.${pkg.category}`)}</Badge>
+                                    <Badge variant='outline'>
+                                        {t(`admin.webNodes.packages.categories.${pkg.category}`)}
+                                    </Badge>
                                     <Badge
                                         className={
                                             pkg.installed
@@ -189,11 +210,13 @@ export function PackageManagerTab({ nodeId }: PackageManagerTabProps) {
                                     </Badge>
                                 </div>
                                 {pkg.binary_path && (
-                                    <p className='text-muted-foreground font-mono text-xs break-all'>{pkg.binary_path}</p>
+                                    <p className='text-muted-foreground font-mono text-xs break-all'>
+                                        {pkg.binary_path}
+                                    </p>
                                 )}
                                 {pkg.version && <p className='text-muted-foreground text-xs'>{pkg.version}</p>}
                                 {pkg.install_blocked && pkg.blocked_by_name && (
-                                    <p className='text-amber-600 text-xs dark:text-amber-400'>
+                                    <p className='text-xs text-amber-600 dark:text-amber-400'>
                                         {t('admin.webNodes.packages.install_blocked', { name: pkg.blocked_by_name })}
                                     </p>
                                 )}

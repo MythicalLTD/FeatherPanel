@@ -2,20 +2,28 @@
 This file is part of FeatherPanel.
  */
 
+/*
+This file is part of FeatherPanel.
+
+Copyright (C) 2025 MythicalSystems Studios
+Copyright (C) 2025 FeatherPanel Contributors
+Copyright (C) 2025 Cassian Gherman (aka NaysKutzu)
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published
+by the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+See the LICENSE file or <https://www.gnu.org/licenses/>.
+*/
+
 'use client';
 
 import { useState } from 'react';
 import Link from 'next/link';
-import {
-    CheckCircle2,
-    CircleAlert,
-    Clock,
-    Loader2,
-    RefreshCw,
-    Rocket,
-    Sparkles,
-    Wrench,
-} from 'lucide-react';
+import axios, { isAxiosError } from 'axios';
+import { toast } from 'sonner';
+import { CheckCircle2, CircleAlert, Clock, Loader2, RefreshCw, Rocket, Sparkles, Wrench } from 'lucide-react';
 import { Button } from '@/components/featherui/Button';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { cn } from '@/lib/utils';
@@ -41,6 +49,24 @@ export function WebSpaceHostingMaturityPanel({
     const { t } = useTranslation();
     const { data, loading, error, refresh } = useWebSpaceHostingMaturity(webNodeId);
     const [showRoadmap, setShowRoadmap] = useState(defaultExpanded);
+    const [installingWebmail, setInstallingWebmail] = useState(false);
+
+    const installPanelWebmail = async () => {
+        setInstallingWebmail(true);
+        try {
+            await axios.post('/api/admin/webspaces/panel-webmail/install');
+            toast.success(t('webSpaces.hosting.installWebmailDone'));
+            await refresh();
+        } catch (err) {
+            toast.error(
+                isAxiosError(err)
+                    ? err.response?.data?.message || t('webSpaces.hosting.installWebmailFailed')
+                    : t('webSpaces.hosting.installWebmailFailed'),
+            );
+        } finally {
+            setInstallingWebmail(false);
+        }
+    };
 
     const label = (prefix: string, id: string, fallback?: string | null) => {
         const key = `${prefix}.${id}`;
@@ -58,7 +84,7 @@ export function WebSpaceHostingMaturityPanel({
                         {data && (
                             <span
                                 className={cn(
-                                    'rounded-full bg-gradient-to-r px-2.5 py-0.5 text-xs font-semibold ring-1 ring-inset ring-white/10',
+                                    'rounded-full bg-gradient-to-r px-2.5 py-0.5 text-xs font-semibold ring-1 ring-white/10 ring-inset',
                                     tierStyles(data.tier),
                                 )}
                             >
@@ -206,6 +232,18 @@ export function WebSpaceHostingMaturityPanel({
                                             <p className='text-muted-foreground mt-0.5 text-xs'>
                                                 {label('webSpaces.hosting.roadmapDetail', item.id)}
                                             </p>
+                                            {item.id === 'webmail' && (
+                                                <Button
+                                                    type='button'
+                                                    size='sm'
+                                                    variant='outline'
+                                                    className='mt-2'
+                                                    loading={installingWebmail}
+                                                    onClick={() => void installPanelWebmail()}
+                                                >
+                                                    {t('webSpaces.hosting.installPanelWebmail')}
+                                                </Button>
+                                            )}
                                         </li>
                                     ))}
                                 </ul>

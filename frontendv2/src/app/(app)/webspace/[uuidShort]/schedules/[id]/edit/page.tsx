@@ -35,6 +35,7 @@ import { WebSpaceScheduleTasksEditor } from '@/components/webspace/WebSpaceSched
 import {
     emptyScheduleDraft,
     emptyScheduleTask,
+    isWebSpaceScheduleLocked,
     needsCommandPayload,
     type WebSpaceScheduleDraft,
     type WebSpaceScheduleTaskDraft,
@@ -69,6 +70,11 @@ export default function WebSpaceScheduleEditPage() {
                 const schedule = data.data?.schedule;
                 if (!schedule) {
                     throw new Error('Schedule not found');
+                }
+                if (isWebSpaceScheduleLocked(schedule)) {
+                    toast.error(t('webSpaces.schedules.lockedCannotChange'));
+                    router.replace(`/webspace/${uuidShort}/schedules`);
+                    return;
                 }
                 const tasks = ((schedule.tasks || []) as ScheduleTask[]).map(
                     (task, index): WebSpaceScheduleTaskDraft => ({

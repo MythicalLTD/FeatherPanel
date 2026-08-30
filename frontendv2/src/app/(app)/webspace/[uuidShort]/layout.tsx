@@ -1,9 +1,5 @@
 /*
 This file is part of FeatherPanel.
- */
-
-/*
-This file is part of FeatherPanel.
 
 Copyright (C) 2025 MythicalSystems Studios
 Copyright (C) 2025 FeatherPanel Contributors
@@ -18,9 +14,14 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
 import { WebSpaceShell } from '@/components/webspace/WebSpaceShell';
+import { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import { getBaseUrl } from '@/lib/settings-api';
 import { WebSpace } from '@/types/webspace';
+
+type Props = {
+    params: Promise<{ uuidShort: string }>;
+};
 
 async function getWebSpace(uuidShort: string): Promise<WebSpace | null> {
     try {
@@ -40,6 +41,17 @@ async function getWebSpace(uuidShort: string): Promise<WebSpace | null> {
     } catch {
         return null;
     }
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+    const { uuidShort } = await params;
+    const webspace = await getWebSpace(uuidShort);
+    const title = webspace?.name || `WebSpace ${uuidShort}`;
+
+    return {
+        title,
+        openGraph: { title },
+    };
 }
 
 export default async function WebSpaceLayout({

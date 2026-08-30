@@ -33,6 +33,8 @@ final class WebSpaceScheduleTasks
         'backup',
         'command',
         'exec',
+        'malware_scan',
+        'scan',
     ];
 
     /**
@@ -150,6 +152,7 @@ final class WebSpaceScheduleTasks
                 'cron_day_of_week' => $cronDayOfWeek,
                 'timezone' => $timezone,
                 'is_active' => array_key_exists('is_active', $schedule) ? (bool) $schedule['is_active'] : true,
+                'is_locked' => array_key_exists('is_locked', $schedule) ? (bool) $schedule['is_locked'] : true,
                 'tasks' => $tasks,
             ];
         }

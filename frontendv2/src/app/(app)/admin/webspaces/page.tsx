@@ -209,6 +209,16 @@ export default function WebSpacesPage() {
         fetchSpaces();
     }, [fetchSpaces, fetchWidgets]);
 
+    const hasInstalling = spaces.some((s) => s.status === 'installing' || s.status === 'reinstalling');
+
+    useEffect(() => {
+        if (!hasInstalling) return;
+        const id = setInterval(() => {
+            void fetchSpaces();
+        }, 5000);
+        return () => clearInterval(id);
+    }, [hasInstalling, fetchSpaces]);
+
     const handleDeleteClick = (e: React.MouseEvent, uuid: string) => {
         e.stopPropagation();
         setConfirmDeleteUuid(uuid);
@@ -297,8 +307,15 @@ export default function WebSpacesPage() {
         setIsViewDrawerOpen(true);
     };
 
-    const consolePath = (space: WebSpace) =>
-        space.uuidShort ? `/webspace/${space.uuidShort}` : `/admin/webspaces/${space.uuid}`;
+    const consolePath = (space: WebSpace) => {
+        if (space.status === 'installing' || space.status === 'reinstalling') {
+            return `/admin/webspaces/${space.uuid}/install`;
+        }
+        if (space.uuidShort) {
+            return `/webspace/${space.uuidShort}`;
+        }
+        return `/admin/webspaces/${space.uuid}`;
+    };
 
     const statusLabel = (status: string) => {
         const key = `admin.webSpaces.status.${status}`;
@@ -331,14 +348,18 @@ export default function WebSpacesPage() {
     const statusStyles: Record<string, string> = {
         installed: 'bg-green-500/10 text-green-600 border-green-500/20',
         installing: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
+        reinstalling: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
         failed: 'bg-red-500/10 text-red-600 border-red-500/20',
+        installation_failed: 'bg-red-500/10 text-red-600 border-red-500/20',
         daemon_sync_failed: 'bg-red-500/10 text-red-600 border-red-500/20',
     };
 
     const statusDotStyles: Record<string, string> = {
         installed: 'bg-green-500',
-        installing: 'bg-blue-500',
+        installing: 'bg-blue-500 animate-pulse',
+        reinstalling: 'bg-blue-500 animate-pulse',
         failed: 'bg-red-500',
+        installation_failed: 'bg-red-500',
         daemon_sync_failed: 'bg-red-500',
     };
 

@@ -1610,6 +1610,25 @@
 			},
 			"view_all": "View all servers"
 		},
+		"webspace_switcher": {
+			"title": "Switch WebSpace",
+			"switch": "Switch WebSpace",
+			"current": "Current WebSpace",
+			"loading": "Loading WebSpaces…",
+			"empty": "No WebSpaces found",
+			"empty_favorites": "No favorite WebSpaces yet. Star a WebSpace in the list to pin it here.",
+			"empty_recent": "No recently viewed WebSpaces yet.",
+			"empty_search": "No WebSpaces match your search.",
+			"search_placeholder": "Search WebSpaces…",
+			"clear_search": "Clear search",
+			"tabs_label": "WebSpace list filters",
+			"tabs": {
+				"all": "All",
+				"favorites": "Favorites",
+				"recent": "Recent"
+			},
+			"view_all": "View all WebSpaces"
+		},
 		"profile": "Your Profile",
 		"adminArea": "Admin Area",
 		"adminPanelTooltip": "Admin Panel",
@@ -5824,6 +5843,7 @@
 					"version_help": "Leave empty to fetch the latest release.",
 					"download_url": "Download URL",
 					"checksum_optional": "SHA256 Checksum (optional)",
+					"sha256_optional": "SHA256 Checksum (optional)",
 					"flags": "Update Flags",
 					"force": "Force Update",
 					"force_help": "Reinstall even if already on the requested version.",
@@ -9752,37 +9772,61 @@
 			}
 		},
 		"mailHosts": {
-			"title": "Mail hosts",
-            "description": "IMAP/SMTP hosts for WebSpace mailboxes — built-in docker-mailserver on web nodes or external inventory/webhook hosts",
-			"create": "Create mail host",
-			"empty": "No mail hosts yet.",
-			"created": "Mail host created",
+			"title": "Mail",
+			"description": "Built-in mail is provisioned automatically when you install Mailserver on a web node. Customers get mailboxes, DNS records, and webmail from the WebSpace email page.",
+			"autoTitle": "Most setups need zero configuration here",
+			"autoHint": "Install the Mailserver package on a web node (Admin → Web node → Package manager). FeatherPanel registers the mail host, MX/SPF/DKIM/DMARC hints, and optional node webmail automatically.",
+			"builtinSection": "Active on your nodes",
+			"setupSection": "Finish mail setup",
+			"setupHint": "These web nodes do not have built-in mail yet. Install Mailserver on the node — or register a host if the package is already installed.",
+			"externalSection": "External mail providers",
+			"addExternal": "Add external mail host",
+			"externalHint": "Only needed for third-party IMAP/SMTP or a custom provisioning webhook — not for FeatherQuilld docker-mailserver.",
+			"installMailserver": "Install Mailserver",
+			"registerHost": "Register mail host",
+			"openPackages": "Package manager",
+			"ensureSuccess": "Mail host registered for this node",
+			"ensureFailed": "Could not register mail host",
+			"requiredWebhookUrl": "Provision URL is required for webhook mode",
+			"noWebNode": "No web node",
+			"noFqdn": "Set an FQDN on the web node first",
+			"rowNode": "Web node: {node}",
+			"labels": {
+				"mx": "MX host",
+				"imap": "IMAP",
+				"smtp": "SMTP",
+				"webmail": "Webmail"
+			},
+			"create": "Add mail host",
+			"empty": "No mail hosts yet. Install Mailserver on a web node to get started.",
+			"created": "Mail host added",
 			"deleted": "Deleted",
-			"confirmDelete": "Delete this mail host?",
-			"requiredFields": "Name, hostname, IMAP host, and SMTP host are required",
+			"confirmDelete": "Delete this mail host? Existing mailboxes may stop working.",
+			"requiredFields": "Name and mail server hosts are required",
 			"requiredWebNode": "Select a web node for built-in mail",
-			"loadFailed": "Failed to load",
-			"createFailed": "Create failed",
+			"loadFailed": "Failed to load mail hosts",
+			"createFailed": "Could not add mail host",
 			"deleteFailed": "Delete failed",
 			"allWebNodes": "All web nodes",
 			"rowDetails": "{hostname} · IMAP {imapHost}:{imapPort} · SMTP {smtpHost}:{smtpPort} · {provisionMode}",
 			"form": {
 				"name": "Name",
-				"hostname": "Hostname",
+				"hostname": "Mail hostname",
 				"imapHost": "IMAP host",
 				"imapPort": "IMAP port",
 				"smtpHost": "SMTP host",
 				"smtpPort": "SMTP port",
-				"provisionMode": "Provision mode",
-				"webNode": "Web node (optional)",
+				"provisionMode": "Type",
+				"webNode": "Web node",
 				"provisionUrl": "Provision URL",
 				"apiKey": "API key",
 				"mxHost": "MX host (optional)",
-				"spfRecord": "SPF record (optional)"
+				"spfRecord": "SPF record (optional)",
+				"webmailUrl": "Webmail URL (optional)"
 			},
 			"provisionMode": {
-				"inventory": "Inventory (panel only)",
-				"node": "Built-in (web node)",
+				"inventory": "External (manual mailboxes)",
+				"node": "Built-in",
 				"webhook": "Webhook API"
 			}
 		},
@@ -10270,6 +10314,16 @@
 				"sftp_disable_password_auth_yes": "Disabled (keys only)",
 				"sftp_disable_password_auth_no": "Allowed",
 				"sftp_disable_password_auth_help": "When enabled, SFTP accepts SSH keys only (sftp.disable_password_auth).",
+				"card_classic_ftp": "Classic FTP",
+				"card_classic_ftp_description": "Optional legacy FTP on port 21 for clients that do not support SFTP. Disabled by default.",
+				"ftp_security_note": "FTP sends passwords in cleartext. Prefer SFTP for customers when possible. Open TCP 21 and the passive port range on the node firewall.",
+				"ftp_enabled": "Classic FTP",
+				"ftp_enabled_yes": "Enabled",
+				"ftp_enabled_no": "Disabled",
+				"ftp_enabled_help": "When enabled, FeatherQuilld serves classic FTP using the same WebSpace credentials as SFTP.",
+				"ftp_port": "FTP port",
+				"ftp_passive_min": "Passive port min",
+				"ftp_passive_max": "Passive port max",
 				"seconds": "sec",
 				"advanced": "Advanced Settings",
 				"quilld_config": "FeatherQuilld",
@@ -10511,6 +10565,7 @@
 				"install_failed": "Package installation failed",
 				"remove_success": "{name} removed successfully",
 				"remove_failed": "Package removal failed",
+				"mail_host_created": "A mail host was registered in the panel for this node.",
 				"active_reverse_proxy": "Active reverse proxy: {name}. Remove it before installing another web server.",
 				"install_blocked": "Remove {name} before installing this web server.",
 				"terminal_title": "Live output",
@@ -10636,6 +10691,7 @@
 			"diskMb": "Disk (MiB)",
 			"cpuLimit": "CPU cores (0 = unlimited)",
 			"memoryLimit": "Memory (MiB, 0 = unlimited)",
+			"bandwidthLimitGb": "Bandwidth (GiB/month, 0 = unlimited)",
 			"databaseLimit": "Database limit",
 			"mailboxLimit": "Mailbox limit",
 			"webplateId": "Default WebPlate ID (optional)",
@@ -10743,13 +10799,16 @@
 				"cpu_limit_help": "0 = unlimited. Example: 1 = one full CPU core.",
 				"memory_limit": "Memory limit (MiB)",
 				"memory_limit_help": "0 = unlimited.",
+				"bandwidth_limit_gb": "Bandwidth limit (GiB/month)",
+				"bandwidth_limit_gb_placeholder": "Package default",
+				"bandwidth_limit_gb_help": "Leave blank to use the hosting package limit. 0 = unlimited.",
 				"waf_enabled": "Web application firewall (WAF)",
 				"waf_enabled_help": "Adds security headers and a 10 MB request body limit on the reverse proxy.",
 				"backend_host": "Proxy upstream host (override)",
 				"backend_host_help": "Optional per-WebSpace override for generated proxy configs. Leave empty to use the web node default (usually 127.0.0.1).",
 				"hostingPackage": "Hosting package",
 				"hostingPackageNone": "Custom limits (no package)",
-				"hostingPackageHelp": "Prefills disk, CPU, memory, and database limits from a named package."
+				"hostingPackageHelp": "Prefills disk, CPU, memory, bandwidth, and database limits from a named package."
 			},
 			"status": {
 				"installing": "Installing",
@@ -10908,6 +10967,9 @@
 		"pagination": {
 			"showing": "Showing {count} of {total} WebSpaces"
 		},
+		"allWebSpaces": "All WebSpaces",
+		"favorite_add": "Add to favorites",
+		"favorite_remove": "Remove from favorites",
 		"messages": {
 			"fetch_failed": "Failed to load WebSpaces"
 		},
@@ -10923,7 +10985,12 @@
 			"users": "Users",
 			"settings": "Settings",
 			"apps": "Apps",
-			"analytics": "Analytics"
+			"analytics": "Analytics",
+			"logs": "Logs",
+			"domains": "Domains",
+			"access": "File access",
+			"waf": "Firewall",
+			"malware": "Malware scan"
 		},
 		"suspended": {
 			"title": "WebSpace suspended",
@@ -10967,7 +11034,9 @@
 			"noDomains": "No domains configured.",
 			"sslEnabled": "SSL: enabled",
 			"sslDisabled": "SSL: disabled",
-			"dangerZone": "Danger zone"
+			"dangerZone": "Danger zone",
+			"bandwidth": "Bandwidth",
+			"bandwidthOverQuota": "Monthly HTTP bandwidth quota exceeded"
 		},
 		"console": {
 			"title": "Console",
@@ -10988,6 +11057,10 @@
 				"error": "Connection error — retrying…",
 				"disconnected": "Disconnected from FeatherQuilld",
 				"info": "Live logs will be available once connected."
+			},
+			"not_found": {
+				"title": "WebSpace not found",
+				"message": "This WebSpace could not be loaded or you may not have access."
 			}
 		},
 		"files": {
@@ -11179,7 +11252,14 @@
 			"newPassword": "New password: {password}",
 			"resetFailed": "Reset failed",
 			"openingWebmail": "Opening webmail…",
+			"openWebmail": "Open webmail",
+			"webmailEmbedHelp": "Read mail in your browser. Panel Roundcube uses secure SSO; node webmail opens in a new tab when configured.",
 			"webmailFailed": "Failed to open webmail",
+			"deliverability": {
+				"title": "Deliverability",
+				"help": "Checks DNS records in your linked zone and mail ports on the web node. PTR/rDNS must be configured with your host provider.",
+				"fix": "Fix DNS"
+			},
 			"mailboxEnabled": "Mailbox enabled",
 			"mailboxDisabled": "Mailbox disabled",
 			"updateFailed": "Update failed",
@@ -11232,7 +11312,7 @@
 			"title": "Settings",
 			"description": "WebSpace settings",
 			"information": "WebSpace information",
-			"informationDescription": "Name, description, and disk quota.",
+			"informationDescription": "Name, description, and resource limits.",
 			"domainsTitle": "Domains",
 			"permissionHint": "Updating settings requires the settings.update permission.",
 			"name": "Name",
@@ -11254,13 +11334,20 @@
 			"wildcardSslHelp": "Issues *.apex via Cloudflare DNS. Link a DNS zone first, then renew SSL.",
 			"cpuLimit": "CPU limit",
 			"memoryLimit": "Memory limit",
+			"bandwidthLimit": "Monthly HTTP bandwidth",
+			"bandwidthLimitGb": "Limit: {n} GiB/month",
 			"unlimited": "Unlimited",
 			"cores": "{n} cores",
 			"mib": "{n} MiB",
 			"resourceLimitsHelp": "Limits are set by an administrator and applied when the container is recreated.",
 			"saveSettings": "Save settings",
 			"sftpTitle": "SFTP access",
-			"sftpHelp": "Connect with your panel password, or use an extra SFTP account below. Classic FTP is not offered — this is SFTP only.",
+			"sftpHelp": "Connect with your panel password, or use an extra SFTP account below.",
+			"ftpTitle": "Classic FTP",
+			"ftpHelp": "Legacy FTP for FileZilla and other clients that do not support SFTP. Uses the same username and password as SFTP.",
+			"ftpSecurityWarning": "FTP passwords are not encrypted. SFTP is recommended for everyday file access.",
+			"ftpCredentialsNote": "Use your panel password (or extra SFTP account password). Enable Classic FTP on the web node in Admin if this card is hidden.",
+			"sftpAccountsFtpNote": "Extra SFTP account credentials also work for Classic FTP when it is enabled on the node.",
 			"host": "Host",
 			"port": "Port",
 			"username": "Username",
@@ -11351,6 +11438,24 @@
 			"malwareScheduleFailed": "Failed to schedule malware scan",
 			"malwareLast": "Last scan: {files} files, {infected} infected"
 		},
+		"domainsPage": {
+			"title": "Domains & SSL",
+			"description": "Manage domain routes, HTTPS, DNS records, and certificates."
+		},
+		"accessPage": {
+			"title": "File access",
+			"description": "SFTP and classic FTP connection details and extra accounts.",
+			"noPermissionTitle": "File access unavailable",
+			"noPermissionDescription": "You need SFTP permission to view file access credentials."
+		},
+		"wafPage": {
+			"title": "Web application firewall",
+			"description": "Configure WAF rules, IP blocks, and path denylists."
+		},
+		"malwarePage": {
+			"title": "Malware scan",
+			"description": "Scan site files with ClamAV and schedule weekly scans."
+		},
 		"apps": {
 			"title": "Apps",
 			"description": "Install software into this WebSpace.",
@@ -11402,24 +11507,55 @@
 		},
 		"analytics": {
 			"title": "Analytics",
-			"description": "Activity summary from the panel activity log.",
+			"description": "HTTP traffic from the reverse proxy and panel activity for this WebSpace.",
 			"period": "Period",
 			"days": "days",
 			"summary": "Summary",
-			"totalEvents": "Total events",
+			"totalEvents": "Panel events",
 			"byDay": "Events by day",
-			"topEvents": "Top events",
+			"topEvents": "Top panel events",
 			"event": "Event",
 			"count": "Count",
-			"noData": "No activity in this period.",
-			"httpHits": "HTTP hits (current log)",
-			"bandwidth": "Response bytes (current log)",
-			"httpByDay": "HTTP hits by day",
-			"noTraffic": "No HTTP traffic in this period.",
-			"statusCodes": "HTTP status codes",
+			"noData": "No panel activity in this period.",
+			"httpHits": "HTTP requests",
+			"bandwidth": "Bandwidth served",
+			"bandwidthHint": "Response bytes from access logs",
+			"bandwidthQuota": "Monthly bandwidth quota",
+			"bandwidthOverQuota": "Bandwidth quota exceeded for this billing period.",
+			"httpByDay": "Requests per day",
+			"noTraffic": "No HTTP traffic recorded in this period.",
+			"noTrafficTitle": "No traffic yet",
+			"noTrafficDescription": "Once visitors hit your domains through the web node proxy, daily request and bandwidth stats will show up here.",
+			"viewLogs": "View raw logs",
+			"statusCodes": "Status codes",
+			"statusGroups": "Response families",
 			"domainFilter": "Domain",
+			"allDomains": "All domains",
+			"byDomain": "Traffic by domain",
+			"trafficSection": "Web traffic",
+			"activitySection": "Panel activity",
+			"periodHint": "Last {days} days",
+			"avgHitsPerDay": "Avg. requests / day",
+			"errorRate": "Client & server errors",
+			"errorRateHint": "Share of 4xx and 5xx responses",
+			"trafficUnavailable": "Traffic data unavailable",
+			"loadFailed": "Failed to load analytics",
 			"accessLogs": "Access log tail",
 			"errorLogs": "Error log tail"
+		},
+		"logs": {
+			"title": "Logs",
+			"description": "Access, error, runtime, and install logs for this WebSpace.",
+			"access": "Access",
+			"error": "Error",
+			"runtime": "Runtime",
+			"install": "Install",
+			"domain": "Domain",
+			"lines": "Lines",
+			"search": "Filter lines…",
+			"autoRefresh": "Auto-refresh",
+			"empty": "No log output.",
+			"loadFailed": "Failed to load logs"
 		},
 		"dns": {
 			"title": "DNS zone editor",
@@ -11631,7 +11767,7 @@
 			"builtinTitle": "Already in FeatherPanel",
 			"roadmapTitle": "Not in the panel yet",
 			"roadmapCount": "items",
-			"roadmapHelp": "These are common retail-hosting features that still need product work — the core WebSpace stack (files, SSL, DB, mail via external hosts) is already here.",
+			"roadmapHelp": "These are common retail-hosting features that still need product work — the core WebSpace stack (files, SSL, DB, DNS, mail, backups) is already built in.",
 			"tiers": {
 				"bootstrap": "Getting started",
 				"staging": "Almost ready",
@@ -11651,6 +11787,7 @@
 			},
 			"builtin": {
 				"files_sftp": "File manager + SFTP",
+				"classic_ftp": "Classic FTP",
 				"backups": "Backups (local/S3/restic/PBS)",
 				"schedules": "Cron schedules",
 				"console": "Live console (WebSocket)",
@@ -11664,20 +11801,24 @@
 				"addon_domains": "Primary, alias & redirect domains",
 				"custom_ssl_upload": "Upload custom SSL certificates",
 				"dns_hosting": "PowerDNS zone hosting (editor, provision, DNS-01)",
+				"builtin_mail": "Built-in mail (docker-mailserver on web node)",
+				"webmail": "Panel / node webmail",
+				"cpu_memory_limits": "CPU and memory limits",
 				"wordpress_manager": "WordPress one-click install",
 				"analytics": "Traffic analytics (proxy logs + activity)",
 				"waf_basic": "WAF headers, IP/URI denylist, ModSecurity, ClamAV scans"
 			},
 			"roadmap": {
-				"ftp": "FTP server (planned — use SFTP today)",
-				"builtin_mail": "Built-in mail server (planned)",
-				"webmail": "In-panel webmail (planned)"
+				"ftp": "Classic FTP + SFTP",
+				"webmail": "In-panel webmail (use panel Roundcube or mail host URL)"
 			},
 			"roadmapDetail": {
-				"ftp": "SFTP is available today. A dedicated FTP daemon is on the roadmap.",
-				"builtin_mail": "Mail uses external hosts today. A built-in MTA is planned for a future release.",
-				"webmail": "No bundled webmail yet — planned alongside built-in mail."
-			}
+				"ftp": "Enable Classic FTP on the web node for legacy clients; SFTP remains the recommended default.",
+				"webmail": "Install panel Roundcube or the webmail package on a web node, then set webmail_url on the mail host."
+			},
+			"installPanelWebmail": "Install panel Roundcube",
+			"installWebmailDone": "Panel webmail installed",
+			"installWebmailFailed": "Failed to install panel webmail"
 		}
 	},
 	"landing": {

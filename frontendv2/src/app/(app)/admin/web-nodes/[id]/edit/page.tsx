@@ -239,6 +239,10 @@ export default function EditWebNodePage() {
                 sftpKeyAlgorithm: node.sftpKeyAlgorithm || 'ssh-ed25519',
                 sftpPort: Number(node.sftpPort ?? 2222),
                 sftpDisablePasswordAuth: node.sftpDisablePasswordAuth ? 'true' : 'false',
+                ftpEnabled: node.ftpEnabled ? 'true' : 'false',
+                ftpPort: Number(node.ftpPort ?? 21),
+                ftpPassivePortMin: Number(node.ftpPassivePortMin ?? 50000),
+                ftpPassivePortMax: Number(node.ftpPassivePortMax ?? 50100),
                 proxyEnabled: node.proxyEnabled === false || node.proxyEnabled === 0 ? 'false' : 'true',
                 proxyProvider: node.proxyProvider || 'caddy',
                 acmeEmail: node.acmeEmail || '',
@@ -436,7 +440,10 @@ export default function EditWebNodePage() {
                             <StatusTab nodeId={id} />
                         </TabsContent>
 
-                        <TabsContent value='diagnostics' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
+                        <TabsContent
+                            value='diagnostics'
+                            className='mt-0 focus-visible:ring-0 focus-visible:outline-none'
+                        >
                             <DiagnosticsTab nodeId={id} onOpenQuilldTab={() => handleTabChange('quilld')} />
                         </TabsContent>
 
@@ -444,7 +451,10 @@ export default function EditWebNodePage() {
                             <PackageManagerTab nodeId={id} />
                         </TabsContent>
 
-                        <TabsContent value='self-update' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
+                        <TabsContent
+                            value='self-update'
+                            className='mt-0 focus-visible:ring-0 focus-visible:outline-none'
+                        >
                             <SelfUpdateTab nodeId={id} />
                         </TabsContent>
 
@@ -494,13 +504,13 @@ export default function EditWebNodePage() {
                             activeTab !== 'diagnostics' &&
                             activeTab !== 'packages' &&
                             activeTab !== 'hosting' && (
-                            <div className='flex justify-end'>
-                                <Button onClick={() => handleSave()} loading={saving}>
-                                    <Save className='mr-2 h-4 w-4' />
-                                    {t('admin.webNodes.form.submit_save')}
-                                </Button>
-                            </div>
-                        )}
+                                <div className='flex justify-end'>
+                                    <Button onClick={() => handleSave()} loading={saving}>
+                                        <Save className='mr-2 h-4 w-4' />
+                                        {t('admin.webNodes.form.submit_save')}
+                                    </Button>
+                                </div>
+                            )}
                     </div>
                 </Tabs>
             </div>

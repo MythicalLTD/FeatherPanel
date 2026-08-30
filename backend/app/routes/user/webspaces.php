@@ -21,11 +21,12 @@ use App\Helpers\ApiResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
 use App\Controllers\User\WebSpaces\WebSpacesController;
+use App\Controllers\User\WebSpaces\WebSpaceDnsController;
+use App\Controllers\User\WebSpaces\WebSpaceAppsController;
+use App\Controllers\User\WebSpaces\WebSpaceLogsController;
 use App\Controllers\User\WebSpaces\WebSpaceFilesController;
 use App\Controllers\User\WebSpaces\WebSpaceSubuserController;
 use App\Controllers\User\WebSpaces\WebSpaceActivityController;
-use App\Controllers\User\WebSpaces\WebSpaceDnsController;
-use App\Controllers\User\WebSpaces\WebSpaceAppsController;
 use App\Controllers\User\WebSpaces\WebSpaceAnalyticsController;
 
 return function (RouteCollection $routes): void {
@@ -967,6 +968,218 @@ return function (RouteCollection $routes): void {
         'user-webspaces'
     );
 
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-files-trash-list',
+        '/api/user/webspaces/{uuidShort}/files/trash',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+
+            return (new WebSpaceFilesController())->listTrash($request, $uuidShort);
+        },
+        ['GET'],
+        Rate::perMinute(30),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-files-trash-restore',
+        '/api/user/webspaces/{uuidShort}/files/trash/restore',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+
+            return (new WebSpaceFilesController())->restoreTrash($request, $uuidShort);
+        },
+        ['POST'],
+        Rate::perMinute(20),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-files-trash-delete',
+        '/api/user/webspaces/{uuidShort}/files/trash/delete',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+
+            return (new WebSpaceFilesController())->deleteTrash($request, $uuidShort);
+        },
+        ['POST'],
+        Rate::perMinute(20),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-files-trash-empty',
+        '/api/user/webspaces/{uuidShort}/files/trash/empty',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+
+            return (new WebSpaceFilesController())->emptyTrash($request, $uuidShort);
+        },
+        ['POST'],
+        Rate::perMinute(10),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-files-download-directory',
+        '/api/user/webspaces/{uuidShort}/files/download-directory',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+
+            return (new WebSpaceFilesController())->downloadDirectory($request, $uuidShort);
+        },
+        ['GET'],
+        Rate::perMinute(10),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-files-archive-list',
+        '/api/user/webspaces/{uuidShort}/files/archive-list',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+
+            return (new WebSpaceFilesController())->listArchive($request, $uuidShort);
+        },
+        ['GET'],
+        Rate::perMinute(30),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-files-extract-archive',
+        '/api/user/webspaces/{uuidShort}/files/extract-archive-selection',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+
+            return (new WebSpaceFilesController())->extractArchiveSelection($request, $uuidShort);
+        },
+        ['POST'],
+        Rate::perMinute(10),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-files-search-advanced',
+        '/api/user/webspaces/{uuidShort}/files/search-advanced',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+
+            return (new WebSpaceFilesController())->searchAdvanced($request, $uuidShort);
+        },
+        ['GET'],
+        Rate::perMinute(30),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-files-wipe',
+        '/api/user/webspaces/{uuidShort}/files/wipe',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+
+            return (new WebSpaceFilesController())->wipeAll($request, $uuidShort);
+        },
+        ['POST'],
+        Rate::perMinute(5),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-files-upload-url',
+        '/api/user/webspaces/{uuidShort}/files/upload-url',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+
+            return (new WebSpaceFilesController())->getUploadUrl($request, $uuidShort);
+        },
+        ['GET'],
+        Rate::perMinute(30),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-files-share',
+        '/api/user/webspaces/{uuidShort}/files/share',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+
+            return (new WebSpaceFilesController())->shareFile($request, $uuidShort);
+        },
+        ['POST'],
+        Rate::perMinute(10),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-files-share-jobs',
+        '/api/user/webspaces/{uuidShort}/files/share-jobs',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+
+            return (new WebSpaceFilesController())->getShareJobs($request, $uuidShort);
+        },
+        ['GET'],
+        Rate::perMinute(30),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-files-share-jobs-delete',
+        '/api/user/webspaces/{uuidShort}/files/share-jobs/{shareId}',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            $shareId = (string) ($args['shareId'] ?? '');
+
+            return (new WebSpaceFilesController())->deleteShareJob($request, $uuidShort, $shareId);
+        },
+        ['DELETE'],
+        Rate::perMinute(20),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-files-pull-jobs',
+        '/api/user/webspaces/{uuidShort}/files/pull-jobs',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+
+            return (new WebSpaceFilesController())->listPullJobs($request, $uuidShort);
+        },
+        ['GET'],
+        Rate::perMinute(30),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-files-pull-jobs-delete',
+        '/api/user/webspaces/{uuidShort}/files/pull-jobs/{identifier}',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            $identifier = (string) ($args['identifier'] ?? '');
+
+            return (new WebSpaceFilesController())->cancelPullJob($request, $uuidShort, $identifier);
+        },
+        ['DELETE'],
+        Rate::perMinute(20),
+        'user-webspaces'
+    );
+
     // --- Subusers ---
     App::getInstance(true)->registerAuthRoute(
         $routes,
@@ -1195,6 +1408,23 @@ return function (RouteCollection $routes): void {
         },
         ['DELETE'],
         Rate::perMinute(20),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-proxy-logs',
+        '/api/user/webspaces/{uuidShort}/proxy-logs',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            if ($uuidShort === '') {
+                return ApiResponse::error('Missing uuidShort', 'INVALID_UUID_SHORT', 400);
+            }
+
+            return (new WebSpaceLogsController())->proxyLogs($request, $uuidShort);
+        },
+        ['GET'],
+        Rate::perMinute(60),
         'user-webspaces'
     );
 

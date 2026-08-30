@@ -1651,7 +1651,7 @@ show_main_menu() {
 	echo -e "  ${YELLOW}${BOLD}[4]${NC} ${BOLD}SSL Certificates${NC} ${CYAN}Let's Encrypt Tools${NC}"
 	echo -e "  ${MAGENTA}${BOLD}[5]${NC} ${BOLD}Databases${NC} ${CYAN}Remote MySQL/MariaDB Hosts${NC}"
 	echo -e "  ${RED}${BOLD}[6]${NC} ${BOLD}Proxmox VNC Agent${NC} ${CYAN}Install on Proxmox Node${NC}"
-	echo -e "  ${MAGENTA}${BOLD}[7]${NC} ${BOLD}FeatherQuilld Daemon${NC} ${CYAN}WebHosting Daemon${NC} ${YELLOW}${BOLD}[Coming Soon]${NC}"
+	echo -e "  ${MAGENTA}${BOLD}[7]${NC} ${BOLD}FeatherQuilld Daemon${NC} ${CYAN}WebHosting Daemon${NC}"
 	echo -e "  ${GREEN}${BOLD}[8]${NC} ${BOLD}Configuration${NC} ${CYAN}Settings & Preferences${NC}"
 	echo ""
 	echo -e "  ${BLUE}Tip:${NC} ${YELLOW}Choose ${BOLD}8${NC}${YELLOW} to set defaults like panel port and prefer-dev behavior.${NC}"
@@ -2946,6 +2946,314 @@ update_wings() {
 	systemctl start featherwings
 
 	log_success "FeatherWings daemon updated successfully."
+}
+
+show_featherquilld_menu() {
+	if [ -t 1 ]; then clear; fi
+	print_banner
+	draw_hr
+	print_centered "FeatherQuilld Operations" "$CYAN"
+	draw_hr
+	echo ""
+	echo -e "  ${GREEN}${BOLD}[1]${NC} ${BOLD}Install FeatherQuilld${NC}"
+	echo -e "     ${BLUE}→ Web hosting daemon (Docker + reverse proxy)${NC}"
+	echo -e "     ${BLUE}→ Creates systemd service for automatic startup${NC}"
+	echo ""
+	echo -e "  ${RED}${BOLD}[2]${NC} ${BOLD}Uninstall FeatherQuilld${NC}"
+	echo -e "     ${YELLOW}⚠️  WARNING: This will remove FeatherQuilld and its configuration${NC}"
+	echo ""
+	echo -e "  ${YELLOW}${BOLD}[3]${NC} ${BOLD}Update FeatherQuilld${NC}"
+	echo -e "     ${BLUE}→ Download latest FeatherQuilld binary${NC}"
+	echo -e "     ${BLUE}→ Restart FeatherQuilld service with new version${NC}"
+	echo ""
+	draw_hr
+}
+
+featherquilld_arch_suffix() {
+	case "$(uname -m)" in
+	x86_64) echo "amd64" ;;
+	aarch64 | arm64) echo "arm64" ;;
+	*) echo "amd64" ;;
+	esac
+}
+
+download_featherquilld_binary() {
+	local arch suffix dest tmp
+	arch="$(featherquilld_arch_suffix)"
+	suffix="linux_${arch}"
+	dest="/usr/local/bin/featherquilld"
+	tmp="$(mktemp)"
+
+	local urls=(
+		"https://github.com/MythicalLTD/FeatherQuilld/releases/latest/download/featherquilld_${suffix}"
+		"https://github.com/MythicalLTD/FeatherQuilld/releases/latest/download/featherquilld_${suffix}.tar.gz"
+	)
+
+	for url in "${urls[@]}"; do
+		log_info "Trying download: $url"
+		if curl -fsSL -o "$tmp" "$url" 2>>"$LOG_FILE"; then
+			if file "$tmp" | grep -qi 'gzip compressed'; then
+				tar -xzf "$tmp" -C /tmp featherquilld 2>>"$LOG_FILE" || tar -xzf "$tmp" -C /tmp 2>>"$LOG_FILE"
+				if [ -f /tmp/featherquilld ]; then
+					mv /tmp/featherquilld "$dest"
+					chmod +x "$dest"
+					rm -f "$tmp"
+					return 0
+				fi
+			else
+				mv "$tmp" "$dest"
+				chmod +x "$dest"
+				return 0
+			fi
+		fi
+	done
+	rm -f "$tmp"
+
+	if command -v dotnet &>/dev/null; then
+		log_info "Release binary not found — building FeatherQuilld from source..."
+		local build_dir="/tmp/featherquilld-build-$$"
+		rm -rf "$build_dir"
+		git clone --depth 1 https://github.com/MythicalLTD/FeatherQuilld.git "$build_dir" >>"$LOG_FILE" 2>&1 || return 1
+		(
+			cd "$build_dir" || exit 1
+			dotnet publish FeatherQuilld.csproj -c Release -o /usr/local/lib/featherquilld -r "linux-${arch}" --self-contained true -p:PublishSingleFile=true >>"$LOG_FILE" 2>&1
+		) || return 1
+		ln -sf /usr/local/lib/featherquilld/FeatherQuilld "$dest"
+		chmod +x "$dest"
+		rm -rf "$build_dir"
+		return 0
+	fi
+
+	log_error "Could not download FeatherQuilld and dotnet SDK is not available to build from source."
+	return 1
+}
+
+install_featherquilld_proxy() {
+	local provider="${FEATHERQUILLD_PROXY_PROVIDER:-caddy}"
+	case "$provider" in
+	caddy)
+		if command -v caddy &>/dev/null; then
+			log_info "Caddy is already installed."
+			return 0
+		fi
+		log_info "Installing Caddy reverse proxy..."
+		install_packages debian-keyring debian-archive-keyring apt-transport-https curl
+		curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg 2>>"$LOG_FILE" || true
+		curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | tee /etc/apt/sources.list.d/caddy-stable.list >/dev/null 2>>"$LOG_FILE" || true
+		apt-get update -qq >>"$LOG_FILE" 2>&1 || true
+		apt-get install -y caddy >>"$LOG_FILE" 2>&1 || true
+		;;
+	nginx)
+		if command -v nginx &>/dev/null; then
+			log_info "nginx is already installed."
+			return 0
+		fi
+		log_info "Installing nginx reverse proxy..."
+		install_packages nginx
+		;;
+	traefik)
+		if command -v traefik &>/dev/null; then
+			log_info "Traefik is already installed."
+			return 0
+		fi
+		log_info "Installing Traefik reverse proxy..."
+		local arch suffix
+		arch="$(featherquilld_arch_suffix)"
+		suffix="linux_${arch}"
+		curl -fsSL -o /usr/local/bin/traefik "https://github.com/traefik/traefik/releases/download/v3.3.4/traefik_v3.3.4_${suffix}.tar.gz" 2>>"$LOG_FILE" || true
+		if [ ! -x /usr/local/bin/traefik ]; then
+			local tmp="/tmp/traefik-$$.tar.gz"
+			curl -fsSL -o "$tmp" "https://github.com/traefik/traefik/releases/download/v3.3.4/traefik_v3.3.4_${suffix}.tar.gz" >>"$LOG_FILE" 2>&1
+			tar -xzf "$tmp" -C /usr/local/bin traefik 2>>"$LOG_FILE"
+			chmod +x /usr/local/bin/traefik
+			rm -f "$tmp"
+		fi
+		mkdir -p /etc/featherquilld/traefik
+		if [ ! -f /etc/featherquilld/traefik/traefik.yml ]; then
+			cat <<'EOF' | tee /etc/featherquilld/traefik/traefik.yml >/dev/null
+entryPoints:
+  web:
+    address: ":80"
+  websecure:
+    address: ":443"
+providers:
+  file:
+    filename: /var/lib/featherquilld/proxy/traefik-dynamic.yml
+    watch: true
+certificatesResolvers:
+  featherquilld:
+    acme:
+      email: "ops@example.com"
+      storage: /etc/featherquilld/traefik/acme.json
+      httpChallenge:
+        entryPoint: web
+EOF
+			touch /etc/featherquilld/traefik/acme.json
+			chmod 600 /etc/featherquilld/traefik/acme.json
+		fi
+		;;
+	esac
+}
+
+write_featherquilld_config() {
+	local provider="${FEATHERQUILLD_PROXY_PROVIDER:-caddy}"
+	local acme_email="${FEATHERQUILLD_ACME_EMAIL:-}"
+	local config_file="Caddyfile"
+	case "$provider" in
+	nginx) config_file="nginx.conf" ;;
+	traefik) config_file="traefik-dynamic.yml" ;;
+	esac
+	mkdir -p /etc/featherquilld
+	if [ -f /etc/featherquilld/config.yml ]; then
+		log_info "Keeping existing /etc/featherquilld/config.yml"
+		return 0
+	fi
+	cat <<EOF | tee /etc/featherquilld/config.yml >/dev/null
+debug: false
+app_name: FeatherQuilld
+api:
+  host: 0.0.0.0
+  port: 8080
+system:
+  root_directory: /var/lib/featherquilld
+  data: /var/lib/featherquilld/volumes
+  log_directory: /var/log/featherquilld
+  proxy:
+    enabled: true
+    provider: ${provider}
+    config_path: /var/lib/featherquilld/proxy/${config_file}
+    acme_email: "${acme_email}"
+docker:
+  network:
+    network_mode: featherquilld
+remote:
+  panel: ""
+  token_id: ""
+  token: ""
+sftp:
+  enabled: true
+  port: 2022
+EOF
+	log_success "Created /etc/featherquilld/config.yml"
+}
+
+install_featherquilld() {
+	log_step "Installing FeatherQuilld web hosting daemon..."
+
+	if command -v docker &>/dev/null; then
+		log_info "Docker is already installed."
+	else
+		log_step "Installing Docker engine (required for FeatherQuilld)..."
+		curl -sSL https://get.docker.com/ | CHANNEL=stable bash >>"$LOG_FILE" 2>&1
+		systemctl enable --now docker 2>&1 | tee -a "$LOG_FILE" >/dev/null
+		usermod -aG docker "$USER" 2>&1 | tee -a "$LOG_FILE" >/dev/null || true
+	fi
+
+	FEATHERQUILLD_PROXY_PROVIDER="${FEATHERQUILLD_PROXY_PROVIDER:-}"
+	if [ -z "$FEATHERQUILLD_PROXY_PROVIDER" ]; then
+		echo ""
+		echo -e "${BOLD}${CYAN}Reverse proxy provider${NC}"
+		echo -e "  ${GREEN}[1]${NC} Caddy (recommended)"
+		echo -e "  ${GREEN}[2]${NC} nginx"
+		echo -e "  ${GREEN}[3]${NC} Traefik"
+		prompt "${BOLD}Select provider${NC} ${BLUE}(1/2/3)${NC}: " proxy_choice
+		case "$proxy_choice" in
+		2) FEATHERQUILLD_PROXY_PROVIDER="nginx" ;;
+		3) FEATHERQUILLD_PROXY_PROVIDER="traefik" ;;
+		*) FEATHERQUILLD_PROXY_PROVIDER="caddy" ;;
+		esac
+	fi
+
+	if [ -z "${FEATHERQUILLD_ACME_EMAIL:-}" ]; then
+		prompt "${BOLD}ACME email for automatic HTTPS${NC} ${BLUE}(optional, press Enter to skip)${NC}: " FEATHERQUILLD_ACME_EMAIL
+	fi
+
+	install_featherquilld_proxy
+
+	log_info "Creating FeatherQuilld directory structure..."
+	mkdir -p /etc/featherquilld
+	mkdir -p /var/lib/featherquilld/volumes
+	mkdir -p /var/lib/featherquilld/websites
+	mkdir -p /var/lib/featherquilld/archives
+	mkdir -p /var/lib/featherquilld/backups
+	mkdir -p /var/lib/featherquilld/proxy
+	mkdir -p /var/log/featherquilld
+
+	if ! download_featherquilld_binary; then
+		return 1
+	fi
+
+	write_featherquilld_config
+
+	cat <<EOF | tee /etc/systemd/system/featherquilld.service >/dev/null
+[Unit]
+Description=FeatherQuilld Web Hosting Daemon
+After=network-online.target docker.service
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+User=root
+WorkingDirectory=/etc/featherquilld
+ExecStart=/usr/local/bin/featherquilld --config /etc/featherquilld/config.yml
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+	systemctl daemon-reload
+	systemctl enable featherquilld
+
+	log_success "FeatherQuilld daemon installed successfully."
+	log_info "Next steps:"
+	log_info "1. Create a Web Node in FeatherPanel admin and copy its configuration"
+	log_info "2. Merge panel credentials into /etc/featherquilld/config.yml (remote.panel, token_id, token)"
+	log_info "3. Set proxy acme_email in config.yml if using automatic HTTPS"
+	log_info "4. Start FeatherQuilld: systemctl start featherquilld"
+	log_info "5. Or run: featherquilld configure"
+}
+
+uninstall_featherquilld() {
+	log_step "Uninstalling FeatherQuilld daemon..."
+	systemctl stop featherquilld >/dev/null 2>&1 || true
+	systemctl disable featherquilld >/dev/null 2>&1 || true
+	rm -f /etc/systemd/system/featherquilld.service
+	systemctl daemon-reload
+	rm -f /usr/local/bin/featherquilld
+	rm -rf /usr/local/lib/featherquilld
+
+	remove_config="n"
+	prompt "Remove FeatherQuilld configuration (/etc/featherquilld)? (y/n): " remove_config
+	if [[ "$remove_config" =~ ^[yY]$ ]]; then
+		rm -rf /etc/featherquilld
+	fi
+
+	remove_data="n"
+	prompt "Remove FeatherQuilld data (/var/lib/featherquilld)? (y/n): " remove_data
+	if [[ "$remove_data" =~ ^[yY]$ ]]; then
+		rm -rf /var/lib/featherquilld
+	fi
+
+	log_success "FeatherQuilld daemon uninstalled successfully."
+}
+
+update_featherquilld() {
+	log_step "Updating FeatherQuilld daemon..."
+	if [ ! -x /usr/local/bin/featherquilld ]; then
+		log_error "FeatherQuilld is not installed. Please install it first."
+		return 1
+	fi
+	systemctl stop featherquilld
+	if ! download_featherquilld_binary; then
+		systemctl start featherquilld || true
+		return 1
+	fi
+	systemctl start featherquilld
+	log_success "FeatherQuilld daemon updated successfully."
 }
 
 install_proxmox_vnc_agent() {
@@ -5894,18 +6202,37 @@ if [ -f /etc/os-release ]; then
 			fi
 		done
 	elif [ "$COMPONENT_TYPE" = "7" ]; then
-		# FeatherQuilld Daemon – Coming Soon
-		if [ -t 1 ]; then clear; fi
-		print_banner
-		draw_hr
-		print_centered "Coming Soon" "$YELLOW"
-		draw_hr
-		echo ""
-		echo -e "  ${BLUE}FeatherQuilld Daemon (WebHosting Daemon) is currently in development.${NC}"
-		echo -e "  ${YELLOW}This feature is not yet available in this installer build.${NC}"
-		echo ""
-		draw_hr
-		exit 0
+		while [[ ! "$INST_TYPE" =~ ^[1-3]$ ]]; do
+			show_featherquilld_menu
+			echo ""
+			prompt "${BOLD}${CYAN}Select operation${NC} ${BLUE}(1/2/3)${NC}: " INST_TYPE
+			if [[ ! "$INST_TYPE" =~ ^[1-3]$ ]]; then
+				echo ""
+				echo -e "${RED}${BOLD}✗ Invalid input!${NC}"
+				echo -e "${YELLOW}Please enter ${BOLD}1${NC} (Install), ${BOLD}2${NC} (Uninstall), or ${BOLD}3${NC} (Update)${NC}"
+				echo ""
+				sleep 2
+			fi
+		done
+
+		if [ "$INST_TYPE" = "2" ]; then
+			echo ""
+			draw_hr
+			echo -e "${RED}${BOLD}⚠️  WARNING: Uninstall Operation${NC}"
+			draw_hr
+			echo -e "${YELLOW}This will permanently delete:${NC}"
+			echo -e "  ${RED}•${NC} FeatherQuilld systemd service"
+			echo -e "  ${RED}•${NC} FeatherQuilld binary"
+			echo -e "  ${RED}•${NC} Configuration and data (optional)"
+			echo ""
+			draw_hr
+			confirm_uninstall=""
+			prompt "${BOLD}${RED}Are you absolutely sure you want to uninstall?${NC} ${BLUE}(type 'yes' to confirm)${NC}: " confirm_uninstall
+			if [ "$confirm_uninstall" != "yes" ]; then
+				echo -e "${GREEN}Uninstallation cancelled.${NC}"
+				exit 0
+			fi
+		fi
 	elif [ "$COMPONENT_TYPE" = "8" ]; then
 		# Configuration Management
 		manage_configuration
@@ -7429,6 +7756,34 @@ if [ -f /etc/os-release ]; then
 			log_success "Proxmox VNC agent install finished. See log at $LOG_FILE"
 		else
 			log_error "Proxmox VNC agent install failed. See log at $LOG_FILE"
+			exit 1
+		fi
+	elif [ "$COMPONENT_TYPE" = "7" ] && [ "$INST_TYPE" = "1" ]; then
+		if [ -x /usr/local/bin/featherquilld ]; then
+			read -r -p "FeatherQuilld appears to be already installed. Reinstall? (y/n): " reinstall
+			if [ "$reinstall" != "y" ]; then
+				echo "Exiting installation."
+				exit 0
+			fi
+		fi
+		if install_featherquilld; then
+			log_success "FeatherQuilld install finished. See log at $LOG_FILE"
+		else
+			log_error "FeatherQuilld install failed. See log at $LOG_FILE"
+			exit 1
+		fi
+	elif [ "$COMPONENT_TYPE" = "7" ] && [ "$INST_TYPE" = "2" ]; then
+		if uninstall_featherquilld; then
+			log_success "FeatherQuilld uninstall finished. See log at $LOG_FILE"
+		else
+			log_error "FeatherQuilld uninstall failed. See log at $LOG_FILE"
+			exit 1
+		fi
+	elif [ "$COMPONENT_TYPE" = "7" ] && [ "$INST_TYPE" = "3" ]; then
+		if update_featherquilld; then
+			log_success "FeatherQuilld update finished. See log at $LOG_FILE"
+		else
+			log_error "FeatherQuilld update failed. See log at $LOG_FILE"
 			exit 1
 		fi
 	else

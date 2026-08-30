@@ -90,6 +90,20 @@ class WebSpaceSchedule
     }
 
     /**
+     * @param array<string, mixed>|null $schedule
+     */
+    public static function isLocked(?array $schedule): bool
+    {
+        if ($schedule === null) {
+            return false;
+        }
+
+        $value = $schedule['is_locked'] ?? 0;
+
+        return $value === true || $value === 1 || $value === '1';
+    }
+
+    /**
      * @param array<string, mixed> $data
      */
     public static function create(array $data): int | false
@@ -118,9 +132,16 @@ class WebSpaceSchedule
             ? $data['timezone']
             : 'UTC';
         $data['is_active'] = isset($data['is_active']) ? (int) (bool) $data['is_active'] : 1;
+        $data['is_locked'] = isset($data['is_locked']) ? (int) (bool) $data['is_locked'] : 0;
         $data['is_processing'] = 0;
         $data['created_at'] = $data['created_at'] ?? date('Y-m-d H:i:s');
         $data['updated_at'] = $data['updated_at'] ?? date('Y-m-d H:i:s');
+
+        $columns = array_map(static fn ($c) => $c['Field'], self::getColumns());
+        $data = array_intersect_key($data, array_flip($columns));
+        if ($data === []) {
+            return false;
+        }
 
         $pdo = Database::getPdoConnection();
         $fields = array_keys($data);
@@ -143,7 +164,7 @@ class WebSpaceSchedule
             return false;
         }
 
-        unset($data['id'], $data['webspace_id']);
+        unset($data['id'], $data['webspace_id'], $data['is_locked']);
 
         $columns = array_map(static fn ($c) => $c['Field'], self::getColumns());
         $data = array_intersect_key($data, array_flip($columns));
@@ -349,6 +370,7 @@ class WebSpaceSchedule
                 'cron_day_of_week' => (string) ($schedule['cron_day_of_week'] ?? '*'),
                 'timezone' => (string) ($schedule['timezone'] ?? 'UTC'),
                 'is_active' => array_key_exists('is_active', $schedule) ? (int) (bool) $schedule['is_active'] : 1,
+                'is_locked' => array_key_exists('is_locked', $schedule) ? (int) (bool) $schedule['is_locked'] : 1,
             ]);
 
             if ($scheduleId === false) {

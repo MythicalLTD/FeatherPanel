@@ -56,6 +56,8 @@ class WebNode
         'acmeStaging',
         'backendPortMin',
         'backendPortMax',
+        'proxyBackendHost',
+        'proxyBackendBindHost',
         'maintenance_mode',
         'memory',
         'memory_overallocate',
@@ -92,6 +94,10 @@ class WebNode
         'sftpKeyAlgorithm',
         'sftpPort',
         'sftpDisablePasswordAuth',
+        'ftpEnabled',
+        'ftpPort',
+        'ftpPassivePortMin',
+        'ftpPassivePortMax',
     ];
 
     /**
@@ -189,6 +195,27 @@ class WebNode
 
         if (isset($data['sftpPort']) && (!is_numeric($data['sftpPort']) || (int) $data['sftpPort'] < 1 || (int) $data['sftpPort'] > 65535)) {
             $errors[] = 'sftpPort must be a valid TCP port (1-65535)';
+        }
+
+        if (isset($data['ftpPort']) && (!is_numeric($data['ftpPort']) || (int) $data['ftpPort'] < 1 || (int) $data['ftpPort'] > 65535)) {
+            $errors[] = 'ftpPort must be a valid TCP port (1-65535)';
+        }
+
+        if (isset($data['ftpPassivePortMin']) && (!is_numeric($data['ftpPassivePortMin']) || (int) $data['ftpPassivePortMin'] < 1024 || (int) $data['ftpPassivePortMin'] > 65535)) {
+            $errors[] = 'ftpPassivePortMin must be a valid TCP port (1024-65535)';
+        }
+
+        if (isset($data['ftpPassivePortMax']) && (!is_numeric($data['ftpPassivePortMax']) || (int) $data['ftpPassivePortMax'] < 1024 || (int) $data['ftpPassivePortMax'] > 65535)) {
+            $errors[] = 'ftpPassivePortMax must be a valid TCP port (1024-65535)';
+        }
+
+        if (
+            isset($data['ftpPassivePortMin'], $data['ftpPassivePortMax'])
+            && is_numeric($data['ftpPassivePortMin'])
+            && is_numeric($data['ftpPassivePortMax'])
+            && (int) $data['ftpPassivePortMax'] < (int) $data['ftpPassivePortMin']
+        ) {
+            $errors[] = 'ftpPassivePortMax must be greater than or equal to ftpPassivePortMin';
         }
 
         if (isset($data['backendPortMin']) && (!is_numeric($data['backendPortMin']) || (int) $data['backendPortMin'] < 1 || (int) $data['backendPortMin'] > 65535)) {
@@ -347,6 +374,22 @@ class WebNode
 
         if (!isset($data['sftpPort']) || !is_numeric($data['sftpPort'])) {
             $data['sftpPort'] = 2222;
+        }
+
+        if (!isset($data['ftpPort']) || !is_numeric($data['ftpPort'])) {
+            $data['ftpPort'] = 21;
+        }
+
+        if (!isset($data['ftpPassivePortMin']) || !is_numeric($data['ftpPassivePortMin'])) {
+            $data['ftpPassivePortMin'] = 50000;
+        }
+
+        if (!isset($data['ftpPassivePortMax']) || !is_numeric($data['ftpPassivePortMax'])) {
+            $data['ftpPassivePortMax'] = 50100;
+        }
+
+        if (!isset($data['ftpEnabled'])) {
+            $data['ftpEnabled'] = 0;
         }
 
         if (!isset($data['backendPortMin']) || !is_numeric($data['backendPortMin'])) {
@@ -749,9 +792,15 @@ class WebNode
      *
      * @param array<string, mixed> $conditions
      */
-    public static function count(array $conditions): int
+    public static function count(array $conditions = []): int
     {
         $pdo = Database::getPdoConnection();
+        if ($conditions === []) {
+            $stmt = $pdo->query('SELECT COUNT(*) FROM ' . self::$table);
+
+            return (int) $stmt->fetchColumn();
+        }
+
         $where = implode(' AND ', array_map(static fn ($k) => "{$k} = :{$k}", array_keys($conditions)));
         $stmt = $pdo->prepare('SELECT COUNT(*) FROM ' . self::$table . ' WHERE ' . $where);
         $stmt->execute($conditions);

@@ -111,6 +111,31 @@ class MailHostsController
         return ApiResponse::success(['host' => $host], 'Updated', 200);
     }
 
+    #[OA\Post(path: '/api/admin/mail-hosts/ensure-node/{webNodeId}', summary: 'Ensure node mail host exists', tags: ['Admin - Mail Hosts'])]
+    public function ensureNode(Request $request, int $webNodeId): Response
+    {
+        $webNode = WebNode::getWebNodeById($webNodeId);
+        if (!$webNode) {
+            return ApiResponse::error('Web node not found', 'WEB_NODE_NOT_FOUND', 404);
+        }
+
+        $id = MailHost::ensureNodeMailHost($webNodeId, $webNode);
+        if ($id === null) {
+            return ApiResponse::error(
+                'Could not create mail host — set the web node FQDN first',
+                'ENSURE_FAILED',
+                422,
+            );
+        }
+
+        $host = MailHost::getById($id);
+        if ($host && !empty($host['provision_api_key'])) {
+            $host['provision_api_key'] = '[REDACTED]';
+        }
+
+        return ApiResponse::success(['host' => $host, 'created' => true], 'Mail host ready', 200);
+    }
+
     #[OA\Delete(path: '/api/admin/mail-hosts/{id}', summary: 'Delete mail host', tags: ['Admin - Mail Hosts'])]
     public function delete(Request $request, int $id): Response
     {

@@ -158,6 +158,74 @@ export function RemoteSftpTab({ form, setForm, errors }: RemoteSftpTabProps) {
                     </div>
                 </div>
             </PageCard>
+
+            <PageCard
+                title={t('admin.webNodes.form.card_classic_ftp')}
+                description={t('admin.webNodes.form.card_classic_ftp_description')}
+                icon={KeyRound}
+            >
+                <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
+                    <div className='space-y-2 md:col-span-2'>
+                        <p className='text-muted-foreground rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-xs leading-relaxed'>
+                            {t('admin.webNodes.form.ftp_security_note')}
+                        </p>
+                    </div>
+                    <div className='space-y-2'>
+                        <Label className='text-sm font-semibold'>{t('admin.webNodes.form.ftp_enabled')}</Label>
+                        <Select
+                            value={form.ftpEnabled}
+                            onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                                setForm({ ...form, ftpEnabled: e.target.value })
+                            }
+                        >
+                            <option value='false'>{t('admin.webNodes.form.ftp_enabled_no')}</option>
+                            <option value='true'>{t('admin.webNodes.form.ftp_enabled_yes')}</option>
+                        </Select>
+                        <p className='text-muted-foreground/70 text-xs italic'>
+                            {t('admin.webNodes.form.ftp_enabled_help')}
+                        </p>
+                    </div>
+                    <div className='space-y-2'>
+                        <Label className='text-sm font-semibold'>{t('admin.webNodes.form.ftp_port')}</Label>
+                        <Input
+                            type='number'
+                            min={1}
+                            max={65535}
+                            value={form.ftpPort}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                setForm({ ...form, ftpPort: parseInt(e.target.value, 10) || 21 })
+                            }
+                            disabled={form.ftpEnabled !== 'true'}
+                        />
+                    </div>
+                    <div className='space-y-2'>
+                        <Label className='text-sm font-semibold'>{t('admin.webNodes.form.ftp_passive_min')}</Label>
+                        <Input
+                            type='number'
+                            min={1024}
+                            max={65535}
+                            value={form.ftpPassivePortMin}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                setForm({ ...form, ftpPassivePortMin: parseInt(e.target.value, 10) || 50000 })
+                            }
+                            disabled={form.ftpEnabled !== 'true'}
+                        />
+                    </div>
+                    <div className='space-y-2'>
+                        <Label className='text-sm font-semibold'>{t('admin.webNodes.form.ftp_passive_max')}</Label>
+                        <Input
+                            type='number'
+                            min={1024}
+                            max={65535}
+                            value={form.ftpPassivePortMax}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                setForm({ ...form, ftpPassivePortMax: parseInt(e.target.value, 10) || 50100 })
+                            }
+                            disabled={form.ftpEnabled !== 'true'}
+                        />
+                    </div>
+                </div>
+            </PageCard>
         </div>
     );
 }

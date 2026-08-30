@@ -27,8 +27,10 @@ export const WebSpaceSubuserPermissions = {
     'control.start': 'control.start',
     'control.stop': 'control.stop',
     'control.restart': 'control.restart',
+    'control.console': 'control.console',
     'console.output': 'console.output',
     'console.send': 'console.send',
+    'websocket.connect': 'websocket.connect',
     'backup.read': 'backup.read',
     'backup.create': 'backup.create',
     'backup.delete': 'backup.delete',
@@ -55,4 +57,6 @@ export const WebSpaceSubuserPermissions = {
     'mail.update': 'mail.update',
     'mail.delete': 'mail.delete',
     'mail.view_password': 'mail.view_password',
+    'dns.read': 'dns.read',
+    'dns.manage': 'dns.manage',
 } as const;

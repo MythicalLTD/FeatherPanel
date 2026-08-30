@@ -48,4 +48,7 @@ export interface WebSpace {
     suspended?: number;
     sftp_host?: string;
     sftp_port?: number;
+    ftp_host?: string;
+    ftp_port?: number;
+    ftp_enabled?: boolean;
 }

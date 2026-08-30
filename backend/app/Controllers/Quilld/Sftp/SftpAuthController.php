@@ -25,6 +25,7 @@ use App\Chat\UserSshKey;
 use App\Helpers\ApiResponse;
 use App\Chat\WebSpaceSubuser;
 use App\Helpers\WebSpaceGateway;
+use App\Chat\WebSpaceSftpAccount;
 use App\Helpers\PermissionHelper;
 use App\WebSpaceSubuserPermissions;
 use Symfony\Component\HttpFoundation\Request;
@@ -57,7 +58,27 @@ class SftpAuthController
                 return ApiResponse::sendManualResponse(['error' => 'WebSpace not found'], 404);
             }
 
-            $user = $this->authenticateUser($parsed['username'], (string) $data['password'], (string) $data['type']);
+            $type = (string) $data['type'];
+            $password = (string) $data['password'];
+
+            // Extra SFTP accounts (account_name.uuidShort) — password only.
+            if ($type === 'password') {
+                $extra = WebSpaceSftpAccount::authenticate((int) $space['id'], $parsed['username'], $password);
+                if ($extra !== null) {
+                    App::getInstance(true)->getLogger()->info(
+                        'Quilld SFTP auth success for extra account on webspace ' . ($space['uuid'] ?? '')
+                    );
+
+                    return ApiResponse::sendManualResponse([
+                        'server' => (string) $space['uuid'],
+                        'user' => 'sftp:' . $extra['account']['account_name'],
+                        'permissions' => ['file.read', 'file.create', 'file.update', 'file.delete', 'file.sftp'],
+                        'root' => $extra['root'],
+                    ], 200);
+                }
+            }
+
+            $user = $this->authenticateUser($parsed['username'], $password, $type);
             if (!$user) {
                 return ApiResponse::sendManualResponse(['error' => 'Invalid credentials'], 401);
             }

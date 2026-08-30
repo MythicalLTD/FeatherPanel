@@ -75,6 +75,40 @@ export function WebSpaceProvider({ children, uuidShort, initialWebSpace }: WebSp
     }, [uuidShort, initialWebSpace, fetchWebSpace]);
 
     useEffect(() => {
+        if (typeof window === 'undefined' || !uuidShort || !webspace) return;
+
+        try {
+            const STORAGE_KEY = 'featherpanel_recent_webspaces_v1';
+            type RecentEntry = {
+                uuidShort: string;
+                lastViewedAt: string;
+            };
+
+            const existingRaw = window.localStorage.getItem(STORAGE_KEY);
+            let existing: RecentEntry[] = [];
+
+            if (existingRaw) {
+                try {
+                    existing = JSON.parse(existingRaw) as RecentEntry[];
+                    if (!Array.isArray(existing)) existing = [];
+                } catch {
+                    existing = [];
+                }
+            }
+
+            const filtered = existing.filter((entry) => entry.uuidShort !== uuidShort);
+            const updated: RecentEntry[] = [{ uuidShort, lastViewedAt: new Date().toISOString() }, ...filtered].slice(
+                0,
+                10,
+            );
+
+            window.localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+        } catch (e) {
+            console.error('Failed to update recent webspaces list', e);
+        }
+    }, [uuidShort, webspace]);
+
+    useEffect(() => {
         if (typeof document === 'undefined' || !uuidShort) return;
         document.cookie = `webspaceUuid=${encodeURIComponent(uuidShort)}; path=/; max-age=3600; SameSite=Lax; Secure`;
     }, [uuidShort]);

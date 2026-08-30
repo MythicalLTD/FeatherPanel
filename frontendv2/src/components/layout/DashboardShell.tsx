@@ -97,6 +97,8 @@ export default function DashboardShell({ children }: { children: React.ReactNode
 
     const pathSegments = (pathname || '').split('/').filter(Boolean);
     const isServerConsoleHome = pathSegments.length === 2 && pathSegments[0] === 'server' && Boolean(pathSegments[1]);
+    const isWebSpaceConsoleHome =
+        pathSegments.length === 2 && pathSegments[0] === 'webspace' && Boolean(pathSegments[1]);
     const isTicketDetailPage =
         pathSegments.length === 3 &&
         (pathSegments[0] === 'admin' || pathSegments[0] === 'dashboard') &&
@@ -200,7 +202,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                                 'flex min-h-0 flex-1 flex-col',
                                 useFullBleedLayout && 'h-full',
                                 !useFullBleedLayout &&
-                                    (isServerConsoleHome
+                                    (isServerConsoleHome || isWebSpaceConsoleHome
                                         ? 'mx-auto w-full max-w-[min(100rem,calc(100vw-1.5rem))] sm:max-w-[min(100rem,calc(100vw-2rem))]'
                                         : isTicketDetailPage
                                           ? 'mx-auto w-full max-w-[min(112rem,calc(100vw-1.5rem))] sm:max-w-[min(112rem,calc(100vw-2rem))]'

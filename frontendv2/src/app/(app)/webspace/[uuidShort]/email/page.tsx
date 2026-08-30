@@ -54,6 +54,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useWebSpace } from '@/contexts/WebSpaceContext';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { WebSpacePageWidgets } from '@/components/webspace/WebSpacePageWidgets';
+import { cn } from '@/lib/utils';
 
 interface MailboxRow {
     id: number;
@@ -107,6 +108,18 @@ interface DnsInfo {
     } | null;
 }
 
+interface DeliverabilityDomain {
+    domain: string;
+    overall: string;
+    checks: Array<{
+        id: string;
+        status: string;
+        label: string;
+        detail?: string | null;
+        fixable?: boolean;
+    }>;
+}
+
 export default function WebSpaceEmailPage() {
     const params = useParams();
     const { t } = useTranslation();
@@ -118,6 +131,8 @@ export default function WebSpaceEmailPage() {
     const [forwarders, setForwarders] = useState<ForwarderRow[]>([]);
     const [hosts, setHosts] = useState<MailHost[]>([]);
     const [dns, setDns] = useState<DnsInfo | null>(null);
+    const [deliverability, setDeliverability] = useState<DeliverabilityDomain[]>([]);
+    const [canProvisionDns, setCanProvisionDns] = useState(false);
     const [localPart, setLocalPart] = useState('');
     const [domain, setDomain] = useState('');
     const [hostId, setHostId] = useState('');
@@ -149,16 +164,19 @@ export default function WebSpaceEmailPage() {
 
     const load = useCallback(async () => {
         try {
-            const [listRes, hostsRes, dnsRes, webmailRes, fwdRes] = await Promise.all([
+            const [listRes, hostsRes, dnsRes, deliverabilityRes, webmailRes, fwdRes] = await Promise.all([
                 axios.get(`/api/user/webspaces/${uuidShort}/mailboxes`),
                 axios.get(`/api/user/webspaces/${uuidShort}/mailboxes/hosts`),
                 axios.get(`/api/user/webspaces/${uuidShort}/mailboxes/dns`).catch(() => null),
+                axios.get(`/api/user/webspaces/${uuidShort}/mailboxes/deliverability`).catch(() => null),
                 axios.get(`/api/user/webspaces/${uuidShort}/mailboxes/webmail/check`).catch(() => null),
                 axios.get(`/api/user/webspaces/${uuidShort}/mailboxes/forwarders`).catch(() => null),
             ]);
             setRows((listRes.data?.data?.data || []) as MailboxRow[]);
             setHosts((hostsRes.data?.data?.hosts || []) as MailHost[]);
             setDns((dnsRes?.data?.data as DnsInfo) || null);
+            setDeliverability((deliverabilityRes?.data?.data?.domains || []) as DeliverabilityDomain[]);
+            setCanProvisionDns(!!deliverabilityRes?.data?.data?.can_provision);
             setWebmailInstalled(!!webmailRes?.data?.data?.installed);
             setForwarders((fwdRes?.data?.data?.data || []) as ForwarderRow[]);
         } catch (err) {
@@ -381,6 +399,13 @@ export default function WebSpaceEmailPage() {
     }
 
     const showHeaderCreate = canCreate && rows.length > 0 && hosts.length > 0 && domains.length > 0 && !atLimit;
+    const primaryMailbox = rows.find((r) => r.enabled !== 0 && r.enabled !== false) ?? rows[0];
+
+    const statusChipClass = (status: string) => {
+        if (status === 'pass') return 'bg-emerald-500/15 text-emerald-600';
+        if (status === 'warn') return 'bg-amber-500/15 text-amber-700 dark:text-amber-400';
+        return 'bg-destructive/15 text-destructive';
+    };
 
     return (
         <WebSpacePageWidgets pageId='webspace-email'>
@@ -410,7 +435,22 @@ export default function WebSpaceEmailPage() {
                                     {t('webSpaces.email.addForwarder')}
                                 </Button>
                             )}
-                            <Button variant='glass' size='default' onClick={() => void load()} aria-label={t('common.refresh')}>
+                            {webmailInstalled && primaryMailbox && (
+                                <Button
+                                    variant='glass'
+                                    size='default'
+                                    onClick={() => void openWebmail(primaryMailbox.id)}
+                                >
+                                    <ExternalLink className='mr-2 h-5 w-5' />
+                                    {t('webSpaces.email.openWebmail')}
+                                </Button>
+                            )}
+                            <Button
+                                variant='glass'
+                                size='default'
+                                onClick={() => void load()}
+                                aria-label={t('common.refresh')}
+                            >
                                 <RefreshCw className='h-5 w-5 sm:mr-2' />
                                 <span className='hidden sm:inline'>{t('common.refresh')}</span>
                             </Button>
@@ -436,7 +476,11 @@ export default function WebSpaceEmailPage() {
                         icon={Mail}
                         action={
                             canCreate && !atLimit && hosts.length > 0 && domains.length > 0 ? (
-                                <Button size='default' onClick={() => setCreateOpen(true)} className='h-14 px-10 text-lg'>
+                                <Button
+                                    size='default'
+                                    onClick={() => setCreateOpen(true)}
+                                    className='h-14 px-10 text-lg'
+                                >
                                     <Plus className='mr-2 h-6 w-6' />
                                     {t('webSpaces.email.createMailbox')}
                                 </Button>
@@ -502,16 +546,20 @@ export default function WebSpaceEmailPage() {
                                                             className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
                                                         >
                                                             <Eye className='text-primary h-4 w-4' />
-                                                            <span className='font-bold'>{t('webSpaces.email.view')}</span>
+                                                            <span className='font-bold'>
+                                                                {t('webSpaces.email.view')}
+                                                            </span>
                                                         </DropdownMenuItem>
                                                     )}
-                                                    {canViewPassword && webmailInstalled && (
+                                                    {webmailInstalled && (
                                                         <DropdownMenuItem
                                                             onClick={() => void openWebmail(row.id)}
                                                             className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
                                                         >
                                                             <ExternalLink className='h-4 w-4 text-blue-500' />
-                                                            <span className='font-bold'>{t('webSpaces.email.webmail')}</span>
+                                                            <span className='font-bold'>
+                                                                {t('webSpaces.email.webmail')}
+                                                            </span>
                                                         </DropdownMenuItem>
                                                     )}
                                                     {canReset && (
@@ -589,46 +637,46 @@ export default function WebSpaceEmailPage() {
                                 }
                             />
                         ) : (
-                        <div className='grid grid-cols-1 gap-4'>
-                            {forwarders.map((row) => {
-                                const source = row.source || `${row.source_local}@${row.domain}`;
-                                return (
-                                    <ResourceCard
-                                        key={row.id}
-                                        icon={Forward}
-                                        title={`${source} → ${row.destination}`}
-                                        badges={
-                                            (row.is_catch_all || row.source_local === '*') && (
-                                                <span className='bg-primary/10 text-primary border-primary/20 rounded-full border px-3 py-1 text-[10px] leading-none font-black tracking-widest uppercase'>
-                                                    {t('webSpaces.email.catchAllBadge')}
-                                                </span>
-                                            )
-                                        }
-                                        description={
-                                            <div className='text-muted-foreground flex items-center gap-2'>
-                                                <ServerIcon className='h-4 w-4 opacity-50' />
-                                                <span className='text-sm font-semibold'>
-                                                    {row.mail_host_name || t('webSpaces.email.mailHost')}
-                                                </span>
-                                            </div>
-                                        }
-                                        actions={
-                                            canDelete && (
-                                                <Button
-                                                    variant='ghost'
-                                                    size='sm'
-                                                    onClick={() => void removeForwarder(row.id)}
-                                                    className='h-8 w-8 p-0'
-                                                >
-                                                    <Trash2 className='h-3.5 w-3.5' />
-                                                </Button>
-                                            )
-                                        }
-                                    />
-                                );
-                            })}
-                        </div>
-                    )}
+                            <div className='grid grid-cols-1 gap-4'>
+                                {forwarders.map((row) => {
+                                    const source = row.source || `${row.source_local}@${row.domain}`;
+                                    return (
+                                        <ResourceCard
+                                            key={row.id}
+                                            icon={Forward}
+                                            title={`${source} → ${row.destination}`}
+                                            badges={
+                                                (row.is_catch_all || row.source_local === '*') && (
+                                                    <span className='bg-primary/10 text-primary border-primary/20 rounded-full border px-3 py-1 text-[10px] leading-none font-black tracking-widest uppercase'>
+                                                        {t('webSpaces.email.catchAllBadge')}
+                                                    </span>
+                                                )
+                                            }
+                                            description={
+                                                <div className='text-muted-foreground flex items-center gap-2'>
+                                                    <ServerIcon className='h-4 w-4 opacity-50' />
+                                                    <span className='text-sm font-semibold'>
+                                                        {row.mail_host_name || t('webSpaces.email.mailHost')}
+                                                    </span>
+                                                </div>
+                                            }
+                                            actions={
+                                                canDelete && (
+                                                    <Button
+                                                        variant='ghost'
+                                                        size='sm'
+                                                        onClick={() => void removeForwarder(row.id)}
+                                                        className='h-8 w-8 p-0'
+                                                    >
+                                                        <Trash2 className='h-3.5 w-3.5' />
+                                                    </Button>
+                                                )
+                                            }
+                                        />
+                                    );
+                                })}
+                            </div>
+                        )}
                     </div>
                 )}
 
@@ -641,6 +689,68 @@ export default function WebSpaceEmailPage() {
                             SMTP {dns.client_settings.smtp_host}:{dns.client_settings.smtp_port} (
                             {dns.client_settings.smtp_encryption})
                         </p>
+                    </div>
+                )}
+
+                {deliverability.length > 0 && (
+                    <div className='space-y-4'>
+                        <h2 className='text-lg font-semibold'>{t('webSpaces.email.deliverability.title')}</h2>
+                        <p className='text-muted-foreground text-sm'>{t('webSpaces.email.deliverability.help')}</p>
+                        <div className='grid grid-cols-1 gap-4'>
+                            {deliverability.map((block) => (
+                                <div
+                                    key={block.domain}
+                                    className='border-border/50 bg-card/50 rounded-xl border p-4 backdrop-blur-xl'
+                                >
+                                    <div className='mb-3 flex flex-wrap items-center justify-between gap-2'>
+                                        <p className='font-mono text-sm font-medium'>{block.domain}</p>
+                                        <span
+                                            className={cn(
+                                                'rounded-full px-2 py-0.5 text-[10px] font-bold uppercase',
+                                                statusChipClass(block.overall),
+                                            )}
+                                        >
+                                            {block.overall}
+                                        </span>
+                                    </div>
+                                    <ul className='space-y-2'>
+                                        {block.checks.map((check) => (
+                                            <li
+                                                key={`${block.domain}-${check.id}`}
+                                                className='flex flex-wrap items-center justify-between gap-2 text-sm'
+                                            >
+                                                <div className='min-w-0'>
+                                                    <span className='font-medium'>{check.label}</span>
+                                                    {check.detail ? (
+                                                        <p className='text-muted-foreground text-xs'>{check.detail}</p>
+                                                    ) : null}
+                                                </div>
+                                                <div className='flex items-center gap-2'>
+                                                    <span
+                                                        className={cn(
+                                                            'rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase',
+                                                            statusChipClass(check.status),
+                                                        )}
+                                                    >
+                                                        {check.status}
+                                                    </span>
+                                                    {check.fixable && canCreate && canProvisionDns && (
+                                                        <Button
+                                                            size='sm'
+                                                            variant='outline'
+                                                            loading={busy}
+                                                            onClick={() => void provisionDns(block.domain)}
+                                                        >
+                                                            {t('webSpaces.email.deliverability.fix')}
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 )}
 
@@ -677,9 +787,13 @@ export default function WebSpaceEmailPage() {
                                     </div>
                                     <ul className='text-muted-foreground space-y-1 font-mono text-xs'>
                                         {block.records.map((rec, idx) => (
-                                            <li key={`${rec.type}-${rec.name}-${idx}`} className='flex flex-wrap items-center gap-2'>
+                                            <li
+                                                key={`${rec.type}-${rec.name}-${idx}`}
+                                                className='flex flex-wrap items-center gap-2'
+                                            >
                                                 <span>
-                                                    {rec.type} {rec.name} → {rec.priority != null ? `${rec.priority} ` : ''}
+                                                    {rec.type} {rec.name} →{' '}
+                                                    {rec.priority != null ? `${rec.priority} ` : ''}
                                                     {rec.value}
                                                 </span>
                                                 {rec.source === 'provisioned' ? (
@@ -687,7 +801,7 @@ export default function WebSpaceEmailPage() {
                                                         {t('webSpaces.email.dnsProvisioned')}
                                                     </span>
                                                 ) : rec.source === 'manual' ? (
-                                                    <span className='rounded bg-muted px-1.5 py-0.5 text-[10px]'>
+                                                    <span className='bg-muted rounded px-1.5 py-0.5 text-[10px]'>
                                                         {t('webSpaces.email.dnsManual')}
                                                     </span>
                                                 ) : null}
@@ -745,7 +859,11 @@ export default function WebSpaceEmailPage() {
                         <DialogTitle>{t('webSpaces.email.addForwarder')}</DialogTitle>
                     </DialogHeader>
                     <div className='flex flex-wrap items-end gap-2 py-4'>
-                        <Select value={fwdHostId} onChange={(e) => setFwdHostId(e.target.value)} className='min-w-[200px]'>
+                        <Select
+                            value={fwdHostId}
+                            onChange={(e) => setFwdHostId(e.target.value)}
+                            className='min-w-[200px]'
+                        >
                             <option value=''>{t('webSpaces.email.selectHost')}</option>
                             {hosts.map((h) => (
                                 <option key={h.id} value={String(h.id)}>
@@ -767,7 +885,11 @@ export default function WebSpaceEmailPage() {
                         )}
                         {fwdCatchAll && <span className='text-muted-foreground pb-2 font-mono text-sm'>*</span>}
                         <span className='text-muted-foreground pb-2'>@</span>
-                        <Select value={fwdDomain} onChange={(e) => setFwdDomain(e.target.value)} className='min-w-[160px]'>
+                        <Select
+                            value={fwdDomain}
+                            onChange={(e) => setFwdDomain(e.target.value)}
+                            className='min-w-[160px]'
+                        >
                             {domains.map((d) => (
                                 <option key={d} value={d}>
                                     {d}
@@ -799,7 +921,10 @@ export default function WebSpaceEmailPage() {
                     </DialogHeader>
                     <div className='space-y-3 py-4'>
                         <label className='flex items-center gap-2 text-sm'>
-                            <Checkbox checked={arEnabled} onCheckedChange={(checked) => setArEnabled(checked === true)} />
+                            <Checkbox
+                                checked={arEnabled}
+                                onCheckedChange={(checked) => setArEnabled(checked === true)}
+                            />
                             {t('common.enabled')}
                         </label>
                         <Input
@@ -833,9 +958,7 @@ export default function WebSpaceEmailPage() {
                     {viewingMailbox && (
                         <div className='space-y-3 py-4 font-mono text-sm'>
                             {canViewPassword && viewingMailbox.password && viewingMailbox.password !== '[REDACTED]' && (
-                                <p>
-                                    {t('webSpaces.email.passwordLabel', { password: viewingMailbox.password })}
-                                </p>
+                                <p>{t('webSpaces.email.passwordLabel', { password: viewingMailbox.password })}</p>
                             )}
                             {viewingMailbox.imap_host && (
                                 <p>

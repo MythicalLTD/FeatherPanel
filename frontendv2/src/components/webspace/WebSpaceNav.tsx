@@ -30,13 +30,15 @@ import { usePluginRoutes } from '@/hooks/usePluginRoutes';
 import type { PluginSidebarItem } from '@/types/navigation';
 
 const tabDefs = [
-    { href: '', labelKey: 'webSpaces.nav.overview', permission: null },
-    { href: '/console', labelKey: 'webSpaces.nav.console', permission: 'console.output' },
+    { href: '', labelKey: 'webSpaces.nav.console', permission: null },
     { href: '/files', labelKey: 'webSpaces.nav.files', permission: 'file.read' },
     { href: '/backups', labelKey: 'webSpaces.nav.backups', permission: 'backup.read' },
     { href: '/schedules', labelKey: 'webSpaces.nav.schedules', permission: 'schedule.read' },
     { href: '/databases', labelKey: 'webSpaces.nav.databases', permission: 'database.read' },
     { href: '/email', labelKey: 'webSpaces.nav.email', permission: 'mail.read' },
+    { href: '/apps', labelKey: 'webSpaces.nav.apps', permission: 'file.write' },
+    { href: '/analytics', labelKey: 'webSpaces.nav.analytics', permission: 'activity.read' },
+    { href: '/logs', labelKey: 'webSpaces.nav.logs', permission: 'activity.read' },
     { href: '/activities', labelKey: 'webSpaces.nav.activity', permission: 'activity.read' },
     { href: '/users', labelKey: 'webSpaces.nav.users', permission: 'user.read' },
     { href: '/settings', labelKey: 'webSpaces.nav.settings', permission: 'settings.read' },

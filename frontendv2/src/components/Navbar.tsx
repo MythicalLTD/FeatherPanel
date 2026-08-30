@@ -30,6 +30,7 @@ import { useNavbarSticky } from '@/hooks/useNavbarSticky';
 import { useChromeLayout } from '@/hooks/useChromeLayout';
 import { NavbarClassicChrome, NavbarModernChrome } from '@/components/NavbarChromeVariants';
 import { ServerSwitcher } from '@/components/server/ServerSwitcher';
+import { WebSpaceSwitcher } from '@/components/webspace/WebSpaceSwitcher';
 
 interface NavbarProps {
     onMenuClick: () => void;
@@ -48,9 +49,14 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
     const isOnWebSpacePage = pathname?.startsWith('/webspace/');
     const isOnAdminPage = pathname?.startsWith('/admin');
     const serverName = isOnServerPage ? serverContext?.server?.name : null;
+    const webSpaceName = isOnWebSpacePage ? webSpaceContext?.webspace?.name : null;
     const isKnowledgeBaseSection = pathname?.startsWith('/dashboard/knowledgebase');
     const headerTitle = isKnowledgeBaseSection ? t('dashboard.knowledgebase.title') : t('dashboard.title');
-    const headerContent = isOnServerPage ? <ServerSwitcher fallbackTitle={serverName ?? undefined} /> : undefined;
+    const headerContent = isOnServerPage ? (
+        <ServerSwitcher fallbackTitle={serverName ?? undefined} />
+    ) : isOnWebSpacePage ? (
+        <WebSpaceSwitcher fallbackTitle={webSpaceName ?? undefined} />
+    ) : undefined;
 
     const userNavigation = [{ name: t('navbar.profile'), href: '/dashboard/account', icon: CircleUser }];
 

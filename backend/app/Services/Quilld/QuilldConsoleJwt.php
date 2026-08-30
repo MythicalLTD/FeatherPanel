@@ -17,6 +17,8 @@
 
 namespace App\Services\Quilld;
 
+use App\Helpers\WingsUrlHelper;
+
 /**
  * Compact HS256 JWT for FeatherQuilld WebSpace console WebSockets.
  *
@@ -81,14 +83,9 @@ class QuilldConsoleJwt
      */
     public static function buildSocketUrl(array $webNode, string $webspaceUuid): string
     {
-        $scheme = strtolower(trim((string) ($webNode['scheme'] ?? 'http'))) === 'https' ? 'wss' : 'ws';
-        $fqdn = trim((string) ($webNode['fqdn'] ?? ''));
-        $port = (int) ($webNode['daemonListen'] ?? 8989);
-        if ($port < 1 || $port > 65535) {
-            $port = 8989;
-        }
+        $baseUrl = WingsUrlHelper::buildFromNode($webNode);
 
-        return "{$scheme}://{$fqdn}:{$port}/api/webspaces/{$webspaceUuid}/ws";
+        return WingsUrlHelper::toWebSocketBaseUrl($baseUrl) . '/api/webspaces/' . $webspaceUuid . '/ws';
     }
 
     private static function base64UrlEncode(string $data): string

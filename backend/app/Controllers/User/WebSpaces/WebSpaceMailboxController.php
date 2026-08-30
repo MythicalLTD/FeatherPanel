@@ -20,14 +20,16 @@ namespace App\Controllers\User\WebSpaces;
 use App\Chat\MailHost;
 use App\Helpers\ApiResponse;
 use App\Chat\WebSpaceMailbox;
+use App\Helpers\DnsProvisioner;
 use App\Helpers\WebSpaceGateway;
 use App\Chat\WebSpaceMailForwarder;
 use App\WebSpaceSubuserPermissions;
+use App\Helpers\FeatherQuilldClient;
 use App\Helpers\WebSpacePluginEvents;
 use App\Helpers\RemoteMailProvisioner;
-use App\Helpers\DnsProvisioner;
 use App\Helpers\WebSpaceActivityLogger;
 use App\Helpers\CheckWebSpacePermission;
+use App\Helpers\MailDeliverabilityChecker;
 use App\Plugins\Events\Events\WebSpaceEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -102,15 +104,16 @@ class WebSpaceMailboxController
             $mxHost = $primary ? (string) ($primary['mx_host'] ?: $primary['hostname']) : 'mail.' . $domain;
             $spf = $primary && !empty($primary['spf_record'])
                 ? (string) $primary['spf_record']
-                : 'v=spf1 mx a:' . $mxHost . ' ~all';
+                : 'v=spf1 mx a:' . $mxHost . ' -all';
             $dkimReady = !empty($primary['dkim_selector']) && !empty($primary['dkim_record']);
             $dkimSelector = $primary ? (string) ($primary['dkim_selector'] ?? '') : '';
             $dkimRecord = $primary ? (string) ($primary['dkim_record'] ?? '') : '';
+            $dmarc = 'v=DMARC1; p=none; rua=mailto:postmaster@' . $domain;
 
             if ($primary && strtolower(trim((string) ($primary['provision_mode'] ?? ''))) === 'node') {
                 $webNode = \App\Chat\WebNode::getWebNodeById((int) ($space['web_node_id'] ?? 0));
                 if ($webNode) {
-                    $hints = \App\Helpers\FeatherQuilldClient::getMailDnsHints($webNode, $domain);
+                    $hints = FeatherQuilldClient::getMailDnsHints($webNode, $domain);
                     if ($hints['ok'] && is_array($hints['body'])) {
                         $dkimReady = !empty($hints['body']['dkim_ready']);
                         $dkimSelector = trim((string) ($hints['body']['dkim_selector'] ?? $dkimSelector));
@@ -123,11 +126,24 @@ class WebSpaceMailboxController
                             if (!is_array($hr)) {
                                 continue;
                             }
-                            if (strtoupper((string) ($hr['type'] ?? '')) === 'TXT'
+                            if (
+                                strtoupper((string) ($hr['type'] ?? '')) === 'TXT'
                                 && trim((string) ($hr['name'] ?? '')) === '@'
-                                && trim((string) ($hr['value'] ?? '')) !== '') {
+                                && trim((string) ($hr['value'] ?? '')) !== ''
+                            ) {
                                 $spf = (string) $hr['value'];
                             }
+                            if (
+                                strtoupper((string) ($hr['type'] ?? '')) === 'TXT'
+                                && trim((string) ($hr['name'] ?? '')) === '_dmarc'
+                                && trim((string) ($hr['value'] ?? '')) !== ''
+                            ) {
+                                $dmarc = (string) $hr['value'];
+                            }
+                        }
+                        $dmarcBody = trim((string) ($hints['body']['dmarc_record'] ?? ''));
+                        if ($dmarcBody !== '') {
+                            $dmarc = $dmarcBody;
                         }
                     }
                 }
@@ -152,6 +168,12 @@ class WebSpaceMailboxController
                     'value' => $dkimRecord,
                     'priority' => null,
                 ] : null,
+                [
+                    'type' => 'TXT',
+                    'name' => '_dmarc',
+                    'value' => $dmarc,
+                    'priority' => null,
+                ],
             ]));
 
             $records[] = [
@@ -180,6 +202,68 @@ class WebSpaceMailboxController
                 'pop_host' => $primary['pop_host'],
                 'pop_port' => (int) ($primary['pop_port'] ?? 995),
             ] : null,
+        ], 'OK', 200);
+    }
+
+    public function deliverability(Request $request, string $uuidShort): Response
+    {
+        $resolved = $this->resolve($request, $uuidShort, WebSpaceSubuserPermissions::MAIL_READ);
+        if ($resolved instanceof Response) {
+            return $resolved;
+        }
+
+        $space = $resolved['space'];
+        $domains = DnsProvisioner::collectProvisionDomains($space);
+        $hosts = MailHost::listForWebNode((int) ($space['web_node_id'] ?? 0));
+        $primary = $hosts[0] ?? null;
+        $dnsContext = DnsProvisioner::resolveProvisionerContext($space);
+        $zoneRecords = [];
+        if ($dnsContext !== null && $primary && strtolower(trim((string) ($primary['provision_mode'] ?? ''))) === 'node') {
+            try {
+                $listed = $dnsContext['provider']->listRecords((string) $dnsContext['zone_id'], null, null, 1, 500);
+                $zoneRecords = is_array($listed['records'] ?? null) ? $listed['records'] : [];
+            } catch (\Throwable) {
+                $zoneRecords = [];
+            }
+        }
+
+        $webNode = \App\Chat\WebNode::getWebNodeById((int) ($space['web_node_id'] ?? 0));
+        $daemonPayload = null;
+        $publicIp = null;
+        if ($webNode) {
+            $ips = DnsProvisioner::resolveNodeIps($webNode);
+            $publicIp = $ips[0] ?? null;
+        }
+        if ($webNode && $domains !== []) {
+            $daemon = FeatherQuilldClient::getMailDeliverability($webNode, (string) $domains[0], $publicIp);
+            if ($daemon['ok'] && is_array($daemon['body'])) {
+                $daemonPayload = $daemon['body'];
+            }
+        }
+
+        $results = [];
+        foreach ($domains as $domain) {
+            $domainDaemon = $daemonPayload;
+            if ($webNode && $domain !== ($domains[0] ?? '')) {
+                $daemon = FeatherQuilldClient::getMailDeliverability($webNode, (string) $domain, $publicIp ?? null);
+                if ($daemon['ok'] && is_array($daemon['body'])) {
+                    $domainDaemon = $daemon['body'];
+                }
+            }
+            $results[] = MailDeliverabilityChecker::assessDomain(
+                $space,
+                (string) $domain,
+                $primary,
+                $zoneRecords,
+                $domainDaemon,
+            );
+        }
+
+        return ApiResponse::success([
+            'domains' => $results,
+            'can_provision' => $dnsContext !== null
+                && $primary
+                && strtolower(trim((string) ($primary['provision_mode'] ?? ''))) === 'node',
         ], 'OK', 200);
     }
 
@@ -479,8 +563,20 @@ class WebSpaceMailboxController
             // check still reports installed=false
         }
 
+        $hosts = MailHost::listForWebNode((int) ($resolved['space']['web_node_id'] ?? 0));
+        $nodeWebmailUrl = null;
+        foreach ($hosts as $host) {
+            $url = trim((string) ($host['webmail_url'] ?? ''));
+            if ($url !== '') {
+                $nodeWebmailUrl = $url;
+                break;
+            }
+        }
+
         return ApiResponse::success([
-            'installed' => \App\Helpers\Roundcube::isInstalled(),
+            'installed' => \App\Helpers\Roundcube::isInstalled() || $nodeWebmailUrl !== null,
+            'panel_roundcube' => \App\Helpers\Roundcube::isInstalled(),
+            'node_webmail_url' => $nodeWebmailUrl,
         ], 'OK', 200);
     }
 
@@ -491,8 +587,22 @@ class WebSpaceMailboxController
             return $resolved;
         }
 
-        if (!$this->canViewPassword($resolved)) {
-            return ApiResponse::error('Insufficient permissions to access mailbox credentials', 'FORBIDDEN', 403);
+        $record = WebSpaceMailbox::getById($mailboxId);
+        if (!$record || (int) $record['webspace_id'] !== (int) $resolved['space']['id']) {
+            return ApiResponse::error('Mailbox not found', 'NOT_FOUND', 404);
+        }
+
+        $mailHost = MailHost::getById((int) $record['mail_host_id']);
+        if (!$mailHost) {
+            return ApiResponse::error('Mail host not found', 'MAIL_HOST_NOT_FOUND', 404);
+        }
+
+        $nodeWebmailUrl = trim((string) ($mailHost['webmail_url'] ?? ''));
+        if ($nodeWebmailUrl !== '') {
+            return ApiResponse::success([
+                'url' => $nodeWebmailUrl,
+                'mode' => 'external',
+            ], 'OK', 200);
         }
 
         try {
@@ -503,16 +613,6 @@ class WebSpaceMailboxController
 
         if (!\App\Helpers\Roundcube::isInstalled()) {
             return ApiResponse::error('Webmail is not installed', 'WEBMAIL_NOT_INSTALLED', 404);
-        }
-
-        $record = WebSpaceMailbox::getById($mailboxId);
-        if (!$record || (int) $record['webspace_id'] !== (int) $resolved['space']['id']) {
-            return ApiResponse::error('Mailbox not found', 'NOT_FOUND', 404);
-        }
-
-        $mailHost = MailHost::getById((int) $record['mail_host_id']);
-        if (!$mailHost) {
-            return ApiResponse::error('Mail host not found', 'MAIL_HOST_NOT_FOUND', 404);
         }
 
         $app = \App\App::getInstance(true);
@@ -530,7 +630,7 @@ class WebSpaceMailboxController
             'enc' => (string) ($mailHost['imap_encryption'] ?? 'ssl'),
         ]);
 
-        return ApiResponse::success(['url' => $url], 'OK', 200);
+        return ApiResponse::success(['url' => $url, 'mode' => 'panel_roundcube'], 'OK', 200);
     }
 
     public function listForwarders(Request $request, string $uuidShort): Response

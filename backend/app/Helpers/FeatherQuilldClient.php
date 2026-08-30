@@ -852,11 +852,251 @@ class FeatherQuilldClient
      *
      * @return array{ok: bool, status: int, body: mixed, error: ?string}
      */
-    public static function deleteWebSpaceFiles(array $webNode, string $uuid, array $files): array
-    {
+    public static function deleteWebSpaceFiles(
+        array $webNode,
+        string $uuid,
+        array $files,
+        bool $permanent = false,
+        bool $useTrash = true,
+    ): array {
         return self::request($webNode, 'POST', '/api/webspaces/' . $uuid . '/files/delete', [
             'files' => array_values($files),
+            'permanent' => $permanent,
+            'use_trash' => $useTrash && !$permanent,
         ]);
+    }
+
+    /** @return array{ok: bool, status: int, body: mixed, error: ?string} */
+    public static function listWebSpaceTrash(
+        array $webNode,
+        string $uuid,
+        int $maxSizeBytes = 0,
+        int $retentionDays = 30,
+    ): array {
+        $q = http_build_query([
+            'maxSizeBytes' => $maxSizeBytes,
+            'retentionDays' => $retentionDays,
+        ]);
+
+        return self::request($webNode, 'GET', '/api/webspaces/' . $uuid . '/files/trash?' . $q);
+    }
+
+    /**
+     * @param list<string> $ids
+     *
+     * @return array{ok: bool, status: int, body: mixed, error: ?string}
+     */
+    public static function restoreWebSpaceTrash(array $webNode, string $uuid, array $ids, bool $overwrite = false): array
+    {
+        return self::request($webNode, 'POST', '/api/webspaces/' . $uuid . '/files/trash/restore', [
+            'ids' => array_values($ids),
+            'overwrite' => $overwrite,
+        ]);
+    }
+
+    /**
+     * @param list<string> $ids
+     *
+     * @return array{ok: bool, status: int, body: mixed, error: ?string}
+     */
+    public static function deleteWebSpaceTrashEntries(array $webNode, string $uuid, array $ids): array
+    {
+        return self::request($webNode, 'POST', '/api/webspaces/' . $uuid . '/files/trash/delete', [
+            'ids' => array_values($ids),
+        ]);
+    }
+
+    /** @return array{ok: bool, status: int, body: mixed, error: ?string} */
+    public static function emptyWebSpaceTrash(array $webNode, string $uuid): array
+    {
+        return self::request($webNode, 'POST', '/api/webspaces/' . $uuid . '/files/trash/empty', []);
+    }
+
+    /** @return array{ok: bool, status: int, body: mixed, error: ?string} */
+    public static function downloadWebSpaceDirectory(
+        array $webNode,
+        string $uuid,
+        string $directory,
+        string $format = 'tar.gz',
+    ): array {
+        $baseUrl = WingsUrlHelper::buildFromNode($webNode);
+        $tokenId = trim((string) ($webNode['daemon_token_id'] ?? ''));
+        $token = trim((string) ($webNode['daemon_token'] ?? ''));
+        if ($tokenId === '' || $token === '') {
+            return ['ok' => false, 'status' => 0, 'body' => null, 'error' => 'Web node is missing daemon credentials'];
+        }
+
+        $url = rtrim($baseUrl, '/') . '/api/webspaces/' . $uuid . '/files/download-directory?' . http_build_query([
+            'directory' => $directory,
+            'format' => $format,
+        ]);
+
+        try {
+            $client = new Client([
+                'timeout' => 300,
+                'connect_timeout' => 10,
+                'verify' => false,
+                'http_errors' => false,
+            ]);
+            $response = $client->request('GET', $url, [
+                'headers' => [
+                    'Authorization' => 'Bearer ' . $tokenId . '.' . $token,
+                    'Accept' => '*/*',
+                ],
+            ]);
+            $status = $response->getStatusCode();
+            $raw = (string) $response->getBody();
+            if ($status < 200 || $status >= 300) {
+                $decoded = json_decode($raw, true);
+
+                return [
+                    'ok' => false,
+                    'status' => $status,
+                    'body' => is_array($decoded) ? $decoded : $raw,
+                    'error' => 'Daemon returned HTTP ' . $status,
+                ];
+            }
+
+            $disposition = $response->getHeaderLine('Content-Disposition');
+            $filename = 'download.tar.gz';
+            if (preg_match('/filename="?([^";]+)"?/i', $disposition, $m)) {
+                $filename = $m[1];
+            }
+
+            return [
+                'ok' => true,
+                'status' => $status,
+                'body' => [
+                    'contents' => $raw,
+                    'filename' => $filename,
+                    'content_type' => $response->getHeaderLine('Content-Type') ?: 'application/octet-stream',
+                ],
+                'error' => null,
+            ];
+        } catch (\Throwable $e) {
+            return ['ok' => false, 'status' => 0, 'body' => null, 'error' => $e->getMessage()];
+        }
+    }
+
+    /** @return array{ok: bool, status: int, body: mixed, error: ?string} */
+    public static function listWebSpaceArchive(
+        array $webNode,
+        string $uuid,
+        string $directory,
+        string $file,
+        string $archivePath = '',
+    ): array {
+        $q = http_build_query([
+            'directory' => $directory,
+            'file' => $file,
+            'archive_path' => $archivePath,
+        ]);
+
+        return self::request($webNode, 'GET', '/api/webspaces/' . $uuid . '/files/archive-list?' . $q);
+    }
+
+    /**
+     * @param list<string> $entries
+     *
+     * @return array{ok: bool, status: int, body: mixed, error: ?string}
+     */
+    public static function extractWebSpaceArchiveSelection(
+        array $webNode,
+        string $uuid,
+        string $root,
+        string $file,
+        string $destination,
+        array $entries,
+    ): array {
+        return self::request($webNode, 'POST', '/api/webspaces/' . $uuid . '/files/extract-archive-selection', [
+            'root' => $root,
+            'file' => $file,
+            'destination' => $destination,
+            'entries' => array_values($entries),
+        ], 300);
+    }
+
+    /** @return array{ok: bool, status: int, body: mixed, error: ?string} */
+    public static function pullWebSpaceFileBackground(
+        array $webNode,
+        string $uuid,
+        string $url,
+        string $directory = '/',
+        ?string $fileName = null,
+    ): array {
+        $payload = [
+            'url' => $url,
+            'directory' => $directory,
+            'background' => true,
+        ];
+        if ($fileName !== null && $fileName !== '') {
+            $payload['file_name'] = $fileName;
+        }
+
+        return self::request($webNode, 'POST', '/api/webspaces/' . $uuid . '/files/pull', $payload, 300);
+    }
+
+    /** @return array{ok: bool, status: int, body: mixed, error: ?string} */
+    public static function listWebSpacePullJobs(array $webNode, string $uuid): array
+    {
+        return self::request($webNode, 'GET', '/api/webspaces/' . $uuid . '/files/pull-jobs');
+    }
+
+    /** @return array{ok: bool, status: int, body: mixed, error: ?string} */
+    public static function cancelWebSpacePullJob(array $webNode, string $uuid, string $identifier): array
+    {
+        return self::request($webNode, 'DELETE', '/api/webspaces/' . $uuid . '/files/pull-jobs/' . rawurlencode($identifier));
+    }
+
+    /**
+     * @param array<string, mixed> $filters
+     *
+     * @return array{ok: bool, status: int, body: mixed, error: ?string}
+     */
+    public static function searchWebSpaceFilesAdvanced(
+        array $webNode,
+        string $uuid,
+        array $filters,
+    ): array {
+        $q = http_build_query($filters);
+
+        return self::request($webNode, 'GET', '/api/webspaces/' . $uuid . '/files/search-advanced?' . $q);
+    }
+
+    /** @return array{ok: bool, status: int, body: mixed, error: ?string} */
+    public static function wipeWebSpaceFiles(array $webNode, string $uuid): array
+    {
+        return self::request($webNode, 'POST', '/api/webspaces/' . $uuid . '/files/wipe', [
+            'confirm' => 'WIPE',
+        ], 300);
+    }
+
+    /**
+     * @return array{upload_url: string, expires_in: int}
+     */
+    public static function createWebSpaceUploadToken(
+        array $webNode,
+        string $uuid,
+        string $directory = '/',
+        ?string $fileName = null,
+        int $expiresIn = 900,
+    ): array {
+        $tokenId = trim((string) ($webNode['daemon_token_id'] ?? ''));
+        $token = trim((string) ($webNode['daemon_token'] ?? ''));
+        $bearer = $tokenId . '.' . $token;
+        $exp = time() + $expiresIn;
+        $payload = $uuid . '|' . $directory . '|' . ($fileName ?? '') . '|' . $exp;
+        $sig = strtolower(hash_hmac('sha256', $payload, $bearer));
+        $uploadToken = base64_encode($payload) . '.' . $sig;
+        $baseUrl = WingsUrlHelper::buildFromNode($webNode);
+        $uploadUrl = rtrim($baseUrl, '/') . '/api/webspaces/' . $uuid . '/files/upload-signed?' . http_build_query([
+            'token' => $uploadToken,
+        ]);
+
+        return [
+            'upload_url' => $uploadUrl,
+            'expires_in' => $expiresIn,
+        ];
     }
 
     /**
@@ -920,6 +1160,12 @@ class FeatherQuilldClient
         ]);
 
         return self::request($webNode, 'GET', '/api/webspaces/' . $uuid . '/files/search?' . $q);
+    }
+
+    /** @return array{ok: bool, status: int, body: mixed, error: ?string} */
+    public static function resetWebSpaceBandwidth(array $webNode, string $uuid): array
+    {
+        return self::request($webNode, 'POST', '/api/webspaces/' . $uuid . '/bandwidth/reset', [], 15);
     }
 
     /** @return array{ok: bool, status: int, body: mixed, error: ?string} */
@@ -1246,6 +1492,17 @@ class FeatherQuilldClient
     public static function getMailDnsHints(array $webNode, string $domain): array
     {
         return self::request($webNode, 'GET', '/api/mail/dns-hints/' . rawurlencode($domain));
+    }
+
+    /** @return array{ok: bool, status: int, body: mixed, error: ?string} */
+    public static function getMailDeliverability(array $webNode, string $domain, ?string $publicIp = null): array
+    {
+        $query = ['domain' => $domain];
+        if ($publicIp !== null && $publicIp !== '') {
+            $query['public_ip'] = $publicIp;
+        }
+
+        return self::request($webNode, 'GET', '/api/mail/deliverability?' . http_build_query($query));
     }
 
     /** @return array{ok: bool, status: int, body: mixed, error: ?string} */

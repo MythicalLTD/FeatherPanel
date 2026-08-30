@@ -37,6 +37,7 @@
 - Multiple text validation issues were fixed. by @nayskutzu
 - Fixed an issue where the Schedules tab was incorrectly hidden when the `server_allow_schedules` setting was unset; it now defaults to visible as intended. by @nayskutzu
 - Fixed: Schedule creation no longer fails with a 500 error when `is_active` is submitted as a boolean; boolean values are handled correctly.
+- Fixes related to server transfers with bunch of allocations were fixed by @nayskutzu
 
 ## v1.3.7.10 STABLE
 

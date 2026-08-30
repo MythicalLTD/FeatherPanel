@@ -50,6 +50,22 @@ return function (RouteCollection $routes): void {
 
     App::getInstance(true)->registerAdminRoute(
         $routes,
+        'admin-mail-hosts-ensure-node',
+        '/api/admin/mail-hosts/ensure-node/{webNodeId}',
+        function (Request $request, array $args) {
+            $webNodeId = $args['webNodeId'] ?? null;
+            if (!$webNodeId || !is_numeric($webNodeId)) {
+                return ApiResponse::error('Missing or invalid web node ID', 'INVALID_ID', 400);
+            }
+
+            return (new MailHostsController())->ensureNode($request, (int) $webNodeId);
+        },
+        Permissions::ADMIN_WEBSPACES_EDIT,
+        ['POST']
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
         'admin-mail-hosts-create',
         '/api/admin/mail-hosts',
         function (Request $request) {

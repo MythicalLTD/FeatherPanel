@@ -24,6 +24,7 @@ import {
     CalendarClock,
     Clock,
     Loader2,
+    Lock,
     Pencil,
     Play,
     Plus,
@@ -42,6 +43,7 @@ import { Dialog, DialogHeader, DialogTitle, DialogDescription } from '@/componen
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { formatDateTimeInTz } from '@/lib/dateUtils';
 import { useDateFormatOptions } from '@/contexts/PreferencesContext';
+import { isWebSpaceScheduleLocked } from '@/lib/webspace-schedules';
 
 interface WebSpaceSchedule {
     id: number;
@@ -53,6 +55,7 @@ interface WebSpaceSchedule {
     cron_day_of_week: string;
     timezone?: string;
     is_active: number | boolean;
+    is_locked?: number | boolean | string;
     is_processing?: number | boolean;
     next_run_at?: string | null;
     tasks?: { id?: number; action?: string; payload?: string }[];
@@ -206,6 +209,7 @@ export default function WebSpaceSchedulesPage() {
                         {schedules.map((schedule) => {
                             const active = Boolean(schedule.is_active);
                             const processing = Boolean(schedule.is_processing);
+                            const locked = isWebSpaceScheduleLocked(schedule);
                             return (
                                 <ResourceCard
                                     key={schedule.id}
@@ -273,19 +277,31 @@ export default function WebSpaceSchedulesPage() {
                                                   ? 'bg-blue-500/10 text-blue-500 border-blue-500/20'
                                                   : 'bg-destructive/10 text-destructive border-destructive/20',
                                         },
+                                        ...(locked
+                                            ? [
+                                                  {
+                                                      label: t('webSpaces.schedules.locked'),
+                                                      className: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
+                                                  },
+                                              ]
+                                            : []),
                                     ]}
                                     actions={
                                         <div className='flex flex-wrap items-center gap-2'>
-                                            <Button
-                                                variant='glass'
-                                                size='sm'
-                                                onClick={() =>
-                                                    router.push(`/webspace/${uuidShort}/schedules/${schedule.id}/edit`)
-                                                }
-                                            >
-                                                <Pencil className='mr-1.5 h-3.5 w-3.5' />
-                                                {t('common.edit')}
-                                            </Button>
+                                            {!locked && (
+                                                <Button
+                                                    variant='glass'
+                                                    size='sm'
+                                                    onClick={() =>
+                                                        router.push(
+                                                            `/webspace/${uuidShort}/schedules/${schedule.id}/edit`,
+                                                        )
+                                                    }
+                                                >
+                                                    <Pencil className='mr-1.5 h-3.5 w-3.5' />
+                                                    {t('common.edit')}
+                                                </Button>
+                                            )}
                                             <Button
                                                 variant='glass'
                                                 size='sm'
@@ -299,23 +315,33 @@ export default function WebSpaceSchedulesPage() {
                                                 )}
                                                 {t('serverSchedules.runNow')}
                                             </Button>
-                                            <Button
-                                                variant='glass'
-                                                size='sm'
-                                                disabled={busy === schedule.id}
-                                                onClick={() => void handleToggle(schedule)}
-                                            >
-                                                <Power className='mr-1.5 h-3.5 w-3.5' />
-                                                {active ? t('common.disable') : t('common.enable')}
-                                            </Button>
-                                            <Button
-                                                variant='destructive'
-                                                size='sm'
-                                                onClick={() => setDeleteTarget(schedule)}
-                                            >
-                                                <Trash2 className='mr-1.5 h-3.5 w-3.5' />
-                                                {t('common.delete')}
-                                            </Button>
+                                            {!locked && (
+                                                <>
+                                                    <Button
+                                                        variant='glass'
+                                                        size='sm'
+                                                        disabled={busy === schedule.id}
+                                                        onClick={() => void handleToggle(schedule)}
+                                                    >
+                                                        <Power className='mr-1.5 h-3.5 w-3.5' />
+                                                        {active ? t('common.disable') : t('common.enable')}
+                                                    </Button>
+                                                    <Button
+                                                        variant='destructive'
+                                                        size='sm'
+                                                        onClick={() => setDeleteTarget(schedule)}
+                                                    >
+                                                        <Trash2 className='mr-1.5 h-3.5 w-3.5' />
+                                                        {t('common.delete')}
+                                                    </Button>
+                                                </>
+                                            )}
+                                            {locked && (
+                                                <span className='text-muted-foreground flex items-center gap-1.5 text-xs'>
+                                                    <Lock className='h-3.5 w-3.5' />
+                                                    {t('webSpaces.schedules.lockedHelp')}
+                                                </span>
+                                            )}
                                         </div>
                                     }
                                 />

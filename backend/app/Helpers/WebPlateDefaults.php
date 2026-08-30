@@ -136,6 +136,7 @@ final class WebPlateDefaults
             'cron_day_of_week' => '*',
             'timezone' => 'UTC',
             'is_active' => true,
+            'is_locked' => true,
             'tasks' => [
                 [
                     'action' => $action,

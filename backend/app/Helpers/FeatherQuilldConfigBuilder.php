@@ -46,6 +46,8 @@ class FeatherQuilldConfigBuilder
 
     private const DEFAULT_SFTP_PORT = 2222;
 
+    private const DEFAULT_FTP_PORT = 21;
+
     /**
      * Bootstrap config embedded in --join-data (panel URL, credentials, headers, API port).
      *
@@ -99,6 +101,11 @@ class FeatherQuilldConfigBuilder
         $sftp = self::buildSftpSection($node);
         if ($sftp !== []) {
             $config['sftp'] = $sftp;
+        }
+
+        $ftp = self::buildFtpSection($node);
+        if ($ftp !== []) {
+            $config['ftp'] = $ftp;
         }
 
         $overrides = self::parseOverrides($node['quilldConfigOverrides'] ?? null);
@@ -309,6 +316,14 @@ class FeatherQuilldConfigBuilder
         }
         $proxy['backend_port_min'] = $backendPortMin;
         $proxy['backend_port_max'] = $backendPortMax;
+        $backendHost = trim((string) ($node['proxyBackendHost'] ?? '127.0.0.1'));
+        if ($backendHost !== '') {
+            $proxy['backend_host'] = $backendHost;
+        }
+        $bindHost = trim((string) ($node['proxyBackendBindHost'] ?? '127.0.0.1'));
+        if ($bindHost !== '') {
+            $proxy['backend_bind_host'] = $bindHost;
+        }
         $system['proxy'] = $proxy;
 
         return $system;
@@ -383,6 +398,37 @@ class FeatherQuilldConfigBuilder
         }
 
         return $sftp;
+    }
+
+    /**
+     * @param array<string, mixed> $node
+     *
+     * @return array<string, mixed>
+     */
+    private static function buildFtpSection(array $node): array
+    {
+        $enabled = filter_var($node['ftpEnabled'] ?? false, FILTER_VALIDATE_BOOLEAN);
+        if (!$enabled) {
+            return ['enabled' => false];
+        }
+
+        $port = (int) ($node['ftpPort'] ?? self::DEFAULT_FTP_PORT);
+        $passiveMin = (int) ($node['ftpPassivePortMin'] ?? 50_000);
+        $passiveMax = (int) ($node['ftpPassivePortMax'] ?? 50_100);
+        $fqdn = trim((string) ($node['fqdn'] ?? ''));
+
+        $ftp = [
+            'enabled' => true,
+            'port' => $port > 0 ? $port : self::DEFAULT_FTP_PORT,
+            'passive_port_min' => max(1024, $passiveMin),
+            'passive_port_max' => max(max(1024, $passiveMin), $passiveMax),
+        ];
+
+        if ($fqdn !== '') {
+            $ftp['passive_host'] = $fqdn;
+        }
+
+        return $ftp;
     }
 
     private static function resolvePanelAppName(): string

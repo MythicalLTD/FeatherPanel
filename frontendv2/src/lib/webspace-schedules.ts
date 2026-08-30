@@ -32,6 +32,7 @@ export interface WebSpaceScheduleDraft {
     cron_day_of_week: string;
     timezone: string;
     is_active: boolean;
+    is_locked?: boolean;
     tasks: WebSpaceScheduleTaskDraft[];
 }
 
@@ -47,7 +48,7 @@ export function emptyScheduleTask(sequence = 1): WebSpaceScheduleTaskDraft {
     };
 }
 
-export function emptyScheduleDraft(timezone = 'UTC'): WebSpaceScheduleDraft {
+export function emptyScheduleDraft(timezone = 'UTC', isLocked = false): WebSpaceScheduleDraft {
     return {
         name: '',
         cron_minute: '*/5',
@@ -57,8 +58,16 @@ export function emptyScheduleDraft(timezone = 'UTC'): WebSpaceScheduleDraft {
         cron_day_of_week: '*',
         timezone,
         is_active: true,
+        is_locked: isLocked,
         tasks: [emptyScheduleTask(1)],
     };
+}
+
+export function isWebSpaceScheduleLocked(
+    schedule: { is_locked?: boolean | number | string } | null | undefined,
+): boolean {
+    const value = schedule?.is_locked;
+    return value === true || value === 1 || value === '1';
 }
 
 export type SchedulePresetId = 'wordpress' | 'whmcs' | 'laravel' | 'nightly_backup';
@@ -80,6 +89,7 @@ export const SCHEDULE_PRESETS: SchedulePreset[] = [
             cron_day_of_week: '*',
             timezone,
             is_active: true,
+            is_locked: true,
             tasks: [
                 {
                     action: 'command',
@@ -102,6 +112,7 @@ export const SCHEDULE_PRESETS: SchedulePreset[] = [
             cron_day_of_week: '*',
             timezone,
             is_active: true,
+            is_locked: true,
             tasks: [
                 {
                     action: 'command',
@@ -124,6 +135,7 @@ export const SCHEDULE_PRESETS: SchedulePreset[] = [
             cron_day_of_week: '*',
             timezone,
             is_active: true,
+            is_locked: true,
             tasks: [
                 {
                     action: 'command',
@@ -146,6 +158,7 @@ export const SCHEDULE_PRESETS: SchedulePreset[] = [
             cron_day_of_week: '*',
             timezone,
             is_active: true,
+            is_locked: true,
             tasks: [
                 {
                     action: 'backup',

@@ -112,6 +112,42 @@ return function (RouteCollection $routes): void {
 
     App::getInstance(true)->registerAuthRoute(
         $routes,
+        'user-webspaces-databases-dump',
+        '/api/user/webspaces/{uuidShort}/databases/{databaseId}/dump',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            $databaseId = (int) ($args['databaseId'] ?? 0);
+            if ($uuidShort === '' || $databaseId <= 0) {
+                return ApiResponse::error('Missing parameters', 'INVALID_PARAMETERS', 400);
+            }
+
+            return (new WebSpaceDatabaseController())->dump($request, $uuidShort, $databaseId);
+        },
+        ['POST'],
+        Rate::perMinute(5),
+        'user-webspaces',
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-databases-restore',
+        '/api/user/webspaces/{uuidShort}/databases/{databaseId}/restore',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            $databaseId = (int) ($args['databaseId'] ?? 0);
+            if ($uuidShort === '' || $databaseId <= 0) {
+                return ApiResponse::error('Missing parameters', 'INVALID_PARAMETERS', 400);
+            }
+
+            return (new WebSpaceDatabaseController())->restoreDump($request, $uuidShort, $databaseId);
+        },
+        ['POST'],
+        Rate::perMinute(5),
+        'user-webspaces',
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
         'user-webspaces-databases-phpmyadmin-check',
         '/api/user/webspaces/{uuidShort}/databases/phpmyadmin/check',
         function (Request $request, array $args) {
@@ -139,6 +175,41 @@ return function (RouteCollection $routes): void {
             }
 
             return (new WebSpaceDatabaseController())->generatePhpMyAdminToken($request, $uuidShort, $databaseId);
+        },
+        ['POST'],
+        Rate::perMinute(10),
+        'user-webspaces',
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-databases-phppgadmin-check',
+        '/api/user/webspaces/{uuidShort}/databases/phppgadmin/check',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            if ($uuidShort === '') {
+                return ApiResponse::error('Missing uuidShort', 'INVALID_UUID_SHORT', 400);
+            }
+
+            return (new WebSpaceDatabaseController())->checkPhpPgAdminInstalled($request, $uuidShort);
+        },
+        ['GET'],
+        Rate::perMinute(30),
+        'user-webspaces',
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-databases-phppgadmin-token',
+        '/api/user/webspaces/{uuidShort}/databases/{databaseId}/phppgadmin/token',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            $databaseId = (int) ($args['databaseId'] ?? 0);
+            if ($uuidShort === '' || $databaseId <= 0) {
+                return ApiResponse::error('Missing parameters', 'INVALID_PARAMETERS', 400);
+            }
+
+            return (new WebSpaceDatabaseController())->generatePhpPgAdminToken($request, $uuidShort, $databaseId);
         },
         ['POST'],
         Rate::perMinute(10),

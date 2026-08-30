@@ -33,6 +33,8 @@
       <h2>Injection Points</h2>
       <p class="muted">Available injection points for this widget slug:</p>
       <ul>
+<li><code>after-header</code></li>
+<li><code>after-terminal</code></li>
 <li><code>bottom-of-page</code></li>
 <li><code>top-of-page</code></li>
       </ul>
@@ -42,7 +44,7 @@
       <h2>Source Files</h2>
       <p class="muted">Files where this widget slug is used:</p>
       <ul>
-<li><code>page.tsx</code> <span class="muted">(src/app/(app)/webspace/[uuidShort]/console/page.tsx)</span></li>
+<li><code>WebSpaceConsolePage.tsx</code> <span class="muted">(src/components/webspace/WebSpaceConsolePage.tsx)</span></li>
       </ul>
     </section>
 
@@ -56,13 +58,15 @@
   "enabled": true,
   "priority": 100,
   "page": "webspace-console",
-  "location": "bottom-of-page",
+  "location": "after-header",
   "size": "full"
 }</code></pre>
 
       <h3>Available Injection Points</h3>
       <p class="muted">This page supports the following injection points. Use the <code>location</code> property in your widget configuration:</p>
       <ul>
+<li><code>after-header</code></li>
+<li><code>after-terminal</code></li>
 <li><code>bottom-of-page</code></li>
 <li><code>top-of-page</code></li>
       </ul>

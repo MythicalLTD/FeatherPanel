@@ -18,18 +18,18 @@
 namespace App\Controllers\Admin;
 
 use App\Chat\WebNode;
-use App\Chat\MailHost;
 use App\Chat\Activity;
 use App\Chat\Location;
+use App\Chat\MailHost;
 use App\Helpers\ApiResponse;
 use App\Helpers\AppUrlHelper;
 use OpenApi\Attributes as OA;
+use App\Helpers\WingsUrlHelper;
 use App\Helpers\FeatherQuilldProbe;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Helpers\FeatherQuilldClient;
 use App\Helpers\FeatherQuilldCapabilities;
 use App\Helpers\FeatherQuilldConfigBuilder;
-use App\Helpers\WingsUrlHelper;
 use App\Plugins\Events\Events\WebNodeEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -929,6 +929,17 @@ class WebNodesController
         $mailHostId = null;
         if (strtolower($packageId) === 'mailserver') {
             $mailHostId = MailHost::ensureNodeMailHost($id, $webNode);
+        }
+        if (strtolower($packageId) === 'webmail') {
+            $mailHostId = MailHost::ensureNodeMailHost($id, $webNode);
+            if ($mailHostId) {
+                $fqdn = trim((string) ($webNode['fqdn'] ?? ''));
+                if ($fqdn !== '') {
+                    $scheme = strtolower(trim((string) ($webNode['scheme'] ?? 'https')));
+                    $base = ($scheme === 'https' ? 'https' : 'http') . '://' . $fqdn;
+                    MailHost::update($mailHostId, ['webmail_url' => $base . ':8080']);
+                }
+            }
         }
 
         return ApiResponse::success([

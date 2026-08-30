@@ -15,7 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import axios, { isAxiosError } from 'axios';
 import {
@@ -26,8 +26,11 @@ import {
     Play,
     Square,
     RotateCcw,
+    Ban,
+    ShieldCheck,
     Terminal,
     RefreshCw,
+    Loader2,
     Network,
     Plus,
     Trash2,
@@ -48,8 +51,10 @@ import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
 import { TableSkeleton } from '@/components/featherui/TableSkeleton';
 import { cn } from '@/lib/utils';
-import { useQuilldWebSocket } from '@/hooks/useQuilldWebSocket';
+import { WebSpaceTerminalPanel } from '@/components/webspace/WebSpaceTerminalPanel';
+import { WebSpaceAccessLinks } from '@/components/webspace/WebSpaceAccessLinks';
 import { TransferWebSpaceDialog } from '@/components/admin/TransferWebSpaceDialog';
+import type { WebSpaceAccessUrls } from '@/lib/webspace-urls';
 
 interface WebSpace {
     uuid: string;
@@ -65,25 +70,16 @@ interface WebSpace {
     web_node_name?: string | null;
     webplate_name?: string | null;
     owner_id?: number | null;
+    web_node_fqdn?: string | null;
+    database_limit?: number;
+    mailbox_limit?: number;
+    access?: WebSpaceAccessUrls;
 }
 
 interface BackupRow {
     uuid: string;
     bytes?: number;
     created_at?: string;
-}
-
-function extractLogText(payload: unknown): string {
-    if (payload == null) return '';
-    if (typeof payload === 'string') return payload;
-    if (typeof payload === 'object') {
-        const obj = payload as Record<string, unknown>;
-        if (typeof obj.data === 'string') return obj.data;
-        if (typeof obj.logs === 'string') return obj.logs;
-        if (Array.isArray(obj.lines)) return obj.lines.map(String).join('\n');
-        return JSON.stringify(payload, null, 2);
-    }
-    return String(payload);
 }
 
 export default function AdminWebSpaceDetailPage() {
@@ -95,27 +91,9 @@ export default function AdminWebSpaceDetailPage() {
     const [loading, setLoading] = useState(true);
     const [busy, setBusy] = useState<string | null>(null);
     const [space, setSpace] = useState<WebSpace | null>(null);
-    const [logs, setLogs] = useState('');
-    const [useHttpPoll, setUseHttpPoll] = useState(false);
     const [transferOpen, setTransferOpen] = useState(false);
     const [backups, setBackups] = useState<BackupRow[]>([]);
-    const [command, setCommand] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
-
-    const onWsFallback = useCallback(() => {
-        setUseHttpPoll(true);
-    }, []);
-
-    const {
-        lines: wsLines,
-        isConnected: wsConnected,
-        sendCommand,
-    } = useQuilldWebSocket({
-        jwtEndpoint: `/api/admin/webspaces/${uuid}/jwt`,
-        enabled: tab === 'console' && !!uuid && !useHttpPoll,
-        onFallback: onWsFallback,
-        fallbackAfterMs: 3000,
-    });
 
     const load = useCallback(async () => {
         try {
@@ -145,37 +123,15 @@ export default function AdminWebSpaceDetailPage() {
     }, [load]);
 
     useEffect(() => {
-        if (tab === 'backups') void loadBackups();
-    }, [tab, loadBackups]);
+        if (!space) return;
+        if (space.status === 'installing' || space.status === 'reinstalling') {
+            router.replace(`/admin/webspaces/${uuid}/install`);
+        }
+    }, [space, uuid, router]);
 
     useEffect(() => {
-        if (tab !== 'console') {
-            setUseHttpPoll(false);
-            return;
-        }
-        if (!useHttpPoll) return;
-
-        let cancelled = false;
-        const poll = async () => {
-            try {
-                const { data } = await axios.get(`/api/admin/webspaces/${uuid}/logs`, {
-                    params: { lines: 200 },
-                });
-                if (!cancelled) setLogs(extractLogText(data?.data) || t('admin.webSpaces.console.no_output'));
-            } catch (error) {
-                if (!cancelled) {
-                    console.error(error);
-                    setLogs(t('admin.webSpaces.console.fetch_failed'));
-                }
-            }
-        };
-        void poll();
-        const id = setInterval(() => void poll(), 3000);
-        return () => {
-            cancelled = true;
-            clearInterval(id);
-        };
-    }, [tab, uuid, useHttpPoll, t]);
+        if (tab === 'backups') void loadBackups();
+    }, [tab, loadBackups]);
 
     const power = async (action: 'start' | 'stop' | 'restart') => {
         setBusy(action);
@@ -200,10 +156,48 @@ export default function AdminWebSpaceDetailPage() {
                 wipe_files: true,
                 start_on_completion: true,
             });
-            if (data?.data?.webspace) setSpace(data.data.webspace);
+            if (data?.data?.webspace) {
+                const ws = data.data.webspace as WebSpace;
+                setSpace(ws);
+                if (ws.status === 'installing' || ws.status === 'reinstalling') {
+                    router.push(`/admin/webspaces/${uuid}/install`);
+                    return;
+                }
+            }
             toast.success(t('admin.webSpaces.messages.reinstall_started'));
         } catch (error) {
             let msg = t('admin.webSpaces.messages.reinstall_failed');
+            if (isAxiosError(error) && error.response?.data?.message) msg = error.response.data.message;
+            toast.error(msg);
+        } finally {
+            setBusy(null);
+        }
+    };
+
+    const forceSync = async () => {
+        setBusy('sync');
+        try {
+            const { data } = await axios.post(`/api/admin/webspaces/${uuid}/sync`);
+            if (data?.data?.webspace) setSpace(data.data.webspace);
+            toast.success(t('admin.webSpaces.messages.sync_ok'));
+        } catch (error) {
+            let msg = t('admin.webSpaces.messages.sync_failed');
+            if (isAxiosError(error) && error.response?.data?.message) msg = error.response.data.message;
+            toast.error(msg);
+        } finally {
+            setBusy(null);
+        }
+    };
+
+    const recreateRuntime = async () => {
+        if (!confirm(t('admin.webSpaces.messages.recreate_runtime_confirm'))) return;
+        setBusy('recreate-runtime');
+        try {
+            const { data } = await axios.post(`/api/admin/webspaces/${uuid}/recreate-runtime`);
+            if (data?.data?.webspace) setSpace(data.data.webspace);
+            toast.success(t('admin.webSpaces.messages.recreate_runtime_ok'));
+        } catch (error) {
+            let msg = t('admin.webSpaces.messages.recreate_runtime_failed');
             if (isAxiosError(error) && error.response?.data?.message) msg = error.response.data.message;
             toast.error(msg);
         } finally {
@@ -322,30 +316,55 @@ export default function AdminWebSpaceDetailPage() {
         }
     };
 
+    const suspend = async () => {
+        if (!confirm(t('admin.webSpaces.messages.suspend_confirm'))) return;
+        setBusy('suspend');
+        try {
+            const { data } = await axios.post(`/api/admin/webspaces/${uuid}/suspend`);
+            if (data?.data?.webspace) setSpace(data.data.webspace);
+            toast.success(t('admin.webSpaces.messages.suspend_ok'));
+        } catch (error) {
+            toast.error(
+                isAxiosError(error)
+                    ? error.response?.data?.message || t('admin.webSpaces.messages.suspend_failed')
+                    : t('admin.webSpaces.messages.suspend_failed'),
+            );
+        } finally {
+            setBusy(null);
+        }
+    };
+
+    const unsuspend = async () => {
+        setBusy('unsuspend');
+        try {
+            const { data } = await axios.post(`/api/admin/webspaces/${uuid}/unsuspend`);
+            if (data?.data?.webspace) setSpace(data.data.webspace);
+            toast.success(t('admin.webSpaces.messages.unsuspend_ok'));
+        } catch (error) {
+            toast.error(
+                isAxiosError(error)
+                    ? error.response?.data?.message || t('admin.webSpaces.messages.unsuspend_failed')
+                    : t('admin.webSpaces.messages.unsuspend_failed'),
+            );
+        } finally {
+            setBusy(null);
+        }
+    };
+
     if (loading || !space) {
         return <TableSkeleton count={3} />;
     }
 
     const state = space.state || 'stopped';
-    const consoleText = useHttpPoll
-        ? logs || t('admin.webSpaces.console.loading')
-        : wsLines.length > 0
-          ? wsLines.join('\n')
-          : wsConnected
-            ? t('admin.webSpaces.console.waiting')
-            : t('admin.webSpaces.console.connecting');
-
-    const canSend = tab === 'console' && !useHttpPoll && wsConnected;
-
-    const onConsoleSubmit = (e: FormEvent) => {
-        e.preventDefault();
-        if (!canSend || !command.trim()) return;
-        sendCommand(command);
-        setCommand('');
-    };
+    const isSuspended = space.status === 'suspended';
 
     return (
         <div className='space-y-6'>
+            {isSuspended ? (
+                <div className='border-destructive/30 bg-destructive/10 text-destructive rounded-lg border px-4 py-3 text-sm'>
+                    {t('webSpaces.suspended.description')}
+                </div>
+            ) : null}
             <PageHeader
                 title={space.name}
                 description={t('admin.webSpaces.detail.header_meta', {
@@ -469,6 +488,26 @@ export default function AdminWebSpaceDetailPage() {
                         <Button
                             size='sm'
                             variant='outline'
+                            loading={busy === 'sync'}
+                            disabled={!!busy}
+                            onClick={() => void forceSync()}
+                        >
+                            <RefreshCw className='mr-1.5 h-3.5 w-3.5' />
+                            {t('admin.webSpaces.detail.force_sync')}
+                        </Button>
+                        <Button
+                            size='sm'
+                            variant='outline'
+                            loading={busy === 'recreate-runtime'}
+                            disabled={!!busy}
+                            onClick={() => void recreateRuntime()}
+                        >
+                            <RotateCcw className='mr-1.5 h-3.5 w-3.5' />
+                            {t('admin.webSpaces.detail.recreate_runtime')}
+                        </Button>
+                        <Button
+                            size='sm'
+                            variant='outline'
                             loading={busy === 'dns'}
                             disabled={!!busy}
                             onClick={() => void checkDns()}
@@ -480,6 +519,29 @@ export default function AdminWebSpaceDetailPage() {
                             <ArrowLeftRight className='mr-1.5 h-3.5 w-3.5' />
                             {t('admin.webSpaces.detail.transfer')}
                         </Button>
+                        {isSuspended ? (
+                            <Button
+                                size='sm'
+                                variant='outline'
+                                loading={busy === 'unsuspend'}
+                                disabled={!!busy}
+                                onClick={() => void unsuspend()}
+                            >
+                                <ShieldCheck className='mr-1.5 h-3.5 w-3.5' />
+                                {t('admin.webSpaces.detail.unsuspend')}
+                            </Button>
+                        ) : (
+                            <Button
+                                size='sm'
+                                variant='destructive'
+                                loading={busy === 'suspend'}
+                                disabled={!!busy}
+                                onClick={() => void suspend()}
+                            >
+                                <Ban className='mr-1.5 h-3.5 w-3.5' />
+                                {t('admin.webSpaces.detail.suspend')}
+                            </Button>
+                        )}
                     </div>
 
                     <PageCard title={t('admin.webSpaces.detail.details')} icon={AppWindow}>
@@ -510,32 +572,25 @@ export default function AdminWebSpaceDetailPage() {
                             </div>
                         </dl>
                     </PageCard>
+
+                    <PageCard title={t('webSpaces.access.title')}>
+                        <WebSpaceAccessLinks
+                            domains={space.domains || []}
+                            ssl={space.ssl}
+                            backendPort={space.backend_port}
+                            nodeFqdn={space.web_node_fqdn}
+                            nodeIp={space.access?.node_ip}
+                            access={space.access}
+                        />
+                    </PageCard>
                 </div>
             ) : tab === 'console' ? (
-                <div className='space-y-3'>
-                    <pre className='max-h-[70vh] overflow-auto rounded-xl bg-zinc-950 p-4 font-mono text-xs leading-relaxed text-zinc-100'>
-                        {consoleText}
-                    </pre>
-                    <form onSubmit={onConsoleSubmit} className='flex gap-2'>
-                        <input
-                            type='text'
-                            value={command}
-                            onChange={(e) => setCommand(e.target.value)}
-                            disabled={!canSend}
-                            placeholder={
-                                canSend
-                                    ? t('admin.webSpaces.console.command_placeholder')
-                                    : t('admin.webSpaces.console.ws_required')
-                            }
-                            className='flex-1 rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 font-mono text-sm text-zinc-100 placeholder:text-zinc-500 disabled:opacity-50'
-                            autoComplete='off'
-                            spellCheck={false}
-                        />
-                        <Button type='submit' size='sm' disabled={!canSend || !command.trim()}>
-                            {t('admin.webSpaces.console.send')}
-                        </Button>
-                    </form>
-                </div>
+                <WebSpaceTerminalPanel
+                    jwtEndpoint={`/api/admin/webspaces/${uuid}/jwt`}
+                    enabled={tab === 'console' && !!uuid}
+                    runtimeState={state}
+                    installMode='auto'
+                />
             ) : (
                 <div className='space-y-4'>
                     <div className='flex justify-end gap-2'>

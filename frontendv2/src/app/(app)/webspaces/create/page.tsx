@@ -1,9 +1,5 @@
 /*
 This file is part of FeatherPanel.
- */
-
-/*
-This file is part of FeatherPanel.
 
 Copyright (C) 2025 MythicalSystems Studios
 Copyright (C) 2025 FeatherPanel Contributors
@@ -17,18 +13,8 @@ by the Free Software Foundation, either version 3 of the License, or
 See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
-'use client';
+import { redirect } from 'next/navigation';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-
-/** Self-service WebSpace ordering is not exposed; admins provision WebSpaces. */
-export default function OrderWebSpacePage() {
-    const router = useRouter();
-
-    useEffect(() => {
-        router.replace('/webspaces');
-    }, [router]);
-
-    return null;
+export default function LegacyWebSpacesCreateRedirect() {
+    redirect('/dashboard/webspaces/create');
 }

@@ -21,6 +21,7 @@ use App\Helpers\ApiResponse;
 use Symfony\Component\HttpFoundation\Request;
 use App\Controllers\Admin\WebSpacesController;
 use Symfony\Component\Routing\RouteCollection;
+use App\Controllers\Admin\WebSpaceDnsController;
 
 return function (RouteCollection $routes): void {
     App::getInstance(true)->registerAdminRoute(
@@ -29,6 +30,37 @@ return function (RouteCollection $routes): void {
         '/api/admin/webspaces',
         function (Request $request) {
             return (new WebSpacesController())->index($request);
+        },
+        Permissions::ADMIN_WEBSPACES_VIEW,
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-webspaces-hosting-maturity',
+        '/api/admin/webspaces/hosting-maturity',
+        function (Request $request) {
+            return (new WebSpacesController())->hostingMaturity($request);
+        },
+        Permissions::ADMIN_WEBSPACES_VIEW,
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-panel-webmail-install',
+        '/api/admin/webspaces/panel-webmail/install',
+        function (Request $request) {
+            return (new WebSpacesController())->installPanelWebmail($request);
+        },
+        Permissions::ADMIN_WEBSPACES_EDIT,
+        ['POST']
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-webspaces-infrastructure-readiness',
+        '/api/admin/webspaces/infrastructure-readiness',
+        function (Request $request) {
+            return (new WebSpacesController())->infrastructureReadiness($request);
         },
         Permissions::ADMIN_WEBSPACES_VIEW,
     );
@@ -154,6 +186,22 @@ return function (RouteCollection $routes): void {
 
     App::getInstance(true)->registerAdminRoute(
         $routes,
+        'admin-webspaces-bandwidth-reset',
+        '/api/admin/webspaces/{uuid}/bandwidth/reset',
+        function (Request $request, array $args) {
+            $uuid = (string) ($args['uuid'] ?? '');
+            if ($uuid === '') {
+                return ApiResponse::error('Missing UUID', 'INVALID_UUID', 400);
+            }
+
+            return (new WebSpacesController())->resetBandwidth($request, $uuid);
+        },
+        Permissions::ADMIN_WEBSPACES_EDIT,
+        ['POST']
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
         'admin-webspaces-reinstall',
         '/api/admin/webspaces/{uuid}/reinstall',
         function (Request $request, array $args) {
@@ -163,6 +211,38 @@ return function (RouteCollection $routes): void {
             }
 
             return (new WebSpacesController())->reinstall($request, $uuid);
+        },
+        Permissions::ADMIN_WEBSPACES_EDIT,
+        ['POST']
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-webspaces-sync',
+        '/api/admin/webspaces/{uuid}/sync',
+        function (Request $request, array $args) {
+            $uuid = (string) ($args['uuid'] ?? '');
+            if ($uuid === '') {
+                return ApiResponse::error('Missing UUID', 'INVALID_UUID', 400);
+            }
+
+            return (new WebSpacesController())->sync($request, $uuid);
+        },
+        Permissions::ADMIN_WEBSPACES_EDIT,
+        ['POST']
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-webspaces-recreate-runtime',
+        '/api/admin/webspaces/{uuid}/recreate-runtime',
+        function (Request $request, array $args) {
+            $uuid = (string) ($args['uuid'] ?? '');
+            if ($uuid === '') {
+                return ApiResponse::error('Missing UUID', 'INVALID_UUID', 400);
+            }
+
+            return (new WebSpacesController())->recreateRuntime($request, $uuid);
         },
         Permissions::ADMIN_WEBSPACES_EDIT,
         ['POST']
@@ -213,6 +293,70 @@ return function (RouteCollection $routes): void {
         },
         Permissions::ADMIN_WEBSPACES_EDIT,
         ['POST']
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-webspaces-dns-provision',
+        '/api/admin/webspaces/{uuid}/dns/provision',
+        function (Request $request, array $args) {
+            $uuid = (string) ($args['uuid'] ?? '');
+            if ($uuid === '') {
+                return ApiResponse::error('Missing UUID', 'INVALID_UUID', 400);
+            }
+
+            return (new WebSpacesController())->provisionDns($request, $uuid);
+        },
+        Permissions::ADMIN_WEBSPACES_EDIT,
+        ['POST']
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-webspaces-ssl-custom',
+        '/api/admin/webspaces/{uuid}/ssl/custom',
+        function (Request $request, array $args) {
+            $uuid = (string) ($args['uuid'] ?? '');
+            if ($uuid === '') {
+                return ApiResponse::error('Missing UUID', 'INVALID_UUID', 400);
+            }
+
+            return (new WebSpacesController())->customSslStatus($request, $uuid);
+        },
+        Permissions::ADMIN_WEBSPACES_VIEW,
+        ['GET']
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-webspaces-ssl-custom-upload',
+        '/api/admin/webspaces/{uuid}/ssl/custom',
+        function (Request $request, array $args) {
+            $uuid = (string) ($args['uuid'] ?? '');
+            if ($uuid === '') {
+                return ApiResponse::error('Missing UUID', 'INVALID_UUID', 400);
+            }
+
+            return (new WebSpacesController())->uploadCustomSsl($request, $uuid);
+        },
+        Permissions::ADMIN_WEBSPACES_EDIT,
+        ['PUT']
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-webspaces-ssl-custom-delete',
+        '/api/admin/webspaces/{uuid}/ssl/custom',
+        function (Request $request, array $args) {
+            $uuid = (string) ($args['uuid'] ?? '');
+            if ($uuid === '') {
+                return ApiResponse::error('Missing UUID', 'INVALID_UUID', 400);
+            }
+
+            return (new WebSpacesController())->deleteCustomSsl($request, $uuid);
+        },
+        Permissions::ADMIN_WEBSPACES_EDIT,
+        ['DELETE']
     );
 
     App::getInstance(true)->registerAdminRoute(
@@ -294,6 +438,23 @@ return function (RouteCollection $routes): void {
         },
         Permissions::ADMIN_WEBSPACES_EDIT,
         ['POST']
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-webspaces-backup-files',
+        '/api/admin/webspaces/{uuid}/backups/{backupUuid}/files',
+        function (Request $request, array $args) {
+            $uuid = (string) ($args['uuid'] ?? '');
+            $backupUuid = (string) ($args['backupUuid'] ?? '');
+            if ($uuid === '' || $backupUuid === '') {
+                return ApiResponse::error('Missing UUID', 'INVALID_UUID', 400);
+            }
+
+            return (new WebSpacesController())->listBackupFiles($request, $uuid, $backupUuid);
+        },
+        Permissions::ADMIN_WEBSPACES_VIEW,
+        ['GET']
     );
 
     App::getInstance(true)->registerAdminRoute(
@@ -407,5 +568,137 @@ return function (RouteCollection $routes): void {
         },
         Permissions::ADMIN_WEBSPACES_EDIT,
         ['POST']
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-webspaces-dns-zones',
+        '/api/admin/webspaces/{uuid}/dns/zones',
+        function (Request $request, array $args) {
+            $uuid = (string) ($args['uuid'] ?? '');
+            if ($uuid === '') {
+                return ApiResponse::error('Missing UUID', 'INVALID_UUID', 400);
+            }
+
+            return (new WebSpaceDnsController())->listZones($request, $uuid);
+        },
+        Permissions::ADMIN_WEBSPACES_VIEW,
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-webspaces-dns-hosts',
+        '/api/admin/webspaces/{uuid}/dns/hosts',
+        function (Request $request, array $args) {
+            $uuid = (string) ($args['uuid'] ?? '');
+            if ($uuid === '') {
+                return ApiResponse::error('Missing UUID', 'INVALID_UUID', 400);
+            }
+
+            return (new WebSpaceDnsController())->listDnsHosts($request, $uuid);
+        },
+        Permissions::ADMIN_WEBSPACES_VIEW,
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-webspaces-dns-zones-link',
+        '/api/admin/webspaces/{uuid}/dns/zones',
+        function (Request $request, array $args) {
+            $uuid = (string) ($args['uuid'] ?? '');
+            if ($uuid === '') {
+                return ApiResponse::error('Missing UUID', 'INVALID_UUID', 400);
+            }
+
+            return (new WebSpaceDnsController())->linkZone($request, $uuid);
+        },
+        Permissions::ADMIN_WEBSPACES_EDIT,
+        ['POST']
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-webspaces-dns-zones-unlink',
+        '/api/admin/webspaces/{uuid}/dns/zones/{zoneId}',
+        function (Request $request, array $args) {
+            $uuid = (string) ($args['uuid'] ?? '');
+            $zoneId = $args['zoneId'] ?? null;
+            if ($uuid === '' || !$zoneId || !is_numeric($zoneId)) {
+                return ApiResponse::error('Missing UUID or zone ID', 'INVALID_ID', 400);
+            }
+
+            return (new WebSpaceDnsController())->unlinkZone($request, $uuid, (int) $zoneId);
+        },
+        Permissions::ADMIN_WEBSPACES_EDIT,
+        ['DELETE']
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-webspaces-dns-records',
+        '/api/admin/webspaces/{uuid}/dns/zones/{zoneId}/records',
+        function (Request $request, array $args) {
+            $uuid = (string) ($args['uuid'] ?? '');
+            $zoneId = $args['zoneId'] ?? null;
+            if ($uuid === '' || !$zoneId || !is_numeric($zoneId)) {
+                return ApiResponse::error('Missing UUID or zone ID', 'INVALID_ID', 400);
+            }
+
+            return (new WebSpaceDnsController())->listRecords($request, $uuid, (int) $zoneId);
+        },
+        Permissions::ADMIN_WEBSPACES_VIEW,
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-webspaces-dns-records-create',
+        '/api/admin/webspaces/{uuid}/dns/zones/{zoneId}/records',
+        function (Request $request, array $args) {
+            $uuid = (string) ($args['uuid'] ?? '');
+            $zoneId = $args['zoneId'] ?? null;
+            if ($uuid === '' || !$zoneId || !is_numeric($zoneId)) {
+                return ApiResponse::error('Missing UUID or zone ID', 'INVALID_ID', 400);
+            }
+
+            return (new WebSpaceDnsController())->createRecord($request, $uuid, (int) $zoneId);
+        },
+        Permissions::ADMIN_WEBSPACES_EDIT,
+        ['POST']
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-webspaces-dns-records-update',
+        '/api/admin/webspaces/{uuid}/dns/zones/{zoneId}/records/{recordId}',
+        function (Request $request, array $args) {
+            $uuid = (string) ($args['uuid'] ?? '');
+            $zoneId = $args['zoneId'] ?? null;
+            $recordId = (string) ($args['recordId'] ?? '');
+            if ($uuid === '' || !$zoneId || !is_numeric($zoneId) || $recordId === '') {
+                return ApiResponse::error('Missing UUID, zone ID, or record ID', 'INVALID_ID', 400);
+            }
+
+            return (new WebSpaceDnsController())->updateRecord($request, $uuid, (int) $zoneId, $recordId);
+        },
+        Permissions::ADMIN_WEBSPACES_EDIT,
+        ['PATCH']
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-webspaces-dns-records-delete',
+        '/api/admin/webspaces/{uuid}/dns/zones/{zoneId}/records/{recordId}',
+        function (Request $request, array $args) {
+            $uuid = (string) ($args['uuid'] ?? '');
+            $zoneId = $args['zoneId'] ?? null;
+            $recordId = (string) ($args['recordId'] ?? '');
+            if ($uuid === '' || !$zoneId || !is_numeric($zoneId) || $recordId === '') {
+                return ApiResponse::error('Missing UUID, zone ID, or record ID', 'INVALID_ID', 400);
+            }
+
+            return (new WebSpaceDnsController())->deleteRecord($request, $uuid, (int) $zoneId, $recordId);
+        },
+        Permissions::ADMIN_WEBSPACES_EDIT,
+        ['DELETE']
     );
 };

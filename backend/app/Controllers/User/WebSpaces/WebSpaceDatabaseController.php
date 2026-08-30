@@ -22,6 +22,7 @@ use App\Chat\DatabaseInstance;
 use App\Chat\WebSpaceDatabase;
 use App\Helpers\WebSpaceGateway;
 use App\WebSpaceSubuserPermissions;
+use App\Helpers\FeatherQuilldClient;
 use App\Helpers\WebSpacePluginEvents;
 use App\Helpers\WebSpaceActivityLogger;
 use App\Helpers\CheckWebSpacePermission;
@@ -257,6 +258,88 @@ class WebSpaceDatabaseController
         return ApiResponse::success(['password' => $password], 'Password reset', 200);
     }
 
+    public function dump(Request $request, string $uuidShort, int $databaseId): Response
+    {
+        $resolved = $this->resolve($request, $uuidShort, WebSpaceSubuserPermissions::DATABASE_READ);
+        if ($resolved instanceof Response) {
+            return $resolved;
+        }
+
+        $record = WebSpaceDatabase::getById($databaseId);
+        if (!$record || (int) $record['webspace_id'] !== (int) $resolved['space']['id']) {
+            return ApiResponse::error('Database not found', 'NOT_FOUND', 404);
+        }
+
+        $databaseHost = DatabaseInstance::getDatabaseById((int) $record['database_host_id']);
+        if (!$databaseHost) {
+            return ApiResponse::error('Database host not found', 'DATABASE_HOST_NOT_FOUND', 404);
+        }
+
+        try {
+            $sql = RemoteDatabaseProvisioner::dumpDatabase($databaseHost, (string) $record['database']);
+        } catch (\Throwable $e) {
+            return ApiResponse::error('Dump failed: ' . $e->getMessage(), 'DUMP_FAILED', 500);
+        }
+
+        $webNode = \App\Chat\WebNode::getWebNodeById((int) $resolved['space']['web_node_id']);
+        if ($webNode) {
+            $file = \App\Helpers\WebSpaceDatabaseDumpService::DUMPS_DIR . '/'
+                . \App\Helpers\WebSpaceDatabaseDumpService::safeFileName((string) $record['database']) . '.sql';
+            FeatherQuilldClient::createWebSpaceDirectory(
+                $webNode,
+                (string) $resolved['space']['uuid'],
+                \App\Helpers\WebSpaceDatabaseDumpService::DUMPS_DIR,
+            );
+            FeatherQuilldClient::writeWebSpaceFile($webNode, (string) $resolved['space']['uuid'], $file, $sql);
+        }
+
+        WebSpaceActivityLogger::log($resolved['space'], $resolved['user'], 'webspace.database.dumped', [
+            'database_id' => $databaseId,
+        ]);
+
+        return ApiResponse::success([
+            'database' => $record['database'],
+            'sql' => $sql,
+            'filename' => \App\Helpers\WebSpaceDatabaseDumpService::safeFileName((string) $record['database']) . '.sql',
+        ], 'OK', 200);
+    }
+
+    public function restoreDump(Request $request, string $uuidShort, int $databaseId): Response
+    {
+        $resolved = $this->resolve($request, $uuidShort, WebSpaceSubuserPermissions::DATABASE_UPDATE);
+        if ($resolved instanceof Response) {
+            return $resolved;
+        }
+
+        $record = WebSpaceDatabase::getById($databaseId);
+        if (!$record || (int) $record['webspace_id'] !== (int) $resolved['space']['id']) {
+            return ApiResponse::error('Database not found', 'NOT_FOUND', 404);
+        }
+
+        $databaseHost = DatabaseInstance::getDatabaseById((int) $record['database_host_id']);
+        if (!$databaseHost) {
+            return ApiResponse::error('Database host not found', 'DATABASE_HOST_NOT_FOUND', 404);
+        }
+
+        $body = json_decode($request->getContent(), true);
+        $sql = is_array($body) ? (string) ($body['sql'] ?? '') : '';
+        if ($sql === '') {
+            return ApiResponse::error('sql is required', 'INVALID_JSON', 400);
+        }
+
+        try {
+            RemoteDatabaseProvisioner::importDatabase($databaseHost, (string) $record['database'], $sql);
+        } catch (\Throwable $e) {
+            return ApiResponse::error('Restore failed: ' . $e->getMessage(), 'RESTORE_FAILED', 500);
+        }
+
+        WebSpaceActivityLogger::log($resolved['space'], $resolved['user'], 'webspace.database.restored', [
+            'database_id' => $databaseId,
+        ]);
+
+        return ApiResponse::success(['database' => $record['database']], 'OK', 200);
+    }
+
     public function checkPhpMyAdminInstalled(Request $request, string $uuidShort): Response
     {
         $resolved = $this->resolve($request, $uuidShort, WebSpaceSubuserPermissions::DATABASE_READ);
@@ -315,6 +398,75 @@ class WebSpaceDatabaseController
         ]);
 
         return ApiResponse::success(['url' => $pmaUrl], 'OK', 200);
+    }
+
+    public function checkPhpPgAdminInstalled(Request $request, string $uuidShort): Response
+    {
+        $resolved = $this->resolve($request, $uuidShort, WebSpaceSubuserPermissions::DATABASE_READ);
+        if ($resolved instanceof Response) {
+            return $resolved;
+        }
+
+        \App\Helpers\PhpPgAdmin::ensureInstalled();
+
+        return ApiResponse::success([
+            'installed' => \App\Helpers\PhpPgAdmin::isInstalled(),
+        ], 'OK', 200);
+    }
+
+    public function generatePhpPgAdminToken(Request $request, string $uuidShort, int $databaseId): Response
+    {
+        $resolved = $this->resolve($request, $uuidShort, WebSpaceSubuserPermissions::DATABASE_READ);
+        if ($resolved instanceof Response) {
+            return $resolved;
+        }
+
+        if (!$this->canViewPassword($resolved)) {
+            return ApiResponse::error('Insufficient permissions to access database credentials', 'FORBIDDEN', 403);
+        }
+
+        $ppaPath = dirname(__DIR__, 4) . '/public/ppa';
+        if (!is_dir($ppaPath) || !file_exists($ppaPath . '/index.php')) {
+            try {
+                \App\Helpers\PhpPgAdmin::download();
+            } catch (\Throwable $e) {
+                return ApiResponse::error('phpPgAdmin is not installed: ' . $e->getMessage(), 'PHPPGADMIN_NOT_INSTALLED', 404);
+            }
+        }
+
+        $record = WebSpaceDatabase::getWithDetails($databaseId);
+        if (!$record || (int) $record['webspace_id'] !== (int) $resolved['space']['id']) {
+            return ApiResponse::error('Database not found', 'NOT_FOUND', 404);
+        }
+
+        $databaseHost = DatabaseInstance::getDatabaseById((int) $record['database_host_id']);
+        if (!$databaseHost) {
+            return ApiResponse::error('Database host not found', 'DATABASE_HOST_NOT_FOUND', 404);
+        }
+
+        $type = strtolower(trim((string) ($databaseHost['database_type'] ?? $record['database_type'] ?? '')));
+        if (!in_array($type, ['postgresql', 'pgsql', 'postgres'], true)) {
+            return ApiResponse::error('phpPgAdmin is only available for PostgreSQL databases', 'NOT_POSTGRES', 400);
+        }
+
+        $app = \App\App::getInstance(true);
+        $config = $app->getConfig();
+        $appUrl = $config->getSetting('APP_URL', 'https://featherpanel.mythical.systems');
+        if (!preg_match('/^https?:\/\//', $appUrl)) {
+            $appUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http')
+                . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost');
+        }
+
+        $databaseHostname = DatabaseInstance::getDatabaseHostname($databaseHost);
+        $ppaUrl = rtrim($appUrl, '/') . '/ppa/token.php?' . http_build_query([
+            'db' => $record['database'],
+            'host' => $databaseHostname,
+            'port' => $record['database_port'] ?? $databaseHost['database_port'] ?? 5432,
+            'user' => $record['username'],
+            'pass' => $record['password'],
+        ]);
+
+        return ApiResponse::success(['url' => $ppaUrl], 'OK', 200);
     }
 
     /**

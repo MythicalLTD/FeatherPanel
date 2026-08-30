@@ -54,7 +54,7 @@ export function WebPlateDefaultSchedulesEditor({ schedules, onChange, disabled }
     };
 
     const addBlank = () => {
-        onChange([...schedules, emptyScheduleDraft()]);
+        onChange([...schedules, emptyScheduleDraft('UTC', true)]);
     };
 
     const addPreset = (presetId: string) => {
@@ -169,6 +169,23 @@ export function WebPlateDefaultSchedulesEditor({ schedules, onChange, disabled }
                                     ]}
                                     disabled={disabled}
                                 />
+                            </div>
+                            <div className='space-y-2'>
+                                <Label className='text-muted-foreground text-xs font-bold tracking-wider uppercase'>
+                                    {t('admin.webPlates.form.schedule_lock')}
+                                </Label>
+                                <HeadlessSelect
+                                    value={schedule.is_locked !== false ? '1' : '0'}
+                                    onChange={(val) => updateSchedule(index, { is_locked: String(val) === '1' })}
+                                    options={[
+                                        { id: '1', name: t('admin.webPlates.form.schedule_lock_on') },
+                                        { id: '0', name: t('admin.webPlates.form.schedule_lock_off') },
+                                    ]}
+                                    disabled={disabled}
+                                />
+                                <p className='text-muted-foreground text-xs'>
+                                    {t('admin.webPlates.form.schedule_lock_help')}
+                                </p>
                             </div>
                         </div>
 

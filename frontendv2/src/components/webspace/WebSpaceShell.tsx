@@ -1,9 +1,5 @@
 /*
 This file is part of FeatherPanel.
- */
-
-/*
-This file is part of FeatherPanel.
 
 Copyright (C) 2025 MythicalSystems Studios
 Copyright (C) 2025 FeatherPanel Contributors
@@ -20,8 +16,9 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import DashboardShell from '@/components/layout/DashboardShell';
+import ChatbotWidget from '@/components/ai/ChatbotWidget';
 import { WebSpaceProvider } from '@/contexts/WebSpaceContext';
-import { WebSpaceSuspendedBanner } from '@/components/webspace/WebSpaceSuspendedBanner';
+import { WebSpaceSuspendedWrapper } from '@/components/webspace/WebSpaceSuspendedWrapper';
 import { WebSpace } from '@/types/webspace';
 
 export function WebSpaceShell({
@@ -36,8 +33,9 @@ export function WebSpaceShell({
     return (
         <WebSpaceProvider uuidShort={uuidShort} initialWebSpace={initialWebSpace}>
             <DashboardShell>
-                <WebSpaceSuspendedBanner>{children}</WebSpaceSuspendedBanner>
+                <WebSpaceSuspendedWrapper>{children}</WebSpaceSuspendedWrapper>
             </DashboardShell>
+            <ChatbotWidget />
         </WebSpaceProvider>
     );
 }

@@ -17,10 +17,13 @@
 
 namespace App\Controllers\User\WebSpaces;
 
+use App\App;
 use App\Chat\WebNode;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
+use App\Config\ConfigInterface;
 use App\Helpers\WebSpaceGateway;
+use App\Helpers\WebSpaceFileShare;
 use App\WebSpaceSubuserPermissions;
 use App\Helpers\FeatherQuilldClient;
 use App\Helpers\WebSpacePluginEvents;
@@ -331,9 +334,22 @@ class WebSpaceFilesController
             return ApiResponse::error('files must be a non-empty array', 'MISSING_FILES', 400);
         }
 
-        $daemon = FeatherQuilldClient::deleteWebSpaceFiles($resolved['webNode'], $resolved['uuid'], $paths);
+        $permanent = !empty($content['permanent']);
+        $useTrash = !array_key_exists('use_trash', $content) || !empty($content['use_trash']);
+        if ($permanent || !$this->isFileTrashEnabled()) {
+            $useTrash = false;
+        }
 
-        $response = $this->daemonResponse($daemon, 'DAEMON_DELETE_FAILED', $resolved, 'webspace.file.deleted', ['files' => $paths]);
+        $daemon = FeatherQuilldClient::deleteWebSpaceFiles(
+            $resolved['webNode'],
+            $resolved['uuid'],
+            $paths,
+            $permanent,
+            $useTrash,
+        );
+
+        $event = $useTrash && !$permanent ? 'webspace.file.trashed' : 'webspace.file.deleted';
+        $response = $this->daemonResponse($daemon, 'DAEMON_DELETE_FAILED', $resolved, $event, ['files' => $paths]);
         if ($daemon['ok']) {
             WebSpacePluginEvents::emit(WebSpaceEvent::onWebSpaceFilesDeleted(), WebSpacePluginEvents::basePayload(
                 $resolved['user']['uuid'] ?? null,
@@ -512,6 +528,22 @@ class WebSpaceFilesController
         $directory = (string) ($content['directory'] ?? $content['root'] ?? '/');
         $fileName = isset($content['file_name']) ? trim((string) $content['file_name']) : (isset($content['filename']) ? trim((string) $content['filename']) : null);
 
+        if (!empty($content['background'])) {
+            $daemon = FeatherQuilldClient::pullWebSpaceFileBackground(
+                $resolved['webNode'],
+                $resolved['uuid'],
+                $url,
+                $directory !== '' ? $directory : '/',
+                $fileName !== '' ? $fileName : null,
+            );
+            if (!$daemon['ok']) {
+                return $this->daemonResponse($daemon, 'DAEMON_PULL_FAILED');
+            }
+            $body = is_array($daemon['body']) ? $daemon['body'] : [];
+
+            return ApiResponse::success($body, 'Pull started', 202);
+        }
+
         $daemon = FeatherQuilldClient::pullWebSpaceFile(
             $resolved['webNode'],
             $resolved['uuid'],
@@ -618,6 +650,366 @@ class WebSpaceFilesController
         return $this->daemonResponse($last, 'DAEMON_UPLOAD_FAILED', $resolved, 'webspace.file.uploaded', [
             'directory' => $directory,
         ]);
+    }
+
+    public function listTrash(Request $request, string $uuidShort): Response
+    {
+        $resolved = $this->resolve($request, $uuidShort, WebSpaceSubuserPermissions::FILE_READ);
+        if ($resolved instanceof Response) {
+            return $resolved;
+        }
+
+        if (!$this->isFileTrashEnabled()) {
+            return ApiResponse::error('File trash is disabled on this panel', 'TRASH_DISABLED', 403);
+        }
+
+        $limits = $this->getTrashLimits();
+        $daemon = FeatherQuilldClient::listWebSpaceTrash(
+            $resolved['webNode'],
+            $resolved['uuid'],
+            (int) $limits['max_size_bytes'],
+            (int) $limits['retention_days'],
+        );
+
+        return $this->daemonResponse($daemon, 'DAEMON_TRASH_LIST_FAILED', $resolved, 'webspace.trash.listed');
+    }
+
+    public function restoreTrash(Request $request, string $uuidShort): Response
+    {
+        $resolved = $this->resolve($request, $uuidShort, WebSpaceSubuserPermissions::FILE_UPDATE);
+        if ($resolved instanceof Response) {
+            return $resolved;
+        }
+
+        if (!$this->isFileTrashEnabled()) {
+            return ApiResponse::error('File trash is disabled on this panel', 'TRASH_DISABLED', 403);
+        }
+
+        $content = json_decode($request->getContent(), true);
+        if (!is_array($content)) {
+            return ApiResponse::error('Invalid JSON payload', 'INVALID_JSON', 400);
+        }
+
+        $ids = $content['ids'] ?? null;
+        if (!is_array($ids) || $ids === []) {
+            return ApiResponse::error('ids must be a non-empty array', 'MISSING_IDS', 400);
+        }
+
+        $daemon = FeatherQuilldClient::restoreWebSpaceTrash(
+            $resolved['webNode'],
+            $resolved['uuid'],
+            array_map('strval', $ids),
+            !empty($content['overwrite']),
+        );
+
+        return $this->daemonResponse($daemon, 'DAEMON_TRASH_RESTORE_FAILED', $resolved, 'webspace.trash.restored', [
+            'ids' => $ids,
+        ]);
+    }
+
+    public function deleteTrash(Request $request, string $uuidShort): Response
+    {
+        $resolved = $this->resolve($request, $uuidShort, WebSpaceSubuserPermissions::FILE_DELETE);
+        if ($resolved instanceof Response) {
+            return $resolved;
+        }
+
+        if (!$this->isFileTrashEnabled()) {
+            return ApiResponse::error('File trash is disabled on this panel', 'TRASH_DISABLED', 403);
+        }
+
+        $content = json_decode($request->getContent(), true);
+        if (!is_array($content)) {
+            return ApiResponse::error('Invalid JSON payload', 'INVALID_JSON', 400);
+        }
+
+        $ids = $content['ids'] ?? null;
+        if (!is_array($ids) || $ids === []) {
+            return ApiResponse::error('ids must be a non-empty array', 'MISSING_IDS', 400);
+        }
+
+        $daemon = FeatherQuilldClient::deleteWebSpaceTrashEntries(
+            $resolved['webNode'],
+            $resolved['uuid'],
+            array_map('strval', $ids),
+        );
+
+        return $this->daemonResponse($daemon, 'DAEMON_TRASH_DELETE_FAILED', $resolved, 'webspace.trash.deleted', [
+            'ids' => $ids,
+        ]);
+    }
+
+    public function emptyTrash(Request $request, string $uuidShort): Response
+    {
+        $resolved = $this->resolve($request, $uuidShort, WebSpaceSubuserPermissions::FILE_DELETE);
+        if ($resolved instanceof Response) {
+            return $resolved;
+        }
+
+        if (!$this->isFileTrashEnabled()) {
+            return ApiResponse::error('File trash is disabled on this panel', 'TRASH_DISABLED', 403);
+        }
+
+        $daemon = FeatherQuilldClient::emptyWebSpaceTrash($resolved['webNode'], $resolved['uuid']);
+
+        return $this->daemonResponse($daemon, 'DAEMON_TRASH_EMPTY_FAILED', $resolved, 'webspace.trash.emptied');
+    }
+
+    public function downloadDirectory(Request $request, string $uuidShort): Response
+    {
+        $resolved = $this->resolve($request, $uuidShort, WebSpaceSubuserPermissions::FILE_READ);
+        if ($resolved instanceof Response) {
+            return $resolved;
+        }
+
+        $directory = trim((string) $request->query->get('path', $request->query->get('directory', '/')));
+        $format = trim((string) $request->query->get('format', 'tar.gz'));
+        if ($directory === '') {
+            return ApiResponse::error('path is required', 'MISSING_PATH', 400);
+        }
+
+        $daemon = FeatherQuilldClient::downloadWebSpaceDirectory(
+            $resolved['webNode'],
+            $resolved['uuid'],
+            $directory,
+            $format !== '' ? $format : 'tar.gz',
+        );
+        if (!$daemon['ok']) {
+            return ApiResponse::error(
+                $daemon['error'] ?? 'Daemon directory download failed',
+                'DAEMON_DIRECTORY_DOWNLOAD_FAILED',
+                $daemon['status'] >= 400 && $daemon['status'] < 600 ? (int) $daemon['status'] : 502,
+            );
+        }
+
+        $body = is_array($daemon['body']) ? $daemon['body'] : [];
+
+        return new Response((string) ($body['contents'] ?? ''), 200, [
+            'Content-Type' => (string) ($body['content_type'] ?? 'application/octet-stream'),
+            'Content-Disposition' => 'attachment; filename="' . str_replace('"', '', (string) ($body['filename'] ?? 'download.tar.gz')) . '"',
+        ]);
+    }
+
+    public function listArchive(Request $request, string $uuidShort): Response
+    {
+        $resolved = $this->resolve($request, $uuidShort, WebSpaceSubuserPermissions::FILE_READ);
+        if ($resolved instanceof Response) {
+            return $resolved;
+        }
+
+        $directory = (string) $request->query->get('directory', '/');
+        $file = trim((string) $request->query->get('file', ''));
+        if ($file === '') {
+            return ApiResponse::error('file is required', 'MISSING_FILE', 400);
+        }
+
+        $daemon = FeatherQuilldClient::listWebSpaceArchive(
+            $resolved['webNode'],
+            $resolved['uuid'],
+            $directory,
+            $file,
+            (string) $request->query->get('archive_path', ''),
+        );
+
+        return $this->daemonResponse($daemon, 'DAEMON_ARCHIVE_LIST_FAILED');
+    }
+
+    public function extractArchiveSelection(Request $request, string $uuidShort): Response
+    {
+        $resolved = $this->resolve($request, $uuidShort, WebSpaceSubuserPermissions::FILE_CREATE);
+        if ($resolved instanceof Response) {
+            return $resolved;
+        }
+
+        $content = json_decode($request->getContent(), true);
+        if (!is_array($content)) {
+            return ApiResponse::error('Invalid JSON payload', 'INVALID_JSON', 400);
+        }
+
+        $entries = $content['entries'] ?? null;
+        if (!is_array($entries) || $entries === []) {
+            return ApiResponse::error('entries must be a non-empty array', 'MISSING_ENTRIES', 400);
+        }
+
+        $daemon = FeatherQuilldClient::extractWebSpaceArchiveSelection(
+            $resolved['webNode'],
+            $resolved['uuid'],
+            (string) ($content['root'] ?? '/'),
+            (string) ($content['file'] ?? ''),
+            (string) ($content['destination'] ?? '/'),
+            array_values(array_map('strval', $entries)),
+        );
+
+        return $this->daemonResponse($daemon, 'DAEMON_ARCHIVE_EXTRACT_FAILED', $resolved, 'webspace.file.archive_extracted');
+    }
+
+    public function searchAdvanced(Request $request, string $uuidShort): Response
+    {
+        $resolved = $this->resolve($request, $uuidShort, WebSpaceSubuserPermissions::FILE_READ);
+        if ($resolved instanceof Response) {
+            return $resolved;
+        }
+
+        $filters = [
+            'directory' => (string) $request->query->get('directory', '/'),
+            'pattern' => (string) $request->query->get('pattern', ''),
+            'include' => (string) $request->query->get('include', ''),
+            'exclude' => (string) $request->query->get('exclude', ''),
+            'case_insensitive' => $request->query->get('case_insensitive', 'true') !== 'false' ? 'true' : 'false',
+            'content' => (string) $request->query->get('content', ''),
+            'content_case_insensitive' => $request->query->get('content_case_insensitive', 'true') !== 'false' ? 'true' : 'false',
+            'limit' => (int) $request->query->get('limit', 100),
+        ];
+        if ($request->query->has('min_size')) {
+            $filters['min_size'] = (int) $request->query->get('min_size');
+        }
+        if ($request->query->has('max_size')) {
+            $filters['max_size'] = (int) $request->query->get('max_size');
+        }
+
+        $daemon = FeatherQuilldClient::searchWebSpaceFilesAdvanced($resolved['webNode'], $resolved['uuid'], $filters);
+
+        return $this->daemonResponse($daemon, 'DAEMON_SEARCH_FAILED');
+    }
+
+    public function wipeAll(Request $request, string $uuidShort): Response
+    {
+        $resolved = $this->resolve($request, $uuidShort, WebSpaceSubuserPermissions::FILE_DELETE);
+        if ($resolved instanceof Response) {
+            return $resolved;
+        }
+
+        $daemon = FeatherQuilldClient::wipeWebSpaceFiles($resolved['webNode'], $resolved['uuid']);
+
+        return $this->daemonResponse($daemon, 'DAEMON_WIPE_FAILED', $resolved, 'webspace.files.wiped');
+    }
+
+    public function getUploadUrl(Request $request, string $uuidShort): Response
+    {
+        $resolved = $this->resolve($request, $uuidShort, WebSpaceSubuserPermissions::FILE_CREATE);
+        if ($resolved instanceof Response) {
+            return $resolved;
+        }
+
+        $directory = (string) $request->query->get('directory', '/');
+        $fileName = trim((string) $request->query->get('file_name', ''));
+        $token = FeatherQuilldClient::createWebSpaceUploadToken(
+            $resolved['webNode'],
+            $resolved['uuid'],
+            $directory !== '' ? $directory : '/',
+            $fileName !== '' ? $fileName : null,
+        );
+
+        return ApiResponse::success($token, 'Upload URL generated', 200);
+    }
+
+    public function shareFile(Request $request, string $uuidShort): Response
+    {
+        $resolved = $this->resolve(
+            $request,
+            $uuidShort,
+            WebSpaceSubuserPermissions::FILE_READ_CONTENT,
+            [WebSpaceSubuserPermissions::FILE_READ],
+        );
+        if ($resolved instanceof Response) {
+            return $resolved;
+        }
+
+        $content = json_decode($request->getContent(), true);
+        if (!is_array($content)) {
+            return ApiResponse::error('Invalid JSON payload', 'INVALID_JSON', 400);
+        }
+
+        $file = trim((string) ($content['file'] ?? ''));
+        if ($file === '') {
+            return ApiResponse::error('file is required', 'MISSING_FILE', 400);
+        }
+
+        $ttlDays = (int) ($content['ttl_days'] ?? 1);
+        if (!in_array($ttlDays, [1, 5], true)) {
+            $ttlDays = 1;
+        }
+
+        try {
+            $result = WebSpaceFileShare::share($resolved['webNode'], $resolved['uuid'], $file, $ttlDays);
+        } catch (\Throwable $e) {
+            return ApiResponse::error($e->getMessage(), 'SHARE_FAILED', 502);
+        }
+
+        $this->logFileActivity($resolved, 'webspace.file.shared', ['path' => $file, 'public_id' => $result['public_id']]);
+
+        return ApiResponse::success($result, 'File shared successfully', 200);
+    }
+
+    public function getShareJobs(Request $request, string $uuidShort): Response
+    {
+        $resolved = $this->resolve($request, $uuidShort, WebSpaceSubuserPermissions::FILE_READ);
+        if ($resolved instanceof Response) {
+            return $resolved;
+        }
+
+        return ApiResponse::success(['shares' => []], 'Share jobs retrieved', 200);
+    }
+
+    public function deleteShareJob(Request $request, string $uuidShort, string $shareId): Response
+    {
+        $resolved = $this->resolve($request, $uuidShort, WebSpaceSubuserPermissions::FILE_READ);
+        if ($resolved instanceof Response) {
+            return $resolved;
+        }
+
+        WebSpaceFileShare::delete($shareId);
+
+        return ApiResponse::success([], 'Share job cancelled', 200);
+    }
+
+    public function listPullJobs(Request $request, string $uuidShort): Response
+    {
+        $resolved = $this->resolve($request, $uuidShort, WebSpaceSubuserPermissions::FILE_READ);
+        if ($resolved instanceof Response) {
+            return $resolved;
+        }
+
+        $daemon = FeatherQuilldClient::listWebSpacePullJobs($resolved['webNode'], $resolved['uuid']);
+        if (!$daemon['ok']) {
+            return $this->daemonResponse($daemon, 'DAEMON_PULL_JOBS_FAILED');
+        }
+        $body = is_array($daemon['body']) ? $daemon['body'] : [];
+        $jobs = is_array($body['data'] ?? null) ? $body['data'] : [];
+
+        return ApiResponse::success(['downloads' => $jobs], 'Pull jobs retrieved', 200);
+    }
+
+    public function cancelPullJob(Request $request, string $uuidShort, string $identifier): Response
+    {
+        $resolved = $this->resolve($request, $uuidShort, WebSpaceSubuserPermissions::FILE_UPDATE);
+        if ($resolved instanceof Response) {
+            return $resolved;
+        }
+
+        $daemon = FeatherQuilldClient::cancelWebSpacePullJob($resolved['webNode'], $resolved['uuid'], $identifier);
+
+        return $this->daemonResponse($daemon, 'DAEMON_PULL_CANCEL_FAILED', $resolved, 'webspace.file.pull_cancelled');
+    }
+
+    private function isFileTrashEnabled(): bool
+    {
+        return App::getInstance(true)->getConfig()->getSetting(ConfigInterface::FILE_TRASH_ENABLED, 'false') === 'true';
+    }
+
+    /**
+     * @return array{max_size_bytes: int, retention_days: int}
+     */
+    private function getTrashLimits(): array
+    {
+        $config = App::getInstance(true)->getConfig();
+        $maxMb = (int) $config->getSetting(ConfigInterface::FILE_TRASH_MAX_SIZE_MB, '512');
+        $retentionDays = (int) $config->getSetting(ConfigInterface::FILE_TRASH_RETENTION_DAYS, '30');
+
+        return [
+            'max_size_bytes' => $maxMb > 0 ? $maxMb * 1024 * 1024 : 0,
+            'retention_days' => $retentionDays,
+        ];
     }
 
     /**

@@ -2,6 +2,21 @@
 This file is part of FeatherPanel.
  */
 
+/*
+This file is part of FeatherPanel.
+
+Copyright (C) 2025 MythicalSystems Studios
+Copyright (C) 2025 FeatherPanel Contributors
+Copyright (C) 2025 Cassian Gherman (aka NaysKutzu)
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published
+by the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+See the LICENSE file or <https://www.gnu.org/licenses/>.
+*/
+
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
@@ -84,10 +99,7 @@ export function SelfUpdateTab({ nodeId, currentVersion, onRefresh }: SelfUpdateT
             ...prev,
             repoOwner: owner || prev.repoOwner,
             repoName: repo || prev.repoName,
-            url:
-                owner && repo
-                    ? `https://github.com/${owner}/${repo}/releases/latest/download/${repo}`
-                    : prev.url,
+            url: owner && repo ? `https://github.com/${owner}/${repo}/releases/latest/download/${repo}` : prev.url,
         }));
     }, [versionStatus, nodeId]);
 
@@ -125,8 +137,7 @@ export function SelfUpdateTab({ nodeId, currentVersion, onRefresh }: SelfUpdateT
         }
     };
 
-    const installedVersion =
-        versionStatus?.current_version || currentVersion || t('common.unknown');
+    const installedVersion = versionStatus?.current_version || currentVersion || t('common.unknown');
 
     return (
         <div className='space-y-6'>
@@ -266,9 +277,7 @@ export function SelfUpdateTab({ nodeId, currentVersion, onRefresh }: SelfUpdateT
                             <Switch
                                 id='disableChecksum'
                                 checked={options.disableChecksum}
-                                onCheckedChange={(checked) =>
-                                    setOptions({ ...options, disableChecksum: checked })
-                                }
+                                onCheckedChange={(checked) => setOptions({ ...options, disableChecksum: checked })}
                             />
                             <Label htmlFor='disableChecksum'>{t('admin.node.view.self_update.disable_checksum')}</Label>
                         </div>

@@ -17,12 +17,12 @@
 
 namespace App\Helpers;
 
-use App\Chat\DatabaseInstance;
 use App\Chat\DnsHost;
-use App\Chat\MailHost;
 use App\Chat\WebNode;
+use App\Chat\MailHost;
 use App\Chat\WebPlate;
 use App\Chat\WebSpace;
+use App\Chat\DatabaseInstance;
 
 /**
  * Platform-level view of what FeatherPanel WebSpaces can do today vs what still needs setup.
@@ -81,9 +81,12 @@ class WebSpaceHostingMaturity
         }
 
         $nodeAcme = $sampleNode ? trim((string) ($sampleNode['acmeEmail'] ?? '')) : '';
+        $ftpEnabled = $sampleNode
+            && filter_var($sampleNode['ftpEnabled'] ?? false, FILTER_VALIDATE_BOOLEAN);
 
         $builtin = [
             self::item('files_sftp', 'ready'),
+            self::item('classic_ftp', $ftpEnabled ? 'ready' : 'needs_setup'),
             self::item('backups', 'ready'),
             self::item('schedules', 'ready'),
             self::item('console', 'ready'),
@@ -98,6 +101,7 @@ class WebSpaceHostingMaturity
             self::item('custom_ssl_upload', 'ready'),
             self::item('dns_hosting', 'ready'),
             self::item('builtin_mail', $mailServerReady ? 'ready' : 'needs_mailserver'),
+            self::item('webmail', Roundcube::isInstalled() ? 'partial' : 'needs_setup'),
             self::item('cpu_memory_limits', 'ready'),
             self::item('wordpress_manager', 'ready'),
             self::item('analytics', 'ready'),
@@ -159,13 +163,13 @@ class WebSpaceHostingMaturity
                 'mail_hosts',
                 $mailHostCount > 0,
                 $mailHostCount > 0
-                    ? (string) $mailHostCount . ' mail host(s)'
-                    : 'Install the mailserver package on a web node or link an external mail host',
+                    ? (string) $mailHostCount . ' mail host(s) — install Mailserver on web nodes to add more'
+                    : 'Install the Mailserver package on a web node (creates a mail host automatically)',
                 $mailHostCount > 0
-                    ? null
+                    ? ['label' => 'View mail', 'href' => '/admin/mail-hosts']
                     : ($sampleNodeId
-                        ? ['label' => 'Package manager', 'href' => WebNodeAdminUrl::edit($sampleNodeId, 'packages')]
-                        : ['label' => 'Add mail host', 'href' => '/admin/mail-hosts']),
+                        ? ['label' => 'Install Mailserver', 'href' => WebNodeAdminUrl::edit($sampleNodeId, 'packages')]
+                        : ['label' => 'Web nodes', 'href' => '/admin/web-nodes']),
             ),
             self::setupItem(
                 'dns_hosts',

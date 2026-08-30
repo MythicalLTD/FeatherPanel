@@ -17,6 +17,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { use, useEffect } from 'react';
 import PluginPage from '@/components/dashboard/PluginPage';
+import WebSpaceConsolePage from '@/components/webspace/WebSpaceConsolePage';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
 
@@ -25,12 +26,22 @@ export default function WebSpacePluginPage({
 }: {
     params: Promise<{ uuidShort: string; pluginPath?: string[] }>;
 }) {
-    const { uuidShort } = use(params);
+    const { uuidShort, pluginPath } = use(params);
     const { fetchWidgets, getWidgets } = usePluginWidgets('webspace-plugin-page');
 
     useEffect(() => {
         fetchWidgets();
     }, [fetchWidgets]);
+
+    if (!pluginPath || pluginPath.length === 0) {
+        return (
+            <>
+                <WidgetRenderer widgets={getWidgets('webspace-plugin-page', 'top-of-page')} />
+                <WebSpaceConsolePage />
+                <WidgetRenderer widgets={getWidgets('webspace-plugin-page', 'bottom-of-page')} />
+            </>
+        );
+    }
 
     return (
         <>

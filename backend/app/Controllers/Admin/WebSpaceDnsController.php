@@ -1,12 +1,27 @@
 <?php
 
+/*
+ * This file is part of FeatherPanel.
+ *
+ * Copyright (C) 2025 MythicalSystems Studios
+ * Copyright (C) 2025 FeatherPanel Contributors
+ * Copyright (C) 2025 Cassian Gherman (aka NaysKutzu)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published
+ * by the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * See the LICENSE file or <https://www.gnu.org/licenses/>.
+ */
+
 namespace App\Controllers\Admin;
 
 use App\Chat\DnsHost;
 use App\Chat\WebNode;
 use App\Chat\WebSpace;
-use App\Chat\WebSpaceDnsZone;
 use App\Helpers\ApiResponse;
+use App\Chat\WebSpaceDnsZone;
 use App\Helpers\DnsProvisioner;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -93,6 +108,12 @@ class WebSpaceDnsController
 
         $webNode = WebNode::getWebNodeById((int) ($host['web_node_id'] ?? 0));
         $delegation = $webNode ? DnsProvisioner::delegationHint($webNode, $zoneName) : null;
+
+        try {
+            DnsProvisioner::provisionMailForWebSpace($space);
+        } catch (\Throwable) {
+            // best-effort when zone is linked
+        }
 
         return ApiResponse::success([
             'zone' => $zone,
@@ -229,7 +250,7 @@ class WebSpaceDnsController
         return ApiResponse::success(['hosts' => $hosts], 'OK', 200);
     }
 
-    private function requireSpace(string $uuid): array|Response
+    private function requireSpace(string $uuid): array | Response
     {
         $space = WebSpace::getByUuid($uuid);
         if (!$space) {
@@ -242,7 +263,7 @@ class WebSpaceDnsController
     /**
      * @return array{zone: array<string, mixed>, provider: \App\Services\Dns\DnsProviderInterface}|Response
      */
-    private function resolveZoneProvider(string $uuid, int $zoneId): array|Response
+    private function resolveZoneProvider(string $uuid, int $zoneId): array | Response
     {
         $space = $this->requireSpace($uuid);
         if ($space instanceof Response) {

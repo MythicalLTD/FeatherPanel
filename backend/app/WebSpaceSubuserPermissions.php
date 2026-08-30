@@ -59,6 +59,8 @@ class WebSpaceSubuserPermissions
     public const MAIL_UPDATE = 'mail.update';
     public const MAIL_DELETE = 'mail.delete';
     public const MAIL_VIEW_PASSWORD = 'mail.view_password';
+    public const DNS_READ = 'dns.read';
+    public const DNS_MANAGE = 'dns.manage';
 
     public const PERMISSIONS = [
         self::FILE_READ,
@@ -98,6 +100,8 @@ class WebSpaceSubuserPermissions
         self::MAIL_UPDATE,
         self::MAIL_DELETE,
         self::MAIL_VIEW_PASSWORD,
+        self::DNS_READ,
+        self::DNS_MANAGE,
     ];
 
     /**
@@ -185,6 +189,12 @@ class WebSpaceSubuserPermissions
                     self::MAIL_UPDATE,
                     self::MAIL_DELETE,
                     self::MAIL_VIEW_PASSWORD,
+                ],
+            ],
+            'dns' => [
+                'permissions' => [
+                    self::DNS_READ,
+                    self::DNS_MANAGE,
                 ],
             ],
         ];

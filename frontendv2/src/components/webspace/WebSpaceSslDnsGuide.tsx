@@ -2,6 +2,21 @@
 This file is part of FeatherPanel.
  */
 
+/*
+This file is part of FeatherPanel.
+
+Copyright (C) 2025 MythicalSystems Studios
+Copyright (C) 2025 FeatherPanel Contributors
+Copyright (C) 2025 Cassian Gherman (aka NaysKutzu)
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published
+by the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+See the LICENSE file or <https://www.gnu.org/licenses/>.
+*/
+
 'use client';
 
 import { ShieldCheck, Globe, Server, AlertTriangle, CheckCircle2 } from 'lucide-react';
@@ -71,21 +86,31 @@ export function WebSpaceSslDnsGuide({
                         <table className='w-full'>
                             <thead className='bg-muted/40'>
                                 <tr>
-                                    <th className='px-3 py-2 text-left font-medium'>{t('webSpaces.guide.tableType')}</th>
-                                    <th className='px-3 py-2 text-left font-medium'>{t('webSpaces.guide.tableHost')}</th>
-                                    <th className='px-3 py-2 text-left font-medium'>{t('webSpaces.guide.tableValue')}</th>
+                                    <th className='px-3 py-2 text-left font-medium'>
+                                        {t('webSpaces.guide.tableType')}
+                                    </th>
+                                    <th className='px-3 py-2 text-left font-medium'>
+                                        {t('webSpaces.guide.tableHost')}
+                                    </th>
+                                    <th className='px-3 py-2 text-left font-medium'>
+                                        {t('webSpaces.guide.tableValue')}
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr className='border-t'>
                                     <td className='px-3 py-2 font-mono'>A</td>
                                     <td className='px-3 py-2 font-mono'>@ or www</td>
-                                    <td className='px-3 py-2 font-mono'>{expectedIps[0] || t('webSpaces.guide.nodeIp')}</td>
+                                    <td className='px-3 py-2 font-mono'>
+                                        {expectedIps[0] || t('webSpaces.guide.nodeIp')}
+                                    </td>
                                 </tr>
                                 <tr className='border-t'>
                                     <td className='px-3 py-2 font-mono'>AAAA</td>
                                     <td className='px-3 py-2 font-mono'>@ or www</td>
-                                    <td className='px-3 py-2 text-muted-foreground'>{t('webSpaces.guide.optionalIpv6')}</td>
+                                    <td className='text-muted-foreground px-3 py-2'>
+                                        {t('webSpaces.guide.optionalIpv6')}
+                                    </td>
                                 </tr>
                             </tbody>
                         </table>
@@ -113,7 +138,9 @@ export function WebSpaceSslDnsGuide({
                     <li className='flex gap-2'>
                         <CheckCircle2 className='mt-0.5 h-4 w-4 shrink-0 text-emerald-500' />
                         <span>
-                            {ssl ? t('webSpaces.guide.sslEnabledNote', { provider: providerLabel }) : t('webSpaces.guide.sslDisabledNote')}
+                            {ssl
+                                ? t('webSpaces.guide.sslEnabledNote', { provider: providerLabel })
+                                : t('webSpaces.guide.sslDisabledNote')}
                         </span>
                     </li>
                 </ul>

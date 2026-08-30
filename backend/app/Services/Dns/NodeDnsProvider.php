@@ -1,5 +1,20 @@
 <?php
 
+/*
+ * This file is part of FeatherPanel.
+ *
+ * Copyright (C) 2025 MythicalSystems Studios
+ * Copyright (C) 2025 FeatherPanel Contributors
+ * Copyright (C) 2025 Cassian Gherman (aka NaysKutzu)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published
+ * by the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * See the LICENSE file or <https://www.gnu.org/licenses/>.
+ */
+
 namespace App\Services\Dns;
 
 /**
@@ -150,9 +165,11 @@ class NodeDnsProvider implements DnsProviderInterface, AcmeDnsCapableInterface
             $records = is_array($existing['records'] ?? null) ? $existing['records'] : [];
             if ($records !== []) {
                 $first = $records[0];
-                if (is_array($first)
+                if (
+                    is_array($first)
                     && (int) ($first['priority'] ?? 0) === $priority
-                    && rtrim((string) ($first['content'] ?? ''), '.') . '.' === $target) {
+                    && rtrim((string) ($first['content'] ?? ''), '.') . '.' === $target
+                ) {
                     return ['ok' => true, 'action' => 'unchanged', 'record' => $first];
                 }
 

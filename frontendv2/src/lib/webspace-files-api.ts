@@ -13,7 +13,9 @@ by the Free Software Foundation, either version 3 of the License, or
 See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
+import axios from 'axios';
 import api from './api';
+import { getFeatherpanelApiErrorMessage } from './api';
 import type { FileObject } from '@/types/server';
 import type {
     AdvancedFileSearchFilters,
@@ -59,6 +61,22 @@ const toAbsolutePath = (root: string, path: string): string => {
 const unsupported = (feature: string): never => {
     throw new Error(`WebSpace file manager does not support ${feature}`);
 };
+
+/** Feature flags for WebSpace file manager UI. */
+export const webspaceFileManagerCapabilities = {
+    trash: true,
+    share: true,
+    wipeAll: true,
+    directoryDownload: true,
+    archiveBrowse: true,
+    archiveExtractSelection: true,
+    advancedSearch: true,
+    abortInstall: false,
+    pullProgress: true,
+    signedUploadUrl: true,
+} as const;
+
+const quilldUploadClient = axios.create();
 
 type RawFileEntry = {
     name?: string;
@@ -149,9 +167,17 @@ export const webspaceFilesApi = {
     },
 
     searchFiles: async (uuid: string, filters: AdvancedFileSearchFilters): Promise<FileObject[]> => {
-        void uuid;
-        void filters;
-        return unsupported('advanced search');
+        const response = await api.get<ApiResponse<{ data?: RawFileEntry[] } | RawFileEntry[]>>(
+            `/user/webspaces/${uuid}/files/search-advanced`,
+            { params: filters },
+        );
+        const payload = response.data.data;
+        const rows = Array.isArray(payload)
+            ? payload
+            : Array.isArray((payload as { data?: RawFileEntry[] })?.data)
+              ? ((payload as { data?: RawFileEntry[] }).data ?? [])
+              : extractList(payload);
+        return rows.map(mapFileObject);
     },
 
     listArchiveDirectory: async (
@@ -160,11 +186,18 @@ export const webspaceFilesApi = {
         archiveFileName: string,
         archiveInnerPath = '',
     ): Promise<ArchiveListData> => {
-        void uuid;
-        void serverDirectory;
-        void archiveFileName;
-        void archiveInnerPath;
-        return unsupported('archive browse');
+        const response = await api.get<ApiResponse<ArchiveListData>>(`/user/webspaces/${uuid}/files/archive-list`, {
+            params: {
+                directory: serverDirectory,
+                file: archiveFileName,
+                archive_path: archiveInnerPath,
+            },
+        });
+        const d = response.data.data;
+        if (!d.contents) {
+            return { contents: [], truncated: Boolean(d.truncated) };
+        }
+        return d;
     },
 
     getFileContent: async (uuid: string, path: string): Promise<string> => {
@@ -236,37 +269,35 @@ export const webspaceFilesApi = {
     },
 
     deleteFiles: async (uuid: string, root: string, files: string[], permanent = false): Promise<void> => {
-        void permanent;
         const paths = files.map((f) => toAbsolutePath(root || '/', f));
-        await api.post(`/user/webspaces/${uuid}/files/delete`, { files: paths });
+        await api.post(`/user/webspaces/${uuid}/files/delete`, {
+            files: paths,
+            permanent,
+            use_trash: !permanent,
+        });
     },
 
     listTrash: async (uuid: string): Promise<{ entries: TrashEntry[]; total_size: number }> => {
-        void uuid;
-        return { entries: [], total_size: 0 };
+        const res = await api.get<ApiResponse<{ entries: TrashEntry[]; total_size: number }>>(
+            `/user/webspaces/${uuid}/files/trash`,
+        );
+        return res.data.data;
     },
 
     restoreTrash: async (uuid: string, ids: string[], overwrite = false): Promise<void> => {
-        void uuid;
-        void ids;
-        void overwrite;
-        unsupported('trash');
+        await api.post(`/user/webspaces/${uuid}/files/trash/restore`, { ids, overwrite });
     },
 
     deleteTrashEntries: async (uuid: string, ids: string[]): Promise<void> => {
-        void uuid;
-        void ids;
-        unsupported('trash');
+        await api.post(`/user/webspaces/${uuid}/files/trash/delete`, { ids });
     },
 
     emptyTrash: async (uuid: string): Promise<void> => {
-        void uuid;
-        unsupported('trash');
+        await api.post(`/user/webspaces/${uuid}/files/trash/empty`);
     },
 
     wipeAllFiles: async (uuid: string): Promise<void> => {
-        void uuid;
-        unsupported('wipe all');
+        await api.post(`/user/webspaces/${uuid}/files/wipe`);
     },
 
     getDownloadUrl: async (uuid: string, path: string): Promise<string> => {
@@ -274,14 +305,15 @@ export const webspaceFilesApi = {
     },
 
     downloadDirectory: async (uuid: string, path: string, archiveFormat?: string): Promise<string> => {
-        void uuid;
-        void path;
-        void archiveFormat;
-        return unsupported('directory download');
+        const params = new URLSearchParams({
+            path: normalizePath(path || '/'),
+            ...(archiveFormat ? { format: archiveFormat } : {}),
+        });
+        return `/api/user/webspaces/${uuid}/files/download-directory?${params.toString()}`;
     },
 
-    abortInstall: async (uuid: string): Promise<void> => {
-        void uuid;
+    abortInstall: async (): Promise<void> => {
+        if (!webspaceFileManagerCapabilities.abortInstall) return;
         unsupported('abort install');
     },
 
@@ -348,12 +380,12 @@ export const webspaceFilesApi = {
         destination: string,
         entries: string[],
     ): Promise<void> => {
-        void uuid;
-        void root;
-        void file;
-        void destination;
-        void entries;
-        unsupported('archive extract selection');
+        await api.post(`/user/webspaces/${uuid}/files/extract-archive-selection`, {
+            root,
+            file,
+            destination,
+            entries,
+        });
     },
 
     changePermissions: async (uuid: string, root: string, files: { file: string; mode: string }[]): Promise<void> => {
@@ -370,6 +402,7 @@ export const webspaceFilesApi = {
             directory: normalizePath(directory || '/'),
             file_name: filename,
             filename,
+            background: true,
         });
     },
 
@@ -383,31 +416,44 @@ export const webspaceFilesApi = {
             background?: boolean;
         },
     ): Promise<ShareFileResponse> => {
-        void uuid;
-        void options;
-        return unsupported('share');
+        void options.background;
+        const response = await api.post<ApiResponse<ShareFileResponse>>(`/user/webspaces/${uuid}/files/share`, {
+            file: options.file,
+            ttl_days: options.ttl_days,
+            password: options.password,
+            delete_key: options.delete_key,
+        });
+        return response.data.data;
     },
 
     getShareJobs: async (uuid: string): Promise<ShareJob[]> => {
-        void uuid;
-        return [];
+        const response = await api.get<ApiResponse<{ shares?: ShareJob[] } | ShareJob[]>>(
+            `/user/webspaces/${uuid}/files/share-jobs`,
+        );
+        const data = response.data.data;
+        if (Array.isArray(data)) return data;
+        return data?.shares || [];
     },
 
     deleteShareJob: async (uuid: string, id: string): Promise<void> => {
-        void uuid;
-        void id;
-        unsupported('share');
+        await api.delete(`/user/webspaces/${uuid}/files/share-jobs/${id}`);
     },
 
     getPullFiles: async (uuid: string): Promise<{ Identifier: string; Progress: number }[]> => {
-        void uuid;
-        return [];
+        const response = await api.get<
+            ApiResponse<{
+                downloads?: { Identifier?: string; identifier?: string; Progress?: number; progress?: number }[];
+            }>
+        >(`/user/webspaces/${uuid}/files/pull-jobs`);
+        const rows = response.data.data?.downloads ?? [];
+        return rows.map((row) => ({
+            Identifier: String(row.Identifier ?? row.identifier ?? ''),
+            Progress: Number(row.Progress ?? row.progress ?? 0),
+        }));
     },
 
     deletePullFile: async (uuid: string, id: string): Promise<void> => {
-        void uuid;
-        void id;
-        unsupported('pull progress');
+        await api.delete(`/user/webspaces/${uuid}/files/pull-jobs/${id}`);
     },
 
     uploadFile: async (
@@ -416,6 +462,35 @@ export const webspaceFilesApi = {
         file: File,
         onProgress?: (percent: number) => void,
     ): Promise<void> => {
+        if (webspaceFileManagerCapabilities.signedUploadUrl) {
+            const signed = await api.get<ApiResponse<{ upload_url: string; expires_in: number }>>(
+                `/user/webspaces/${uuid}/files/upload-url`,
+                { params: { directory: normalizePath(root || '/') } },
+            );
+            const uploadUrl = signed.data.data?.upload_url;
+            if (!uploadUrl) {
+                throw new Error('Failed to get upload URL');
+            }
+            const formData = new FormData();
+            formData.append('files', file);
+            try {
+                await quilldUploadClient.post(uploadUrl, formData, {
+                    onUploadProgress:
+                        onProgress &&
+                        ((e) => {
+                            const percent = e.total ? Math.round((e.loaded / e.total) * 100) : 0;
+                            onProgress(Math.min(percent, 100));
+                        }),
+                });
+            } catch (error) {
+                if (axios.isAxiosError(error)) {
+                    throw new Error(getFeatherpanelApiErrorMessage(error) || 'Upload failed');
+                }
+                throw error;
+            }
+            return;
+        }
+
         const formData = new FormData();
         formData.append('files', file);
         await api.post(`/user/webspaces/${uuid}/files/upload`, formData, {
@@ -430,9 +505,11 @@ export const webspaceFilesApi = {
         });
     },
 
-    getUploadUrl: async (uuid: string): Promise<string> => {
-        void uuid;
-        return unsupported('signed upload URL');
+    getUploadUrl: async (uuid: string, directory = '/'): Promise<string> => {
+        const signed = await api.get<ApiResponse<{ upload_url: string }>>(`/user/webspaces/${uuid}/files/upload-url`, {
+            params: { directory: normalizePath(directory || '/') },
+        });
+        return signed.data.data?.upload_url ?? '';
     },
 
     fileExists: async (uuid: string, path: string): Promise<boolean | null> => {

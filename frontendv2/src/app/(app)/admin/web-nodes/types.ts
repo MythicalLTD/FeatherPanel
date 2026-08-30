@@ -62,12 +62,18 @@ export interface WebNodeForm {
     sftpKeyAlgorithm: string;
     sftpPort: number;
     sftpDisablePasswordAuth: string;
+    ftpEnabled: string;
+    ftpPort: number;
+    ftpPassivePortMin: number;
+    ftpPassivePortMax: number;
     proxyEnabled: string;
     proxyProvider: string;
     acmeEmail: string;
     acmeStaging: string;
     backendPortMin: number;
     backendPortMax: number;
+    proxyBackendHost: string;
+    proxyBackendBindHost: string;
 }
 
 export function parseCustomHeaderEntries(
@@ -181,12 +187,18 @@ export function defaultWebNodeForm(): WebNodeForm {
         sftpKeyAlgorithm: 'ssh-ed25519',
         sftpPort: 2222,
         sftpDisablePasswordAuth: 'false',
+        ftpEnabled: 'false',
+        ftpPort: 21,
+        ftpPassivePortMin: 50000,
+        ftpPassivePortMax: 50100,
         proxyEnabled: 'true',
         proxyProvider: 'caddy',
         acmeEmail: '',
         acmeStaging: 'false',
         backendPortMin: 20000,
         backendPortMax: 29999,
+        proxyBackendHost: '127.0.0.1',
+        proxyBackendBindHost: '127.0.0.1',
     };
 }
 
@@ -231,12 +243,18 @@ export function buildWebNodeSubmitPayload(form: WebNodeForm) {
         sftpKeyAlgorithm: form.sftpKeyAlgorithm,
         sftpPort: Number(form.sftpPort),
         sftpDisablePasswordAuth: form.sftpDisablePasswordAuth === 'true',
+        ftpEnabled: form.ftpEnabled === 'true',
+        ftpPort: Number(form.ftpPort),
+        ftpPassivePortMin: Number(form.ftpPassivePortMin),
+        ftpPassivePortMax: Number(form.ftpPassivePortMax),
         proxyEnabled: form.proxyEnabled === 'true',
         proxyProvider: form.proxyProvider || 'caddy',
         acmeEmail: form.acmeEmail.trim() || null,
         acmeStaging: form.acmeStaging === 'true',
         backendPortMin: Number(form.backendPortMin),
         backendPortMax: Number(form.backendPortMax),
+        proxyBackendHost: form.proxyBackendHost.trim() || '127.0.0.1',
+        proxyBackendBindHost: form.proxyBackendBindHost.trim() || '127.0.0.1',
     };
 
     if (!form.backupsS3SecretKey.trim()) {

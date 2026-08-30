@@ -2,6 +2,21 @@
 This file is part of FeatherPanel.
  */
 
+/*
+This file is part of FeatherPanel.
+
+Copyright (C) 2025 MythicalSystems Studios
+Copyright (C) 2025 FeatherPanel Contributors
+Copyright (C) 2025 Cassian Gherman (aka NaysKutzu)
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published
+by the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+See the LICENSE file or <https://www.gnu.org/licenses/>.
+*/
+
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
@@ -256,11 +271,17 @@ export function WebSpaceDnsZoneEditor({ apiBase, canRead = true, canManage = tru
             {delegation && (
                 <div className='border-border bg-muted/20 space-y-1 rounded-lg border p-3 text-xs'>
                     <p className='font-medium'>{t('webSpaces.dns.delegationTitle')}</p>
-                    <p>{t('webSpaces.dns.delegationNameservers', { nameservers: delegation.nameservers.join(', ') })}</p>
+                    <p>
+                        {t('webSpaces.dns.delegationNameservers', { nameservers: delegation.nameservers.join(', ') })}
+                    </p>
                     {delegation.glue_ip && (
                         <p>{t('webSpaces.dns.delegationGlue', { glue: `ns1 → ${delegation.glue_ip}` })}</p>
                     )}
-                    {delegation.registrar_note && <p className='text-muted-foreground'>{t('webSpaces.dns.delegationNote', { note: delegation.registrar_note })}</p>}
+                    {delegation.registrar_note && (
+                        <p className='text-muted-foreground'>
+                            {t('webSpaces.dns.delegationNote', { note: delegation.registrar_note })}
+                        </p>
+                    )}
                 </div>
             )}
 
@@ -349,7 +370,10 @@ export function WebSpaceDnsZoneEditor({ apiBase, canRead = true, canManage = tru
                             <tbody>
                                 {records.length === 0 && (
                                     <tr>
-                                        <td colSpan={canManage ? 5 : 4} className='text-muted-foreground px-3 py-4 text-xs'>
+                                        <td
+                                            colSpan={canManage ? 5 : 4}
+                                            className='text-muted-foreground px-3 py-4 text-xs'
+                                        >
                                             {t('webSpaces.dns.noRecords')}
                                         </td>
                                     </tr>
@@ -363,10 +387,18 @@ export function WebSpaceDnsZoneEditor({ apiBase, canRead = true, canManage = tru
                                         {canManage && (
                                             <td className='px-3 py-2'>
                                                 <div className='flex gap-1'>
-                                                    <Button variant='ghost' size='sm' onClick={() => openEditRecord(record)}>
+                                                    <Button
+                                                        variant='ghost'
+                                                        size='sm'
+                                                        onClick={() => openEditRecord(record)}
+                                                    >
                                                         {t('common.edit')}
                                                     </Button>
-                                                    <Button variant='ghost' size='sm' onClick={() => void deleteRecord(record.id)}>
+                                                    <Button
+                                                        variant='ghost'
+                                                        size='sm'
+                                                        onClick={() => void deleteRecord(record.id)}
+                                                    >
                                                         <Trash2 className='h-4 w-4' />
                                                     </Button>
                                                 </div>
@@ -403,7 +435,10 @@ export function WebSpaceDnsZoneEditor({ apiBase, canRead = true, canManage = tru
                     </div>
                     <div className='space-y-1'>
                         <Label>{t('webSpaces.dns.colName')}</Label>
-                        <Input value={recordForm.name} onChange={(e) => setRecordForm({ ...recordForm, name: e.target.value })} />
+                        <Input
+                            value={recordForm.name}
+                            onChange={(e) => setRecordForm({ ...recordForm, name: e.target.value })}
+                        />
                     </div>
                     <div className='space-y-1'>
                         <Label>{t('webSpaces.dns.colContent')}</Label>
@@ -414,7 +449,10 @@ export function WebSpaceDnsZoneEditor({ apiBase, canRead = true, canManage = tru
                     </div>
                     <div className='space-y-1'>
                         <Label>{t('webSpaces.dns.colTtl')}</Label>
-                        <Input value={recordForm.ttl} onChange={(e) => setRecordForm({ ...recordForm, ttl: e.target.value })} />
+                        <Input
+                            value={recordForm.ttl}
+                            onChange={(e) => setRecordForm({ ...recordForm, ttl: e.target.value })}
+                        />
                     </div>
                     {recordForm.type === 'MX' && (
                         <div className='space-y-1'>

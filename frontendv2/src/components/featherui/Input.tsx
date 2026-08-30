@@ -33,7 +33,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         const inputId = id || (label ? `input-${label.replace(/\s+/g, '-').toLowerCase()}` : undefined);
 
         const field = (
-            <div className={cn(icon && 'group relative')}>
+            <div className={cn('w-full min-w-0', icon && 'group relative')}>
                 {icon && (
                     <div className='text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 z-10 -translate-y-1/2 transition-colors'>
                         {icon}

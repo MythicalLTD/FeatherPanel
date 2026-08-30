@@ -46,6 +46,7 @@ class MailHost
         'spf_record',
         'dkim_selector',
         'dkim_record',
+        'webmail_url',
     ];
 
     /**
@@ -176,6 +177,74 @@ class MailHost
     }
 
     /**
+     * Whether this web node has a built-in (node-mode) mail host.
+     */
+    public static function webNodeHasNodeMailHost(int $webNodeId): bool
+    {
+        if ($webNodeId <= 0) {
+            return false;
+        }
+
+        foreach (self::listForWebNode($webNodeId) as $host) {
+            if (
+                (int) ($host['web_node_id'] ?? 0) === $webNodeId
+                && strtolower(trim((string) ($host['provision_mode'] ?? ''))) === 'node'
+            ) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Create a node-mode mail host for a web node after mailserver package install.
+     *
+     * @param array<string, mixed> $webNode
+     */
+    public static function ensureNodeMailHost(int $webNodeId, array $webNode): ?int
+    {
+        if ($webNodeId <= 0) {
+            return null;
+        }
+
+        foreach (self::listForWebNode($webNodeId) as $host) {
+            if (
+                (int) ($host['web_node_id'] ?? 0) === $webNodeId
+                && strtolower(trim((string) ($host['provision_mode'] ?? ''))) === 'node'
+            ) {
+                return (int) $host['id'];
+            }
+        }
+
+        $fqdn = trim((string) ($webNode['fqdn'] ?? ''));
+        if ($fqdn === '') {
+            return null;
+        }
+
+        $name = trim((string) ($webNode['name'] ?? $fqdn));
+        if ($name === '') {
+            $name = $fqdn;
+        }
+
+        $id = self::create([
+            'name' => $name . ' mail',
+            'web_node_id' => $webNodeId,
+            'hostname' => $fqdn,
+            'imap_host' => $fqdn,
+            'imap_port' => 993,
+            'imap_encryption' => 'ssl',
+            'smtp_host' => $fqdn,
+            'smtp_port' => 587,
+            'smtp_encryption' => 'starttls',
+            'provision_mode' => 'node',
+            'mx_host' => $fqdn,
+        ]);
+
+        return $id === false ? null : $id;
+    }
+
+    /**
      * @param array<string, mixed> $data
      *
      * @return array<string, mixed>
@@ -220,69 +289,5 @@ class MailHost
         }
 
         return $row;
-    }
-
-    /**
-     * Whether this web node has a built-in (node-mode) mail host.
-     */
-    public static function webNodeHasNodeMailHost(int $webNodeId): bool
-    {
-        if ($webNodeId <= 0) {
-            return false;
-        }
-
-        foreach (self::listForWebNode($webNodeId) as $host) {
-            if ((int) ($host['web_node_id'] ?? 0) === $webNodeId
-                && strtolower(trim((string) ($host['provision_mode'] ?? ''))) === 'node') {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * Create a node-mode mail host for a web node after mailserver package install.
-     *
-     * @param array<string, mixed> $webNode
-     */
-    public static function ensureNodeMailHost(int $webNodeId, array $webNode): ?int
-    {
-        if ($webNodeId <= 0) {
-            return null;
-        }
-
-        foreach (self::listForWebNode($webNodeId) as $host) {
-            if ((int) ($host['web_node_id'] ?? 0) === $webNodeId
-                && strtolower(trim((string) ($host['provision_mode'] ?? ''))) === 'node') {
-                return (int) $host['id'];
-            }
-        }
-
-        $fqdn = trim((string) ($webNode['fqdn'] ?? ''));
-        if ($fqdn === '') {
-            return null;
-        }
-
-        $name = trim((string) ($webNode['name'] ?? $fqdn));
-        if ($name === '') {
-            $name = $fqdn;
-        }
-
-        $id = self::create([
-            'name' => $name . ' mail',
-            'web_node_id' => $webNodeId,
-            'hostname' => $fqdn,
-            'imap_host' => $fqdn,
-            'imap_port' => 993,
-            'imap_encryption' => 'ssl',
-            'smtp_host' => $fqdn,
-            'smtp_port' => 587,
-            'smtp_encryption' => 'starttls',
-            'provision_mode' => 'node',
-            'mx_host' => $fqdn,
-        ]);
-
-        return $id === false ? null : $id;
     }
 }

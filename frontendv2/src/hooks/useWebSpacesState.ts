@@ -13,56 +13,69 @@ by the Free Software Foundation, either version 3 of the License, or
 See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
-import { useState, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
-export type WebSpacesLayout = 'grid' | 'list';
-export type WebSpacesSort = 'name' | 'status' | 'node';
+interface WebSpacesState {
+    selectedLayout: 'grid' | 'list';
+    selectedSort: 'name' | 'status' | 'node';
+    showOnlyRunning: boolean;
+}
+
+const DEFAULT_STATE: WebSpacesState = {
+    selectedLayout: 'grid',
+    selectedSort: 'name',
+    showOnlyRunning: false,
+};
+
+const STORAGE_KEY = 'webspaces_preferences';
 
 export function useWebSpacesState() {
-    const [selectedLayout, setSelectedLayout] = useState<WebSpacesLayout>(() => {
-        if (typeof window === 'undefined') return 'list';
-        const saved = localStorage.getItem('featherpanel_webspaces_layout');
-        return (saved as WebSpacesLayout) || 'list';
-    });
-
-    const [selectedSort, setSelectedSort] = useState<WebSpacesSort>(() => {
-        if (typeof window === 'undefined') return 'name';
-        const saved = localStorage.getItem('featherpanel_webspaces_sort');
-        return (saved as WebSpacesSort) || 'name';
-    });
-
-    const [showOnlyRunning, setShowOnlyRunning] = useState(() => {
-        if (typeof window === 'undefined') return false;
-        return localStorage.getItem('featherpanel_webspaces_running_only') === 'true';
-    });
-
-    const updateLayout = useCallback((layout: WebSpacesLayout) => {
-        setSelectedLayout(layout);
-        if (typeof window !== 'undefined') {
-            localStorage.setItem('featherpanel_webspaces_layout', layout);
+    const [state, setState] = useState<WebSpacesState>(() => {
+        if (typeof window === 'undefined') {
+            return DEFAULT_STATE;
         }
+
+        try {
+            const stored = localStorage.getItem(STORAGE_KEY);
+            if (stored) {
+                const parsed = JSON.parse(stored);
+                return { ...DEFAULT_STATE, ...parsed };
+            }
+        } catch (error) {
+            console.error('Failed to load webspaces state from localStorage:', error);
+        }
+
+        return DEFAULT_STATE;
+    });
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        } catch (error) {
+            console.error('Failed to save webspaces state to localStorage:', error);
+        }
+    }, [state]);
+
+    const setSelectedLayout = useCallback((layout: 'grid' | 'list') => {
+        setState((prev) => ({ ...prev, selectedLayout: layout }));
     }, []);
 
-    const updateSort = useCallback((sort: WebSpacesSort) => {
-        setSelectedSort(sort);
-        if (typeof window !== 'undefined') {
-            localStorage.setItem('featherpanel_webspaces_sort', sort);
-        }
+    const setSelectedSort = useCallback((sort: 'name' | 'status' | 'node') => {
+        setState((prev) => ({ ...prev, selectedSort: sort }));
     }, []);
 
-    const updateShowOnlyRunning = useCallback((show: boolean) => {
-        setShowOnlyRunning(show);
-        if (typeof window !== 'undefined') {
-            localStorage.setItem('featherpanel_webspaces_running_only', show ? 'true' : 'false');
-        }
+    const setShowOnlyRunning = useCallback((show: boolean) => {
+        setState((prev) => ({ ...prev, showOnlyRunning: show }));
     }, []);
 
     return {
-        selectedLayout,
-        selectedSort,
-        showOnlyRunning,
-        setSelectedLayout: updateLayout,
-        setSelectedSort: updateSort,
-        setShowOnlyRunning: updateShowOnlyRunning,
+        selectedLayout: state.selectedLayout,
+        selectedSort: state.selectedSort,
+        showOnlyRunning: state.showOnlyRunning,
+        setSelectedLayout,
+        setSelectedSort,
+        setShowOnlyRunning,
     };
 }

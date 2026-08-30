@@ -1,10 +1,25 @@
 <?php
 
+/*
+ * This file is part of FeatherPanel.
+ *
+ * Copyright (C) 2025 MythicalSystems Studios
+ * Copyright (C) 2025 FeatherPanel Contributors
+ * Copyright (C) 2025 Cassian Gherman (aka NaysKutzu)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published
+ * by the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * See the LICENSE file or <https://www.gnu.org/licenses/>.
+ */
+
 namespace App\Helpers;
 
 use App\Chat\DnsHost;
-use App\Chat\MailHost;
 use App\Chat\WebNode;
+use App\Chat\MailHost;
 use App\Chat\WebSpaceDnsZone;
 use App\Services\Dns\DnsProviderInterface;
 
@@ -204,9 +219,6 @@ class DnsProvisioner
         return null;
     }
 
-    /**
-     * @param array<string, mixed> $webNode
-     */
     public static function webNodeHasDnsHost(int $webNodeId): bool
     {
         if ($webNodeId <= 0) {
@@ -335,6 +347,16 @@ class DnsProvisioner
     }
 
     /**
+     * @param array<string, mixed> $space
+     *
+     * @return list<array{domain: string, ok: bool, skipped?: bool, error?: string}>
+     */
+    public static function provisionMailForWebSpace(array $space): array
+    {
+        return MailDeliverabilityChecker::provisionMailForWebSpace($space);
+    }
+
+    /**
      * @param list<mixed> $records
      */
     private static function findHintValue(array $records, string $type, string $name): ?string
@@ -343,8 +365,10 @@ class DnsProvisioner
             if (!is_array($record)) {
                 continue;
             }
-            if (strtoupper((string) ($record['type'] ?? '')) === $type
-                && trim((string) ($record['name'] ?? '')) === $name) {
+            if (
+                strtoupper((string) ($record['type'] ?? '')) === $type
+                && trim((string) ($record['name'] ?? '')) === $name
+            ) {
                 $value = trim((string) ($record['value'] ?? ''));
 
                 return $value !== '' ? $value : null;

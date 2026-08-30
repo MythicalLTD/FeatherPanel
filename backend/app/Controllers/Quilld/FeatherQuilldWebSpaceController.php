@@ -128,4 +128,67 @@ class FeatherQuilldWebSpaceController
 
         return new Response('', 204);
     }
+
+    /**
+     * POST /api/quilld-remote/webspaces/{uuid}/acme-dns
+     * Body: { action: set|clear, name: "_acme-challenge.example.com", content: "<digest>" }.
+     */
+    public function acmeDns(Request $request, string $uuid): Response
+    {
+        $webNode = $request->attributes->get('quilld_node');
+        if (!is_array($webNode)) {
+            return ApiResponse::error('Invalid FeatherQuilld authentication', 'INVALID_QUILLD_AUTH', 403);
+        }
+
+        $space = WebSpace::getByUuidAndNodeId($uuid, (int) $webNode['id']);
+        if (!$space) {
+            return ApiResponse::error('WebSpace not found', 'WEBSPACE_NOT_FOUND', 404);
+        }
+
+        $content = json_decode($request->getContent(), true);
+        if (!is_array($content)) {
+            return ApiResponse::error('Invalid JSON payload', 'INVALID_JSON', 400);
+        }
+
+        $action = strtolower(trim((string) ($content['action'] ?? '')));
+        $name = strtolower(trim((string) ($content['name'] ?? '')));
+        $txt = trim((string) ($content['content'] ?? ''));
+        if (!in_array($action, ['set', 'clear'], true) || $name === '') {
+            return ApiResponse::error('action (set|clear) and name are required', 'MISSING_FIELDS', 400);
+        }
+        if ($action === 'set' && $txt === '') {
+            return ApiResponse::error('content is required for set', 'MISSING_FIELDS', 400);
+        }
+
+        $context = \App\Helpers\DnsProvisioner::resolveProvisionerContext($space);
+        if ($context === null) {
+            return ApiResponse::error(
+                'No DNS zone linked for this WebSpace',
+                'DNS_NOT_CONFIGURED',
+                400
+            );
+        }
+
+        $provider = $context['provider'];
+        $zoneId = (string) $context['zone_id'];
+        if (!$provider instanceof \App\Services\Dns\AcmeDnsCapableInterface) {
+            return ApiResponse::error('DNS provider does not support ACME TXT', 'DNS_UNSUPPORTED', 400);
+        }
+
+        if ($action === 'set') {
+            $result = $provider->createTxtRecord($zoneId, $name, $txt);
+            if (empty($result['ok'])) {
+                return ApiResponse::error($result['error'] ?? 'Failed to create TXT', 'DNS_TXT_FAILED', 502);
+            }
+
+            return ApiResponse::success(['action' => 'set', 'name' => $name], 'OK', 200);
+        }
+
+        $result = $provider->deleteTxtRecords($zoneId, $name, $txt !== '' ? $txt : null);
+        if (empty($result['ok'])) {
+            return ApiResponse::error($result['error'] ?? 'Failed to clear TXT', 'DNS_TXT_FAILED', 502);
+        }
+
+        return ApiResponse::success(['action' => 'clear', 'name' => $name, 'deleted' => $result['deleted'] ?? 0], 'OK', 200);
+    }
 }

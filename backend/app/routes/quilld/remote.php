@@ -105,6 +105,21 @@ return function (RouteCollection $routes): void {
 
     App::getInstance(true)->registerQuilldRoute(
         $routes,
+        'quilld-remote-webspace-acme-dns',
+        '/api/quilld-remote/webspaces/{uuid}/acme-dns',
+        function (Request $request, array $args) {
+            $uuid = $args['uuid'] ?? null;
+            if (!$uuid) {
+                return \App\Helpers\ApiResponse::error('Missing WebSpace UUID', 'MISSING_UUID', 400);
+            }
+
+            return (new FeatherQuilldWebSpaceController())->acmeDns($request, (string) $uuid);
+        },
+        ['POST']
+    );
+
+    App::getInstance(true)->registerQuilldRoute(
+        $routes,
         'quilld-remote-sftp-auth',
         '/api/quilld-remote/sftp/auth',
         function (Request $request) {

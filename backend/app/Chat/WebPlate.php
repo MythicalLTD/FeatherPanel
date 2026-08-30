@@ -91,12 +91,24 @@ class WebPlate
     public static function normalizeDocumentRoot(mixed $value): string
     {
         $root = trim((string) ($value ?? ''));
+        $root = str_replace('\\', '/', $root);
         $root = trim($root, '/');
         if ($root === '' || $root === '.') {
             return '';
         }
 
-        return $root;
+        $parts = [];
+        foreach (explode('/', $root) as $part) {
+            if ($part === '' || $part === '.') {
+                continue;
+            }
+            if ($part === '..') {
+                return '';
+            }
+            $parts[] = $part;
+        }
+
+        return implode('/', $parts);
     }
 
     /**

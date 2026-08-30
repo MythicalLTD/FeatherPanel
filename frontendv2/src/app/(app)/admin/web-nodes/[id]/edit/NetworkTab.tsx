@@ -238,6 +238,34 @@ export function NetworkTab({ form, setForm, errors }: NetworkTabProps) {
                             {t('admin.webNodes.form.backend_port_max_help')}
                         </p>
                     </div>
+                    <div className='space-y-2 sm:col-span-2'>
+                        <Label className='text-sm font-semibold'>{t('admin.webNodes.form.proxy_backend_host')}</Label>
+                        <Input
+                            placeholder='127.0.0.1'
+                            value={form.proxyBackendHost}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                setForm({ ...form, proxyBackendHost: e.target.value })
+                            }
+                        />
+                        <p className='text-muted-foreground/70 text-xs italic'>
+                            {t('admin.webNodes.form.proxy_backend_host_help')}
+                        </p>
+                    </div>
+                    <div className='space-y-2 sm:col-span-2'>
+                        <Label className='text-sm font-semibold'>
+                            {t('admin.webNodes.form.proxy_backend_bind_host')}
+                        </Label>
+                        <Input
+                            placeholder='127.0.0.1'
+                            value={form.proxyBackendBindHost}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                setForm({ ...form, proxyBackendBindHost: e.target.value })
+                            }
+                        />
+                        <p className='text-muted-foreground/70 text-xs italic'>
+                            {t('admin.webNodes.form.proxy_backend_bind_host_help')}
+                        </p>
+                    </div>
                 </div>
             </PageCard>
 

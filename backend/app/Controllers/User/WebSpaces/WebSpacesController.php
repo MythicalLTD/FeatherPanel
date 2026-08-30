@@ -33,6 +33,7 @@ use App\Helpers\CheckWebSpacePermission;
 use App\Plugins\Events\Events\WebSpaceEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Helpers\WebSpaceInfrastructureReadiness;
 
 /**
  * User-facing WebSpace endpoints (owner, admin, or subuser).
@@ -80,6 +81,37 @@ class WebSpacesController
         return ApiResponse::success(['webspace' => $space], 'OK', 200);
     }
 
+    #[OA\Get(path: '/api/user/webspaces/{uuidShort}/infrastructure-readiness', summary: 'Infrastructure readiness for this WebSpace', tags: ['User - WebSpaces'])]
+    public function infrastructureReadiness(Request $request, string $uuidShort): Response
+    {
+        $resolved = $this->resolveAccessible($request, $uuidShort, WebSpaceSubuserPermissions::SETTINGS_READ);
+        if ($resolved instanceof Response) {
+            return $resolved;
+        }
+
+        $space = $resolved['space'];
+        $webNodeId = (int) ($space['web_node_id'] ?? 0);
+        $ssl = !empty($space['ssl']);
+        $databaseLimit = (int) ($space['database_limit'] ?? 0);
+        $mailboxLimit = (int) ($space['mailbox_limit'] ?? 0);
+        $domains = $space['domains'] ?? [];
+        if (is_string($domains)) {
+            $decoded = json_decode($domains, true);
+            $domains = is_array($decoded) ? $decoded : [];
+        }
+        $hasDomains = is_array($domains) && count(array_filter($domains, static fn ($d) => trim((string) $d) !== '')) > 0;
+
+        $payload = WebSpaceInfrastructureReadiness::inspect(
+            $webNodeId > 0 ? $webNodeId : null,
+            $ssl,
+            $databaseLimit,
+            $mailboxLimit,
+            $hasDomains,
+        );
+
+        return ApiResponse::success($payload, 'OK', 200);
+    }
+
     #[OA\Get(path: '/api/user/webspaces/catalog', summary: 'Order catalog (nodes + WebPlates)', tags: ['User - WebSpaces'])]
     public function catalog(Request $request): Response
     {
@@ -101,8 +133,8 @@ class WebSpacesController
         ], 'OK', 200);
     }
 
-    #[OA\Post(path: '/api/user/webspaces/order', summary: 'Self-service WebSpace order', tags: ['User - WebSpaces'])]
-    public function order(Request $request): Response
+    #[OA\Post(path: '/api/user/webspaces/create', summary: 'Create a WebSpace', tags: ['User - WebSpaces'])]
+    public function create(Request $request): Response
     {
         $user = $request->attributes->get('user');
         if (!$user) {
@@ -164,8 +196,16 @@ class WebSpacesController
             );
         }
 
+        $body = is_array($daemon['body']) ? $daemon['body'] : [];
+        if (isset($body['bandwidth_used_bytes'])) {
+            WebSpace::updateBandwidthUsage(
+                (string) $space['uuid'],
+                (int) $body['bandwidth_used_bytes'],
+            );
+        }
+
         return ApiResponse::success([
-            'utilization' => is_array($daemon['body']) ? $daemon['body'] : [],
+            'utilization' => $body,
         ], 'OK', 200);
     }
 
@@ -193,6 +233,7 @@ class WebSpacesController
 
         $body = is_array($daemon['body']) ? $daemon['body'] : ['job' => $daemon['body']];
         $this->persistCompletedBackupJob($resolved['space'], $body);
+        $this->importDumpsAfterRestoreJob($resolved['space'], $body);
 
         return ApiResponse::success($body, 'OK', 200);
     }
@@ -225,8 +266,29 @@ class WebSpacesController
         if (array_key_exists('domains', $content)) {
             $fields['domains'] = $content['domains'];
         }
+        if (array_key_exists('domain_routes', $content) && is_array($content['domain_routes'])) {
+            $fields['domain_routes'] = $content['domain_routes'];
+        }
         if (array_key_exists('ssl', $content)) {
             $fields['ssl'] = !empty($content['ssl']);
+        }
+        if (array_key_exists('ssl_mode', $content)) {
+            $mode = strtolower(trim((string) $content['ssl_mode']));
+            if (in_array($mode, ['acme', 'dns01'], true)) {
+                $fields['ssl_mode'] = $mode;
+            }
+        }
+        if (array_key_exists('www_preference', $content)) {
+            $pref = strtolower(trim((string) $content['www_preference']));
+            if (in_array($pref, ['apex', 'www', 'none'], true)) {
+                $routes = $fields['domain_routes'] ?? ($space['domain_routes'] ?? []);
+                if (!is_array($routes)) {
+                    $routes = [];
+                }
+                $sslForWww = array_key_exists('ssl', $fields) ? (bool) $fields['ssl'] : !empty($space['ssl']);
+                $fields['domain_routes'] = \App\Chat\WebSpaceDomain::applyWwwPreference($routes, $pref, $sslForWww);
+                $fields['domains'] = array_column($fields['domain_routes'], 'domain');
+            }
         }
         if (array_key_exists('disk', $content)) {
             $user = $resolved['user'];
@@ -245,23 +307,58 @@ class WebSpacesController
             $fields['disk'] = (int) $content['disk'];
         }
         if (array_key_exists('document_root', $content)) {
-            $fields['document_root'] = trim((string) $content['document_root']);
+            return ApiResponse::error(
+                'Document root is managed by the WebPlate and cannot be changed here',
+                'DOCUMENT_ROOT_LOCKED',
+                403
+            );
+        }
+        if (array_key_exists('webplate_id', $content)) {
+            $fields['webplate_id'] = (int) $content['webplate_id'];
+        }
+        if (array_key_exists('waf_enabled', $content)) {
+            $fields['waf_enabled'] = !empty($content['waf_enabled']) ? 1 : 0;
+        }
+        if (array_key_exists('waf_deny_ips', $content)) {
+            $fields['waf_deny_ips'] = $content['waf_deny_ips'];
+        }
+        if (array_key_exists('waf_deny_paths', $content)) {
+            $fields['waf_deny_paths'] = $content['waf_deny_paths'];
         }
 
         if ($fields === []) {
             return ApiResponse::error('No updatable fields provided', 'MISSING_FIELDS', 400);
         }
 
+        $previousSpace = $space;
         $uuid = (string) $space['uuid'];
         $webNode = WebNode::getWebNodeById((int) $space['web_node_id']);
         if (!$webNode) {
             return ApiResponse::error('Web node not found', 'WEB_NODE_NOT_FOUND', 404);
         }
 
+        if (isset($fields['webplate_id'])) {
+            $newPlate = WebPlate::getById((int) $fields['webplate_id']);
+            if (!$newPlate) {
+                return ApiResponse::error('WebPlate not found', 'WEBPLATE_NOT_FOUND', 404);
+            }
+            $currentPlate = WebPlate::getById((int) $space['webplate_id']);
+            $currentRuntime = strtolower(trim((string) ($currentPlate['runtime'] ?? 'static')));
+            $newRuntime = strtolower(trim((string) ($newPlate['runtime'] ?? 'static')));
+            if ($currentRuntime !== $newRuntime) {
+                return ApiResponse::error(
+                    'WebPlate runtime family must match the current WebSpace (e.g. php → php only)',
+                    'RUNTIME_FAMILY_MISMATCH',
+                    400,
+                );
+            }
+            $fields['image'] = (string) ($newPlate['docker_image'] ?? '');
+        }
+
         $sslEnabled = array_key_exists('ssl', $fields) ? (bool) $fields['ssl'] : !empty($space['ssl']);
-        if ($sslEnabled && trim((string) ($webNode['acmeEmail'] ?? '')) === '') {
+        if ($sslEnabled && !WebSpaceInfrastructureReadiness::hasAcmeContact($space, $webNode)) {
             return ApiResponse::error(
-                'Web node acmeEmail is required when SSL is enabled',
+                'The site owner\'s account email is required when SSL is enabled (or set a fallback acmeEmail on the web node)',
                 'MISSING_ACME_EMAIL',
                 400,
             );
@@ -273,7 +370,7 @@ class WebSpacesController
 
         $space = WebSpace::getByUuid($uuid) ?? $space;
 
-        $daemon = FeatherQuilldClient::syncWebSpace($webNode, $uuid);
+        $daemon = \App\Helpers\WebSpaceDaemonSync::syncAfterUpdate($webNode, $space, $previousSpace);
         if (!$daemon['ok']) {
             return ApiResponse::error(
                 'WebSpace saved on panel but daemon sync failed: ' . ($daemon['error'] ?? 'unknown'),
@@ -301,8 +398,525 @@ class WebSpacesController
 
         return ApiResponse::success([
             'webspace' => $space,
-            'daemon' => is_array($daemon['body']) ? $daemon['body'] : [],
+            'daemon' => is_array($daemon['sync']['body'] ?? null) ? $daemon['sync']['body'] : [],
+            'runtime_recreated' => isset($daemon['recreate']),
         ], 'WebSpace updated', 200);
+    }
+
+    public function phpIni(Request $request, string $uuidShort): Response
+    {
+        $resolved = $this->resolveAccessible($request, $uuidShort);
+        if ($resolved instanceof Response) {
+            return $resolved;
+        }
+
+        $denied = CheckWebSpacePermission::require($request, $resolved['space'], WebSpaceSubuserPermissions::SETTINGS_READ);
+        if ($denied instanceof Response) {
+            return $denied;
+        }
+
+        $webNode = WebNode::getWebNodeById((int) $resolved['space']['web_node_id']);
+        if (!$webNode) {
+            return ApiResponse::error('Web node not found', 'WEB_NODE_NOT_FOUND', 404);
+        }
+
+        $uuid = (string) $resolved['space']['uuid'];
+        $read = FeatherQuilldClient::getWebSpaceFileContents($webNode, $uuid, '.featherquilld/php.ini');
+        $contents = '';
+        if ($read['ok']) {
+            $body = $read['body'];
+            $contents = is_string($body) ? $body : (is_array($body) ? (string) ($body['data'] ?? $body['contents'] ?? '') : '');
+        }
+        if ($contents === '') {
+            $contents = "; FeatherQuilld per-site php.ini\nmemory_limit = 256M\nupload_max_filesize = 64M\npost_max_size = 64M\nmax_execution_time = 120\n";
+        }
+
+        return ApiResponse::success([
+            'path' => '.featherquilld/php.ini',
+            'contents' => $contents,
+        ], 'OK', 200);
+    }
+
+    public function savePhpIni(Request $request, string $uuidShort): Response
+    {
+        $resolved = $this->resolveAccessible($request, $uuidShort);
+        if ($resolved instanceof Response) {
+            return $resolved;
+        }
+
+        $space = $resolved['space'];
+        $denied = CheckWebSpacePermission::require($request, $space, WebSpaceSubuserPermissions::SETTINGS_UPDATE);
+        if ($denied instanceof Response) {
+            return $denied;
+        }
+
+        $content = json_decode($request->getContent(), true);
+        if (!is_array($content) || !array_key_exists('contents', $content)) {
+            return ApiResponse::error('contents is required', 'INVALID_JSON', 400);
+        }
+
+        $ini = (string) $content['contents'];
+        if (strlen($ini) > 256_000) {
+            return ApiResponse::error('php.ini is too large', 'PHP_INI_TOO_LARGE', 400);
+        }
+
+        $webNode = WebNode::getWebNodeById((int) $space['web_node_id']);
+        if (!$webNode) {
+            return ApiResponse::error('Web node not found', 'WEB_NODE_NOT_FOUND', 404);
+        }
+
+        $uuid = (string) $space['uuid'];
+        FeatherQuilldClient::createWebSpaceDirectory($webNode, $uuid, '.featherquilld');
+        $write = FeatherQuilldClient::writeWebSpaceFile($webNode, $uuid, '.featherquilld/php.ini', $ini);
+        if (!$write['ok']) {
+            return ApiResponse::error($write['error'] ?? 'Failed to write php.ini', 'PHP_INI_WRITE_FAILED', 502);
+        }
+
+        $runtime = strtolower(trim((string) ($space['webplate_runtime'] ?? '')));
+        if ($runtime === '' && !empty($space['webplate_id'])) {
+            $plate = WebPlate::getById((int) $space['webplate_id']);
+            $runtime = strtolower(trim((string) ($plate['runtime'] ?? '')));
+        }
+
+        $recreated = false;
+        if ($runtime === 'php') {
+            $recreate = FeatherQuilldClient::recreateRuntime($webNode, $uuid);
+            if (!$recreate['ok']) {
+                return ApiResponse::error(
+                    'php.ini saved but runtime recreate failed: ' . ($recreate['error'] ?? 'unknown'),
+                    'DAEMON_RECREATE_FAILED',
+                    502,
+                );
+            }
+            $recreated = true;
+        }
+
+        \App\Helpers\WebSpaceActivityLogger::log($space, $resolved['user'], 'webspace.php_ini.updated', []);
+
+        return ApiResponse::success([
+            'path' => '.featherquilld/php.ini',
+            'runtime_recreated' => $recreated,
+        ], 'php.ini saved', 200);
+    }
+
+    public function phpExtensions(Request $request, string $uuidShort): Response
+    {
+        $resolved = $this->resolveAccessible($request, $uuidShort);
+        if ($resolved instanceof Response) {
+            return $resolved;
+        }
+
+        $denied = CheckWebSpacePermission::require($request, $resolved['space'], WebSpaceSubuserPermissions::SETTINGS_READ);
+        if ($denied instanceof Response) {
+            return $denied;
+        }
+
+        $webNode = WebNode::getWebNodeById((int) $resolved['space']['web_node_id']);
+        if (!$webNode) {
+            return ApiResponse::error('Web node not found', 'WEB_NODE_NOT_FOUND', 404);
+        }
+
+        $uuid = (string) $resolved['space']['uuid'];
+        $read = FeatherQuilldClient::getWebSpaceFileContents($webNode, $uuid, '.featherquilld/php-extensions.json');
+        $extensions = [];
+        if ($read['ok']) {
+            $body = $read['body'];
+            $raw = is_string($body) ? $body : (is_array($body) ? (string) ($body['data'] ?? $body['contents'] ?? '') : '');
+            $decoded = json_decode($raw, true);
+            if (is_array($decoded)) {
+                if (isset($decoded['extensions']) && is_array($decoded['extensions'])) {
+                    $extensions = $decoded['extensions'];
+                } elseif (array_is_list($decoded)) {
+                    $extensions = $decoded;
+                }
+            }
+        }
+
+        $catalog = [
+            'bcmath', 'calendar', 'exif', 'gd', 'gettext', 'gmp', 'intl', 'ldap',
+            'pdo_pgsql', 'pgsql', 'redis', 'soap', 'sockets', 'zip',
+        ];
+        $selected = [];
+        foreach ($extensions as $ext) {
+            $name = strtolower(trim((string) $ext));
+            if ($name !== '' && in_array($name, $catalog, true) && !in_array($name, $selected, true)) {
+                $selected[] = $name;
+            }
+        }
+        sort($selected);
+
+        return ApiResponse::success([
+            'path' => '.featherquilld/php-extensions.json',
+            'catalog' => $catalog,
+            'baseline' => ['mysqli', 'pdo_mysql', 'opcache'],
+            'extensions' => $selected,
+        ], 'OK', 200);
+    }
+
+    public function savePhpExtensions(Request $request, string $uuidShort): Response
+    {
+        $resolved = $this->resolveAccessible($request, $uuidShort);
+        if ($resolved instanceof Response) {
+            return $resolved;
+        }
+
+        $space = $resolved['space'];
+        $denied = CheckWebSpacePermission::require($request, $space, WebSpaceSubuserPermissions::SETTINGS_UPDATE);
+        if ($denied instanceof Response) {
+            return $denied;
+        }
+
+        $content = json_decode($request->getContent(), true);
+        if (!is_array($content) || !array_key_exists('extensions', $content) || !is_array($content['extensions'])) {
+            return ApiResponse::error('extensions array is required', 'INVALID_JSON', 400);
+        }
+
+        $catalog = [
+            'bcmath', 'calendar', 'exif', 'gd', 'gettext', 'gmp', 'intl', 'ldap',
+            'pdo_pgsql', 'pgsql', 'redis', 'soap', 'sockets', 'zip',
+        ];
+        $selected = [];
+        foreach ($content['extensions'] as $ext) {
+            $name = strtolower(trim((string) $ext));
+            if ($name !== '' && in_array($name, $catalog, true) && !in_array($name, $selected, true)) {
+                $selected[] = $name;
+            }
+        }
+        sort($selected);
+
+        $webNode = WebNode::getWebNodeById((int) $space['web_node_id']);
+        if (!$webNode) {
+            return ApiResponse::error('Web node not found', 'WEB_NODE_NOT_FOUND', 404);
+        }
+
+        $uuid = (string) $space['uuid'];
+        $json = json_encode(['extensions' => $selected], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+        FeatherQuilldClient::createWebSpaceDirectory($webNode, $uuid, '.featherquilld');
+        $write = FeatherQuilldClient::writeWebSpaceFile($webNode, $uuid, '.featherquilld/php-extensions.json', $json);
+        if (!$write['ok']) {
+            return ApiResponse::error($write['error'] ?? 'Failed to write php-extensions.json', 'PHP_EXTENSIONS_WRITE_FAILED', 502);
+        }
+
+        $runtime = strtolower(trim((string) ($space['webplate_runtime'] ?? '')));
+        if ($runtime === '' && !empty($space['webplate_id'])) {
+            $plate = WebPlate::getById((int) $space['webplate_id']);
+            $runtime = strtolower(trim((string) ($plate['runtime'] ?? '')));
+        }
+
+        $recreated = false;
+        if ($runtime === 'php') {
+            $recreate = FeatherQuilldClient::recreateRuntime($webNode, $uuid);
+            if (!$recreate['ok']) {
+                return ApiResponse::error(
+                    'Extensions saved but runtime recreate failed: ' . ($recreate['error'] ?? 'unknown'),
+                    'DAEMON_RECREATE_FAILED',
+                    502,
+                );
+            }
+            $recreated = true;
+        }
+
+        \App\Helpers\WebSpaceActivityLogger::log($space, $resolved['user'], 'webspace.php_extensions.updated', [
+            'extensions' => $selected,
+        ]);
+
+        return ApiResponse::success([
+            'path' => '.featherquilld/php-extensions.json',
+            'extensions' => $selected,
+            'runtime_recreated' => $recreated,
+        ], 'PHP extensions saved', 200);
+    }
+
+    public function redis(Request $request, string $uuidShort): Response
+    {
+        $resolved = $this->resolveAccessible($request, $uuidShort);
+        if ($resolved instanceof Response) {
+            return $resolved;
+        }
+
+        $denied = CheckWebSpacePermission::require($request, $resolved['space'], WebSpaceSubuserPermissions::SETTINGS_READ);
+        if ($denied instanceof Response) {
+            return $denied;
+        }
+
+        $webNode = WebNode::getWebNodeById((int) $resolved['space']['web_node_id']);
+        if (!$webNode) {
+            return ApiResponse::error('Web node not found', 'WEB_NODE_NOT_FOUND', 404);
+        }
+
+        $uuid = (string) $resolved['space']['uuid'];
+        $read = FeatherQuilldClient::getWebSpaceFileContents($webNode, $uuid, '.featherquilld/redis.json');
+        $enabled = false;
+        $host = 'redis';
+        $port = 6379;
+        $password = '';
+        if ($read['ok']) {
+            $body = $read['body'];
+            $raw = is_string($body) ? $body : (is_array($body) ? (string) ($body['data'] ?? $body['contents'] ?? '') : '');
+            $decoded = json_decode($raw, true);
+            if (is_array($decoded)) {
+                $enabled = !empty($decoded['enabled']);
+                $host = trim((string) ($decoded['host'] ?? 'redis')) ?: 'redis';
+                $port = (int) ($decoded['port'] ?? 6379) ?: 6379;
+                $password = (string) ($decoded['password'] ?? '');
+            }
+        }
+
+        return ApiResponse::success([
+            'enabled' => $enabled,
+            'host' => $host,
+            'port' => $port,
+            'password' => $password,
+            'env' => [
+                'REDIS_HOST' => $host,
+                'REDIS_PORT' => $port,
+                'REDIS_PASSWORD' => $password,
+            ],
+        ], 'OK', 200);
+    }
+
+    public function saveRedis(Request $request, string $uuidShort): Response
+    {
+        $resolved = $this->resolveAccessible($request, $uuidShort);
+        if ($resolved instanceof Response) {
+            return $resolved;
+        }
+
+        $space = $resolved['space'];
+        $denied = CheckWebSpacePermission::require($request, $space, WebSpaceSubuserPermissions::SETTINGS_UPDATE);
+        if ($denied instanceof Response) {
+            return $denied;
+        }
+
+        $content = json_decode($request->getContent(), true);
+        if (!is_array($content) || !array_key_exists('enabled', $content)) {
+            return ApiResponse::error('enabled is required', 'INVALID_JSON', 400);
+        }
+
+        $enabled = !empty($content['enabled']);
+        $webNode = WebNode::getWebNodeById((int) $space['web_node_id']);
+        if (!$webNode) {
+            return ApiResponse::error('Web node not found', 'WEB_NODE_NOT_FOUND', 404);
+        }
+
+        $uuid = (string) $space['uuid'];
+        $password = '';
+        if ($enabled) {
+            $existing = FeatherQuilldClient::getWebSpaceFileContents($webNode, $uuid, '.featherquilld/redis.json');
+            if ($existing['ok']) {
+                $body = $existing['body'];
+                $raw = is_string($body) ? $body : (is_array($body) ? (string) ($body['data'] ?? $body['contents'] ?? '') : '');
+                $decoded = json_decode($raw, true);
+                if (is_array($decoded)) {
+                    $password = (string) ($decoded['password'] ?? '');
+                }
+            }
+            if ($password === '') {
+                $password = bin2hex(random_bytes(16));
+            }
+        }
+
+        $payload = [
+            'enabled' => $enabled,
+            'host' => 'redis',
+            'port' => 6379,
+            'password' => $password,
+        ];
+        $json = json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+        FeatherQuilldClient::createWebSpaceDirectory($webNode, $uuid, '.featherquilld');
+        $write = FeatherQuilldClient::writeWebSpaceFile($webNode, $uuid, '.featherquilld/redis.json', $json);
+        if (!$write['ok']) {
+            return ApiResponse::error($write['error'] ?? 'Failed to write redis.json', 'REDIS_WRITE_FAILED', 502);
+        }
+
+        if ($enabled) {
+            $extRead = FeatherQuilldClient::getWebSpaceFileContents($webNode, $uuid, '.featherquilld/php-extensions.json');
+            $extensions = [];
+            if ($extRead['ok']) {
+                $body = $extRead['body'];
+                $raw = is_string($body) ? $body : (is_array($body) ? (string) ($body['data'] ?? $body['contents'] ?? '') : '');
+                $decoded = json_decode($raw, true);
+                if (is_array($decoded)) {
+                    $extensions = isset($decoded['extensions']) && is_array($decoded['extensions'])
+                        ? $decoded['extensions']
+                        : (array_is_list($decoded) ? $decoded : []);
+                }
+            }
+            $extensions = array_values(array_unique(array_map('strval', $extensions)));
+            if (!in_array('redis', $extensions, true)) {
+                $extensions[] = 'redis';
+                sort($extensions);
+                FeatherQuilldClient::writeWebSpaceFile(
+                    $webNode,
+                    $uuid,
+                    '.featherquilld/php-extensions.json',
+                    json_encode(['extensions' => $extensions], JSON_PRETTY_PRINT) . "\n",
+                );
+            }
+        }
+
+        $recreated = false;
+        $runtime = strtolower(trim((string) ($space['webplate_runtime'] ?? '')));
+        if ($runtime === '' && !empty($space['webplate_id'])) {
+            $plate = WebPlate::getById((int) $space['webplate_id']);
+            $runtime = strtolower(trim((string) ($plate['runtime'] ?? '')));
+        }
+        if ($runtime === 'php') {
+            $recreate = FeatherQuilldClient::recreateRuntime($webNode, $uuid);
+            if (!$recreate['ok']) {
+                return ApiResponse::error(
+                    'Redis config saved but runtime recreate failed: ' . ($recreate['error'] ?? 'unknown'),
+                    'DAEMON_RECREATE_FAILED',
+                    502,
+                );
+            }
+            $recreated = true;
+        }
+
+        \App\Helpers\WebSpaceActivityLogger::log($space, $resolved['user'], 'webspace.redis.updated', [
+            'enabled' => $enabled,
+        ]);
+
+        return ApiResponse::success([
+            'enabled' => $enabled,
+            'host' => 'redis',
+            'port' => 6379,
+            'password' => $password,
+            'runtime_recreated' => $recreated,
+        ], 'Redis add-on updated', 200);
+    }
+
+    public function malwareScan(Request $request, string $uuidShort): Response
+    {
+        $resolved = $this->resolveAccessible($request, $uuidShort);
+        if ($resolved instanceof Response) {
+            return $resolved;
+        }
+
+        $space = $resolved['space'];
+        $denied = CheckWebSpacePermission::require($request, $space, WebSpaceSubuserPermissions::SETTINGS_UPDATE);
+        if ($denied instanceof Response) {
+            return $denied;
+        }
+
+        $webNode = WebNode::getWebNodeById((int) $space['web_node_id']);
+        if (!$webNode) {
+            return ApiResponse::error('Web node not found', 'WEB_NODE_NOT_FOUND', 404);
+        }
+
+        $content = json_decode($request->getContent(), true);
+        if (!is_array($content)) {
+            $content = [];
+        }
+
+        $scan = FeatherQuilldClient::startWebSpaceMalwareScan(
+            $webNode,
+            (string) $space['uuid'],
+            ['async' => array_key_exists('async', $content) ? !empty($content['async']) : true],
+        );
+        if (!$scan['ok']) {
+            $msg = is_array($scan['body']) ? (string) ($scan['body']['error'] ?? $scan['error'] ?? 'Scan failed') : (string) ($scan['error'] ?? 'Scan failed');
+
+            return ApiResponse::error($msg, 'MALWARE_SCAN_FAILED', $scan['status'] >= 400 ? $scan['status'] : 502);
+        }
+
+        \App\Helpers\WebSpaceActivityLogger::log($space, $resolved['user'], 'webspace.malware_scan.started', []);
+
+        return ApiResponse::success($scan['body'], 'Malware scan started', $scan['status'] === 202 ? 202 : 200);
+    }
+
+    public function malwareScanStatus(Request $request, string $uuidShort): Response
+    {
+        $resolved = $this->resolveAccessible($request, $uuidShort);
+        if ($resolved instanceof Response) {
+            return $resolved;
+        }
+
+        $space = $resolved['space'];
+        $denied = CheckWebSpacePermission::require($request, $space, WebSpaceSubuserPermissions::SETTINGS_READ);
+        if ($denied instanceof Response) {
+            return $denied;
+        }
+
+        $webNode = WebNode::getWebNodeById((int) $space['web_node_id']);
+        if (!$webNode) {
+            return ApiResponse::error('Web node not found', 'WEB_NODE_NOT_FOUND', 404);
+        }
+
+        $uuid = (string) $space['uuid'];
+        $jobId = trim((string) $request->query->get('job_id', ''));
+        if ($jobId !== '') {
+            $job = FeatherQuilldClient::getWebSpaceMalwareScanJob($webNode, $uuid, $jobId);
+            if (!$job['ok']) {
+                return ApiResponse::error($job['error'] ?? 'Job not found', 'MALWARE_JOB_NOT_FOUND', 404);
+            }
+
+            return ApiResponse::success($job['body'], 'OK', 200);
+        }
+
+        $probe = FeatherQuilldClient::probeWebSpaceMalwareScan($webNode);
+        $last = FeatherQuilldClient::getWebSpaceMalwareScanLast($webNode, $uuid);
+
+        return ApiResponse::success([
+            'probe' => is_array($probe['body']) ? $probe['body'] : null,
+            'last' => is_array($last['body']) ? ($last['body']['last'] ?? null) : null,
+        ], 'OK', 200);
+    }
+
+    public function enableMalwareScanSchedule(Request $request, string $uuidShort): Response
+    {
+        $resolved = $this->resolveAccessible($request, $uuidShort);
+        if ($resolved instanceof Response) {
+            return $resolved;
+        }
+
+        $space = $resolved['space'];
+        $denied = CheckWebSpacePermission::require($request, $space, WebSpaceSubuserPermissions::SCHEDULE_CREATE);
+        if ($denied instanceof Response) {
+            return $denied;
+        }
+
+        $scheduleId = \App\Chat\WebSpaceSchedule::create([
+            'webspace_id' => (int) $space['id'],
+            'name' => 'Weekly malware scan',
+            'cron_day_of_week' => '0',
+            'cron_month' => '*',
+            'cron_day_of_month' => '*',
+            'cron_hour' => '3',
+            'cron_minute' => '30',
+            'timezone' => 'UTC',
+            'is_active' => 1,
+        ]);
+        if ($scheduleId === false) {
+            return ApiResponse::error('Failed to create malware scan schedule', 'CREATION_FAILED', 500);
+        }
+
+        $tasks = [[
+            'action' => 'malware_scan',
+            'payload' => '',
+            'sequence_id' => 1,
+            'time_offset' => 0,
+            'continue_on_failure' => false,
+        ]];
+        if (!\App\Chat\WebSpaceSchedule::replaceTasks($scheduleId, $tasks)) {
+            \App\Chat\WebSpaceSchedule::delete($scheduleId);
+
+            return ApiResponse::error('Failed to create schedule tasks', 'TASK_CREATION_FAILED', 500);
+        }
+
+        $webNode = WebNode::getWebNodeById((int) $space['web_node_id']);
+        if ($webNode) {
+            FeatherQuilldClient::syncWebSpaceSchedules($webNode, (string) $space['uuid']);
+        }
+
+        \App\Helpers\WebSpaceActivityLogger::log($space, $resolved['user'], 'webspace.malware_scan.scheduled', [
+            'schedule_id' => $scheduleId,
+        ]);
+
+        return ApiResponse::success([
+            'schedule_id' => $scheduleId,
+            'cron' => '30 3 * * 0',
+        ], 'Weekly malware scan scheduled', 200);
     }
 
     public function power(Request $request, string $uuidShort): Response
@@ -593,6 +1207,66 @@ class WebSpacesController
         return (new \App\Controllers\Admin\WebSpacesController())->checkDns($request, (string) $resolved['space']['uuid']);
     }
 
+    public function provisionDns(Request $request, string $uuidShort): Response
+    {
+        $resolved = $this->resolveAccessible($request, $uuidShort);
+        if ($resolved instanceof Response) {
+            return $resolved;
+        }
+
+        $denied = CheckWebSpacePermission::require($request, $resolved['space'], WebSpaceSubuserPermissions::SETTINGS_UPDATE);
+        if ($denied instanceof Response) {
+            return $denied;
+        }
+
+        return (new \App\Controllers\Admin\WebSpacesController())->provisionDns($request, (string) $resolved['space']['uuid']);
+    }
+
+    public function uploadCustomSsl(Request $request, string $uuidShort): Response
+    {
+        $resolved = $this->resolveAccessible($request, $uuidShort);
+        if ($resolved instanceof Response) {
+            return $resolved;
+        }
+
+        $denied = CheckWebSpacePermission::require($request, $resolved['space'], WebSpaceSubuserPermissions::SETTINGS_UPDATE);
+        if ($denied instanceof Response) {
+            return $denied;
+        }
+
+        return (new \App\Controllers\Admin\WebSpacesController())->uploadCustomSsl($request, (string) $resolved['space']['uuid']);
+    }
+
+    public function customSslStatus(Request $request, string $uuidShort): Response
+    {
+        $resolved = $this->resolveAccessible($request, $uuidShort);
+        if ($resolved instanceof Response) {
+            return $resolved;
+        }
+
+        $denied = CheckWebSpacePermission::require($request, $resolved['space'], WebSpaceSubuserPermissions::SETTINGS_READ);
+        if ($denied instanceof Response) {
+            return $denied;
+        }
+
+        return (new \App\Controllers\Admin\WebSpacesController())->customSslStatus($request, (string) $resolved['space']['uuid']);
+    }
+
+    public function deleteCustomSsl(Request $request, string $uuidShort): Response
+    {
+        $resolved = $this->resolveAccessible($request, $uuidShort);
+        if ($resolved instanceof Response) {
+            return $resolved;
+        }
+
+        $denied = CheckWebSpacePermission::require($request, $resolved['space'], WebSpaceSubuserPermissions::SETTINGS_UPDATE);
+        if ($denied instanceof Response) {
+            return $denied;
+        }
+
+        return (new \App\Controllers\Admin\WebSpacesController())->deleteCustomSsl($request, (string) $resolved['space']['uuid']);
+    }
+
     public function listBackups(Request $request, string $uuidShort): Response
     {
         $resolved = $this->resolveAccessible($request, $uuidShort);
@@ -651,6 +1325,21 @@ class WebSpacesController
         }
 
         return (new \App\Controllers\Admin\WebSpacesController())->restoreBackup($request, (string) $resolved['space']['uuid'], $backupUuid);
+    }
+
+    public function listBackupFiles(Request $request, string $uuidShort, string $backupUuid): Response
+    {
+        $resolved = $this->resolveAccessible($request, $uuidShort);
+        if ($resolved instanceof Response) {
+            return $resolved;
+        }
+
+        $denied = CheckWebSpacePermission::require($request, $resolved['space'], WebSpaceSubuserPermissions::BACKUP_RESTORE);
+        if ($denied instanceof Response) {
+            return $denied;
+        }
+
+        return (new \App\Controllers\Admin\WebSpacesController())->listBackupFiles($request, (string) $resolved['space']['uuid'], $backupUuid);
     }
 
     public function downloadBackup(Request $request, string $uuidShort, string $backupUuid): Response
@@ -784,6 +1473,7 @@ class WebSpacesController
             return ApiResponse::success([
                 'token' => $jwt,
                 'socket' => $socket,
+                'connection_string' => $socket,
             ], 'OK', 200);
         } catch (\Throwable $e) {
             return ApiResponse::error(
@@ -826,6 +1516,26 @@ class WebSpacesController
             'status' => 'completed',
         ]);
         \App\Chat\WebSpaceBackup::markCompleted($backupUuid, $bytes, $checksum);
+    }
+
+    /**
+     * @param array<string, mixed> $space
+     * @param array<string, mixed> $body
+     */
+    private function importDumpsAfterRestoreJob(array $space, array $body): void
+    {
+        $job = is_array($body['job'] ?? null) ? $body['job'] : $body;
+        $phase = strtolower((string) ($job['phase'] ?? ''));
+        $operation = strtolower((string) ($job['operation'] ?? ''));
+        if ($phase !== 'completed' || $operation !== 'restore') {
+            return;
+        }
+
+        try {
+            \App\Helpers\WebSpaceDatabaseDumpService::importDumpsFromWebSpace($space);
+        } catch (\Throwable) {
+            // Restore files already succeeded; dump import is best-effort.
+        }
     }
 
     /**

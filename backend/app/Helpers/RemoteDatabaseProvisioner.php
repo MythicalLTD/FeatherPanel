@@ -157,11 +157,141 @@ class RemoteDatabaseProvisioner
     {
         $chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
         $result = '';
+        $max = strlen($chars) - 1;
         for ($i = 0; $i < $length; ++$i) {
-            $result .= $chars[random_int(0, strlen($chars) - 1)];
+            $result .= $chars[random_int(0, $max)];
         }
 
         return $result;
+    }
+
+    /**
+     * Logical SQL dump of a customer database (MySQL/MariaDB/PostgreSQL).
+     *
+     * @param array<string, mixed> $databaseHost
+     */
+    public static function dumpDatabase(array $databaseHost, string $databaseName): string
+    {
+        $type = (string) ($databaseHost['database_type'] ?? '');
+        $pdo = self::connectToDatabase($databaseHost, $databaseName);
+
+        return match ($type) {
+            'mysql', 'mariadb' => self::dumpMysql($pdo, $databaseName),
+            'postgresql' => self::dumpPostgres($pdo, $databaseName),
+            default => throw new \InvalidArgumentException('Unsupported database type: ' . $type),
+        };
+    }
+
+    /**
+     * @param array<string, mixed> $databaseHost
+     */
+    public static function importDatabase(array $databaseHost, string $databaseName, string $sql): void
+    {
+        $pdo = self::connectToDatabase($databaseHost, $databaseName);
+        $sql = trim($sql);
+        if ($sql === '') {
+            return;
+        }
+
+        $chunks = preg_split('/;\s*\n/', $sql) ?: [];
+        foreach ($chunks as $chunk) {
+            $stmt = trim($chunk);
+            if ($stmt === '' || str_starts_with($stmt, '--')) {
+                continue;
+            }
+            $pdo->exec($stmt);
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $databaseHost
+     */
+    private static function connectToDatabase(array $databaseHost, string $databaseName): \PDO
+    {
+        $options = [
+            \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+            \PDO::ATTR_TIMEOUT => 30,
+        ];
+
+        $type = (string) ($databaseHost['database_type'] ?? '');
+        $host = (string) ($databaseHost['database_host'] ?? '');
+        $port = (int) ($databaseHost['database_port'] ?? 3306);
+        $db = str_replace(['\\', ';'], '', $databaseName);
+
+        $dsn = match ($type) {
+            'mysql', 'mariadb' => "mysql:host={$host};port={$port};dbname={$db};charset=utf8mb4",
+            'postgresql' => "pgsql:host={$host};port={$port};dbname={$db}",
+            default => throw new \InvalidArgumentException('Unsupported database type: ' . $type),
+        };
+
+        return new \PDO(
+            $dsn,
+            (string) ($databaseHost['database_username'] ?? ''),
+            (string) ($databaseHost['database_password'] ?? ''),
+            $options,
+        );
+    }
+
+    private static function dumpMysql(\PDO $pdo, string $databaseName): string
+    {
+        $out = "-- FeatherQuilld dump for `{$databaseName}`\nSET NAMES utf8mb4;\nSET FOREIGN_KEY_CHECKS=0;\n\n";
+        $tables = $pdo->query('SHOW TABLES')->fetchAll(\PDO::FETCH_COLUMN) ?: [];
+        foreach ($tables as $table) {
+            $table = (string) $table;
+            $ident = self::quoteIdentifierMySQL($table);
+            $create = $pdo->query("SHOW CREATE TABLE {$ident}")->fetch(\PDO::FETCH_ASSOC) ?: [];
+            $ddl = (string) ($create['Create Table'] ?? $create['Create View'] ?? '');
+            if ($ddl === '') {
+                continue;
+            }
+            $out .= "DROP TABLE IF EXISTS {$ident};\n{$ddl};\n";
+            $rows = $pdo->query("SELECT * FROM {$ident}");
+            while ($row = $rows->fetch(\PDO::FETCH_ASSOC)) {
+                $cols = implode(', ', array_map(static fn ($c) => self::quoteIdentifierMySQL((string) $c), array_keys($row)));
+                $vals = implode(', ', array_map(static function ($v) use ($pdo) {
+                    return $v === null ? 'NULL' : $pdo->quote((string) $v);
+                }, array_values($row)));
+                $out .= "INSERT INTO {$ident} ({$cols}) VALUES ({$vals});\n";
+            }
+            $out .= "\n";
+        }
+
+        return $out . "SET FOREIGN_KEY_CHECKS=1;\n";
+    }
+
+    private static function dumpPostgres(\PDO $pdo, string $databaseName): string
+    {
+        $out = "-- FeatherQuilld dump for \"{$databaseName}\"\n";
+        $tables = $pdo->query(
+            "SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname = 'public' ORDER BY tablename"
+        )->fetchAll(\PDO::FETCH_COLUMN) ?: [];
+        foreach ($tables as $table) {
+            $table = (string) $table;
+            $ident = self::quoteIdentifier($table);
+            $out .= "DROP TABLE IF EXISTS {$ident} CASCADE;\n";
+            $cols = $pdo->query(
+                "SELECT column_name, data_type FROM information_schema.columns WHERE table_schema = 'public' AND table_name = " . $pdo->quote($table) . ' ORDER BY ordinal_position'
+            )->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+            $colSql = [];
+            foreach ($cols as $col) {
+                $colSql[] = self::quoteIdentifier((string) $col['column_name']) . ' ' . (string) $col['data_type'];
+            }
+            if ($colSql === []) {
+                continue;
+            }
+            $out .= 'CREATE TABLE ' . $ident . ' (' . implode(', ', $colSql) . ");\n";
+            $rows = $pdo->query("SELECT * FROM {$ident}");
+            while ($row = $rows->fetch(\PDO::FETCH_ASSOC)) {
+                $c = implode(', ', array_map(static fn ($n) => self::quoteIdentifier((string) $n), array_keys($row)));
+                $vals = implode(', ', array_map(static function ($v) use ($pdo) {
+                    return $v === null ? 'NULL' : $pdo->quote((string) $v);
+                }, array_values($row)));
+                $out .= "INSERT INTO {$ident} ({$c}) VALUES ({$vals});\n";
+            }
+            $out .= "\n";
+        }
+
+        return $out;
     }
 
     /**

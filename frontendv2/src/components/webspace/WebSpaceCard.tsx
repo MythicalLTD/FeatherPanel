@@ -16,167 +16,198 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import Link from 'next/link';
-import { AppWindow, ArrowRight, Globe, HardDrive, LayoutTemplate, ShieldCheck } from 'lucide-react';
+import { Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { formatDisk } from '@/lib/server-utils';
+import { StatusBadge } from '@/components/servers/StatusBadge';
+import { ResourceBar } from '@/components/servers/ResourceBar';
+import { Checkbox } from '@/components/ui/checkbox';
+import { displayWebSpaceStatus, isWebSpaceAccessible } from '@/lib/webspace-utils';
+import type { WebSpace } from '@/types/webspace';
 
-export type DashboardWebSpace = {
-    uuid: string;
-    uuidShort?: string;
-    name: string;
-    web_node_name?: string | null;
-    webplate_name?: string | null;
-    domains?: string[];
-    status?: string;
-    state?: string;
-    ssl?: boolean;
-    dns_status?: string | null;
-    suspended?: number;
-    disk?: number;
+export type DashboardWebSpace = WebSpace & {
+    id?: number;
 };
 
 interface WebSpaceCardProps {
     webspace: DashboardWebSpace;
-    layout?: 'list' | 'grid';
+    layout: 'list' | 'grid';
+    webspaceUrl: string;
+    t: (key: string) => string;
+    selectable?: boolean;
+    selected?: boolean;
+    onToggleSelect?: () => void;
+    showFavoriteToggle?: boolean;
+    isFavorite?: boolean;
+    onToggleFavorite?: () => void;
 }
 
-function StatusDot({ status, state, suspended }: { status?: string; state?: string; suspended?: number }) {
-    const isSuspended = suspended === 1 || status === 'suspended';
-    const running = !isSuspended && state === 'running';
-    const label = isSuspended ? 'suspended' : state || status || 'unknown';
+export function WebSpaceCard({
+    webspace,
+    layout,
+    webspaceUrl,
+    t,
+    selectable = false,
+    selected = false,
+    onToggleSelect,
+    showFavoriteToggle = false,
+    isFavorite = false,
+    onToggleFavorite,
+}: WebSpaceCardProps) {
+    const accessible = isWebSpaceAccessible(webspace);
+    const status = displayWebSpaceStatus(webspace);
+    const isSuspended = webspace.suspended === 1 || webspace.status === 'suspended';
+    const diskLimitBytes =
+        webspace.disk_limit_bytes ?? (webspace.disk && webspace.disk > 0 ? webspace.disk * 1024 * 1024 : 0);
+    const diskUsedBytes = webspace.disk_used_bytes ?? 0;
 
-    return (
-        <span
+    const favoriteButton = showFavoriteToggle && onToggleFavorite && (
+        <button
+            type='button'
+            onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onToggleFavorite();
+            }}
             className={cn(
-                'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold tracking-wide',
-                isSuspended
-                    ? 'bg-amber-500/15 text-amber-400'
-                    : running
-                      ? 'bg-green-500/15 text-green-400'
-                      : 'bg-red-500/15 text-red-400',
+                'text-muted-foreground hover:text-primary shrink-0 rounded-lg p-2 transition-colors',
+                isFavorite && 'text-primary',
             )}
+            title={isFavorite ? t('webSpaces.favorite_remove') : t('webSpaces.favorite_add')}
+            aria-label={isFavorite ? t('webSpaces.favorite_remove') : t('webSpaces.favorite_add')}
         >
-            <span
-                className={cn(
-                    'h-1.5 w-1.5 rounded-full',
-                    isSuspended ? 'bg-amber-400' : running ? 'animate-pulse bg-green-400' : 'bg-red-400',
-                )}
-            />
-            {label}
-        </span>
+            <Star className={cn('h-4 w-4', isFavorite && 'fill-current')} aria-hidden />
+        </button>
     );
-}
-
-export function WebSpaceCard({ webspace, layout = 'list' }: WebSpaceCardProps) {
-    const short = webspace.uuidShort || webspace.uuid.slice(0, 8);
-    const domains = Array.isArray(webspace.domains) ? webspace.domains : [];
-    const href = `/webspace/${short}`;
-    const diskLabel = webspace.disk ? `${webspace.disk} MiB` : '—';
 
     if (layout === 'list') {
         return (
-            <Link href={href}>
-                <div className='border-border/40 bg-card/40 hover:bg-card/70 hover:border-primary/30 group flex items-center gap-4 rounded-xl border p-4 backdrop-blur-sm transition-all duration-200'>
-                    <div className='bg-primary/10 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl'>
-                        <AppWindow className='text-primary h-5 w-5' />
+            <div
+                className={cn(
+                    'bg-card/50 border-border/50 group relative flex flex-col items-stretch gap-4 rounded-2xl border p-4 backdrop-blur-xl transition-all sm:flex-row sm:items-center sm:gap-6 sm:p-5 md:p-6',
+                    accessible ? 'hover:border-primary' : 'opacity-60',
+                )}
+            >
+                {selectable && (
+                    <div className='self-start pt-1'>
+                        <Checkbox
+                            checked={selected}
+                            onCheckedChange={() => onToggleSelect && onToggleSelect()}
+                            className='h-4 w-4'
+                        />
                     </div>
+                )}
 
-                    <div className='min-w-0 flex-1'>
-                        <div className='flex flex-wrap items-center gap-2'>
-                            <span className='text-foreground truncate font-semibold'>{webspace.name}</span>
-                            <StatusDot status={webspace.status} state={webspace.state} suspended={webspace.suspended} />
-                        </div>
-                        <div className='text-muted-foreground mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs'>
-                            {domains[0] && (
-                                <span className='flex items-center gap-1 truncate'>
-                                    <Globe className='h-3 w-3 shrink-0' />
-                                    {domains[0]}
-                                    {domains.length > 1 ? ` +${domains.length - 1}` : ''}
-                                </span>
-                            )}
-                            {webspace.web_node_name && <span>{webspace.web_node_name}</span>}
-                            {webspace.webplate_name && (
-                                <span className='uppercase opacity-60'>{webspace.webplate_name}</span>
-                            )}
-                        </div>
-                    </div>
-
-                    <div className='hidden shrink-0 flex-col gap-1 sm:flex'>
-                        {webspace.disk ? (
-                            <div className='flex items-center gap-1.5'>
-                                <HardDrive className='text-muted-foreground h-3.5 w-3.5' />
-                                <span className='text-muted-foreground text-xs'>Disk</span>
-                                <span className='text-foreground text-xs font-semibold'>{diskLabel}</span>
+                <Link href={webspaceUrl} className='block w-full min-w-0 flex-1 cursor-pointer'>
+                    <div className='mb-1 flex flex-col gap-2'>
+                        <div className='flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5'>
+                            <h3 className='w-full min-w-0 flex-1 truncate text-base font-semibold sm:w-auto sm:max-w-[12rem] sm:text-lg md:max-w-none'>
+                                {webspace.name}
+                            </h3>
+                            <div className='flex flex-wrap items-center gap-2'>
+                                {isSuspended ? (
+                                    <span className='rounded-lg border border-red-500/30 bg-red-500/20 px-2 py-0.5 text-[10px] font-bold tracking-wide text-red-600 uppercase sm:text-xs dark:text-red-400'>
+                                        {t('servers.status.suspended')}
+                                    </span>
+                                ) : (
+                                    <StatusBadge status={status} t={t} />
+                                )}
                             </div>
-                        ) : null}
-                        {webspace.ssl ? (
-                            <div className='flex items-center gap-1.5'>
-                                <ShieldCheck className='text-muted-foreground h-3.5 w-3.5' />
-                                <span className='text-foreground text-xs font-semibold'>SSL</span>
-                            </div>
+                        </div>
+                        {webspace.description ? (
+                            <p className='text-muted-foreground line-clamp-2 text-xs wrap-break-word sm:text-sm'>
+                                {webspace.description}
+                            </p>
                         ) : null}
                     </div>
+                </Link>
 
-                    <ArrowRight className='text-muted-foreground group-hover:text-primary ml-2 hidden h-4 w-4 shrink-0 transition-colors sm:block' />
+                <div className='mt-1 flex w-full flex-col gap-3 sm:mt-0 sm:w-auto sm:shrink-0 sm:flex-row sm:items-center sm:justify-between sm:gap-4'>
+                    <Link
+                        href={webspaceUrl}
+                        className='flex min-w-0 cursor-pointer flex-wrap items-start gap-x-6 gap-y-2 text-sm'
+                    >
+                        <div className='min-w-0'>
+                            <div className='text-muted-foreground text-[10px] tracking-wider uppercase sm:text-xs'>
+                                {t('webSpaces.webNode')}
+                            </div>
+                            <div className='max-w-[10rem] truncate text-xs font-medium sm:max-w-[14rem] sm:text-sm'>
+                                {webspace.web_node_name || '—'}
+                            </div>
+                        </div>
+                        <div className='min-w-0'>
+                            <div className='text-muted-foreground text-[10px] tracking-wider uppercase sm:text-xs'>
+                                {t('webSpaces.webPlate')}
+                            </div>
+                            <div className='max-w-[10rem] truncate text-xs font-medium sm:max-w-[14rem] sm:text-sm'>
+                                {webspace.webplate_name || '—'}
+                            </div>
+                        </div>
+                    </Link>
+                    {favoriteButton}
                 </div>
-            </Link>
+            </div>
         );
     }
 
     return (
-        <Link href={href}>
-            <div className='border-border/40 bg-card/40 hover:bg-card/70 hover:border-primary/30 group flex h-full flex-col rounded-xl border p-4 backdrop-blur-sm transition-all duration-200'>
-                <div className='mb-3 flex items-start justify-between gap-2'>
-                    <div className='flex min-w-0 items-center gap-2.5'>
-                        <div className='bg-primary/10 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg'>
-                            <AppWindow className='text-primary h-4.5 w-4.5' />
-                        </div>
-                        <span className='text-foreground truncate font-semibold'>{webspace.name}</span>
-                    </div>
-                    <StatusDot status={webspace.status} state={webspace.state} suspended={webspace.suspended} />
+        <div
+            className={cn(
+                'group bg-card/50 border-border/50 relative overflow-hidden rounded-2xl border backdrop-blur-xl transition-all',
+                accessible ? 'hover:border-primary' : 'opacity-60',
+            )}
+        >
+            {selectable && (
+                <div className='absolute top-4 left-4 z-10'>
+                    <Checkbox
+                        checked={selected}
+                        onCheckedChange={() => onToggleSelect && onToggleSelect()}
+                        className='bg-background/80 h-4 w-4'
+                    />
                 </div>
+            )}
+            {showFavoriteToggle && onToggleFavorite && (
+                <div className='absolute top-4 right-4 z-10'>{favoriteButton}</div>
+            )}
 
-                <div className='text-muted-foreground mb-4 flex flex-wrap gap-x-3 gap-y-1 text-xs'>
-                    {domains[0] && (
-                        <span className='flex items-center gap-1 truncate'>
-                            <Globe className='h-3 w-3 shrink-0' />
-                            {domains[0]}
-                            {domains.length > 1 ? ` +${domains.length - 1}` : ''}
+            <div className='space-y-4 p-4 sm:p-6'>
+                <Link href={webspaceUrl} className='block min-w-0 cursor-pointer'>
+                    <h3 className='mb-1 truncate text-xl font-bold'>{webspace.name}</h3>
+                    <p className='text-muted-foreground line-clamp-2 text-sm'>
+                        {webspace.description || t('webSpaces.noDescription')}
+                    </p>
+                </Link>
+
+                <Link href={webspaceUrl} className='flex cursor-pointer flex-wrap items-center gap-2'>
+                    {isSuspended ? (
+                        <span className='rounded-lg border border-red-500/30 bg-red-500/20 px-2 py-1 text-xs font-bold text-red-600 uppercase dark:text-red-400'>
+                            {t('servers.status.suspended')}
                         </span>
+                    ) : (
+                        <StatusBadge status={status} t={t} />
                     )}
-                    {webspace.web_node_name && <span>{webspace.web_node_name}</span>}
-                </div>
+                </Link>
 
-                <div className='mt-auto grid grid-cols-2 gap-2'>
-                    <div className='bg-background/60 flex flex-col items-center rounded-lg px-2 py-2.5'>
-                        <HardDrive className='text-primary mb-1 h-4 w-4' />
-                        <span className='text-foreground text-sm font-bold'>{diskLabel}</span>
-                        <span className='text-muted-foreground text-[10px] tracking-wide uppercase'>Disk</span>
+                <Link href={webspaceUrl} className='grid cursor-pointer grid-cols-1 gap-3 pt-2 min-[400px]:grid-cols-2'>
+                    <div className='min-w-0 text-sm'>
+                        <div className='text-muted-foreground mb-1 text-xs'>{t('webSpaces.webNode')}</div>
+                        <div className='truncate font-medium'>{webspace.web_node_name || '—'}</div>
                     </div>
-                    <div className='bg-background/60 flex flex-col items-center rounded-lg px-2 py-2.5'>
-                        <LayoutTemplate className='text-primary mb-1 h-4 w-4' />
-                        <span className='text-foreground truncate px-1 text-sm font-bold'>
-                            {webspace.webplate_name || '—'}
-                        </span>
-                        <span className='text-muted-foreground text-[10px] tracking-wide uppercase'>Plate</span>
+                    <div className='min-w-0 text-sm'>
+                        <div className='text-muted-foreground mb-1 text-xs'>{t('webSpaces.webPlate')}</div>
+                        <div className='truncate font-medium'>{webspace.webplate_name || '—'}</div>
                     </div>
-                </div>
+                </Link>
 
-                <div className='border-border/30 mt-3 flex items-center justify-between border-t pt-3'>
-                    <div className='flex gap-1.5'>
-                        {webspace.ssl && (
-                            <span className='bg-primary/10 text-primary rounded px-2 py-0.5 text-[10px] font-semibold tracking-wider uppercase'>
-                                SSL
-                            </span>
-                        )}
-                        {webspace.web_node_name && (
-                            <span className='bg-muted/50 text-muted-foreground rounded px-2 py-0.5 text-[10px] font-medium'>
-                                {webspace.web_node_name}
-                            </span>
-                        )}
-                    </div>
-                    <ArrowRight className='text-muted-foreground group-hover:text-primary h-3.5 w-3.5 transition-colors' />
-                </div>
+                <Link href={webspaceUrl} className={cn('block min-w-0 cursor-pointer space-y-2 pt-2 sm:space-y-2.5')}>
+                    <ResourceBar
+                        label={t('webSpaces.diskShort')}
+                        used={diskUsedBytes}
+                        limit={diskLimitBytes}
+                        formatter={formatDisk}
+                    />
+                </Link>
             </div>
-        </Link>
+        </div>
     );
 }

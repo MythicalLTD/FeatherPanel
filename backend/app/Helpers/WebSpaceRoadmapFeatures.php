@@ -30,8 +30,8 @@ class WebSpaceRoadmapFeatures
         return [
             [
                 'id' => 'ftp',
-                'status' => 'alternative',
-                'detail' => 'SFTP (including extra accounts with subdirectory jails) is available; classic FTP server provisioning is not built in.',
+                'status' => 'ready',
+                'detail' => 'Classic FTP (port 21) and SFTP are available when enabled on the web node. Use the same WebSpace credentials.',
             ],
             [
                 'id' => 'builtin_mail',
@@ -40,8 +40,10 @@ class WebSpaceRoadmapFeatures
             ],
             [
                 'id' => 'webmail',
-                'status' => 'external',
-                'detail' => 'Use your mail host webmail URL or integrate Roundcube on a mail host.',
+                'status' => Roundcube::isInstalled() ? 'partial' : 'external',
+                'detail' => Roundcube::isInstalled()
+                    ? 'Panel Roundcube is installed. Node webmail package adds per-node Roundcube when configured on mail hosts.'
+                    : 'Use your mail host webmail URL or integrate Roundcube on a mail host.',
             ],
         ];
     }

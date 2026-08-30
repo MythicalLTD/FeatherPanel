@@ -36,7 +36,16 @@ class WebSpace
         'description',
         'web_node_id',
         'webplate_id',
+        'hosting_package_id',
         'disk',
+        'cpu_limit',
+        'memory_limit',
+        'bandwidth_limit_gb',
+        'bandwidth_used_bytes',
+        'bandwidth_period_start',
+        'waf_enabled',
+        'waf_deny_ips',
+        'waf_deny_paths',
         'database_limit',
         'mailbox_limit',
         'domains',
@@ -44,8 +53,10 @@ class WebSpace
         'dns_status',
         'dns_checked_at',
         'backend_port',
+        'backend_host',
         'document_root',
         'image',
+        'ssl_mode',
         'status',
         'state',
         'owner_id',
@@ -93,6 +104,22 @@ class WebSpace
         }
 
         $data['disk'] = isset($data['disk']) && is_numeric($data['disk']) ? (int) $data['disk'] : 1024;
+        $data['cpu_limit'] = isset($data['cpu_limit']) && is_numeric($data['cpu_limit'])
+            ? max(0, (float) $data['cpu_limit'])
+            : 0;
+        $data['memory_limit'] = isset($data['memory_limit']) && is_numeric($data['memory_limit'])
+            ? max(0, (int) $data['memory_limit'])
+            : 0;
+        if (array_key_exists('bandwidth_limit_gb', $data) && $data['bandwidth_limit_gb'] !== null && $data['bandwidth_limit_gb'] !== '') {
+            $data['bandwidth_limit_gb'] = max(0, (int) $data['bandwidth_limit_gb']);
+        }
+        $data['waf_enabled'] = !empty($data['waf_enabled']) ? 1 : 0;
+        if (array_key_exists('waf_deny_ips', $data)) {
+            $data['waf_deny_ips'] = self::encodeDenyIps($data['waf_deny_ips']);
+        }
+        if (array_key_exists('waf_deny_paths', $data)) {
+            $data['waf_deny_paths'] = self::encodeDenyPaths($data['waf_deny_paths']);
+        }
         $data['database_limit'] = isset($data['database_limit']) && is_numeric($data['database_limit'])
             ? max(0, (int) $data['database_limit'])
             : 1;
@@ -142,12 +169,7 @@ class WebSpace
             return null;
         }
 
-        $pdo = Database::getPdoConnection();
-        $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE id = :id LIMIT 1');
-        $stmt->execute(['id' => $id]);
-        $row = $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
-
-        return $row ? self::hydrate($row) : null;
+        return self::fetchOne('w.id = :id', ['id' => $id]);
     }
 
     /** @return array<string, mixed>|null */
@@ -157,12 +179,7 @@ class WebSpace
             return null;
         }
 
-        $pdo = Database::getPdoConnection();
-        $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE uuid = :uuid LIMIT 1');
-        $stmt->execute(['uuid' => $uuid]);
-        $row = $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
-
-        return $row ? self::hydrate($row) : null;
+        return self::fetchOne('w.uuid = :uuid', ['uuid' => $uuid]);
     }
 
     /** @return array<string, mixed>|null */
@@ -172,12 +189,10 @@ class WebSpace
             return null;
         }
 
-        $pdo = Database::getPdoConnection();
-        $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE uuid = :uuid AND web_node_id = :node LIMIT 1');
-        $stmt->execute(['uuid' => $uuid, 'node' => $webNodeId]);
-        $row = $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
-
-        return $row ? self::hydrate($row) : null;
+        return self::fetchOne('w.uuid = :uuid AND w.web_node_id = :node', [
+            'uuid' => $uuid,
+            'node' => $webNodeId,
+        ]);
     }
 
     /**
@@ -339,6 +354,52 @@ class WebSpace
         return $stmt->execute(['status' => $status, 'uuid' => $uuid]);
     }
 
+    public static function updateBandwidthUsage(string $uuid, int $usedBytes, ?string $periodStart = null): bool
+    {
+        if (!self::isValidUuid($uuid)) {
+            return false;
+        }
+
+        $pdo = Database::getPdoConnection();
+        if ($periodStart !== null && $periodStart !== '') {
+            $stmt = $pdo->prepare(
+                'UPDATE ' . self::$table
+                . ' SET bandwidth_used_bytes = :used, bandwidth_period_start = :period WHERE uuid = :uuid'
+            );
+
+            return $stmt->execute([
+                'used' => max(0, $usedBytes),
+                'period' => $periodStart,
+                'uuid' => $uuid,
+            ]);
+        }
+
+        $stmt = $pdo->prepare(
+            'UPDATE ' . self::$table . ' SET bandwidth_used_bytes = :used WHERE uuid = :uuid'
+        );
+
+        return $stmt->execute(['used' => max(0, $usedBytes), 'uuid' => $uuid]);
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     */
+    public static function resolveBandwidthLimitGb(array $row): int
+    {
+        if (array_key_exists('bandwidth_limit_gb', $row) && $row['bandwidth_limit_gb'] !== null && $row['bandwidth_limit_gb'] !== '') {
+            return max(0, (int) $row['bandwidth_limit_gb']);
+        }
+
+        $packageId = (int) ($row['hosting_package_id'] ?? 0);
+        if ($packageId <= 0) {
+            return 0;
+        }
+
+        $pkg = HostingPackage::getById($packageId);
+
+        return max(0, (int) ($pkg['bandwidth_limit_gb'] ?? 0));
+    }
+
     public static function updateWebNodeId(string $uuid, int $webNodeId): bool
     {
         if (!self::isValidUuid($uuid) || $webNodeId <= 0) {
@@ -362,9 +423,24 @@ class WebSpace
             return false;
         }
 
-        $allowed = ['name', 'description', 'domains', 'ssl', 'disk', 'document_root'];
+        $allowed = ['name', 'description', 'domains', 'domain_routes', 'ssl', 'ssl_mode', 'disk', 'document_root', 'webplate_id', 'image', 'waf_enabled', 'waf_deny_ips', 'waf_deny_paths', 'cpu_limit', 'memory_limit', 'bandwidth_limit_gb', 'backend_host'];
         $updates = [];
         $params = ['uuid' => $uuid];
+
+        if (isset($fields['domain_routes']) && is_array($fields['domain_routes'])) {
+            $existing = self::getByUuid($uuid);
+            if (!$existing) {
+                return false;
+            }
+            try {
+                $flat = WebSpaceDomain::replaceForWebspace((int) ($existing['id'] ?? 0), $fields['domain_routes']);
+                $fields['domains'] = $flat;
+            } catch (\InvalidArgumentException $e) {
+                App::getInstance(true)->getLogger()->error('WebSpace domain routes invalid: ' . $e->getMessage());
+
+                return false;
+            }
+        }
 
         if (isset($fields['name'])) {
             $name = trim((string) $fields['name']);
@@ -390,6 +466,26 @@ class WebSpace
             $params['ssl'] = !empty($fields['ssl']) ? 1 : 0;
         }
 
+        if (array_key_exists('ssl_mode', $fields)) {
+            $mode = strtolower(trim((string) $fields['ssl_mode']));
+            $updates[] = 'ssl_mode = :ssl_mode';
+            $params['ssl_mode'] = match ($mode) {
+                'custom' => 'custom',
+                'dns01' => 'dns01',
+                default => 'acme',
+            };
+        }
+
+        if (isset($fields['webplate_id']) && is_numeric($fields['webplate_id'])) {
+            $updates[] = 'webplate_id = :webplate_id';
+            $params['webplate_id'] = (int) $fields['webplate_id'];
+        }
+
+        if (array_key_exists('image', $fields)) {
+            $updates[] = 'image = :image';
+            $params['image'] = trim((string) ($fields['image'] ?? '')) ?: null;
+        }
+
         if (isset($fields['disk']) && is_numeric($fields['disk'])) {
             $updates[] = 'disk = :disk';
             $params['disk'] = max(1, (int) $fields['disk']);
@@ -411,6 +507,45 @@ class WebSpace
             $params['document_root'] = WebPlate::normalizeDocumentRoot($fields['document_root'] ?? '');
         }
 
+        if (array_key_exists('waf_enabled', $fields)) {
+            $updates[] = 'waf_enabled = :waf_enabled';
+            $params['waf_enabled'] = !empty($fields['waf_enabled']) ? 1 : 0;
+        }
+
+        if (array_key_exists('waf_deny_ips', $fields)) {
+            $updates[] = 'waf_deny_ips = :waf_deny_ips';
+            $params['waf_deny_ips'] = self::encodeDenyIps($fields['waf_deny_ips']);
+        }
+
+        if (array_key_exists('waf_deny_paths', $fields)) {
+            $updates[] = 'waf_deny_paths = :waf_deny_paths';
+            $params['waf_deny_paths'] = self::encodeDenyPaths($fields['waf_deny_paths']);
+        }
+
+        if (array_key_exists('cpu_limit', $fields) && is_numeric($fields['cpu_limit'])) {
+            $updates[] = 'cpu_limit = :cpu_limit';
+            $params['cpu_limit'] = max(0, (float) $fields['cpu_limit']);
+        }
+
+        if (array_key_exists('memory_limit', $fields) && is_numeric($fields['memory_limit'])) {
+            $updates[] = 'memory_limit = :memory_limit';
+            $params['memory_limit'] = max(0, (int) $fields['memory_limit']);
+        }
+
+        if (array_key_exists('bandwidth_limit_gb', $fields)) {
+            if ($fields['bandwidth_limit_gb'] === null || $fields['bandwidth_limit_gb'] === '') {
+                $updates[] = 'bandwidth_limit_gb = NULL';
+            } else {
+                $updates[] = 'bandwidth_limit_gb = :bandwidth_limit_gb';
+                $params['bandwidth_limit_gb'] = max(0, (int) $fields['bandwidth_limit_gb']);
+            }
+        }
+
+        if (array_key_exists('backend_host', $fields)) {
+            $updates[] = 'backend_host = :backend_host';
+            $params['backend_host'] = trim((string) $fields['backend_host']);
+        }
+
         if ($updates === []) {
             return false;
         }
@@ -430,12 +565,7 @@ class WebSpace
             return null;
         }
 
-        $pdo = Database::getPdoConnection();
-        $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE uuidShort = :s LIMIT 1');
-        $stmt->execute(['s' => $uuidShort]);
-        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
-
-        return $row ? self::hydrate($row) : null;
+        return self::fetchOne('w.uuidShort = :s', ['s' => $uuidShort]);
     }
 
     /**
@@ -544,10 +674,20 @@ class WebSpace
             'webplate' => $plateRef,
             'build' => [
                 'disk_space' => (int) ($row['disk'] ?? 1024),
+                'cpu_limit' => (float) ($row['cpu_limit'] ?? 0),
+                'memory_limit' => (int) ($row['memory_limit'] ?? 0),
+                'bandwidth_limit_gb' => self::resolveBandwidthLimitGb($row),
             ],
             'domains' => is_array($row['domains'] ?? null) ? array_values($row['domains']) : [],
+            'domain_routes' => is_array($row['domain_routes'] ?? null) ? array_values($row['domain_routes']) : [],
             'ssl' => !empty($row['ssl']),
+            'ssl_mode' => trim((string) ($row['ssl_mode'] ?? 'acme')) ?: 'acme',
+            'acme_email' => trim((string) ($row['owner_email'] ?? '')),
+            'waf_enabled' => !empty($row['waf_enabled']),
+            'waf_deny_ips' => is_array($row['waf_deny_ips'] ?? null) ? array_values($row['waf_deny_ips']) : [],
+            'waf_deny_paths' => is_array($row['waf_deny_paths'] ?? null) ? array_values($row['waf_deny_paths']) : [],
             'backend_port' => (int) ($row['backend_port'] ?? 0),
+            'backend_host' => trim((string) ($row['backend_host'] ?? '')),
             'meta' => [
                 'document_root' => $documentRoot,
             ],
@@ -585,6 +725,27 @@ class WebSpace
     }
 
     /**
+     * Single-row fetch with owner email joined for ACME / daemon config.
+     *
+     * @param array<string, mixed> $params
+     *
+     * @return array<string, mixed>|null
+     */
+    private static function fetchOne(string $where, array $params): ?array
+    {
+        $pdo = Database::getPdoConnection();
+        $sql = 'SELECT w.*, u.username AS owner_username, u.uuid AS owner_uuid, u.email AS owner_email
+            FROM ' . self::$table . ' w
+            LEFT JOIN featherpanel_users u ON u.id = w.owner_id
+            WHERE ' . $where . ' LIMIT 1';
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
+
+        return $row ? self::hydrate($row) : null;
+    }
+
+    /**
      * @param array<string, mixed> $row
      *
      * @return array<string, mixed>
@@ -592,11 +753,26 @@ class WebSpace
     private static function hydrate(array $row): array
     {
         $row['ssl'] = !empty($row['ssl']);
+        $row['waf_enabled'] = !empty($row['waf_enabled']);
+        $row['waf_deny_ips'] = self::decodeDenyIps($row['waf_deny_ips'] ?? null);
+        $row['waf_deny_paths'] = self::decodeDenyPaths($row['waf_deny_paths'] ?? null);
+        $row['cpu_limit'] = (float) ($row['cpu_limit'] ?? 0);
+        $row['memory_limit'] = (int) ($row['memory_limit'] ?? 0);
+        $row['bandwidth_used_bytes'] = (int) ($row['bandwidth_used_bytes'] ?? 0);
+        $row['effective_bandwidth_limit_gb'] = self::resolveBandwidthLimitGb($row);
         $row['disk'] = (int) ($row['disk'] ?? 0);
         $row['backend_port'] = (int) ($row['backend_port'] ?? 0);
         $row['web_node_id'] = (int) ($row['web_node_id'] ?? 0);
         $row['webplate_id'] = (int) ($row['webplate_id'] ?? 0);
         $row['domains'] = self::decodeDomains($row['domains'] ?? null);
+        $row['ssl_mode'] = trim((string) ($row['ssl_mode'] ?? 'acme')) ?: 'acme';
+        $webspaceId = (int) ($row['id'] ?? 0);
+        if ($webspaceId > 0) {
+            WebSpaceDomain::migrateLegacyFromJson($webspaceId, $row['domains']);
+            $row['domain_routes'] = WebSpaceDomain::listForWebspaceId($webspaceId);
+        } else {
+            $row['domain_routes'] = [];
+        }
         $row['state'] = trim((string) ($row['state'] ?? 'stopped')) ?: 'stopped';
 
         if (isset($row['webplate_name'])) {
@@ -663,6 +839,99 @@ class WebSpace
         $decoded = json_decode($raw, true);
 
         return is_array($decoded) ? array_values(array_filter(array_map('strval', $decoded))) : [];
+    }
+
+    private static function encodeDenyIps(mixed $raw): string
+    {
+        return json_encode(self::decodeDenyIps($raw)) ?: '[]';
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function decodeDenyIps(mixed $raw): array
+    {
+        if (is_string($raw) && $raw !== '') {
+            $decoded = json_decode($raw, true);
+            if (is_array($decoded)) {
+                $raw = $decoded;
+            } else {
+                $parts = preg_split('/[\s,]+/', $raw);
+                $raw = $parts === false ? [] : $parts;
+            }
+        }
+        if (!is_array($raw)) {
+            return [];
+        }
+
+        $out = [];
+        foreach ($raw as $item) {
+            $value = trim((string) $item);
+            if ($value === '' || strlen($value) > 64) {
+                continue;
+            }
+            $host = explode('/', $value, 2)[0];
+            if (filter_var($host, FILTER_VALIDATE_IP) === false) {
+                continue;
+            }
+            if (!in_array($value, $out, true)) {
+                $out[] = $value;
+            }
+        }
+
+        return $out;
+    }
+
+    private static function encodeDenyPaths(mixed $raw): string
+    {
+        return json_encode(self::decodeDenyPaths($raw)) ?: '[]';
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function decodeDenyPaths(mixed $raw): array
+    {
+        if (is_string($raw) && $raw !== '') {
+            $decoded = json_decode($raw, true);
+            if (is_array($decoded)) {
+                $raw = $decoded;
+            } else {
+                $parts = preg_split('/[\s,]+/', $raw);
+                $raw = $parts === false ? [] : $parts;
+            }
+        }
+        if (!is_array($raw)) {
+            return [];
+        }
+
+        $out = [];
+        foreach ($raw as $item) {
+            $value = str_replace('\\', '/', trim((string) $item));
+            if ($value === '' || strlen($value) > 256) {
+                continue;
+            }
+            if (!str_starts_with($value, '/')) {
+                $value = '/' . $value;
+            }
+            if (str_contains($value, '..') || str_contains($value, "\0")) {
+                continue;
+            }
+            if (str_starts_with(strtolower($value), '/.well-known')) {
+                continue;
+            }
+            while (str_contains($value, '//')) {
+                $value = str_replace('//', '/', $value);
+            }
+            if ($value === '/') {
+                continue;
+            }
+            if (!in_array($value, $out, true)) {
+                $out[] = $value;
+            }
+        }
+
+        return $out;
     }
 
     private static function generateUuid(): string
