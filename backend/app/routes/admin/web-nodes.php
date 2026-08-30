@@ -196,4 +196,139 @@ return function (RouteCollection $routes): void {
         },
         Permissions::ADMIN_NODES_VIEW,
     );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-web-nodes-system-logs',
+        '/api/admin/web-nodes/{id}/system-logs',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
+
+            return (new WebNodesController())->systemLogs($request, (int) $id);
+        },
+        Permissions::ADMIN_NODES_VIEW,
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-web-nodes-system-log-file',
+        '/api/admin/web-nodes/{id}/system-logs/{file}',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            $file = $args['file'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
+            if (!$file || !is_string($file)) {
+                return ApiResponse::error('Missing log file name', 'INVALID_FILE', 400);
+            }
+
+            return (new WebNodesController())->systemLogFile($request, (int) $id, $file);
+        },
+        Permissions::ADMIN_NODES_VIEW,
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-web-nodes-packages',
+        '/api/admin/web-nodes/{id}/packages',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
+
+            return (new WebNodesController())->packages($request, (int) $id);
+        },
+        Permissions::ADMIN_NODES_VIEW,
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-web-nodes-packages-socket',
+        '/api/admin/web-nodes/{id}/packages/socket',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
+
+            return (new WebNodesController())->packageSocket($request, (int) $id);
+        },
+        Permissions::ADMIN_NODES_VIEW,
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-web-nodes-packages-install',
+        '/api/admin/web-nodes/{id}/packages/{packageId}/install',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            $packageId = $args['packageId'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
+            if (!$packageId || !is_string($packageId)) {
+                return ApiResponse::error('Missing package id', 'INVALID_PACKAGE', 400);
+            }
+
+            return (new WebNodesController())->installPackage($request, (int) $id, $packageId);
+        },
+        Permissions::ADMIN_NODES_EDIT,
+        ['POST']
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-web-nodes-packages-remove',
+        '/api/admin/web-nodes/{id}/packages/{packageId}/remove',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            $packageId = $args['packageId'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
+            if (!$packageId || !is_string($packageId)) {
+                return ApiResponse::error('Missing package id', 'INVALID_PACKAGE', 400);
+            }
+
+            return (new WebNodesController())->removePackage($request, (int) $id, $packageId);
+        },
+        Permissions::ADMIN_NODES_EDIT,
+        ['POST']
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-web-nodes-version-status',
+        '/api/admin/web-nodes/{id}/version-status',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
+
+            return (new WebNodesController())->versionStatus($request, (int) $id);
+        },
+        Permissions::ADMIN_NODES_VIEW,
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-web-nodes-self-update',
+        '/api/admin/web-nodes/{id}/self-update',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
+
+            return (new WebNodesController())->triggerSelfUpdate($request, (int) $id);
+        },
+        Permissions::ADMIN_NODES_EDIT,
+        ['POST']
+    );
 };

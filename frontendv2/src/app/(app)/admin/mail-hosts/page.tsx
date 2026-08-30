@@ -46,6 +46,7 @@ interface MailHostRow {
 interface WebNodeOption {
     id: number;
     name: string;
+    fqdn?: string;
 }
 
 const emptyForm = {
@@ -94,9 +95,34 @@ export default function AdminMailHostsPage() {
         void load();
     }, [load]);
 
+    const applyNodeDefaults = (webNodeId: string, mode: string) => {
+        if (mode !== 'node' || !webNodeId) return;
+        const node = nodes.find((n) => String(n.id) === webNodeId);
+        if (!node) return;
+        const fqdn = (node.fqdn || node.name).trim();
+        if (!fqdn) return;
+        setForm((prev) => ({
+            ...prev,
+            web_node_id: webNodeId,
+            hostname: prev.hostname || fqdn,
+            imap_host: prev.imap_host || fqdn,
+            smtp_host: prev.smtp_host || fqdn,
+            mx_host: prev.mx_host || fqdn,
+        }));
+    };
+
     const createHost = async () => {
-        if (!form.name.trim() || !form.hostname.trim() || !form.imap_host.trim() || !form.smtp_host.trim()) {
+        if (!form.name.trim()) {
             toast.error(t('admin.mailHosts.requiredFields'));
+            return;
+        }
+        if (form.provision_mode !== 'node') {
+            if (!form.hostname.trim() || !form.imap_host.trim() || !form.smtp_host.trim()) {
+                toast.error(t('admin.mailHosts.requiredFields'));
+                return;
+            }
+        } else if (!form.web_node_id) {
+            toast.error(t('admin.mailHosts.requiredWebNode'));
             return;
         }
         setBusy(true);
@@ -179,9 +205,14 @@ export default function AdminMailHostsPage() {
                     <Label>{t('admin.mailHosts.form.provisionMode')}</Label>
                     <Select
                         value={form.provision_mode}
-                        onChange={(e) => setForm({ ...form, provision_mode: e.target.value })}
+                        onChange={(e) => {
+                            const mode = e.target.value;
+                            setForm({ ...form, provision_mode: mode });
+                            applyNodeDefaults(form.web_node_id, mode);
+                        }}
                     >
                         <option value='inventory'>{t('admin.mailHosts.provisionMode.inventory')}</option>
+                        <option value='node'>{t('admin.mailHosts.provisionMode.node')}</option>
                         <option value='webhook'>{t('admin.mailHosts.provisionMode.webhook')}</option>
                     </Select>
                 </div>
@@ -189,7 +220,11 @@ export default function AdminMailHostsPage() {
                     <Label>{t('admin.mailHosts.form.webNode')}</Label>
                     <Select
                         value={form.web_node_id}
-                        onChange={(e) => setForm({ ...form, web_node_id: e.target.value })}
+                        onChange={(e) => {
+                            const webNodeId = e.target.value;
+                            setForm({ ...form, web_node_id: webNodeId });
+                            applyNodeDefaults(webNodeId, form.provision_mode);
+                        }}
                     >
                         <option value=''>{t('admin.mailHosts.allWebNodes')}</option>
                         {nodes.map((n) => (

@@ -24,6 +24,9 @@ use App\Controllers\User\WebSpaces\WebSpacesController;
 use App\Controllers\User\WebSpaces\WebSpaceFilesController;
 use App\Controllers\User\WebSpaces\WebSpaceSubuserController;
 use App\Controllers\User\WebSpaces\WebSpaceActivityController;
+use App\Controllers\User\WebSpaces\WebSpaceDnsController;
+use App\Controllers\User\WebSpaces\WebSpaceAppsController;
+use App\Controllers\User\WebSpaces\WebSpaceAnalyticsController;
 
 return function (RouteCollection $routes): void {
     App::getInstance(true)->registerAuthRoute(
@@ -52,10 +55,22 @@ return function (RouteCollection $routes): void {
 
     App::getInstance(true)->registerAuthRoute(
         $routes,
+        'user-webspaces-create',
+        '/api/user/webspaces/create',
+        function (Request $request) {
+            return (new WebSpacesController())->create($request);
+        },
+        ['POST'],
+        Rate::perMinute(5),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
         'user-webspaces-order',
         '/api/user/webspaces/order',
         function (Request $request) {
-            return (new WebSpacesController())->order($request);
+            return (new WebSpacesController())->create($request);
         },
         ['POST'],
         Rate::perMinute(5),
@@ -133,6 +148,23 @@ return function (RouteCollection $routes): void {
 
     App::getInstance(true)->registerAuthRoute(
         $routes,
+        'user-webspaces-infrastructure-readiness',
+        '/api/user/webspaces/{uuidShort}/infrastructure-readiness',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            if ($uuidShort === '') {
+                return ApiResponse::error('Missing uuidShort', 'INVALID_UUID_SHORT', 400);
+            }
+
+            return (new WebSpacesController())->infrastructureReadiness($request, $uuidShort);
+        },
+        ['GET'],
+        Rate::perMinute(20),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
         'user-webspaces-update',
         '/api/user/webspaces/{uuidShort}',
         function (Request $request, array $args) {
@@ -145,6 +177,159 @@ return function (RouteCollection $routes): void {
         },
         ['PATCH'],
         Rate::perMinute(10),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-php-ini',
+        '/api/user/webspaces/{uuidShort}/php-ini',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            if ($uuidShort === '') {
+                return ApiResponse::error('Missing uuidShort', 'INVALID_UUID_SHORT', 400);
+            }
+
+            return (new WebSpacesController())->phpIni($request, $uuidShort);
+        },
+        ['GET'],
+        Rate::perMinute(30),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-php-ini-save',
+        '/api/user/webspaces/{uuidShort}/php-ini',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            if ($uuidShort === '') {
+                return ApiResponse::error('Missing uuidShort', 'INVALID_UUID_SHORT', 400);
+            }
+
+            return (new WebSpacesController())->savePhpIni($request, $uuidShort);
+        },
+        ['PUT'],
+        Rate::perMinute(10),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-php-extensions',
+        '/api/user/webspaces/{uuidShort}/php-extensions',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            if ($uuidShort === '') {
+                return ApiResponse::error('Missing uuidShort', 'INVALID_UUID_SHORT', 400);
+            }
+
+            return (new WebSpacesController())->phpExtensions($request, $uuidShort);
+        },
+        ['GET'],
+        Rate::perMinute(30),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-php-extensions-save',
+        '/api/user/webspaces/{uuidShort}/php-extensions',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            if ($uuidShort === '') {
+                return ApiResponse::error('Missing uuidShort', 'INVALID_UUID_SHORT', 400);
+            }
+
+            return (new WebSpacesController())->savePhpExtensions($request, $uuidShort);
+        },
+        ['PUT'],
+        Rate::perMinute(10),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-redis',
+        '/api/user/webspaces/{uuidShort}/redis',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            if ($uuidShort === '') {
+                return ApiResponse::error('Missing uuidShort', 'INVALID_UUID_SHORT', 400);
+            }
+
+            return (new WebSpacesController())->redis($request, $uuidShort);
+        },
+        ['GET'],
+        Rate::perMinute(30),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-redis-save',
+        '/api/user/webspaces/{uuidShort}/redis',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            if ($uuidShort === '') {
+                return ApiResponse::error('Missing uuidShort', 'INVALID_UUID_SHORT', 400);
+            }
+
+            return (new WebSpacesController())->saveRedis($request, $uuidShort);
+        },
+        ['PUT'],
+        Rate::perMinute(10),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-malware-scan',
+        '/api/user/webspaces/{uuidShort}/malware-scan',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            if ($uuidShort === '') {
+                return ApiResponse::error('Missing uuidShort', 'INVALID_UUID_SHORT', 400);
+            }
+
+            return (new WebSpacesController())->malwareScan($request, $uuidShort);
+        },
+        ['POST'],
+        Rate::perMinute(5),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-malware-scan-status',
+        '/api/user/webspaces/{uuidShort}/malware-scan',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            if ($uuidShort === '') {
+                return ApiResponse::error('Missing uuidShort', 'INVALID_UUID_SHORT', 400);
+            }
+
+            return (new WebSpacesController())->malwareScanStatus($request, $uuidShort);
+        },
+        ['GET'],
+        Rate::perMinute(30),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-malware-scan-schedule',
+        '/api/user/webspaces/{uuidShort}/malware-scan/schedule',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            if ($uuidShort === '') {
+                return ApiResponse::error('Missing uuidShort', 'INVALID_UUID_SHORT', 400);
+            }
+
+            return (new WebSpacesController())->enableMalwareScanSchedule($request, $uuidShort);
+        },
+        ['POST'],
+        Rate::perMinute(5),
         'user-webspaces'
     );
 
@@ -286,6 +471,74 @@ return function (RouteCollection $routes): void {
 
     App::getInstance(true)->registerAuthRoute(
         $routes,
+        'user-webspaces-dns-provision',
+        '/api/user/webspaces/{uuidShort}/dns/provision',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            if ($uuidShort === '') {
+                return ApiResponse::error('Missing uuidShort', 'INVALID_UUID_SHORT', 400);
+            }
+
+            return (new WebSpacesController())->provisionDns($request, $uuidShort);
+        },
+        ['POST'],
+        Rate::perMinute(5),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-ssl-custom-status',
+        '/api/user/webspaces/{uuidShort}/ssl/custom',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            if ($uuidShort === '') {
+                return ApiResponse::error('Missing uuidShort', 'INVALID_UUID_SHORT', 400);
+            }
+
+            return (new WebSpacesController())->customSslStatus($request, $uuidShort);
+        },
+        ['GET'],
+        Rate::perMinute(30),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-ssl-custom-upload',
+        '/api/user/webspaces/{uuidShort}/ssl/custom',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            if ($uuidShort === '') {
+                return ApiResponse::error('Missing uuidShort', 'INVALID_UUID_SHORT', 400);
+            }
+
+            return (new WebSpacesController())->uploadCustomSsl($request, $uuidShort);
+        },
+        ['PUT'],
+        Rate::perMinute(5),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-ssl-custom-delete',
+        '/api/user/webspaces/{uuidShort}/ssl/custom',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            if ($uuidShort === '') {
+                return ApiResponse::error('Missing uuidShort', 'INVALID_UUID_SHORT', 400);
+            }
+
+            return (new WebSpacesController())->deleteCustomSsl($request, $uuidShort);
+        },
+        ['DELETE'],
+        Rate::perMinute(5),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
         'user-webspaces-backups',
         '/api/user/webspaces/{uuidShort}/backups',
         function (Request $request, array $args) {
@@ -351,6 +604,24 @@ return function (RouteCollection $routes): void {
         },
         ['POST'],
         Rate::perMinute(5),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-backup-files',
+        '/api/user/webspaces/{uuidShort}/backups/{backupUuid}/files',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            $backupUuid = (string) ($args['backupUuid'] ?? '');
+            if ($uuidShort === '' || $backupUuid === '') {
+                return ApiResponse::error('Missing uuid', 'INVALID_UUID', 400);
+            }
+
+            return (new WebSpacesController())->listBackupFiles($request, $uuidShort, $backupUuid);
+        },
+        ['GET'],
+        Rate::perMinute(30),
         'user-webspaces'
     );
 
@@ -781,6 +1052,336 @@ return function (RouteCollection $routes): void {
         },
         ['GET'],
         Rate::perMinute(60),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-dns-zones',
+        '/api/user/webspaces/{uuidShort}/dns/zones',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            if ($uuidShort === '') {
+                return ApiResponse::error('Missing uuidShort', 'INVALID_UUID_SHORT', 400);
+            }
+
+            return (new WebSpaceDnsController())->listZones($request, $uuidShort);
+        },
+        ['GET'],
+        Rate::perMinute(60),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-dns-hosts',
+        '/api/user/webspaces/{uuidShort}/dns/hosts',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            if ($uuidShort === '') {
+                return ApiResponse::error('Missing uuidShort', 'INVALID_UUID_SHORT', 400);
+            }
+
+            return (new WebSpaceDnsController())->listDnsHosts($request, $uuidShort);
+        },
+        ['GET'],
+        Rate::perMinute(60),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-dns-zones-link',
+        '/api/user/webspaces/{uuidShort}/dns/zones',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            if ($uuidShort === '') {
+                return ApiResponse::error('Missing uuidShort', 'INVALID_UUID_SHORT', 400);
+            }
+
+            return (new WebSpaceDnsController())->linkZone($request, $uuidShort);
+        },
+        ['POST'],
+        Rate::perMinute(10),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-dns-zones-unlink',
+        '/api/user/webspaces/{uuidShort}/dns/zones/{zoneId}',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            $zoneId = $args['zoneId'] ?? null;
+            if ($uuidShort === '' || !$zoneId || !is_numeric($zoneId)) {
+                return ApiResponse::error('Missing uuidShort or zone ID', 'INVALID_ID', 400);
+            }
+
+            return (new WebSpaceDnsController())->unlinkZone($request, $uuidShort, (int) $zoneId);
+        },
+        ['DELETE'],
+        Rate::perMinute(10),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-dns-records',
+        '/api/user/webspaces/{uuidShort}/dns/zones/{zoneId}/records',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            $zoneId = $args['zoneId'] ?? null;
+            if ($uuidShort === '' || !$zoneId || !is_numeric($zoneId)) {
+                return ApiResponse::error('Missing uuidShort or zone ID', 'INVALID_ID', 400);
+            }
+
+            return (new WebSpaceDnsController())->listRecords($request, $uuidShort, (int) $zoneId);
+        },
+        ['GET'],
+        Rate::perMinute(60),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-dns-records-create',
+        '/api/user/webspaces/{uuidShort}/dns/zones/{zoneId}/records',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            $zoneId = $args['zoneId'] ?? null;
+            if ($uuidShort === '' || !$zoneId || !is_numeric($zoneId)) {
+                return ApiResponse::error('Missing uuidShort or zone ID', 'INVALID_ID', 400);
+            }
+
+            return (new WebSpaceDnsController())->createRecord($request, $uuidShort, (int) $zoneId);
+        },
+        ['POST'],
+        Rate::perMinute(20),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-dns-records-update',
+        '/api/user/webspaces/{uuidShort}/dns/zones/{zoneId}/records/{recordId}',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            $zoneId = $args['zoneId'] ?? null;
+            $recordId = (string) ($args['recordId'] ?? '');
+            if ($uuidShort === '' || !$zoneId || !is_numeric($zoneId) || $recordId === '') {
+                return ApiResponse::error('Missing uuidShort, zone ID, or record ID', 'INVALID_ID', 400);
+            }
+
+            return (new WebSpaceDnsController())->updateRecord($request, $uuidShort, (int) $zoneId, $recordId);
+        },
+        ['PATCH'],
+        Rate::perMinute(20),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-dns-records-delete',
+        '/api/user/webspaces/{uuidShort}/dns/zones/{zoneId}/records/{recordId}',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            $zoneId = $args['zoneId'] ?? null;
+            $recordId = (string) ($args['recordId'] ?? '');
+            if ($uuidShort === '' || !$zoneId || !is_numeric($zoneId) || $recordId === '') {
+                return ApiResponse::error('Missing uuidShort, zone ID, or record ID', 'INVALID_ID', 400);
+            }
+
+            return (new WebSpaceDnsController())->deleteRecord($request, $uuidShort, (int) $zoneId, $recordId);
+        },
+        ['DELETE'],
+        Rate::perMinute(20),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-analytics',
+        '/api/user/webspaces/{uuidShort}/analytics',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            if ($uuidShort === '') {
+                return ApiResponse::error('Missing uuidShort', 'INVALID_ID', 400);
+            }
+
+            return (new WebSpaceAnalyticsController())->summary($request, $uuidShort);
+        },
+        ['GET'],
+        Rate::perMinute(30),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-apps-wordpress',
+        '/api/user/webspaces/{uuidShort}/apps/wordpress',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            if ($uuidShort === '') {
+                return ApiResponse::error('Missing uuidShort', 'INVALID_ID', 400);
+            }
+
+            return (new WebSpaceAppsController())->installWordPress($request, $uuidShort);
+        },
+        ['POST'],
+        Rate::perMinute(5),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-apps-wordpress-update',
+        '/api/user/webspaces/{uuidShort}/apps/wordpress/update',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            if ($uuidShort === '') {
+                return ApiResponse::error('Missing uuidShort', 'INVALID_ID', 400);
+            }
+
+            return (new WebSpaceAppsController())->updateWordPress($request, $uuidShort);
+        },
+        ['POST'],
+        Rate::perMinute(5),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-apps-wordpress-staging',
+        '/api/user/webspaces/{uuidShort}/apps/wordpress/staging',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            if ($uuidShort === '') {
+                return ApiResponse::error('Missing uuidShort', 'INVALID_ID', 400);
+            }
+
+            return (new WebSpaceAppsController())->stagingWordPress($request, $uuidShort);
+        },
+        ['POST'],
+        Rate::perMinute(5),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-apps-wordpress-plugin',
+        '/api/user/webspaces/{uuidShort}/apps/wordpress/plugin',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            if ($uuidShort === '') {
+                return ApiResponse::error('Missing uuidShort', 'INVALID_ID', 400);
+            }
+
+            return (new WebSpaceAppsController())->installWordPressPlugin($request, $uuidShort);
+        },
+        ['POST'],
+        Rate::perMinute(10),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-apps-wordpress-auto-update',
+        '/api/user/webspaces/{uuidShort}/apps/wordpress/auto-update',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            if ($uuidShort === '') {
+                return ApiResponse::error('Missing uuidShort', 'INVALID_ID', 400);
+            }
+
+            return (new WebSpaceAppsController())->enableWordPressAutoUpdate($request, $uuidShort);
+        },
+        ['POST'],
+        Rate::perMinute(5),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-apps-git-deploy',
+        '/api/user/webspaces/{uuidShort}/apps/git-deploy',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            if ($uuidShort === '') {
+                return ApiResponse::error('Missing uuidShort', 'INVALID_ID', 400);
+            }
+
+            return (new WebSpaceAppsController())->gitDeploy($request, $uuidShort);
+        },
+        ['POST'],
+        Rate::perMinute(5),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-apps-git-webhook',
+        '/api/user/webspaces/{uuidShort}/apps/git-webhook',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            if ($uuidShort === '') {
+                return ApiResponse::error('Missing uuidShort', 'INVALID_ID', 400);
+            }
+
+            return (new WebSpaceAppsController())->gitWebhookConfig($request, $uuidShort);
+        },
+        ['GET'],
+        Rate::perMinute(30),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-apps-git-webhook-save',
+        '/api/user/webspaces/{uuidShort}/apps/git-webhook',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            if ($uuidShort === '') {
+                return ApiResponse::error('Missing uuidShort', 'INVALID_ID', 400);
+            }
+
+            return (new WebSpaceAppsController())->saveGitWebhookConfig($request, $uuidShort);
+        },
+        ['PUT'],
+        Rate::perMinute(10),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-apps-git-deploy-key',
+        '/api/user/webspaces/{uuidShort}/apps/git-deploy-key',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            if ($uuidShort === '') {
+                return ApiResponse::error('Missing uuidShort', 'INVALID_ID', 400);
+            }
+
+            return (new WebSpaceAppsController())->gitDeployKey($request, $uuidShort);
+        },
+        ['GET'],
+        Rate::perMinute(30),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-apps-git-deploy-key-regenerate',
+        '/api/user/webspaces/{uuidShort}/apps/git-deploy-key',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            if ($uuidShort === '') {
+                return ApiResponse::error('Missing uuidShort', 'INVALID_ID', 400);
+            }
+
+            return (new WebSpaceAppsController())->regenerateGitDeployKey($request, $uuidShort);
+        },
+        ['POST'],
+        Rate::perMinute(5),
         'user-webspaces'
     );
 };

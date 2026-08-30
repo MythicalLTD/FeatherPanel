@@ -25,6 +25,7 @@ use App\Chat\WebSpaceMailForwarder;
 use App\WebSpaceSubuserPermissions;
 use App\Helpers\WebSpacePluginEvents;
 use App\Helpers\RemoteMailProvisioner;
+use App\Helpers\DnsProvisioner;
 use App\Helpers\WebSpaceActivityLogger;
 use App\Helpers\CheckWebSpacePermission;
 use App\Plugins\Events\Events\WebSpaceEvent;
@@ -80,6 +81,16 @@ class WebSpaceMailboxController
         $domains = is_array($space['domains'] ?? null) ? $space['domains'] : [];
         $hosts = MailHost::listForWebNode((int) ($space['web_node_id'] ?? 0));
         $primary = $hosts[0] ?? null;
+        $dnsContext = DnsProvisioner::resolveProvisionerContext($space);
+        $zoneRecords = [];
+        if ($dnsContext !== null && $primary && strtolower(trim((string) ($primary['provision_mode'] ?? ''))) === 'node') {
+            try {
+                $listed = $dnsContext['provider']->listRecords((string) $dnsContext['zone_id'], null, null, 1, 500);
+                $zoneRecords = is_array($listed['records'] ?? null) ? $listed['records'] : [];
+            } catch (\Throwable) {
+                $zoneRecords = [];
+            }
+        }
 
         $records = [];
         foreach ($domains as $domain) {
@@ -92,34 +103,73 @@ class WebSpaceMailboxController
             $spf = $primary && !empty($primary['spf_record'])
                 ? (string) $primary['spf_record']
                 : 'v=spf1 mx a:' . $mxHost . ' ~all';
+            $dkimReady = !empty($primary['dkim_selector']) && !empty($primary['dkim_record']);
+            $dkimSelector = $primary ? (string) ($primary['dkim_selector'] ?? '') : '';
+            $dkimRecord = $primary ? (string) ($primary['dkim_record'] ?? '') : '';
+
+            if ($primary && strtolower(trim((string) ($primary['provision_mode'] ?? ''))) === 'node') {
+                $webNode = \App\Chat\WebNode::getWebNodeById((int) ($space['web_node_id'] ?? 0));
+                if ($webNode) {
+                    $hints = \App\Helpers\FeatherQuilldClient::getMailDnsHints($webNode, $domain);
+                    if ($hints['ok'] && is_array($hints['body'])) {
+                        $dkimReady = !empty($hints['body']['dkim_ready']);
+                        $dkimSelector = trim((string) ($hints['body']['dkim_selector'] ?? $dkimSelector));
+                        $dkimRecord = trim((string) ($hints['body']['dkim_record'] ?? $dkimRecord));
+                        $hintMx = trim((string) ($hints['body']['mx_host'] ?? ''));
+                        if ($hintMx !== '') {
+                            $mxHost = rtrim($hintMx, '.');
+                        }
+                        foreach (is_array($hints['body']['records'] ?? null) ? $hints['body']['records'] : [] as $hr) {
+                            if (!is_array($hr)) {
+                                continue;
+                            }
+                            if (strtoupper((string) ($hr['type'] ?? '')) === 'TXT'
+                                && trim((string) ($hr['name'] ?? '')) === '@'
+                                && trim((string) ($hr['value'] ?? '')) !== '') {
+                                $spf = (string) $hr['value'];
+                            }
+                        }
+                    }
+                }
+            }
+
+            $hintRecords = array_values(array_filter([
+                [
+                    'type' => 'MX',
+                    'name' => '@',
+                    'value' => $mxHost,
+                    'priority' => 10,
+                ],
+                [
+                    'type' => 'TXT',
+                    'name' => '@',
+                    'value' => $spf,
+                    'priority' => null,
+                ],
+                $dkimReady && $dkimSelector !== '' && $dkimRecord !== '' ? [
+                    'type' => 'TXT',
+                    'name' => $dkimSelector . '._domainkey',
+                    'value' => $dkimRecord,
+                    'priority' => null,
+                ] : null,
+            ]));
 
             $records[] = [
                 'domain' => $domain,
-                'records' => array_values(array_filter([
-                    [
-                        'type' => 'MX',
-                        'name' => '@',
-                        'value' => $mxHost,
-                        'priority' => 10,
-                    ],
-                    [
-                        'type' => 'TXT',
-                        'name' => '@',
-                        'value' => $spf,
-                        'priority' => null,
-                    ],
-                    !empty($primary['dkim_selector']) && !empty($primary['dkim_record']) ? [
-                        'type' => 'TXT',
-                        'name' => (string) $primary['dkim_selector'] . '._domainkey',
-                        'value' => (string) $primary['dkim_record'],
-                        'priority' => null,
-                    ] : null,
-                ])),
+                'dkim_ready' => $dkimReady,
+                'records' => array_map(static function (array $row) use ($zoneRecords, $domain): array {
+                    $row['source'] = self::mailDnsRecordProvisioned($zoneRecords, $domain, $row) ? 'provisioned' : 'manual';
+
+                    return $row;
+                }, $hintRecords),
             ];
         }
 
         return ApiResponse::success([
             'domains' => $records,
+            'can_provision' => $dnsContext !== null
+                && $primary
+                && strtolower(trim((string) ($primary['provision_mode'] ?? ''))) === 'node',
             'client_settings' => $primary ? [
                 'imap_host' => $primary['imap_host'],
                 'imap_port' => (int) $primary['imap_port'],
@@ -131,6 +181,59 @@ class WebSpaceMailboxController
                 'pop_port' => (int) ($primary['pop_port'] ?? 995),
             ] : null,
         ], 'OK', 200);
+    }
+
+    public function provisionDns(Request $request, string $uuidShort): Response
+    {
+        $resolved = $this->resolve($request, $uuidShort, WebSpaceSubuserPermissions::MAIL_CREATE);
+        if ($resolved instanceof Response) {
+            return $resolved;
+        }
+
+        $space = $resolved['space'];
+        $body = json_decode($request->getContent(), true);
+        $domain = is_array($body) ? strtolower(trim((string) ($body['domain'] ?? ''))) : '';
+        if ($domain === '') {
+            $domains = is_array($space['domains'] ?? null) ? $space['domains'] : [];
+            $domain = strtolower(trim((string) ($domains[0] ?? '')));
+        }
+        if ($domain === '') {
+            return ApiResponse::error('domain is required', 'VALIDATION_FAILED', 400);
+        }
+
+        $hosts = MailHost::listForWebNode((int) ($space['web_node_id'] ?? 0));
+        $mailHost = null;
+        foreach ($hosts as $host) {
+            if (strtolower(trim((string) ($host['provision_mode'] ?? ''))) === 'node') {
+                $mailHost = $host;
+                break;
+            }
+        }
+        if ($mailHost === null) {
+            $mailHost = $hosts[0] ?? null;
+        }
+        if ($mailHost === null) {
+            return ApiResponse::error('No mail host available', 'MAIL_HOST_NOT_FOUND', 404);
+        }
+
+        try {
+            $result = DnsProvisioner::provisionMailRecords($space, $mailHost, $domain);
+        } catch (\Throwable $e) {
+            return ApiResponse::error('Failed to provision mail DNS: ' . $e->getMessage(), 'DNS_PROVISION_FAILED', 500);
+        }
+
+        if (empty($result['ok']) && empty($result['skipped'])) {
+            return ApiResponse::error(
+                $result['error'] ?? 'Mail DNS provision failed',
+                'DNS_PROVISION_FAILED',
+                502,
+                ['result' => $result],
+            );
+        }
+
+        return ApiResponse::success($result, empty($result['dkim_ready'])
+            ? 'MX/SPF provisioned; DKIM still pending — retry shortly'
+            : 'Mail DNS records provisioned', 200);
     }
 
     public function create(Request $request, string $uuidShort): Response
@@ -196,6 +299,12 @@ class WebSpaceMailboxController
             ]);
         } catch (\Throwable $e) {
             return ApiResponse::error('Failed to provision mailbox: ' . $e->getMessage(), 'CREATION_FAILED', 500);
+        }
+
+        try {
+            DnsProvisioner::provisionMailRecords($space, $mailHost, $domain);
+        } catch (\Throwable) {
+            // DNS auto-provision is best-effort when a zone is linked
         }
 
         $recordId = WebSpaceMailbox::create([
@@ -629,6 +738,45 @@ class WebSpaceMailboxController
             'autorespond_subject' => $subject !== '' ? $subject : null,
             'autorespond_body' => $message !== '' ? $message : null,
         ], 'Updated', 200);
+    }
+
+    /**
+     * @param list<mixed> $zoneRecords
+     * @param array{type: string, name: string, value: string, priority?: int|null} $hint
+     */
+    private static function mailDnsRecordProvisioned(array $zoneRecords, string $domain, array $hint): bool
+    {
+        $type = strtoupper(trim((string) ($hint['type'] ?? '')));
+        $name = trim((string) ($hint['name'] ?? '@'));
+        $value = trim((string) ($hint['value'] ?? ''));
+        $fqdn = $name === '@' ? $domain : ($name . '.' . $domain);
+
+        foreach ($zoneRecords as $record) {
+            if (!is_array($record)) {
+                continue;
+            }
+            if (strtoupper((string) ($record['type'] ?? '')) !== $type) {
+                continue;
+            }
+            $recordName = strtolower(rtrim((string) ($record['name'] ?? ''), '.'));
+            if ($recordName !== strtolower(rtrim($fqdn, '.')) && $recordName !== strtolower(rtrim($domain, '.'))) {
+                continue;
+            }
+
+            if ($type === 'MX') {
+                $target = rtrim((string) ($record['content'] ?? ''), '.');
+                if (rtrim($value, '.') === $target) {
+                    return true;
+                }
+            } elseif ($type === 'TXT') {
+                $content = trim((string) ($record['content'] ?? ''));
+                if ($content === $value || str_contains($content, $value)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /**

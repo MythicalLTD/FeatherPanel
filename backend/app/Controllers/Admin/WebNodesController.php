@@ -18,6 +18,7 @@
 namespace App\Controllers\Admin;
 
 use App\Chat\WebNode;
+use App\Chat\MailHost;
 use App\Chat\Activity;
 use App\Chat\Location;
 use App\Helpers\ApiResponse;
@@ -28,6 +29,7 @@ use App\CloudFlare\CloudFlareRealIP;
 use App\Helpers\FeatherQuilldClient;
 use App\Helpers\FeatherQuilldCapabilities;
 use App\Helpers\FeatherQuilldConfigBuilder;
+use App\Helpers\WingsUrlHelper;
 use App\Plugins\Events\Events\WebNodeEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -76,7 +78,7 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'sftpDisablePasswordAuth', type: 'integer', description: 'Whether SFTP password authentication is disabled'),
         new OA\Property(property: 'proxyEnabled', type: 'boolean', nullable: true, description: 'Whether FeatherQuilld terminates HTTP(S) for WebSpaces'),
         new OA\Property(property: 'proxyProvider', type: 'string', nullable: true, description: 'Reverse proxy provider: caddy, nginx, or traefik'),
-        new OA\Property(property: 'acmeEmail', type: 'string', nullable: true, description: 'ACME contact email for automatic HTTPS'),
+        new OA\Property(property: 'acmeEmail', type: 'string', nullable: true, description: 'Optional ACME fallback email (site owner account email is preferred)'),
         new OA\Property(property: 'acmeStaging', type: 'boolean', nullable: true, description: 'Use Let’s Encrypt staging ACME directory'),
         new OA\Property(property: 'backendPortMin', type: 'integer', description: 'Loopback backend port range start (system.proxy.backend_port_min)', default: 20000),
         new OA\Property(property: 'backendPortMax', type: 'integer', description: 'Loopback backend port range end (system.proxy.backend_port_max)', default: 29999),
@@ -139,7 +141,7 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'sftpDisablePasswordAuth', type: 'boolean', description: 'Disable SFTP password authentication', default: false),
         new OA\Property(property: 'proxyEnabled', type: 'boolean', nullable: true, description: 'Whether FeatherQuilld terminates HTTP(S) for WebSpaces'),
         new OA\Property(property: 'proxyProvider', type: 'string', nullable: true, description: 'Reverse proxy provider: caddy, nginx, or traefik'),
-        new OA\Property(property: 'acmeEmail', type: 'string', nullable: true, description: 'ACME contact email for automatic HTTPS'),
+        new OA\Property(property: 'acmeEmail', type: 'string', nullable: true, description: 'Optional ACME fallback email (site owner account email is preferred)'),
         new OA\Property(property: 'acmeStaging', type: 'boolean', nullable: true, description: 'Use Let’s Encrypt staging ACME directory'),
         new OA\Property(property: 'backendPortMin', type: 'integer', description: 'Loopback backend port range start (system.proxy.backend_port_min)', default: 20000),
         new OA\Property(property: 'backendPortMax', type: 'integer', description: 'Loopback backend port range end (system.proxy.backend_port_max)', default: 29999),
@@ -186,7 +188,7 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'sftpDisablePasswordAuth', type: 'boolean', description: 'Disable SFTP password authentication'),
         new OA\Property(property: 'proxyEnabled', type: 'boolean', nullable: true, description: 'Whether FeatherQuilld terminates HTTP(S) for WebSpaces'),
         new OA\Property(property: 'proxyProvider', type: 'string', nullable: true, description: 'Reverse proxy provider: caddy, nginx, or traefik'),
-        new OA\Property(property: 'acmeEmail', type: 'string', nullable: true, description: 'ACME contact email for automatic HTTPS'),
+        new OA\Property(property: 'acmeEmail', type: 'string', nullable: true, description: 'Optional ACME fallback email (site owner account email is preferred)'),
         new OA\Property(property: 'acmeStaging', type: 'boolean', nullable: true, description: 'Use Let’s Encrypt staging ACME directory'),
         new OA\Property(property: 'backendPortMin', type: 'integer', description: 'Loopback backend port range start (system.proxy.backend_port_min)'),
         new OA\Property(property: 'backendPortMax', type: 'integer', description: 'Loopback backend port range end (system.proxy.backend_port_max)'),
@@ -792,6 +794,297 @@ class WebNodesController
                 'fqdn' => (string) ($webNode['fqdn'] ?? ''),
             ],
         ], 'OK', 200);
+    }
+
+    public function systemLogs(Request $request, int $id): Response
+    {
+        $webNode = WebNode::getWebNodeById($id);
+        if (!$webNode) {
+            return ApiResponse::error('Web node not found', 'WEB_NODE_NOT_FOUND', 404);
+        }
+
+        $result = FeatherQuilldClient::getSystemLogs($webNode);
+        if (!$result['ok']) {
+            return ApiResponse::error(
+                $result['error'] ?? 'Failed to reach FeatherQuilld logs endpoint',
+                'DAEMON_LOGS_FAILED',
+                502,
+                ['daemon' => $result],
+            );
+        }
+
+        return ApiResponse::success([
+            'logs' => $result['body'],
+            'node' => [
+                'id' => (int) $webNode['id'],
+                'uuid' => (string) ($webNode['uuid'] ?? ''),
+                'fqdn' => (string) ($webNode['fqdn'] ?? ''),
+            ],
+        ], 'OK', 200);
+    }
+
+    public function systemLogFile(Request $request, int $id, string $file): Response
+    {
+        $webNode = WebNode::getWebNodeById($id);
+        if (!$webNode) {
+            return ApiResponse::error('Web node not found', 'WEB_NODE_NOT_FOUND', 404);
+        }
+
+        $lines = (int) $request->query->get('lines', 200);
+        $result = FeatherQuilldClient::getSystemLogFile($webNode, $file, $lines);
+        if (!$result['ok']) {
+            return ApiResponse::error(
+                $result['error'] ?? 'Failed to fetch log file from FeatherQuilld',
+                'DAEMON_LOG_FILE_FAILED',
+                502,
+                ['daemon' => $result],
+            );
+        }
+
+        $body = is_array($result['body']) ? $result['body'] : [];
+
+        return ApiResponse::success([
+            'log' => $body,
+            'node' => [
+                'id' => (int) $webNode['id'],
+                'uuid' => (string) ($webNode['uuid'] ?? ''),
+                'fqdn' => (string) ($webNode['fqdn'] ?? ''),
+            ],
+        ], 'OK', 200);
+    }
+
+    public function packages(Request $request, int $id): Response
+    {
+        $webNode = WebNode::getWebNodeById($id);
+        if (!$webNode) {
+            return ApiResponse::error('Web node not found', 'WEB_NODE_NOT_FOUND', 404);
+        }
+
+        $result = FeatherQuilldClient::getPackages($webNode);
+        if (!$result['ok']) {
+            return ApiResponse::error(
+                $result['error'] ?? 'Failed to list packages on FeatherQuilld',
+                'DAEMON_PACKAGES_FAILED',
+                502,
+                ['daemon' => $result],
+            );
+        }
+
+        return ApiResponse::success([
+            'packages' => $result['body'],
+            'node' => [
+                'id' => (int) $webNode['id'],
+                'uuid' => (string) ($webNode['uuid'] ?? ''),
+                'fqdn' => (string) ($webNode['fqdn'] ?? ''),
+            ],
+        ], 'OK', 200);
+    }
+
+    public function packageSocket(Request $request, int $id): Response
+    {
+        $webNode = WebNode::getWebNodeById($id);
+        if (!$webNode) {
+            return ApiResponse::error('Web node not found', 'WEB_NODE_NOT_FOUND', 404);
+        }
+
+        $tokenId = trim((string) ($webNode['daemon_token_id'] ?? ''));
+        $token = trim((string) ($webNode['daemon_token'] ?? ''));
+        if ($tokenId === '' || $token === '') {
+            return ApiResponse::error('Web node is missing daemon credentials', 'MISSING_DAEMON_TOKEN', 500);
+        }
+
+        $baseUrl = WingsUrlHelper::buildFromNode($webNode);
+        $socket = WingsUrlHelper::toWebSocketBaseUrl($baseUrl) . '/api/system/packages/ws?token='
+            . rawurlencode($tokenId . '.' . $token);
+
+        return ApiResponse::success([
+            'socket' => $socket,
+            'connection_string' => $socket,
+            'node' => [
+                'id' => (int) $webNode['id'],
+                'uuid' => (string) ($webNode['uuid'] ?? ''),
+                'fqdn' => (string) ($webNode['fqdn'] ?? ''),
+            ],
+        ], 'OK', 200);
+    }
+
+    public function installPackage(Request $request, int $id, string $packageId): Response
+    {
+        $webNode = WebNode::getWebNodeById($id);
+        if (!$webNode) {
+            return ApiResponse::error('Web node not found', 'WEB_NODE_NOT_FOUND', 404);
+        }
+
+        $result = FeatherQuilldClient::installPackage($webNode, $packageId);
+        if (!$result['ok']) {
+            $body = is_array($result['body']) ? $result['body'] : [];
+            $message = is_string($body['message'] ?? null) ? $body['message'] : ($result['error'] ?? 'Package install failed');
+
+            return ApiResponse::error($message, 'DAEMON_PACKAGE_INSTALL_FAILED', 502, [
+                'daemon' => $result,
+                'packages' => $body['packages'] ?? null,
+            ]);
+        }
+
+        $mailHostId = null;
+        if (strtolower($packageId) === 'mailserver') {
+            $mailHostId = MailHost::ensureNodeMailHost($id, $webNode);
+        }
+
+        return ApiResponse::success([
+            'operation' => $result['body'],
+            'mail_host_id' => $mailHostId,
+            'node' => [
+                'id' => (int) $webNode['id'],
+                'uuid' => (string) ($webNode['uuid'] ?? ''),
+                'fqdn' => (string) ($webNode['fqdn'] ?? ''),
+            ],
+        ], 'Package installed', 200);
+    }
+
+    public function removePackage(Request $request, int $id, string $packageId): Response
+    {
+        $webNode = WebNode::getWebNodeById($id);
+        if (!$webNode) {
+            return ApiResponse::error('Web node not found', 'WEB_NODE_NOT_FOUND', 404);
+        }
+
+        $purge = filter_var($request->query->get('purge_config', false), FILTER_VALIDATE_BOOLEAN);
+        $result = FeatherQuilldClient::removePackage($webNode, $packageId, $purge);
+        if (!$result['ok']) {
+            $body = is_array($result['body']) ? $result['body'] : [];
+            $message = is_string($body['message'] ?? null) ? $body['message'] : ($result['error'] ?? 'Package removal failed');
+
+            return ApiResponse::error($message, 'DAEMON_PACKAGE_REMOVE_FAILED', 502, [
+                'daemon' => $result,
+                'packages' => $body['packages'] ?? null,
+            ]);
+        }
+
+        return ApiResponse::success([
+            'operation' => $result['body'],
+            'node' => [
+                'id' => (int) $webNode['id'],
+                'uuid' => (string) ($webNode['uuid'] ?? ''),
+                'fqdn' => (string) ($webNode['fqdn'] ?? ''),
+            ],
+        ], 'Package removed', 200);
+    }
+
+    public function versionStatus(Request $request, int $id): Response
+    {
+        $webNode = WebNode::getWebNodeById($id);
+        if (!$webNode) {
+            return ApiResponse::error('Web node not found', 'WEB_NODE_NOT_FOUND', 404);
+        }
+
+        $system = FeatherQuilldClient::getSystem($webNode);
+        if (!$system['ok']) {
+            return ApiResponse::error(
+                $system['error'] ?? 'Failed to reach FeatherQuilld',
+                'DAEMON_VERSION_FAILED',
+                502,
+            );
+        }
+
+        $currentVersion = is_array($system['body'])
+            ? (string) ($system['body']['version'] ?? '')
+            : '';
+        if ($currentVersion === '') {
+            return ApiResponse::error('Failed to retrieve FeatherQuilld version', 'VERSION_RETRIEVAL_FAILED', 500);
+        }
+
+        $status = FeatherQuilldClient::getVersionStatus($webNode);
+        if (!$status['ok'] || !is_array($status['body'])) {
+            return ApiResponse::success([
+                'current_version' => $currentVersion,
+                'latest_version' => null,
+                'is_up_to_date' => true,
+                'update_available' => false,
+                'github_owner' => 'mythicalltd',
+                'github_repo' => 'featherquilld',
+                'github_error' => $status['error'] ?? 'Upstream check failed',
+            ], 'OK', 200);
+        }
+
+        $body = $status['body'];
+
+        return ApiResponse::success([
+            'current_version' => (string) ($body['current_version'] ?? $currentVersion),
+            'latest_version' => $body['latest_version'] ?? null,
+            'is_up_to_date' => (bool) ($body['is_up_to_date'] ?? true),
+            'update_available' => (bool) ($body['update_available'] ?? false),
+            'github_owner' => (string) ($body['github_owner'] ?? 'mythicalltd'),
+            'github_repo' => (string) ($body['github_repo'] ?? 'featherquilld'),
+            'github_error' => $body['github_error'] ?? null,
+        ], 'OK', 200);
+    }
+
+    public function triggerSelfUpdate(Request $request, int $id): Response
+    {
+        $admin = $request->attributes->get('user');
+        $webNode = WebNode::getWebNodeById($id);
+        if (!$webNode) {
+            return ApiResponse::error('Web node not found', 'WEB_NODE_NOT_FOUND', 404);
+        }
+
+        $payload = json_decode($request->getContent() ?: '{}', true);
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($payload)) {
+            return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
+        }
+
+        $allowedKeys = [
+            'source',
+            'version',
+            'url',
+            'repo_owner',
+            'repo_name',
+            'sha256',
+            'force',
+            'disable_checksum',
+        ];
+        $cleanPayload = [];
+        foreach ($allowedKeys as $key) {
+            if (!array_key_exists($key, $payload)) {
+                continue;
+            }
+            $value = $payload[$key];
+            if (in_array($key, ['force', 'disable_checksum'], true)) {
+                $cleanPayload[$key] = (bool) $value;
+                continue;
+            }
+            if (is_string($value)) {
+                $trimmed = trim($value);
+                if ($trimmed !== '') {
+                    $cleanPayload[$key] = $trimmed;
+                }
+                continue;
+            }
+            $cleanPayload[$key] = $value;
+        }
+
+        if (!isset($cleanPayload['source'])) {
+            $cleanPayload['source'] = 'github';
+        }
+
+        $result = FeatherQuilldClient::triggerSelfUpdate($webNode, $cleanPayload);
+        if (!$result['ok']) {
+            $body = is_array($result['body']) ? $result['body'] : [];
+            $message = is_string($body['message'] ?? null) ? $body['message'] : ($result['error'] ?? 'Self-update failed');
+
+            return ApiResponse::error($message, 'WEB_NODE_SELF_UPDATE_FAILED', 502, ['daemon' => $result]);
+        }
+
+        Activity::createActivity([
+            'user_uuid' => $admin['uuid'] ?? null,
+            'name' => 'trigger_web_node_self_update',
+            'context' => 'Triggered FeatherQuilld self-update for web node: ' . ($webNode['name'] ?? $id),
+            'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        return ApiResponse::success([
+            'result' => $result['body'],
+        ], 'Self-update requested successfully', 202);
     }
 
     /**

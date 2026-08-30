@@ -17,12 +17,15 @@
 
 namespace App\Helpers;
 
+use App\Services\Mail\NodeMailProvisioner;
+
 /**
  * Provisions mailboxes on external mail hosts.
  *
  * Modes:
  * - inventory: panel is source of truth (no remote call)
  * - webhook: POST JSON actions to provision_url with Bearer API key
+ * - node: FeatherQuilld docker-mailserver on the linked web node
  */
 class RemoteMailProvisioner
 {
@@ -102,6 +105,12 @@ class RemoteMailProvisioner
     {
         $mode = strtolower(trim((string) ($mailHost['provision_mode'] ?? 'inventory')));
         if ($mode === 'inventory' || $mode === '') {
+            return;
+        }
+
+        if ($mode === 'node') {
+            NodeMailProvisioner::dispatch($mailHost, $action, $mailbox);
+
             return;
         }
 

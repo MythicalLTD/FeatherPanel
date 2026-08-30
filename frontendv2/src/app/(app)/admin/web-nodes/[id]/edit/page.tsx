@@ -41,6 +41,9 @@ import {
     ChevronLeft,
     ChevronRight,
     HeartPulse,
+    Stethoscope,
+    Package,
+    ArrowUpCircle,
 } from 'lucide-react';
 import { usePluginWidgets } from '@/hooks/usePluginWidgets';
 import { WidgetRenderer } from '@/components/server/WidgetRenderer';
@@ -53,6 +56,10 @@ import { RemoteSftpTab } from './RemoteSftpTab';
 import { AdvancedTab } from './AdvancedTab';
 import { FeatherQuilldTab } from './FeatherQuilldTab';
 import { StatusTab } from './StatusTab';
+import { DiagnosticsTab } from './DiagnosticsTab';
+import { PackageManagerTab } from './PackageManagerTab';
+import { SelfUpdateTab } from './SelfUpdateTab';
+import { HostingSetupTab } from './HostingSetupTab';
 import {
     type WebNodeForm,
     defaultWebNodeForm,
@@ -62,6 +69,24 @@ import {
     getFirstWebNodeErrorTab,
     getWebNodeTabLabelKey,
 } from '../../types';
+
+const WEB_NODE_EDIT_TABS = new Set([
+    'status',
+    'diagnostics',
+    'packages',
+    'self-update',
+    'hosting',
+    'details',
+    'config',
+    'network',
+    'remote',
+    'advanced',
+    'quilld',
+]);
+
+function resolveWebNodeEditTab(tab: string | null): string {
+    return tab && WEB_NODE_EDIT_TABS.has(tab) ? tab : 'details';
+}
 
 interface Location {
     id: number;
@@ -84,15 +109,7 @@ export default function EditWebNodePage() {
     const [selectedLocationName, setSelectedLocationName] = useState('');
     const [resettingToken, setResettingToken] = useState(false);
     const [configRefreshKey, setConfigRefreshKey] = useState(0);
-    const [activeTab, setActiveTab] = useState(
-        tabFromUrl === 'quilld'
-            ? 'quilld'
-            : tabFromUrl === 'status'
-              ? 'status'
-              : tabFromUrl === 'config'
-                ? 'config'
-                : 'details',
-    );
+    const [activeTab, setActiveTab] = useState(() => resolveWebNodeEditTab(tabFromUrl));
     const [locationModalOpen, setLocationModalOpen] = useState(false);
     const [locationPagination, setLocationPagination] = useState({
         current_page: 1,
@@ -228,6 +245,8 @@ export default function EditWebNodePage() {
                 acmeStaging: node.acmeStaging === true || node.acmeStaging === 1 ? 'true' : 'false',
                 backendPortMin: Number(node.backendPortMin ?? 20000),
                 backendPortMax: Number(node.backendPortMax ?? 29999),
+                proxyBackendHost: node.proxyBackendHost || '127.0.0.1',
+                proxyBackendBindHost: node.proxyBackendBindHost || '127.0.0.1',
             });
         } catch (error) {
             console.error('Error loading web node:', error);
@@ -242,9 +261,29 @@ export default function EditWebNodePage() {
         if (id) void fetchInitialData();
     }, [id, fetchInitialData]);
 
+    useEffect(() => {
+        setActiveTab(resolveWebNodeEditTab(tabFromUrl));
+    }, [tabFromUrl]);
+
+    const handleTabChange = useCallback(
+        (tab: string) => {
+            setActiveTab(tab);
+            const path =
+                tab === 'details'
+                    ? `/admin/web-nodes/${id}/edit`
+                    : `/admin/web-nodes/${id}/edit?tab=${encodeURIComponent(tab)}`;
+            router.replace(path, { scroll: false });
+        },
+        [id, router],
+    );
+
     const tabs = useMemo(
         () => [
             { id: 'status', label: t('admin.webNodes.status.tab'), icon: HeartPulse },
+            { id: 'diagnostics', label: t('admin.webNodes.diagnostics.tab'), icon: Stethoscope },
+            { id: 'packages', label: t('admin.webNodes.packages.tab'), icon: Package },
+            { id: 'self-update', label: t('admin.webNodes.selfUpdate.tab'), icon: ArrowUpCircle },
+            { id: 'hosting', label: t('admin.webNodes.hostingSetup.tab'), icon: Globe },
             { id: 'details', label: t('admin.webNodes.form.basic_details'), icon: Database },
             { id: 'config', label: t('admin.webNodes.form.configuration'), icon: Settings2 },
             { id: 'network', label: t('admin.webNodes.form.network'), icon: Network },
@@ -332,14 +371,30 @@ export default function EditWebNodePage() {
             <WidgetRenderer widgets={getWidgets('admin-web-node-edit', 'top-of-page')} context={{ id }} />
 
             <PageHeader
-                title={t('admin.webNodes.form.edit_title')}
-                description={t('admin.webNodes.form.edit_description')}
+                title={form.name || t('admin.webNodes.form.edit_title')}
+                description={
+                    form.fqdn
+                        ? `${t('admin.webNodes.form.edit_description')} · ${form.fqdn}`
+                        : t('admin.webNodes.form.edit_description')
+                }
                 icon={Server}
                 actions={
                     <div className='flex flex-wrap gap-2'>
                         <Button variant='outline' onClick={() => safeBack(router, '/admin/web-nodes')}>
                             <ArrowLeft className='mr-2 h-4 w-4' />
                             {t('common.back')}
+                        </Button>
+                        <Button variant='outline' onClick={() => handleTabChange('diagnostics')}>
+                            <Stethoscope className='mr-2 h-4 w-4' />
+                            {t('admin.webNodes.diagnostics.tab')}
+                        </Button>
+                        <Button variant='outline' onClick={() => handleTabChange('packages')}>
+                            <Package className='mr-2 h-4 w-4' />
+                            {t('admin.webNodes.packages.tab')}
+                        </Button>
+                        <Button variant='outline' onClick={() => handleTabChange('quilld')}>
+                            <Terminal className='mr-2 h-4 w-4' />
+                            {t('admin.webNodes.form.quilld_config')}
                         </Button>
                         <Button onClick={() => handleSave()} loading={saving}>
                             <Save className='mr-2 h-4 w-4' />
@@ -354,7 +409,7 @@ export default function EditWebNodePage() {
             <div className='block'>
                 <Tabs
                     value={activeTab}
-                    onValueChange={setActiveTab}
+                    onValueChange={handleTabChange}
                     orientation='vertical'
                     className='flex w-full flex-col gap-6 md:flex-row'
                 >
@@ -379,6 +434,22 @@ export default function EditWebNodePage() {
                     <div className='min-w-0 flex-1 space-y-6'>
                         <TabsContent value='status' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
                             <StatusTab nodeId={id} />
+                        </TabsContent>
+
+                        <TabsContent value='diagnostics' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
+                            <DiagnosticsTab nodeId={id} onOpenQuilldTab={() => handleTabChange('quilld')} />
+                        </TabsContent>
+
+                        <TabsContent value='packages' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
+                            <PackageManagerTab nodeId={id} />
+                        </TabsContent>
+
+                        <TabsContent value='self-update' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
+                            <SelfUpdateTab nodeId={id} />
+                        </TabsContent>
+
+                        <TabsContent value='hosting' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
+                            <HostingSetupTab nodeId={id} />
                         </TabsContent>
 
                         <TabsContent value='details' className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
@@ -418,7 +489,11 @@ export default function EditWebNodePage() {
                             />
                         </TabsContent>
 
-                        {activeTab !== 'quilld' && activeTab !== 'status' && (
+                        {activeTab !== 'quilld' &&
+                            activeTab !== 'status' &&
+                            activeTab !== 'diagnostics' &&
+                            activeTab !== 'packages' &&
+                            activeTab !== 'hosting' && (
                             <div className='flex justify-end'>
                                 <Button onClick={() => handleSave()} loading={saving}>
                                     <Save className='mr-2 h-4 w-4' />

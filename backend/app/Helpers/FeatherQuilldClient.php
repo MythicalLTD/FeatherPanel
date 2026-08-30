@@ -105,9 +105,8 @@ class FeatherQuilldClient
         string $uuid,
         bool $startOnCompletion = false,
         bool $skipScripts = false,
-        int $timeout = 120,
+        int $timeout = 30,
     ): array {
-        // Install/pull can exceed the default 30s Wings-style client timeout.
         return self::request($webNode, 'POST', '/api/webspaces', [
             'uuid' => $uuid,
             'start_on_completion' => $startOnCompletion,
@@ -153,6 +152,119 @@ class FeatherQuilldClient
     public static function getDiagnostics(array $webNode, int $timeout = 15): array
     {
         return self::request($webNode, 'GET', '/api/system/diagnostics', null, $timeout);
+    }
+
+    /**
+     * @param array<string, mixed> $webNode
+     *
+     * @return array{ok: bool, status: int, body: mixed, error: ?string}
+     */
+    public static function getSystemLogs(array $webNode, int $timeout = 15): array
+    {
+        return self::request($webNode, 'GET', '/api/system/logs', null, $timeout);
+    }
+
+    /**
+     * @param array<string, mixed> $webNode
+     *
+     * @return array{ok: bool, status: int, body: mixed, error: ?string}
+     */
+    public static function getSystemLogFile(array $webNode, string $fileName, int $lines = 200, int $timeout = 30): array
+    {
+        $safe = rawurlencode($fileName);
+
+        return self::request(
+            $webNode,
+            'GET',
+            '/api/system/logs/' . $safe . '?lines=' . max(1, min(5000, $lines)),
+            null,
+            $timeout,
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $webNode
+     *
+     * @return array{ok: bool, status: int, body: mixed, error: ?string}
+     */
+    public static function getSystemInfo(array $webNode, int $timeout = 10): array
+    {
+        return self::request($webNode, 'GET', '/api/system/info', null, $timeout);
+    }
+
+    /**
+     * @param array<string, mixed> $webNode
+     *
+     * @return array{ok: bool, status: int, body: mixed, error: ?string}
+     */
+    public static function getSystemPlugins(array $webNode, int $timeout = 10): array
+    {
+        return self::request($webNode, 'GET', '/api/system/plugins', null, $timeout);
+    }
+
+    /**
+     * @param array<string, mixed> $webNode
+     *
+     * @return array{ok: bool, status: int, body: mixed, error: ?string}
+     */
+    public static function getPackages(array $webNode, int $timeout = 30): array
+    {
+        return self::request($webNode, 'GET', '/api/system/packages', null, $timeout);
+    }
+
+    /**
+     * @param array<string, mixed> $webNode
+     *
+     * @return array{ok: bool, status: int, body: mixed, error: ?string}
+     */
+    public static function installPackage(array $webNode, string $packageId, int $timeout = 300): array
+    {
+        return self::request(
+            $webNode,
+            'POST',
+            '/api/system/packages/' . rawurlencode($packageId) . '/install',
+            [],
+            $timeout,
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $webNode
+     *
+     * @return array{ok: bool, status: int, body: mixed, error: ?string}
+     */
+    public static function removePackage(array $webNode, string $packageId, bool $purgeConfig = false, int $timeout = 300): array
+    {
+        $query = $purgeConfig ? '?purge_config=1' : '';
+
+        return self::request(
+            $webNode,
+            'POST',
+            '/api/system/packages/' . rawurlencode($packageId) . '/remove' . $query,
+            [],
+            $timeout,
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $webNode
+     *
+     * @return array{ok: bool, status: int, body: mixed, error: ?string}
+     */
+    public static function getVersionStatus(array $webNode, int $timeout = 15): array
+    {
+        return self::request($webNode, 'GET', '/api/system/version-status', null, $timeout);
+    }
+
+    /**
+     * @param array<string, mixed> $webNode
+     * @param array<string, mixed> $options
+     *
+     * @return array{ok: bool, status: int, body: mixed, error: ?string}
+     */
+    public static function triggerSelfUpdate(array $webNode, array $options, int $timeout = 120): array
+    {
+        return self::request($webNode, 'POST', '/api/system/self-update', $options, $timeout);
     }
 
     /**
@@ -282,6 +394,96 @@ class FeatherQuilldClient
      *
      * @return array{ok: bool, status: int, body: mixed, error: ?string}
      */
+    public static function recreateRuntime(array $webNode, string $uuid): array
+    {
+        return self::request($webNode, 'POST', '/api/webspaces/' . $uuid . '/recreate-runtime', [], 300);
+    }
+
+    /**
+     * @param array<string, mixed> $webNode
+     *
+     * @return array{ok: bool, status: int, body: mixed, error: ?string}
+     */
+    public static function getCustomSsl(array $webNode, string $uuid): array
+    {
+        return self::request($webNode, 'GET', '/api/webspaces/' . $uuid . '/ssl/custom', null, 30);
+    }
+
+    /**
+     * @param array<string, mixed> $webNode
+     *
+     * @return array{ok: bool, status: int, body: mixed, error: ?string}
+     */
+    public static function deleteCustomSsl(array $webNode, string $uuid): array
+    {
+        return self::request($webNode, 'DELETE', '/api/webspaces/' . $uuid . '/ssl/custom', null, 60);
+    }
+
+    /**
+     * @param array<string, mixed> $webNode
+     *
+     * @return array{ok: bool, status: int, body: mixed, error: ?string}
+     */
+    public static function uploadCustomSsl(array $webNode, string $uuid, string $certPath, string $keyPath): array
+    {
+        $baseUrl = WingsUrlHelper::buildFromNode($webNode);
+        $tokenId = trim((string) ($webNode['daemon_token_id'] ?? ''));
+        $token = trim((string) ($webNode['daemon_token'] ?? ''));
+        if ($tokenId === '' || $token === '') {
+            return ['ok' => false, 'status' => 0, 'body' => null, 'error' => 'Web node is missing daemon credentials'];
+        }
+
+        $url = rtrim($baseUrl, '/') . '/api/webspaces/' . $uuid . '/ssl/custom';
+        try {
+            $client = new Client([
+                'timeout' => 60,
+                'connect_timeout' => 10,
+                'verify' => false,
+                'http_errors' => false,
+            ]);
+            $response = $client->request('PUT', $url, [
+                'headers' => [
+                    'Authorization' => 'Bearer ' . $tokenId . '.' . $token,
+                    'Accept' => 'application/json',
+                ],
+                'multipart' => [
+                    [
+                        'name' => 'cert',
+                        'contents' => fopen($certPath, 'r'),
+                        'filename' => 'cert.pem',
+                    ],
+                    [
+                        'name' => 'key',
+                        'contents' => fopen($keyPath, 'r'),
+                        'filename' => 'key.pem',
+                    ],
+                ],
+            ]);
+            $status = $response->getStatusCode();
+            $raw = (string) $response->getBody();
+            $decoded = json_decode($raw, true);
+
+            return [
+                'ok' => $status >= 200 && $status < 300,
+                'status' => $status,
+                'body' => is_array($decoded) ? $decoded : $raw,
+                'error' => $status >= 200 && $status < 300 ? null : 'Daemon returned HTTP ' . $status,
+            ];
+        } catch (\Throwable $e) {
+            return [
+                'ok' => false,
+                'status' => 0,
+                'body' => null,
+                'error' => $e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $webNode
+     *
+     * @return array{ok: bool, status: int, body: mixed, error: ?string}
+     */
     public static function getTransferStatus(array $webNode, string $uuid): array
     {
         return self::request($webNode, 'GET', '/api/transfers/' . $uuid . '/status', null, 15);
@@ -361,6 +563,34 @@ class FeatherQuilldClient
         return self::request($webNode, 'GET', '/api/webspaces/' . $uuid . '/backups/jobs/' . $jobId, null, 30);
     }
 
+    /**
+     * @param array<string, mixed> $webNode
+     *
+     * @return array{ok: bool, status: int, body: mixed, error: ?string}
+     */
+    public static function startWebSpaceMalwareScan(array $webNode, string $uuid, ?array $body = null): array
+    {
+        return self::request($webNode, 'POST', '/api/webspaces/' . $uuid . '/malware-scan', $body ?? ['async' => true], 600);
+    }
+
+    /** @return array{ok: bool, status: int, body: mixed, error: ?string} */
+    public static function getWebSpaceMalwareScanJob(array $webNode, string $uuid, string $jobId): array
+    {
+        return self::request($webNode, 'GET', '/api/webspaces/' . $uuid . '/malware-scan/jobs/' . $jobId, null, 30);
+    }
+
+    /** @return array{ok: bool, status: int, body: mixed, error: ?string} */
+    public static function getWebSpaceMalwareScanLast(array $webNode, string $uuid): array
+    {
+        return self::request($webNode, 'GET', '/api/webspaces/' . $uuid . '/malware-scan/last', null, 30);
+    }
+
+    /** @return array{ok: bool, status: int, body: mixed, error: ?string} */
+    public static function probeWebSpaceMalwareScan(array $webNode): array
+    {
+        return self::request($webNode, 'GET', '/api/webspaces/malware-scan/probe', null, 15);
+    }
+
     /** @return array{ok: bool, status: int, body: mixed, error: ?string} */
     public static function getWebSpaceUtilization(array $webNode, string $uuid): array
     {
@@ -411,6 +641,18 @@ class FeatherQuilldClient
         ?array $body = null,
     ): array {
         return self::request($webNode, 'POST', '/api/webspaces/' . $uuid . '/backups/' . $backupUuid . '/restore', $body ?? [], 600);
+    }
+
+    /** @return array{ok: bool, status: int, body: mixed, error: ?string} */
+    public static function listWebSpaceBackupFiles(
+        array $webNode,
+        string $uuid,
+        string $backupUuid,
+        string $directory = '/',
+    ): array {
+        $q = http_build_query(['directory' => $directory]);
+
+        return self::request($webNode, 'GET', '/api/webspaces/' . $uuid . '/backups/' . $backupUuid . '/files?' . $q);
     }
 
     /** @return array{ok: bool, status: int, body: mixed, error: ?string} */
@@ -681,6 +923,33 @@ class FeatherQuilldClient
     }
 
     /** @return array{ok: bool, status: int, body: mixed, error: ?string} */
+    public static function getWebSpaceProxyLogs(
+        array $webNode,
+        string $uuid,
+        ?string $domain = null,
+        int $lines = 200,
+        int $days = 0,
+    ): array {
+        $query = ['lines' => $lines];
+        if ($domain !== null && $domain !== '') {
+            $query['domain'] = $domain;
+        }
+        if ($days > 0) {
+            $query['days'] = $days;
+        }
+
+        return self::request($webNode, 'GET', '/api/webspaces/' . $uuid . '/proxy-logs?' . http_build_query($query));
+    }
+
+    /** @return array{ok: bool, status: int, body: mixed, error: ?string} */
+    public static function execWebSpaceCommand(array $webNode, string $uuid, string $command, int $timeout = 180): array
+    {
+        return self::request($webNode, 'POST', '/api/webspaces/' . $uuid . '/exec', [
+            'command' => $command,
+        ], $timeout);
+    }
+
+    /** @return array{ok: bool, status: int, body: mixed, error: ?string} */
     public static function pullWebSpaceFile(
         array $webNode,
         string $uuid,
@@ -831,5 +1100,157 @@ class FeatherQuilldClient
     public static function abortWebSpaceSchedules(array $webNode, string $uuid): array
     {
         return self::request($webNode, 'POST', '/api/webspaces/' . $uuid . '/schedules/abort');
+    }
+
+    /** @return array{ok: bool, status: int, body: mixed, error: ?string} */
+    public static function probeDns(array $webNode): array
+    {
+        return self::request($webNode, 'GET', '/api/dns/probe');
+    }
+
+    /** @return array{ok: bool, status: int, body: mixed, error: ?string} */
+    public static function listDnsZones(array $webNode): array
+    {
+        return self::request($webNode, 'GET', '/api/dns/zones');
+    }
+
+    /** @return array{ok: bool, status: int, body: mixed, error: ?string} */
+    public static function createDnsZone(array $webNode, string $zoneName, ?string $nodeIp = null): array
+    {
+        $payload = ['name' => $zoneName];
+        if ($nodeIp !== null && trim($nodeIp) !== '') {
+            $payload['node_ip'] = trim($nodeIp);
+        }
+
+        return self::request($webNode, 'POST', '/api/dns/zones', $payload);
+    }
+
+    /**
+     * @return array{ok: bool, status: int, body: mixed, error: ?string}
+     */
+    public static function listDnsRecords(
+        array $webNode,
+        string $zone,
+        ?string $type = null,
+        ?string $name = null,
+        int $page = 1,
+        int $perPage = 100,
+    ): array {
+        $query = array_filter([
+            'type' => $type,
+            'name' => $name,
+            'page' => $page,
+            'per_page' => $perPage,
+        ], static fn ($v) => $v !== null && $v !== '');
+
+        $path = '/api/dns/zones/' . rawurlencode($zone) . '/records';
+        if ($query !== []) {
+            $path .= '?' . http_build_query($query);
+        }
+
+        return self::request($webNode, 'GET', $path);
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     *
+     * @return array{ok: bool, status: int, body: mixed, error: ?string}
+     */
+    public static function createDnsRecord(array $webNode, string $zone, array $payload): array
+    {
+        return self::request($webNode, 'POST', '/api/dns/zones/' . rawurlencode($zone) . '/records', $payload);
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     *
+     * @return array{ok: bool, status: int, body: mixed, error: ?string}
+     */
+    public static function updateDnsRecord(array $webNode, string $zone, string $recordId, array $payload): array
+    {
+        return self::request(
+            $webNode,
+            'PATCH',
+            '/api/dns/zones/' . rawurlencode($zone) . '/records/' . rawurlencode($recordId),
+            $payload,
+        );
+    }
+
+    /** @return array{ok: bool, status: int, body: mixed, error: ?string} */
+    public static function deleteDnsRecord(array $webNode, string $zone, string $recordId): array
+    {
+        return self::request(
+            $webNode,
+            'DELETE',
+            '/api/dns/zones/' . rawurlencode($zone) . '/records/' . rawurlencode($recordId),
+        );
+    }
+
+    /** @return array{ok: bool, status: int, body: mixed, error: ?string} */
+    public static function upsertDnsTxt(
+        array $webNode,
+        string $zone,
+        string $name,
+        string $content,
+        int $ttl = 120,
+    ): array {
+        return self::request($webNode, 'POST', '/api/dns/zones/' . rawurlencode($zone) . '/txt', [
+            'name' => $name,
+            'content' => $content,
+            'ttl' => $ttl,
+        ]);
+    }
+
+    /** @return array{ok: bool, status: int, body: mixed, error: ?string} */
+    public static function deleteDnsTxt(
+        array $webNode,
+        string $zone,
+        string $name,
+        ?string $content = null,
+    ): array {
+        $query = ['name' => $name];
+        if ($content !== null && $content !== '') {
+            $query['content'] = $content;
+        }
+
+        return self::request(
+            $webNode,
+            'DELETE',
+            '/api/dns/zones/' . rawurlencode($zone) . '/txt?' . http_build_query($query),
+        );
+    }
+
+    /** @return array{ok: bool, status: int, body: mixed, error: ?string} */
+    public static function probeMail(array $webNode): array
+    {
+        return self::request($webNode, 'GET', '/api/mail/probe');
+    }
+
+    /** @return array{ok: bool, status: int, body: mixed, error: ?string} */
+    public static function listMailDomains(array $webNode): array
+    {
+        return self::request($webNode, 'GET', '/api/mail/domains');
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     *
+     * @return array{ok: bool, status: int, body: mixed, error: ?string}
+     */
+    public static function mailProvision(array $webNode, array $payload): array
+    {
+        return self::request($webNode, 'POST', '/api/mail/provision', $payload);
+    }
+
+    /** @return array{ok: bool, status: int, body: mixed, error: ?string} */
+    public static function getMailDnsHints(array $webNode, string $domain): array
+    {
+        return self::request($webNode, 'GET', '/api/mail/dns-hints/' . rawurlencode($domain));
+    }
+
+    /** @return array{ok: bool, status: int, body: mixed, error: ?string} */
+    public static function addMailDomain(array $webNode, string $domain): array
+    {
+        return self::request($webNode, 'POST', '/api/mail/domains', ['name' => $domain]);
     }
 }

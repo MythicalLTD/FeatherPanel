@@ -147,11 +147,32 @@ class MailHostsController
 
         if (isset($body['provision_mode'])) {
             $mode = strtolower(trim((string) $body['provision_mode']));
-            if (!in_array($mode, ['inventory', 'webhook'], true)) {
-                return ApiResponse::error('provision_mode must be inventory or webhook', 'VALIDATION_FAILED', 400);
+            if (!in_array($mode, ['inventory', 'webhook', 'node'], true)) {
+                return ApiResponse::error('provision_mode must be inventory, webhook, or node', 'VALIDATION_FAILED', 400);
             }
             if ($mode === 'webhook' && trim((string) ($body['provision_url'] ?? ($creating ? '' : 'x'))) === '' && $creating) {
                 return ApiResponse::error('provision_url is required for webhook mode', 'VALIDATION_FAILED', 400);
+            }
+            if ($mode === 'node') {
+                $nodeId = (int) ($body['web_node_id'] ?? 0);
+                if ($nodeId <= 0) {
+                    return ApiResponse::error('web_node_id is required for node provision mode', 'VALIDATION_FAILED', 400);
+                }
+                $webNode = WebNode::getWebNodeById($nodeId);
+                if (!$webNode) {
+                    return ApiResponse::error('Web node not found', 'WEB_NODE_NOT_FOUND', 404);
+                }
+                $fqdn = trim((string) ($webNode['fqdn'] ?? ''));
+                if ($fqdn !== '') {
+                    foreach (['hostname', 'imap_host', 'smtp_host'] as $field) {
+                        if (trim((string) ($body[$field] ?? '')) === '') {
+                            $body[$field] = $fqdn;
+                        }
+                    }
+                    if (trim((string) ($body['mx_host'] ?? '')) === '') {
+                        $body['mx_host'] = $fqdn;
+                    }
+                }
             }
         }
 
