@@ -119,7 +119,7 @@ use App\Plugins\Events\Events\PluginManagerEvent;
     ]
 )]
 #[OA\Schema(
-    schema: 'PluginWidget',
+    schema: 'PluginWidgetConfig',
     type: 'object',
     required: ['id', 'component', 'page', 'location'],
     properties: [
@@ -1041,7 +1041,7 @@ class PluginManagerController
                 description: 'Widgets retrieved successfully',
                 content: new OA\JsonContent(
                     type: 'array',
-                    items: new OA\Items(ref: '#/components/schemas/PluginWidget')
+                    items: new OA\Items(ref: '#/components/schemas/PluginWidgetConfig')
                 )
             ),
             new OA\Response(response: 400, description: 'Bad request - Invalid plugin identifier'),
@@ -1104,7 +1104,7 @@ class PluginManagerController
             required: true,
             content: new OA\JsonContent(
                 type: 'array',
-                items: new OA\Items(ref: '#/components/schemas/PluginWidget')
+                items: new OA\Items(ref: '#/components/schemas/PluginWidgetConfig')
             )
         ),
         responses: [
@@ -1114,7 +1114,7 @@ class PluginManagerController
                 content: new OA\JsonContent(
                     properties: [
                         new OA\Property(property: 'identifier', type: 'string', description: 'Plugin identifier'),
-                        new OA\Property(property: 'widgets', type: 'array', items: new OA\Items(ref: '#/components/schemas/PluginWidget'), description: 'Updated widgets'),
+                        new OA\Property(property: 'widgets', type: 'array', items: new OA\Items(ref: '#/components/schemas/PluginWidgetConfig'), description: 'Updated widgets'),
                     ]
                 )
             ),

@@ -46,7 +46,9 @@ jobs:
 
       - name: Generate OpenAPI specification
         working-directory: backend
-        run: COMPOSER_ALLOW_SUPERUSER=1 composer openapi
+        run: |
+          COMPOSER_ALLOW_SUPERUSER=1 composer openapi
+          test -s openapi.json
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4

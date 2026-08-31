@@ -62,7 +62,6 @@ This branch ships experimental features that may be unstable, incomplete, or uns
 
 - [icanhasfeatherpanel](https://mythicalltd.github.io/featherpanel/icanhasfeatherpanel/) widgets, permissions, events
 - [OpenAPI / Redoc](https://mythicalltd.github.io/featherpanel/icanhasfeatherpanel/api/) full API reference
-- [Postman workspace](https://www.postman.com/mythicalsystems/workspace/featherpanel)
 
 </td>
 <td valign="top">
@@ -135,15 +134,12 @@ Docker images for the backend, frontend, and async runner are published through 
 
 <br />
 
-After enabling **GitHub Pages → Source: GitHub Actions** in the repository settings, pushes to `develop` or `main` publish:
-
 **https://mythicalltd.github.io/featherpanel/icanhasfeatherpanel/**
-
-The workflow also ships **`/api/openapi.json`** so the Redoc page works without a backend.
 
 </details>
 
 <details>
+
 <summary><strong>🛠️ Build locally</strong></summary>
 
 <br />

@@ -3156,6 +3156,7 @@ install_featherquilld() {
 		echo -e "  ${GREEN}[1]${NC} Caddy (recommended)"
 		echo -e "  ${GREEN}[2]${NC} nginx"
 		echo -e "  ${GREEN}[3]${NC} Traefik"
+		proxy_choice=""
 		prompt "${BOLD}Select provider${NC} ${BLUE}(1/2/3)${NC}: " proxy_choice
 		case "$proxy_choice" in
 		2) FEATHERQUILLD_PROXY_PROVIDER="nginx" ;;

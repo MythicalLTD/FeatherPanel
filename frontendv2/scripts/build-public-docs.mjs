@@ -29,6 +29,23 @@ const OPENAPI_SOURCE =
     process.env.OPENAPI_JSON || path.join(REPO_ROOT, 'backend/openapi.json');
 const BASE_PATH = (process.env.DOCS_BASE_PATH || '').replace(/\/$/, '');
 
+function ensureOpenApiSpec() {
+    if (fs.existsSync(OPENAPI_SOURCE)) {
+        return;
+    }
+
+    const exportScript = path.join(REPO_ROOT, 'backend/scripts/export-openapi.php');
+    if (!fs.existsSync(exportScript)) {
+        throw new Error(`Missing OpenAPI export script: ${exportScript}`);
+    }
+
+    console.log(`OpenAPI spec not found at ${OPENAPI_SOURCE}; generating from backend controllers…`);
+    execSync(`php "${exportScript}" "${OPENAPI_SOURCE}"`, {
+        cwd: path.join(REPO_ROOT, 'backend'),
+        stdio: 'inherit',
+    });
+}
+
 function copyRecursive(source, destination) {
     fs.mkdirSync(destination, { recursive: true });
 
@@ -85,6 +102,8 @@ function main() {
     if (!fs.existsSync(SOURCE_DOCS_DIR)) {
         throw new Error(`Missing docs source directory: ${SOURCE_DOCS_DIR}`);
     }
+
+    ensureOpenApiSpec();
 
     if (!fs.existsSync(OPENAPI_SOURCE)) {
         throw new Error(

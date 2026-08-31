@@ -83,7 +83,7 @@
 		],
 		"openapi": [
 			"export COMPOSER_ALLOW_SUPERUSER=1",
-			"storage/packages/bin/openapi -b cli -o openapi.json app/Controllers || test -s openapi.json"
+			"@php scripts/export-openapi.php openapi.json"
 		],
 		"phpstan": [
 			"export COMPOSER_ALLOW_SUPERUSER=1",
