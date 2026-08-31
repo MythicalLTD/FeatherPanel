@@ -27,7 +27,11 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useWebSpacePermissions } from '@/hooks/useWebSpacePermissions';
 import { WebSpaceSubuserPermissions } from '@/lib/webspace-permissions';
-import { webspaceFilesApi, webspaceFileManagerCapabilities } from '@/lib/webspace-files-api';
+import {
+    webspaceFilesApi,
+    resolveWebSpaceFileCapabilities,
+    type WebSpaceFileCapabilitiesMap,
+} from '@/lib/webspace-files-api';
 import { formatBytes } from '@/lib/format';
 import { isEnabled } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -52,8 +56,14 @@ export default function WebSpaceTrashPage({ params }: { params: Promise<{ uuidSh
     const [emptyOpen, setEmptyOpen] = useState(false);
     const [restoreOpen, setRestoreOpen] = useState(false);
     const [busy, setBusy] = useState(false);
+    const [fileCaps, setFileCaps] = useState<WebSpaceFileCapabilitiesMap | null>(null);
 
-    const trashEnabled = isEnabled(settings?.file_trash_enabled) && webspaceFileManagerCapabilities.trash;
+    useEffect(() => {
+        void webspaceFilesApi.getFileCapabilities(uuidShort).then(setFileCaps);
+    }, [uuidShort]);
+
+    const caps = useMemo(() => resolveWebSpaceFileCapabilities(fileCaps), [fileCaps]);
+    const trashEnabled = isEnabled(settings?.file_trash_enabled) && caps.trash;
     const canUpdate = hasPermission(WebSpaceSubuserPermissions['file.update']);
     const canDelete = hasPermission(WebSpaceSubuserPermissions['file.delete']);
 

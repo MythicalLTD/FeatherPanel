@@ -25,6 +25,7 @@ import { useParams, usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useWebSpacePermissions } from '@/hooks/useWebSpacePermissions';
 import { WebSpaceSubuserPermissions } from '@/lib/webspace-permissions';
+import { hasWebSpaceApps } from '@/lib/webspace-apps';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { usePluginRoutes } from '@/hooks/usePluginRoutes';
 import type { PluginSidebarItem } from '@/types/navigation';
@@ -32,6 +33,8 @@ import type { PluginSidebarItem } from '@/types/navigation';
 const tabDefs = [
     { href: '', labelKey: 'webSpaces.nav.console', permission: null },
     { href: '/files', labelKey: 'webSpaces.nav.files', permission: 'file.read' },
+    { href: '/domains', labelKey: 'webSpaces.nav.domains', permission: 'settings.read' },
+    { href: '/access', labelKey: 'webSpaces.nav.access', permission: 'file.sftp' },
     { href: '/backups', labelKey: 'webSpaces.nav.backups', permission: 'backup.read' },
     { href: '/schedules', labelKey: 'webSpaces.nav.schedules', permission: 'schedule.read' },
     { href: '/databases', labelKey: 'webSpaces.nav.databases', permission: 'database.read' },
@@ -71,12 +74,16 @@ export function WebSpaceNav() {
     const { t } = useTranslation();
     const uuidShort = String(params.uuidShort || '');
     const base = `/webspace/${uuidShort}`;
-    const { hasPermission } = useWebSpacePermissions(uuidShort);
+    const { hasPermission, webspace } = useWebSpacePermissions(uuidShort);
     const pluginRoutes = usePluginRoutes();
+    const showAppsTab = hasWebSpaceApps(webspace?.webplate_runtime, webspace?.available_apps);
 
     const tabs = useMemo(() => {
         const builtIn: NavTab[] = tabDefs
             .filter((tab) => {
+                if (tab.href === '/apps' && !showAppsTab) {
+                    return false;
+                }
                 if (!tab.permission) return true;
                 const perm = WebSpaceSubuserPermissions[tab.permission as keyof typeof WebSpaceSubuserPermissions];
                 return hasPermission(perm || tab.permission);
@@ -103,7 +110,7 @@ export function WebSpaceNav() {
             }));
 
         return [...builtIn, ...pluginTabs];
-    }, [base, hasPermission, pluginRoutes?.webspace, t]);
+    }, [base, hasPermission, pluginRoutes?.webspace, showAppsTab, t]);
 
     return (
         <nav className='border-border flex flex-wrap gap-1 border-b pb-2'>

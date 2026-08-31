@@ -31,6 +31,7 @@ import { useTranslation } from '@/contexts/TranslationContext';
 import { WebSpacePageWidgets } from '@/components/webspace/WebSpacePageWidgets';
 import { WebSpaceDomainsManager, type DomainRoute } from '@/components/webspace/WebSpaceDomainsManager';
 import { WebSpaceDnsZoneEditor } from '@/components/webspace/WebSpaceDnsZoneEditor';
+import { WebSpaceSslWizard } from '@/components/webspace/WebSpaceSslWizard';
 import { useWebSpacePermissions } from '@/hooks/useWebSpacePermissions';
 import { WebSpaceSubuserPermissions } from '@/lib/webspace-permissions';
 import { detectWwwPreference, domainRoutesFromWebSpace } from '@/lib/webspace-settings-utils';
@@ -41,6 +42,7 @@ interface WebSpaceDomainsData {
     ssl?: boolean;
     ssl_mode?: string;
     dns_status?: string | null;
+    web_node_fqdn?: string | null;
 }
 
 export default function WebSpaceDomainsPage() {
@@ -265,6 +267,16 @@ export default function WebSpaceDomainsPage() {
                 <PageHeader
                     title={t('webSpaces.domainsPage.title')}
                     description={t('webSpaces.domainsPage.description')}
+                />
+
+                <WebSpaceSslWizard
+                    uuidShort={uuidShort}
+                    nodeFqdn={space.web_node_fqdn}
+                    ssl={form.ssl}
+                    dnsStatus={space.dns_status}
+                    proxyProvider={sslInfo?.provider}
+                    sslDomains={sslInfo?.domains ?? []}
+                    onUpdated={() => void load()}
                 />
 
                 <PageCard title={t('webSpaces.settings.domainsTitle')} icon={Globe}>

@@ -46,9 +46,31 @@ class WebSpaceFilesController
         }
 
         $directory = (string) $request->query->get('directory', '/');
-        $daemon = FeatherQuilldClient::listWebSpaceFiles($resolved['webNode'], $resolved['uuid'], $directory);
+        $page = (int) $request->query->get('page', 0);
+        $perPage = (int) $request->query->get('per_page', 0);
+        $query = ['directory' => $directory];
+        if ($page > 0) {
+            $query['page'] = $page;
+        }
+        if ($perPage > 0) {
+            $query['per_page'] = $perPage;
+        }
+        $daemon = FeatherQuilldClient::listWebSpaceFiles($resolved['webNode'], $resolved['uuid'], $query);
 
         return $this->daemonResponse($daemon, 'DAEMON_LIST_FAILED');
+    }
+
+    #[OA\Get(path: '/api/user/webspaces/{uuidShort}/file-capabilities', summary: 'WebSpace file manager capabilities', tags: ['User - WebSpace Files'])]
+    public function fileCapabilities(Request $request, string $uuidShort): Response
+    {
+        $resolved = $this->resolve($request, $uuidShort, WebSpaceSubuserPermissions::FILE_READ);
+        if ($resolved instanceof Response) {
+            return $resolved;
+        }
+
+        $caps = \App\Helpers\WebSpaceFileCapabilities::resolve($resolved['webNode'], $resolved['uuid']);
+
+        return ApiResponse::success(['capabilities' => $caps], 'OK', 200);
     }
 
     #[OA\Get(path: '/api/user/webspaces/{uuidShort}/files/contents', summary: 'Read WebSpace file', tags: ['User - WebSpace Files'])]
@@ -948,7 +970,7 @@ class WebSpaceFilesController
             return $resolved;
         }
 
-        return ApiResponse::success(['shares' => []], 'Share jobs retrieved', 200);
+        return ApiResponse::success(['shares' => WebSpaceFileShare::listForWebSpace($resolved['uuid'])], 'Share jobs retrieved', 200);
     }
 
     public function deleteShareJob(Request $request, string $uuidShort, string $shareId): Response

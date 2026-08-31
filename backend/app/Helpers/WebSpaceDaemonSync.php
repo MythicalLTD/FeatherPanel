@@ -30,7 +30,7 @@ class WebSpaceDaemonSync
      *
      * @return array{ok: bool, sync: array<string, mixed>, recreate?: array<string, mixed>, error?: string}
      */
-    public static function syncAfterUpdate(array $webNode, array $space, array $previousSpace): array
+    public static function syncAfterUpdate(array $webNode, array $space, array $previousSpace, ?array $previousPlateOverride = null): array
     {
         $sync = FeatherQuilldClient::syncWebSpace($webNode, (string) $space['uuid']);
         if (!$sync['ok']) {
@@ -43,13 +43,16 @@ class WebSpaceDaemonSync
 
         $previousImage = trim((string) ($previousSpace['image'] ?? ''));
         $newImage = trim((string) ($space['image'] ?? ''));
-        $runtime = strtolower(trim((string) ($space['webplate_runtime'] ?? '')));
-        if ($runtime === '' && !empty($space['webplate_id'])) {
-            $plate = WebPlate::getById((int) $space['webplate_id']);
-            $runtime = strtolower(trim((string) ($plate['runtime'] ?? 'static')));
-        }
+        $runtime = self::resolveRuntime($space);
+        $previousPlateRef = $previousPlateOverride !== null
+            ? self::plateRefFromRow($previousPlateOverride)
+            : self::plateRefForSpace($previousSpace);
+        $currentPlateRef = self::plateRefForSpace($space);
 
         $needRecreate = $runtime !== 'static' && $newImage !== '' && strcasecmp($newImage, $previousImage) !== 0;
+        if (!$needRecreate && $runtime !== 'static' && self::plateRuntimeFieldsChanged($previousPlateRef, $currentPlateRef)) {
+            $needRecreate = true;
+        }
         if (!$needRecreate && $runtime === 'php' && self::addonRootsChanged($previousSpace, $space)) {
             $needRecreate = true;
         }
@@ -72,6 +75,74 @@ class WebSpaceDaemonSync
         }
 
         return ['ok' => true, 'sync' => $sync];
+    }
+
+    /**
+     * @param array<string, mixed> $space
+     */
+    private static function resolveRuntime(array $space): string
+    {
+        $runtime = strtolower(trim((string) ($space['webplate_runtime'] ?? '')));
+        if ($runtime === '' && !empty($space['webplate_id'])) {
+            $plate = WebPlate::getById((int) $space['webplate_id']);
+            $runtime = strtolower(trim((string) ($plate['runtime'] ?? 'static')));
+        }
+
+        return $runtime;
+    }
+
+    /**
+     * @param array<string, mixed> $plate
+     *
+     * @return array{startup: string, container_port: int, docker_image: string}
+     */
+    private static function plateRefFromRow(array $plate): array
+    {
+        $ref = WebPlate::toDaemonRef($plate);
+
+        return [
+            'startup' => trim((string) ($ref['startup'] ?? '')),
+            'container_port' => (int) ($ref['container_port'] ?? 0),
+            'docker_image' => trim((string) ($ref['docker_image'] ?? '')),
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $space
+     *
+     * @return array{startup: string, container_port: int, docker_image: string}
+     */
+    private static function plateRefForSpace(array $space): array
+    {
+        $plateId = (int) ($space['webplate_id'] ?? 0);
+        if ($plateId <= 0) {
+            return ['startup' => '', 'container_port' => 0, 'docker_image' => ''];
+        }
+
+        $plate = WebPlate::getById($plateId);
+        if (!$plate) {
+            return ['startup' => '', 'container_port' => 0, 'docker_image' => ''];
+        }
+
+        return self::plateRefFromRow($plate);
+    }
+
+    /**
+     * @param array{startup: string, container_port: int, docker_image: string} $previous
+     * @param array{startup: string, container_port: int, docker_image: string} $current
+     */
+    private static function plateRuntimeFieldsChanged(array $previous, array $current): bool
+    {
+        if ($previous['startup'] !== $current['startup']) {
+            return true;
+        }
+        if ($previous['container_port'] !== $current['container_port']) {
+            return true;
+        }
+
+        return $previous['docker_image'] !== ''
+            && $current['docker_image'] !== ''
+            && strcasecmp($previous['docker_image'], $current['docker_image']) !== 0;
     }
 
     /**

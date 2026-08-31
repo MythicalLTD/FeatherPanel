@@ -198,6 +198,32 @@ class WebSpace
     /**
      * @return list<array<string, mixed>>
      */
+    public static function listByWebplateId(int $webplateId): array
+    {
+        if ($webplateId <= 0) {
+            return [];
+        }
+
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare(
+            'SELECT w.*, p.name AS webplate_name, p.runtime AS webplate_runtime, n.name AS web_node_name,
+                u.username AS owner_username, u.uuid AS owner_uuid, u.email AS owner_email
+            FROM ' . self::$table . ' w
+            LEFT JOIN featherpanel_webplates p ON p.id = w.webplate_id
+            LEFT JOIN featherpanel_web_nodes n ON n.id = w.web_node_id
+            LEFT JOIN featherpanel_users u ON u.id = w.owner_id
+            WHERE w.webplate_id = :plate
+            ORDER BY w.id DESC'
+        );
+        $stmt->execute(['plate' => $webplateId]);
+        $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+
+        return array_map([self::class, 'hydrate'], $rows);
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
     public static function listByNodeId(int $webNodeId): array
     {
         if ($webNodeId <= 0) {
@@ -688,6 +714,7 @@ class WebSpace
             'waf_deny_paths' => is_array($row['waf_deny_paths'] ?? null) ? array_values($row['waf_deny_paths']) : [],
             'backend_port' => (int) ($row['backend_port'] ?? 0),
             'backend_host' => trim((string) ($row['backend_host'] ?? '')),
+            'suspended' => strtolower(trim((string) ($row['status'] ?? ''))) === 'suspended',
             'meta' => [
                 'document_root' => $documentRoot,
             ],

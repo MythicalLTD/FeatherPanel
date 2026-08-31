@@ -85,6 +85,14 @@ body {
     font-family: var(--app-font-family);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    overflow-x: clip;
+}
+
+/* Dashboard shell: one scroll container (main), not the document */
+html:has([data-fp-dashboard-shell]),
+body:has([data-fp-dashboard-shell]) {
+    height: 100%;
+    overflow: hidden;
 }
 
 /* Full-bleed plugin routes: body bg stacks under the fixed theme layer (pattern holes etc.),
@@ -450,6 +458,38 @@ html[data-fp-plugin-fullbleed='1'] body [data-fp-plugin-main-inner] {
     transition-duration: 0.2s !important;
 }
 
+/* Portaled sidebar + shell chrome: respect the same motion preference as .motion-content */
+[data-motion='none'] .fp-desktop-sidebar,
+[data-motion='none'] .fp-desktop-sidebar *,
+[data-motion='none'] .fp-chrome-motion,
+[data-motion='none'] .fp-chrome-motion * {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+    transition-duration: 0s !important;
+    transition-delay: 0s !important;
+}
+
+[data-motion='reduced'] .fp-desktop-sidebar,
+[data-motion='reduced'] .fp-desktop-sidebar *,
+[data-motion='reduced'] .fp-chrome-motion,
+[data-motion='reduced'] .fp-chrome-motion * {
+    animation-duration: 0.15s !important;
+    transition-duration: 0.15s !important;
+}
+
+/* Accent-tinted chrome glow (uses theme primary, not white/foreground) */
+.fp-chrome-glow {
+    box-shadow:
+        0 0 0 1px hsl(var(--primary) / 0.14),
+        0 12px 40px -12px hsl(var(--primary) / 0.24);
+}
+
+.fp-chrome-glow-subtle {
+    box-shadow:
+        0 0 0 1px hsl(var(--primary) / 0.1),
+        0 8px 28px -10px hsl(var(--primary) / 0.16);
+}
+
 /* Custom scrollbar utilities */
 .hide-scrollbar::-webkit-scrollbar {
     display: none;
@@ -484,4 +524,92 @@ html[data-fp-plugin-fullbleed='1'] body [data-fp-plugin-main-inner] {
 * {
     scrollbar-width: thin;
     scrollbar-color: hsl(var(--muted-foreground) / 0.2) transparent;
+}
+
+/* Bottom dock */
+.fp-mac-dock-shell {
+    overflow: visible;
+}
+
+.fp-mac-dock-provider {
+    overflow: visible;
+}
+
+.fp-mac-dock-track::before,
+.fp-mac-dock-track::after {
+    content: '';
+    pointer-events: none;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1.25rem;
+    z-index: 2;
+}
+
+.fp-mac-dock-track::before {
+    left: 0;
+    background: linear-gradient(to right, hsl(var(--card) / 0.95), transparent);
+}
+
+.fp-mac-dock-track::after {
+    right: 0;
+    background: linear-gradient(to left, hsl(var(--card) / 0.95), transparent);
+}
+
+.fp-mac-dock-tooltip {
+    padding: 0.4rem 0.7rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.2;
+    color: hsl(var(--foreground));
+    background: hsl(var(--popover));
+    border: 1px solid hsl(var(--primary) / 0.28);
+    border-radius: 0.5rem;
+    box-shadow:
+        0 0 0 1px hsl(var(--primary) / 0.08),
+        0 10px 28px -10px hsl(var(--primary) / 0.35);
+    white-space: nowrap;
+    max-width: min(18rem, 90vw);
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.fp-mac-dock-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: hsl(var(--popover));
+}
+
+.fp-dock-item-glow-accent {
+    box-shadow:
+        0 0 0 1px hsl(var(--primary) / 0.22),
+        0 6px 20px -6px hsl(var(--primary) / 0.45);
+}
+
+.fp-dock-item-glow-subtle {
+    box-shadow:
+        0 0 0 1px hsl(var(--primary) / 0.14),
+        0 4px 14px -8px hsl(var(--primary) / 0.28);
+}
+
+.fp-sidebar-rail-tooltip {
+    padding: 0.4rem 0.7rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    line-height: 1.2;
+    color: hsl(var(--foreground));
+    background: hsl(var(--popover));
+    border: 1px solid hsl(var(--primary) / 0.28);
+    border-radius: 0.5rem;
+    box-shadow:
+        0 0 0 1px hsl(var(--primary) / 0.08),
+        0 10px 28px -10px hsl(var(--primary) / 0.35);
+    white-space: nowrap;
+    max-width: min(18rem, 90vw);
+    overflow: hidden;
+    text-overflow: ellipsis;
 }

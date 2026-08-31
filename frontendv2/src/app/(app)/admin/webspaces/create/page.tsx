@@ -16,7 +16,6 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import axios, { isAxiosError } from 'axios';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -143,8 +142,6 @@ export default function CreateWebSpacePage() {
         skip_scripts: false,
         start_on_completion: false,
     });
-
-    const hasDomains = domainRoutes.some((r) => r.domain.trim().length > 0);
 
     const wizardSteps = [
         {

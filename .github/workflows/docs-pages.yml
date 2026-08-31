@@ -1,0 +1,90 @@
+name: Developer Docs (GitHub Pages)
+
+on:
+  push:
+    branches:
+      - develop
+      - main
+    paths:
+      - 'backend/app/Controllers/**'
+      - 'backend/composer.json'
+      - 'backend/composer.lock'
+      - 'frontendv2/scripts/**'
+      - 'frontendv2/src/**'
+      - 'frontendv2/public/icanhasfeatherpanel/**'
+      - 'permission_nodes.fpperm'
+      - '.github/workflows/docs-pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build icanhasfeatherpanel site
+    runs-on: ubuntu-latest
+    steps:
+      - name: Code Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          tools: composer:v2
+          coverage: none
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Generate OpenAPI specification
+        working-directory: backend
+        run: COMPOSER_ALLOW_SUPERUSER=1 composer openapi
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: frontendv2/pnpm-lock.yaml
+
+      - name: Install frontend dependencies
+        working-directory: frontendv2
+        run: pnpm install --frozen-lockfile
+
+      - name: Build static developer docs
+        working-directory: frontendv2
+        env:
+          DOCS_OUTPUT_DIR: ../docs-site
+          DOCS_BASE_PATH: /featherpanel
+          OPENAPI_JSON: ../backend/openapi.json
+        run: pnpm build:public-docs
+
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs-site
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4

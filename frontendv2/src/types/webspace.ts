@@ -33,6 +33,8 @@ export interface WebSpace {
     web_node_name?: string | null;
     webplate_name?: string | null;
     webplate_id?: number;
+    webplate_runtime?: string | null;
+    available_apps?: string[];
     document_root?: string;
     owner_id?: number;
     disk?: number;

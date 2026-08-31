@@ -40,7 +40,7 @@ class WebSpaceRoadmapFeatures
             ],
             [
                 'id' => 'webmail',
-                'status' => Roundcube::isInstalled() ? 'partial' : 'external',
+                'status' => Roundcube::isInstalled() ? 'ready' : 'external',
                 'detail' => Roundcube::isInstalled()
                     ? 'Panel Roundcube is installed. Node webmail package adds per-node Roundcube when configured on mail hosts.'
                     : 'Use your mail host webmail URL or integrate Roundcube on a mail host.',

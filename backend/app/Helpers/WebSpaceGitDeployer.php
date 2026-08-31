@@ -24,7 +24,6 @@ class WebSpaceGitDeployer
 {
     private const KEY_REL = '.featherquilld/git-deploy-key';
     private const KEY_PUB_REL = '.featherquilld/git-deploy-key.pub';
-    private const CONTAINER_KEY = '/var/www/html/.featherquilld/git-deploy-key';
 
     /**
      * @param array<string, mixed> $space
@@ -35,6 +34,11 @@ class WebSpaceGitDeployer
      */
     public static function deploy(array $space, array $webNode, array $input): array
     {
+        WebSpaceAppsCatalog::requireApp($space, WebSpaceAppsCatalog::APP_GIT_DEPLOY);
+
+        $runtime = WebSpaceAppsCatalog::resolveRuntime($space);
+        $containerKey = WebSpaceAppsCatalog::containerPath($runtime, '.featherquilld/git-deploy-key');
+
         $repo = trim((string) ($input['repo'] ?? ''));
         if ($repo === '' || !self::isValidRepoUrl($repo)) {
             throw new \InvalidArgumentException('A https:// or git@ Git repository URL is required');
@@ -51,14 +55,13 @@ class WebSpaceGitDeployer
         if (self::isSshRepoUrl($repo)) {
             self::ensureDeployKey($space, $webNode);
             $sshPrefix = 'export GIT_SSH_COMMAND=' . self::shellQuote(
-                'ssh -i ' . self::CONTAINER_KEY . ' -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new'
+                'ssh -i ' . $containerKey . ' -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new'
             ) . ' && ';
         } elseif ($token !== '') {
             $cloneUrl = preg_replace('#^https://#i', 'https://x-access-token:' . rawurlencode($token) . '@', $repo) ?? $repo;
         }
 
-        $rel = trim($directory, '/');
-        $containerPath = $rel === '' ? '/var/www/html' : '/var/www/html/' . $rel;
+        $containerPath = WebSpaceAppsCatalog::containerPath($runtime, $directory);
         $uuid = (string) $space['uuid'];
 
         $state = strtolower(trim((string) ($space['state'] ?? '')));
@@ -115,6 +118,11 @@ class WebSpaceGitDeployer
      */
     public static function ensureDeployKey(array $space, array $webNode, bool $regenerate = false): array
     {
+        WebSpaceAppsCatalog::requireApp($space, WebSpaceAppsCatalog::APP_GIT_DEPLOY);
+
+        $runtime = WebSpaceAppsCatalog::resolveRuntime($space);
+        $containerKey = WebSpaceAppsCatalog::containerPath($runtime, '.featherquilld/git-deploy-key');
+
         $uuid = (string) $space['uuid'];
         if (!$regenerate) {
             $existing = self::loadDeployKeyPublic($space, $webNode);
@@ -155,7 +163,7 @@ class WebSpaceGitDeployer
             FeatherQuilldClient::execWebSpaceCommand(
                 $webNode,
                 $uuid,
-                'chmod 600 ' . self::shellQuote(self::CONTAINER_KEY),
+                'chmod 600 ' . self::shellQuote($containerKey),
                 30,
             );
         }
@@ -192,6 +200,8 @@ class WebSpaceGitDeployer
      */
     public static function saveWebhookConfig(array $space, array $webNode, array $input): array
     {
+        WebSpaceAppsCatalog::requireApp($space, WebSpaceAppsCatalog::APP_GIT_DEPLOY);
+
         $repo = trim((string) ($input['repo'] ?? ''));
         if ($repo === '' || !self::isValidRepoUrl($repo)) {
             throw new \InvalidArgumentException('A https:// or git@ Git repository URL is required');

@@ -46,6 +46,16 @@ return function (RouteCollection $routes): void {
 
     App::getInstance(true)->registerAdminRoute(
         $routes,
+        'admin-webspaces-hosting-setup-wizard',
+        '/api/admin/webspaces/hosting-setup/wizard',
+        function (Request $request) {
+            return (new WebSpacesController())->hostingSetupWizard($request);
+        },
+        Permissions::ADMIN_WEBSPACES_VIEW,
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
         'admin-panel-webmail-install',
         '/api/admin/webspaces/panel-webmail/install',
         function (Request $request) {
@@ -211,6 +221,22 @@ return function (RouteCollection $routes): void {
             }
 
             return (new WebSpacesController())->reinstall($request, $uuid);
+        },
+        Permissions::ADMIN_WEBSPACES_EDIT,
+        ['POST']
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-webspaces-install-abort',
+        '/api/admin/webspaces/{uuid}/install/abort',
+        function (Request $request, array $args) {
+            $uuid = (string) ($args['uuid'] ?? '');
+            if ($uuid === '') {
+                return ApiResponse::error('Missing UUID', 'INVALID_UUID', 400);
+            }
+
+            return (new WebSpacesController())->abortInstall($request, $uuid);
         },
         Permissions::ADMIN_WEBSPACES_EDIT,
         ['POST']

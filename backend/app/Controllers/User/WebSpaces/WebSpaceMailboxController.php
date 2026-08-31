@@ -22,6 +22,7 @@ use App\Helpers\ApiResponse;
 use App\Chat\WebSpaceMailbox;
 use App\Helpers\DnsProvisioner;
 use App\Helpers\WebSpaceGateway;
+use App\Chat\WebSpaceMailingList;
 use App\Chat\WebSpaceMailForwarder;
 use App\WebSpaceSubuserPermissions;
 use App\Helpers\FeatherQuilldClient;
@@ -838,6 +839,196 @@ class WebSpaceMailboxController
             'autorespond_subject' => $subject !== '' ? $subject : null,
             'autorespond_body' => $message !== '' ? $message : null,
         ], 'Updated', 200);
+    }
+
+    public function getSpamFilter(Request $request, string $uuidShort, int $mailboxId): Response
+    {
+        $resolved = $this->resolve($request, $uuidShort, WebSpaceSubuserPermissions::MAIL_READ);
+        if ($resolved instanceof Response) {
+            return $resolved;
+        }
+
+        $record = WebSpaceMailbox::getById($mailboxId);
+        if (!$record || (int) $record['webspace_id'] !== (int) $resolved['space']['id']) {
+            return ApiResponse::error('Mailbox not found', 'NOT_FOUND', 404);
+        }
+
+        return ApiResponse::success([
+            'spam_filter_enabled' => !array_key_exists('spam_filter_enabled', $record) || !empty($record['spam_filter_enabled']),
+        ], 'OK', 200);
+    }
+
+    public function setSpamFilter(Request $request, string $uuidShort, int $mailboxId): Response
+    {
+        $resolved = $this->resolve($request, $uuidShort, WebSpaceSubuserPermissions::MAIL_UPDATE);
+        if ($resolved instanceof Response) {
+            return $resolved;
+        }
+
+        $record = WebSpaceMailbox::getById($mailboxId);
+        if (!$record || (int) $record['webspace_id'] !== (int) $resolved['space']['id']) {
+            return ApiResponse::error('Mailbox not found', 'NOT_FOUND', 404);
+        }
+
+        $body = json_decode($request->getContent(), true);
+        if (!is_array($body)) {
+            return ApiResponse::error('Invalid JSON payload', 'INVALID_JSON', 400);
+        }
+
+        $enabled = !array_key_exists('enabled', $body) || !empty($body['enabled']);
+        $mailHost = MailHost::getById((int) $record['mail_host_id']);
+        $email = WebSpaceMailbox::emailAddress($record);
+        if ($mailHost) {
+            try {
+                RemoteMailProvisioner::setSpamFilter($mailHost, [
+                    'email' => $email,
+                    'enabled' => $enabled,
+                ]);
+            } catch (\Throwable $e) {
+                return ApiResponse::error('Failed to update spam filter: ' . $e->getMessage(), 'UPDATE_FAILED', 500);
+            }
+        }
+
+        WebSpaceMailbox::update($mailboxId, ['spam_filter_enabled' => $enabled ? 1 : 0]);
+        WebSpaceActivityLogger::log($resolved['space'], $resolved['user'], 'webspace.mailbox.spam_filter_updated', [
+            'mailbox_id' => $mailboxId,
+            'email' => $email,
+            'enabled' => $enabled,
+        ]);
+
+        return ApiResponse::success(['spam_filter_enabled' => $enabled], 'Updated', 200);
+    }
+
+    public function listMailingLists(Request $request, string $uuidShort): Response
+    {
+        $resolved = $this->resolve($request, $uuidShort, WebSpaceSubuserPermissions::MAIL_READ);
+        if ($resolved instanceof Response) {
+            return $resolved;
+        }
+
+        $rows = WebSpaceMailingList::listByWebSpaceId((int) $resolved['space']['id']);
+        $grouped = [];
+        foreach ($rows as $row) {
+            $key = ($row['list_local'] ?? '') . '@' . ($row['domain'] ?? '');
+            if (!isset($grouped[$key])) {
+                $grouped[$key] = [
+                    'list_local' => (string) ($row['list_local'] ?? ''),
+                    'domain' => (string) ($row['domain'] ?? ''),
+                    'address' => WebSpaceMailingList::listAddress($row),
+                    'mail_host_id' => (int) ($row['mail_host_id'] ?? 0),
+                    'members' => [],
+                ];
+            }
+            $grouped[$key]['members'][] = [
+                'id' => (int) ($row['id'] ?? 0),
+                'email' => (string) ($row['member'] ?? ''),
+                'enabled' => !empty($row['enabled']),
+            ];
+        }
+
+        return ApiResponse::success(['data' => array_values($grouped)], 'OK', 200);
+    }
+
+    public function createMailingList(Request $request, string $uuidShort): Response
+    {
+        $resolved = $this->resolve($request, $uuidShort, WebSpaceSubuserPermissions::MAIL_CREATE);
+        if ($resolved instanceof Response) {
+            return $resolved;
+        }
+
+        $space = $resolved['space'];
+        $body = json_decode($request->getContent(), true);
+        if (!is_array($body)) {
+            return ApiResponse::error('Invalid JSON payload', 'INVALID_JSON', 400);
+        }
+
+        $hostId = (int) ($body['mail_host_id'] ?? 0);
+        $listLocal = strtolower(trim((string) ($body['list_local'] ?? '')));
+        $domain = strtolower(trim((string) ($body['domain'] ?? '')));
+        $members = is_array($body['members'] ?? null) ? $body['members'] : [];
+
+        if ($hostId <= 0 || $listLocal === '' || $domain === '' || $members === []) {
+            return ApiResponse::error('mail_host_id, list_local, domain, and members are required', 'VALIDATION_FAILED', 400);
+        }
+
+        $normalizedMembers = [];
+        foreach ($members as $member) {
+            $member = strtolower(trim((string) $member));
+            if (!filter_var($member, FILTER_VALIDATE_EMAIL)) {
+                return ApiResponse::error('Each member must be a valid email address', 'VALIDATION_FAILED', 400);
+            }
+            $normalizedMembers[] = $member;
+        }
+
+        $mailHost = MailHost::getById($hostId);
+        if (!$mailHost || !$this->hostAllowedForWebNode($mailHost, (int) $space['web_node_id'])) {
+            return ApiResponse::error('Mail host not found for this WebSpace', 'MAIL_HOST_NOT_FOUND', 404);
+        }
+
+        $address = $listLocal . '@' . $domain;
+        try {
+            RemoteMailProvisioner::createMailingList($mailHost, [
+                'address' => $address,
+                'members' => array_values(array_unique($normalizedMembers)),
+            ]);
+        } catch (\Throwable $e) {
+            return ApiResponse::error('Failed to create mailing list: ' . $e->getMessage(), 'CREATION_FAILED', 500);
+        }
+
+        WebSpaceMailingList::deleteListMembers((int) $space['id'], $listLocal, $domain);
+        foreach (array_unique($normalizedMembers) as $member) {
+            WebSpaceMailingList::create([
+                'webspace_id' => (int) $space['id'],
+                'mail_host_id' => $hostId,
+                'list_local' => $listLocal,
+                'domain' => $domain,
+                'member' => $member,
+                'enabled' => 1,
+            ]);
+        }
+
+        return ApiResponse::success(['address' => $address], 'Mailing list created', 201);
+    }
+
+    public function deleteMailingList(Request $request, string $uuidShort): Response
+    {
+        $resolved = $this->resolve($request, $uuidShort, WebSpaceSubuserPermissions::MAIL_DELETE);
+        if ($resolved instanceof Response) {
+            return $resolved;
+        }
+
+        $body = json_decode($request->getContent(), true);
+        if (!is_array($body)) {
+            return ApiResponse::error('Invalid JSON payload', 'INVALID_JSON', 400);
+        }
+
+        $listLocal = strtolower(trim((string) ($body['list_local'] ?? '')));
+        $domain = strtolower(trim((string) ($body['domain'] ?? '')));
+        if ($listLocal === '' || $domain === '') {
+            return ApiResponse::error('list_local and domain are required', 'VALIDATION_FAILED', 400);
+        }
+
+        $rows = array_filter(
+            WebSpaceMailingList::listByWebSpaceId((int) $resolved['space']['id']),
+            static fn (array $row): bool => ($row['list_local'] ?? '') === $listLocal && ($row['domain'] ?? '') === $domain,
+        );
+        if ($rows === []) {
+            return ApiResponse::error('Mailing list not found', 'NOT_FOUND', 404);
+        }
+
+        $mailHost = MailHost::getById((int) ($rows[array_key_first($rows)]['mail_host_id'] ?? 0));
+        $address = $listLocal . '@' . $domain;
+        if ($mailHost) {
+            try {
+                RemoteMailProvisioner::deleteMailingList($mailHost, ['address' => $address]);
+            } catch (\Throwable $e) {
+                return ApiResponse::error('Failed to delete mailing list: ' . $e->getMessage(), 'DELETE_FAILED', 500);
+            }
+        }
+
+        WebSpaceMailingList::deleteListMembers((int) $resolved['space']['id'], $listLocal, $domain);
+
+        return ApiResponse::success([], 'Deleted', 200);
     }
 
     /**

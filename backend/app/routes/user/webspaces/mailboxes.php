@@ -283,4 +283,91 @@ return function (RouteCollection $routes): void {
         Rate::perMinute(10),
         'user-webspaces',
     );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-mailboxes-spam-filter-get',
+        '/api/user/webspaces/{uuidShort}/mailboxes/{mailboxId}/spam-filter',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            $mailboxId = (int) ($args['mailboxId'] ?? 0);
+            if ($uuidShort === '' || $mailboxId <= 0) {
+                return ApiResponse::error('Missing parameters', 'INVALID_PARAMETERS', 400);
+            }
+
+            return (new WebSpaceMailboxController())->getSpamFilter($request, $uuidShort, $mailboxId);
+        },
+        ['GET'],
+        Rate::perMinute(60),
+        'user-webspaces',
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-mailboxes-spam-filter-set',
+        '/api/user/webspaces/{uuidShort}/mailboxes/{mailboxId}/spam-filter',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            $mailboxId = (int) ($args['mailboxId'] ?? 0);
+            if ($uuidShort === '' || $mailboxId <= 0) {
+                return ApiResponse::error('Missing parameters', 'INVALID_PARAMETERS', 400);
+            }
+
+            return (new WebSpaceMailboxController())->setSpamFilter($request, $uuidShort, $mailboxId);
+        },
+        ['PUT', 'PATCH'],
+        Rate::perMinute(10),
+        'user-webspaces',
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-mailboxes-mailing-lists',
+        '/api/user/webspaces/{uuidShort}/mailboxes/mailing-lists',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            if ($uuidShort === '') {
+                return ApiResponse::error('Missing uuidShort', 'INVALID_UUID_SHORT', 400);
+            }
+
+            return (new WebSpaceMailboxController())->listMailingLists($request, $uuidShort);
+        },
+        ['GET'],
+        Rate::perMinute(60),
+        'user-webspaces',
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-mailboxes-mailing-lists-create',
+        '/api/user/webspaces/{uuidShort}/mailboxes/mailing-lists',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            if ($uuidShort === '') {
+                return ApiResponse::error('Missing uuidShort', 'INVALID_UUID_SHORT', 400);
+            }
+
+            return (new WebSpaceMailboxController())->createMailingList($request, $uuidShort);
+        },
+        ['POST'],
+        Rate::perMinute(10),
+        'user-webspaces',
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-mailboxes-mailing-lists-delete',
+        '/api/user/webspaces/{uuidShort}/mailboxes/mailing-lists/delete',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            if ($uuidShort === '') {
+                return ApiResponse::error('Missing uuidShort', 'INVALID_UUID_SHORT', 400);
+            }
+
+            return (new WebSpaceMailboxController())->deleteMailingList($request, $uuidShort);
+        },
+        ['POST', 'DELETE'],
+        Rate::perMinute(10),
+        'user-webspaces',
+    );
 };

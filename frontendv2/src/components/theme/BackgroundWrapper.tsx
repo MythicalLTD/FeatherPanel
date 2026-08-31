@@ -15,39 +15,25 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import dynamic from 'next/dynamic';
 import { useContext, useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { ServerContext } from '@/contexts/ServerContext';
 
-import { getAuroraColorStops, getPrimaryHex, getBeamLightHex } from '@/lib/themeColors';
 import { backgroundFitToCssSize } from '@/lib/backgroundImageFit';
-import { importWithRetry } from '@/lib/importWithRetry';
-import BackgroundEffectBoundary from '@/components/theme/BackgroundEffectBoundary';
+import BackgroundAnimatedLayer from '@/components/theme/BackgroundAnimatedLayer';
 import { resolveServerSpellBannerBackground, resolveSpellBannerUrl } from '@/lib/server-spell-banner';
+import { cn } from '@/lib/utils';
 
-import '@/components/thirdparty/Aurora.css';
-import '@/components/thirdparty/Beams.css';
-import '@/components/thirdparty/ColorBends.css';
-import '@/components/thirdparty/FloatingLines.css';
-
-const Aurora = dynamic(() => importWithRetry(() => import('@/components/thirdparty/Aurora')), {
-    ssr: false,
-    loading: () => <div className='aurora-container' />,
-});
-const Beams = dynamic(() => importWithRetry(() => import('@/components/thirdparty/Beams')), { ssr: false });
-const ColorBends = dynamic(() => importWithRetry(() => import('@/components/thirdparty/ColorBends')), {
-    ssr: false,
-});
-const FloatingLines = dynamic(() => importWithRetry(() => import('@/components/thirdparty/FloatingLines')), {
-    ssr: false,
-    loading: () => <div className='floating-lines-container' aria-hidden />,
-});
-const Silk = dynamic(() => importWithRetry(() => import('@/components/thirdparty/Silk')), { ssr: false });
-
-export default function BackgroundWrapper({ children }: { children: React.ReactNode }) {
+export default function BackgroundWrapper({
+    children,
+    fillViewport = false,
+}: {
+    children: React.ReactNode;
+    /** Lock shell to viewport height — dashboard uses a single inner scroll area. */
+    fillViewport?: boolean;
+}) {
     const {
         backgroundType,
         backgroundImage,
@@ -167,7 +153,12 @@ export default function BackgroundWrapper({ children }: { children: React.ReactN
     };
 
     return (
-        <div className='relative min-h-screen transition-all duration-500'>
+        <div
+            className={cn(
+                'relative transition-all duration-500',
+                fillViewport ? 'flex h-svh max-h-svh flex-col overflow-hidden' : 'min-h-svh',
+            )}
+        >
             {/* Background layer: Aurora or gradient/solid/pattern/image (or spell replace on server pages) */}
             {useAurora ? (
                 <>
@@ -176,42 +167,7 @@ export default function BackgroundWrapper({ children }: { children: React.ReactN
                         style={{ background: 'hsl(var(--background))' }}
                         aria-hidden
                     >
-                        <BackgroundEffectBoundary>
-                            {backgroundAnimatedVariant === 'aurora' && (
-                                <Aurora colorStops={getAuroraColorStops(accentColor)} amplitude={1.2} blend={0.5} />
-                            )}
-                            {backgroundAnimatedVariant === 'beams' && (
-                                <Beams
-                                    lightColor={getBeamLightHex(accentColor)}
-                                    speed={2}
-                                    noiseIntensity={1.75}
-                                    scale={0.2}
-                                />
-                            )}
-                            {backgroundAnimatedVariant === 'colorBends' && (
-                                <ColorBends
-                                    colors={getAuroraColorStops(accentColor)}
-                                    speed={0.2}
-                                    transparent
-                                    scale={1}
-                                    frequency={1}
-                                    warpStrength={1}
-                                />
-                            )}
-                            {backgroundAnimatedVariant === 'floatingLines' && (
-                                <FloatingLines
-                                    linesGradient={getAuroraColorStops(accentColor)}
-                                    enabledWaves={['middle', 'bottom']}
-                                    lineCount={[8]}
-                                    animationSpeed={1}
-                                    interactive={false}
-                                    parallax={false}
-                                />
-                            )}
-                            {backgroundAnimatedVariant === 'silk' && (
-                                <Silk color={getPrimaryHex(accentColor)} speed={5} scale={1} noiseIntensity={1.5} />
-                            )}
-                        </BackgroundEffectBoundary>
+                        <BackgroundAnimatedLayer variant={backgroundAnimatedVariant} accentColor={accentColor} />
                     </div>
                     <div
                         className='pointer-events-none fixed inset-0 z-[1]'
@@ -246,7 +202,7 @@ export default function BackgroundWrapper({ children }: { children: React.ReactN
                     aria-hidden
                 />
             )}
-            <div className='relative z-10'>{children}</div>
+            <div className={cn('relative z-10', fillViewport && 'flex min-h-0 flex-1 flex-col')}>{children}</div>
         </div>
     );
 }

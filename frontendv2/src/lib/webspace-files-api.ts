@@ -58,11 +58,7 @@ const toAbsolutePath = (root: string, path: string): string => {
     return joinPath(root || '/', path);
 };
 
-const unsupported = (feature: string): never => {
-    throw new Error(`WebSpace file manager does not support ${feature}`);
-};
-
-/** Feature flags for WebSpace file manager UI. */
+/** Feature flags for WebSpace file manager UI (fallback when API unavailable). */
 export const webspaceFileManagerCapabilities = {
     trash: true,
     share: true,
@@ -71,10 +67,62 @@ export const webspaceFileManagerCapabilities = {
     archiveBrowse: true,
     archiveExtractSelection: true,
     advancedSearch: true,
-    abortInstall: false,
+    abortInstall: true,
     pullProgress: true,
     signedUploadUrl: true,
+    paginatedList: true,
+    compress7z: true,
 } as const;
+
+export type WebSpaceFileCapabilityKey = keyof typeof webspaceFileManagerCapabilities;
+
+export type WebSpaceFileCapabilitiesMap = Record<string, boolean>;
+
+const CAPABILITY_ALIASES: Record<WebSpaceFileCapabilityKey, string[]> = {
+    trash: ['trash'],
+    share: ['share'],
+    wipeAll: ['wipe_all', 'wipeAll'],
+    directoryDownload: ['directory_download', 'directoryDownload'],
+    archiveBrowse: ['archive_browse', 'archiveBrowse'],
+    archiveExtractSelection: ['archive_extract_selection', 'archiveExtractSelection'],
+    advancedSearch: ['advanced_search', 'advancedSearch'],
+    abortInstall: ['abort_install', 'abortInstall'],
+    pullProgress: ['pull_progress', 'pullProgress'],
+    signedUploadUrl: ['signed_upload_url', 'signedUploadUrl'],
+    paginatedList: ['paginated_list', 'paginatedList'],
+    compress7z: ['compress_7z', 'compress7z'],
+};
+
+export function resolveWebSpaceFileCapabilities(
+    caps?: WebSpaceFileCapabilitiesMap | null,
+): Record<WebSpaceFileCapabilityKey, boolean> {
+    const resolved: Record<WebSpaceFileCapabilityKey, boolean> = {
+        ...webspaceFileManagerCapabilities,
+    };
+    if (!caps) {
+        return resolved;
+    }
+
+    for (const [key, aliases] of Object.entries(CAPABILITY_ALIASES) as [WebSpaceFileCapabilityKey, string[]][]) {
+        for (const alias of aliases) {
+            if (typeof caps[alias] === 'boolean') {
+                resolved[key] = caps[alias];
+                break;
+            }
+        }
+    }
+
+    return resolved;
+}
+
+export function supportsWebSpaceFileFeature(
+    caps: WebSpaceFileCapabilitiesMap | null | undefined,
+    feature: WebSpaceFileCapabilityKey,
+): boolean {
+    return resolveWebSpaceFileCapabilities(caps)[feature];
+}
+
+const DEFAULT_PAGE_SIZE = 250;
 
 const quilldUploadClient = axios.create();
 
@@ -123,11 +171,27 @@ const extractList = (payload: unknown): RawFileEntry[] => {
     if (Array.isArray(payload)) return payload as RawFileEntry[];
     if (typeof payload !== 'object') return [];
     const body = payload as Record<string, unknown>;
-    const candidates = [body.contents, body.files, body.data];
+    const candidates = [body.entries, body.contents, body.files, body.data];
     for (const c of candidates) {
         if (Array.isArray(c)) return c as RawFileEntry[];
     }
     return [];
+};
+
+const extractPagination = (payload: unknown): { total: number; limited: boolean; limit: number } => {
+    if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+        return { total: 0, limited: false, limit: DEFAULT_PAGE_SIZE };
+    }
+    const body = payload as Record<string, unknown>;
+    const total = typeof body.total === 'number' ? body.total : 0;
+    const perPage = typeof body.per_page === 'number' ? body.per_page : DEFAULT_PAGE_SIZE;
+    const entries = extractList(payload);
+    const resolvedTotal = total > 0 ? total : entries.length;
+    return {
+        total: resolvedTotal,
+        limited: resolvedTotal > entries.length,
+        limit: perPage,
+    };
 };
 
 const extractContentsString = (payload: unknown): string => {
@@ -145,24 +209,64 @@ const extractContentsString = (payload: unknown): string => {
 };
 
 export const webspaceFilesApi = {
+    getFileCapabilities: async (uuid: string): Promise<WebSpaceFileCapabilitiesMap> => {
+        try {
+            const response = await api.get<ApiResponse<{ capabilities?: WebSpaceFileCapabilitiesMap }>>(
+                `/user/webspaces/${uuid}/file-capabilities`,
+            );
+            return response.data.data?.capabilities ?? {};
+        } catch {
+            return {};
+        }
+    },
+
     getFiles: async (
         uuid: string,
         directory: string = '/',
         search?: string,
     ): Promise<{ contents: FileObject[]; limited: boolean; limit: number; total: number }> => {
-        const response = await api.get<ApiResponse<unknown>>(`/user/webspaces/${uuid}/files/list`, {
-            params: { directory: normalizePath(directory || '/') },
-        });
-        let mapped = extractList(response.data.data).map(mapFileObject);
+        const normalizedDir = normalizePath(directory || '/');
+        let page = 1;
+        let allMapped: FileObject[] = [];
+        let limited = false;
+        let limit = DEFAULT_PAGE_SIZE;
+        let total = 0;
+
+        while (true) {
+            const response = await api.get<ApiResponse<unknown>>(`/user/webspaces/${uuid}/files/list`, {
+                params: {
+                    directory: normalizedDir,
+                    page,
+                    per_page: DEFAULT_PAGE_SIZE,
+                },
+            });
+            const payload = response.data.data;
+            const mapped = extractList(payload).map(mapFileObject);
+            const meta = extractPagination(payload);
+            total = meta.total > 0 ? meta.total : mapped.length;
+            limit = meta.limit;
+            allMapped = allMapped.concat(mapped);
+            limited = total > allMapped.length;
+
+            if (!limited || mapped.length === 0) {
+                break;
+            }
+            page += 1;
+            if (page > 100) {
+                break;
+            }
+        }
+
         const q = search?.trim().toLowerCase();
         if (q) {
-            mapped = mapped.filter((f) => f.name.toLowerCase().includes(q));
+            allMapped = allMapped.filter((f) => f.name.toLowerCase().includes(q));
         }
+
         return {
-            contents: mapped,
-            limited: false,
-            limit: mapped.length,
-            total: mapped.length,
+            contents: allMapped,
+            limited,
+            limit,
+            total: q ? allMapped.length : total,
         };
     },
 
@@ -312,9 +416,9 @@ export const webspaceFilesApi = {
         return `/api/user/webspaces/${uuid}/files/download-directory?${params.toString()}`;
     },
 
-    abortInstall: async (): Promise<void> => {
+    abortInstall: async (uuid: string): Promise<void> => {
         if (!webspaceFileManagerCapabilities.abortInstall) return;
-        unsupported('abort install');
+        await api.post(`/user/webspaces/${uuid}/install/abort`);
     },
 
     getFingerprints: async (

@@ -17,15 +17,18 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { createContext, useContext, useEffect, useLayoutEffect, useState, ReactNode } from 'react';
 import { useSettings } from '@/contexts/SettingsContext';
+import { isBackgroundAnimatedVariant, type BackgroundAnimatedVariant } from '@/lib/background-variants';
+import { APP_FONT_STACKS, isAppFontFamily, type AppFontFamily } from '@/lib/app-fonts';
+import { isPresetAccent, isValidAccentValue, resolveAccentForeground, resolveAccentHsl } from '@/lib/accent-colors';
 
 type Theme = 'light' | 'dark';
 type BackgroundType = 'aurora' | 'gradient' | 'solid' | 'image' | 'pattern';
-export type BackgroundAnimatedVariant = 'aurora' | 'beams' | 'colorBends' | 'floatingLines' | 'silk';
+export type { BackgroundAnimatedVariant };
 export type BackgroundImageFit = 'cover' | 'contain' | 'fill';
 /** Controls animations and transitions app-wide. */
 export type MotionLevel = 'full' | 'reduced' | 'none';
 /** UI font family preference. */
-type FontFamily = 'system' | 'inter' | 'rounded';
+type FontFamily = AppFontFamily;
 
 function parseAndClamp(value: string | null, min: number, max: number, defaultValue: number): number {
     if (value == null) {
@@ -69,33 +72,6 @@ interface ThemeContextType {
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
-
-const ACCENT_COLORS = {
-    purple: '262 83% 58%',
-    blue: '217 91% 60%',
-    green: '142 71% 45%',
-    red: '0 84% 60%',
-    orange: '25 95% 53%',
-    pink: '330 81% 60%',
-    teal: '173 80% 40%',
-    yellow: '48 96% 53%',
-    indigo: '245 58% 51%',
-    violet: '270 75% 55%',
-    cyan: '188 78% 41%',
-    lime: '84 69% 35%',
-    amber: '38 92% 50%',
-    rose: '347 77% 50%',
-    slate: '215 20% 45%',
-};
-
-const ACCENT_FOREGROUNDS: Partial<Record<keyof typeof ACCENT_COLORS, string>> = {
-    orange: '0 0% 9%',
-    teal: '0 0% 9%',
-    yellow: '0 0% 9%',
-    cyan: '0 0% 9%',
-    lime: '0 0% 9%',
-    amber: '0 0% 9%',
-};
 
 const USER_OVERRIDE_KEYS = {
     theme: 'themeUserOverride',
@@ -144,7 +120,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
         // Load initial values from localStorage until public admin settings are available.
         setThemeState(saved || (prefersDark ? 'dark' : 'light'));
-        setAccentColorState(savedAccent && savedAccent in ACCENT_COLORS ? savedAccent : 'purple');
+        setAccentColorState(savedAccent && isValidAccentValue(savedAccent) ? savedAccent : 'purple');
         setBackgroundTypeState(
             savedBgType === 'aurora' ||
                 savedBgType === 'gradient' ||
@@ -155,13 +131,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
                 : 'pattern',
         );
         setBackgroundAnimatedVariantState(
-            savedAnimatedVariant === 'aurora' ||
-                savedAnimatedVariant === 'beams' ||
-                savedAnimatedVariant === 'colorBends' ||
-                savedAnimatedVariant === 'floatingLines' ||
-                savedAnimatedVariant === 'silk'
-                ? savedAnimatedVariant
-                : 'aurora',
+            isBackgroundAnimatedVariant(savedAnimatedVariant) ? savedAnimatedVariant : 'aurora',
         );
         setBackgroundImageState(savedBgImage || '');
         setBackdropBlurState(parseAndClamp(savedBlur, 0, 24, 0));
@@ -176,10 +146,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         setMotionLevelState(initialMotion);
         localStorage.setItem('motionLevel', initialMotion);
 
-        const initialFont: FontFamily =
-            savedFontFamily === 'system' || savedFontFamily === 'rounded' || savedFontFamily === 'inter'
-                ? savedFontFamily
-                : 'inter';
+        const initialFont: FontFamily = isAppFontFamily(savedFontFamily) ? savedFontFamily : 'inter';
         setFontFamilyState(initialFont);
         localStorage.setItem('fontFamily', initialFont);
     }, []);
@@ -217,7 +184,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
             localStorage.setItem('theme', forcedTheme);
         }
 
-        if (shouldUseAccentDefault && forcedAccent && forcedAccent in ACCENT_COLORS && accentColor !== forcedAccent) {
+        if (shouldUseAccentDefault && forcedAccent && isPresetAccent(forcedAccent) && accentColor !== forcedAccent) {
             setAccentColorState(forcedAccent);
             localStorage.setItem('accentColor', forcedAccent);
         }
@@ -266,20 +233,15 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         root.style.colorScheme = theme;
         localStorage.setItem('theme', theme);
 
-        const accentHSL = ACCENT_COLORS[accentColor as keyof typeof ACCENT_COLORS] || ACCENT_COLORS.purple;
-        const primaryForeground = ACCENT_FOREGROUNDS[accentColor as keyof typeof ACCENT_FOREGROUNDS] || '0 0% 98%';
+        const accentHSL = resolveAccentHsl(accentColor);
+        const primaryForeground = resolveAccentForeground(accentColor);
         root.style.setProperty('--color-primary', `hsl(${accentHSL})`);
         root.style.setProperty('--primary', accentHSL);
         root.style.setProperty('--color-primary-foreground', `hsl(${primaryForeground})`);
         root.style.setProperty('--primary-foreground', primaryForeground);
         localStorage.setItem('accentColor', accentColor);
 
-        const fontStacks: Record<FontFamily, string> = {
-            inter: "var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-            system: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-            rounded: "var(--font-nunito), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-        };
-        const stack = fontStacks[fontFamily] || fontStacks.inter;
+        const stack = APP_FONT_STACKS[fontFamily] || APP_FONT_STACKS.inter;
         root.style.setProperty('--app-font-family', stack);
         localStorage.setItem('fontFamily', fontFamily);
     }, [theme, accentColor, fontFamily, mounted]);
@@ -437,4 +399,4 @@ export function useTheme() {
     return context;
 }
 
-export { ACCENT_COLORS };
+export { ACCENT_COLORS } from '@/lib/accent-colors';

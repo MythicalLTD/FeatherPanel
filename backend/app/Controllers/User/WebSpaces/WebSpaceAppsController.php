@@ -22,6 +22,7 @@ use App\Helpers\ApiResponse;
 use App\Helpers\WebSpaceGateway;
 use App\WebSpaceSubuserPermissions;
 use App\Helpers\FeatherQuilldClient;
+use App\Helpers\WebSpaceAppsCatalog;
 use App\Helpers\WebSpaceActivityLogger;
 use App\Helpers\CheckWebSpacePermission;
 use App\Helpers\WebSpaceWordPressInstaller;
@@ -167,6 +168,315 @@ class WebSpaceAppsController
         return ApiResponse::success($result, 'WordPress staging created', 200);
     }
 
+    public function promoteWordPressStaging(Request $request, string $uuidShort): Response
+    {
+        $space = WebSpaceGateway::resolveWebSpace($uuidShort);
+        if (!$space) {
+            return ApiResponse::error('WebSpace not found', 'WEBSPACE_NOT_FOUND', 404);
+        }
+
+        $denied = CheckWebSpacePermission::require($request, $space, WebSpaceSubuserPermissions::FILE_CREATE);
+        if ($denied instanceof Response) {
+            return $denied;
+        }
+
+        $webNode = WebNode::getWebNodeById((int) $space['web_node_id']);
+        if (!$webNode) {
+            return ApiResponse::error('Web node not found', 'WEB_NODE_NOT_FOUND', 404);
+        }
+
+        $content = json_decode($request->getContent(), true);
+        if (!is_array($content)) {
+            $content = [];
+        }
+
+        try {
+            $result = WebSpaceWordPressInstaller::promoteStaging($space, $webNode, $content);
+        } catch (\InvalidArgumentException $e) {
+            return ApiResponse::error($e->getMessage(), 'WORDPRESS_VALIDATION_FAILED', 400);
+        } catch (\Throwable $e) {
+            return ApiResponse::error($e->getMessage(), 'WORDPRESS_PROMOTE_FAILED', 502);
+        }
+
+        $user = $request->attributes->get('user');
+        WebSpaceActivityLogger::log(
+            $space,
+            is_array($user) ? $user : null,
+            'wordpress.promote_staging',
+            [
+                'source' => $result['source'] ?? '/',
+                'directory' => $result['directory'] ?? '/staging',
+            ],
+        );
+
+        return ApiResponse::success($result, 'WordPress staging promoted to production', 200);
+    }
+
+    public function installLaravel(Request $request, string $uuidShort): Response
+    {
+        $space = WebSpaceGateway::resolveWebSpace($uuidShort);
+        if (!$space) {
+            return ApiResponse::error('WebSpace not found', 'WEBSPACE_NOT_FOUND', 404);
+        }
+
+        $denied = CheckWebSpacePermission::require($request, $space, WebSpaceSubuserPermissions::FILE_CREATE);
+        if ($denied instanceof Response) {
+            return $denied;
+        }
+        $denied = CheckWebSpacePermission::require($request, $space, WebSpaceSubuserPermissions::DATABASE_CREATE);
+        if ($denied instanceof Response) {
+            return $denied;
+        }
+
+        $webNode = WebNode::getWebNodeById((int) $space['web_node_id']);
+        if (!$webNode) {
+            return ApiResponse::error('Web node not found', 'WEB_NODE_NOT_FOUND', 404);
+        }
+
+        $content = json_decode($request->getContent(), true);
+        if (!is_array($content)) {
+            $content = [];
+        }
+
+        try {
+            $result = \App\Helpers\WebSpaceLaravelInstaller::install($space, $webNode, $content);
+        } catch (\InvalidArgumentException $e) {
+            return ApiResponse::error($e->getMessage(), 'LARAVEL_VALIDATION_FAILED', 400);
+        } catch (\Throwable $e) {
+            return ApiResponse::error($e->getMessage(), 'LARAVEL_INSTALL_FAILED', 502);
+        }
+
+        $user = $request->attributes->get('user');
+        WebSpaceActivityLogger::log(
+            $space,
+            is_array($user) ? $user : null,
+            'laravel.install',
+            ['directory' => $result['directory'] ?? '/', 'database' => $result['database'] ?? null],
+        );
+
+        return ApiResponse::success($result, 'Laravel installed', 200);
+    }
+
+    public function installJoomla(Request $request, string $uuidShort): Response
+    {
+        $space = WebSpaceGateway::resolveWebSpace($uuidShort);
+        if (!$space) {
+            return ApiResponse::error('WebSpace not found', 'WEBSPACE_NOT_FOUND', 404);
+        }
+
+        $denied = CheckWebSpacePermission::require($request, $space, WebSpaceSubuserPermissions::FILE_CREATE);
+        if ($denied instanceof Response) {
+            return $denied;
+        }
+        $denied = CheckWebSpacePermission::require($request, $space, WebSpaceSubuserPermissions::DATABASE_CREATE);
+        if ($denied instanceof Response) {
+            return $denied;
+        }
+
+        $webNode = WebNode::getWebNodeById((int) $space['web_node_id']);
+        if (!$webNode) {
+            return ApiResponse::error('Web node not found', 'WEB_NODE_NOT_FOUND', 404);
+        }
+
+        $content = json_decode($request->getContent(), true);
+        if (!is_array($content)) {
+            $content = [];
+        }
+
+        try {
+            $result = \App\Helpers\WebSpaceJoomlaInstaller::install($space, $webNode, $content);
+        } catch (\InvalidArgumentException $e) {
+            return ApiResponse::error($e->getMessage(), 'JOOMLA_VALIDATION_FAILED', 400);
+        } catch (\Throwable $e) {
+            return ApiResponse::error($e->getMessage(), 'JOOMLA_INSTALL_FAILED', 502);
+        }
+
+        $user = $request->attributes->get('user');
+        WebSpaceActivityLogger::log(
+            $space,
+            is_array($user) ? $user : null,
+            'joomla.install',
+            ['directory' => $result['directory'] ?? '/', 'database' => $result['database'] ?? null],
+        );
+
+        return ApiResponse::success($result, 'Joomla installed', 200);
+    }
+
+    public function installDrupal(Request $request, string $uuidShort): Response
+    {
+        $space = WebSpaceGateway::resolveWebSpace($uuidShort);
+        if (!$space) {
+            return ApiResponse::error('WebSpace not found', 'WEBSPACE_NOT_FOUND', 404);
+        }
+
+        $denied = CheckWebSpacePermission::require($request, $space, WebSpaceSubuserPermissions::FILE_CREATE);
+        if ($denied instanceof Response) {
+            return $denied;
+        }
+        $denied = CheckWebSpacePermission::require($request, $space, WebSpaceSubuserPermissions::DATABASE_CREATE);
+        if ($denied instanceof Response) {
+            return $denied;
+        }
+
+        $webNode = WebNode::getWebNodeById((int) $space['web_node_id']);
+        if (!$webNode) {
+            return ApiResponse::error('Web node not found', 'WEB_NODE_NOT_FOUND', 404);
+        }
+
+        $content = json_decode($request->getContent(), true);
+        if (!is_array($content)) {
+            $content = [];
+        }
+
+        try {
+            $result = \App\Helpers\WebSpaceDrupalInstaller::install($space, $webNode, $content);
+        } catch (\InvalidArgumentException $e) {
+            return ApiResponse::error($e->getMessage(), 'DRUPAL_VALIDATION_FAILED', 400);
+        } catch (\Throwable $e) {
+            return ApiResponse::error($e->getMessage(), 'DRUPAL_INSTALL_FAILED', 502);
+        }
+
+        $user = $request->attributes->get('user');
+        WebSpaceActivityLogger::log(
+            $space,
+            is_array($user) ? $user : null,
+            'drupal.install',
+            ['directory' => $result['directory'] ?? '/', 'database' => $result['database'] ?? null],
+        );
+
+        return ApiResponse::success($result, 'Drupal installed', 200);
+    }
+
+    public function installPrestaShop(Request $request, string $uuidShort): Response
+    {
+        return $this->installDbApp($request, $uuidShort, 'prestashop', WebSpaceAppsCatalog::APP_PRESTASHOP, static fn ($s, $n, $c) => WebSpacePrestaShopInstaller::install($s, $n, $c), 'PRESTASHOP');
+    }
+
+    public function installMagento(Request $request, string $uuidShort): Response
+    {
+        return $this->installDbApp($request, $uuidShort, 'magento', WebSpaceAppsCatalog::APP_MAGENTO, static fn ($s, $n, $c) => WebSpaceMagentoInstaller::install($s, $n, $c), 'MAGENTO');
+    }
+
+    public function installGhost(Request $request, string $uuidShort): Response
+    {
+        $space = WebSpaceGateway::resolveWebSpace($uuidShort);
+        if (!$space) {
+            return ApiResponse::error('WebSpace not found', 'WEBSPACE_NOT_FOUND', 404);
+        }
+
+        $denied = CheckWebSpacePermission::require($request, $space, WebSpaceSubuserPermissions::FILE_CREATE);
+        if ($denied instanceof Response) {
+            return $denied;
+        }
+
+        $webNode = WebNode::getWebNodeById((int) $space['web_node_id']);
+        if (!$webNode) {
+            return ApiResponse::error('Web node not found', 'WEB_NODE_NOT_FOUND', 404);
+        }
+
+        $content = json_decode($request->getContent(), true);
+        if (!is_array($content)) {
+            $content = [];
+        }
+
+        try {
+            $result = WebSpaceGhostInstaller::install($space, $webNode, $content);
+        } catch (\InvalidArgumentException $e) {
+            return ApiResponse::error($e->getMessage(), 'GHOST_VALIDATION_FAILED', 400);
+        } catch (\Throwable $e) {
+            return ApiResponse::error($e->getMessage(), 'GHOST_INSTALL_FAILED', 502);
+        }
+
+        $user = $request->attributes->get('user');
+        WebSpaceActivityLogger::log($space, is_array($user) ? $user : null, 'ghost.install', [
+            'directory' => $result['directory'] ?? '/',
+        ]);
+
+        return ApiResponse::success($result, 'Ghost installed', 200);
+    }
+
+    public function installNodeStarter(Request $request, string $uuidShort): Response
+    {
+        $space = WebSpaceGateway::resolveWebSpace($uuidShort);
+        if (!$space) {
+            return ApiResponse::error('WebSpace not found', 'WEBSPACE_NOT_FOUND', 404);
+        }
+
+        $denied = CheckWebSpacePermission::require($request, $space, WebSpaceSubuserPermissions::FILE_CREATE);
+        if ($denied instanceof Response) {
+            return $denied;
+        }
+
+        $webNode = WebNode::getWebNodeById((int) $space['web_node_id']);
+        if (!$webNode) {
+            return ApiResponse::error('Web node not found', 'WEB_NODE_NOT_FOUND', 404);
+        }
+
+        $content = json_decode($request->getContent(), true);
+        if (!is_array($content)) {
+            $content = [];
+        }
+
+        try {
+            $result = \App\Helpers\WebSpaceNodeStarterInstaller::install($space, $webNode, $content);
+        } catch (\InvalidArgumentException $e) {
+            return ApiResponse::error($e->getMessage(), 'NODE_STARTER_VALIDATION_FAILED', 400);
+        } catch (\Throwable $e) {
+            return ApiResponse::error($e->getMessage(), 'NODE_STARTER_INSTALL_FAILED', 502);
+        }
+
+        $user = $request->attributes->get('user');
+        WebSpaceActivityLogger::log(
+            $space,
+            is_array($user) ? $user : null,
+            'node_starter.install',
+            ['directory' => $result['directory'] ?? '/'],
+        );
+
+        return ApiResponse::success($result, 'Node starter created', 200);
+    }
+
+    public function installPythonStarter(Request $request, string $uuidShort): Response
+    {
+        $space = WebSpaceGateway::resolveWebSpace($uuidShort);
+        if (!$space) {
+            return ApiResponse::error('WebSpace not found', 'WEBSPACE_NOT_FOUND', 404);
+        }
+
+        $denied = CheckWebSpacePermission::require($request, $space, WebSpaceSubuserPermissions::FILE_CREATE);
+        if ($denied instanceof Response) {
+            return $denied;
+        }
+
+        $webNode = WebNode::getWebNodeById((int) $space['web_node_id']);
+        if (!$webNode) {
+            return ApiResponse::error('Web node not found', 'WEB_NODE_NOT_FOUND', 404);
+        }
+
+        $content = json_decode($request->getContent(), true);
+        if (!is_array($content)) {
+            $content = [];
+        }
+
+        try {
+            $result = \App\Helpers\WebSpacePythonStarterInstaller::install($space, $webNode, $content);
+        } catch (\InvalidArgumentException $e) {
+            return ApiResponse::error($e->getMessage(), 'PYTHON_STARTER_VALIDATION_FAILED', 400);
+        } catch (\Throwable $e) {
+            return ApiResponse::error($e->getMessage(), 'PYTHON_STARTER_INSTALL_FAILED', 502);
+        }
+
+        $user = $request->attributes->get('user');
+        WebSpaceActivityLogger::log(
+            $space,
+            is_array($user) ? $user : null,
+            'python_starter.install',
+            ['directory' => $result['directory'] ?? '/'],
+        );
+
+        return ApiResponse::success($result, 'Python starter created', 200);
+    }
+
     public function installWordPressPlugin(Request $request, string $uuidShort): Response
     {
         $space = WebSpaceGateway::resolveWebSpace($uuidShort);
@@ -218,6 +528,12 @@ class WebSpaceAppsController
         $denied = CheckWebSpacePermission::require($request, $space, WebSpaceSubuserPermissions::SCHEDULE_CREATE);
         if ($denied instanceof Response) {
             return $denied;
+        }
+
+        try {
+            WebSpaceAppsCatalog::requireApp($space, WebSpaceAppsCatalog::APP_WORDPRESS);
+        } catch (\InvalidArgumentException $e) {
+            return ApiResponse::error($e->getMessage(), 'WORDPRESS_VALIDATION_FAILED', 400);
         }
 
         $content = json_decode($request->getContent(), true);
@@ -446,5 +762,57 @@ class WebSpaceAppsController
         );
 
         return ApiResponse::success($result, 'Deploy key regenerated', 200);
+    }
+
+    /**
+     * @param callable(array<string, mixed>, array<string, mixed>, array<string, mixed>): array<string, mixed> $installer
+     */
+    private function installDbApp(
+        Request $request,
+        string $uuidShort,
+        string $logKey,
+        string $appId,
+        callable $installer,
+        string $errorPrefix,
+    ): Response {
+        $space = WebSpaceGateway::resolveWebSpace($uuidShort);
+        if (!$space) {
+            return ApiResponse::error('WebSpace not found', 'WEBSPACE_NOT_FOUND', 404);
+        }
+
+        $denied = CheckWebSpacePermission::require($request, $space, WebSpaceSubuserPermissions::FILE_CREATE);
+        if ($denied instanceof Response) {
+            return $denied;
+        }
+        $denied = CheckWebSpacePermission::require($request, $space, WebSpaceSubuserPermissions::DATABASE_CREATE);
+        if ($denied instanceof Response) {
+            return $denied;
+        }
+
+        $webNode = WebNode::getWebNodeById((int) $space['web_node_id']);
+        if (!$webNode) {
+            return ApiResponse::error('Web node not found', 'WEB_NODE_NOT_FOUND', 404);
+        }
+
+        $content = json_decode($request->getContent(), true);
+        if (!is_array($content)) {
+            $content = [];
+        }
+
+        try {
+            $result = $installer($space, $webNode, $content);
+        } catch (\InvalidArgumentException $e) {
+            return ApiResponse::error($e->getMessage(), $errorPrefix . '_VALIDATION_FAILED', 400);
+        } catch (\Throwable $e) {
+            return ApiResponse::error($e->getMessage(), $errorPrefix . '_INSTALL_FAILED', 502);
+        }
+
+        $user = $request->attributes->get('user');
+        WebSpaceActivityLogger::log($space, is_array($user) ? $user : null, $logKey . '.install', [
+            'directory' => $result['directory'] ?? '/',
+            'database' => $result['database'] ?? null,
+        ]);
+
+        return ApiResponse::success($result, ucfirst($logKey) . ' installed', 200);
     }
 }

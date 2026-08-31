@@ -421,6 +421,23 @@ return function (RouteCollection $routes): void {
 
     App::getInstance(true)->registerAuthRoute(
         $routes,
+        'user-webspaces-install-abort',
+        '/api/user/webspaces/{uuidShort}/install/abort',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            if ($uuidShort === '') {
+                return ApiResponse::error('Missing uuidShort', 'INVALID_UUID_SHORT', 400);
+            }
+
+            return (new WebSpacesController())->abortInstall($request, $uuidShort);
+        },
+        ['POST'],
+        Rate::perMinute(10),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
         'user-webspaces-ssl',
         '/api/user/webspaces/{uuidShort}/ssl',
         function (Request $request, array $args) {
@@ -679,6 +696,23 @@ return function (RouteCollection $routes): void {
     );
 
     // --- Files ---
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-file-capabilities',
+        '/api/user/webspaces/{uuidShort}/file-capabilities',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            if ($uuidShort === '') {
+                return ApiResponse::error('Missing uuidShort', 'INVALID_UUID_SHORT', 400);
+            }
+
+            return (new WebSpaceFilesController())->fileCapabilities($request, $uuidShort);
+        },
+        ['GET'],
+        Rate::perMinute(60),
+        'user-webspaces'
+    );
+
     App::getInstance(true)->registerAuthRoute(
         $routes,
         'user-webspaces-files-list',
@@ -1430,6 +1464,23 @@ return function (RouteCollection $routes): void {
 
     App::getInstance(true)->registerAuthRoute(
         $routes,
+        'user-webspaces-proxy-logs-rotate',
+        '/api/user/webspaces/{uuidShort}/proxy-logs/rotate',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            if ($uuidShort === '') {
+                return ApiResponse::error('Missing uuidShort', 'INVALID_UUID_SHORT', 400);
+            }
+
+            return (new WebSpaceLogsController())->rotateProxyLogs($request, $uuidShort);
+        },
+        ['POST'],
+        Rate::perMinute(10),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
         'user-webspaces-analytics',
         '/api/user/webspaces/{uuidShort}/analytics',
         function (Request $request, array $args) {
@@ -1490,6 +1541,159 @@ return function (RouteCollection $routes): void {
             }
 
             return (new WebSpaceAppsController())->stagingWordPress($request, $uuidShort);
+        },
+        ['POST'],
+        Rate::perMinute(5),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-apps-wordpress-staging-promote',
+        '/api/user/webspaces/{uuidShort}/apps/wordpress/staging/promote',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            if ($uuidShort === '') {
+                return ApiResponse::error('Missing uuidShort', 'INVALID_ID', 400);
+            }
+
+            return (new WebSpaceAppsController())->promoteWordPressStaging($request, $uuidShort);
+        },
+        ['POST'],
+        Rate::perMinute(5),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-apps-laravel',
+        '/api/user/webspaces/{uuidShort}/apps/laravel',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            if ($uuidShort === '') {
+                return ApiResponse::error('Missing uuidShort', 'INVALID_ID', 400);
+            }
+
+            return (new WebSpaceAppsController())->installLaravel($request, $uuidShort);
+        },
+        ['POST'],
+        Rate::perMinute(5),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-apps-joomla',
+        '/api/user/webspaces/{uuidShort}/apps/joomla',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            if ($uuidShort === '') {
+                return ApiResponse::error('Missing uuidShort', 'INVALID_ID', 400);
+            }
+
+            return (new WebSpaceAppsController())->installJoomla($request, $uuidShort);
+        },
+        ['POST'],
+        Rate::perMinute(5),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-apps-drupal',
+        '/api/user/webspaces/{uuidShort}/apps/drupal',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            if ($uuidShort === '') {
+                return ApiResponse::error('Missing uuidShort', 'INVALID_ID', 400);
+            }
+
+            return (new WebSpaceAppsController())->installDrupal($request, $uuidShort);
+        },
+        ['POST'],
+        Rate::perMinute(5),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-apps-prestashop',
+        '/api/user/webspaces/{uuidShort}/apps/prestashop',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            if ($uuidShort === '') {
+                return ApiResponse::error('Missing uuidShort', 'INVALID_ID', 400);
+            }
+
+            return (new WebSpaceAppsController())->installPrestaShop($request, $uuidShort);
+        },
+        ['POST'],
+        Rate::perMinute(5),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-apps-magento',
+        '/api/user/webspaces/{uuidShort}/apps/magento',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            if ($uuidShort === '') {
+                return ApiResponse::error('Missing uuidShort', 'INVALID_ID', 400);
+            }
+
+            return (new WebSpaceAppsController())->installMagento($request, $uuidShort);
+        },
+        ['POST'],
+        Rate::perMinute(5),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-apps-ghost',
+        '/api/user/webspaces/{uuidShort}/apps/ghost',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            if ($uuidShort === '') {
+                return ApiResponse::error('Missing uuidShort', 'INVALID_ID', 400);
+            }
+
+            return (new WebSpaceAppsController())->installGhost($request, $uuidShort);
+        },
+        ['POST'],
+        Rate::perMinute(5),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-apps-node-starter',
+        '/api/user/webspaces/{uuidShort}/apps/node-starter',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            if ($uuidShort === '') {
+                return ApiResponse::error('Missing uuidShort', 'INVALID_ID', 400);
+            }
+
+            return (new WebSpaceAppsController())->installNodeStarter($request, $uuidShort);
+        },
+        ['POST'],
+        Rate::perMinute(5),
+        'user-webspaces'
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'user-webspaces-apps-python-starter',
+        '/api/user/webspaces/{uuidShort}/apps/python-starter',
+        function (Request $request, array $args) {
+            $uuidShort = (string) ($args['uuidShort'] ?? '');
+            if ($uuidShort === '') {
+                return ApiResponse::error('Missing uuidShort', 'INVALID_ID', 400);
+            }
+
+            return (new WebSpaceAppsController())->installPythonStarter($request, $uuidShort);
         },
         ['POST'],
         Rate::perMinute(5),

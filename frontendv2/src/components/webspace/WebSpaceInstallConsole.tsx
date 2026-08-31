@@ -21,14 +21,14 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, CheckCircle2, XCircle } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, OctagonX } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
 import { WebSpaceTerminalPanel } from '@/components/webspace/WebSpaceTerminalPanel';
-import { WebSpaceInfrastructurePanel } from '@/components/webspace/WebSpaceInfrastructurePanel';
 import { toast } from 'sonner';
+import axios from 'axios';
 
 interface WebSpaceInstallConsoleProps {
     uuid: string;
@@ -51,9 +51,6 @@ export function WebSpaceInstallConsole({
     backHref = '/admin/webspaces',
     initialStatus,
     webNodeId,
-    ssl = false,
-    databaseLimit = 0,
-    mailboxLimit = 0,
 }: WebSpaceInstallConsoleProps) {
     const { t } = useTranslation();
     const router = useRouter();
@@ -62,6 +59,16 @@ export function WebSpaceInstallConsole({
     const isInstalling = status === 'installing' || status === 'reinstalling';
     const isFailed = status === 'failed' || status === 'installation_failed' || status === 'daemon_sync_failed';
     const isDone = status === 'installed';
+
+    const abortInstall = async () => {
+        try {
+            await axios.post(`/api/admin/webspaces/${uuid}/install/abort`);
+            setStatus('installation_failed');
+            toast.success(t('admin.webSpaces.install.abortSuccess'));
+        } catch {
+            toast.error(t('admin.webSpaces.install.abortFailed'));
+        }
+    };
 
     const statusLabel = (value: string) => {
         const key = `admin.webSpaces.status.${value}`;
@@ -103,6 +110,12 @@ export function WebSpaceInstallConsole({
                             </p>
                         </div>
                     </div>
+                    {isInstalling ? (
+                        <Button variant='outline' size='sm' className='mt-4' onClick={() => void abortInstall()}>
+                            <OctagonX className='mr-2 h-4 w-4' />
+                            {t('admin.webSpaces.install.abort')}
+                        </Button>
+                    ) : null}
                 </PageCard>
 
                 {isFailed && webNodeId && (

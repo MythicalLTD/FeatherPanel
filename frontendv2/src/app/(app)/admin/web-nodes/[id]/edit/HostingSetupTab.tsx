@@ -20,12 +20,12 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 'use client';
 
 import Link from 'next/link';
-import { ExternalLink } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { PageCard } from '@/components/featherui/PageCard';
 import { Button } from '@/components/featherui/Button';
 import { WebSpaceInfrastructurePanel } from '@/components/webspace/WebSpaceInfrastructurePanel';
 import { WebSpaceHostingMaturityPanel } from '@/components/webspace/WebSpaceHostingMaturityPanel';
+import { WebSpaceHostingSetupWizard } from '@/components/webspace/WebSpaceHostingSetupWizard';
 
 interface HostingSetupTabProps {
     nodeId: string;
@@ -59,6 +59,8 @@ export function HostingSetupTab({ nodeId }: HostingSetupTabProps) {
                     </Button>
                 </div>
             </PageCard>
+
+            <WebSpaceHostingSetupWizard webNodeId={numericId > 0 ? numericId : undefined} />
 
             <WebSpaceHostingMaturityPanel webNodeId={numericId > 0 ? numericId : undefined} />
 

@@ -222,6 +222,66 @@ class WebSpaceHostingMaturity
     }
 
     /**
+     * Ordered wizard steps for admin first-node onboarding UI.
+     *
+     * @return array{
+     *   tier: string,
+     *   score: int,
+     *   doc_path: string,
+     *   sample_node_id: ?int,
+     *   steps: list<array{
+     *     step: int,
+     *     id: string,
+     *     status: string,
+     *     detail: ?string,
+     *     action_href: ?string,
+     *     action_label: ?string,
+     *     doc_anchor: ?string
+     *   }>
+     * }
+     */
+    public static function wizardSteps(?int $preferredWebNodeId = null): array
+    {
+        $assess = self::assess($preferredWebNodeId);
+        $docAnchors = [
+            'web_nodes' => '1-create-a-web-node',
+            'webplates' => '2-add-webplate-templates',
+            'daemon' => '1-create-a-web-node',
+            'reverse_proxy' => '3-install-reverse-proxy-required-for-ssl-and-php-sites',
+            'docker' => '4-install-docker-for-php-and-app-containers',
+            'acme_email' => '5-acme-email-for-ssl',
+            'database_hosts' => '6-link-database-hosts',
+            'mail_hosts' => '7-mail-optional-but-recommended',
+            'dns_hosts' => '8-dns-hosting-optional',
+            'first_webspace' => '9-create-your-first-webspace',
+        ];
+
+        $steps = [];
+        $stepNum = 0;
+        foreach ($assess['setup'] as $item) {
+            ++$stepNum;
+            $action = is_array($item['action'] ?? null) ? $item['action'] : null;
+            $steps[] = [
+                'step' => $stepNum,
+                'id' => (string) ($item['id'] ?? ''),
+                'status' => (string) ($item['status'] ?? 'missing'),
+                'detail' => isset($item['detail']) ? (string) $item['detail'] : null,
+                'action_href' => $action ? (string) ($action['href'] ?? '') : null,
+                'action_label' => $action ? (string) ($action['label'] ?? '') : null,
+                'doc_anchor' => $docAnchors[(string) ($item['id'] ?? '')] ?? null,
+            ];
+        }
+
+        return [
+            'tier' => (string) ($assess['tier'] ?? 'bootstrap'),
+            'score' => (int) ($assess['score'] ?? 0),
+            'doc_path' => 'featherpanel/docs/web-hosting-first-node.md',
+            'sample_node_id' => $assess['sample_node_id'] ?? null,
+            'steps' => $steps,
+        ];
+    }
+
+    /**
      * @return ?array<string, mixed>
      */
     private static function resolveSampleNode(?int $preferredWebNodeId): ?array

@@ -13,6 +13,13 @@
 - Database backups was added to the panel. by @nayskutzu
 - Backups now support the ability to dump the database to a folder. by @nayskutzu
 - New type of serve backup added `FeatherBackup` witch is a backup that dumps all the files and the database of the server including metadata and more. by @nayskutzu
+- More types of animated backgrounds were added. by @nayskutzu
+- More types of fonts were added. by @nayskutzu
+- A custom search system was added that can query and find results for everything in the panel! by @nayskutzu
+- A handy debug menu for developers to debug the panel was added. It can be accessed by opening the search bar and typing `##icanhasfeatherpanel`. by @nayskutzu
+- Brand new sidebar design that really is floating alongside a new Dockbar design. That can be customized with a lot of different styles. with LTR and RTL support. by @nayskutzu
+- Support for custom color schemes was added. So now users can chose their own colors for the panel. by @nayskutzu
+- Support for more icons engines were added. So now you can chose from lucide, tabler, react-icons, and more. by @nayskutzu
 
 ### Improved 
 
@@ -28,6 +35,8 @@
 - Multiple ui improvements were made. by @nayskutzu
 - Admin nav: WebSpaces sit under Servers (with game/VDS), WebPlates under Realms (with Spells); Web Nodes stay under Locations & Nodes. Admin Area from a user WebSpace goes to `/admin/webspaces/{uuid}/edit`. by @nayskutzu
 - English translations were improved to not reflect LLM generated text. by @nayskutzu
+- Complete rewrite of the customization system. by @nayskutzu
+- The crash page was improved with a better design and a better message. by @nayskutzu
 
 ### Fixed
 

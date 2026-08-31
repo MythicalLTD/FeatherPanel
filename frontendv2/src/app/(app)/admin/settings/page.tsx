@@ -258,6 +258,7 @@ export default function SettingsPage() {
     const pathname = usePathname();
     const searchParams = useSearchParams();
     const urlCategory = searchParams.get('category');
+    const urlSearchQuery = searchParams.get('q') ?? searchParams.get('search') ?? '';
 
     const [showLogDialog, setShowLogDialog] = useState(false);
     const [uploadedLogs, setUploadedLogs] = useState<{
@@ -304,6 +305,12 @@ export default function SettingsPage() {
     useEffect(() => {
         fetchWidgets();
     }, [fetchWidgets]);
+
+    useEffect(() => {
+        if (urlSearchQuery) {
+            setSettingsSearch(urlSearchQuery);
+        }
+    }, [urlSearchQuery]);
 
     useEffect(() => {
         if (typeof window === 'undefined') return;

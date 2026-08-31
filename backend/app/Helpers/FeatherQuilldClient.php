@@ -294,9 +294,24 @@ class FeatherQuilldClient
      *
      * @return array{ok: bool, status: int, body: mixed, error: ?string}
      */
-    public static function getWebSpaceLogs(array $webNode, string $uuid, int $lines = 100): array
-    {
-        return self::request($webNode, 'GET', '/api/webspaces/' . $uuid . '/logs?lines=' . max(1, $lines));
+    public static function getWebSpaceLogs(
+        array $webNode,
+        string $uuid,
+        int $lines = 100,
+        ?string $query = null,
+        bool $regex = false,
+        int $scanLines = 10000,
+    ): array {
+        $queryParams = ['lines' => max(1, $lines)];
+        if ($query !== null && trim($query) !== '') {
+            $queryParams['q'] = trim($query);
+            if ($regex) {
+                $queryParams['regex'] = '1';
+            }
+            $queryParams['scan_lines'] = max($lines, min(10000, $scanLines));
+        }
+
+        return self::request($webNode, 'GET', '/api/webspaces/' . $uuid . '/logs?' . http_build_query($queryParams));
     }
 
     /**
@@ -394,9 +409,39 @@ class FeatherQuilldClient
      *
      * @return array{ok: bool, status: int, body: mixed, error: ?string}
      */
+    public static function abortWebSpaceInstall(array $webNode, string $uuid): array
+    {
+        return self::request($webNode, 'POST', '/api/webspaces/' . $uuid . '/install/abort', [], 60);
+    }
+
+    /**
+     * @param array<string, mixed> $webNode
+     *
+     * @return array{ok: bool, status: int, body: mixed, error: ?string}
+     */
     public static function recreateRuntime(array $webNode, string $uuid): array
     {
         return self::request($webNode, 'POST', '/api/webspaces/' . $uuid . '/recreate-runtime', [], 300);
+    }
+
+    /**
+     * @param array<string, mixed> $webNode
+     *
+     * @return array{ok: bool, status: int, body: mixed, error: ?string}
+     */
+    public static function getWebSpaceRedis(array $webNode, string $uuid): array
+    {
+        return self::request($webNode, 'GET', '/api/webspaces/' . $uuid . '/redis', null, 30);
+    }
+
+    /**
+     * @param array<string, mixed> $webNode
+     *
+     * @return array{ok: bool, status: int, body: mixed, error: ?string}
+     */
+    public static function setWebSpaceRedis(array $webNode, string $uuid, bool $enabled): array
+    {
+        return self::request($webNode, 'PUT', '/api/webspaces/' . $uuid . '/redis', ['enabled' => $enabled], 300);
     }
 
     /**
@@ -707,11 +752,25 @@ class FeatherQuilldClient
     }
 
     /** @return array{ok: bool, status: int, body: mixed, error: ?string} */
-    public static function listWebSpaceFiles(array $webNode, string $uuid, string $directory = '/'): array
+    public static function listWebSpaceFiles(array $webNode, string $uuid, array | string $directory = '/'): array
     {
-        $q = http_build_query(['directory' => $directory]);
+        if (is_string($directory)) {
+            $query = ['directory' => $directory];
+        } else {
+            $query = $directory;
+            if (!isset($query['directory'])) {
+                $query['directory'] = '/';
+            }
+        }
+        $q = http_build_query($query);
 
         return self::request($webNode, 'GET', '/api/webspaces/' . $uuid . '/files/list?' . $q);
+    }
+
+    /** @return array{ok: bool, status: int, body: mixed, error: ?string} */
+    public static function getWebSpaceFileCapabilities(array $webNode, string $uuid): array
+    {
+        return self::request($webNode, 'GET', '/api/webspaces/' . $uuid . '/files/capabilities');
     }
 
     /** @return array{ok: bool, status: int, body: mixed, error: ?string} */
@@ -1175,16 +1234,37 @@ class FeatherQuilldClient
         ?string $domain = null,
         int $lines = 200,
         int $days = 0,
+        ?string $query = null,
+        bool $regex = false,
+        int $scanLines = 10000,
     ): array {
-        $query = ['lines' => $lines];
+        $queryParams = ['lines' => $lines];
         if ($domain !== null && $domain !== '') {
-            $query['domain'] = $domain;
+            $queryParams['domain'] = $domain;
         }
         if ($days > 0) {
-            $query['days'] = $days;
+            $queryParams['days'] = $days;
+        }
+        if ($query !== null && trim($query) !== '') {
+            $queryParams['q'] = trim($query);
+            if ($regex) {
+                $queryParams['regex'] = '1';
+            }
+            $queryParams['scan_lines'] = max($lines, min(10000, $scanLines));
         }
 
-        return self::request($webNode, 'GET', '/api/webspaces/' . $uuid . '/proxy-logs?' . http_build_query($query));
+        return self::request($webNode, 'GET', '/api/webspaces/' . $uuid . '/proxy-logs?' . http_build_query($queryParams));
+    }
+
+    /** @return array{ok: bool, status: int, body: mixed, error: ?string} */
+    public static function rotateWebSpaceProxyLogs(array $webNode, string $uuid, ?string $domain = null): array
+    {
+        $path = '/api/webspaces/' . $uuid . '/proxy-logs/rotate';
+        if ($domain !== null && trim($domain) !== '') {
+            $path .= '?' . http_build_query(['domain' => trim($domain)]);
+        }
+
+        return self::request($webNode, 'POST', $path, [], 30);
     }
 
     /** @return array{ok: bool, status: int, body: mixed, error: ?string} */
@@ -1270,6 +1350,104 @@ class FeatherQuilldClient
             ];
         } catch (\Throwable $e) {
             return ['ok' => false, 'status' => 0, 'body' => null, 'error' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Stream a WebSpace file from the daemon directly to a local path (avoids loading into memory).
+     *
+     * @return array{ok: bool, status: int, filename: ?string, size: int, content_type: ?string, error: ?string}
+     */
+    public static function streamWebSpaceFileToPath(
+        array $webNode,
+        string $uuid,
+        string $file,
+        string $destPath,
+        int $maxBytes = 536870912,
+    ): array {
+        $baseUrl = WingsUrlHelper::buildFromNode($webNode);
+        $tokenId = trim((string) ($webNode['daemon_token_id'] ?? ''));
+        $token = trim((string) ($webNode['daemon_token'] ?? ''));
+        if ($tokenId === '' || $token === '') {
+            return ['ok' => false, 'status' => 0, 'filename' => null, 'size' => 0, 'content_type' => null, 'error' => 'Web node is missing daemon credentials'];
+        }
+
+        $url = rtrim($baseUrl, '/') . '/api/webspaces/' . $uuid . '/files/download?' . http_build_query(['file' => $file]);
+        $dir = dirname($destPath);
+        if (!is_dir($dir) && !mkdir($dir, 0750, true) && !is_dir($dir)) {
+            return ['ok' => false, 'status' => 0, 'filename' => null, 'size' => 0, 'content_type' => null, 'error' => 'Failed to create destination directory'];
+        }
+
+        try {
+            $client = new Client([
+                'timeout' => 600,
+                'connect_timeout' => 10,
+                'verify' => false,
+                'http_errors' => false,
+            ]);
+            $response = $client->request('GET', $url, [
+                'headers' => [
+                    'Authorization' => 'Bearer ' . $tokenId . '.' . $token,
+                    'Accept' => '*/*',
+                ],
+                'sink' => $destPath,
+                'on_headers' => static function ($response) use ($maxBytes): void {
+                    $length = (int) $response->getHeaderLine('Content-Length');
+                    if ($length > 0 && $length > $maxBytes) {
+                        throw new \RuntimeException('File exceeds maximum share size of 512 MB');
+                    }
+                },
+            ]);
+            $status = $response->getStatusCode();
+            if ($status < 200 || $status >= 300) {
+                if (is_file($destPath)) {
+                    @unlink($destPath);
+                }
+
+                return [
+                    'ok' => false,
+                    'status' => $status,
+                    'filename' => null,
+                    'size' => 0,
+                    'content_type' => null,
+                    'error' => 'Daemon returned HTTP ' . $status,
+                ];
+            }
+
+            $size = is_file($destPath) ? (int) filesize($destPath) : 0;
+            if ($size > $maxBytes) {
+                @unlink($destPath);
+
+                return [
+                    'ok' => false,
+                    'status' => 413,
+                    'filename' => null,
+                    'size' => 0,
+                    'content_type' => null,
+                    'error' => 'File exceeds maximum share size of 512 MB',
+                ];
+            }
+
+            $disposition = $response->getHeaderLine('Content-Disposition');
+            $filename = basename($file);
+            if (preg_match('/filename="?([^";]+)"?/i', $disposition, $m)) {
+                $filename = $m[1];
+            }
+
+            return [
+                'ok' => true,
+                'status' => $status,
+                'filename' => $filename,
+                'size' => $size,
+                'content_type' => $response->getHeaderLine('Content-Type') ?: 'application/octet-stream',
+                'error' => null,
+            ];
+        } catch (\Throwable $e) {
+            if (is_file($destPath)) {
+                @unlink($destPath);
+            }
+
+            return ['ok' => false, 'status' => 0, 'filename' => null, 'size' => 0, 'content_type' => null, 'error' => $e->getMessage()];
         }
     }
 

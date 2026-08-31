@@ -19,6 +19,7 @@ import React, { useMemo, useRef } from 'react';
 import { LineChart, Line, ResponsiveContainer, YAxis, Tooltip, type TooltipContentProps } from 'recharts';
 import { Cpu, Database, HardDrive, Globe, Activity, type LucideIcon } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { cn } from '@/lib/utils';
 
 interface PerformanceDataPoint {
     timestamp: number;
@@ -38,6 +39,7 @@ interface ServerPerformanceProps {
     cpuLimit: number;
     memoryLimit: number;
     diskLimit: number;
+    showDiskIo?: boolean;
 }
 
 function getCurrentValue(data: PerformanceDataPoint[]): number {
@@ -200,6 +202,7 @@ export default function ServerPerformance({
     cpuLimit,
     memoryLimit,
     diskLimit,
+    showDiskIo = true,
 }: ServerPerformanceProps) {
     const { t } = useTranslation();
 
@@ -299,9 +302,16 @@ export default function ServerPerformance({
         },
     ];
 
+    const visibleCharts = showDiskIo ? charts : charts.filter((chart) => chart.id !== 'disk_io');
+
     return (
-        <div className='grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5'>
-            {charts.map((chart) => (
+        <div
+            className={cn(
+                'grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3',
+                visibleCharts.length >= 5 ? 'xl:grid-cols-5' : 'xl:grid-cols-4',
+            )}
+        >
+            {visibleCharts.map((chart) => (
                 <PerformanceChartCard key={chart.id} {...chart} />
             ))}
         </div>

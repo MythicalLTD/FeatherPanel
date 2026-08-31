@@ -105,6 +105,15 @@ class WebSpacesController
         return ApiResponse::success($payload, 'OK', 200);
     }
 
+    #[OA\Get(path: '/api/admin/webspaces/hosting-setup/wizard', summary: 'Admin first-node setup wizard steps', tags: ['Admin - WebSpaces'])]
+    public function hostingSetupWizard(Request $request): Response
+    {
+        $webNodeId = (int) $request->query->get('web_node_id', 0);
+        $payload = WebSpaceHostingMaturity::wizardSteps($webNodeId > 0 ? $webNodeId : null);
+
+        return ApiResponse::success($payload, 'OK', 200);
+    }
+
     public function installPanelWebmail(Request $request): Response
     {
         try {
@@ -212,7 +221,7 @@ class WebSpacesController
             $currentPlate = WebPlate::getById((int) $space['webplate_id']);
             $currentRuntime = strtolower(trim((string) ($currentPlate['runtime'] ?? 'static')));
             $newRuntime = strtolower(trim((string) ($newPlate['runtime'] ?? 'static')));
-            if ($currentRuntime !== $newRuntime) {
+            if (!WebPlate::runtimeFamiliesMatch($currentRuntime, $newRuntime)) {
                 return ApiResponse::error(
                     'WebPlate runtime family must match the current WebSpace (e.g. php → php only)',
                     'RUNTIME_FAMILY_MISMATCH',
@@ -797,6 +806,46 @@ class WebSpacesController
             'webspace' => $space,
             'daemon' => $body,
         ], 'Config synced from panel', 200);
+    }
+
+    public function abortInstall(Request $request, string $uuid): Response
+    {
+        $space = WebSpace::getByUuid($uuid);
+        if (!$space) {
+            return ApiResponse::error('WebSpace not found', 'WEBSPACE_NOT_FOUND', 404);
+        }
+
+        $webNode = WebNode::getWebNodeById((int) $space['web_node_id']);
+        if (!$webNode) {
+            return ApiResponse::error('Web node not found', 'WEB_NODE_NOT_FOUND', 404);
+        }
+
+        $daemon = FeatherQuilldClient::abortWebSpaceInstall($webNode, $uuid);
+        if (!$daemon['ok']) {
+            $status = (int) ($daemon['status'] ?? 502);
+            if ($status === 404) {
+                return ApiResponse::error(
+                    'No install in progress on the daemon',
+                    'INSTALL_NOT_IN_PROGRESS',
+                    404,
+                );
+            }
+
+            return ApiResponse::error(
+                $daemon['error'] ?? 'Install abort failed',
+                'INSTALL_ABORT_FAILED',
+                502,
+                ['daemon' => $daemon],
+            );
+        }
+
+        WebSpace::updateStatus($uuid, 'installation_failed');
+        $space = WebSpace::getByUuid($uuid) ?? $space;
+
+        return ApiResponse::success([
+            'webspace' => $space,
+            'aborted' => true,
+        ], 'Install aborted', 200);
     }
 
     public function recreateRuntime(Request $request, string $uuid): Response
@@ -1631,6 +1680,10 @@ class WebSpacesController
         WebSpace::updateStatus($uuid, 'suspended');
         $space = WebSpace::getByUuid($uuid) ?? $space;
 
+        if ($webNode) {
+            FeatherQuilldClient::syncWebSpace($webNode, $uuid);
+        }
+
         $user = $request->attributes->get('user');
         WebSpacePluginEvents::emit(WebSpaceEvent::onWebSpaceSuspended(), WebSpacePluginEvents::basePayload(
             is_array($user) ? ($user['uuid'] ?? null) : null,
@@ -1650,6 +1703,11 @@ class WebSpacesController
 
         WebSpace::updateStatus($uuid, 'installed');
         $space = WebSpace::getByUuid($uuid) ?? $space;
+
+        $webNode = WebNode::getWebNodeById((int) $space['web_node_id']);
+        if ($webNode) {
+            FeatherQuilldClient::syncWebSpace($webNode, $uuid);
+        }
 
         $user = $request->attributes->get('user');
         WebSpacePluginEvents::emit(WebSpaceEvent::onWebSpaceUnsuspended(), WebSpacePluginEvents::basePayload(

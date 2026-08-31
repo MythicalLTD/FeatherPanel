@@ -26,11 +26,26 @@ import { FileManagerApiProvider, useFileManagerApi } from '@/contexts/FileManage
 import { WebSpacePageWidgets } from '@/components/webspace/WebSpacePageWidgets';
 import { useWebSpacePermissions } from '@/hooks/useWebSpacePermissions';
 import { WebSpaceSubuserPermissions } from '@/lib/webspace-permissions';
-import { webspaceFilesApi } from '@/lib/webspace-files-api';
+import {
+    webspaceFilesApi,
+    resolveWebSpaceFileCapabilities,
+    type WebSpaceFileCapabilitiesMap,
+} from '@/lib/webspace-files-api';
 import { getFeatherpanelApiErrorMessage } from '@/lib/api';
 import { triggerSignedUrlDownload } from '@/lib/trigger-signed-download';
 import { isBinaryLikeFileName } from '@/lib/binary-like-file-names';
-import { filterSelectableFiles } from '@/lib/feather-trash';
+import {
+    filterSelectableFiles,
+    createTrashFolderEntry,
+    FEATHER_TRASH_DIR,
+    isTrashShortcut,
+    trashStatsFromList,
+    type TrashFolderStats,
+} from '@/lib/feather-trash';
+import { ARCHIVE_EXTRACT_DRAG_MIME } from '@/lib/files-api';
+import { useSettings } from '@/contexts/SettingsContext';
+import { isEnabled } from '@/lib/utils';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { FileObject } from '@/types/server';
 import { FileActionToolbar } from '@/app/(app)/server/[uuidShort]/files/components/FileActionToolbar';
 import { FileBreadcrumbs } from '@/app/(app)/server/[uuidShort]/files/components/FileBreadcrumbs';
@@ -46,6 +61,10 @@ import {
     PullFileDialog,
     CompressDialog,
     FileHashDialog,
+    ShareFileDialog,
+    WipeAllDialog,
+    EmptyTrashDialog,
+    ArchiveBrowsePanel,
 } from '@/app/(app)/server/[uuidShort]/files/components/dialogs';
 
 type FileWithPath = { file: File; relativePath: string };
@@ -141,14 +160,32 @@ function WebSpaceFilesPageInner({ uuidShort }: { uuidShort: string }) {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { t } = useTranslation();
+    const { settings } = useSettings();
     const filesApi = useFileManagerApi();
     const { hasPermission } = useWebSpacePermissions(uuidShort);
+    const [fileCaps, setFileCaps] = useState<WebSpaceFileCapabilitiesMap | null>(null);
+
+    useEffect(() => {
+        void webspaceFilesApi.getFileCapabilities(uuidShort).then(setFileCaps);
+    }, [uuidShort]);
+
+    const caps = useMemo(() => resolveWebSpaceFileCapabilities(fileCaps), [fileCaps]);
+
+    const trashEnabled = isEnabled(settings?.file_trash_enabled) && caps.trash;
+    const shareEnabled = caps.share;
+    const archiveBrowseEnabled = caps.archiveBrowse;
+    const directoryDownloadEnabled = caps.directoryDownload;
+    const fileSearchEnabled = caps.advancedSearch;
+    const wipeAllEnabled = caps.wipeAll;
+    const pullProgressEnabled = caps.pullProgress;
+    const compressCapabilities = useMemo(() => ({ compress_7z: caps.compress7z }), [caps.compress7z]);
 
     const canRead = hasPermission(WebSpaceSubuserPermissions['file.read']);
     const canCreate = hasPermission(WebSpaceSubuserPermissions['file.create']);
     const canUpdate = hasPermission(WebSpaceSubuserPermissions['file.update']);
     const canDelete = hasPermission(WebSpaceSubuserPermissions['file.delete']);
     const canReadContent = hasPermission(WebSpaceSubuserPermissions['file.read-content']);
+    const canArchive = hasPermission(WebSpaceSubuserPermissions['file.create']);
 
     const currentDirectory = normalizePath(searchParams?.get('path') || '/');
     const filesBasePath = `/webspace/${uuidShort}/files`;
@@ -173,6 +210,25 @@ function WebSpaceFilesPageInner({ uuidShort }: { uuidShort: string }) {
     const [permissionsOpen, setPermissionsOpen] = useState(false);
     const [compressOpen, setCompressOpen] = useState(false);
     const [fileHashOpen, setFileHashOpen] = useState(false);
+    const [shareFileOpen, setShareFileOpen] = useState(false);
+    const [wipeAllOpen, setWipeAllOpen] = useState(false);
+    const [archiveBrowseOpen, setArchiveBrowseOpen] = useState(false);
+    const [searchFiltersOpen, setSearchFiltersOpen] = useState(false);
+    const [searchLoading, setSearchLoading] = useState(false);
+    const [searchResults, setSearchResults] = useState<FileObject[] | null>(null);
+    const [trashStats, setTrashStats] = useState<TrashFolderStats | null>(null);
+    const [emptyTrashOpen, setEmptyTrashOpen] = useState(false);
+    const [emptyTrashBusy, setEmptyTrashBusy] = useState(false);
+    const [activePulls, setActivePulls] = useState<{ Identifier: string; Progress: number }[]>([]);
+    const [includePattern, setIncludePattern] = useState('');
+    const [excludePattern, setExcludePattern] = useState('');
+    const [searchCaseInsensitive] = useState(true);
+    const [contentQuery, setContentQuery] = useState('');
+    const [contentCaseInsensitive] = useState(true);
+    const [maxFileSizeMiB] = useState(5);
+    const [includeOversized] = useState(false);
+    const [minSizeBytes, setMinSizeBytes] = useState(0);
+    const [maxSizeBytes, setMaxSizeBytes] = useState(0);
     const [filesToCompress, setFilesToCompress] = useState<string[]>([]);
     const [moveCopyAction, setMoveCopyAction] = useState<'move' | 'copy'>('move');
 
@@ -229,10 +285,192 @@ function WebSpaceFilesPageInner({ uuidShort }: { uuidShort: string }) {
         void refresh();
     }, [refresh]);
 
-    const selectableFiles = useMemo(() => filterSelectableFiles(files), [files]);
-    const visibleFiles = files;
+    const activeAdvancedFiltersCount = useMemo(() => {
+        let count = 0;
+        if (includePattern.trim()) count++;
+        if (excludePattern.trim()) count++;
+        if (contentQuery.trim()) count++;
+        if (!searchCaseInsensitive) count++;
+        if (!contentCaseInsensitive) count++;
+        if (maxFileSizeMiB !== 5) count++;
+        if (includeOversized) count++;
+        if (minSizeBytes > 0) count++;
+        if (maxSizeBytes > 0) count++;
+        return count;
+    }, [
+        includePattern,
+        excludePattern,
+        contentQuery,
+        searchCaseInsensitive,
+        contentCaseInsensitive,
+        maxFileSizeMiB,
+        includeOversized,
+        minSizeBytes,
+        maxSizeBytes,
+    ]);
+    const hasAdvancedFilters = activeAdvancedFiltersCount > 0;
+
+    const refreshTrashStats = useCallback(async () => {
+        if (!trashEnabled || !uuidShort) return;
+        try {
+            const data = await filesApi.listTrash(uuidShort);
+            setTrashStats(trashStatsFromList(data));
+        } catch {
+            setTrashStats({ totalSize: 0, lastModified: null, itemCount: 0 });
+        }
+    }, [filesApi, trashEnabled, uuidShort]);
+
+    useEffect(() => {
+        void refreshTrashStats();
+    }, [refreshTrashStats]);
+
+    const refreshPulls = useCallback(async () => {
+        if (!pullProgressEnabled || !uuidShort) return;
+        try {
+            const pulls = await filesApi.getPullFiles(uuidShort);
+            setActivePulls(pulls.filter((p) => p.Progress < 100));
+        } catch {
+            setActivePulls([]);
+        }
+    }, [filesApi, pullProgressEnabled, uuidShort]);
+
+    useEffect(() => {
+        void refreshPulls();
+    }, [refreshPulls]);
+
+    useEffect(() => {
+        if (!pullProgressEnabled || activePulls.length === 0) return;
+        const interval = setInterval(() => void refreshPulls(), 5000);
+        return () => clearInterval(interval);
+    }, [activePulls.length, pullProgressEnabled, refreshPulls]);
+
+    const cancelPull = useCallback(
+        async (id: string) => {
+            try {
+                await filesApi.deletePullFile(uuidShort, id);
+                toast.success(t('files.messages.download_cancelled'));
+                void refreshPulls();
+            } catch {
+                toast.error(t('files.messages.cancel_download_failed'));
+            }
+        },
+        [filesApi, refreshPulls, t, uuidShort],
+    );
+
+    useEffect(() => {
+        let cancelled = false;
+        if (!hasAdvancedFilters || !fileSearchEnabled) {
+            setSearchResults(null);
+            setSearchLoading(false);
+            return;
+        }
+
+        const timeout = setTimeout(async () => {
+            setSearchLoading(true);
+            try {
+                const results = await filesApi.searchFiles(uuidShort, {
+                    directory: currentDirectory || '/',
+                    pattern: searchQuery || undefined,
+                    include: includePattern || undefined,
+                    exclude: excludePattern || undefined,
+                    case_insensitive: searchCaseInsensitive,
+                    content: contentQuery || undefined,
+                    content_case_insensitive: contentCaseInsensitive,
+                    min_size: minSizeBytes || undefined,
+                    max_size: maxSizeBytes || undefined,
+                    max_content_size: Math.max(0, maxFileSizeMiB) * 1024 * 1024,
+                    include_oversized: includeOversized,
+                });
+                if (!cancelled) setSearchResults(results);
+            } catch {
+                if (!cancelled) {
+                    toast.error(t('files.search.search_failed'));
+                    setSearchResults([]);
+                }
+            } finally {
+                if (!cancelled) setSearchLoading(false);
+            }
+        }, 250);
+
+        return () => {
+            cancelled = true;
+            clearTimeout(timeout);
+        };
+    }, [
+        uuidShort,
+        currentDirectory,
+        searchQuery,
+        includePattern,
+        excludePattern,
+        searchCaseInsensitive,
+        contentQuery,
+        contentCaseInsensitive,
+        minSizeBytes,
+        maxSizeBytes,
+        maxFileSizeMiB,
+        includeOversized,
+        hasAdvancedFilters,
+        fileSearchEnabled,
+        filesApi,
+        t,
+    ]);
+
+    const closeArchiveBrowse = useCallback(() => {
+        setArchiveBrowseOpen(false);
+        setActionFile((file) => (file && archiveBrowseOpen ? null : file));
+    }, [archiveBrowseOpen]);
+
+    const performArchiveExtract = useCallback(
+        async (payload: { root: string; file: string; entries: string[] }, destinationPath: string) => {
+            const toastId = toast.loading(t('files.messages.archive_members_extracting'));
+            try {
+                await filesApi.extractArchiveSelection(
+                    uuidShort,
+                    payload.root,
+                    payload.file,
+                    normalizePath(destinationPath || '/'),
+                    payload.entries,
+                );
+                toast.success(t('files.messages.archive_members_extracted'), { id: toastId });
+                closeArchiveBrowse();
+                void refresh();
+            } catch (error) {
+                toast.error(
+                    getFeatherpanelApiErrorMessage(error) || t('files.messages.archive_members_extract_failed'),
+                    {
+                        id: toastId,
+                    },
+                );
+            }
+        },
+        [closeArchiveBrowse, filesApi, refresh, t, uuidShort],
+    );
+
+    const handleEmptyTrash = async () => {
+        setEmptyTrashBusy(true);
+        try {
+            await filesApi.emptyTrash(uuidShort);
+            toast.success(t('files.trash.messages.emptied'));
+            setEmptyTrashOpen(false);
+            await refreshTrashStats();
+            void refresh();
+        } catch {
+            toast.error(t('files.trash.messages.empty_error'));
+        } finally {
+            setEmptyTrashBusy(false);
+        }
+    };
+
+    const baseFiles = searchResults ?? files;
+    const selectableFiles = useMemo(() => filterSelectableFiles(baseFiles), [baseFiles]);
+    const visibleFiles = useMemo(() => {
+        if (!trashEnabled || searchResults !== null) return baseFiles;
+        return [createTrashFolderEntry(trashStats ?? undefined), ...baseFiles];
+    }, [baseFiles, trashEnabled, searchResults, trashStats]);
 
     const toggleSelect = (name: string) => {
+        const entry = visibleFiles.find((f) => f.name === name);
+        if (entry && isTrashShortcut(entry)) return;
         setSelectedFiles((prev) => (prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name]));
         setAnchorName(name);
         shiftPivotRef.current = null;
@@ -245,6 +483,7 @@ function WebSpaceFilesPageInner({ uuidShort }: { uuidShort: string }) {
     };
 
     const handleModifierClick = (file: FileObject, event: React.MouseEvent) => {
+        if (isTrashShortcut(file)) return;
         const isCtrlLike = event.ctrlKey || event.metaKey;
         const isShift = event.shiftKey;
         if (isShift && visibleFiles.length) {
@@ -456,6 +695,20 @@ function WebSpaceFilesPageInner({ uuidShort }: { uuidShort: string }) {
         }
     };
 
+    const handleDownloadDirectory = async (folderName: string) => {
+        if (!directoryDownloadEnabled) return;
+        const path = joinPath(currentDirectory || '/', folderName);
+        const toastId = toast.loading(t('files.messages.downloading_directory'));
+        try {
+            const downloadUrl = await filesApi.downloadDirectory(uuidShort, path);
+            triggerSignedUrlDownload(downloadUrl);
+            toast.success(t('files.messages.download_directory_started'), { id: toastId });
+            setActionFile(null);
+        } catch {
+            toast.error(t('files.messages.failed_download_directory'), { id: toastId });
+        }
+    };
+
     const handleDecompress = async (filename: string) => {
         const toastId = toast.loading(t('files.messages.extracting'));
         try {
@@ -468,6 +721,18 @@ function WebSpaceFilesPageInner({ uuidShort }: { uuidShort: string }) {
     };
 
     const handleAction = (action: string, file: FileObject) => {
+        if (isTrashShortcut(file)) {
+            switch (action) {
+                case 'trash-open':
+                    router.push(`${filesBasePath}/trash`);
+                    return;
+                case 'trash-empty':
+                    setEmptyTrashOpen(true);
+                    return;
+            }
+            return;
+        }
+
         setActionFile(file);
         const usesSelection = selectedFiles.includes(file.name) && selectedFiles.length > 1;
         switch (action) {
@@ -480,6 +745,13 @@ function WebSpaceFilesPageInner({ uuidShort }: { uuidShort: string }) {
             case 'download':
                 void handleDownload(file.name);
                 break;
+            case 'download-directory':
+                void handleDownloadDirectory(file.name);
+                break;
+            case 'share':
+                if (!shareEnabled) return;
+                setShareFileOpen(true);
+                break;
             case 'edit': {
                 const editPath = `${filesBasePath}/edit?file=${encodeURIComponent(file.name)}&directory=${encodeURIComponent(currentDirectory || '/')}`;
                 router.push(editPath);
@@ -491,6 +763,10 @@ function WebSpaceFilesPageInner({ uuidShort }: { uuidShort: string }) {
                 break;
             case 'decompress':
                 void handleDecompress(file.name);
+                break;
+            case 'browse-archive':
+                if (!archiveBrowseEnabled) return;
+                setArchiveBrowseOpen(true);
                 break;
             case 'copy':
                 setMoveCopyAction('copy');
@@ -515,7 +791,11 @@ function WebSpaceFilesPageInner({ uuidShort }: { uuidShort: string }) {
     };
 
     const handleNavigate = (name: string) => {
-        const file = files.find((f) => f.name === name);
+        if (name === FEATHER_TRASH_DIR) {
+            router.push(`${filesBasePath}/trash`);
+            return;
+        }
+        const file = visibleFiles.find((f) => f.name === name);
         if (!file) return;
         if (!file.isFile) {
             navigate(resolveDirectoryTarget(currentDirectory || '/', file.name));
@@ -534,6 +814,29 @@ function WebSpaceFilesPageInner({ uuidShort }: { uuidShort: string }) {
     };
 
     const handleDropOnPath = async (destinationPath: string, event: React.DragEvent) => {
+        const archiveRaw = event.dataTransfer.getData(ARCHIVE_EXTRACT_DRAG_MIME);
+        if (archiveRaw) {
+            if (!canArchive || !archiveBrowseEnabled) return;
+            try {
+                const payload = JSON.parse(archiveRaw) as { root?: string; file?: string; entries?: string[] };
+                if (
+                    typeof payload.root !== 'string' ||
+                    typeof payload.file !== 'string' ||
+                    !Array.isArray(payload.entries) ||
+                    payload.entries.length === 0
+                ) {
+                    return;
+                }
+                void performArchiveExtract(
+                    { root: payload.root, file: payload.file, entries: payload.entries },
+                    destinationPath,
+                );
+            } catch {
+                // ignore malformed payloads
+            }
+            return;
+        }
+
         const raw = event.dataTransfer.getData(DRAG_MIME);
         if (!raw || !canUpdate) return;
         try {
@@ -563,6 +866,11 @@ function WebSpaceFilesPageInner({ uuidShort }: { uuidShort: string }) {
 
     const handleDropOnFolder = async (destinationFolder: FileObject, event: React.DragEvent) => {
         if (destinationFolder.isFile || !canUpdate) return;
+        const archiveRaw = event.dataTransfer.getData(ARCHIVE_EXTRACT_DRAG_MIME);
+        if (archiveRaw && canArchive && archiveBrowseEnabled) {
+            await handleDropOnPath(joinPath(currentDirectory || '/', destinationFolder.name), event);
+            return;
+        }
         await handleDropOnPath(joinPath(currentDirectory || '/', destinationFolder.name), event);
     };
 
@@ -602,7 +910,9 @@ function WebSpaceFilesPageInner({ uuidShort }: { uuidShort: string }) {
                         onNavigate={navigate}
                         searchQuery={searchQuery}
                         onSearchChange={setSearchQuery}
-                        onDropFilesToPath={canUpdate ? handleDropOnPath : undefined}
+                        onDropFilesToPath={canUpdate || canArchive ? handleDropOnPath : undefined}
+                        onToggleFilters={fileSearchEnabled ? () => setSearchFiltersOpen(true) : undefined}
+                        activeFiltersCount={activeAdvancedFiltersCount}
                     />
                 </div>
 
@@ -624,6 +934,7 @@ function WebSpaceFilesPageInner({ uuidShort }: { uuidShort: string }) {
                     }}
                     onClearSelection={() => setSelectedFiles([])}
                     onPullFile={() => setPullFileOpen(true)}
+                    onWipeAll={wipeAllEnabled ? () => setWipeAllOpen(true) : undefined}
                     onCopySelected={() => {
                         setActionFile(null);
                         setMoveCopyAction('copy');
@@ -733,9 +1044,70 @@ function WebSpaceFilesPageInner({ uuidShort }: { uuidShort: string }) {
                     </div>
                 )}
 
+                {pullProgressEnabled && activePulls.length > 0 && (
+                    <div className='mb-2 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3'>
+                        {activePulls.map((pull) => (
+                            <div
+                                key={pull.Identifier}
+                                className='rounded-2xl border border-black/5 bg-white/80 p-4 backdrop-blur-xl dark:border-white/10 dark:bg-white/5'
+                            >
+                                <div className='mb-2 flex items-center justify-between gap-2'>
+                                    <span className='truncate text-sm font-medium'>
+                                        {t('files.messages.task_id', { id: pull.Identifier.slice(0, 8) })}...
+                                    </span>
+                                    <Button
+                                        variant='ghost'
+                                        size='icon'
+                                        onClick={() => void cancelPull(pull.Identifier)}
+                                        className='text-muted-foreground h-7 w-7 hover:text-red-500'
+                                    >
+                                        <X className='h-4 w-4' />
+                                    </Button>
+                                </div>
+                                <div className='space-y-1.5'>
+                                    <div className='flex justify-between text-[10px] font-bold tracking-tighter text-white/40 uppercase'>
+                                        <span>{t('files.toolbar.pull')}</span>
+                                        <span className='text-primary'>{pull.Progress}%</span>
+                                    </div>
+                                    <div className='h-1.5 w-full overflow-hidden rounded-full border border-white/5 bg-white/5'>
+                                        <div
+                                            className='from-primary to-primary-foreground h-full bg-linear-to-r transition-all duration-500'
+                                            style={{ width: `${pull.Progress}%` }}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                <ArchiveBrowsePanel
+                    open={archiveBrowseOpen}
+                    onOpenChange={(open) => {
+                        setArchiveBrowseOpen(open);
+                        if (!open) setActionFile(null);
+                    }}
+                    uuid={uuidShort}
+                    serverDirectory={currentDirectory || '/'}
+                    archiveFileName={actionFile?.name ?? ''}
+                    canExtract={canArchive}
+                    onExtractEntries={(entries, destinationPath) => {
+                        if (!actionFile) return;
+                        void performArchiveExtract(
+                            {
+                                root: currentDirectory || '/',
+                                file: actionFile.name,
+                                entries,
+                            },
+                            destinationPath,
+                        );
+                    }}
+                    onExtractComplete={() => void refresh()}
+                />
+
                 <FileList
                     files={visibleFiles}
-                    loading={loading}
+                    loading={loading || searchLoading}
                     selectedFiles={selectedFiles}
                     onSelect={toggleSelect}
                     onSelectAll={handleSelectAll}
@@ -744,19 +1116,20 @@ function WebSpaceFilesPageInner({ uuidShort }: { uuidShort: string }) {
                     onAction={handleAction}
                     onRowDragStart={handleRowDragStart}
                     onRowDragEnd={handleRowDragEnd}
-                    onDropFiles={canUpdate ? handleDropOnFolder : undefined}
+                    onDropFiles={canUpdate || canArchive ? handleDropOnFolder : undefined}
                     draggingFileNames={draggingFileNames}
                     canEdit={canUpdate || canReadContent}
                     canDelete={canDelete}
                     canDownload={canRead}
-                    canShare={false}
-                    canBrowseArchiveFeature={false}
-                    canDownloadDirectory={false}
+                    canShare={shareEnabled}
+                    canBrowseArchiveFeature={archiveBrowseEnabled}
+                    canDownloadDirectory={directoryDownloadEnabled}
+                    acceptArchiveExtract={canArchive && archiveBrowseEnabled}
                     serverUuid={uuidShort}
                     filesBasePath={filesBasePath}
                     currentDirectory={currentDirectory || '/'}
                     anchorName={anchorName}
-                    isSearching={Boolean(debouncedSearch)}
+                    isSearching={Boolean(searchQuery.trim()) || searchResults !== null}
                 />
             </div>
 
@@ -790,14 +1163,38 @@ function WebSpaceFilesPageInner({ uuidShort }: { uuidShort: string }) {
                 files={actionFile ? [actionFile.name] : selectedFiles}
                 onSuccess={() => {
                     void refresh();
+                    void refreshTrashStats();
                     setSelectedFiles([]);
                 }}
+            />
+            <EmptyTrashDialog
+                open={emptyTrashOpen}
+                onOpenChange={setEmptyTrashOpen}
+                onConfirm={handleEmptyTrash}
+                loading={emptyTrashBusy}
+                disabled={(trashStats?.itemCount ?? 0) === 0}
             />
             <PullFileDialog
                 open={pullFileOpen}
                 onOpenChange={setPullFileOpen}
                 uuid={uuidShort}
                 root={currentDirectory || '/'}
+                onSuccess={() => {
+                    void refresh();
+                    void refreshPulls();
+                }}
+            />
+            <ShareFileDialog
+                open={shareFileOpen}
+                onOpenChange={setShareFileOpen}
+                uuid={uuidShort}
+                filePath={actionFile ? joinPath(currentDirectory || '/', actionFile.name) : ''}
+                fileName={actionFile?.name || ''}
+            />
+            <WipeAllDialog
+                open={wipeAllOpen}
+                onOpenChange={setWipeAllOpen}
+                uuid={uuidShort}
                 onSuccess={() => void refresh()}
             />
             <ImagePreviewDialog
@@ -837,6 +1234,8 @@ function WebSpaceFilesPageInner({ uuidShort }: { uuidShort: string }) {
                 serverUuid={uuidShort}
                 directory={currentDirectory || '/'}
                 files={filesToCompress}
+                capabilities={compressCapabilities}
+                daemonType='featherquilld'
                 onSuccess={() => {
                     void refresh();
                     setSelectedFiles([]);
@@ -848,6 +1247,74 @@ function WebSpaceFilesPageInner({ uuidShort }: { uuidShort: string }) {
                 uuid={uuidShort}
                 path={actionFile ? joinPath(currentDirectory || '/', actionFile.name) : ''}
             />
+
+            <Dialog open={searchFiltersOpen} onOpenChange={setSearchFiltersOpen}>
+                <DialogContent className='sm:max-w-4xl'>
+                    <DialogHeader>
+                        <DialogTitle>{t('files.search.advanced.title')}</DialogTitle>
+                        <p className='text-muted-foreground text-sm'>{t('files.search.advanced.subtitle')}</p>
+                    </DialogHeader>
+                    <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
+                        <div className='space-y-1'>
+                            <label className='text-sm font-semibold'>{t('files.search.advanced.include_label')}</label>
+                            <input
+                                className='w-full rounded-md border border-white/10 bg-black/10 px-3 py-2 text-sm'
+                                placeholder={t('files.search.advanced.include_placeholder')}
+                                value={includePattern}
+                                onChange={(e) => setIncludePattern(e.target.value)}
+                            />
+                        </div>
+                        <div className='space-y-1'>
+                            <label className='text-sm font-semibold'>{t('files.search.advanced.exclude_label')}</label>
+                            <input
+                                className='w-full rounded-md border border-white/10 bg-black/10 px-3 py-2 text-sm'
+                                placeholder={t('files.search.advanced.exclude_placeholder')}
+                                value={excludePattern}
+                                onChange={(e) => setExcludePattern(e.target.value)}
+                            />
+                        </div>
+                        <div className='space-y-1 md:col-span-2'>
+                            <label className='text-sm font-semibold'>
+                                {t('files.search.advanced.search_text_label')}
+                            </label>
+                            <input
+                                className='w-full rounded-md border border-white/10 bg-black/10 px-3 py-2 text-sm'
+                                placeholder={t('files.search.advanced.search_text_placeholder')}
+                                value={contentQuery}
+                                onChange={(e) => setContentQuery(e.target.value)}
+                            />
+                        </div>
+                        <div className='space-y-1'>
+                            <label className='text-sm font-semibold'>
+                                {t('files.search.advanced.file_size_label')}
+                            </label>
+                            <div className='grid grid-cols-2 gap-2'>
+                                <input
+                                    className='w-full rounded-md border border-white/10 bg-black/10 px-3 py-2 text-sm'
+                                    type='number'
+                                    min={0}
+                                    placeholder={t('files.search.advanced.minimum_placeholder')}
+                                    value={minSizeBytes}
+                                    onChange={(e) => setMinSizeBytes(Number(e.target.value || 0))}
+                                />
+                                <input
+                                    className='w-full rounded-md border border-white/10 bg-black/10 px-3 py-2 text-sm'
+                                    type='number'
+                                    min={0}
+                                    placeholder={t('files.search.advanced.maximum_placeholder')}
+                                    value={maxSizeBytes}
+                                    onChange={(e) => setMaxSizeBytes(Number(e.target.value || 0))}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant='default' onClick={() => setSearchFiltersOpen(false)}>
+                            {t('files.search.advanced.apply_filters')}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             {isDragging && canCreate && (
                 <div className='pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm'>

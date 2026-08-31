@@ -22,7 +22,8 @@ const VALID_EXTENSIONS = [
   ".yaml",
   ".sql",
   ".cs",
-  ".rs"
+  ".rs",
+  ".json"
 ];
 // Directories to exclude
 const EXCLUDED_DIRS = [

@@ -40,3 +40,6 @@ backend/storage/config/panel_integrity_baseline.json
 build.log
 crack/backend/storage/data/
 wings/
+.pnpm-store
+docs-site/
+backend/openapi.json

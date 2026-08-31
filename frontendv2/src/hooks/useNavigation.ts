@@ -207,6 +207,7 @@ export function useNavigation() {
                         url: fullUrl,
                         icon: item.icon,
                         lucideIcon: item.lucideIcon,
+                        panelIcon: item.panelIcon,
                         isActive: pathname === fullUrl || pathname.startsWith(fullUrl + '/'),
                         category: 'server',
                         isPlugin: true,

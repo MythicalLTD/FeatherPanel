@@ -20,6 +20,8 @@ namespace App\Controllers\Public;
 use App\Helpers\WebSpaceFileShare;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\ResponseHeaderBag;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class WebSpaceShareController
 {
@@ -30,10 +32,17 @@ class WebSpaceShareController
             return new Response('Share not found or expired', 404);
         }
 
-        return new Response($share['contents'], 200, [
-            'Content-Type' => 'application/octet-stream',
-            'Content-Disposition' => 'attachment; filename="' . str_replace('"', '', $share['filename']) . '"',
-        ]);
+        $response = new BinaryFileResponse($share['path']);
+        $response->headers->set('Content-Type', $share['content_type']);
+        $response->setContentDisposition(
+            ResponseHeaderBag::DISPOSITION_ATTACHMENT,
+            str_replace('"', '', $share['filename']),
+        );
+        if ($share['size'] > 0) {
+            $response->headers->set('Content-Length', (string) $share['size']);
+        }
+
+        return $response;
     }
 
     public function delete(Request $request, string $publicId): Response

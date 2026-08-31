@@ -345,7 +345,7 @@ class WebSpacesController
             $currentPlate = WebPlate::getById((int) $space['webplate_id']);
             $currentRuntime = strtolower(trim((string) ($currentPlate['runtime'] ?? 'static')));
             $newRuntime = strtolower(trim((string) ($newPlate['runtime'] ?? 'static')));
-            if ($currentRuntime !== $newRuntime) {
+            if (!WebPlate::runtimeFamiliesMatch($currentRuntime, $newRuntime)) {
                 return ApiResponse::error(
                     'WebPlate runtime family must match the current WebSpace (e.g. php → php only)',
                     'RUNTIME_FAMILY_MISMATCH',
@@ -645,21 +645,17 @@ class WebSpacesController
         }
 
         $uuid = (string) $resolved['space']['uuid'];
-        $read = FeatherQuilldClient::getWebSpaceFileContents($webNode, $uuid, '.featherquilld/redis.json');
+        $read = FeatherQuilldClient::getWebSpaceRedis($webNode, $uuid);
         $enabled = false;
         $host = 'redis';
         $port = 6379;
         $password = '';
-        if ($read['ok']) {
+        if ($read['ok'] && is_array($read['body'])) {
             $body = $read['body'];
-            $raw = is_string($body) ? $body : (is_array($body) ? (string) ($body['data'] ?? $body['contents'] ?? '') : '');
-            $decoded = json_decode($raw, true);
-            if (is_array($decoded)) {
-                $enabled = !empty($decoded['enabled']);
-                $host = trim((string) ($decoded['host'] ?? 'redis')) ?: 'redis';
-                $port = (int) ($decoded['port'] ?? 6379) ?: 6379;
-                $password = (string) ($decoded['password'] ?? '');
-            }
+            $enabled = !empty($body['enabled']);
+            $host = trim((string) ($body['host'] ?? 'redis')) ?: 'redis';
+            $port = (int) ($body['port'] ?? 6379) ?: 6379;
+            $password = (string) ($body['password'] ?? '');
         }
 
         return ApiResponse::success([
@@ -700,78 +696,16 @@ class WebSpacesController
         }
 
         $uuid = (string) $space['uuid'];
-        $password = '';
-        if ($enabled) {
-            $existing = FeatherQuilldClient::getWebSpaceFileContents($webNode, $uuid, '.featherquilld/redis.json');
-            if ($existing['ok']) {
-                $body = $existing['body'];
-                $raw = is_string($body) ? $body : (is_array($body) ? (string) ($body['data'] ?? $body['contents'] ?? '') : '');
-                $decoded = json_decode($raw, true);
-                if (is_array($decoded)) {
-                    $password = (string) ($decoded['password'] ?? '');
-                }
-            }
-            if ($password === '') {
-                $password = bin2hex(random_bytes(16));
-            }
+        $result = FeatherQuilldClient::setWebSpaceRedis($webNode, $uuid, $enabled);
+        if (!$result['ok']) {
+            return ApiResponse::error($result['error'] ?? 'Failed to update Redis', 'REDIS_WRITE_FAILED', 502);
         }
 
-        $payload = [
-            'enabled' => $enabled,
-            'host' => 'redis',
-            'port' => 6379,
-            'password' => $password,
-        ];
-        $json = json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
-        FeatherQuilldClient::createWebSpaceDirectory($webNode, $uuid, '.featherquilld');
-        $write = FeatherQuilldClient::writeWebSpaceFile($webNode, $uuid, '.featherquilld/redis.json', $json);
-        if (!$write['ok']) {
-            return ApiResponse::error($write['error'] ?? 'Failed to write redis.json', 'REDIS_WRITE_FAILED', 502);
-        }
-
-        if ($enabled) {
-            $extRead = FeatherQuilldClient::getWebSpaceFileContents($webNode, $uuid, '.featherquilld/php-extensions.json');
-            $extensions = [];
-            if ($extRead['ok']) {
-                $body = $extRead['body'];
-                $raw = is_string($body) ? $body : (is_array($body) ? (string) ($body['data'] ?? $body['contents'] ?? '') : '');
-                $decoded = json_decode($raw, true);
-                if (is_array($decoded)) {
-                    $extensions = isset($decoded['extensions']) && is_array($decoded['extensions'])
-                        ? $decoded['extensions']
-                        : (array_is_list($decoded) ? $decoded : []);
-                }
-            }
-            $extensions = array_values(array_unique(array_map('strval', $extensions)));
-            if (!in_array('redis', $extensions, true)) {
-                $extensions[] = 'redis';
-                sort($extensions);
-                FeatherQuilldClient::writeWebSpaceFile(
-                    $webNode,
-                    $uuid,
-                    '.featherquilld/php-extensions.json',
-                    json_encode(['extensions' => $extensions], JSON_PRETTY_PRINT) . "\n",
-                );
-            }
-        }
-
-        $recreated = false;
-        $runtime = strtolower(trim((string) ($space['webplate_runtime'] ?? '')));
-        if ($runtime === '' && !empty($space['webplate_id'])) {
-            $plate = WebPlate::getById((int) $space['webplate_id']);
-            $runtime = strtolower(trim((string) ($plate['runtime'] ?? '')));
-        }
-        if ($runtime === 'php') {
-            $recreate = FeatherQuilldClient::recreateRuntime($webNode, $uuid);
-            if (!$recreate['ok']) {
-                return ApiResponse::error(
-                    'Redis config saved but runtime recreate failed: ' . ($recreate['error'] ?? 'unknown'),
-                    'DAEMON_RECREATE_FAILED',
-                    502,
-                );
-            }
-            $recreated = true;
-        }
+        $read = FeatherQuilldClient::getWebSpaceRedis($webNode, $uuid);
+        $body = is_array($read['body']) ? $read['body'] : [];
+        $enabled = !empty($body['enabled']);
+        $password = (string) ($body['password'] ?? '');
+        $recreated = true;
 
         \App\Helpers\WebSpaceActivityLogger::log($space, $resolved['user'], 'webspace.redis.updated', [
             'enabled' => $enabled,
@@ -1041,7 +975,17 @@ class WebSpacesController
         }
 
         $lines = max(1, min(5000, (int) $request->query->get('lines', 100)));
-        $daemon = FeatherQuilldClient::getWebSpaceLogs($webNode, (string) $space['uuid'], $lines);
+        $query = trim((string) $request->query->get('q', ''));
+        $regex = filter_var($request->query->get('regex', false), FILTER_VALIDATE_BOOLEAN);
+        $scanLines = max($lines, min(10000, (int) $request->query->get('scan_lines', 10000)));
+        $daemon = FeatherQuilldClient::getWebSpaceLogs(
+            $webNode,
+            (string) $space['uuid'],
+            $lines,
+            $query !== '' ? $query : null,
+            $regex,
+            $scanLines,
+        );
         if (!$daemon['ok']) {
             return ApiResponse::error(
                 $daemon['error'] ?? 'Daemon logs failed',
@@ -1147,6 +1091,51 @@ class WebSpacesController
             'webspace' => $space,
             'daemon' => $body,
         ], 'OK', 200);
+    }
+
+    public function abortInstall(Request $request, string $uuidShort): Response
+    {
+        $resolved = $this->resolveAccessible($request, $uuidShort);
+        if ($resolved instanceof Response) {
+            return $resolved;
+        }
+
+        $space = $resolved['space'];
+        $status = strtolower(trim((string) ($space['status'] ?? '')));
+        if (!in_array($status, ['installing', 'reinstalling'], true)) {
+            return ApiResponse::error('WebSpace is not installing', 'INSTALL_NOT_IN_PROGRESS', 400);
+        }
+
+        $denied = CheckWebSpacePermission::require($request, $space, WebSpaceSubuserPermissions::SETTINGS_UPDATE);
+        if ($denied instanceof Response) {
+            return $denied;
+        }
+
+        $webNode = WebNode::getWebNodeById((int) $space['web_node_id']);
+        if (!$webNode) {
+            return ApiResponse::error('Web node not found', 'WEB_NODE_NOT_FOUND', 404);
+        }
+
+        $uuid = (string) $space['uuid'];
+        $daemon = FeatherQuilldClient::abortWebSpaceInstall($webNode, $uuid);
+        if (!$daemon['ok']) {
+            $httpStatus = (int) ($daemon['status'] ?? 502);
+            if ($httpStatus === 404) {
+                return ApiResponse::error('No install in progress on the daemon', 'INSTALL_NOT_IN_PROGRESS', 404);
+            }
+
+            return ApiResponse::error(
+                $daemon['error'] ?? 'Install abort failed',
+                'INSTALL_ABORT_FAILED',
+                502,
+                ['daemon' => $daemon],
+            );
+        }
+
+        WebSpace::updateStatus($uuid, 'installation_failed');
+        $space = WebSpace::getByUuid($uuid) ?? $space;
+
+        return ApiResponse::success(['webspace' => $space, 'aborted' => true], 'Install aborted', 200);
     }
 
     public function ssl(Request $request, string $uuidShort): Response

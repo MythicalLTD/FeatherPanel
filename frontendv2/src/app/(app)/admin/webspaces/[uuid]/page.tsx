@@ -30,7 +30,6 @@ import {
     ShieldCheck,
     Terminal,
     RefreshCw,
-    Loader2,
     Network,
     Plus,
     Trash2,

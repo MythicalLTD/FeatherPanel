@@ -32,9 +32,11 @@ interface DialogProps {
     onOpenChange?: (open: boolean) => void;
     children: React.ReactNode;
     className?: string;
+    /** Full viewport sheet — for settings-style panels. */
+    fullscreen?: boolean;
 }
 
-export function Dialog({ open, onClose, onOpenChange, children, className }: DialogProps) {
+export function Dialog({ open, onClose, onOpenChange, children, className, fullscreen = false }: DialogProps) {
     const handleClose = () => {
         onClose?.();
         onOpenChange?.(false);
@@ -52,24 +54,32 @@ export function Dialog({ open, onClose, onOpenChange, children, className }: Dia
                     leaveFrom='opacity-100'
                     leaveTo='opacity-0'
                 >
-                    <div className='fixed inset-0 bg-black/50 backdrop-blur-sm' />
+                    <div className={cn('fixed inset-0 bg-black/50 backdrop-blur-sm', fullscreen && 'bg-black/60')} />
                 </TransitionChild>
 
-                <div className='fixed inset-0 overflow-y-auto'>
-                    <div className='flex min-h-full items-center justify-center p-4 text-center'>
+                <div className={cn('fixed inset-0', fullscreen ? 'overflow-hidden' : 'overflow-y-auto')}>
+                    <div
+                        className={cn(
+                            'flex min-h-full text-center',
+                            fullscreen ? 'h-dvh items-stretch justify-stretch p-0' : 'items-center justify-center p-4',
+                        )}
+                    >
                         <TransitionChild
                             as={React.Fragment}
                             enter='ease-out duration-300'
-                            enterFrom='opacity-0 scale-95'
-                            enterTo='opacity-100 scale-100'
+                            enterFrom={fullscreen ? 'opacity-0 translate-y-2' : 'opacity-0 scale-95'}
+                            enterTo={fullscreen ? 'opacity-100 translate-y-0' : 'opacity-100 scale-100'}
                             leave='ease-in duration-200'
-                            leaveFrom='opacity-100 scale-100'
-                            leaveTo='opacity-0 scale-95'
+                            leaveFrom={fullscreen ? 'opacity-100 translate-y-0' : 'opacity-100 scale-100'}
+                            leaveTo={fullscreen ? 'opacity-0 translate-y-2' : 'opacity-0 scale-95'}
                         >
                             <DialogPanel
                                 className={cn(
-                                    'bg-card border-border/50 w-full transform overflow-hidden rounded-2xl border p-6 text-left align-middle shadow-2xl transition-all',
-                                    !className?.includes('max-w-') && 'max-w-md',
+                                    'bg-card border-border/50 w-full transform text-left align-middle shadow-2xl transition-all',
+                                    fullscreen
+                                        ? 'flex h-dvh max-h-dvh max-w-none flex-col overflow-hidden rounded-none border-0 p-0'
+                                        : 'overflow-hidden rounded-2xl border p-6',
+                                    !fullscreen && !className?.includes('max-w-') && 'max-w-md',
                                     className,
                                 )}
                             >

@@ -17,6 +17,7 @@ import axios, { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from 'ax
 import { getClientSyncHeaders } from '@/lib/clientIdentity';
 import { isCloudflareChallengeAxios } from '@/lib/cloudflare-challenge';
 import { acquireWingsSlot, isWingsAdminNodeRequest, releaseWingsSlot } from '@/lib/wingsRequestQueue';
+import { attachPanelApiHistoryInterceptor } from '@/lib/panel-api-history';
 
 type WingsQueuedAxiosRequestConfig = InternalAxiosRequestConfig & {
     _wingsQueued?: boolean;
@@ -169,6 +170,8 @@ attachWingsQueueInterceptor(api);
 attachWingsQueueInterceptor(axios);
 attachCommonResponseInterceptor(api);
 attachCommonResponseInterceptor(axios);
+attachPanelApiHistoryInterceptor(api);
+attachPanelApiHistoryInterceptor(axios);
 
 export type FeatherpanelApiErrorBody = {
     success?: boolean;

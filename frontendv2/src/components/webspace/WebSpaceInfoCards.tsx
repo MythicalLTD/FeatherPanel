@@ -15,11 +15,12 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { HardDrive, Cpu, Database, ArrowDown, ArrowUp, Activity, Globe } from 'lucide-react';
+import { HardDrive, Cpu, Database, ArrowDown, ArrowUp, Activity, Globe, ExternalLink, Server } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { Progress } from '@/components/ui/progress';
-import { cn, formatFileSize, copyToClipboard } from '@/lib/utils';
+import { cn, formatFileSize } from '@/lib/utils';
 import { getProgressColor } from '@/lib/server-utils';
+import { buildWebSpaceAccessUrls, type WebSpaceAccessUrls } from '@/lib/webspace-urls';
 
 export type WebSpaceUtilization = {
     cpu_percent?: number | null;
@@ -50,6 +51,9 @@ interface WebSpaceInfoCardsProps {
     nodeName?: string | null;
     domains?: string[];
     ssl?: boolean;
+    backendPort?: number | null;
+    nodeFqdn?: string | null;
+    access?: WebSpaceAccessUrls | null;
     util?: WebSpaceUtilization | null;
     className?: string;
 }
@@ -59,6 +63,20 @@ function usagePercent(used?: number | null, limit?: number | null) {
     return Math.min(100, (used / limit) * 100);
 }
 
+function VisitButton({ href, title }: { href: string; title: string }) {
+    return (
+        <a
+            href={href}
+            target='_blank'
+            rel='noopener noreferrer'
+            title={title}
+            className='hover:bg-muted text-muted-foreground hover:text-foreground inline-flex shrink-0 items-center justify-center rounded-md p-1.5 transition-colors'
+        >
+            <ExternalLink className='h-3.5 w-3.5' />
+        </a>
+    );
+}
+
 export function WebSpaceInfoCards({
     status,
     state,
@@ -66,6 +84,9 @@ export function WebSpaceInfoCards({
     nodeName,
     domains = [],
     ssl,
+    backendPort,
+    nodeFqdn,
+    access,
     util,
     className,
 }: WebSpaceInfoCardsProps) {
@@ -80,11 +101,8 @@ export function WebSpaceInfoCards({
     const cpuPct = util?.cpu_percent != null ? Math.min(100, util.cpu_percent) : 0;
     const runtimeState = util?.state ?? state ?? null;
     const lifecycleActive = !!status && ['installing', 'reinstalling', 'failed', 'transferring'].includes(status);
-    const primaryDomain = domains.filter(Boolean)[0] || '';
-
-    const handleCopy = (text: string) => {
-        void copyToClipboard(text, t);
-    };
+    const urls = access ?? buildWebSpaceAccessUrls({ domains, ssl, backendPort, nodeFqdn });
+    const primaryPublic = urls.public[0] ?? null;
 
     return (
         <div className={cn('grid gap-4', className)}>
@@ -95,36 +113,29 @@ export function WebSpaceInfoCards({
                 </h3>
                 <div className='space-y-4'>
                     <div>
-                        <p className='text-muted-foreground mb-1 text-xs'>{t('servers.console.info_cards.address')}</p>
+                        <p className='text-muted-foreground mb-1 text-xs'>{t('webSpaces.access.publicDomain')}</p>
                         <div className='flex items-center gap-2'>
                             <code className='bg-muted flex-1 truncate rounded px-2 py-1 font-mono text-sm'>
-                                {primaryDomain || na}
+                                {primaryPublic?.url ?? na}
                             </code>
-                            {primaryDomain ? (
-                                <button
-                                    type='button'
-                                    onClick={() => handleCopy(primaryDomain)}
-                                    className='hover:bg-muted text-muted-foreground hover:text-foreground rounded-md p-1.5 transition-colors'
-                                    title={t('servers.console.info_cards.copy')}
-                                >
-                                    <svg
-                                        xmlns='http://www.w3.org/2000/svg'
-                                        width='14'
-                                        height='14'
-                                        viewBox='0 0 24 24'
-                                        fill='none'
-                                        stroke='currentColor'
-                                        strokeWidth='2'
-                                        strokeLinecap='round'
-                                        strokeLinejoin='round'
-                                    >
-                                        <rect width='14' height='14' x='8' y='8' rx='2' ry='2' />
-                                        <path d='M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2' />
-                                    </svg>
-                                </button>
+                            {primaryPublic ? (
+                                <VisitButton href={primaryPublic.url} title={t('webSpaces.access.visit')} />
                             ) : null}
                         </div>
                     </div>
+
+                    {urls.internal_url ? (
+                        <div>
+                            <p className='text-muted-foreground mb-1 text-xs'>{t('webSpaces.access.directBackend')}</p>
+                            <div className='flex items-center gap-2'>
+                                <code className='bg-muted flex-1 truncate rounded px-2 py-1 font-mono text-sm'>
+                                    {urls.internal_url}
+                                </code>
+                                <VisitButton href={urls.internal_url} title={t('webSpaces.access.open')} />
+                            </div>
+                        </div>
+                    ) : null}
+
                     <div className='grid grid-cols-2 gap-4 pt-2'>
                         <div>
                             <p className='text-muted-foreground mb-1 text-xs'>{t('webSpaces.ssl')}</p>
@@ -264,7 +275,7 @@ export function WebSpaceInfoCards({
                             <span className='truncate'>{t('servers.console.info_cards.network_rx')}</span>
                         </span>
                         <span className='shrink-0 font-medium tabular-nums'>
-                            {util?.network_rx_bytes != null ? formatFileSize(util.network_rx_bytes) : na}
+                            {util?.network_rx_bytes != null ? `${formatFileSize(util.network_rx_bytes)}/s` : na}
                         </span>
                     </div>
                     <div className='flex items-center justify-between gap-2 text-sm'>
@@ -273,14 +284,17 @@ export function WebSpaceInfoCards({
                             <span className='truncate'>{t('servers.console.info_cards.network_tx')}</span>
                         </span>
                         <span className='shrink-0 font-medium tabular-nums'>
-                            {util?.network_tx_bytes != null ? formatFileSize(util.network_tx_bytes) : na}
+                            {util?.network_tx_bytes != null ? `${formatFileSize(util.network_tx_bytes)}/s` : na}
                         </span>
                     </div>
                     {(webplateName || nodeName) && (
                         <div className='border-border/50 space-y-2 border-t pt-3 text-sm'>
                             {webplateName && (
                                 <div className='flex items-center justify-between gap-2'>
-                                    <span className='text-muted-foreground'>{t('webSpaces.overview.webplate')}</span>
+                                    <span className='text-muted-foreground flex items-center gap-1.5'>
+                                        <Server className='h-3 w-3 shrink-0' />
+                                        {t('webSpaces.overview.webplate')}
+                                    </span>
                                     <span className='truncate font-medium'>{webplateName}</span>
                                 </div>
                             )}

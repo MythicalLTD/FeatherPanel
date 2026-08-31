@@ -196,9 +196,10 @@ export function formatDate(date: string | null | undefined): string {
  * Format bytes to human-readable string
  */
 export function formatFileSize(bytes: number): string {
-    if (bytes === 0) return '0 B';
+    if (!Number.isFinite(bytes) || bytes <= 0) return '0 B';
     const k = 1024;
     const sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    const safeIndex = Math.max(0, Math.min(i, sizes.length - 1));
+    return parseFloat((bytes / Math.pow(k, safeIndex)).toFixed(2)) + ' ' + sizes[safeIndex];
 }

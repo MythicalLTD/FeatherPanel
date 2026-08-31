@@ -64,6 +64,7 @@ import {
     LayoutTemplate,
     AppWindow,
     Mail,
+    Palette,
 } from 'lucide-react';
 import { isEnabled, isEnabledUnlessExplicitlyFalse } from '@/lib/utils';
 import { supportsDaemonFeature, type DaemonFeature } from '@/lib/daemonCapabilities';
@@ -692,6 +693,7 @@ export const getAdminNavigationItems = (
             title: t('navigation.items.knowledgebase'),
             url: '/admin/knowledgebase/categories',
             icon: BookOpen,
+            lucideIcon: 'book-open',
             isActive: false,
             category: 'admin',
             permission: Permissions.ADMIN_KNOWLEDGEBASE_CATEGORIES_VIEW,
@@ -1059,6 +1061,17 @@ export const getMainNavigationItems = (
         group: 'account',
     });
 
+    items.push({
+        id: 'preferences',
+        name: t('navigation.items.preferences'),
+        title: t('appearance.settingsMenuTitle'),
+        url: '/dashboard/preferences',
+        icon: Palette,
+        isActive: false,
+        category: 'main',
+        group: 'account',
+    });
+
     if (hasPermission(Permissions.ADMIN_DASHBOARD_VIEW)) {
         items.push({
             id: 'admin',
@@ -1079,6 +1092,7 @@ export const getMainNavigationItems = (
             title: t('navigation.items.knowledgebase'),
             url: '/dashboard/knowledgebase',
             icon: BookOpen,
+            lucideIcon: 'book-open',
             isActive: false,
             category: 'main',
             group: 'support',

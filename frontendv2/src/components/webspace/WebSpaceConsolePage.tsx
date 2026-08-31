@@ -15,10 +15,10 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
 import axios, { isAxiosError } from 'axios';
-import { AlertTriangle, Loader2, Wifi, WifiOff } from 'lucide-react';
+import { AlertTriangle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useWebSpacePermissions } from '@/hooks/useWebSpacePermissions';
@@ -31,8 +31,9 @@ import {
     parseWebSpaceUtilization,
     type WebSpaceUtilization,
 } from '@/components/webspace/WebSpaceInfoCards';
-import { WebSpaceAccessLinks } from '@/components/webspace/WebSpaceAccessLinks';
 import { WebSpaceTerminalPanel } from '@/components/webspace/WebSpaceTerminalPanel';
+import { WebSpaceHealthBanners } from '@/components/webspace/WebSpaceSetupChecklist';
+import ServerPerformance from '@/components/server/ServerPerformance';
 import { Card, CardContent } from '@/components/ui/card';
 import type { QuilldStats } from '@/hooks/useQuilldWebSocket';
 import type { WebSpaceAccessUrls } from '@/lib/webspace-urls';
@@ -78,6 +79,19 @@ export default function WebSpaceConsolePage() {
         message?: string | null;
         panel_status?: string;
     } | null>(null);
+
+    const prevNetworkRef = useRef({ rx: 0, tx: 0, timestamp: 0 });
+    const smoothNetworkRef = useRef({ rx: 0, tx: 0 });
+    const maxDataPoints = 60;
+
+    const [cpuData, setCpuData] = useState<Array<{ timestamp: number; value: number }>>([]);
+    const [memoryData, setMemoryData] = useState<Array<{ timestamp: number; value: number }>>([]);
+    const [diskData, setDiskData] = useState<Array<{ timestamp: number; value: number }>>([]);
+    const [networkData, setNetworkData] = useState<Array<{ timestamp: number; value: number }>>([]);
+    const [networkRxTotal, setNetworkRxTotal] = useState(0);
+    const [networkTxTotal, setNetworkTxTotal] = useState(0);
+    const [currentNetworkRx, setCurrentNetworkRx] = useState(0);
+    const [currentNetworkTx, setCurrentNetworkTx] = useState(0);
 
     useEffect(() => {
         fetchWidgets();
@@ -146,23 +160,92 @@ export default function WebSpaceConsolePage() {
     }, [uuidShort]);
 
     const handleStatsUpdate = useCallback((stats: QuilldStats) => {
-        setUtil({
-            cpu_percent: stats.cpu_absolute ?? null,
-            memory_used_bytes: stats.memory_bytes ?? null,
-            memory_limit_bytes: stats.memory_limit_bytes ?? null,
-            disk_used_bytes: stats.disk_bytes ?? null,
-            disk_limit_bytes: stats.disk_limit_bytes ?? null,
-            network_rx_bytes: stats.network?.rx_bytes ?? stats.network_rx_bytes ?? null,
-            network_tx_bytes: stats.network?.tx_bytes ?? stats.network_tx_bytes ?? null,
-            bandwidth_used_bytes: stats.bandwidth_used_bytes ?? null,
-            bandwidth_limit_bytes: stats.bandwidth_limit_bytes ?? null,
-            bandwidth_over_quota: stats.bandwidth_over_quota ?? null,
-            state: stats.state ?? null,
-        });
+        const timestamp = Date.now();
+        const smoothRate = (previous: number, next: number, alpha = 0.35) => previous * (1 - alpha) + next * alpha;
+
+        setUtil((prev) => ({
+            ...prev,
+            cpu_percent: stats.cpu_absolute ?? prev?.cpu_percent ?? null,
+            memory_used_bytes: stats.memory_bytes ?? prev?.memory_used_bytes ?? null,
+            memory_limit_bytes: stats.memory_limit_bytes ?? prev?.memory_limit_bytes ?? null,
+            disk_used_bytes: stats.disk_bytes ?? prev?.disk_used_bytes ?? null,
+            disk_limit_bytes: stats.disk_limit_bytes ?? prev?.disk_limit_bytes ?? null,
+            network_rx_bytes: stats.network?.rx_bytes ?? stats.network_rx_bytes ?? prev?.network_rx_bytes ?? null,
+            network_tx_bytes: stats.network?.tx_bytes ?? stats.network_tx_bytes ?? prev?.network_tx_bytes ?? null,
+            bandwidth_used_bytes: stats.bandwidth_used_bytes ?? prev?.bandwidth_used_bytes ?? null,
+            bandwidth_limit_bytes: stats.bandwidth_limit_bytes ?? prev?.bandwidth_limit_bytes ?? null,
+            bandwidth_over_quota: stats.bandwidth_over_quota ?? prev?.bandwidth_over_quota ?? null,
+            state: stats.state ?? prev?.state ?? null,
+        }));
+
+        if (stats.cpu_absolute !== undefined && stats.cpu_absolute !== null) {
+            const cpuValue = Number(stats.cpu_absolute) || 0;
+            setCpuData((prev) => [...prev, { timestamp, value: cpuValue }].slice(-maxDataPoints));
+        }
+
+        if (stats.memory_bytes !== undefined && stats.memory_bytes !== null) {
+            const memoryMiB = Number(stats.memory_bytes) / (1024 * 1024);
+            setMemoryData((prev) => [...prev, { timestamp, value: memoryMiB }].slice(-maxDataPoints));
+        }
+
+        if (stats.disk_bytes !== undefined && stats.disk_bytes !== null) {
+            const diskMiB = Number(stats.disk_bytes) / (1024 * 1024);
+            setDiskData((prev) => [...prev, { timestamp, value: diskMiB }].slice(-maxDataPoints));
+        }
+
+        const rxBytes = stats.network?.rx_bytes ?? stats.network_rx_bytes;
+        const txBytes = stats.network?.tx_bytes ?? stats.network_tx_bytes;
+        if (rxBytes !== undefined && txBytes !== undefined) {
+            const currentRxBytes = Number(rxBytes);
+            const currentTxBytes = Number(txBytes);
+            const now = Date.now();
+
+            setNetworkRxTotal(Math.max(0, currentRxBytes));
+            setNetworkTxTotal(Math.max(0, currentTxBytes));
+
+            if (prevNetworkRef.current.timestamp > 0) {
+                const timeDiff = (now - prevNetworkRef.current.timestamp) / 1000;
+                if (timeDiff > 0) {
+                    const rxRate = Math.max(0, currentRxBytes - prevNetworkRef.current.rx) / timeDiff;
+                    const txRate = Math.max(0, currentTxBytes - prevNetworkRef.current.tx) / timeDiff;
+
+                    smoothNetworkRef.current = {
+                        rx: smoothRate(smoothNetworkRef.current.rx, rxRate),
+                        tx: smoothRate(smoothNetworkRef.current.tx, txRate),
+                    };
+
+                    setCurrentNetworkRx(smoothNetworkRef.current.rx);
+                    setCurrentNetworkTx(smoothNetworkRef.current.tx);
+
+                    const totalRate = smoothNetworkRef.current.rx + smoothNetworkRef.current.tx;
+                    setNetworkData((prev) => [...prev, { timestamp, value: totalRate }].slice(-maxDataPoints));
+                }
+            }
+
+            prevNetworkRef.current = {
+                rx: currentRxBytes,
+                tx: currentTxBytes,
+                timestamp: now,
+            };
+        }
+
         if (stats.state && ['running', 'stopped', 'starting', 'stopping', 'offline'].includes(stats.state)) {
             setLiveState(stats.state);
         }
     }, []);
+
+    useEffect(() => {
+        if (cpuData.length === 0) {
+            const timer = setTimeout(() => {
+                const timestamp = Date.now();
+                setCpuData([{ timestamp, value: 0 }]);
+                setMemoryData([{ timestamp, value: 0 }]);
+                setDiskData([{ timestamp, value: 0 }]);
+                setNetworkData([{ timestamp, value: 0 }]);
+            }, 0);
+            return () => clearTimeout(timer);
+        }
+    }, [cpuData.length]);
 
     const power = async (action: 'start' | 'stop' | 'restart') => {
         const perm =
@@ -190,43 +273,6 @@ export default function WebSpaceConsolePage() {
             toast.error(msg);
         } finally {
             setBusy(null);
-        }
-    };
-
-    const getConnectionStatusInfo = () => {
-        switch (connectionStatus) {
-            case 'connecting':
-                return {
-                    icon: Loader2,
-                    message: t('webSpaces.console.connection.connecting'),
-                    color: 'text-blue-500',
-                    bgColor: 'bg-blue-500/10 border-blue-500/20',
-                    iconClass: 'animate-spin',
-                };
-            case 'connected':
-                return {
-                    icon: Wifi,
-                    message: t('webSpaces.console.connection.connected'),
-                    color: 'text-green-500',
-                    bgColor: 'bg-green-500/10 border-green-500/20',
-                    iconClass: '',
-                };
-            case 'error':
-                return {
-                    icon: AlertTriangle,
-                    message: t('webSpaces.console.connection.error'),
-                    color: 'text-yellow-500',
-                    bgColor: 'bg-yellow-500/10 border-yellow-500/20',
-                    iconClass: '',
-                };
-            default:
-                return {
-                    icon: WifiOff,
-                    message: t('webSpaces.console.connection.disconnected'),
-                    color: 'text-red-500',
-                    bgColor: 'bg-red-500/10 border-red-500/20',
-                    iconClass: '',
-                };
         }
     };
 
@@ -265,9 +311,11 @@ export default function WebSpaceConsolePage() {
         ...util,
         disk_used_bytes: util?.disk_used_bytes ?? space.disk_used_bytes ?? ctxSpace?.disk_used_bytes,
         disk_limit_bytes: util?.disk_limit_bytes ?? space.disk_limit_bytes ?? ctxSpace?.disk_limit_bytes,
+        network_rx_bytes: connectionStatus === 'connected' ? currentNetworkRx : util?.network_rx_bytes,
+        network_tx_bytes: connectionStatus === 'connected' ? currentNetworkTx : util?.network_tx_bytes,
     };
-    const connectionInfo = getConnectionStatusInfo();
-
+    const memoryLimitMiB = mergedUtil.memory_limit_bytes ? mergedUtil.memory_limit_bytes / (1024 * 1024) : 0;
+    const diskLimitMiB = mergedUtil.disk_limit_bytes ? mergedUtil.disk_limit_bytes / (1024 * 1024) : 0;
     return (
         <div className='space-y-4 pb-8'>
             <WidgetRenderer widgets={getWidgets('webspace-console', 'top-of-page')} />
@@ -293,6 +341,8 @@ export default function WebSpaceConsolePage() {
 
             <WidgetRenderer widgets={getWidgets('webspace-console', 'after-header')} />
 
+            <WebSpaceHealthBanners util={mergedUtil} space={space} />
+
             {(transfer?.phase === 'running' || space.status === 'transferring') && (
                 <div className='border-border/50 bg-card/50 rounded-xl border px-4 py-3 text-sm backdrop-blur-xl'>
                     <p className='font-medium'>{t('webSpaces.overview.transferInProgress')}</p>
@@ -311,32 +361,8 @@ export default function WebSpaceConsolePage() {
                 </div>
             )}
 
-            <div className='grid grid-cols-1 items-stretch gap-4 xl:grid-cols-12 xl:gap-5 2xl:gap-6'>
-                <div className='flex h-[min(36rem,calc(100dvh-14rem))] min-h-[22rem] min-w-0 flex-col gap-4 xl:col-span-9'>
-                    {canConsole && connectionStatus !== 'connected' && (
-                        <Card className={`border-2 ${connectionInfo.bgColor}`}>
-                            <CardContent className='p-4'>
-                                <div className='flex items-center gap-4'>
-                                    <div
-                                        className={`flex h-12 w-12 items-center justify-center rounded-lg ${connectionInfo.bgColor}`}
-                                    >
-                                        <connectionInfo.icon
-                                            className={`h-6 w-6 ${connectionInfo.color} ${connectionInfo.iconClass}`}
-                                        />
-                                    </div>
-                                    <div className='flex-1'>
-                                        <p className={`font-semibold ${connectionInfo.color}`}>
-                                            {connectionInfo.message}
-                                        </p>
-                                        <p className='text-muted-foreground text-sm'>
-                                            {t('webSpaces.console.connection.info')}
-                                        </p>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    )}
-
+            <div className='grid grid-cols-1 items-start gap-4 xl:grid-cols-12 xl:gap-5 2xl:gap-6'>
+                <div className='flex min-h-[calc(100dvh-12rem)] min-w-0 flex-col gap-4 xl:col-span-9'>
                     {!canConsole && (
                         <Card className='border-2 border-yellow-500/20 bg-yellow-500/10'>
                             <CardContent className='p-4'>
@@ -355,7 +381,7 @@ export default function WebSpaceConsolePage() {
                     )}
 
                     {canConsole ? (
-                        <div className='flex h-full min-h-0 flex-col'>
+                        <div className='flex min-h-0 flex-1 flex-col'>
                             <WebSpaceTerminalPanel
                                 jwtEndpoint={`/api/user/webspaces/${uuidShort}/jwt`}
                                 enabled={!!uuidShort}
@@ -399,6 +425,22 @@ export default function WebSpaceConsolePage() {
                         </div>
                     ) : null}
 
+                    {canConsole && (
+                        <ServerPerformance
+                            cpuData={cpuData}
+                            memoryData={memoryData}
+                            diskData={diskData}
+                            networkData={networkData}
+                            diskIoData={[]}
+                            networkRxTotal={networkRxTotal}
+                            networkTxTotal={networkTxTotal}
+                            cpuLimit={100}
+                            memoryLimit={memoryLimitMiB}
+                            diskLimit={diskLimitMiB}
+                            showDiskIo={false}
+                        />
+                    )}
+
                     <WidgetRenderer widgets={getWidgets('webspace-console', 'after-terminal')} />
                 </div>
 
@@ -410,22 +452,12 @@ export default function WebSpaceConsolePage() {
                         nodeName={space.web_node_name}
                         domains={domains}
                         ssl={space.ssl}
+                        backendPort={space.backend_port}
+                        nodeFqdn={space.web_node_fqdn}
+                        access={space.access}
                         util={mergedUtil}
                         className='xl:grid-cols-1'
                     />
-                    <div className='border-border/50 bg-card/50 rounded-xl border p-4 backdrop-blur-xl'>
-                        <h3 className='text-muted-foreground mb-3 text-sm font-medium'>
-                            {t('webSpaces.access.title')}
-                        </h3>
-                        <WebSpaceAccessLinks
-                            domains={domains}
-                            ssl={space.ssl}
-                            backendPort={space.backend_port}
-                            nodeFqdn={space.web_node_fqdn}
-                            access={space.access}
-                            compact
-                        />
-                    </div>
                 </div>
             </div>
 

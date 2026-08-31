@@ -92,6 +92,42 @@ class RemoteMailProvisioner
         self::dispatch($mailHost, 'set_autorespond', $mailbox);
     }
 
+    /**
+     * @param array<string, mixed> $mailHost
+     * @param array{email: string, enabled: bool} $mailbox
+     */
+    public static function setSpamFilter(array $mailHost, array $mailbox): void
+    {
+        self::dispatch($mailHost, 'set_spam_filter', $mailbox);
+    }
+
+    /**
+     * @param array<string, mixed> $mailHost
+     * @param array{address: string, members: list<string>} $list
+     */
+    public static function createMailingList(array $mailHost, array $list): void
+    {
+        self::dispatch($mailHost, 'create_list', $list);
+    }
+
+    /**
+     * @param array<string, mixed> $mailHost
+     * @param array{address: string} $list
+     */
+    public static function deleteMailingList(array $mailHost, array $list): void
+    {
+        self::dispatch($mailHost, 'delete_list', $list);
+    }
+
+    /**
+     * @param array<string, mixed> $mailHost
+     * @param array{address: string, member: string, add: bool} $payload
+     */
+    public static function setMailingListMember(array $mailHost, array $payload): void
+    {
+        self::dispatch($mailHost, 'set_list_member', $payload);
+    }
+
     public static function generateRandomString(int $length): string
     {
         return RemoteDatabaseProvisioner::generateRandomString($length);

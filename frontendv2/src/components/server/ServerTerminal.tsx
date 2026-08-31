@@ -377,6 +377,7 @@ interface ServerTerminalProps {
     filters?: ConsoleFilterRule[];
     onFiltersChange?: (rules: ConsoleFilterRule[]) => void;
     fullHeight?: boolean;
+    fillContainer?: boolean;
     showPopoutButton?: boolean;
     onUploadLogs?: () => void;
     subtitle?: string;
@@ -391,6 +392,7 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
             filters = [],
             onFiltersChange,
             fullHeight = false,
+            fillContainer = false,
             showPopoutButton = true,
             onUploadLogs,
             subtitle,
@@ -808,7 +810,9 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
             <Card
                 className={cn(
                     'border-border/50 bg-card/50 w-full min-w-0 overflow-hidden shadow-sm backdrop-blur-xl',
-                    'flex h-full min-h-[22rem] flex-col sm:min-h-[26rem]',
+                    fillContainer
+                        ? 'flex min-h-0 flex-1 flex-col'
+                        : 'flex h-full min-h-[22rem] flex-col sm:min-h-[26rem]',
                 )}
             >
                 <CardHeader className='border-border/50 shrink-0 space-y-3 border-b p-3 sm:p-4'>

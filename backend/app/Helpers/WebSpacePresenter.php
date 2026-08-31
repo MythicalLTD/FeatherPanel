@@ -61,6 +61,7 @@ class WebSpacePresenter
         $space['database_limit'] = (int) ($space['database_limit'] ?? 1);
         $space['mailbox_limit'] = (int) ($space['mailbox_limit'] ?? 0);
         $space['disk_limit_mb'] = (int) ($space['disk'] ?? 1024);
+        $space['available_apps'] = WebSpaceAppsCatalog::availableForSpace($space);
 
         $webNode = WebNode::getWebNodeById((int) ($space['web_node_id'] ?? 0));
         if ($webNode) {
@@ -150,6 +151,8 @@ class WebSpacePresenter
      */
     public static function forAdmin(array $space): array
     {
+        $space['available_apps'] = WebSpaceAppsCatalog::availableForSpace($space);
+
         return self::enrichAccess($space);
     }
 

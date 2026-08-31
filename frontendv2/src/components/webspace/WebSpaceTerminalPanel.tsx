@@ -180,7 +180,7 @@ export function WebSpaceTerminalPanel({
     })();
 
     return (
-        <div className='flex h-full min-h-0 flex-col gap-4'>
+        <div className='flex min-h-0 flex-1 flex-col gap-4'>
             {enabled && connectionStatus !== 'connected' && connectionStatus !== 'idle' && (
                 <Card className={`shrink-0 border-2 ${connectionInfo.bgColor}`}>
                     <CardContent className='p-4'>
@@ -208,10 +208,11 @@ export function WebSpaceTerminalPanel({
                 </Card>
             )}
 
-            <div className='min-h-0 flex-1'>
+            <div className='flex min-h-0 flex-1 flex-col'>
                 <ServerTerminal
                     ref={terminalRef}
                     serverStatus={state}
+                    fillContainer
                     showPopoutButton={showPopoutButton && !isInstallFlow}
                     subtitle={t('webSpaces.console.terminalSubtitle')}
                     onSendCommand={isInstallFlow ? undefined : sendCommand}

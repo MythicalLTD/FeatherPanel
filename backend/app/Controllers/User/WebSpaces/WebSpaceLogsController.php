@@ -48,6 +48,9 @@ class WebSpaceLogsController
         $domain = trim((string) $request->query->get('domain', ''));
         $lines = max(1, min(5000, (int) $request->query->get('lines', 500)));
         $days = max(0, min(90, (int) $request->query->get('days', 0)));
+        $query = trim((string) $request->query->get('q', ''));
+        $regex = filter_var($request->query->get('regex', false), FILTER_VALIDATE_BOOLEAN);
+        $scanLines = max($lines, min(10000, (int) $request->query->get('scan_lines', 10000)));
 
         $daemon = FeatherQuilldClient::getWebSpaceProxyLogs(
             $webNode,
@@ -55,6 +58,9 @@ class WebSpaceLogsController
             $domain !== '' ? $domain : null,
             $lines,
             $days,
+            $query !== '' ? $query : null,
+            $regex,
+            $scanLines,
         );
 
         if (!$daemon['ok']) {
@@ -69,6 +75,46 @@ class WebSpaceLogsController
         return ApiResponse::success(
             is_array($daemon['body']) ? $daemon['body'] : ['data' => $daemon['body']],
             'OK',
+            200,
+        );
+    }
+
+    public function rotateProxyLogs(Request $request, string $uuidShort): Response
+    {
+        $space = WebSpaceGateway::resolveWebSpace($uuidShort);
+        if (!$space) {
+            return ApiResponse::error('WebSpace not found', 'WEBSPACE_NOT_FOUND', 404);
+        }
+
+        $denied = CheckWebSpacePermission::require($request, $space, WebSpaceSubuserPermissions::ACTIVITY_READ);
+        if ($denied instanceof Response) {
+            return $denied;
+        }
+
+        $webNode = WebNode::getWebNodeById((int) ($space['web_node_id'] ?? 0));
+        if (!$webNode) {
+            return ApiResponse::error('Web node not found', 'WEB_NODE_NOT_FOUND', 404);
+        }
+
+        $domain = trim((string) $request->query->get('domain', ''));
+        $daemon = FeatherQuilldClient::rotateWebSpaceProxyLogs(
+            $webNode,
+            (string) $space['uuid'],
+            $domain !== '' ? $domain : null,
+        );
+
+        if (!$daemon['ok']) {
+            return ApiResponse::error(
+                $daemon['error'] ?? 'Daemon proxy log rotate failed',
+                'DAEMON_PROXY_LOGS_ROTATE_FAILED',
+                502,
+                ['daemon' => $daemon],
+            );
+        }
+
+        return ApiResponse::success(
+            is_array($daemon['body']) ? $daemon['body'] : ['ok' => true],
+            'Proxy logs rotated',
             200,
         );
     }

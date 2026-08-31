@@ -182,7 +182,7 @@ export function DiagnosticsTab({ nodeId, onOpenQuilldTab }: DiagnosticsTabProps)
         }
     }, [loading, selectedFile, fetchLogContent]);
 
-    const checks = diagnostics?.checks || [];
+    const checks = useMemo(() => diagnostics?.checks || [], [diagnostics?.checks]);
     const failCount = checks.filter((c) => c.status === 'fail').length;
     const warnCount = checks.filter((c) => c.status === 'warn').length;
 

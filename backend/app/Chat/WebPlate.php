@@ -58,6 +58,24 @@ class WebPlate
     }
 
     /**
+     * Runtime family for plate-switch rules (node and custom are interchangeable JS containers).
+     */
+    public static function runtimeFamily(string $runtime): string
+    {
+        $key = strtolower(trim($runtime));
+        if ($key === 'custom') {
+            return 'node';
+        }
+
+        return $key;
+    }
+
+    public static function runtimeFamiliesMatch(string $a, string $b): bool
+    {
+        return self::runtimeFamily($a) === self::runtimeFamily($b);
+    }
+
+    /**
      * Infer runtime from a Docker image name. Empty image → static.
      */
     public static function inferRuntimeFromDockerImage(?string $image): string

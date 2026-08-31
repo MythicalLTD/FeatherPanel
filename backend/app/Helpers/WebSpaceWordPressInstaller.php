@@ -36,6 +36,8 @@ class WebSpaceWordPressInstaller
      */
     public static function install(array $space, array $webNode, array $input): array
     {
+        WebSpaceAppsCatalog::requireApp($space, WebSpaceAppsCatalog::APP_WORDPRESS);
+
         $runtime = self::runtime($space);
         if ($runtime !== 'php') {
             throw new \InvalidArgumentException('WordPress requires a PHP WebSpace');
@@ -73,8 +75,7 @@ class WebSpaceWordPressInstaller
             throw new \RuntimeException($decompress['error'] ?? 'Failed to extract WordPress');
         }
 
-        $rel = trim($directory, '/');
-        $containerPath = $rel === '' ? '/var/www/html' : '/var/www/html/' . $rel;
+        $containerPath = WebSpaceAppsCatalog::containerPath($runtime, $directory);
         $flatten = FeatherQuilldClient::execWebSpaceCommand(
             $webNode,
             $uuid,
@@ -144,10 +145,7 @@ class WebSpaceWordPressInstaller
      */
     public static function update(array $space, array $webNode, array $input): array
     {
-        $runtime = self::runtime($space);
-        if ($runtime !== 'php') {
-            throw new \InvalidArgumentException('WordPress requires a PHP WebSpace');
-        }
+        WebSpaceAppsCatalog::requireApp($space, WebSpaceAppsCatalog::APP_WORDPRESS);
 
         $directory = self::normalizeDirectory((string) ($input['directory'] ?? '/'));
         $uuid = (string) $space['uuid'];
@@ -178,10 +176,7 @@ class WebSpaceWordPressInstaller
      */
     public static function staging(array $space, array $webNode, array $input): array
     {
-        $runtime = self::runtime($space);
-        if ($runtime !== 'php') {
-            throw new \InvalidArgumentException('WordPress requires a PHP WebSpace');
-        }
+        WebSpaceAppsCatalog::requireApp($space, WebSpaceAppsCatalog::APP_WORDPRESS);
 
         $source = self::normalizeDirectory((string) ($input['source'] ?? '/'));
         $directory = self::normalizeDirectory((string) ($input['directory'] ?? '/staging'));
@@ -243,6 +238,63 @@ class WebSpaceWordPressInstaller
     }
 
     /**
+     * Copy a staging WordPress install back to production (files + database + URL replace).
+     *
+     * @param array<string, mixed> $space
+     * @param array<string, mixed> $webNode
+     * @param array<string, mixed> $input
+     *
+     * @return array<string, mixed>
+     */
+    public static function promoteStaging(array $space, array $webNode, array $input): array
+    {
+        WebSpaceAppsCatalog::requireApp($space, WebSpaceAppsCatalog::APP_WORDPRESS);
+
+        $source = self::normalizeDirectory((string) ($input['source'] ?? '/'));
+        $staging = self::normalizeDirectory((string) ($input['directory'] ?? '/staging'));
+        if ($source === $staging) {
+            throw new \InvalidArgumentException('Staging directory must differ from production');
+        }
+
+        $uuid = (string) $space['uuid'];
+        self::ensureRunning($webNode, $space);
+        $srcPath = self::containerPath($source);
+        $stgPath = self::containerPath($staging);
+
+        $primary = self::primaryDomain($space);
+        $scheme = !empty($space['ssl']) ? 'https' : 'http';
+        $liveUrl = $primary !== '' ? $scheme . '://' . $primary : 'http://localhost';
+        $stagingUrl = rtrim($liveUrl, '/') . ($staging === '/' ? '' : $staging);
+
+        $cmd = self::wpCliBootstrap()
+            . ' && PROD_DB=$(php /tmp/wp-cli.phar config get DB_NAME --allow-root --path=' . self::shellQuote($srcPath) . ')'
+            . ' && PROD_USER=$(php /tmp/wp-cli.phar config get DB_USER --allow-root --path=' . self::shellQuote($srcPath) . ')'
+            . ' && PROD_PASS=$(php /tmp/wp-cli.phar config get DB_PASSWORD --allow-root --path=' . self::shellQuote($srcPath) . ')'
+            . ' && PROD_HOST=$(php /tmp/wp-cli.phar config get DB_HOST --allow-root --path=' . self::shellQuote($srcPath) . ')'
+            . ' && php /tmp/wp-cli.phar db export /tmp/fp-wp-promote.sql --allow-root --path=' . self::shellQuote($stgPath)
+            . ' && find ' . self::shellQuote($srcPath) . ' -mindepth 1 -maxdepth 1 ! -name ' . self::shellQuote('.featherpanel-trash')
+            . ' ! -name ' . self::shellQuote('.install') . ' -exec rm -rf {} +'
+            . ' && cp -a ' . self::shellQuote($stgPath) . '/. ' . self::shellQuote($srcPath) . '/'
+            . ' && php /tmp/wp-cli.phar config set DB_NAME "$PROD_DB" --allow-root --path=' . self::shellQuote($srcPath)
+            . ' && php /tmp/wp-cli.phar config set DB_USER "$PROD_USER" --allow-root --path=' . self::shellQuote($srcPath)
+            . ' && php /tmp/wp-cli.phar config set DB_PASSWORD "$PROD_PASS" --allow-root --path=' . self::shellQuote($srcPath)
+            . ' && php /tmp/wp-cli.phar config set DB_HOST "$PROD_HOST" --allow-root --path=' . self::shellQuote($srcPath)
+            . ' && php /tmp/wp-cli.phar db import /tmp/fp-wp-promote.sql --allow-root --path=' . self::shellQuote($srcPath)
+            . ' && php /tmp/wp-cli.phar search-replace ' . self::shellQuote($stagingUrl) . ' ' . self::shellQuote($liveUrl)
+            . ' --allow-root --skip-columns=guid --path=' . self::shellQuote($srcPath)
+            . ' ; rm -f /tmp/fp-wp-promote.sql';
+
+        $output = self::runExec($webNode, $uuid, $cmd, 300, 'WordPress staging promote failed');
+
+        return [
+            'source' => $source,
+            'directory' => $staging,
+            'url' => $liveUrl,
+            'output' => $output,
+        ];
+    }
+
+    /**
      * Install and activate a plugin by slug via wp-cli.
      *
      * @param array<string, mixed> $space
@@ -253,10 +305,7 @@ class WebSpaceWordPressInstaller
      */
     public static function installPlugin(array $space, array $webNode, array $input): array
     {
-        $runtime = self::runtime($space);
-        if ($runtime !== 'php') {
-            throw new \InvalidArgumentException('WordPress requires a PHP WebSpace');
-        }
+        WebSpaceAppsCatalog::requireApp($space, WebSpaceAppsCatalog::APP_WORDPRESS);
 
         $slug = strtolower(trim((string) ($input['slug'] ?? '')));
         if ($slug === '' || !preg_match('/^[a-z0-9\-]+$/', $slug)) {
@@ -301,9 +350,7 @@ class WebSpaceWordPressInstaller
 
     private static function containerPath(string $directory): string
     {
-        $rel = trim($directory, '/');
-
-        return $rel === '' ? '/var/www/html' : '/var/www/html/' . $rel;
+        return WebSpaceAppsCatalog::containerPath('php', $directory);
     }
 
     /**

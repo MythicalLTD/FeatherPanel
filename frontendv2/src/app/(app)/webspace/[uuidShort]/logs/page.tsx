@@ -17,13 +17,26 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
-import axios from 'axios';
-import { Copy, Loader2, RefreshCw, Search } from 'lucide-react';
+import axios, { isAxiosError } from 'axios';
+import { Copy, Loader2, Play, RefreshCw, RotateCcw, Search, Square } from 'lucide-react';
+import { toast } from 'sonner';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { HeadlessSelect } from '@/components/ui/headless-select';
 import { Button } from '@/components/featherui/Button';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { WebSpacePageWidgets } from '@/components/webspace/WebSpacePageWidgets';
+import { useQuilldWebSocket } from '@/hooks/useQuilldWebSocket';
 import { copyToClipboard, cn } from '@/lib/utils';
 
 type LogTab = 'access' | 'error' | 'runtime' | 'install';
@@ -32,6 +45,8 @@ interface ProxyLogFile {
     domain: string;
     access_tail?: string;
     error_tail?: string;
+    access_search_truncated?: boolean;
+    error_search_truncated?: boolean;
 }
 
 export default function WebSpaceLogsPage() {
@@ -41,14 +56,38 @@ export default function WebSpaceLogsPage() {
     const [tab, setTab] = useState<LogTab>('access');
     const [lines, setLines] = useState('500');
     const [autoRefresh, setAutoRefresh] = useState(true);
+    const [liveTail, setLiveTail] = useState(false);
     const [loading, setLoading] = useState(true);
-    const [search, setSearch] = useState('');
+    const [searchInput, setSearchInput] = useState('');
+    const [serverSearch, setServerSearch] = useState('');
+    const [useRegex, setUseRegex] = useState(false);
+    const [truncated, setTruncated] = useState(false);
+    const [rotateOpen, setRotateOpen] = useState(false);
+    const [rotating, setRotating] = useState(false);
     const [domains, setDomains] = useState<string[]>([]);
     const [selectedDomain, setSelectedDomain] = useState('');
     const [content, setContent] = useState('');
     const preRef = useRef<HTMLPreElement>(null);
+    const scrollLockRef = useRef(true);
 
     const lineCount = useMemo(() => Math.max(100, Math.min(2000, Number(lines) || 500)), [lines]);
+    const jwtEndpoint = `/api/user/webspaces/${uuidShort}/jwt`;
+
+    const {
+        lines: tailLines,
+        isConnected: tailConnected,
+        connectionStatus: tailStatus,
+        reconnect: reconnectTail,
+    } = useQuilldWebSocket({
+        jwtEndpoint,
+        enabled: tab === 'runtime' && liveTail,
+        wsOnly: true,
+        onConsoleOutput: () => {
+            if (scrollLockRef.current && preRef.current) {
+                preRef.current.scrollTop = preRef.current.scrollHeight;
+            }
+        },
+    });
 
     const loadDomains = useCallback(async () => {
         try {
@@ -64,11 +103,23 @@ export default function WebSpaceLogsPage() {
     }, [uuidShort]);
 
     const loadLogs = useCallback(async () => {
+        if (tab === 'runtime' && liveTail) {
+            setLoading(false);
+            return;
+        }
+
         setLoading(true);
         try {
+            const searchParams: Record<string, string | number | boolean> = { lines: lineCount };
+            if (serverSearch.trim()) {
+                searchParams.q = serverSearch.trim();
+                searchParams.scan_lines = 10000;
+                if (useRegex) searchParams.regex = true;
+            }
+
             if (tab === 'runtime') {
                 const { data } = await axios.get(`/api/user/webspaces/${uuidShort}/logs`, {
-                    params: { lines: lineCount },
+                    params: searchParams,
                 });
                 const body = data?.data;
                 const text =
@@ -78,6 +129,7 @@ export default function WebSpaceLogsPage() {
                           ? body.logs
                           : JSON.stringify(body ?? {}, null, 2);
                 setContent(text || t('webSpaces.logs.empty'));
+                setTruncated(!!body?.truncated);
                 return;
             }
 
@@ -86,16 +138,18 @@ export default function WebSpaceLogsPage() {
                 const body = data?.data;
                 const text = typeof body?.data === 'string' ? body.data : JSON.stringify(body ?? {}, null, 2);
                 setContent(text || t('webSpaces.logs.empty'));
+                setTruncated(false);
                 return;
             }
 
             const { data } = await axios.get(`/api/user/webspaces/${uuidShort}/proxy-logs`, {
                 params: {
-                    lines: lineCount,
+                    ...searchParams,
                     domain: selectedDomain || undefined,
                 },
             });
-            const files = (data?.data?.files ?? []) as ProxyLogFile[];
+            const payload = data?.data ?? data;
+            const files = (payload?.files ?? []) as ProxyLogFile[];
             if (!selectedDomain && files.length > 0) {
                 setSelectedDomain(files[0].domain);
             }
@@ -105,12 +159,38 @@ export default function WebSpaceLogsPage() {
                 files[0];
             const text = tab === 'error' ? (file?.error_tail ?? '') : (file?.access_tail ?? '');
             setContent(text || t('webSpaces.logs.empty'));
+            setTruncated(
+                tab === 'error'
+                    ? !!file?.error_search_truncated || !!payload?.search_scan_lines
+                    : !!file?.access_search_truncated || !!payload?.search_scan_lines,
+            );
         } catch {
             setContent(t('webSpaces.logs.loadFailed'));
+            setTruncated(false);
         } finally {
             setLoading(false);
         }
-    }, [tab, uuidShort, lineCount, selectedDomain, domains, t]);
+    }, [tab, uuidShort, lineCount, selectedDomain, domains, serverSearch, useRegex, liveTail, t]);
+
+    const rotateLogs = useCallback(async () => {
+        setRotating(true);
+        try {
+            await axios.post(`/api/user/webspaces/${uuidShort}/proxy-logs/rotate`, null, {
+                params: selectedDomain ? { domain: selectedDomain } : undefined,
+            });
+            toast.success(t('webSpaces.logs.rotateDone'));
+            setRotateOpen(false);
+            await loadLogs();
+        } catch (err) {
+            toast.error(
+                isAxiosError(err)
+                    ? err.response?.data?.message || t('webSpaces.logs.rotateFailed')
+                    : t('webSpaces.logs.rotateFailed'),
+            );
+        } finally {
+            setRotating(false);
+        }
+    }, [uuidShort, selectedDomain, loadLogs, t]);
 
     useEffect(() => {
         void loadDomains();
@@ -121,25 +201,34 @@ export default function WebSpaceLogsPage() {
     }, [loadLogs]);
 
     useEffect(() => {
-        if (!autoRefresh) return;
+        if (!autoRefresh || liveTail) return;
         const id = window.setInterval(() => void loadLogs(), 5000);
         return () => window.clearInterval(id);
-    }, [autoRefresh, loadLogs]);
+    }, [autoRefresh, liveTail, loadLogs]);
 
     useEffect(() => {
-        if (preRef.current) {
+        if (tab !== 'runtime' || !liveTail) return;
+        if (scrollLockRef.current && preRef.current) {
             preRef.current.scrollTop = preRef.current.scrollHeight;
         }
-    }, [content]);
+    }, [tailLines, tab, liveTail]);
 
-    const filteredContent = useMemo(() => {
-        const needle = search.trim().toLowerCase();
-        if (!needle) return content;
-        return content
-            .split('\n')
-            .filter((line) => line.toLowerCase().includes(needle))
-            .join('\n');
-    }, [content, search]);
+    useEffect(() => {
+        if (!liveTail && preRef.current) {
+            preRef.current.scrollTop = preRef.current.scrollHeight;
+        }
+    }, [content, liveTail]);
+
+    const applySearch = () => {
+        setServerSearch(searchInput.trim());
+    };
+
+    const displayContent = useMemo(() => {
+        if (tab === 'runtime' && liveTail) {
+            return tailLines.join('\n') || t('webSpaces.logs.empty');
+        }
+        return content;
+    }, [tab, liveTail, tailLines, content, t]);
 
     const domainOptions = domains.map((domain) => ({ id: domain, name: domain }));
     const tabs: { id: LogTab; label: string }[] = [
@@ -166,12 +255,41 @@ export default function WebSpaceLogsPage() {
                                 {t('common.refresh')}
                             </Button>
                             <Button
-                                variant={autoRefresh ? 'default' : 'outline'}
+                                variant={autoRefresh && !liveTail ? 'default' : 'outline'}
                                 size='sm'
                                 onClick={() => setAutoRefresh((v) => !v)}
+                                disabled={liveTail}
                             >
                                 {t('webSpaces.logs.autoRefresh')}
                             </Button>
+                            {tab === 'runtime' && (
+                                <Button
+                                    variant={liveTail ? 'default' : 'outline'}
+                                    size='sm'
+                                    onClick={() => {
+                                        setLiveTail((v) => !v);
+                                        if (!liveTail) setAutoRefresh(false);
+                                    }}
+                                >
+                                    {liveTail ? (
+                                        <>
+                                            <Square className='mr-2 h-4 w-4' />
+                                            {t('webSpaces.logs.stopTail')}
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Play className='mr-2 h-4 w-4' />
+                                            {t('webSpaces.logs.liveTail')}
+                                        </>
+                                    )}
+                                </Button>
+                            )}
+                            {(tab === 'access' || tab === 'error') && (
+                                <Button variant='outline' size='sm' onClick={() => setRotateOpen(true)}>
+                                    <RotateCcw className='mr-2 h-4 w-4' />
+                                    {t('webSpaces.logs.rotate')}
+                                </Button>
+                            )}
                         </div>
                     }
                 />
@@ -181,7 +299,10 @@ export default function WebSpaceLogsPage() {
                         <button
                             key={item.id}
                             type='button'
-                            onClick={() => setTab(item.id)}
+                            onClick={() => {
+                                setTab(item.id);
+                                if (item.id !== 'runtime') setLiveTail(false);
+                            }}
                             className={cn(
                                 'rounded-lg px-3 py-1.5 text-sm font-medium transition-colors',
                                 tab === item.id
@@ -194,7 +315,7 @@ export default function WebSpaceLogsPage() {
                     ))}
                 </div>
 
-                <div className='grid gap-3 md:grid-cols-3'>
+                <div className='grid gap-3 md:grid-cols-4'>
                     {(tab === 'access' || tab === 'error') && domainOptions.length > 0 && (
                         <HeadlessSelect
                             value={selectedDomain}
@@ -214,15 +335,49 @@ export default function WebSpaceLogsPage() {
                         ]}
                         placeholder={t('webSpaces.logs.lines')}
                     />
-                    <div className='relative md:col-span-1'>
+                    <div className='relative md:col-span-2'>
                         <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
                         <input
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
+                            value={searchInput}
+                            onChange={(e) => setSearchInput(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') applySearch();
+                            }}
                             placeholder={t('webSpaces.logs.search')}
-                            className='border-border/50 bg-background h-10 w-full rounded-lg border pr-3 pl-9 text-sm'
+                            className='border-border/50 bg-background h-10 w-full rounded-lg border pr-24 pl-9 text-sm'
                         />
+                        <Button
+                            type='button'
+                            size='sm'
+                            variant='secondary'
+                            className='absolute top-1/2 right-1 h-8 -translate-y-1/2'
+                            onClick={applySearch}
+                        >
+                            {t('webSpaces.logs.searchApply')}
+                        </Button>
                     </div>
+                </div>
+
+                <div className='flex flex-wrap items-center gap-4 text-sm'>
+                    <label className='flex items-center gap-2'>
+                        <Checkbox checked={useRegex} onCheckedChange={(v) => setUseRegex(!!v)} />
+                        {t('webSpaces.logs.regex')}
+                    </label>
+                    {tab === 'runtime' && liveTail && (
+                        <span className='text-muted-foreground'>
+                            {tailConnected
+                                ? t('webSpaces.logs.tailConnected')
+                                : t('webSpaces.logs.tailConnecting', { status: tailStatus })}
+                            {!tailConnected && (
+                                <Button variant='link' className='ml-2 h-auto p-0' onClick={() => reconnectTail()}>
+                                    {t('common.retry')}
+                                </Button>
+                            )}
+                        </span>
+                    )}
+                    {truncated && !liveTail && (
+                        <span className='text-amber-600 dark:text-amber-400'>{t('webSpaces.logs.truncated')}</span>
+                    )}
                 </div>
 
                 <div className='border-border/50 bg-card/50 rounded-xl border backdrop-blur-xl'>
@@ -233,8 +388,8 @@ export default function WebSpaceLogsPage() {
                         <Button
                             variant='ghost'
                             size='sm'
-                            onClick={() => void copyToClipboard(filteredContent, t)}
-                            disabled={!filteredContent}
+                            onClick={() => void copyToClipboard(displayContent, t)}
+                            disabled={!displayContent}
                         >
                             <Copy className='mr-2 h-4 w-4' />
                             {t('common.copy')}
@@ -242,12 +397,32 @@ export default function WebSpaceLogsPage() {
                     </div>
                     <pre
                         ref={preRef}
+                        onScroll={() => {
+                            const el = preRef.current;
+                            if (!el) return;
+                            scrollLockRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 48;
+                        }}
                         className='max-h-[min(70vh,40rem)] overflow-auto p-4 font-mono text-xs leading-relaxed whitespace-pre-wrap'
                     >
-                        {loading ? t('common.loading') : filteredContent}
+                        {loading && !(tab === 'runtime' && liveTail) ? t('common.loading') : displayContent}
                     </pre>
                 </div>
             </div>
+
+            <AlertDialog open={rotateOpen} onOpenChange={setRotateOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>{t('webSpaces.logs.rotateTitle')}</AlertDialogTitle>
+                        <AlertDialogDescription>{t('webSpaces.logs.rotateDescription')}</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={rotating}>{t('common.cancel')}</AlertDialogCancel>
+                        <AlertDialogAction disabled={rotating} onClick={() => void rotateLogs()}>
+                            {rotating ? t('common.loading') : t('webSpaces.logs.rotateConfirm')}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </WebSpacePageWidgets>
     );
 }

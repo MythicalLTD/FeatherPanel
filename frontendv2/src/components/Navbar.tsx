@@ -15,7 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import { useContext, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { CircleUser } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useSession } from '@/contexts/SessionContext';
@@ -28,6 +28,8 @@ import { LocalStorageManagerDialog } from '@/components/layout/LocalStorageManag
 import { useNavbarHoverReveal } from '@/hooks/useNavbarHoverReveal';
 import { useNavbarSticky } from '@/hooks/useNavbarSticky';
 import { useChromeLayout } from '@/hooks/useChromeLayout';
+import { readSidebarCollapsed, subscribeSidebarCollapsed } from '@/lib/sidebarChrome';
+import { useSidebarPreferences } from '@/hooks/useSidebarPreferences';
 import { NavbarClassicChrome, NavbarModernChrome } from '@/components/NavbarChromeVariants';
 import { ServerSwitcher } from '@/components/server/ServerSwitcher';
 import { WebSpaceSwitcher } from '@/components/webspace/WebSpaceSwitcher';
@@ -85,9 +87,17 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
 
     const [emailRevealed, setEmailRevealed] = useState(false);
     const [localStorageOpen, setLocalStorageOpen] = useState(false);
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+    useEffect(() => {
+        setSidebarCollapsed(readSidebarCollapsed());
+        return subscribeSidebarCollapsed(setSidebarCollapsed);
+    }, []);
+
     const { navbarHoverReveal } = useNavbarHoverReveal();
     const { navbarSticky } = useNavbarSticky();
     const { chromeLayout } = useChromeLayout();
+    const { sidebarPosition, sidebarTogglePlacement, sidebarGlow } = useSidebarPreferences();
 
     const canAccessAdmin = hasPermission(Permissions.ADMIN_DASHBOARD_VIEW);
     const showAdminAreaButton = canAccessAdmin && !isOnAdminPage;
@@ -102,6 +112,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
 
     const chromeProps = {
         onMenuClick,
+        sidebarCollapsed,
         headerTitle,
         headerContent,
         showAdminAreaButton,
@@ -119,6 +130,9 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
         handleLogout,
         desktopHoverDock: navbarHoverReveal,
         navbarSticky,
+        sidebarPosition,
+        sidebarTogglePlacement,
+        sidebarGlow,
     };
 
     const Chrome = chromeLayout === 'classic' ? NavbarClassicChrome : NavbarModernChrome;

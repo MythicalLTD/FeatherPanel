@@ -339,6 +339,37 @@ class DnsProvisioner
             }
         }
 
+        $dmarcValue = self::findHintValue($records, 'TXT', '_dmarc');
+        if ($dmarcValue === null) {
+            $dmarcValue = trim((string) ($hints['body']['dmarc_record'] ?? ''));
+        }
+        if ($dmarcValue !== '') {
+            $hasDmarc = false;
+            foreach ($results as $result) {
+                if (
+                    ($result['type'] ?? '') === 'TXT'
+                    && ($result['name'] ?? '') === '_dmarc'
+                    && !empty($result['ok'])
+                ) {
+                    $hasDmarc = true;
+                    break;
+                }
+            }
+            if (!$hasDmarc) {
+                $upsert = $provider->createTxtRecord($zoneId, '_dmarc.' . $domain, $dmarcValue);
+                if (empty($upsert['ok'])) {
+                    $allOk = false;
+                }
+                $results[] = [
+                    'type' => 'TXT',
+                    'name' => '_dmarc',
+                    'ok' => !empty($upsert['ok']),
+                    'action' => $upsert['action'] ?? null,
+                    'error' => $upsert['error'] ?? null,
+                ];
+            }
+        }
+
         return [
             'ok' => $allOk && $results !== [],
             'results' => $results,

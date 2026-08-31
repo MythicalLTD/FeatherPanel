@@ -33,6 +33,8 @@ import {
     Eye,
     Server as ServerIcon,
     Forward,
+    Users,
+    Shield,
 } from 'lucide-react';
 import { PageHeader } from '@/components/featherui/PageHeader';
 import { Button } from '@/components/featherui/Button';
@@ -72,6 +74,15 @@ interface MailboxRow {
     autorespond_enabled?: number | boolean;
     autorespond_subject?: string | null;
     autorespond_body?: string | null;
+    spam_filter_enabled?: number | boolean;
+}
+
+interface MailingListRow {
+    list_local: string;
+    domain: string;
+    address: string;
+    mail_host_id: number;
+    members: Array<{ id: number; email: string; enabled?: boolean }>;
 }
 
 interface ForwarderRow {
@@ -129,6 +140,7 @@ export default function WebSpaceEmailPage() {
     const [loading, setLoading] = useState(true);
     const [rows, setRows] = useState<MailboxRow[]>([]);
     const [forwarders, setForwarders] = useState<ForwarderRow[]>([]);
+    const [mailingLists, setMailingLists] = useState<MailingListRow[]>([]);
     const [hosts, setHosts] = useState<MailHost[]>([]);
     const [dns, setDns] = useState<DnsInfo | null>(null);
     const [deliverability, setDeliverability] = useState<DeliverabilityDomain[]>([]);
@@ -149,6 +161,11 @@ export default function WebSpaceEmailPage() {
     const [arBody, setArBody] = useState('');
     const [createOpen, setCreateOpen] = useState(false);
     const [fwdOpen, setFwdOpen] = useState(false);
+    const [listOpen, setListOpen] = useState(false);
+    const [listLocal, setListLocal] = useState('');
+    const [listDomain, setListDomain] = useState('');
+    const [listHostId, setListHostId] = useState('');
+    const [listMembers, setListMembers] = useState('');
     const [viewingMailbox, setViewingMailbox] = useState<MailboxRow | null>(null);
 
     const canCreate = hasPermission(WebSpaceSubuserPermissions['mail.create']);
@@ -164,13 +181,14 @@ export default function WebSpaceEmailPage() {
 
     const load = useCallback(async () => {
         try {
-            const [listRes, hostsRes, dnsRes, deliverabilityRes, webmailRes, fwdRes] = await Promise.all([
+            const [listRes, hostsRes, dnsRes, deliverabilityRes, webmailRes, fwdRes, listsRes] = await Promise.all([
                 axios.get(`/api/user/webspaces/${uuidShort}/mailboxes`),
                 axios.get(`/api/user/webspaces/${uuidShort}/mailboxes/hosts`),
                 axios.get(`/api/user/webspaces/${uuidShort}/mailboxes/dns`).catch(() => null),
                 axios.get(`/api/user/webspaces/${uuidShort}/mailboxes/deliverability`).catch(() => null),
                 axios.get(`/api/user/webspaces/${uuidShort}/mailboxes/webmail/check`).catch(() => null),
                 axios.get(`/api/user/webspaces/${uuidShort}/mailboxes/forwarders`).catch(() => null),
+                axios.get(`/api/user/webspaces/${uuidShort}/mailboxes/mailing-lists`).catch(() => null),
             ]);
             setRows((listRes.data?.data?.data || []) as MailboxRow[]);
             setHosts((hostsRes.data?.data?.hosts || []) as MailHost[]);
@@ -179,6 +197,7 @@ export default function WebSpaceEmailPage() {
             setCanProvisionDns(!!deliverabilityRes?.data?.data?.can_provision);
             setWebmailInstalled(!!webmailRes?.data?.data?.installed);
             setForwarders((fwdRes?.data?.data?.data || []) as ForwarderRow[]);
+            setMailingLists((listsRes?.data?.data?.data || []) as MailingListRow[]);
         } catch (err) {
             toast.error(
                 isAxiosError(err)
@@ -218,7 +237,8 @@ export default function WebSpaceEmailPage() {
     useEffect(() => {
         if (!domain && domains.length > 0) setDomain(domains[0]);
         if (!fwdDomain && domains.length > 0) setFwdDomain(domains[0]);
-    }, [domain, fwdDomain, domains]);
+        if (!listDomain && domains.length > 0) setListDomain(domains[0]);
+    }, [domain, fwdDomain, listDomain, domains]);
 
     const createMailbox = async () => {
         if (!hostId || !localPart.trim() || !domain) {
@@ -339,6 +359,76 @@ export default function WebSpaceEmailPage() {
                 isAxiosError(err)
                     ? err.response?.data?.message || t('webSpaces.email.updateFailed')
                     : t('webSpaces.email.updateFailed'),
+            );
+        }
+    };
+
+    const toggleSpamFilter = async (row: MailboxRow) => {
+        const enabled = !(
+            row.spam_filter_enabled === 1 ||
+            row.spam_filter_enabled === true ||
+            row.spam_filter_enabled === undefined
+        );
+        try {
+            await axios.patch(`/api/user/webspaces/${uuidShort}/mailboxes/${row.id}/spam-filter`, { enabled });
+            toast.success(t('webSpaces.email.spamFilterUpdated'));
+            await load();
+        } catch (err) {
+            toast.error(
+                isAxiosError(err)
+                    ? err.response?.data?.message || t('webSpaces.email.updateFailed')
+                    : t('webSpaces.email.updateFailed'),
+            );
+        }
+    };
+
+    const createMailingList = async () => {
+        const members = listMembers
+            .split(/[\n,;]+/)
+            .map((m) => m.trim())
+            .filter(Boolean);
+        if (!listHostId || !listLocal.trim() || !listDomain || members.length === 0) {
+            toast.error(t('webSpaces.email.fillMailingList'));
+            return;
+        }
+        setBusy(true);
+        try {
+            await axios.post(`/api/user/webspaces/${uuidShort}/mailboxes/mailing-lists`, {
+                mail_host_id: Number(listHostId),
+                list_local: listLocal.trim(),
+                domain: listDomain,
+                members,
+            });
+            toast.success(t('webSpaces.email.mailingListCreated'));
+            setListLocal('');
+            setListMembers('');
+            setListOpen(false);
+            await load();
+        } catch (err) {
+            toast.error(
+                isAxiosError(err)
+                    ? err.response?.data?.message || t('webSpaces.email.createFailed')
+                    : t('webSpaces.email.createFailed'),
+            );
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    const removeMailingList = async (list: MailingListRow) => {
+        if (!confirm(t('webSpaces.email.deleteMailingListConfirm'))) return;
+        try {
+            await axios.post(`/api/user/webspaces/${uuidShort}/mailboxes/mailing-lists/delete`, {
+                list_local: list.list_local,
+                domain: list.domain,
+            });
+            toast.success(t('webSpaces.email.mailingListDeleted'));
+            await load();
+        } catch (err) {
+            toast.error(
+                isAxiosError(err)
+                    ? err.response?.data?.message || t('webSpaces.email.deleteFailed')
+                    : t('webSpaces.email.deleteFailed'),
             );
         }
     };
@@ -493,6 +583,10 @@ export default function WebSpaceEmailPage() {
                             const email = row.email || `${row.local_part}@${row.domain}`;
                             const enabled = row.enabled === 1 || row.enabled === true;
                             const arOn = row.autorespond_enabled === 1 || row.autorespond_enabled === true;
+                            const spamOn =
+                                row.spam_filter_enabled === 1 ||
+                                row.spam_filter_enabled === true ||
+                                row.spam_filter_enabled === undefined;
                             return (
                                 <ResourceCard
                                     key={row.id}
@@ -508,6 +602,11 @@ export default function WebSpaceEmailPage() {
                                             {arOn && (
                                                 <span className='rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-[10px] leading-none font-black tracking-widest text-emerald-500 uppercase'>
                                                     {t('webSpaces.email.autorespond')}
+                                                </span>
+                                            )}
+                                            {!spamOn && (
+                                                <span className='rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1 text-[10px] leading-none font-black tracking-widest text-amber-600 uppercase'>
+                                                    {t('webSpaces.email.spamFilterOff')}
                                                 </span>
                                             )}
                                         </>
@@ -559,6 +658,19 @@ export default function WebSpaceEmailPage() {
                                                             <ExternalLink className='h-4 w-4 text-blue-500' />
                                                             <span className='font-bold'>
                                                                 {t('webSpaces.email.webmail')}
+                                                            </span>
+                                                        </DropdownMenuItem>
+                                                    )}
+                                                    {canReset && (
+                                                        <DropdownMenuItem
+                                                            onClick={() => void toggleSpamFilter(row)}
+                                                            className='flex cursor-pointer items-center gap-3 rounded-xl p-3'
+                                                        >
+                                                            <Shield className='h-4 w-4 text-violet-500' />
+                                                            <span className='font-bold'>
+                                                                {spamOn
+                                                                    ? t('webSpaces.email.disableSpamFilter')
+                                                                    : t('webSpaces.email.enableSpamFilter')}
                                                             </span>
                                                         </DropdownMenuItem>
                                                     )}
@@ -675,6 +787,54 @@ export default function WebSpaceEmailPage() {
                                         />
                                     );
                                 })}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {(rows.length > 0 || mailingLists.length > 0) && (
+                    <div className='space-y-4'>
+                        <div className='flex flex-wrap items-center justify-between gap-2'>
+                            <h2 className='text-lg font-semibold'>{t('webSpaces.email.mailingListsTitle')}</h2>
+                            {canCreate && hosts.length > 0 && domains.length > 0 && (
+                                <Button variant='glass' size='sm' onClick={() => setListOpen(true)}>
+                                    <Plus className='mr-2 h-4 w-4' />
+                                    {t('webSpaces.email.addMailingList')}
+                                </Button>
+                            )}
+                        </div>
+                        {mailingLists.length === 0 ? (
+                            <EmptyState
+                                title={t('webSpaces.email.noMailingLists')}
+                                description={t('webSpaces.email.mailingListsTitle')}
+                                icon={Users}
+                            />
+                        ) : (
+                            <div className='grid grid-cols-1 gap-4'>
+                                {mailingLists.map((list) => (
+                                    <ResourceCard
+                                        key={list.address}
+                                        icon={Users}
+                                        title={list.address}
+                                        description={
+                                            <p className='text-muted-foreground text-sm'>
+                                                {list.members.map((m) => m.email).join(', ')}
+                                            </p>
+                                        }
+                                        actions={
+                                            canDelete && (
+                                                <Button
+                                                    variant='ghost'
+                                                    size='sm'
+                                                    onClick={() => void removeMailingList(list)}
+                                                    className='h-8 w-8 p-0'
+                                                >
+                                                    <Trash2 className='h-3.5 w-3.5' />
+                                                </Button>
+                                            )
+                                        }
+                                    />
+                                ))}
                             </div>
                         )}
                     </div>
@@ -911,6 +1071,58 @@ export default function WebSpaceEmailPage() {
                         <Button loading={busy} onClick={() => void createForwarder()}>
                             <Plus className='mr-2 h-4 w-4' />
                             {t('webSpaces.email.addForwarder')}
+                        </Button>
+                    </DialogFooter>
+                </Dialog>
+
+                <Dialog open={listOpen} onOpenChange={setListOpen}>
+                    <DialogHeader>
+                        <DialogTitle>{t('webSpaces.email.addMailingList')}</DialogTitle>
+                        <DialogDescription>{t('webSpaces.email.mailingListHelp')}</DialogDescription>
+                    </DialogHeader>
+                    <div className='space-y-3 py-4'>
+                        <Select value={listHostId} onChange={(e) => setListHostId(e.target.value)} className='w-full'>
+                            <option value=''>{t('webSpaces.email.selectHost')}</option>
+                            {hosts.map((h) => (
+                                <option key={h.id} value={String(h.id)}>
+                                    {h.name} ({h.hostname})
+                                </option>
+                            ))}
+                        </Select>
+                        <div className='flex flex-wrap items-end gap-2'>
+                            <Input
+                                placeholder={t('webSpaces.email.listLocal')}
+                                value={listLocal}
+                                onChange={(e) => setListLocal(e.target.value)}
+                                className='max-w-[160px]'
+                            />
+                            <span className='text-muted-foreground pb-2'>@</span>
+                            <Select
+                                value={listDomain}
+                                onChange={(e) => setListDomain(e.target.value)}
+                                className='min-w-[180px]'
+                            >
+                                {domains.map((d) => (
+                                    <option key={d} value={d}>
+                                        {d}
+                                    </option>
+                                ))}
+                            </Select>
+                        </div>
+                        <textarea
+                            className='border-border bg-background min-h-[100px] w-full rounded-xl border px-3 py-2 text-sm'
+                            placeholder={t('webSpaces.email.listMembersPlaceholder')}
+                            value={listMembers}
+                            onChange={(e) => setListMembers(e.target.value)}
+                        />
+                    </div>
+                    <DialogFooter>
+                        <Button variant='outline' onClick={() => setListOpen(false)}>
+                            {t('common.cancel')}
+                        </Button>
+                        <Button loading={busy} onClick={() => void createMailingList()}>
+                            <Plus className='mr-2 h-4 w-4' />
+                            {t('webSpaces.email.addMailingList')}
                         </Button>
                     </DialogFooter>
                 </Dialog>

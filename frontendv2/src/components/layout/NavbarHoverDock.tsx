@@ -47,7 +47,12 @@ export function NavbarHoverDock({ children }: { children: ReactNode }) {
     useEffect(() => () => clearCloseTimer(), [clearCloseTimer]);
 
     return (
-        <div className='relative z-30' onMouseEnter={openDock} onMouseLeave={scheduleClose} onFocusCapture={openDock}>
+        <div
+            className='fp-chrome-motion relative z-30'
+            onMouseEnter={openDock}
+            onMouseLeave={scheduleClose}
+            onFocusCapture={openDock}
+        >
             <div className='hidden shrink-0 lg:block lg:h-3' aria-hidden />
             <div
                 className={cn(

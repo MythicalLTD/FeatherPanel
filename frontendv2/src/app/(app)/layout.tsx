@@ -14,7 +14,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 */
 
 import './globals.css';
-import localFont from 'next/font/local';
+import { panelFontClassName } from '@/lib/panel-fonts';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { SettingsProvider } from '@/contexts/SettingsContext';
 import { TranslationProvider } from '@/contexts/TranslationContext';
@@ -29,30 +29,8 @@ import { cookies } from 'next/headers';
 import { settingsApi } from '@/lib/settings-api';
 import { ANALYTICS_COOKIE_NAME } from '@/lib/analytics-cookie';
 
-// Self-hosted (no Google Fonts at build time). Paths are relative to this file.
-const inter = localFont({
-    src: [
-        { path: '../../fonts/Inter-400.woff2', weight: '400', style: 'normal' },
-        { path: '../../fonts/Inter-500.woff2', weight: '500', style: 'normal' },
-        { path: '../../fonts/Inter-600.woff2', weight: '600', style: 'normal' },
-        { path: '../../fonts/Inter-700.woff2', weight: '700', style: 'normal' },
-    ],
-    variable: '--font-inter',
-    display: 'swap',
-    fallback: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
-});
-
-const nunito = localFont({
-    src: [
-        { path: '../../fonts/Nunito-400.woff2', weight: '400', style: 'normal' },
-        { path: '../../fonts/Nunito-500.woff2', weight: '500', style: 'normal' },
-        { path: '../../fonts/Nunito-600.woff2', weight: '600', style: 'normal' },
-        { path: '../../fonts/Nunito-700.woff2', weight: '700', style: 'normal' },
-    ],
-    variable: '--font-nunito',
-    display: 'swap',
-    fallback: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
-});
+import { APP_FONT_BOOT_STACKS_JSON } from '@/lib/app-fonts';
+import { ACCENT_COLORS_BOOT_JSON, ACCENT_FOREGROUNDS_BOOT_JSON } from '@/lib/accent-colors';
 
 export async function generateMetadata(): Promise<Metadata> {
     const data = await settingsApi.getPublicSettings();
@@ -129,7 +107,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     const analyticsEnabled = analyticsCookie !== '0';
 
     return (
-        <html lang='en' suppressHydrationWarning className={`${inter.variable} ${nunito.variable}`}>
+        <html lang='en' suppressHydrationWarning className={panelFontClassName}>
             <head>
                 <noscript
                     dangerouslySetInnerHTML={{
@@ -144,36 +122,46 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 try {
                   const theme = localStorage.getItem('theme') || 'dark';
                   const accentColor = localStorage.getItem('accentColor') || 'purple';
-                  const colors = {
-                    purple: '262 83% 58%',
-                    blue: '217 91% 60%',
-                    green: '142 71% 45%',
-                    red: '0 84% 60%',
-                    orange: '25 95% 53%',
-                    pink: '330 81% 60%',
-                    teal: '173 80% 40%',
-                    yellow: '48 96% 53%',
-                    white: '210 20% 92%',
-                    violet: '270 75% 55%',
-                    cyan: '188 78% 41%',
-                    lime: '84 69% 35%',
-                    amber: '38 92% 50%',
-                    rose: '347 77% 50%',
-                    slate: '215 20% 45%',
-                  };
-                  var foregrounds = {
-                    orange: '0 0% 9%',
-                    teal: '0 0% 9%',
-                    yellow: '0 0% 9%',
-                    cyan: '0 0% 9%',
-                    lime: '0 0% 9%',
-                    amber: '0 0% 9%'
-                  };
+                  const colors = ${ACCENT_COLORS_BOOT_JSON};
+                  var foregrounds = ${ACCENT_FOREGROUNDS_BOOT_JSON};
+                  function bootHexToHsl(hex) {
+                    var normalized = hex.replace('#', '');
+                    var r = parseInt(normalized.slice(0, 2), 16) / 255;
+                    var g = parseInt(normalized.slice(2, 4), 16) / 255;
+                    var b = parseInt(normalized.slice(4, 6), 16) / 255;
+                    var max = Math.max(r, g, b);
+                    var min = Math.min(r, g, b);
+                    var delta = max - min;
+                    var h = 0;
+                    var l = (max + min) / 2;
+                    var s = 0;
+                    if (delta !== 0) {
+                      s = l > 0.5 ? delta / (2 - max - min) : delta / (max + min);
+                      if (max === r) h = ((g - b) / delta + (g < b ? 6 : 0)) / 6;
+                      else if (max === g) h = ((b - r) / delta + 2) / 6;
+                      else h = ((r - g) / delta + 4) / 6;
+                    }
+                    return {
+                      h: Math.round(h * 360),
+                      s: Math.round(s * 100),
+                      l: Math.round(l * 100)
+                    };
+                  }
+                  var accentHsl = colors[accentColor] || colors.purple;
+                  var accentFg = foregrounds[accentColor] || '0 0% 98%';
+                  if (accentColor.indexOf('custom:') === 0) {
+                    var customHex = accentColor.slice(7);
+                    if (/^#[0-9A-Fa-f]{6}$/.test(customHex)) {
+                      var hsl = bootHexToHsl(customHex);
+                      accentHsl = hsl.h + ' ' + hsl.s + '% ' + hsl.l + '%';
+                      accentFg = hsl.l > 58 ? '0 0% 9%' : '0 0% 98%';
+                    }
+                  }
                   document.documentElement.classList.add(theme);
                   document.documentElement.style.colorScheme = theme;
-                  document.documentElement.style.setProperty('--primary', colors[accentColor] || colors.purple);
-                  document.documentElement.style.setProperty('--ring', colors[accentColor] || colors.purple);
-                  document.documentElement.style.setProperty('--primary-foreground', foregrounds[accentColor] || '0 0% 98%');
+                  document.documentElement.style.setProperty('--primary', accentHsl);
+                  document.documentElement.style.setProperty('--ring', accentHsl);
+                  document.documentElement.style.setProperty('--primary-foreground', accentFg);
                   // Initialize motion preference for app-wide transitions.
                   const savedMotion = localStorage.getItem('motionLevel');
                   const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -185,11 +173,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
                   // Initialize font preference for UI.
                   const savedFont = localStorage.getItem('fontFamily');
-                  var fontStacks = {
-                    inter: "var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-                    system: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-                    rounded: "var(--font-nunito), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
-                  };
+                  var fontStacks = ${APP_FONT_BOOT_STACKS_JSON};
                   if (savedFont && fontStacks[savedFont]) {
                     document.documentElement.style.setProperty('--app-font-family', fontStacks[savedFont]);
                   }

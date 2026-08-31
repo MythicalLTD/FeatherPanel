@@ -58,7 +58,7 @@ function generateApiDocsPage() {
 
   <script src="https://cdn.redoc.ly/redoc/latest/bundles/redoc.standalone.js"></script>
   <script>
-    Redoc.init('/api/openapi.json', {
+    Redoc.init('../../api/openapi.json', {
       theme: {
         colors: {
           primary: {

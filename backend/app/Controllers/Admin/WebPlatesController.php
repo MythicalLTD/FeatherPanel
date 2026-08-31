@@ -21,6 +21,7 @@ use App\Chat\WebPlate;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Helpers\WebSpaceScheduleTasks;
+use App\Helpers\WebPlateCascadeService;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -136,6 +137,11 @@ class WebPlatesController
             return ApiResponse::error('WebPlate not found', 'WEBPLATE_NOT_FOUND', 404);
         }
 
+        $previousPlate = WebPlate::getById($id);
+        if (!$previousPlate) {
+            return ApiResponse::error('WebPlate not found', 'WEBPLATE_NOT_FOUND', 404);
+        }
+
         $content = json_decode($request->getContent(), true);
         if (!is_array($content)) {
             return ApiResponse::error('Invalid JSON payload', 'INVALID_JSON', 400);
@@ -185,7 +191,13 @@ class WebPlatesController
             $plate['default_schedules'] = WebPlate::getDefaultSchedules($plate);
         }
 
-        return ApiResponse::success(['webplate' => $plate], 'WebPlate updated', 200);
+        $cascade = WebPlateCascadeService::cascadeAfterPlateUpdate($previousPlate, $plate ?: []);
+
+        return ApiResponse::success([
+            'webplate' => $plate,
+            'cascaded_count' => $cascade['cascaded'],
+            'cascade_errors' => $cascade['errors'],
+        ], 'WebPlate updated', 200);
     }
 
     #[OA\Delete(path: '/api/admin/webplates/{id}', summary: 'Delete WebPlate', tags: ['Admin - WebPlates'])]

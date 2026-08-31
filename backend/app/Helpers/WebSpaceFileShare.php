@@ -18,11 +18,12 @@
 namespace App\Helpers;
 
 /**
- * Panel-side temporary file sharing for WebSpaces (copies from FeatherQuilld).
+ * Panel-side temporary file sharing for WebSpaces (streams from FeatherQuilld to disk).
  */
 final class WebSpaceFileShare
 {
     private const TTL_SECONDS = 86400;
+    private const MAX_SHARE_BYTES = 512 * 1024 * 1024;
 
     /**
      * @param array<string, mixed> $webNode
@@ -31,14 +32,6 @@ final class WebSpaceFileShare
      */
     public static function share(array $webNode, string $uuid, string $filePath, int $ttlDays = 1): array
     {
-        $download = FeatherQuilldClient::downloadWebSpaceFile($webNode, $uuid, $filePath);
-        if (!$download['ok']) {
-            throw new \RuntimeException($download['error'] ?? 'Failed to read file from web node');
-        }
-
-        $body = is_array($download['body']) ? $download['body'] : [];
-        $contents = (string) ($body['contents'] ?? '');
-        $filename = (string) ($body['filename'] ?? basename($filePath));
         $publicId = bin2hex(random_bytes(16));
         $deleteKey = bin2hex(random_bytes(16));
         $expiresAt = gmdate('c', time() + max(3600, $ttlDays * 86400));
@@ -48,15 +41,32 @@ final class WebSpaceFileShare
             throw new \RuntimeException('Failed to create share storage directory');
         }
 
+        $binPath = $dir . '/' . $publicId . '.bin';
+        $stream = FeatherQuilldClient::streamWebSpaceFileToPath(
+            $webNode,
+            $uuid,
+            $filePath,
+            $binPath,
+            self::MAX_SHARE_BYTES,
+        );
+        if (!$stream['ok']) {
+            throw new \RuntimeException($stream['error'] ?? 'Failed to read file from web node');
+        }
+
+        $filename = (string) ($stream['filename'] ?? basename($filePath));
+        $size = (int) ($stream['size'] ?? 0);
+
         $meta = [
             'public_id' => $publicId,
             'delete_key' => $deleteKey,
             'filename' => $filename,
             'expires_at' => $expiresAt,
-            'size' => strlen($contents),
+            'size' => $size,
+            'webspace_uuid' => $uuid,
+            'file_path' => $filePath,
+            'content_type' => (string) ($stream['content_type'] ?? 'application/octet-stream'),
         ];
         file_put_contents($dir . '/' . $publicId . '.meta.json', json_encode($meta, JSON_THROW_ON_ERROR));
-        file_put_contents($dir . '/' . $publicId . '.bin', $contents);
 
         $base = AppUrlHelper::baseUrl();
 
@@ -66,12 +76,67 @@ final class WebSpaceFileShare
             'delete_key' => $deleteKey,
             'expires_at' => $expiresAt,
             'filename' => $filename,
-            'size' => strlen($contents),
+            'size' => $size,
         ];
     }
 
     /**
-     * @return ?array{filename: string, contents: string, delete_key: string, expires_at: string}
+     * @return list<array{identifier: string, file: string, status: string, progress: int, error?: string, result?: array<string, mixed>}>
+     */
+    public static function listForWebSpace(string $uuid): array
+    {
+        $dir = self::storageDir();
+        if (!is_dir($dir)) {
+            return [];
+        }
+
+        $shares = [];
+        foreach (glob($dir . '/*.meta.json') ?: [] as $metaPath) {
+            /** @var array<string, mixed>|null $meta */
+            $meta = json_decode((string) file_get_contents($metaPath), true);
+            if (!is_array($meta)) {
+                continue;
+            }
+            if ((string) ($meta['webspace_uuid'] ?? '') !== $uuid) {
+                continue;
+            }
+
+            $publicId = (string) ($meta['public_id'] ?? basename($metaPath, '.meta.json'));
+            $expiresAt = (string) ($meta['expires_at'] ?? '');
+            if ($expiresAt !== '' && strtotime($expiresAt) !== false && strtotime($expiresAt) < time()) {
+                self::delete($publicId);
+                continue;
+            }
+
+            $binPath = $dir . '/' . $publicId . '.bin';
+            if (!is_file($binPath)) {
+                continue;
+            }
+
+            $base = AppUrlHelper::baseUrl();
+            $shares[] = [
+                'identifier' => $publicId,
+                'file' => (string) ($meta['file_path'] ?? $meta['filename'] ?? ''),
+                'status' => 'completed',
+                'progress' => 100,
+                'result' => [
+                    'public_id' => $publicId,
+                    'url' => $base . '/api/public/webspace-shares/' . $publicId,
+                    'delete_key' => (string) ($meta['delete_key'] ?? ''),
+                    'expires_at' => $expiresAt,
+                    'filename' => (string) ($meta['filename'] ?? 'download'),
+                    'size' => (int) ($meta['size'] ?? 0),
+                ],
+            ];
+        }
+
+        usort($shares, static fn (array $a, array $b): int => strcmp($b['identifier'], $a['identifier']));
+
+        return $shares;
+    }
+
+    /**
+     * @return ?array{filename: string, path: string, delete_key: string, expires_at: string, content_type: string, size: int}
      */
     public static function resolve(string $publicId): ?array
     {
@@ -92,9 +157,11 @@ final class WebSpaceFileShare
 
         return [
             'filename' => (string) ($meta['filename'] ?? 'download'),
-            'contents' => (string) file_get_contents($binPath),
+            'path' => $binPath,
             'delete_key' => (string) ($meta['delete_key'] ?? ''),
             'expires_at' => $expiresAt,
+            'content_type' => (string) ($meta['content_type'] ?? 'application/octet-stream'),
+            'size' => (int) ($meta['size'] ?? filesize($binPath)),
         ];
     }
 

@@ -105,9 +105,6 @@ export function WebSpaceHeader({
         }
     };
 
-    const isRunning = runtime === 'running';
-    const isOffline = runtime === 'stopped' || runtime === 'offline';
-
     const isOfflineStatus = (value: string) => value === 'stopped' || value === 'offline';
     const isRunningStatus = (value: string) => value === 'running' || value === 'starting';
 
