@@ -76,9 +76,7 @@ function rewriteHtmlPaths(html) {
 }
 
 function writeRootIndex() {
-    const target = BASE_PATH
-        ? `${BASE_PATH}/icanhasfeatherpanel/index.html`
-        : './icanhasfeatherpanel/index.html';
+    const target = './icanhasfeatherpanel/index.html';
 
     const html = `<!doctype html>
 <html lang="en">

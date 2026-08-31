@@ -70,7 +70,7 @@ jobs:
         working-directory: frontendv2
         env:
           DOCS_OUTPUT_DIR: ../docs-site
-          DOCS_BASE_PATH: /featherpanel
+          DOCS_BASE_PATH: /${{ github.event.repository.name }}
           OPENAPI_JSON: ../backend/openapi.json
         run: pnpm build:public-docs
 

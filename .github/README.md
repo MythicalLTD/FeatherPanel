@@ -60,8 +60,8 @@ This branch ships experimental features that may be unstable, incomplete, or uns
 </td>
 <td valign="top">
 
-- [icanhasfeatherpanel](https://mythicalltd.github.io/featherpanel/icanhasfeatherpanel/) widgets, permissions, events
-- [OpenAPI / Redoc](https://mythicalltd.github.io/featherpanel/icanhasfeatherpanel/api/) full API reference
+- [icanhasfeatherpanel](https://mythicalltd.github.io/FeatherPanel/icanhasfeatherpanel/) widgets, permissions, events
+- [OpenAPI / Redoc](https://mythicalltd.github.io/FeatherPanel/icanhasfeatherpanel/api/) full API reference
 
 </td>
 <td valign="top">
@@ -134,7 +134,7 @@ Docker images for the backend, frontend, and async runner are published through 
 
 <br />
 
-**https://mythicalltd.github.io/featherpanel/icanhasfeatherpanel/**
+**https://mythicalltd.github.io/FeatherPanel/icanhasfeatherpanel/**
 
 </details>
 
@@ -164,7 +164,7 @@ Optional environment variables for `build:public-docs`:
 | Variable | Purpose |
 | --- | --- |
 | `DOCS_OUTPUT_DIR` | Output directory (default: `docs-site/`) |
-| `DOCS_BASE_PATH` | URL prefix for GitHub Pages project sites (`/featherpanel`) |
+| `DOCS_BASE_PATH` | URL prefix for GitHub Pages project sites (CI sets `/FeatherPanel` from the repo name) |
 | `OPENAPI_JSON` | Path to the generated OpenAPI file |
 
 </details>
@@ -319,7 +319,7 @@ FeatherPanel is licensed under the **[GNU Affero General Public License v3.0](..
 
 <a href="https://docs.mythical.systems/docs">Documentation</a>
 &nbsp;·&nbsp;
-<a href="https://mythicalltd.github.io/featherpanel/icanhasfeatherpanel/">Developer docs</a>
+<a href="https://mythicalltd.github.io/FeatherPanel/icanhasfeatherpanel/">Developer docs</a>
 &nbsp;·&nbsp;
 <a href="https://discord.mythical.systems">Discord</a>
 &nbsp;·&nbsp;
