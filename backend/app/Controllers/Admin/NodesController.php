@@ -33,6 +33,7 @@ use App\Helpers\WingsUrlHelper;
 use App\Helpers\DaemonCapabilities;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Plugins\Events\Events\NodesEvent;
+use App\Helpers\FeatherWingsConfigBuilder;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use App\Services\Servers\ServerTransferInitiator;
@@ -1173,7 +1174,7 @@ class NodesController
     #[OA\Get(
         path: '/api/admin/nodes/{id}/setup-command',
         summary: 'Get node setup command',
-        description: 'Returns install command (step 1) and setup command (step 2) to configure the node. Step 1 installs FeatherWings; step 2 fetches config from the panel and restarts the daemon.',
+        description: 'Returns install command (step 1) and setup command (step 2) to configure the node. Step 1 installs FeatherWings only; step 2 runs the interactive featherwings configure wizard.',
         tags: ['Admin - Nodes'],
         parameters: [
             new OA\Parameter(
@@ -1192,8 +1193,8 @@ class NodesController
                     properties: [
                         new OA\Property(property: 'panel_url', type: 'string', description: 'Panel base URL'),
                         new OA\Property(property: 'config_url', type: 'string', description: 'Full URL to fetch config (GET with Wings Bearer token)'),
-                        new OA\Property(property: 'install_command', type: 'string', description: 'Step 1: Install FeatherWings on the node (curl get.featherpanel.com/installer.sh)'),
-                        new OA\Property(property: 'setup_command', type: 'string', description: 'Step 2: Fetch config and restart FeatherWings'),
+                        new OA\Property(property: 'install_command', type: 'string', description: 'Step 1: Install FeatherWings on the node (binary + Docker, no SSL)'),
+                        new OA\Property(property: 'setup_command', type: 'string', description: 'Step 2: Run featherwings configure (handles node join, SSL, and systemd)'),
                         new OA\Property(property: 'config_path_hint', type: 'string', description: 'Suggested config path on the node (e.g. /etc/featherpanel/config.yml)'),
                     ]
                 )
@@ -1219,7 +1220,8 @@ class NodesController
 
         $caps = DaemonCapabilities::fromNode($node);
         $configYaml = Node::generateWingsConfigYaml($node, $panelUrl);
-        $commands = $caps->buildSetupCommands($configUrl, $bearer, $configYaml);
+        $joinYaml = FeatherWingsConfigBuilder::buildJoinConfigYaml($node, $panelUrl);
+        $commands = $caps->buildSetupCommands($panelUrl, $configUrl, $bearer, $configYaml, $joinYaml);
         $defaults = $caps->defaults();
 
         $payload = [

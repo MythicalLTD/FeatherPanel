@@ -65,6 +65,7 @@ import {
     AppWindow,
     Mail,
     Palette,
+    LifeBuoy,
 } from 'lucide-react';
 import { isEnabled, isEnabledUnlessExplicitlyFalse } from '@/lib/utils';
 import { supportsDaemonFeature, type DaemonFeature } from '@/lib/daemonCapabilities';
@@ -535,6 +536,17 @@ export const getAdminNavigationItems = (
                     title: t('navigation.items.settings'),
                     url: '/admin/settings',
                     icon: Settings,
+                    isActive: false,
+                    category: 'admin',
+                    permission: Permissions.ADMIN_ROOT,
+                    group: 'system',
+                },
+                {
+                    id: 'admin-support',
+                    name: t('navigation.items.support'),
+                    title: t('navigation.items.support'),
+                    url: '/admin/support',
+                    icon: LifeBuoy,
                     isActive: false,
                     category: 'admin',
                     permission: Permissions.ADMIN_ROOT,

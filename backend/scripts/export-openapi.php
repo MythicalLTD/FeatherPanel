@@ -1,5 +1,8 @@
 <?php
 
+
+declare(strict_types=1);
+
 /*
  * This file is part of FeatherPanel.
  *
@@ -14,8 +17,6 @@
  *
  * See the LICENSE file or <https://www.gnu.org/licenses/>.
  */
-
-declare(strict_types=1);
 
 if (!defined('APP_VERSION')) {
     define('APP_VERSION', 'v1.4.0');

@@ -141,6 +141,21 @@ export function WingsTab({ nodeId, wingsConfigYaml, handleResetKey, resetting }:
                                     />
                                 </div>
                             )}
+                            {setupData.join_data && (
+                                <div className='space-y-2 border-t border-white/5 pt-4'>
+                                    <p className='text-foreground text-xs font-semibold'>
+                                        {t('admin.node.wings.join_data_title')}
+                                    </p>
+                                    <p className='text-muted-foreground text-xs'>
+                                        {t('admin.node.wings.join_data_help')}
+                                    </p>
+                                    <CommandBlock
+                                        command={setupData.join_data}
+                                        copyLabel={t('admin.node.wings.copy_join_data')}
+                                        onCopy={() => copyToClipboard(setupData.join_data!, t)}
+                                    />
+                                </div>
+                            )}
                             <p className='text-muted-foreground text-xs'>{t('admin.node.wings.setup_command_then')}</p>
                         </>
                     ) : (

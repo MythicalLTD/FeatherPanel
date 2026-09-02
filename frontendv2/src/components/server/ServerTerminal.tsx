@@ -15,7 +15,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 
 'use client';
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
@@ -26,6 +26,7 @@ import {
     Trash2,
     Send,
     ChevronDown,
+    ChevronRight,
     History,
     Clock,
     Settings2,
@@ -40,13 +41,13 @@ import { Menu, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
 import { toast } from 'sonner';
 import { useTranslation } from '@/contexts/TranslationContext';
+import type { CommandSuggestRequest, CommandSuggestResponse } from '@/hooks/useWingsWebSocket';
 import {
     CONSOLE_PRESET_TEMPLATES,
     type ConsolePresetMenuGroup,
     type ConsolePresetTemplate,
 } from '@/components/server/consolePresetRules';
 import { Button } from '@/components/featherui/Button';
-import { Input } from '@/components/featherui/Input';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -54,6 +55,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
@@ -148,6 +150,138 @@ function CommandHistoryList({ commandHistory, onSelect }: CommandHistoryListProp
                     <span className='truncate font-mono text-xs'>{cmd}</span>
                 </button>
             ))}
+        </div>
+    );
+}
+
+interface SuggestionMenuState {
+    suggestions: string[];
+    prefix: string;
+    suffix: string;
+    highlight: number;
+}
+
+function completionPartial(menu: SuggestionMenuState, line: string): string {
+    const end = line.length - menu.suffix.length;
+    return line.slice(menu.prefix.length, Math.max(menu.prefix.length, end));
+}
+
+function completionGhostRemainder(menu: SuggestionMenuState, line: string): string {
+    const partial = completionPartial(menu, line);
+    const choice = menu.suggestions[menu.highlight];
+    if (!choice || !partial) {
+        return '';
+    }
+    if (choice.toLowerCase().startsWith(partial.toLowerCase())) {
+        return choice.slice(partial.length);
+    }
+    return '';
+}
+
+function CompletionSuggestionLabel({ suggestion, partial }: { suggestion: string; partial: string }) {
+    if (partial && suggestion.toLowerCase().startsWith(partial.toLowerCase())) {
+        return (
+            <>
+                <span className='text-primary font-semibold'>{suggestion.slice(0, partial.length)}</span>
+                <span className='text-foreground/85'>{suggestion.slice(partial.length)}</span>
+            </>
+        );
+    }
+    return <span className='text-foreground/85'>{suggestion}</span>;
+}
+
+interface ConsoleCompletionMenuProps {
+    menu: SuggestionMenuState;
+    commandInput: string;
+    listRef: React.RefObject<HTMLDivElement | null>;
+    onHighlight: (index: number) => void;
+    onSelect: (choice: string) => void;
+    t: (key: string, params?: Record<string, string>) => string;
+}
+
+function ConsoleCompletionMenu({ menu, commandInput, listRef, onHighlight, onSelect, t }: ConsoleCompletionMenuProps) {
+    const partial = completionPartial(menu, commandInput);
+    const visible = menu.suggestions.slice(0, 40);
+    const total = menu.suggestions.length;
+    const truncated = total > visible.length;
+
+    return (
+        <div
+            className='border-border/60 bg-popover/95 animate-in fade-in-0 slide-in-from-bottom-1 absolute right-0 bottom-full left-0 z-20 mb-2 overflow-hidden rounded-xl border shadow-xl backdrop-blur-md duration-150'
+            role='listbox'
+            aria-label={t('servers.console.terminal.completions')}
+        >
+            <div className='border-border/50 bg-muted/25 flex items-center gap-2 border-b px-3 py-2'>
+                <div className='bg-primary/12 text-primary flex h-6 w-6 shrink-0 items-center justify-center rounded-md'>
+                    <Sparkles className='h-3.5 w-3.5' aria-hidden />
+                </div>
+                <span className='text-foreground min-w-0 flex-1 truncate text-xs font-semibold'>
+                    {t('servers.console.terminal.completions')}
+                </span>
+                <Badge variant='secondary' className='h-5 shrink-0 rounded-md px-1.5 text-[10px] font-bold'>
+                    {t('servers.console.terminal.completions_count', { count: String(total) })}
+                </Badge>
+            </div>
+            <div ref={listRef} className='custom-scrollbar max-h-44 overflow-y-auto p-1'>
+                {visible.map((suggestion, index) => {
+                    const selected = index === menu.highlight;
+                    return (
+                        <button
+                            key={`${suggestion}-${index}`}
+                            type='button'
+                            role='option'
+                            aria-selected={selected}
+                            data-completion-selected={selected ? 'true' : undefined}
+                            className={cn(
+                                'group flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left font-mono text-xs transition-colors',
+                                selected
+                                    ? 'bg-primary/12 text-foreground ring-primary/25 ring-1'
+                                    : 'hover:bg-muted/70 text-foreground/90',
+                            )}
+                            onMouseDown={(e) => {
+                                e.preventDefault();
+                                onSelect(suggestion);
+                            }}
+                            onMouseEnter={() => onHighlight(index)}
+                        >
+                            <span
+                                className={cn(
+                                    'bg-primary h-4 w-0.5 shrink-0 rounded-full transition-opacity',
+                                    selected ? 'opacity-100' : 'opacity-0 group-hover:opacity-40',
+                                )}
+                                aria-hidden
+                            />
+                            <span className='min-w-0 flex-1 truncate'>
+                                <CompletionSuggestionLabel suggestion={suggestion} partial={partial} />
+                            </span>
+                            <ChevronRight
+                                className={cn(
+                                    'text-primary h-3.5 w-3.5 shrink-0 transition-all',
+                                    selected
+                                        ? 'translate-x-0 opacity-100'
+                                        : 'translate-x-1 opacity-0 group-hover:translate-x-0 group-hover:opacity-50',
+                                )}
+                                aria-hidden
+                            />
+                        </button>
+                    );
+                })}
+                {truncated && (
+                    <p className='text-muted-foreground px-2.5 py-1.5 text-[10px] font-medium'>
+                        {t('servers.console.terminal.completions_more', { count: String(total - visible.length) })}
+                    </p>
+                )}
+            </div>
+            <div className='border-border/50 bg-muted/15 text-muted-foreground hidden items-center gap-2 border-t px-3 py-2 text-[10px] sm:flex'>
+                <kbd className='border-border/60 bg-background/70 rounded border px-1.5 py-0.5 font-mono'>Tab</kbd>
+                <span>{t('servers.console.terminal.completions_hint_cycle')}</span>
+                <kbd className='border-border/60 bg-background/70 rounded border px-1.5 py-0.5'>↑↓</kbd>
+                <span>{t('servers.console.terminal.completions_hint_navigate')}</span>
+                <kbd className='border-border/60 bg-background/70 rounded border px-1.5 py-0.5'>↵</kbd>
+                <span>{t('servers.console.terminal.completions_hint_accept')}</span>
+                <kbd className='border-border/60 bg-background/70 ml-auto rounded border px-1.5 py-0.5'>Esc</kbd>
+                <span>{t('servers.console.terminal.completions_hint_close')}</span>
+            </div>
         </div>
     );
 }
@@ -356,6 +490,7 @@ export interface ServerTerminalRef {
     write: (data: string) => void;
     writeln: (data: string) => void;
     clear: () => void;
+    applyCommandSuggestions: (response: CommandSuggestResponse) => void;
 }
 
 export interface ConsoleFilterRule {
@@ -372,6 +507,8 @@ export interface ConsoleFilterRule {
 
 interface ServerTerminalProps {
     onSendCommand?: (command: string) => void;
+    /** Request Wings console Tab completions for the current input line. */
+    onSuggestCommand?: (request: CommandSuggestRequest) => void;
     canSendCommands?: boolean;
     serverStatus?: string;
     filters?: ConsoleFilterRule[];
@@ -387,6 +524,7 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
     (
         {
             onSendCommand,
+            onSuggestCommand,
             canSendCommands = false,
             serverStatus = 'offline',
             filters = [],
@@ -405,8 +543,20 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
         const showScrollButtonRef = useRef(false);
         const autoScrollRef = useRef(true);
         const followOutputRef = useRef(true);
+        const commandInputRef = useRef<HTMLInputElement | null>(null);
+        const completionListRef = useRef<HTMLDivElement | null>(null);
+        const pendingSuggestIdRef = useRef<string | null>(null);
+        const acceptOnSuggestRef = useRef(false);
+        const suggestDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+        const applyingCompletionRef = useRef(false);
         const { t } = useTranslation();
         const [commandInput, setCommandInput] = useState('');
+        const [suggestionMenu, setSuggestionMenu] = useState<{
+            suggestions: string[];
+            prefix: string;
+            suffix: string;
+            highlight: number;
+        } | null>(null);
         const [showScrollButton, setShowScrollButton] = useState(false);
         const [autoScroll, setAutoScroll] = useState(() => {
             const saved = localStorage.getItem('featherpanel_terminal_autoscroll');
@@ -514,6 +664,93 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
             }
         }, []);
 
+        const applyCompletionChoice = useCallback((prefix: string, suffix: string, choice: string) => {
+            let insert = choice;
+            if (
+                suffix === '' &&
+                !prefix.endsWith(' ') &&
+                !choice.startsWith('/') &&
+                prefix.length > 0 &&
+                !choice.startsWith(prefix)
+            ) {
+                insert = ` ${choice}`;
+            }
+            const next = prefix + insert + suffix;
+            applyingCompletionRef.current = true;
+            setCommandInput(next);
+            setSuggestionMenu(null);
+            requestAnimationFrame(() => {
+                const el = commandInputRef.current;
+                if (el) {
+                    const pos = prefix.length + insert.length;
+                    el.focus();
+                    el.setSelectionRange(pos, pos);
+                }
+                applyingCompletionRef.current = false;
+            });
+        }, []);
+
+        const applyCommandSuggestions = useCallback((response: CommandSuggestResponse) => {
+            if (!response.id || response.id !== pendingSuggestIdRef.current) {
+                return;
+            }
+            pendingSuggestIdRef.current = null;
+
+            const suggestions = response.suggestions ?? [];
+            if (suggestions.length === 0) {
+                setSuggestionMenu(null);
+                acceptOnSuggestRef.current = false;
+                return;
+            }
+
+            setCommandInput((current) => {
+                if (current !== response.line) {
+                    acceptOnSuggestRef.current = false;
+                    return current;
+                }
+
+                const start = Math.max(0, Math.min(response.start, response.line.length));
+                const end = Math.max(start, Math.min(response.end, response.line.length));
+                const prefix = response.line.slice(0, start);
+                const suffix = response.line.slice(end);
+
+                if (acceptOnSuggestRef.current) {
+                    acceptOnSuggestRef.current = false;
+                    let insert = suggestions[0];
+                    if (
+                        suffix === '' &&
+                        !prefix.endsWith(' ') &&
+                        !insert.startsWith('/') &&
+                        prefix.length > 0 &&
+                        !insert.startsWith(prefix)
+                    ) {
+                        insert = ` ${insert}`;
+                    }
+                    const next = prefix + insert + suffix;
+                    applyingCompletionRef.current = true;
+                    setSuggestionMenu(null);
+                    requestAnimationFrame(() => {
+                        const el = commandInputRef.current;
+                        if (el) {
+                            const pos = prefix.length + insert.length;
+                            el.focus();
+                            el.setSelectionRange(pos, pos);
+                        }
+                        applyingCompletionRef.current = false;
+                    });
+                    return next;
+                }
+
+                setSuggestionMenu({
+                    suggestions,
+                    prefix,
+                    suffix,
+                    highlight: 0,
+                });
+                return current;
+            });
+        }, []);
+
         React.useImperativeHandle(
             ref,
             () => ({
@@ -534,8 +771,9 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                         terminalInstanceRef.current.clear();
                     }
                 },
+                applyCommandSuggestions,
             }),
-            [maybeFollowOutput],
+            [maybeFollowOutput, applyCommandSuggestions],
         );
 
         useEffect(() => {
@@ -688,6 +926,9 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
 
             saveToHistory(commandInput);
             setHistoryIndex(-1);
+            setSuggestionMenu(null);
+            pendingSuggestIdRef.current = null;
+            acceptOnSuggestRef.current = false;
 
             onSendCommand(commandInput);
 
@@ -793,11 +1034,86 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
 
         const canSend = canSendCommands && (serverStatus === 'running' || serverStatus === 'starting');
 
+        const requestSuggestions = useCallback(
+            (line: string, cursor: number, acceptFirst: boolean) => {
+                if (!onSuggestCommand || !canSend) return;
+                const id =
+                    typeof crypto !== 'undefined' && crypto.randomUUID
+                        ? crypto.randomUUID()
+                        : `suggest-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+                pendingSuggestIdRef.current = id;
+                acceptOnSuggestRef.current = acceptFirst;
+                onSuggestCommand({ id, line, cursor });
+            },
+            [onSuggestCommand, canSend],
+        );
+
+        const requestTabCompletion = () => {
+            if (!onSuggestCommand || !canSend) return;
+
+            if (suggestionMenu && suggestionMenu.suggestions.length > 0) {
+                if (suggestionMenu.suggestions.length > 1) {
+                    setSuggestionMenu((menu) => {
+                        if (!menu) return menu;
+                        return {
+                            ...menu,
+                            highlight: (menu.highlight + 1) % menu.suggestions.length,
+                        };
+                    });
+                    return;
+                }
+                applyCompletionChoice(suggestionMenu.prefix, suggestionMenu.suffix, suggestionMenu.suggestions[0]);
+                return;
+            }
+
+            const el = commandInputRef.current;
+            const cursor = el?.selectionStart ?? commandInput.length;
+            requestSuggestions(commandInput, cursor, true);
+        };
+
+        // Live suggestions while typing (Minecraft `/` commands and any egg tree).
+        useEffect(() => {
+            if (!onSuggestCommand || !canSend || applyingCompletionRef.current) {
+                return;
+            }
+            if (suggestDebounceRef.current) {
+                clearTimeout(suggestDebounceRef.current);
+            }
+            const line = commandInput;
+            if (!line.trim()) {
+                setSuggestionMenu(null);
+                return;
+            }
+            suggestDebounceRef.current = setTimeout(() => {
+                const el = commandInputRef.current;
+                const cursor = el?.selectionStart ?? line.length;
+                requestSuggestions(line, cursor, false);
+            }, 120);
+            return () => {
+                if (suggestDebounceRef.current) {
+                    clearTimeout(suggestDebounceRef.current);
+                }
+            };
+        }, [commandInput, canSend, onSuggestCommand, requestSuggestions]);
+
+        useEffect(() => {
+            if (!suggestionMenu) return;
+            const selected = completionListRef.current?.querySelector('[data-completion-selected="true"]');
+            selected?.scrollIntoView({ block: 'nearest' });
+        }, [suggestionMenu?.highlight, suggestionMenu?.suggestions.length]);
+
+        const completionGhostText = useMemo(
+            () => (suggestionMenu ? completionGhostRemainder(suggestionMenu, commandInput) : ''),
+            [suggestionMenu, commandInput],
+        );
+
         const prevCanSendRef = useRef(false);
         useEffect(() => {
             if (prevCanSendRef.current && !canSend) {
                 setCommandInput('');
                 setHistoryIndex(-1);
+                setSuggestionMenu(null);
+                pendingSuggestIdRef.current = null;
             }
             prevCanSendRef.current = canSend;
         }, [canSend]);
@@ -1042,46 +1358,156 @@ const ServerTerminal = React.forwardRef<ServerTerminalRef, ServerTerminalProps>(
                 {onSendCommand && (
                     <CardFooter className='border-border/50 bg-card flex w-full min-w-0 shrink-0 flex-col items-stretch gap-1.5 border-t px-3 py-2 sm:px-4 sm:py-2.5'>
                         <div className='flex w-full min-w-0 items-center gap-2'>
-                            <div className='min-w-0 flex-1'>
-                                <Input
-                                    value={commandInput}
-                                    onChange={(e) => setCommandInput(e.target.value)}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter') sendCommand();
-                                        if (e.key === 'ArrowUp') {
-                                            e.preventDefault();
-                                            navigateHistory('up');
+                            <div className='relative min-w-0 flex-1'>
+                                {suggestionMenu && suggestionMenu.suggestions.length > 0 && (
+                                    <ConsoleCompletionMenu
+                                        menu={suggestionMenu}
+                                        commandInput={commandInput}
+                                        listRef={completionListRef}
+                                        onHighlight={(index) =>
+                                            setSuggestionMenu((menu) => (menu ? { ...menu, highlight: index } : menu))
                                         }
-                                        if (e.key === 'ArrowDown') {
-                                            e.preventDefault();
-                                            navigateHistory('down');
+                                        onSelect={(choice) =>
+                                            applyCompletionChoice(suggestionMenu.prefix, suggestionMenu.suffix, choice)
                                         }
-                                        if (e.ctrlKey && e.code === 'KeyC') {
-                                            const termHasSelection = terminalInstanceRef.current?.hasSelection();
-                                            const target = e.target as HTMLInputElement;
-                                            const inputHasSelection = target.selectionStart !== target.selectionEnd;
-
-                                            if (termHasSelection && !inputHasSelection) {
-                                                const selection = terminalInstanceRef.current?.getSelection();
-                                                if (selection) {
-                                                    navigator.clipboard.writeText(selection);
+                                        t={t}
+                                    />
+                                )}
+                                <div
+                                    className={cn(
+                                        'border-border/50 bg-muted/20 focus-within:border-primary/40 focus-within:ring-primary/15 flex h-9 w-full items-center gap-2 rounded-lg border px-2.5 transition-all focus-within:ring-2',
+                                        !canSend && 'opacity-60',
+                                        suggestionMenu &&
+                                            suggestionMenu.suggestions.length > 0 &&
+                                            'border-primary/30 ring-primary/10 ring-1',
+                                    )}
+                                >
+                                    <span
+                                        className='text-primary shrink-0 font-mono text-xs font-bold select-none'
+                                        aria-hidden
+                                    >
+                                        &gt;
+                                    </span>
+                                    <div className='relative min-w-0 flex-1'>
+                                        {completionGhostText && (
+                                            <div
+                                                className='pointer-events-none absolute inset-0 flex items-center overflow-hidden'
+                                                aria-hidden
+                                            >
+                                                <span className='invisible truncate font-mono text-xs font-semibold whitespace-pre'>
+                                                    {commandInput}
+                                                </span>
+                                                <span className='text-muted-foreground/35 truncate font-mono text-xs font-semibold whitespace-pre'>
+                                                    {completionGhostText}
+                                                </span>
+                                            </div>
+                                        )}
+                                        <input
+                                            ref={commandInputRef}
+                                            value={commandInput}
+                                            onChange={(e) => {
+                                                if (!applyingCompletionRef.current) {
+                                                    pendingSuggestIdRef.current = null;
                                                 }
-                                                e.preventDefault();
-                                                e.stopPropagation();
-                                            } else if (!termHasSelection && !inputHasSelection && onSendCommand) {
-                                                e.preventDefault();
-                                                e.stopPropagation();
-                                                onSendCommand('\x03');
-                                                setCommandInput('');
-                                            }
-                                        }
-                                    }}
-                                    type='text'
-                                    className='focus:ring-primary/15 h-9 rounded-lg border px-3 py-2 font-mono text-xs font-semibold shadow-none focus:ring-2'
-                                    placeholder={t('servers.console.terminal.placeholder')}
-                                    title={t('servers.console.terminal.input_hint')}
-                                    disabled={!canSend}
-                                />
+                                                setCommandInput(e.target.value);
+                                            }}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Tab') {
+                                                    e.preventDefault();
+                                                    requestTabCompletion();
+                                                    return;
+                                                }
+                                                if (e.key === 'Escape') {
+                                                    setSuggestionMenu(null);
+                                                    pendingSuggestIdRef.current = null;
+                                                    return;
+                                                }
+                                                if (suggestionMenu && suggestionMenu.suggestions.length > 0) {
+                                                    if (e.key === 'ArrowDown') {
+                                                        e.preventDefault();
+                                                        setSuggestionMenu((menu) => {
+                                                            if (!menu) return menu;
+                                                            return {
+                                                                ...menu,
+                                                                highlight:
+                                                                    (menu.highlight + 1) % menu.suggestions.length,
+                                                            };
+                                                        });
+                                                        return;
+                                                    }
+                                                    if (e.key === 'ArrowUp') {
+                                                        e.preventDefault();
+                                                        setSuggestionMenu((menu) => {
+                                                            if (!menu) return menu;
+                                                            const next =
+                                                                (menu.highlight - 1 + menu.suggestions.length) %
+                                                                menu.suggestions.length;
+                                                            return { ...menu, highlight: next };
+                                                        });
+                                                        return;
+                                                    }
+                                                    if (e.key === 'Enter') {
+                                                        e.preventDefault();
+                                                        const choice =
+                                                            suggestionMenu.suggestions[suggestionMenu.highlight] ??
+                                                            suggestionMenu.suggestions[0];
+                                                        applyCompletionChoice(
+                                                            suggestionMenu.prefix,
+                                                            suggestionMenu.suffix,
+                                                            choice,
+                                                        );
+                                                        return;
+                                                    }
+                                                }
+                                                if (e.key === 'Enter') sendCommand();
+                                                if (e.key === 'ArrowUp') {
+                                                    e.preventDefault();
+                                                    setSuggestionMenu(null);
+                                                    navigateHistory('up');
+                                                }
+                                                if (e.key === 'ArrowDown') {
+                                                    e.preventDefault();
+                                                    setSuggestionMenu(null);
+                                                    navigateHistory('down');
+                                                }
+                                                if (e.ctrlKey && e.code === 'KeyC') {
+                                                    const termHasSelection =
+                                                        terminalInstanceRef.current?.hasSelection();
+                                                    const target = e.target as HTMLInputElement;
+                                                    const inputHasSelection =
+                                                        target.selectionStart !== target.selectionEnd;
+
+                                                    if (termHasSelection && !inputHasSelection) {
+                                                        const selection = terminalInstanceRef.current?.getSelection();
+                                                        if (selection) {
+                                                            navigator.clipboard.writeText(selection);
+                                                        }
+                                                        e.preventDefault();
+                                                        e.stopPropagation();
+                                                    } else if (
+                                                        !termHasSelection &&
+                                                        !inputHasSelection &&
+                                                        onSendCommand
+                                                    ) {
+                                                        e.preventDefault();
+                                                        e.stopPropagation();
+                                                        onSendCommand('\x03');
+                                                        setCommandInput('');
+                                                        setSuggestionMenu(null);
+                                                    }
+                                                }
+                                            }}
+                                            type='text'
+                                            className='text-foreground placeholder:text-muted-foreground/50 relative h-full w-full min-w-0 bg-transparent py-1.5 font-mono text-xs font-semibold outline-none'
+                                            placeholder={t('servers.console.terminal.placeholder')}
+                                            title={t('servers.console.terminal.input_hint')}
+                                            disabled={!canSend}
+                                            autoComplete='off'
+                                            autoCorrect='off'
+                                            spellCheck={false}
+                                        />
+                                    </div>
+                                </div>
                             </div>
                             <Button
                                 type='button'

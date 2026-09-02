@@ -64,6 +64,21 @@ export interface FileOperationEvent {
     args?: unknown[];
 }
 
+export interface CommandSuggestRequest {
+    id: string;
+    line: string;
+    cursor: number;
+}
+
+export interface CommandSuggestResponse {
+    id: string;
+    line: string;
+    cursor: number;
+    start: number;
+    end: number;
+    suggestions: string[];
+}
+
 interface WingsWebSocketOptions {
     serverUuid: string;
     onMessage?: (data: WingsMessage) => void;
@@ -79,6 +94,8 @@ interface WingsWebSocketOptions {
     onTransferStatus?: (status: string) => void;
     /** Calagopus file-op progress/completed/error/aborted events */
     onFileOperation?: (event: FileOperationEvent) => void;
+    /** Wings console Tab-completion replies (`command suggestions`). */
+    onCommandSuggestions?: (response: CommandSuggestResponse) => void;
     connect?: boolean;
 }
 
@@ -88,6 +105,7 @@ interface WingsWebSocketReturn {
     ping: number | null;
     stats: WingsStats | null;
     sendCommand: (command: string) => void;
+    suggestCommand: (request: CommandSuggestRequest) => void;
     sendPowerAction: (action: 'start' | 'stop' | 'restart' | 'kill') => Promise<void>;
     reconnect: () => void;
     requestStats: () => void;
@@ -112,6 +130,7 @@ export function useWingsWebSocket({
     onTransferLogs,
     onTransferStatus,
     onFileOperation,
+    onCommandSuggestions,
     connect: shouldConnect = true,
 }: WingsWebSocketOptions): WingsWebSocketReturn {
     const { t } = useTranslation();
@@ -152,6 +171,7 @@ export function useWingsWebSocket({
     const onTransferLogsRef = useRef(onTransferLogs);
     const onTransferStatusRef = useRef(onTransferStatus);
     const onFileOperationRef = useRef(onFileOperation);
+    const onCommandSuggestionsRef = useRef(onCommandSuggestions);
     // Tracks toast ids raised for in-flight file operations so they can be dismissed on
     // socket close / unmount instead of being left dangling (e.g. a "progress" toast whose
     // "completed"/"error"/"aborted" event never arrives because the socket dropped).
@@ -172,6 +192,7 @@ export function useWingsWebSocket({
         onTransferLogsRef.current = onTransferLogs;
         onTransferStatusRef.current = onTransferStatus;
         onFileOperationRef.current = onFileOperation;
+        onCommandSuggestionsRef.current = onCommandSuggestions;
     }, [
         onMessage,
         onStats,
@@ -185,6 +206,7 @@ export function useWingsWebSocket({
         onTransferLogs,
         onTransferStatus,
         onFileOperation,
+        onCommandSuggestions,
     ]);
 
     const flushConsoleOutputQueue = useCallback(() => {
@@ -278,6 +300,17 @@ export function useWingsWebSocket({
         },
         [connectionStatus],
     );
+
+    const suggestCommand = useCallback((request: CommandSuggestRequest) => {
+        if (wsRef.current?.readyState === WebSocket.OPEN) {
+            wsRef.current.send(
+                JSON.stringify({
+                    event: 'suggest command',
+                    args: [JSON.stringify(request)],
+                }),
+            );
+        }
+    }, []);
 
     const sendPowerAction = useCallback(
         async (action: 'start' | 'stop' | 'restart' | 'kill') => {
@@ -473,6 +506,32 @@ export function useWingsWebSocket({
                         // Handle console output (batched off the WebSocket thread to avoid UI freezes)
                         if (data.event === 'console output' && onConsoleOutputRef.current) {
                             enqueueConsoleOutput((data.args?.[0] as string) || '');
+                            return;
+                        }
+
+                        // Console Tab-completion replies from Wings
+                        if (data.event === 'command suggestions' && onCommandSuggestionsRef.current) {
+                            try {
+                                const raw = data.args?.[0];
+                                const payload =
+                                    typeof raw === 'string'
+                                        ? (JSON.parse(raw) as CommandSuggestResponse)
+                                        : (raw as CommandSuggestResponse);
+                                if (payload && typeof payload === 'object') {
+                                    onCommandSuggestionsRef.current({
+                                        id: String(payload.id ?? ''),
+                                        line: String(payload.line ?? ''),
+                                        cursor: Number(payload.cursor ?? 0),
+                                        start: Number(payload.start ?? 0),
+                                        end: Number(payload.end ?? 0),
+                                        suggestions: Array.isArray(payload.suggestions)
+                                            ? payload.suggestions.map(String)
+                                            : [],
+                                    });
+                                }
+                            } catch (err) {
+                                console.error('[Wings WS] Failed to parse command suggestions:', err);
+                            }
                             return;
                         }
 
@@ -772,6 +831,7 @@ export function useWingsWebSocket({
         ping,
         stats,
         sendCommand,
+        suggestCommand,
         sendPowerAction,
         reconnect,
         requestStats,

@@ -1062,6 +1062,13 @@
 				"no_history": "No history yet",
 				"scroll_bottom": "Scroll to bottom",
 				"placeholder": "Enter command...",
+				"completions": "Command completions",
+				"completions_count": "{{count}} matches",
+				"completions_more": "+{{count}} more — keep typing to narrow",
+				"completions_hint_cycle": "cycle",
+				"completions_hint_navigate": "navigate",
+				"completions_hint_accept": "accept",
+				"completions_hint_close": "close",
 				"send": "Send command",
 				"server_running_required": "Server must be running to send commands",
 				"clear": "Clear console",
@@ -1093,7 +1100,7 @@
 				"copied_selection": "Selection copied to clipboard",
 				"nothing_to_copy": "Select text in the console first",
 				"rules_intro": "Rules run on each log line before it is shown. Replace and highlight rules are useful for demos, streams, and tickets.",
-				"input_hint": "Arrow Up/Down for command history. Ctrl+C with an empty field sends SIGINT to the process.",
+				"input_hint": "Suggestions appear while you type. Tab cycles matches, Enter accepts, arrows navigate. Ctrl+C with an empty field sends SIGINT.",
 				"presets": {
 					"hide_ipv4": {
 						"title": "Hide IPv4 addresses",
@@ -1617,6 +1624,7 @@
 			"overview": "Overview",
 			"activities": "Activities",
 			"settings": "Settings",
+			"support": "Support",
 			"zeroTrust": "ZeroTrust Security",
 			"images": "Images",
 			"mailTemplates": "Mail Templates",
@@ -5868,12 +5876,15 @@
 				"reset_key_failed": "Failed to request reset key",
 				"config_copied": "Wings configuration copied to clipboard",
 				"setup_command_title": "Quick setup",
-				"setup_command_help": "Run these commands on your node server in order. Step 1 installs the daemon; step 2 writes the config and starts the service.",
-				"setup_step_1": "Step 1 Install daemon",
-				"setup_step_2": "Step 2 Configure and start daemon",
+				"setup_command_help": "Run these commands on your game node server in order. Step 1 installs FeatherWings only. Step 2 launches the interactive setup wizard — it handles OAuth, node configuration, SSL certificates, and the systemd service.",
+				"setup_step_1": "Step 1 — Install FeatherWings",
+				"setup_step_2": "Step 2 — Run setup wizard",
 				"copy_setup_command": "Copy command",
 				"setup_command_copied": "Setup command copied to clipboard",
-				"setup_command_then": "For FeatherWings, step 2 fetches config from the panel. For Calagopus, step 2 runs wings configure --join-data with panel-generated config, then enables the wings service.",
+				"join_data_title": "Advanced: join data only",
+				"join_data_help": "If the wizard cannot run interactively, use this join-data value with: featherwings configure --join-data <value> --override --install-service",
+				"copy_join_data": "Copy join data",
+				"setup_command_then": "The setup wizard connects to your panel, verifies DNS, issues SSL certificates when needed, writes config.yml, and starts featherwings.",
 				"setup_command_unavailable": "Setup command could not be loaded."
 			},
 			"columns": {},
@@ -8773,6 +8784,45 @@
 					"saved": "Article order saved successfully",
 					"save_failed": "Failed to save article order"
 				}
+			}
+		},
+		"support": {
+			"title": "FeatherPanel Support",
+			"description": "Remote access and resources when working with FeatherPanel developers on an active support ticket.",
+			"tabs": {
+				"sshx": "Remote shell (sshx)",
+				"resources": "Logs & resources"
+			},
+			"sshx": {
+				"title": "Share shell access with FeatherPanel devs",
+				"description": "Use sshx only when you are actively in a support ticket with FeatherPanel developers and they explicitly ask for remote shell access on this server.",
+				"warning_title": "Ticket-only — do not use unless a dev asked right now",
+				"warning_body": "An sshx link grants full SSH-level access to your server. Treat it like handing someone your root password.",
+				"warning_only_team": "Only use this when you are talking with FeatherPanel developers right now in an open support ticket and they requested shell access.",
+				"warning_trusted": "Only paste the link in that ticket — anyone with the link can access your system.",
+				"warning_self": "You can open the link yourself in a browser first to verify it works before sharing it in the ticket.",
+				"step_install": "Step 1 — Install sshx",
+				"step_install_help": "Run this on your panel server (the machine hosting FeatherPanel):",
+				"step_run": "Step 2 — Start a session",
+				"step_run_help": "After installation, run sshx in the same shell. It prints a link you can share:",
+				"copy_command": "Copy command",
+				"output_title": "Example output",
+				"output_help": "Copy only the Link URL from the terminal output — not your shell history.",
+				"output_share": "Paste that link in your open support ticket only while FeatherPanel devs are actively helping you. Close the session with Ctrl+C when they are done.",
+				"learn_more_title": "About sshx",
+				"learn_more_body": "sshx is a third-party tool that creates encrypted, browser-based shell sessions. FeatherPanel does not operate sshx.io — you install and run it on your own server.",
+				"learn_more_link": "Visit sshx.io"
+			},
+			"resources": {
+				"logs_title": "Upload panel logs",
+				"logs_description": "Upload web, app, and runner logs from Settings and share the paste URLs with support.",
+				"open_settings": "Open Settings",
+				"discord_title": "Community Discord",
+				"discord_description": "Ask questions and get help from the community and MythicalSystems team.",
+				"open_discord": "Join Discord",
+				"docs_title": "Documentation",
+				"docs_description": "Official FeatherPanel guides, API reference, and troubleshooting docs.",
+				"open_docs": "Open docs"
 			}
 		},
 		"settings": {

@@ -260,13 +260,15 @@ class DaemonCapabilities
     /**
      * Build install + config setup shell commands for this daemon type.
      *
+     * @param string $panelUrl Panel base URL (for featherwings configure --panel-url)
      * @param string $configUrl Panel URL for GET /api/remote/config (FeatherWings curl flow)
      * @param string $bearer Wings bearer token (token_id.token)
      * @param string|null $configYaml Full config.yml content; required for Calagopus join-data setup
+     * @param string|null $joinYaml Minimal bootstrap YAML for FeatherWings join-data setup
      *
      * @return array{install_command: string, setup_command: string, config_path_hint: string, join_data?: string}
      */
-    public function buildSetupCommands(string $configUrl, string $bearer, ?string $configYaml = null): array
+    public function buildSetupCommands(string $panelUrl, string $configUrl, string $bearer, ?string $configYaml = null, ?string $joinYaml = null): array
     {
         $defaults = $this->defaults();
         $configDir = $defaults['config_dir'];
@@ -296,16 +298,31 @@ class DaemonCapabilities
             ];
         }
 
-        $installCommand = 'curl -sSL https://get.featherpanel.com/installer.sh | bash';
-        $setupCommand = 'mkdir -p ' . $configDir
-            . ' && curl -s -H "Authorization: Bearer ' . $bearer . '" "' . $configUrl . '" -o ' . $configPath
-            . ' && systemctl restart ' . $unit;
+        $installCommand = 'curl -sSL https://get.featherpanel.com/installer.sh | env FP_COMPONENT=wings FP_ACTION=install FP_WINGS_SKIP_CONFIGURE=true bash';
+        $joinData = '';
+        if ($joinYaml !== null && $joinYaml !== '') {
+            $joinData = base64_encode($joinYaml);
+        } elseif ($configYaml !== null && $configYaml !== '') {
+            $joinData = base64_encode($configYaml);
+        }
 
-        return [
+        if ($joinData !== '') {
+            $setupCommand = 'featherwings configure --join-data ' . escapeshellarg($joinData) . ' --override --install-service';
+        } else {
+            $setupCommand = 'featherwings configure --panel-url ' . escapeshellarg($panelUrl) . ' --install-service';
+        }
+
+        $payload = [
             'install_command' => $installCommand,
             'setup_command' => $setupCommand,
             'config_path_hint' => $configPath,
         ];
+
+        if ($joinData !== '') {
+            $payload['join_data'] = $joinData;
+        }
+
+        return $payload;
     }
 
     /**

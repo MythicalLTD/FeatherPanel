@@ -18,7 +18,7 @@ See the LICENSE file or <https://www.gnu.org/licenses/>.
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import axios from 'axios';
-import { useWingsWebSocket } from '@/hooks/useWingsWebSocket';
+import { useWingsWebSocket, type CommandSuggestResponse } from '@/hooks/useWingsWebSocket';
 import ServerHeader from '@/components/server/ServerHeader';
 import ServerInfoCards from '@/components/server/ServerInfoCards';
 import ServerTerminal, { ServerTerminalRef, ConsoleFilterRule } from '@/components/server/ServerTerminal';
@@ -419,16 +419,22 @@ export default function ServerConsolePage() {
         }
     }, []);
 
-    const { connectionStatus, ping, sendCommand, sendPowerAction, requestStats, requestLogs } = useWingsWebSocket({
-        serverUuid,
-        connect: shouldConnectToWings,
-        onConsoleOutput: handleConsoleOutput,
-        onStatus: handleStatusUpdate,
-        onStats: handleStatsUpdate,
-        onInstallOutput: handleInstallOutput,
-        onInstallStarted: handleInstallStarted,
-        onInstallCompleted: handleInstallCompleted,
-    });
+    const handleCommandSuggestions = useCallback((response: CommandSuggestResponse) => {
+        terminalRef.current?.applyCommandSuggestions(response);
+    }, []);
+
+    const { connectionStatus, ping, sendCommand, suggestCommand, sendPowerAction, requestStats, requestLogs } =
+        useWingsWebSocket({
+            serverUuid,
+            connect: shouldConnectToWings,
+            onConsoleOutput: handleConsoleOutput,
+            onStatus: handleStatusUpdate,
+            onStats: handleStatsUpdate,
+            onInstallOutput: handleInstallOutput,
+            onInstallStarted: handleInstallStarted,
+            onInstallCompleted: handleInstallCompleted,
+            onCommandSuggestions: handleCommandSuggestions,
+        });
 
     useEffect(() => {
         if (connectionStatus !== 'connected' || !requestStats) return;
@@ -605,6 +611,7 @@ export default function ServerConsolePage() {
                         <ServerTerminal
                             ref={terminalRef}
                             onSendCommand={sendCommand}
+                            onSuggestCommand={suggestCommand}
                             canSendCommands={connectionStatus === 'connected' && hasPermission('control.console')}
                             serverStatus={serverStatus}
                             filters={consoleFilters}
@@ -732,6 +739,7 @@ export default function ServerConsolePage() {
                             <ServerTerminal
                                 ref={terminalRef}
                                 onSendCommand={sendCommand}
+                                onSuggestCommand={suggestCommand}
                                 canSendCommands={connectionStatus === 'connected' && hasPermission('control.console')}
                                 serverStatus={serverStatus}
                                 filters={consoleFilters}

@@ -81,6 +81,12 @@ while [[ $# -gt 0 ]]; do
 		REFRESH_DOCKER_UPDATER_ONLY=true
 		shift
 		;;
+	--wings-install-only)
+		FP_COMPONENT=wings
+		FP_ACTION=install
+		FP_WINGS_SKIP_CONFIGURE=true
+		shift
+		;;
 	--help | -h)
 		echo "FeatherPanel Installer"
 		echo ""
@@ -93,6 +99,7 @@ while [[ $# -gt 0 ]]; do
 		echo "  --skip-virt-check      Skip virtualization compatibility checks"
 		echo "  --skip-system-update   Skip apt update and essential package installation"
 		echo "  --refresh-docker-updater-only  Rewrite /etc/featherpanel host updater scripts only (no full install)"
+		echo "  --wings-install-only   Install FeatherWings only (no setup wizard; for panel quick-setup step 1)"
 		echo "  --dev                  Use latest dev release images"
 		echo "  --dev-branch BRANCH    Use dev images for specific branch (e.g., develop, main)"
 		echo "  --dev-sha SHA          Use dev images for specific commit SHA (requires --dev-branch)"
@@ -108,6 +115,12 @@ while [[ $# -gt 0 ]]; do
 		echo "may result in unsupported configurations. Use at your own risk."
 		echo ""
 		echo "Warning: Dev releases are development builds and may be unstable."
+		echo ""
+		echo "Support (install failures / tickets):"
+		echo "  Failed installs may upload logs automatically — share those URLs in your ticket."
+		echo "  Remote shell (sshx) is only for when FeatherPanel devs ask for access in an"
+		echo "  active support ticket. See Admin → Settings → Support in the panel, or run"
+		echo "  the installer until it fails to see sshx steps in the log output."
 		exit 0
 		;;
 	*)
@@ -229,6 +242,23 @@ support_hint() {
 	echo -e "${YELLOW}Need help?${NC} Join Discord: ${BLUE}https://discord.mythical.systems${NC}  Docs: ${BLUE}https://docs.mythical.systems${NC}"
 }
 
+# Remote shell via sshx — only for users actively in a FeatherPanel dev support ticket.
+show_sshx_support_hint() {
+	echo ""
+	echo -e "${RED}${BOLD}⚠️  Remote shell (sshx) — ticket-only${NC}"
+	echo -e "${YELLOW}Use this ${BOLD}only${NC}${YELLOW} if you are ${BOLD}actively talking with FeatherPanel developers right now${NC}${YELLOW} in a support ticket${NC}"
+	echo -e "${YELLOW}and they explicitly asked you to share shell access.${NC}"
+	echo -e "${RED}An sshx link gives anyone full SSH access to this server. Do not share it outside that ticket.${NC}"
+	echo ""
+	echo -e "${BOLD}If a FeatherPanel dev requested remote access in your open ticket:${NC}"
+	echo -e "  ${CYAN}1.${NC} Install: ${BOLD}curl -sSf https://sshx.io/get | sh${NC}"
+	echo -e "  ${CYAN}2.${NC} Start:   ${BOLD}sshx${NC}"
+	echo -e "  ${CYAN}3.${NC} Copy the ${BOLD}Link:${NC} URL from the output and paste it only in that ticket."
+	echo -e "  ${CYAN}4.${NC} Press ${BOLD}Ctrl+C${NC} when support is done."
+	echo -e "${BLUE}Panel guide:${NC} Admin → Settings → Support → Remote shell (sshx)"
+	echo ""
+}
+
 ERROR_HANDLER_ACTIVE=0
 
 upload_logs_on_fail() {
@@ -289,6 +319,7 @@ upload_logs_on_fail() {
 		log_warn "curl not available; cannot upload logs automatically."
 	fi
 	support_hint
+	show_sshx_support_hint
 }
 
 handle_unexpected_error() {
@@ -2132,9 +2163,8 @@ show_wings_menu() {
 	draw_hr
 	echo ""
 	echo -e "  ${GREEN}${BOLD}[1]${NC} ${BOLD}Install Wings${NC}"
-	echo -e "     ${BLUE}→ Install FeatherWings game server daemon${NC}"
-	echo -e "     ${BLUE}→ Creates systemd service for automatic startup${NC}"
-	echo -e "     ${BLUE}→ SSL (option 4) recommended for production; optional for home hosting${NC}"
+	echo -e "     ${BLUE}→ Install FeatherWings, Docker, and required directories${NC}"
+	echo -e "     ${BLUE}→ Launches ${BOLD}featherwings configure${NC} to finish setup (node, SSL, service)${NC}"
 	echo ""
 	echo -e "  ${RED}${BOLD}[2]${NC} ${BOLD}Uninstall Wings${NC}"
 	echo -e "     ${YELLOW}⚠️  WARNING: This will remove Wings and its configuration${NC}"
@@ -2144,10 +2174,6 @@ show_wings_menu() {
 	echo -e "  ${YELLOW}${BOLD}[3]${NC} ${BOLD}Update Wings${NC}"
 	echo -e "     ${BLUE}→ Download latest Wings binary${NC}"
 	echo -e "     ${BLUE}→ Restart Wings service with new version${NC}"
-	echo ""
-	echo -e "  ${CYAN}${BOLD}[4]${NC} ${BOLD}Create SSL Certificate${NC}"
-	echo -e "     ${BLUE}→ Optional: use for domain-based nodes (Let's Encrypt)${NC}"
-	echo -e "     ${BLUE}→ Skip if home hosting; you can use self-signed or IP in config${NC}"
 	echo ""
 	draw_hr
 }
@@ -2880,12 +2906,38 @@ EOF
 	systemctl enable featherwings
 
 	log_success "FeatherWings daemon installed successfully."
-	log_info "Next steps:"
-	log_info "1. Create a node in your FeatherPanel admin panel"
-	log_info "2. Copy the configuration from the node to /etc/featherpanel/config.yml"
-	log_info "   (For home hosting: you can use your server IP and, if needed, a self-signed certificate in config.yml)"
-	log_info "3. Start FeatherWings with: systemctl start featherwings"
-	log_info "4. Or run in debug mode first: featherwings --debug"
+}
+
+run_featherwings_configure_wizard() {
+	local panel_url="${1:-}"
+
+	if ! command -v featherwings >/dev/null 2>&1; then
+		log_error "FeatherWings binary not found at /usr/local/bin/featherwings"
+		return 1
+	fi
+
+	if [ ! -t 0 ] || [ ! -t 1 ]; then
+		log_info "FeatherWings is installed. Run the setup wizard on this server:"
+		if [ -n "$panel_url" ]; then
+			log_info "  featherwings configure --panel-url $(printf '%q' "$panel_url")"
+		else
+			log_info "  featherwings configure"
+		fi
+		return 0
+	fi
+
+	echo ""
+	draw_hr
+	echo -e "${BOLD}${CYAN}FeatherWings setup wizard${NC}"
+	draw_hr
+	echo -e "${BLUE}The wizard will connect this machine to FeatherPanel, create or join the node,${NC}"
+	echo -e "${BLUE}handle SSL certificates when needed, and install the systemd service.${NC}"
+	echo ""
+	if [ -n "$panel_url" ]; then
+		featherwings configure --panel-url "$panel_url"
+	else
+		featherwings configure
+	fi
 }
 
 uninstall_wings() {
@@ -6109,14 +6161,14 @@ if [ -f /etc/os-release ]; then
 		fi
 	elif [ "$COMPONENT_TYPE" = "2" ]; then
 		# Wings operations
-		while [[ ! "$INST_TYPE" =~ ^[1-4]$ ]]; do
+		while [[ ! "$INST_TYPE" =~ ^[1-3]$ ]]; do
 			show_wings_menu
 			echo ""
-			prompt "${BOLD}${CYAN}Select operation${NC} ${BLUE}(1/2/3/4)${NC}: " INST_TYPE
-			if [[ ! "$INST_TYPE" =~ ^[1-4]$ ]]; then
+			prompt "${BOLD}${CYAN}Select operation${NC} ${BLUE}(1/2/3)${NC}: " INST_TYPE
+			if [[ ! "$INST_TYPE" =~ ^[1-3]$ ]]; then
 				echo ""
 				echo -e "${RED}${BOLD}✗ Invalid input!${NC}"
-				echo -e "${YELLOW}Please enter ${BOLD}1${NC} (Install), ${BOLD}2${NC} (Uninstall), ${BOLD}3${NC} (Update), or ${BOLD}4${NC} (SSL)${NC}"
+				echo -e "${YELLOW}Please enter ${BOLD}1${NC} (Install), ${BOLD}2${NC} (Uninstall), or ${BOLD}3${NC} (Update)${NC}"
 				echo ""
 				sleep 2
 			fi
@@ -7572,66 +7624,16 @@ if [ -f /etc/os-release ]; then
 			fi
 		fi
 
-		# SSL is optional for home hosting; inform and let user proceed either way
-		draw_hr
-		echo -e "${BOLD}${CYAN}Wings & SSL (optional for home hosting)${NC}"
-		draw_hr
-		echo ""
-		echo -e "${BLUE}For production or a public node with a domain:${NC}"
-		echo -e "  ${CYAN}•${NC} Create an SSL certificate first (Wings menu option 4), then install Wings."
-		echo ""
-		echo -e "${BLUE}For home hosting or no domain:${NC}"
-		echo -e "  ${CYAN}•${NC} You can install Wings now and use your server IP or a self-signed certificate in ${BOLD}/etc/featherpanel/config.yml${NC}."
-		echo -e "  ${CYAN}•${NC} The Panel can connect to this node by IP (e.g. https://YOUR_IP:443 or with a self-signed cert)."
-		echo ""
-		if [ -d "/etc/letsencrypt/live" ]; then
-			FOUND_CERTS=false
-			for domain_dir in /etc/letsencrypt/live/*; do
-				if [ -d "$domain_dir" ] && [ -f "$domain_dir/fullchain.pem" ] && [ -f "$domain_dir/privkey.pem" ]; then
-					[ "$FOUND_CERTS" = false ] && echo -e "${BLUE}Existing certificates (optional):${NC}"
-					domain=$(basename "$domain_dir")
-					echo "  - $domain"
-					FOUND_CERTS=true
-				fi
-			done
-			[ "$FOUND_CERTS" = true ] && echo ""
-		fi
-		draw_hr
-		continue_without_cert=""
-		prompt "${BOLD}Continue with Wings installation?${NC} ${BLUE}(y/n)${NC}: " continue_without_cert
-
-		if [[ ! "$continue_without_cert" =~ ^[yY]$ ]]; then
-			echo "Installation cancelled. Run the installer again when ready."
-			exit 0
-		fi
-
-		# Check virtualization compatibility before installing Wings (which requires Docker)
 		check_virtualization_compatibility
 
 		install_packages curl jq
 		install_wings
 		log_success "Wings installation finished. See log at $LOG_FILE"
-		log_info "Configure /etc/featherpanel/config.yml with your Panel URL and, if using a domain, SSL certificate paths (or use IP/self-signed for home hosting)."
 
-		# Offer to create an SSL certificate for Wings immediately
-		echo ""
-		draw_hr
-		echo -e "${BOLD}${YELLOW}Wings SSL Certificate (Optional)${NC}"
-		draw_hr
-		echo -e "${BLUE}You can secure your Wings node with a real SSL certificate now.${NC}"
-		echo -e "${BLUE}This is recommended if your node will be accessed over the Internet with a domain.${NC}"
-		echo ""
-		create_wings_ssl_now=""
-		prompt "${BOLD}Create an SSL certificate for Wings now?${NC} ${BLUE}(y/n)${NC}: " create_wings_ssl_now
-		if [[ "$create_wings_ssl_now" =~ ^[yY]$ ]]; then
-			if create_wings_ssl_certificate; then
-				log_success "Wings SSL certificate creation finished. See log at $LOG_FILE"
-			else
-				log_error "Wings SSL certificate creation failed. See log at $LOG_FILE"
-				log_warn "You can run the installer again and choose Wings → Create SSL Certificate (option 4) later."
-			fi
+		if [ "${FP_WINGS_SKIP_CONFIGURE:-}" = "true" ]; then
+			log_info "FeatherWings binary is ready. Run ${BOLD}featherwings configure${NC} on this server to finish setup."
 		else
-			log_info "Skipping automatic Wings SSL certificate creation. You can create it later via Wings → Create SSL Certificate."
+			run_featherwings_configure_wizard "${FP_PANEL_URL:-}"
 		fi
 	elif [ "$COMPONENT_TYPE" = "2" ] && [ "$INST_TYPE" = "2" ]; then
 		# Wings Uninstall
@@ -7657,20 +7659,9 @@ if [ -f /etc/os-release ]; then
 		log_success "Wings updated successfully."
 		exit 0
 	elif [ "$COMPONENT_TYPE" = "2" ] && [ "$INST_TYPE" = "4" ]; then
-		# Wings SSL Certificate
-		if create_wings_ssl_certificate; then
-			log_success "Wings SSL certificate creation finished. See log at $LOG_FILE"
-		else
-			log_error "Wings SSL certificate creation failed. See log at $LOG_FILE"
-			draw_hr
-			echo -e "${YELLOW}SSL Certificate Creation Failed${NC}"
-			echo -e "${BLUE}To fix this issue:${NC}"
-			echo -e "1. Go back to main menu and select ${GREEN}SSL Certificates${NC}"
-			echo -e "2. Choose ${GREEN}Install Certbot${NC} first"
-			echo -e "3. Then return here to create the SSL certificate"
-			draw_hr
-			exit 1
-		fi
+		log_info "SSL for game nodes is handled by the FeatherWings setup wizard."
+		log_info "Run: featherwings configure"
+		exit 0
 	elif [ "$COMPONENT_TYPE" = "3" ] && [ "$INST_TYPE" = "1" ]; then
 		# CLI Install
 		if [ -f /usr/local/bin/feathercli ]; then
